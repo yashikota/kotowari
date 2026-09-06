@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/yashikota/kotowari/internal/httpapi"
 	"github.com/yashikota/kotowari/internal/store"
 	"github.com/yashikota/kotowari/internal/syncer"
+	"github.com/yashikota/kotowari/internal/term"
 	"github.com/yashikota/kotowari/internal/webembed"
 )
 
@@ -53,7 +55,8 @@ func newRootCommand(stdout, stderr io.Writer, version string) *urfavecli.Command
 		DefaultCommand: "help",
 		ExtraInfo: func() map[string]string {
 			return map[string]string{
-				"Development (Task)": "task dev   API + Vite dev server",
+				"Daily use (Task)":   "task serve / task stop",
+				"Development (Task)": "task dev",
 			}
 		},
 		Commands: []*urfavecli.Command{
@@ -66,16 +69,32 @@ func newRootCommand(stdout, stderr io.Writer, version string) *urfavecli.Command
 			},
 			{
 				Name:  "serve",
-				Usage: "JSON API and UI on 127.0.0.1:7730",
+				Usage: "JSON API and UI (background by default)",
 				Flags: []urfavecli.Flag{
 					&urfavecli.StringFlag{
 						Name:  "addr",
 						Value: "127.0.0.1:7730",
 						Usage: "listen address",
 					},
+					&urfavecli.BoolFlag{
+						Name:    "foreground",
+						Aliases: []string{"fg"},
+						Usage:   "run in foreground (also set by re-exec)",
+					},
+					&urfavecli.BoolFlag{
+						Name:  "strict-port",
+						Usage: "fail if port is in use instead of trying the next port",
+					},
 				},
 				Action: func(ctx context.Context, c *urfavecli.Command) error {
-					return cmdServe(ctx, c.String("addr"), c.ErrWriter)
+					return cmdServe(ctx, c.String("addr"), c.Bool("foreground"), c.Bool("strict-port"), c.ErrWriter)
+				},
+			},
+			{
+				Name:  "stop",
+				Usage: "stop background kotowari serve",
+				Action: func(_ context.Context, _ *urfavecli.Command) error {
+					return cmdStop(stdout)
 				},
 			},
 			{
@@ -153,26 +172,32 @@ func cmdInit(stdout io.Writer) error {
 		return err
 	}
 	defer func() { _ = st.Close() }()
-	fmt.Fprintf(stdout, "initialized %s\n", root)
+	term.For(stdout).Success(stdout, "initialized %s\n", root)
 	return nil
 }
 
-func cmdServe(ctx context.Context, addr string, stderr io.Writer) error {
+func cmdServe(ctx context.Context, addr string, foreground, strictPort bool, stderr io.Writer) error {
+	foreground = foreground || os.Getenv(serveChildEnv) == "1"
+	if !foreground {
+		return spawnServeBackground()
+	}
+
 	st, err := openStore()
 	if err != nil {
 		return err
 	}
 	defer func() { _ = st.Close() }()
 	h := httpapi.New(st, webembed.Dist())
+	styl := term.For(stderr)
+	warn := func(msg string) { styl.Warn(stderr, "kotowari: %s\n", msg) }
+	ln, listenAddr, err := listenTCP(addr, strictPort, warn)
+	if err != nil {
+		return err
+	}
 	srv := &http.Server{
-		Addr:              addr,
 		Handler:           h,
 		ReadHeaderTimeout: 5 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
-	}
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
 	}
 	go func() {
 		<-ctx.Done()
@@ -180,7 +205,7 @@ func cmdServe(ctx context.Context, addr string, stderr io.Writer) error {
 		defer cancel()
 		_ = srv.Shutdown(shutdownCtx)
 	}()
-	fmt.Fprintf(stderr, "kotowari listening on http://%s\n", ln.Addr().String())
+	styl.Listen(stderr, "http://"+listenAddr)
 	err = srv.Serve(ln)
 	if errors.Is(err, http.ErrServerClosed) {
 		return nil
@@ -215,7 +240,7 @@ func cmdPush(ctx context.Context, stdout io.Writer, version string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(stdout, "pushed %s (%s)\n", tag, digest)
+	term.For(stdout).Success(stdout, "pushed %s (%s)\n", tag, digest)
 	return nil
 }
 
@@ -225,7 +250,7 @@ func cmdPull(ctx context.Context, tag string, stdout, stderr io.Writer) error {
 		return err
 	}
 	svc, err := newService(st, "", func(msg string) {
-		fmt.Fprintln(stderr, msg)
+		term.For(stderr).Warn(stderr, "%s\n", msg)
 	})
 	if err != nil {
 		_ = st.Close()
@@ -235,7 +260,7 @@ func cmdPull(ctx context.Context, tag string, stdout, stderr io.Writer) error {
 		_ = st.Close()
 		return err
 	}
-	fmt.Fprintf(stdout, "pulled %s into %s\n", tag, st.Path())
+	term.For(stdout).Success(stdout, "pulled %s into %s\n", tag, st.Path())
 	return nil
 }
 
@@ -257,11 +282,12 @@ func cmdStatus(stdout io.Writer) error {
 	if ws.LastPushedDigest != nil {
 		digest = *ws.LastPushedDigest
 	}
-	fmt.Fprintf(stdout, "path\t%s\n", st.Path())
-	fmt.Fprintf(stdout, "name\t%s\n", ws.Name)
-	fmt.Fprintf(stdout, "ghcr\t%s\n", ws.GHCRRef)
-	fmt.Fprintf(stdout, "dirty\t%t\n", dirty)
-	fmt.Fprintf(stdout, "digest\t%s\n", digest)
+	styl := term.For(stdout)
+	styl.Label(stdout, "path", st.Path())
+	styl.Label(stdout, "name", ws.Name)
+	styl.Label(stdout, "ghcr", ws.GHCRRef)
+	styl.Bool(stdout, "dirty", dirty)
+	styl.Label(stdout, "digest", digest)
 	return nil
 }
 
@@ -276,11 +302,12 @@ func cmdCheck(stdout io.Writer) error {
 		return err
 	}
 	if len(diags) == 0 {
-		fmt.Fprintln(stdout, "ok")
+		term.For(stdout).Success(stdout, "ok\n")
 		return nil
 	}
+	styl := term.For(stdout)
 	for _, d := range diags {
-		fmt.Fprintf(stdout, "%s: %s\n", d.Path, d.Message)
+		styl.Error(stdout, "%s: %s\n", d.Path, d.Message)
 	}
 	return fmt.Errorf("check failed: %d issue(s)", len(diags))
 }

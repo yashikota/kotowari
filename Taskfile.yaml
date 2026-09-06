@@ -1,33 +1,80 @@
 version: "3"
 
+vars:
+  SERVE_ADDR: 127.0.0.1:7730
+
 tasks:
   default:
-    desc: "List available tasks"
+    desc: List available tasks
+    silent: true
     cmds:
       - task -l
 
+  # --- runtime ---
+
+  serve:
+    desc: Start kotowari in background (embedded SPA + API)
+    cmds:
+      - task: _run
+        vars: { CLI: 'serve --addr {{.SERVE_ADDR}}' }
+
+  stop:
+    desc: Stop background kotowari
+    cmds:
+      - task: _run
+        vars: { CLI: stop }
+
+  serve:fg:
+    desc: Foreground serve with embedded SPA (no Vite)
+    cmds:
+      - task: _run
+        vars: { CLI: 'serve --fg --addr {{.SERVE_ADDR}}' }
+
+  dev:
+    desc: Dev mode — API + Vite HMR (open the Vite URL in your browser)
+    deps: [dev:api, dev:web]
+
+  dev:api:
+    desc: "API on {{.SERVE_ADDR}} (foreground, strict port for Vite proxy)"
+    cmds:
+      - task: _run
+        vars: { CLI: 'serve --fg --strict-port --addr {{.SERVE_ADDR}}' }
+
+  dev:web:
+    desc: Vite dev server (proxies /api to {{.SERVE_ADDR}})
+    dir: web
+    cmds:
+      - pnpm exec vp dev
+
+  _run:
+    internal: true
+    cmds:
+      - '[ -x ./kotowari ] && ./kotowari {{.CLI}} || go run . {{.CLI}}'
+
+  # --- quality ---
+
   lint:
-    desc: "Lint"
+    desc: Lint Go code
     cmds:
       - golangci-lint run --fix
       - golangci-lint fmt
 
   test:
-    desc: "Run all tests"
+    desc: Run all Go tests
     deps: [test:unit]
 
   test:unit:
-    desc: "Unit test"
+    desc: Go unit tests
     cmds:
       - go test -v -shuffle=on -race ./...
 
   test:scenario:
-    desc: "API scenario tests"
+    desc: API scenario tests
     cmds:
       - go test -v -shuffle=on -race ./internal/httpapi -run Scenario
 
   check:
-    desc: "Lint and test"
+    desc: Lint and test everything (Go + SPA)
     cmds:
       - task: lint
       - task: test
@@ -35,19 +82,19 @@ tasks:
       - task: web:test
 
   web:check:
-    desc: "Format, lint, and typecheck the SPA"
+    desc: Format, lint, and typecheck the SPA
     dir: web
     cmds:
       - pnpm exec vp check --fix
 
   web:test:
-    desc: "SPA unit tests"
+    desc: SPA unit tests
     dir: web
     cmds:
       - pnpm exec vp test
 
   web:e2e:
-    desc: "Playwright e2e against the embedded SPA"
+    desc: Playwright e2e against the embedded SPA
     deps: [build]
     dir: web
     env:
@@ -56,32 +103,19 @@ tasks:
     cmds:
       - pnpm exec playwright test
 
+  # --- build ---
+
+  build:
+    desc: Build kotowari binary with embedded SPA
+    deps: [web:build]
+    cmds:
+      - go build -o kotowari .
+
   web:build:
-    desc: "Build the SPA"
+    desc: Build SPA and copy into go:embed dist
     dir: web
     cmds:
       - pnpm exec vp build
       - rm -rf ../internal/webembed/dist
       - mkdir -p ../internal/webembed/dist
       - cp -a dist/. ../internal/webembed/dist/
-
-  build:
-    desc: "Build kotowari with embedded SPA"
-    deps: [web:build]
-    cmds:
-      - go build -o kotowari .
-
-  serve:
-    desc: "Run kotowari serve"
-    cmds:
-      - go run . serve
-
-  web:dev:
-    desc: "Vite dev server (proxies /api to 127.0.0.1:7730)"
-    dir: web
-    cmds:
-      - pnpm exec vp dev
-
-  dev:
-    desc: "Run API and SPA dev servers in parallel"
-    deps: [serve, web:dev]

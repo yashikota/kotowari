@@ -13,6 +13,21 @@ import (
 	"github.com/yashikota/kotowari/internal/cli"
 )
 
+func TestStopWithoutPIDFile(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("KOTOWARI_HOME", dir)
+	if err := cli.Run(context.Background(), []string{"kotowari", "init"}, ioDiscard{}, ioDiscard{}, "test"); err != nil {
+		t.Fatal(err)
+	}
+	err := cli.Run(context.Background(), []string{"kotowari", "stop"}, ioDiscard{}, ioDiscard{}, "test")
+	if err == nil {
+		t.Fatal("expected error when pid file missing")
+	}
+	if !strings.Contains(err.Error(), "not running") {
+		t.Fatalf("stop error = %v", err)
+	}
+}
+
 func TestRunHelp(t *testing.T) {
 	var stdout bytes.Buffer
 	err := cli.Run(context.Background(), []string{"kotowari", "help"}, &stdout, ioDiscard{}, "test")
@@ -20,7 +35,7 @@ func TestRunHelp(t *testing.T) {
 		t.Fatalf("Run: %v", err)
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "init") || !strings.Contains(out, "serve") {
+	if !strings.Contains(out, "init") || !strings.Contains(out, "serve") || !strings.Contains(out, "stop") {
 		t.Fatalf("help output missing commands: %s", out)
 	}
 }
