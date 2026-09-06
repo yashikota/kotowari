@@ -40,7 +40,7 @@ func (o *ORAS) Push(ctx context.Context, ref, tag, dir string) (string, error) {
 			return err
 		}
 		rel = filepath.ToSlash(rel)
-		desc, err := store.Add(ctx, rel, "application/vnd.sen.file.v1", "")
+		desc, err := store.Add(ctx, rel, "application/vnd.kotowari.file.v1", "")
 		if err != nil {
 			return fmt.Errorf("add %s: %w", rel, err)
 		}

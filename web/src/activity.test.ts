@@ -3,7 +3,7 @@ import { formatActivity } from './activity.ts';
 
 describe('formatActivity', () => {
   it('describes a create', () => {
-    expect(formatActivity('created', { identifier: 'SEN-1' })).toBe('Created SEN-1');
+    expect(formatActivity('created', { identifier: 'ISS-1' })).toBe('Created ISS-1');
   });
 
   it('describes a status change', () => {

@@ -105,7 +105,7 @@ export function ProjectDetailPage() {
             className="ghost"
             onClick={() =>
               window.dispatchEvent(
-                new CustomEvent('sen:create-issue', { detail: { projectId: project.id } }),
+                new CustomEvent('kotowari:create-issue', { detail: { projectId: project.id } }),
               )
             }
           >
@@ -285,7 +285,7 @@ export function CycleDetailPage() {
             className="ghost"
             onClick={() =>
               window.dispatchEvent(
-                new CustomEvent('sen:create-issue', { detail: { cycleId: cycle.id } }),
+                new CustomEvent('kotowari:create-issue', { detail: { cycleId: cycle.id } }),
               )
             }
           >

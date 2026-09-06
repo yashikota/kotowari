@@ -26,10 +26,10 @@ func TestCreateIssueDefaultsAndValidation(t *testing.T) {
 	if _, err := s.CreateIssue(CreateIssueInput{Title: "bad", Priority: 5}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid priority: %v", err)
 	}
-	if _, err := s.GetIssue("SEN-99"); !errors.Is(err, ErrNotFound) {
+	if _, err := s.GetIssue("ISS-99"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing issue: %v", err)
 	}
-	if err := s.DeleteIssue("SEN-99"); !errors.Is(err, ErrNotFound) {
+	if err := s.DeleteIssue("ISS-99"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("delete missing: %v", err)
 	}
 }
@@ -117,7 +117,7 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hits, err = s.Search("sen-1")
+	hits, err = s.Search("iss-1")
 	if err != nil {
 		t.Fatal(err)
 	}

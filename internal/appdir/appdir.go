@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 )
 
-const DefaultDir = ".sen"
+const DefaultDir = ".kotowari"
 
 func Home() (string, error) {
-	if v := os.Getenv("SEN_HOME"); v != "" {
+	if v := os.Getenv("KOTOWARI_HOME"); v != "" {
 		return filepath.Clean(v), nil
 	}
 	cwd, err := os.Getwd()

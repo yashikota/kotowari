@@ -9,17 +9,17 @@ import (
 func TestIdentifierRoundTrip(t *testing.T) {
 	t.Parallel()
 	id := Identifier(12)
-	if id != "SEN-12" {
+	if id != "ISS-12" {
 		t.Fatalf("got %q", id)
 	}
 	n, ok := ParseIdentifier(id)
 	if !ok || n != 12 {
 		t.Fatalf("parse %q: %d %v", id, n, ok)
 	}
-	if _, ok := ParseIdentifier("SEN-0"); ok {
-		t.Fatal("SEN-0 should be rejected")
+	if _, ok := ParseIdentifier("ISS-0"); ok {
+		t.Fatal("ISS-0 should be rejected")
 	}
-	if _, ok := ParseIdentifier("sen-1"); ok {
+	if _, ok := ParseIdentifier("iss-1"); ok {
 		t.Fatal("lowercase prefix should be rejected")
 	}
 }
@@ -58,7 +58,7 @@ func TestUniqueSlug(t *testing.T) {
 func TestRenderPageMarkdown(t *testing.T) {
 	t.Parallel()
 	date := "2026-08-18"
-	project := "sen"
+	project := "kotowari"
 	md := RenderPageMarkdown(Page{
 		Title:       "SQLite as source of truth",
 		Slug:        "sqlite-source",
@@ -77,7 +77,7 @@ func TestRenderPageMarkdown(t *testing.T) {
 		"status: proposed\n",
 		"date: 2026-08-18\n",
 		"tags: [adr]\n",
-		"project: sen\n",
+		"project: kotowari\n",
 	} {
 		if !strings.Contains(md, want) {
 			t.Fatalf("missing %q in %s", want, md)
@@ -142,14 +142,14 @@ func TestValidators(t *testing.T) {
 
 func TestParseIdentifierRejectsJunk(t *testing.T) {
 	t.Parallel()
-	for _, id := range []string{"", "SEN-", "SEN-abc", "ISSUE-1", "SEN-1a", "SEN--1"} {
+	for _, id := range []string{"", "ISS-", "ISS-abc", "ISSUE-1", "ISS-1a", "ISS--1"} {
 		if _, ok := ParseIdentifier(id); ok {
 			t.Fatalf("accepted %q", id)
 		}
 	}
-	n, ok := ParseIdentifier("SEN-01")
+	n, ok := ParseIdentifier("ISS-01")
 	if !ok || n != 1 {
-		t.Fatalf("SEN-01: %d %v", n, ok)
+		t.Fatalf("ISS-01: %d %v", n, ok)
 	}
 }
 

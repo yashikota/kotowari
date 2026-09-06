@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yashikota/sen/internal/domain"
-	"github.com/yashikota/sen/internal/store"
+	"github.com/yashikota/kotowari/internal/domain"
+	"github.com/yashikota/kotowari/internal/store"
 )
 
 var ErrDirty = errors.New("local workspace has unpushed changes")
 var ErrNoRef = errors.New("workspace ghcrRef is empty")
 var ErrNoWorkspace = errors.New("artifact is missing workspace.toml")
 
-const artifactType = "application/vnd.sen.workspace.v1"
+const artifactType = "application/vnd.kotowari.workspace.v1"
 
 type Registry interface {
 	Push(ctx context.Context, ref, tag, dir string) (digest string, err error)
@@ -71,7 +71,7 @@ func (s *Service) Push(ctx context.Context) (string, string, error) {
 	if strings.TrimSpace(ws.GHCRRef) == "" {
 		return "", "", ErrNoRef
 	}
-	dir, err := os.MkdirTemp("", "sen-push-*")
+	dir, err := os.MkdirTemp("", "kotowari-push-*")
 	if err != nil {
 		return "", "", err
 	}
@@ -111,7 +111,7 @@ func (s *Service) Pull(ctx context.Context, tag string) error {
 	if strings.TrimSpace(ws.GHCRRef) == "" {
 		return ErrNoRef
 	}
-	dir, err := os.MkdirTemp("", "sen-pull-*")
+	dir, err := os.MkdirTemp("", "kotowari-pull-*")
 	if err != nil {
 		return err
 	}

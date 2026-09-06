@@ -10,12 +10,12 @@ import (
 
 	urfavecli "github.com/urfave/cli/v3"
 
-	"github.com/yashikota/sen/internal/cli"
+	"github.com/yashikota/kotowari/internal/cli"
 )
 
 func TestRunHelp(t *testing.T) {
 	var stdout bytes.Buffer
-	err := cli.Run(context.Background(), []string{"sen", "help"}, &stdout, ioDiscard{}, "test")
+	err := cli.Run(context.Background(), []string{"kotowari", "help"}, &stdout, ioDiscard{}, "test")
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -26,7 +26,7 @@ func TestRunHelp(t *testing.T) {
 }
 
 func TestRunUnknownCommand(t *testing.T) {
-	err := cli.Run(context.Background(), []string{"sen", "not-a-command"}, ioDiscard{}, ioDiscard{}, "test")
+	err := cli.Run(context.Background(), []string{"kotowari", "not-a-command"}, ioDiscard{}, ioDiscard{}, "test")
 	if err == nil {
 		t.Fatal("expected error for unknown command")
 	}
@@ -41,7 +41,7 @@ func TestRunUnknownCommand(t *testing.T) {
 
 func TestRunAcceptsGoRunBinaryPath(t *testing.T) {
 	var stdout bytes.Buffer
-	err := cli.Run(context.Background(), []string{"/tmp/go-build/exe/sen", "version"}, &stdout, ioDiscard{}, "9.9.9")
+	err := cli.Run(context.Background(), []string{"/tmp/go-build/exe/kotowari", "version"}, &stdout, ioDiscard{}, "9.9.9")
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -52,7 +52,7 @@ func TestRunAcceptsGoRunBinaryPath(t *testing.T) {
 
 func TestRunVersionFlag(t *testing.T) {
 	var stdout bytes.Buffer
-	err := cli.Run(context.Background(), []string{"sen", "--version"}, &stdout, ioDiscard{}, "1.2.3")
+	err := cli.Run(context.Background(), []string{"kotowari", "--version"}, &stdout, ioDiscard{}, "1.2.3")
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -63,10 +63,10 @@ func TestRunVersionFlag(t *testing.T) {
 
 func TestInitCheckAndDirtyStatus(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("SEN_HOME", dir)
+	t.Setenv("KOTOWARI_HOME", dir)
 
 	var stdout bytes.Buffer
-	if err := cli.Run(context.Background(), []string{"sen", "init"}, &stdout, ioDiscard{}, "test"); err != nil {
+	if err := cli.Run(context.Background(), []string{"kotowari", "init"}, &stdout, ioDiscard{}, "test"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(stdout.String(), dir) {
@@ -74,7 +74,7 @@ func TestInitCheckAndDirtyStatus(t *testing.T) {
 	}
 
 	stdout.Reset()
-	if err := cli.Run(context.Background(), []string{"sen", "check"}, &stdout, ioDiscard{}, "test"); err != nil {
+	if err := cli.Run(context.Background(), []string{"kotowari", "check"}, &stdout, ioDiscard{}, "test"); err != nil {
 		t.Fatalf("fresh check: %v %s", err, stdout.String())
 	}
 	if strings.TrimSpace(stdout.String()) != "ok" {
@@ -82,7 +82,7 @@ func TestInitCheckAndDirtyStatus(t *testing.T) {
 	}
 
 	stdout.Reset()
-	if err := cli.Run(context.Background(), []string{"sen", "status"}, &stdout, ioDiscard{}, "test"); err != nil {
+	if err := cli.Run(context.Background(), []string{"kotowari", "status"}, &stdout, ioDiscard{}, "test"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(stdout.String(), "dirty\tfalse") {
@@ -94,11 +94,11 @@ func TestInitCheckAndDirtyStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	md := "+++\ntitle = 'loose'\nstatus = 'todo'\npriority = 0\nproject = \"missing\"\ncreated = '2026-01-01T00:00:00Z'\nupdated = '2026-01-01T00:00:00Z'\n+++\n\n"
-	if err := os.WriteFile(filepath.Join(issue, "SEN-1.md"), []byte(md), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(issue, "ISS-1.md"), []byte(md), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	stdout.Reset()
-	err := cli.Run(context.Background(), []string{"sen", "check"}, &stdout, ioDiscard{}, "test")
+	err := cli.Run(context.Background(), []string{"kotowari", "check"}, &stdout, ioDiscard{}, "test")
 	if err == nil {
 		t.Fatal("expected check failure")
 	}
@@ -109,7 +109,7 @@ func TestInitCheckAndDirtyStatus(t *testing.T) {
 
 func TestRunDefaultIsHelp(t *testing.T) {
 	var stdout bytes.Buffer
-	if err := cli.Run(context.Background(), []string{"sen"}, &stdout, ioDiscard{}, "test"); err != nil {
+	if err := cli.Run(context.Background(), []string{"kotowari"}, &stdout, ioDiscard{}, "test"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(stdout.String(), "init") {
@@ -119,7 +119,7 @@ func TestRunDefaultIsHelp(t *testing.T) {
 
 func TestRunVersionCommand(t *testing.T) {
 	var stdout bytes.Buffer
-	if err := cli.Run(context.Background(), []string{"sen", "version"}, &stdout, ioDiscard{}, "4.5.6"); err != nil {
+	if err := cli.Run(context.Background(), []string{"kotowari", "version"}, &stdout, ioDiscard{}, "4.5.6"); err != nil {
 		t.Fatal(err)
 	}
 	if strings.TrimSpace(stdout.String()) != "4.5.6" {
@@ -129,11 +129,11 @@ func TestRunVersionCommand(t *testing.T) {
 
 func TestInitAlreadyInitialized(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("SEN_HOME", dir)
-	if err := cli.Run(context.Background(), []string{"sen", "init"}, ioDiscard{}, ioDiscard{}, "test"); err != nil {
+	t.Setenv("KOTOWARI_HOME", dir)
+	if err := cli.Run(context.Background(), []string{"kotowari", "init"}, ioDiscard{}, ioDiscard{}, "test"); err != nil {
 		t.Fatal(err)
 	}
-	err := cli.Run(context.Background(), []string{"sen", "init"}, ioDiscard{}, ioDiscard{}, "test")
+	err := cli.Run(context.Background(), []string{"kotowari", "init"}, ioDiscard{}, ioDiscard{}, "test")
 	if err == nil {
 		t.Fatal("expected already initialized")
 	}
@@ -144,27 +144,27 @@ func TestInitAlreadyInitialized(t *testing.T) {
 
 func TestStatusAndCheckWithoutWorkspace(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("SEN_HOME", dir)
-	err := cli.Run(context.Background(), []string{"sen", "status"}, ioDiscard{}, ioDiscard{}, "test")
+	t.Setenv("KOTOWARI_HOME", dir)
+	err := cli.Run(context.Background(), []string{"kotowari", "status"}, ioDiscard{}, ioDiscard{}, "test")
 	if err == nil {
 		t.Fatal("expected missing workspace")
 	}
 	if !strings.Contains(err.Error(), "workspace not found") {
 		t.Fatalf("status %v", err)
 	}
-	err = cli.Run(context.Background(), []string{"sen", "check"}, ioDiscard{}, ioDiscard{}, "test")
+	err = cli.Run(context.Background(), []string{"kotowari", "check"}, ioDiscard{}, ioDiscard{}, "test")
 	if err == nil {
 		t.Fatal("expected missing workspace")
 	}
-	if !strings.Contains(err.Error(), "run sen init") {
+	if !strings.Contains(err.Error(), "run kotowari init") {
 		t.Fatalf("check %v", err)
 	}
 }
 
 func TestStatusDirtyAfterIssueFile(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("SEN_HOME", dir)
-	if err := cli.Run(context.Background(), []string{"sen", "init"}, ioDiscard{}, ioDiscard{}, "test"); err != nil {
+	t.Setenv("KOTOWARI_HOME", dir)
+	if err := cli.Run(context.Background(), []string{"kotowari", "init"}, ioDiscard{}, ioDiscard{}, "test"); err != nil {
 		t.Fatal(err)
 	}
 	issue := filepath.Join(dir, "issues")
@@ -172,11 +172,11 @@ func TestStatusDirtyAfterIssueFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	md := "+++\ntitle = 'real'\nstatus = 'todo'\npriority = 0\ncreated = '2026-01-01T00:00:00Z'\nupdated = '2026-01-01T00:00:00Z'\n+++\n\n"
-	if err := os.WriteFile(filepath.Join(issue, "SEN-1.md"), []byte(md), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(issue, "ISS-1.md"), []byte(md), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	var stdout bytes.Buffer
-	if err := cli.Run(context.Background(), []string{"sen", "status"}, &stdout, ioDiscard{}, "test"); err != nil {
+	if err := cli.Run(context.Background(), []string{"kotowari", "status"}, &stdout, ioDiscard{}, "test"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(stdout.String(), "dirty\ttrue") {

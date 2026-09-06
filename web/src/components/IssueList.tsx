@@ -57,7 +57,7 @@ export function IssueList({ issues, selectedId, onSelect, openOnSelect = true }:
 
   useEffect(() => {
     if (selectedId) {
-      window.dispatchEvent(new CustomEvent('sen:issue', { detail: selectedId }));
+      window.dispatchEvent(new CustomEvent('kotowari:issue', { detail: selectedId }));
     }
   }, [selectedId]);
 

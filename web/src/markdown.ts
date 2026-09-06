@@ -8,7 +8,7 @@ export function escapeHtml(s: string): string {
     .replaceAll('"', '&quot;');
 }
 
-const FENCE = '@@SENFENCE:';
+const FENCE = '@@KOTOFENCE:';
 
 export function renderMarkdown(src: string): string {
   const fences: string[] = [];
@@ -47,7 +47,7 @@ export function renderMarkdown(src: string): string {
       return `<p>${inline(t).replaceAll('\n', '<br />')}</p>`;
     })
     .join('');
-  return html.replace(/@@SENFENCE:(\d+)@@/g, (_, i: string) => fences[Number(i)] ?? '');
+  return html.replace(/@@KOTOFENCE:(\d+)@@/g, (_, i: string) => fences[Number(i)] ?? '');
 }
 
 function inline(s: string): string {

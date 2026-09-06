@@ -52,7 +52,7 @@ tasks:
     dir: web
     env:
       CI: "true"
-      E2E_SEN_BIN: "{{.TASKFILE_DIR}}/sen"
+      E2E_KOTOWARI_BIN: "{{.TASKFILE_DIR}}/kotowari"
     cmds:
       - pnpm exec playwright test
 
@@ -66,13 +66,13 @@ tasks:
       - cp -a dist/. ../internal/webembed/dist/
 
   build:
-    desc: "Build sen with embedded SPA"
+    desc: "Build kotowari with embedded SPA"
     deps: [web:build]
     cmds:
-      - go build -o sen .
+      - go build -o kotowari .
 
   serve:
-    desc: "Run sen serve"
+    desc: "Run kotowari serve"
     cmds:
       - go run . serve
 

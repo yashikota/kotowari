@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/yashikota/sen/internal/domain"
+	"github.com/yashikota/kotowari/internal/domain"
 )
 
 func errf(kind error, format string, args ...any) error {
@@ -49,7 +49,7 @@ func seed(root string) error {
 	now := domain.Now()
 	m := &mem{
 		Workspace: workspaceFile{
-			Name:         "sen",
+			Name:         "kotowari",
 			Timezone:     "Asia/Tokyo",
 			IssueCounter: 0,
 			NextID:       4,

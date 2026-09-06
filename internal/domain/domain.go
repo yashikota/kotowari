@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const IdentifierPrefix = "SEN-"
+const IdentifierPrefix = "ISS-"
 
 type Page struct {
 	Title       string

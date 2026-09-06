@@ -1,5 +1,6 @@
 /sen
-.sen/
+/kotowari
+.kotowari/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal

@@ -12,8 +12,8 @@ test('create issue, comment, and page', async ({ page }) => {
   await issueTitle.fill('Smoke issue');
   await issueTitle.press('Enter');
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
-  await expect(page).toHaveURL(/\/issues\/SEN-\d+/);
-  const identifier = page.url().match(/SEN-\d+/)?.[0];
+  await expect(page).toHaveURL(/\/issues\/ISS-\d+/);
+  const identifier = page.url().match(/ISS-\d+/)?.[0];
   if (!identifier) {
     throw new Error('expected issue identifier in the URL');
   }

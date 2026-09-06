@@ -32,8 +32,8 @@ export function IssueFilters({
       findRef.current?.focus();
       findRef.current?.select();
     }
-    window.addEventListener('sen:find', onFindKey);
-    return () => window.removeEventListener('sen:find', onFindKey);
+    window.addEventListener('kotowari:find', onFindKey);
+    return () => window.removeEventListener('kotowari:find', onFindKey);
   }, []);
   const selectedLabels = (search.labels ?? '')
     .split(',')

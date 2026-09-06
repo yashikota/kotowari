@@ -12,22 +12,22 @@ import (
 
 	urfavecli "github.com/urfave/cli/v3"
 
-	"github.com/yashikota/sen/internal/appdir"
-	"github.com/yashikota/sen/internal/httpapi"
-	"github.com/yashikota/sen/internal/store"
-	"github.com/yashikota/sen/internal/syncer"
-	"github.com/yashikota/sen/internal/webembed"
+	"github.com/yashikota/kotowari/internal/appdir"
+	"github.com/yashikota/kotowari/internal/httpapi"
+	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/syncer"
+	"github.com/yashikota/kotowari/internal/webembed"
 )
 
 func Run(ctx context.Context, osArgs []string, stdout, stderr io.Writer, version string) error {
 	if len(osArgs) == 0 {
-		osArgs = []string{"sen"}
+		osArgs = []string{"kotowari"}
 	} else {
 		base := filepath.Base(osArgs[0])
-		if base == "sen" || base == "sen.exe" {
-			osArgs[0] = "sen"
+		if base == "kotowari" || base == "kotowari.exe" {
+			osArgs[0] = "kotowari"
 		} else {
-			osArgs = append([]string{"sen"}, osArgs...)
+			osArgs = append([]string{"kotowari"}, osArgs...)
 		}
 	}
 
@@ -44,9 +44,9 @@ func Run(ctx context.Context, osArgs []string, stdout, stderr io.Writer, version
 
 func newRootCommand(stdout, stderr io.Writer, version string) *urfavecli.Command {
 	return &urfavecli.Command{
-		Name:           "sen",
+		Name:           "kotowari",
 		Usage:          "personal local issue tracker",
-		Description:    "One-person workspace in ./.sen (override with SEN_HOME). No teams or assignees.",
+		Description:    "One-person workspace in ./.kotowari (override with KOTOWARI_HOME). No teams or assignees.",
 		Writer:         stdout,
 		ErrWriter:      stderr,
 		Version:        version,
@@ -59,7 +59,7 @@ func newRootCommand(stdout, stderr io.Writer, version string) *urfavecli.Command
 		Commands: []*urfavecli.Command{
 			{
 				Name:  "init",
-				Usage: "create .sen/ in the current directory",
+				Usage: "create .kotowari/ in the current directory",
 				Action: func(_ context.Context, _ *urfavecli.Command) error {
 					return cmdInit(stdout)
 				},
@@ -131,7 +131,7 @@ func openStore() (*store.Store, error) {
 		return nil, err
 	}
 	if !appdir.Initialized(root) {
-		return nil, fmt.Errorf("workspace not found at %s (run sen init)", root)
+		return nil, fmt.Errorf("workspace not found at %s (run kotowari init)", root)
 	}
 	st, err := store.Open(root)
 	if err != nil {
@@ -180,7 +180,7 @@ func cmdServe(ctx context.Context, addr string, stderr io.Writer) error {
 		defer cancel()
 		_ = srv.Shutdown(shutdownCtx)
 	}()
-	fmt.Fprintf(stderr, "sen listening on http://%s\n", ln.Addr().String())
+	fmt.Fprintf(stderr, "kotowari listening on http://%s\n", ln.Addr().String())
 	err = srv.Serve(ln)
 	if errors.Is(err, http.ErrServerClosed) {
 		return nil

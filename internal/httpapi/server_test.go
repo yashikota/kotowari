@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yashikota/sen/internal/store"
+	"github.com/yashikota/kotowari/internal/store"
 )
 
 func testAPI(t *testing.T) *Server {
@@ -54,7 +54,7 @@ func TestCreateIssueRequiresTitle(t *testing.T) {
 
 func TestGetMissingIssue(t *testing.T) {
 	s := testAPI(t)
-	rec := doJSON(t, s, "GET", "/api/issues/SEN-99", "")
+	rec := doJSON(t, s, "GET", "/api/issues/ISS-99", "")
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("code %d", rec.Code)
 	}
@@ -160,7 +160,7 @@ func TestIssueParentAndListDepth(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &child); err != nil {
 		t.Fatal(err)
 	}
-	if child["parentIdentifier"] != "SEN-1" {
+	if child["parentIdentifier"] != "ISS-1" {
 		t.Fatalf("parentIdentifier %#v", child["parentIdentifier"])
 	}
 	rec = doJSON(t, s, "GET", "/api/issues", "")
@@ -174,7 +174,7 @@ func TestIssueParentAndListDepth(t *testing.T) {
 	if len(issues) != 2 {
 		t.Fatalf("want 2 issues, got %d", len(issues))
 	}
-	if issues[0]["identifier"] != "SEN-1" || issues[1]["identifier"] != "SEN-2" {
+	if issues[0]["identifier"] != "ISS-1" || issues[1]["identifier"] != "ISS-2" {
 		t.Fatalf("tree order %#v %#v", issues[0]["identifier"], issues[1]["identifier"])
 	}
 	if issues[1]["depth"].(float64) != 1 {
@@ -329,7 +329,7 @@ func TestLivedInWorkspaceHTTP(t *testing.T) {
 	if len(issues) != 2 {
 		t.Fatalf("atlas todo %#v", issues)
 	}
-	if issues[0]["identifier"] != "SEN-1" || issues[1]["depth"].(float64) != 1 {
+	if issues[0]["identifier"] != "ISS-1" || issues[1]["depth"].(float64) != 1 {
 		t.Fatalf("tree %#v", issues)
 	}
 	rec = doJSON(t, s, "GET", "/api/issues?labels="+labels[0]["name"].(string), "")

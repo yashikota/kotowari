@@ -9,7 +9,7 @@ import (
 
 	urfavecli "github.com/urfave/cli/v3"
 
-	"github.com/yashikota/sen/internal/cli"
+	"github.com/yashikota/kotowari/internal/cli"
 )
 
 var Version string

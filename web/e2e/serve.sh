@@ -1,10 +1,10 @@
 #!/bin/sh
 set -eu
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-export SEN_HOME="${E2E_SEN_HOME:-$(mktemp -d)}"
+export KOTOWARI_HOME="${E2E_KOTOWARI_HOME:-$(mktemp -d)}"
 cd "$ROOT"
-bin="${E2E_SEN_BIN:-}"
-if [ ! -f "$SEN_HOME/workspace.toml" ]; then
+bin="${E2E_KOTOWARI_BIN:-}"
+if [ ! -f "$KOTOWARI_HOME/workspace.toml" ]; then
   if [ -n "$bin" ]; then
     "$bin" init
   else

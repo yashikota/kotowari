@@ -56,8 +56,8 @@ export function IssueDetail({ identifier }: Props) {
     function onRefresh() {
       void reload().catch(() => undefined);
     }
-    window.addEventListener('sen:refresh', onRefresh);
-    return () => window.removeEventListener('sen:refresh', onRefresh);
+    window.addEventListener('kotowari:refresh', onRefresh);
+    return () => window.removeEventListener('kotowari:refresh', onRefresh);
   }, [identifier]);
 
   async function patch(body: Record<string, unknown>) {
@@ -87,7 +87,7 @@ export function IssueDetail({ identifier }: Props) {
     await api.createIssue({ title, parentId });
     setSubTitle('');
     await router.invalidate();
-    window.dispatchEvent(new Event('sen:refresh'));
+    window.dispatchEvent(new Event('kotowari:refresh'));
     await reload();
   }
 

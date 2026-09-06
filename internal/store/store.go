@@ -235,7 +235,7 @@ func Open(root string) (*Store, error) {
 	marker := filepath.Join(root, "workspace.toml")
 	if _, err := os.Stat(marker); err != nil {
 		if _, yamlErr := os.Stat(filepath.Join(root, "workspace.yaml")); yamlErr == nil {
-			return nil, fmt.Errorf("found workspace.yaml in %s; this version uses workspace.toml (move the directory aside and run sen init)", root)
+			return nil, fmt.Errorf("found workspace.yaml in %s; this version uses workspace.toml (move the directory aside and run kotowari init)", root)
 		}
 		if err := seed(root); err != nil {
 			return nil, err

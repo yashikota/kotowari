@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/yashikota/sen/internal/domain"
+	"github.com/yashikota/kotowari/internal/domain"
 )
 
 type issueFM struct {

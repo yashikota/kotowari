@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yashikota/sen/internal/store"
+	"github.com/yashikota/kotowari/internal/store"
 )
 
 func TestExportWritesFrontmatter(t *testing.T) {
@@ -48,7 +48,7 @@ func TestPushDoesNotMarkOnFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	ref := "ghcr.io/example/sen"
+	ref := "ghcr.io/example/kotowari"
 	if _, err := st.UpdateWorkspace(nil, &ref, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestPullRefusesDirty(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	ref := "ghcr.io/example/sen"
+	ref := "ghcr.io/example/kotowari"
 	if _, err := st.UpdateWorkspace(nil, &ref, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestPushPullRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ref := "ghcr.io/example/sen"
+	ref := "ghcr.io/example/kotowari"
 	if _, err := st.UpdateWorkspace(nil, &ref, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestPushPullRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st3.Close() })
-	iss, err := st3.GetIssue("SEN-1")
+	iss, err := st3.GetIssue("ISS-1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func TestPullRejectsLegacySQLiteArtifact(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	ref := "ghcr.io/example/sen"
+	ref := "ghcr.io/example/kotowari"
 	if _, err := st.UpdateWorkspace(nil, &ref, nil); err != nil {
 		t.Fatal(err)
 	}

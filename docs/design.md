@@ -1,17 +1,17 @@
-# sen 設計
+# kotowari 設計
 
-sen は一人で使うローカルファーストな課題管理である。
+kotowari は一人で使うローカルファーストな課題管理である。
 Linear の密度とキーボード操作を借りるが、チーム製品の複製ではない。
 データは Markdown、TOML、JSONL を正とし、SQLite は持たない。
 エージェントがファイルを直接編集でき、次の API 読み込みで UI に載る。
 
-## 誰のための sen か
+## 誰のための kotowari か
 
 利用者は常に一人である。
 担当者、メンバー、Inbox、通知、権限、リアルタイム共同編集は持たない。
 複数人で同じワークスペースを共有する前提も持たない。
 
-複数マシン間の受け渡しは、自分用のスナップショットとして `sen push` と `sen pull` で行う。
+複数マシン間の受け渡しは、自分用のスナップショットとして `kotowari push` と `kotowari pull` で行う。
 マージはしない。
 後勝ちの置き換えである。
 
@@ -36,18 +36,18 @@ Cycle は自分の時間枠である。チームのスプリントではない�
 
 ## ワークスペース
 
-既定はカレントディレクトリの `.sen/` である。
-環境変数 `SEN_HOME` があればそれを使う。
+既定はカレントディレクトリの `.kotowari/` である。
+環境変数 `KOTOWARI_HOME` があればそれを使う。
 初期化の判定は `workspace.toml` の有無である。
 
 ```
-$SEN_HOME/
+$KOTOWARI_HOME/
   workspace.toml
   labels.toml
   projects/<slug>.toml
   cycles/<n>.toml
   views/<slug>.toml
-  issues/SEN-n.md
+  issues/ISS-n.md
   pages/<slug>.md
   activities.jsonl
 ```
@@ -55,19 +55,19 @@ $SEN_HOME/
 Issue と Page は `+++` で囲んだ TOML frontmatter と Markdown 本文である。
 メモは Issue ファイルの `[[comments]]` に置く。
 活動履歴は追記の JSONL である。
-サブ Issue は frontmatter の `parent`（親の識別子 `SEN-n`）で表す。
+サブ Issue は frontmatter の `parent`（親の識別子 `ISS-n`）で表す。
 循環参照は拒否する。
 
 ## ランタイム
 
-`sen` は単一の Go バイナリである。
+`kotowari` は単一の Go バイナリである。
 
-- `sen init`：`.sen/` と空の `workspace.toml` を作る
-- `sen serve`：JSON API と SPA を `127.0.0.1:7730` で出す
-- `sen push`：自分の GHCR 参照へスナップショットを送る
-- `sen pull`：スナップショットでローカルを置き換える
-- `sen status`：未 push の有無と最後の digest
-- `sen check`：ファイルの意味的な壊れを一覧する
+- `kotowari init`：`.kotowari/` と空の `workspace.toml` を作る
+- `kotowari serve`：JSON API と SPA を `127.0.0.1:7730` で出す
+- `kotowari push`：自分の GHCR 参照へスナップショットを送る
+- `kotowari pull`：スナップショットでローカルを置き換える
+- `kotowari status`：未 push の有無と最後の digest
+- `kotowari check`：ファイルの意味的な壊れを一覧する
 
 認証トークンはファイルに保存しない。
 `GITHUB_TOKEN`、なければ `gh auth token` を使う。
@@ -113,7 +113,7 @@ Issue と多対多で結ぶ。
 
 ### Issue
 
-識別子は `SEN-n` である。
+識別子は `ISS-n` である。
 タイトル、本文、状態、優先度、Label、任意の Project、任意の Cycle、任意の期限、並び順、任意の親 Issue を持つ。
 担当者は持たない。
 親は高々1つである。深さの上限は設けない。循環は拒否する。
@@ -143,9 +143,9 @@ ADR や自分用の文書に使う。
 
 ## 同期
 
-成果物の参照は `ghcr.io/<user>/sen` である。
+成果物の参照は `ghcr.io/<user>/kotowari` である。
 自分のマシン間のバックアップであり、共有ディレクトリではない。
-`sen pull` はローカルが dirty なら中止する。
+`kotowari pull` はローカルが dirty なら中止する。
 起動時自動同期と `--force` pull は持たない。
 
 ## 代替案

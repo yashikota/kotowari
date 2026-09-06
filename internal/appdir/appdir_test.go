@@ -6,12 +6,12 @@ import (
 	"testing"
 )
 
-func TestHomeDefaultIsDotSenInCwd(t *testing.T) {
+func TestHomeDefaultIsDotKotowariInCwd(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.Chdir(dir); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("SEN_HOME", "")
+	t.Setenv("KOTOWARI_HOME", "")
 	got, err := Home()
 	if err != nil {
 		t.Fatal(err)
@@ -22,9 +22,9 @@ func TestHomeDefaultIsDotSenInCwd(t *testing.T) {
 	}
 }
 
-func TestHomeRespectsSEN_HOME(t *testing.T) {
+func TestHomeRespectsKOTOWARI_HOME(t *testing.T) {
 	custom := t.TempDir()
-	t.Setenv("SEN_HOME", custom)
+	t.Setenv("KOTOWARI_HOME", custom)
 	got, err := Home()
 	if err != nil {
 		t.Fatal(err)
@@ -34,9 +34,9 @@ func TestHomeRespectsSEN_HOME(t *testing.T) {
 	}
 }
 
-func TestHomeCleansSEN_HOME(t *testing.T) {
+func TestHomeCleansKOTOWARI_HOME(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("SEN_HOME", dir+string(os.PathSeparator)+"."+string(os.PathSeparator))
+	t.Setenv("KOTOWARI_HOME", dir+string(os.PathSeparator)+"."+string(os.PathSeparator))
 	got, err := Home()
 	if err != nil {
 		t.Fatal(err)
@@ -54,7 +54,7 @@ func TestInitializedAndMarker(t *testing.T) {
 	if Marker(dir) != filepath.Join(dir, "workspace.toml") {
 		t.Fatalf("marker %s", Marker(dir))
 	}
-	if err := os.WriteFile(Marker(dir), []byte("name = \"sen\"\n"), 0o644); err != nil {
+	if err := os.WriteFile(Marker(dir), []byte("name = \"kotowari\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if !Initialized(dir) {
@@ -64,7 +64,7 @@ func TestInitializedAndMarker(t *testing.T) {
 
 func TestInitializedAcceptsLegacyYAML(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "workspace.yaml"), []byte("name: sen\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "workspace.yaml"), []byte("name: kotowari\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if !Initialized(dir) {

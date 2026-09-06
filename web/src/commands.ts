@@ -15,7 +15,7 @@ export const STATIC_COMMANDS: Command[] = [
   { id: 'goto-cycles', title: 'Go to Cycles' },
   { id: 'goto-pages', title: 'Go to Pages', keywords: 'adr docs' },
   { id: 'goto-active-cycle', title: 'Go to active cycle', keywords: 'sprint current' },
-  { id: 'copy-identifier', title: 'Copy identifier', keywords: 'id sen clipboard' },
+  { id: 'copy-identifier', title: 'Copy identifier', keywords: 'id iss clipboard' },
   { id: 'keyboard-help', title: 'Keyboard shortcuts', hint: '?', keywords: 'help keys' },
   { id: 'set-status-backlog', title: 'Set status: Backlog', hint: 's' },
   { id: 'set-status-todo', title: 'Set status: Todo', hint: 's' },

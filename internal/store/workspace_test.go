@@ -32,16 +32,16 @@ func TestLivedInWorkspaceTreeAndView(t *testing.T) {
 	if len(all) != 4 {
 		t.Fatalf("want 4 issues, got %d", len(all))
 	}
-	if all[0].Identifier != "SEN-1" || all[0].Depth != 0 {
+	if all[0].Identifier != "ISS-1" || all[0].Depth != 0 {
 		t.Fatalf("epic %#v", all[0])
 	}
-	if all[1].Identifier != "SEN-2" || all[1].Depth != 1 {
+	if all[1].Identifier != "ISS-2" || all[1].Depth != 1 {
 		t.Fatalf("feature %#v", all[1])
 	}
-	if all[2].Identifier != "SEN-3" || all[2].Depth != 2 {
+	if all[2].Identifier != "ISS-3" || all[2].Depth != 2 {
 		t.Fatalf("task %#v", all[2])
 	}
-	if all[3].Identifier != "SEN-4" || all[3].Depth != 0 {
+	if all[3].Identifier != "ISS-4" || all[3].Depth != 0 {
 		t.Fatalf("unrelated %#v", all[3])
 	}
 
@@ -84,21 +84,21 @@ func TestDeleteParentOrphansDirectChildren(t *testing.T) {
 	if _, err := s.CreateIssue(CreateIssueInput{Title: "leaf", ParentID: &mid.ID}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.DeleteIssue("SEN-1"); err != nil {
+	if err := s.DeleteIssue("ISS-1"); err != nil {
 		t.Fatal(err)
 	}
-	midGot, err := s.GetIssue("SEN-2")
+	midGot, err := s.GetIssue("ISS-2")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if midGot.ParentID != nil {
 		t.Fatalf("mid still has parent %#v", midGot.ParentID)
 	}
-	leaf, err := s.GetIssue("SEN-3")
+	leaf, err := s.GetIssue("ISS-3")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if leaf.ParentIdentifier == nil || *leaf.ParentIdentifier != "SEN-2" {
+	if leaf.ParentIdentifier == nil || *leaf.ParentIdentifier != "ISS-2" {
 		t.Fatalf("leaf parent %#v", leaf.ParentIdentifier)
 	}
 }
@@ -121,7 +121,7 @@ func TestAgentEditsCRLFAndDanglingParent(t *testing.T) {
 	}
 	crlf := strings.ReplaceAll(string(raw), "\n", "\r\n")
 	crlf = strings.Replace(crlf, "from ui", "edited on windows", 1)
-	crlf = strings.Replace(crlf, "+++\r\n", "+++\r\nparent = \"SEN-99\"\r\n", 1)
+	crlf = strings.Replace(crlf, "+++\r\n", "+++\r\nparent = \"ISS-99\"\r\n", 1)
 	if err := os.WriteFile(path, []byte(crlf), 0o644); err != nil {
 		t.Fatal(err)
 	}

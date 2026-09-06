@@ -93,8 +93,8 @@ export function Shell() {
         setFocusedIssue(id);
       }
     }
-    window.addEventListener('sen:issue', onFocus);
-    return () => window.removeEventListener('sen:issue', onFocus);
+    window.addEventListener('kotowari:issue', onFocus);
+    return () => window.removeEventListener('kotowari:issue', onFocus);
   }, []);
 
   useEffect(() => {
@@ -108,8 +108,8 @@ export function Shell() {
       }
       setCreateIssue(true);
     }
-    window.addEventListener('sen:create-issue', onCreate);
-    return () => window.removeEventListener('sen:create-issue', onCreate);
+    window.addEventListener('kotowari:create-issue', onCreate);
+    return () => window.removeEventListener('kotowari:create-issue', onCreate);
   }, []);
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export function Shell() {
     return () => window.clearTimeout(t);
   }, [query]);
 
-  const currentIdentifier = pathname.startsWith('/issues/SEN-')
+  const currentIdentifier = pathname.startsWith('/issues/ISS-')
     ? pathname.slice('/issues/'.length)
     : focusedIssue;
 
@@ -185,7 +185,7 @@ export function Shell() {
       if (id.startsWith('set-status-') && currentIdentifier) {
         const status = id.replace('set-status-', '') as IssueStatus;
         await api.patchIssue(currentIdentifier, { status });
-        window.dispatchEvent(new Event('sen:refresh'));
+        window.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
         await navigate({
           to: '/issues/$identifier',
@@ -196,14 +196,14 @@ export function Shell() {
         const raw = id.slice('assign-cycle:'.length);
         const cycleId = raw === 'none' ? null : Number(raw);
         await api.patchIssue(currentIdentifier, { cycleId });
-        window.dispatchEvent(new Event('sen:refresh'));
+        window.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
       }
       if (id.startsWith('assign-project:') && currentIdentifier) {
         const raw = id.slice('assign-project:'.length);
         const projectId = raw === 'none' ? null : Number(raw);
         await api.patchIssue(currentIdentifier, { projectId });
-        window.dispatchEvent(new Event('sen:refresh'));
+        window.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
       }
       if (id.startsWith('open-issue:')) {
@@ -260,7 +260,7 @@ export function Shell() {
       }
       if (action === 'find') {
         e.preventDefault();
-        window.dispatchEvent(new Event('sen:find'));
+        window.dispatchEvent(new Event('kotowari:find'));
         return;
       }
       if (paletteOpen || createIssue || createPage || createView || helpOpen) {
@@ -282,7 +282,7 @@ export function Shell() {
       if (action.startsWith('priority-') && currentIdentifier) {
         const n = Number(action.slice(-1));
         void api.patchIssue(currentIdentifier, { priority: n }).then(() => {
-          window.dispatchEvent(new Event('sen:refresh'));
+          window.dispatchEvent(new Event('kotowari:refresh'));
           return router.invalidate();
         });
       }
@@ -357,7 +357,7 @@ export function Shell() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">sen</div>
+          <div className="brand-mark">kotowari</div>
           <div className="brand-sub">{workspace?.name ?? 'workspace'}</div>
         </div>
         <nav aria-label="Primary">
@@ -464,7 +464,7 @@ export function Shell() {
             <input
               id="ws-ghcr"
               value={workspace.ghcrRef}
-              placeholder="ghcr.io/user/sen"
+              placeholder="ghcr.io/user/kotowari"
               onChange={(e) => setWorkspace({ ...workspace, ghcrRef: e.target.value })}
             />
             <label className="sr-only" htmlFor="ws-tz">

@@ -29,17 +29,17 @@ func TestIssueNumberingDoesNotReuse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.Identifier != "SEN-1" || b.Identifier != "SEN-2" {
+	if a.Identifier != "ISS-1" || b.Identifier != "ISS-2" {
 		t.Fatalf("got %s %s", a.Identifier, b.Identifier)
 	}
-	if err := s.DeleteIssue("SEN-1"); err != nil {
+	if err := s.DeleteIssue("ISS-1"); err != nil {
 		t.Fatal(err)
 	}
 	c, err := s.CreateIssue(CreateIssueInput{Title: "three"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Identifier != "SEN-3" {
+	if c.Identifier != "ISS-3" {
 		t.Fatalf("reused number: %s", c.Identifier)
 	}
 }
@@ -147,11 +147,11 @@ func TestIssueParentRejectsCycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if b.ParentIdentifier == nil || *b.ParentIdentifier != "SEN-1" {
+	if b.ParentIdentifier == nil || *b.ParentIdentifier != "ISS-1" {
 		t.Fatalf("parent identifier %#v", b.ParentIdentifier)
 	}
 	parentID := &b.ID
-	_, err = s.UpdateIssue("SEN-1", PatchIssueInput{ParentID: &parentID})
+	_, err = s.UpdateIssue("ISS-1", PatchIssueInput{ParentID: &parentID})
 	if !errors.Is(err, ErrValidation) {
 		t.Fatalf("want cycle validation, got %v", err)
 	}
@@ -176,7 +176,7 @@ func TestIssueParentWritesFrontmatter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), "parent =") || !strings.Contains(string(raw), "SEN-1") {
+	if !strings.Contains(string(raw), "parent =") || !strings.Contains(string(raw), "ISS-1") {
 		t.Fatalf("frontmatter: %s", raw)
 	}
 }
@@ -300,7 +300,7 @@ func TestDiagnosticsDanglingProject(t *testing.T) {
 
 func TestOpenRejectsLegacyYAML(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "workspace.yaml"), []byte("name: sen\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "workspace.yaml"), []byte("name: kotowari\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := Open(dir)

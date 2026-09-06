@@ -3,7 +3,7 @@ package store
 import (
 	"fmt"
 
-	"github.com/yashikota/sen/internal/domain"
+	"github.com/yashikota/kotowari/internal/domain"
 )
 
 func (s *Store) Diagnostics() ([]Diagnostic, error) {

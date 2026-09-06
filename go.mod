@@ -1,4 +1,4 @@
-module github.com/yashikota/sen
+module github.com/yashikota/kotowari
 
 go 1.26.0
 
