@@ -40,3 +40,19 @@ test('ADR list, detail, link, and append-only', async ({ page, request }) => {
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}`));
   await expect(page.getByRole('link', { name: adr.identifier })).toBeVisible();
 });
+
+test('new ADR only inherits an issue on its detail route', async ({ page, request }) => {
+  const issue = await json<{ identifier: string; number: number }>(
+    await request.post('/api/issues', { data: { title: `Context ${Date.now()}` } }),
+  );
+  await page.goto('/issues');
+  await page.getByRole('option').filter({ hasText: issue.identifier }).click();
+  await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}`));
+  await page.keyboard.press('p');
+  await expect(page.getByText(`Will link issue ${issue.number}`, { exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('link', { name: 'ADRs', exact: true }).click();
+  await page.keyboard.press('p');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByText(/Will link issue/)).toHaveCount(0);
+});

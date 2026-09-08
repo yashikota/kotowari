@@ -200,7 +200,9 @@ export function Shell() {
           setCreateIssue(true);
           return;
         case 'new-adr':
-          setAdrLinkIssue(issueNumberFromIdent(currentIdentifier));
+          setAdrLinkIssue(
+            pathname.startsWith('/issues/') ? issueNumberFromIdent(currentIdentifier) : undefined,
+          );
           setCreateADR(true);
           return;
         case 'new-page':
@@ -305,7 +307,7 @@ export function Shell() {
         });
       }
     },
-    [currentIdentifier, cycles, navigate, router],
+    [currentIdentifier, cycles, navigate, router, pathname],
   );
 
   useEffect(() => {
@@ -347,7 +349,9 @@ export function Shell() {
       }
       if (action === 'new-adr') {
         e.preventDefault();
-        setAdrLinkIssue(issueNumberFromIdent(currentIdentifier));
+        setAdrLinkIssue(
+          pathname.startsWith('/issues/') ? issueNumberFromIdent(currentIdentifier) : undefined,
+        );
         setCreateADR(true);
       }
       if (action === 'status' && currentIdentifier) {
@@ -373,6 +377,7 @@ export function Shell() {
     createView,
     helpOpen,
     currentIdentifier,
+    pathname,
     router,
   ]);
 

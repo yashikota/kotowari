@@ -224,6 +224,7 @@ export function ADRDetailPage() {
               type="number"
               min={1}
               aria-label="Supersedes ADR number"
+              disabled={initial.supersedes != null}
               placeholder="Supersedes ADR number"
               value={adr.supersedes ?? ''}
               onChange={(e) =>
