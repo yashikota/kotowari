@@ -73,11 +73,13 @@ $KOTOWARI_HOME/
 カウンタは Issue と ADR で別である。
 接頭辞の既定は `ISS` と `ADR` であり、`workspace.toml` の `issuePrefix` / `adrPrefix` で変えられる。
 パスは番号だけなので、接頭辞を変えてもディレクトリは動かない。
+接頭辞は URL 内で安全に扱える ASCII 英数字、`_`、`-` に限定する。
 既存の `issues/ISS-n.md` と `issues/SEN-n.md` は読み込み時に `issues/0000n/README.md` へ移す。
 
 Issue と ADR と Page は `+++` で囲んだ TOML frontmatter と Markdown 本文である。
 kotowari が読むのは各件の `README.md`（と ADR の `PUBLISH.md`）だけである。
-Issue 配下の他ファイルは無視する。
+Issue 配下の他ファイルは読み込み時に無視する。
+Issue の削除時は補助ファイルを含めてそのディレクトリを削除する。
 図や画像は `adr/NNNNN/assets/` に置く。
 実験コードは `adr/NNNNN/experiments/` に置く。
 文書の保存履歴は `.history/`、ACP の会話状態は `.local/ai/` に保存する。
@@ -100,7 +102,7 @@ UI と API でリンクしたときは両側を更新する。
 `kotowari` は単一の Go バイナリである。短い別名は作らない。
 
 - `kotowari init`：`.kotowari/` と空の `workspace.toml` を作り、skills を `.agents/skills/` へコピーする
-- `kotowari serve`：JSON API と SPA を `127.0.0.1:7730` で出す
+- `kotowari serve`：JSON API と SPA を `127.0.0.1:7730` で出す。待ち受け先は loopback に限定する
 - `kotowari list`：`--issues` と `--adr` で識別子とタイトルを一覧する。`--status` で絞り、`--long` で状態と日付も出す
 - `kotowari adr new [--supersedes N] [--status proposed] [--issue N] TITLE`：ADR を作る。エディタは開かない。`--supersedes` は旧 ADR を `superseded` にする
 - `kotowari adr status <id> <status>`：状態を変える。`superseded --by N` は後続 ADR の `supersedes` を結ぶ
@@ -178,6 +180,7 @@ frontmatter の `title`、`created`、`updated` は必須である。
 ADR は削除しない。番号は RFC と同じく単調増加であり、欠番を埋めるために再利用しない。
 判断をやり直すときは後続の ADR を書き、旧 ADR を `superseded` にする。
 `superseded` は後続の ADR が前の ADR を置き換えたときだけ使う。
+確定した `supersedes` 関係の解除・付け替えは拒否する。
 `rejected` は提案全体を採らなかったとき使う。一度 `accepted` にした判断を下ろすときは `deprecated` にする。
 `kotowari adr new --supersedes N` と `kotowari adr status <id> superseded --by N` は旧 ADR の状態を `superseded` にする。
 `kotowari check` は存在しない `supersedes` と、後続のない `superseded` を診断する。自動修復しない。
