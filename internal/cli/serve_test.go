@@ -10,7 +10,11 @@ func TestListenTCPUsesNextPortWhenBusy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer occupied.Close()
+	t.Cleanup(func() {
+		if err := occupied.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	_, portStr, err := net.SplitHostPort(occupied.Addr().String())
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +24,11 @@ func TestListenTCPUsesNextPortWhenBusy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	t.Cleanup(func() {
+		if err := ln.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	_, gotPort, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -36,7 +44,11 @@ func TestListenTCPStrictPortFailsWhenBusy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer occupied.Close()
+	t.Cleanup(func() {
+		if err := occupied.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	_, _, err = listenTCP(occupied.Addr().String(), true, nil)
 	if err == nil {
