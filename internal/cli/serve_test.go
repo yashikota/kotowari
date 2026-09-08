@@ -65,3 +65,15 @@ func TestParseServeAddr(t *testing.T) {
 		t.Fatalf("host=%q port=%d", host, port)
 	}
 }
+
+func TestListenRejectsNonLoopback(t *testing.T) {
+	for _, addr := range []string{"0.0.0.0:7730", "[::]:7730", "192.0.2.1:7730"} {
+		ln, _, err := listenTCP(addr, true, nil)
+		if ln != nil {
+			_ = ln.Close()
+		}
+		if err == nil {
+			t.Fatalf("accepted %s", addr)
+		}
+	}
+}
