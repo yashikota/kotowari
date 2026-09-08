@@ -1,11 +1,12 @@
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { AIPanel } from './AIPanel.tsx';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { formatActivity } from '../activity.ts';
 import { api } from '../api.ts';
 import { formatStamp } from '../time.ts';
 import { ISSUE_STATUSES, PRIORITY_LABEL, STATUS_LABEL } from '../types.ts';
-import type { Activity, Comment, Cycle, Issue, Label, Project } from '../types.ts';
-import { MarkdownField } from './MarkdownField.tsx';
+import type { ADR, Activity, Comment, Cycle, Issue, Label, Project } from '../types.ts';
+import { DocumentEditor } from './DocumentEditor.tsx';
 
 const LABEL_COLORS = ['#d4725a', '#6b9bd1', '#c4a574', '#7a9e7e', '#d4a05a'];
 
@@ -23,15 +24,17 @@ export function IssueDetail({ identifier }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [adrs, setAdrs] = useState<ADR[]>([]);
   const [draft, setDraft] = useState('');
   const [subTitle, setSubTitle] = useState('');
   const [labelName, setLabelName] = useState('');
+  const [adrPick, setAdrPick] = useState('');
   const [timeZone, setTimeZone] = useState('UTC');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
   async function reload() {
-    const [iss, all, com, act, proj, cyc, labs, ws] = await Promise.all([
+    const [iss, all, com, act, proj, cyc, labs, allAdrs, ws] = await Promise.all([
       api.issue(identifier),
       api.issues(),
       api.comments(identifier),
@@ -39,6 +42,7 @@ export function IssueDetail({ identifier }: Props) {
       api.projects(),
       api.cycles(),
       api.labels(),
+      api.adrs(),
       api.workspace(),
     ]);
     setIssue(iss);
@@ -48,6 +52,7 @@ export function IssueDetail({ identifier }: Props) {
     setProjects(proj);
     setCycles(cyc);
     setLabels(labs);
+    setAdrs(allAdrs);
     setTimeZone(ws.timezone || 'UTC');
   }
 
@@ -78,6 +83,8 @@ export function IssueDetail({ identifier }: Props) {
   const children = issues.filter((i) => i.parentId === issue.id);
   const parentOptions = issues.filter((i) => i.id !== issue.id);
   const parentId = issue.id;
+  const linkedAdrs = adrs.filter((a) => (issue.adrNumbers ?? []).includes(a.number));
+  const unlinkedAdrs = adrs.filter((a) => !(issue.adrNumbers ?? []).includes(a.number));
 
   async function addSubIssue() {
     const title = subTitle.trim();
@@ -293,11 +300,86 @@ export function IssueDetail({ identifier }: Props) {
           }}
         />
       </div>
-      <MarkdownField
-        value={issue.body}
-        onChange={(body) => setIssue({ ...issue, body })}
-        onSave={(body) => void patch({ body })}
-      />
+      <div>
+        <div className="muted">ADRs</div>
+        {linkedAdrs.length === 0 ? (
+          <div className="empty-inline">No linked decisions.</div>
+        ) : (
+          <div className="list" role="list">
+            {linkedAdrs.map((a) => (
+              <div className="row" key={a.identifier}>
+                <Link
+                  to="/adrs/$identifier"
+                  params={{ identifier: a.identifier }}
+                  className="ident"
+                >
+                  {a.identifier}
+                </Link>
+                <span>{a.title}</span>
+                <span className="badge">{a.status}</span>
+                <button
+                  type="button"
+                  className="ghost"
+                  aria-label={`Unlink ${a.identifier}`}
+                  onClick={() => {
+                    void api.unlinkIssueADR(identifier, a.number).then(() => reload());
+                  }}
+                >
+                  Unlink
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="props">
+          <label>
+            <span className="sr-only">Link ADR</span>
+            <select
+              aria-label="Link ADR"
+              value={adrPick}
+              onChange={(e) => setAdrPick(e.target.value)}
+            >
+              <option value="">Link an ADR</option>
+              {unlinkedAdrs.map((a) => (
+                <option key={a.identifier} value={String(a.number)}>
+                  {a.identifier} {a.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="ghost"
+            disabled={!adrPick}
+            onClick={() => {
+              const n = Number(adrPick);
+              if (!n) {
+                return;
+              }
+              void api.linkIssueADR(identifier, n).then(async () => {
+                setAdrPick('');
+                await reload();
+                await router.invalidate();
+              });
+            }}
+          >
+            Link
+          </button>
+          <button
+            type="button"
+            className="ghost"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent('kotowari:create-adr', { detail: { issueNumber: issue.number } }),
+              )
+            }
+          >
+            New ADR
+          </button>
+        </div>
+      </div>
+      <AIPanel kind="issues" id={identifier} />
+      <DocumentEditor documentKey={`issues/${identifier}/body`} />
       <div>
         <div className="muted">Sub-issues</div>
         {children.length === 0 ? (

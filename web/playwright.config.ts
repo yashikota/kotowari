@@ -1,6 +1,11 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 const ci = Boolean(process.env.CI);
+process.env.E2E_KOTOWARI_HOME ??= mkdtempSync(join(tmpdir(), 'kotowari-e2e-'));
+process.env.KOTOWARI_ACP_COMMAND = JSON.stringify([process.execPath, resolve('e2e/acp-agent.mjs')]);
 
 export default defineConfig({
   testDir: './e2e',

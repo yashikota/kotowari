@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
-import { BookText, CircleDot, Filter, Kanban, Layers, ListTodo } from 'lucide-react';
+import { BookText, CircleDot, Filter, Kanban, Layers, ListTodo, Scale } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.ts';
 import { STATIC_COMMANDS, cycleCommands, filterCommands, projectCommands } from '../commands.ts';
@@ -27,9 +27,56 @@ function slugify(s: string): string {
     .slice(0, 48);
 }
 
+function issueNumberFromIdent(id: string | null): number | undefined {
+  if (!id) {
+    return undefined;
+  }
+  const m = id.match(/-(\d+)$/);
+  if (!m?.[1]) {
+    return undefined;
+  }
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}
+
 export function Shell() {
   const navigate = useNavigate();
   const router = useRouter();
+  useEffect(() => {
+    let revision = '';
+    let active = true;
+    let pending = false;
+    async function refresh() {
+      if (
+        pending ||
+        document.hidden ||
+        document.activeElement?.matches('input,textarea,select,[contenteditable="true"]')
+      )
+        return;
+      pending = true;
+      try {
+        const response = await fetch('/api/revision');
+        if (!response.ok) return;
+        const data = (await response.json()) as { revision: string };
+        if (!active) return;
+        if (revision && revision !== data.revision) {
+          await router.invalidate();
+          window.dispatchEvent(new Event('kotowari:refresh'));
+        }
+        revision = data.revision;
+      } catch {
+        /* Existing views retain their last data during a disconnect. */
+      } finally {
+        pending = false;
+      }
+    }
+    void refresh();
+    const timer = setInterval(() => void refresh(), 3000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [router]);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
@@ -39,6 +86,7 @@ export function Shell() {
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [createIssue, setCreateIssue] = useState(false);
+  const [createADR, setCreateADR] = useState(false);
   const [createPage, setCreatePage] = useState(false);
   const [createView, setCreateView] = useState(false);
   const [issueTitle, setIssueTitle] = useState('');
@@ -49,6 +97,8 @@ export function Shell() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [pageTitle, setPageTitle] = useState('');
+  const [adrTitle, setAdrTitle] = useState('');
+  const [adrLinkIssue, setAdrLinkIssue] = useState<number | undefined>(undefined);
   const [viewName, setViewName] = useState('');
   const [error, setError] = useState('');
   const [focusedIssue, setFocusedIssue] = useState<string | null>(null);
@@ -113,6 +163,16 @@ export function Shell() {
   }, []);
 
   useEffect(() => {
+    function onCreateAdr(e: Event) {
+      const detail = (e as CustomEvent<{ issueNumber?: number }>).detail ?? {};
+      setAdrLinkIssue(detail.issueNumber);
+      setCreateADR(true);
+    }
+    window.addEventListener('kotowari:create-adr', onCreateAdr);
+    return () => window.removeEventListener('kotowari:create-adr', onCreateAdr);
+  }, []);
+
+  useEffect(() => {
     if (!query.trim()) {
       setHits([]);
       return;
@@ -126,9 +186,10 @@ export function Shell() {
     return () => window.clearTimeout(t);
   }, [query]);
 
-  const currentIdentifier = pathname.startsWith('/issues/ISS-')
-    ? pathname.slice('/issues/'.length)
-    : focusedIssue;
+  const currentIdentifier =
+    pathname.startsWith('/issues/') && pathname.slice('/issues/'.length).length > 0
+      ? pathname.slice('/issues/'.length)
+      : focusedIssue;
 
   const runCommand = useCallback(
     async (id: string) => {
@@ -137,6 +198,10 @@ export function Shell() {
       switch (id) {
         case 'new-issue':
           setCreateIssue(true);
+          return;
+        case 'new-adr':
+          setAdrLinkIssue(issueNumberFromIdent(currentIdentifier));
+          setCreateADR(true);
           return;
         case 'new-page':
           setCreatePage(true);
@@ -149,6 +214,9 @@ export function Shell() {
           return;
         case 'goto-board':
           await navigate({ to: '/board', search: {} });
+          return;
+        case 'goto-adrs':
+          await navigate({ to: '/adrs' });
           return;
         case 'goto-projects':
           await navigate({ to: '/projects' });
@@ -218,6 +286,12 @@ export function Shell() {
           params: { slug: id.slice('open-project:'.length) },
         });
       }
+      if (id.startsWith('open-adr:')) {
+        await navigate({
+          to: '/adrs/$identifier',
+          params: { identifier: id.slice('open-adr:'.length) },
+        });
+      }
       if (id.startsWith('open-page:')) {
         await navigate({
           to: '/pages/$slug',
@@ -248,6 +322,7 @@ export function Shell() {
       if (action === 'escape') {
         setPaletteOpen(false);
         setCreateIssue(false);
+        setCreateADR(false);
         setCreatePage(false);
         setCreateView(false);
         setHelpOpen(false);
@@ -263,16 +338,17 @@ export function Shell() {
         window.dispatchEvent(new Event('kotowari:find'));
         return;
       }
-      if (paletteOpen || createIssue || createPage || createView || helpOpen) {
+      if (paletteOpen || createIssue || createADR || createPage || createView || helpOpen) {
         return;
       }
       if (action === 'new-issue') {
         e.preventDefault();
         setCreateIssue(true);
       }
-      if (action === 'new-page') {
+      if (action === 'new-adr') {
         e.preventDefault();
-        setCreatePage(true);
+        setAdrLinkIssue(issueNumberFromIdent(currentIdentifier));
+        setCreateADR(true);
       }
       if (action === 'status' && currentIdentifier) {
         e.preventDefault();
@@ -289,12 +365,21 @@ export function Shell() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paletteOpen, createIssue, createPage, createView, helpOpen, currentIdentifier, router]);
+  }, [
+    paletteOpen,
+    createIssue,
+    createADR,
+    createPage,
+    createView,
+    helpOpen,
+    currentIdentifier,
+    router,
+  ]);
 
   const commands = [
     ...hits.map((h) => ({
       id: `open-${h.kind}:${h.id}`,
-      title: `${h.kind} ${h.id}  ${h.title}`,
+      title: `${h.kind} ${h.id}  ${h.title}${h.snippet ? ` — ${h.snippet}` : ''}`,
     })),
     ...filterCommands(STATIC_COMMANDS, query),
     ...(currentIdentifier ? filterCommands(cycleCommands(cycles), query) : []),
@@ -323,6 +408,25 @@ export function Shell() {
     await navigate({
       to: '/issues/$identifier',
       params: { identifier: issue.identifier },
+    });
+  }
+
+  async function submitADR() {
+    const title = adrTitle.trim();
+    if (!title) {
+      return;
+    }
+    const adr = await api.createADR({
+      title,
+      issueNumbers: adrLinkIssue ? [adrLinkIssue] : [],
+    });
+    setAdrTitle('');
+    setAdrLinkIssue(undefined);
+    setCreateADR(false);
+    await router.invalidate();
+    await navigate({
+      to: '/adrs/$identifier',
+      params: { identifier: adr.identifier },
     });
   }
 
@@ -376,6 +480,9 @@ export function Shell() {
             activeProps={{ className: 'nav-link active' }}
           >
             <Kanban size={14} aria-hidden /> Board
+          </Link>
+          <Link to="/adrs" className="nav-link" activeProps={{ className: 'nav-link active' }}>
+            <Scale size={14} aria-hidden /> ADRs
           </Link>
           <Link to="/projects" className="nav-link" activeProps={{ className: 'nav-link active' }}>
             <Layers size={14} aria-hidden /> Projects
@@ -590,6 +697,32 @@ export function Shell() {
                 </select>
               </label>
             </div>
+          </div>
+        </div>
+      ) : null}
+      {createADR ? (
+        <div className="overlay" onClick={() => setCreateADR(false)}>
+          <div
+            className="dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create ADR"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              autoFocus
+              aria-label="ADR title"
+              placeholder="ADR title"
+              value={adrTitle}
+              onChange={(e) => setAdrTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void submitADR();
+                }
+              }}
+            />
+            {adrLinkIssue ? <div className="muted">Will link issue {adrLinkIssue}</div> : null}
           </div>
         </div>
       ) : null}

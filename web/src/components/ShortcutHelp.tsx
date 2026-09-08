@@ -1,7 +1,7 @@
 const ROWS: { keys: string; action: string }[] = [
   { keys: 'Mod+K', action: 'Command palette' },
   { keys: 'c', action: 'Create issue' },
-  { keys: 'p', action: 'Create page' },
+  { keys: 'p', action: 'Create ADR' },
   { keys: '/', action: 'Find in the current list' },
   { keys: 'j / k', action: 'Move selection' },
   { keys: 'Enter', action: 'Open selected issue' },

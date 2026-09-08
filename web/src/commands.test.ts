@@ -8,8 +8,8 @@ describe('filterCommands', () => {
 
   it('matches title and keywords', () => {
     const hits = filterCommands(STATIC_COMMANDS, 'adr');
-    expect(hits.map((c) => c.id)).toContain('new-page');
-    expect(hits.map((c) => c.id)).toContain('goto-pages');
+    expect(hits.map((c) => c.id)).toContain('new-adr');
+    expect(hits.map((c) => c.id)).toContain('goto-adrs');
   });
 
   it('matches status commands', () => {

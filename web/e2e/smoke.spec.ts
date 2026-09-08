@@ -23,18 +23,31 @@ test('create issue, comment, and page', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Bug' })).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByLabel('Due date').fill('2026-09-01');
-  await page.getByRole('tab', { name: 'Preview' }).click();
-  await expect(page.getByText('Empty')).toBeVisible();
-  await page.getByRole('tab', { name: 'Edit' }).click();
+  await page.getByRole('button', { name: 'Preview' }).click();
+  await expect(page.getByRole('heading', { name: '目的' })).toBeVisible();
+  await page.getByRole('button', { name: 'Edit' }).click();
   await page.getByLabel('Markdown body').fill('## Goal\n\nShow **labels**.');
-  await page.getByLabel('Markdown body').blur();
-  await page.getByRole('tab', { name: 'Preview' }).click();
+  await page.getByLabel('Document view').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Preview' }).click();
   await expect(page.getByRole('heading', { name: 'Goal' })).toBeVisible();
 
   const comment = page.getByLabel('New note');
   await comment.fill('looks good');
   await comment.press('Control+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
+
+  await page.getByRole('heading', { name: 'Issues' }).click();
+  await page.keyboard.press('p');
+  const adrTitle = page.getByPlaceholder('ADR title');
+  await expect(adrTitle).toBeFocused();
+  await adrTitle.fill('local cache');
+  await adrTitle.press('Enter');
+  await expect(page).toHaveURL(/\/adrs\/ADR-\d+/);
+  await expect(page.getByRole('textbox', { name: 'ADR title' })).toHaveValue('local cache');
+  await page.getByRole('link', { name: identifier }).click();
+  await expect(page).toHaveURL(new RegExp(`/issues/${identifier}`));
+  await expect(page.getByRole('link', { name: /ADR-/ })).toBeVisible();
 
   await page.getByRole('link', { name: 'Projects' }).click();
   await page.getByLabel('New project name').fill('Atlas');
@@ -60,7 +73,9 @@ test('create issue, comment, and page', async ({ page }) => {
   await expect(doneCol.getByRole('button', { name: new RegExp(identifier) })).toBeVisible();
 
   await page.getByRole('link', { name: 'Pages' }).click();
-  await page.keyboard.press('p');
+  await page.getByRole('button', { name: /Command palette/ }).click();
+  await page.getByLabel('Command search').fill('Create page');
+  await page.getByRole('option', { name: 'Create page' }).click();
   const pageTitle = page.getByPlaceholder('Page title');
   await expect(pageTitle).toBeFocused();
   await pageTitle.fill('ADR 1');

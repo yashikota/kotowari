@@ -107,6 +107,9 @@ export function IssueList({ issues, selectedId, onSelect, openOnSelect = true }:
                 </span>
               ) : null}
               {childCount > 0 ? <span className="badge">{childCount}</span> : null}
+              {(issue.adrNumbers ?? []).length > 0 ? (
+                <span className="badge">{issue.adrNumbers.length} ADR</span>
+              ) : null}
               {issue.labels.slice(0, 3).map((l) => (
                 <span key={l.id} className="pip" style={{ background: l.color }} title={l.name} />
               ))}

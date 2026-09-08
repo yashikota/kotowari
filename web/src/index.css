@@ -762,3 +762,88 @@ nav {
     grid-template-columns: 1fr;
   }
 }
+
+/* Document surfaces use the existing workspace palette. */
+.document-editor .seg {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.document-editor nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  list-style: none;
+  padding: 0;
+}
+.md img {
+  max-width: 100%;
+  height: auto;
+}
+.md table {
+  border-collapse: collapse;
+  display: block;
+  overflow: auto;
+}
+.md th,
+.md td {
+  border: 1px solid currentColor;
+  padding: 8px 12px;
+}
+.md blockquote {
+  border-left: 3px solid currentColor;
+  margin-left: 0;
+  padding-left: 16px;
+}
+.md pre,
+.document-comparison pre,
+.ai-panel pre {
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.html-figure {
+  margin: 16px 0;
+}
+.html-figure iframe {
+  display: block;
+  width: 100%;
+  min-height: 360px;
+  border: 0;
+  background: white;
+}
+.html-figure figcaption {
+  margin-top: 8px;
+}
+.document-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.ai-panel {
+  border-block: 1px solid var(--border, #444);
+  padding: 12px 0;
+}
+.ai-content {
+  display: grid;
+  gap: 12px;
+}
+.ai-messages {
+  max-height: 480px;
+  overflow: auto;
+}
+.ai-messages article {
+  padding-block: 12px;
+}
+.ai-panel textarea {
+  display: block;
+  width: 100%;
+  min-height: 90px;
+}
+.ai-panel button {
+  margin: 4px;
+}
+@media (max-width: 700px) {
+  .document-comparison {
+    grid-template-columns: 1fr;
+  }
+}
