@@ -11,11 +11,13 @@
   "dependencies": {
     "@tanstack/react-router": "^1.170.29",
     "lucide-react": "^1.31.0",
+    "markdown-it": "^15.0.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "@types/markdown-it": "^14.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",

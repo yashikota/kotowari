@@ -114,7 +114,7 @@ func TestAgentEditsCRLFAndDanglingParent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(dir, "issues", iss.Identifier+".md")
+	path := filepath.Join(dir, "issues", "00001", "README.md")
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

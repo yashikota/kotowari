@@ -262,7 +262,7 @@ func TestYAMLFrontmatterRejected(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(dir, "issues", iss.Identifier+".md")
+	path := filepath.Join(dir, "issues", "00001", "README.md")
 	if err := os.WriteFile(path, []byte("---\ntitle: yaml\n---\n\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}

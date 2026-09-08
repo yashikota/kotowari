@@ -1,7 +1,8 @@
+import { AIPanel } from '../components/AIPanel.tsx';
 import { Link, useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
-import { MarkdownField } from '../components/MarkdownField.tsx';
+import { DocumentEditor } from '../components/DocumentEditor.tsx';
 import { PAGE_STATUSES } from '../types.ts';
 import type { Page, Project } from '../types.ts';
 
@@ -32,12 +33,10 @@ export function PagesPage() {
       <section className="pane">
         <div className="pane-head">
           <h1>Pages</h1>
-          <span className="muted">Press p</span>
+          <span className="muted">Memos</span>
         </div>
         {pages.length === 0 ? (
-          <div className="empty">
-            No pages. Press <span className="kbd">p</span> to create an ADR.
-          </div>
+          <div className="empty">No pages. Use the command palette to create one.</div>
         ) : (
           <div className="list">
             {pages.map((p) => (
@@ -196,12 +195,8 @@ export function PageDetailPage() {
               })
             }
           />
-          <MarkdownField
-            value={page.body}
-            placeholder="Markdown body"
-            onChange={(body) => setPage({ ...page, body })}
-            onSave={(body) => void save({ body })}
-          />
+          <AIPanel kind="pages" id={slug} />
+          <DocumentEditor documentKey={`pages/${slug}/body`} />
         </div>
       </section>
     </div>

@@ -83,7 +83,7 @@ describe('actionFromKeyboard', () => {
         ctrlKey: false,
         target: body,
       }),
-    ).toBe('new-page');
+    ).toBe('new-adr');
     expect(
       actionFromKeyboard({
         key: 's',

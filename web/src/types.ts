@@ -24,6 +24,7 @@ export type Issue = {
   dueDate: string | null;
   sortOrder: number;
   labels: Label[];
+  adrNumbers: number[];
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
@@ -64,6 +65,26 @@ export type Page = {
   status: string;
   date: string | null;
   tags: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ADRStatus = 'proposed' | 'rejected' | 'accepted' | 'deprecated' | 'superseded';
+
+export type ADR = {
+  projectSlug?: string | null;
+  id: number;
+  number: number;
+  identifier: string;
+  title: string;
+  body: string;
+  publishBody: string;
+  status: ADRStatus;
+  evaluation: string;
+  replay: string;
+  workload: string;
+  supersedes: number | null;
+  issueNumbers: number[];
   createdAt: string;
   updatedAt: string;
 };
@@ -115,6 +136,7 @@ export type Workspace = {
 };
 
 export type SearchHit = {
+  snippet?: string;
   kind: string;
   id: string;
   title: string;
@@ -137,3 +159,23 @@ export const PROJECT_STATUSES = ['planned', 'started', 'completed', 'canceled'] 
 export const CYCLE_STATUSES = ['upcoming', 'active', 'completed'] as const;
 
 export const PAGE_STATUSES = ['proposed', 'accepted', 'deprecated', 'superseded'] as const;
+
+export const ADR_STATUSES: ADRStatus[] = [
+  'proposed',
+  'rejected',
+  'accepted',
+  'deprecated',
+  'superseded',
+];
+
+export const ADR_STATUS_LABEL: Record<ADRStatus, string> = {
+  proposed: 'Proposed',
+  rejected: 'Rejected',
+  accepted: 'Accepted',
+  deprecated: 'Deprecated',
+  superseded: 'Superseded',
+};
+
+export function entityDir(n: number): string {
+  return String(n).padStart(5, '0');
+}

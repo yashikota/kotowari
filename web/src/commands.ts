@@ -7,13 +7,15 @@ export type Command = {
 
 export const STATIC_COMMANDS: Command[] = [
   { id: 'new-issue', title: 'Create issue', hint: 'c', keywords: 'new' },
-  { id: 'new-page', title: 'Create page', hint: 'p', keywords: 'new adr' },
+  { id: 'new-adr', title: 'Create ADR', hint: 'p', keywords: 'new decision' },
+  { id: 'new-page', title: 'Create page', keywords: 'new memo docs' },
   { id: 'new-view', title: 'Create view', keywords: 'new filter saved' },
   { id: 'goto-issues', title: 'Go to Issues', keywords: 'list' },
   { id: 'goto-board', title: 'Go to Board', keywords: 'kanban' },
+  { id: 'goto-adrs', title: 'Go to ADRs', keywords: 'decision' },
   { id: 'goto-projects', title: 'Go to Projects' },
   { id: 'goto-cycles', title: 'Go to Cycles' },
-  { id: 'goto-pages', title: 'Go to Pages', keywords: 'adr docs' },
+  { id: 'goto-pages', title: 'Go to Pages', keywords: 'docs memo' },
   { id: 'goto-active-cycle', title: 'Go to active cycle', keywords: 'sprint current' },
   { id: 'copy-identifier', title: 'Copy identifier', keywords: 'id iss clipboard' },
   { id: 'keyboard-help', title: 'Keyboard shortcuts', hint: '?', keywords: 'help keys' },

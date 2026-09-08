@@ -6,6 +6,7 @@ import type {
   Issue,
   Label,
   Page,
+  ADR,
   Project,
   SearchHit,
   View,
@@ -102,6 +103,37 @@ export const api = {
       body: JSON.stringify(body),
     }),
   deletePage: (slug: string) => req<void>(`/api/pages/${slug}`, { method: 'DELETE' }),
+  adrs: () => req<ADR[]>('/api/adrs'),
+  adr: (id: string) => req<ADR>(`/api/adrs/${id}`),
+  createADR: (body: {
+    projectSlug?: string | null;
+    supersedes?: number;
+    title: string;
+    body?: string;
+    status?: string;
+    evaluation?: string;
+    issueNumbers?: number[];
+  }) => req<ADR>('/api/adrs', { method: 'POST', body: JSON.stringify(body) }),
+  patchADR: (id: string, body: Record<string, unknown>) =>
+    req<ADR>(`/api/adrs/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  publishADR: (id: string) => req<ADR>(`/api/adrs/${id}/publish`, { method: 'POST' }),
+  linkIssueADR: (issueId: string, number: number) =>
+    req<Issue>(`/api/issues/${issueId}/links/adrs`, {
+      method: 'POST',
+      body: JSON.stringify({ number }),
+    }),
+  unlinkIssueADR: (issueId: string, number: number) =>
+    req<void>(`/api/issues/${issueId}/links/adrs/${number}`, { method: 'DELETE' }),
+  linkADRIssue: (adrId: string, number: number) =>
+    req<ADR>(`/api/adrs/${adrId}/links/issues`, {
+      method: 'POST',
+      body: JSON.stringify({ number }),
+    }),
+  unlinkADRIssue: (adrId: string, number: number) =>
+    req<void>(`/api/adrs/${adrId}/links/issues/${number}`, { method: 'DELETE' }),
   views: () => req<View[]>('/api/views'),
   view: (slug: string) => req<View>(`/api/views/${slug}`),
   createView: (body: {

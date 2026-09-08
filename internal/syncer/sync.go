@@ -30,6 +30,7 @@ type Manifest struct {
 	Version   string `json:"version"`
 	Issues    int    `json:"issues"`
 	Pages     int    `json:"pages"`
+	ADRs      int    `json:"adrs"`
 }
 
 type Service struct {
@@ -43,7 +44,7 @@ func (s *Service) Export(dir string) (*Manifest, error) {
 	if err := s.Store.Snapshot(dir); err != nil {
 		return nil, err
 	}
-	issues, pageCount, err := s.Store.Counts()
+	issues, pageCount, adrCount, err := s.Store.Counts()
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +53,7 @@ func (s *Service) Export(dir string) (*Manifest, error) {
 		Version:   s.Version,
 		Issues:    issues,
 		Pages:     pageCount,
+		ADRs:      adrCount,
 	}
 	raw, err := json.MarshalIndent(man, "", "  ")
 	if err != nil {
@@ -79,6 +81,22 @@ func (s *Service) Push(ctx context.Context) (string, string, error) {
 	if _, err := s.Export(dir); err != nil {
 		return "", "", err
 	}
+	snapshotStore, err := store.Open(dir)
+	if err != nil {
+		return "", "", err
+	}
+	hash, err := snapshotStore.ContentHash()
+
+	if err != nil {
+		return "", "", err
+	}
+	// A pulled artifact must carry its own baseline, not the source's previous push.
+	if err := snapshotStore.MarkPushedContent("", hash); err != nil {
+		return "", "", err
+	}
+	if err := snapshotStore.Close(); err != nil {
+		return "", "", err
+	}
 	tag := time.Now().UTC().Format("20060102T150405Z")
 	digest, err := s.Registry.Push(ctx, ws.GHCRRef, tag, dir)
 	if err != nil {
@@ -87,7 +105,7 @@ func (s *Service) Push(ctx context.Context) (string, string, error) {
 	if _, err := s.Registry.Push(ctx, ws.GHCRRef, "latest", dir); err != nil {
 		return "", "", fmt.Errorf("push latest after %s: %w", tag, err)
 	}
-	if err := s.Store.MarkPushed(digest); err != nil {
+	if err := s.Store.MarkPushedContent(digest, hash); err != nil {
 		return "", "", err
 	}
 	return tag, digest, nil

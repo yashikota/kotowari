@@ -58,6 +58,14 @@ func listenTCP(addr string, strictPort bool, warn func(string)) (net.Listener, s
 		return nil, "", err
 	}
 
+	// The unauthenticated workspace can launch local ACP tools. Never expose it on a network interface.
+	if host == "localhost" {
+		host = "127.0.0.1"
+	}
+	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+		return nil, "", fmt.Errorf("serve requires a loopback address (127.0.0.1 or ::1)")
+	}
+
 	for i := range maxPortAttempts {
 		tryPort := port + i
 		tryAddr := net.JoinHostPort(host, strconv.Itoa(tryPort))

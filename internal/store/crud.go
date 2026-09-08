@@ -55,10 +55,19 @@ func (s *Store) UpdateWorkspace(name, ghcrRef, timezone *string) (Workspace, err
 }
 
 func (s *Store) MarkPushed(digest string) error {
+	hash, err := s.ContentHash()
+	if err != nil {
+		return err
+	}
+	return s.MarkPushedContent(digest, hash)
+}
+
+func (s *Store) MarkPushedContent(digest, hash string) error {
 	return s.mutate(func(m *mem) error {
 		now := domain.Now()
 		m.Workspace.LastPushedAt = &now
 		m.Workspace.LastPushedDigest = &digest
+		m.Workspace.ContentHash = hash
 		m.Workspace.UpdatedAt = now
 		return nil
 	})
@@ -67,7 +76,7 @@ func (s *Store) MarkPushed(digest string) error {
 func (s *Store) HasUserContent() (bool, error) {
 	var n int
 	err := s.snapshot(func(m *mem) error {
-		n = len(m.Issues) + len(m.Projects) + len(m.Cycles) + len(m.Pages) + len(m.Views)
+		n = len(m.Issues) + len(m.Projects) + len(m.Cycles) + len(m.Pages) + len(m.Views) + len(m.ADRs)
 		for _, cs := range m.Comments {
 			n += len(cs)
 		}
@@ -77,6 +86,14 @@ func (s *Store) HasUserContent() (bool, error) {
 }
 
 func (s *Store) Dirty() (bool, error) {
+	var expected string
+	if err := s.snapshot(func(m *mem) error { expected = m.Workspace.ContentHash; return nil }); err != nil {
+		return false, err
+	}
+	if expected != "" {
+		actual, err := s.ContentHash()
+		return actual != expected, err
+	}
 	ws, err := s.Workspace()
 	if err != nil {
 		return false, err
@@ -226,6 +243,17 @@ func (s *Store) DeleteProject(slug string) error {
 		}
 		id := m.Projects[i].ID
 		m.Projects = append(m.Projects[:i], m.Projects[i+1:]...)
+		for j := range m.ADRs {
+			if m.ADRs[j].ProjectSlug != nil && *m.ADRs[j].ProjectSlug == slug {
+				m.ADRs[j].ProjectSlug = nil
+			}
+		}
+		for j := range m.Pages {
+			if m.Pages[j].ProjectSlug != nil && *m.Pages[j].ProjectSlug == slug {
+				m.Pages[j].ProjectSlug = nil
+				m.Pages[j].ProjectID = nil
+			}
+		}
 		for j := range m.Issues {
 			if m.Issues[j].ProjectID != nil && *m.Issues[j].ProjectID == id {
 				m.Issues[j].ProjectID = nil
@@ -429,11 +457,14 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		return Issue{}, validationf("invalid priority")
 	}
 	now := domain.Now()
+	if strings.TrimSpace(in.Body) == "" {
+		in.Body = templateBody(s.root, "ISSUE.md", "")
+	}
 	var out Issue
 	err := s.mutate(func(m *mem) error {
 		m.Workspace.IssueCounter++
 		n := m.Workspace.IssueCounter
-		ident := domain.Identifier(n)
+		ident := domain.Ident(m.issuePrefix(), n)
 		sort := 1.0
 		for _, iss := range m.Issues {
 			if iss.SortOrder >= sort {
@@ -444,7 +475,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
 			Status: in.Status, Priority: in.Priority, ProjectID: in.ProjectID, CycleID: in.CycleID,
 			DueDate: in.DueDate, SortOrder: sort, CreatedAt: now, UpdatedAt: now,
-			CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{},
+			CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{},
 		}
 		if in.ProjectID != nil {
 			if p, ok := projectByID(m, *in.ProjectID); ok {
@@ -582,6 +613,7 @@ func (s *Store) DeleteIssue(identifier string) error {
 			return ErrNotFound
 		}
 		deletedID := m.Issues[i].ID
+		deletedNum := m.Issues[i].Number
 		m.Issues = append(m.Issues[:i], m.Issues[i+1:]...)
 		delete(m.Comments, identifier)
 		for j := range m.Issues {
@@ -589,6 +621,9 @@ func (s *Store) DeleteIssue(identifier string) error {
 				m.Issues[j].ParentID = nil
 				m.Issues[j].ParentIdentifier = nil
 			}
+		}
+		for j := range m.ADRs {
+			m.ADRs[j].IssueNumbers = removeInt(m.ADRs[j].IssueNumbers, deletedNum)
 		}
 		m.bump(domain.Now())
 		return nil
@@ -598,10 +633,11 @@ func (s *Store) DeleteIssue(identifier string) error {
 func (s *Store) ListComments(identifier string) ([]Comment, error) {
 	var out []Comment
 	err := s.snapshot(func(m *mem) error {
-		if _, ok := issueByIdent(m, identifier); !ok {
+		iss, ok := issueByIdent(m, identifier)
+		if !ok {
 			return ErrNotFound
 		}
-		out = append([]Comment{}, m.Comments[identifier]...)
+		out = append([]Comment{}, m.Comments[iss.Identifier]...)
 		if out == nil {
 			out = []Comment{}
 		}
@@ -622,6 +658,7 @@ func (s *Store) AddComment(identifier, body string) (Comment, error) {
 			return ErrNotFound
 		}
 		now := domain.Now()
+		identifier = iss.Identifier
 		m.commentSeq[identifier]++
 		out = Comment{ID: m.commentSeq[identifier], IssueID: iss.ID, Body: body, CreatedAt: now}
 		m.Comments[identifier] = append(m.Comments[identifier], out)
@@ -1063,8 +1100,8 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 			return nil
 		}
 		for _, iss := range m.Issues {
-			if strings.Contains(strings.ToLower(iss.Title), q) || strings.Contains(strings.ToLower(iss.Identifier), q) {
-				hits = append(hits, SearchHit{Kind: "issue", ID: iss.Identifier, Title: iss.Title})
+			if strings.Contains(strings.ToLower(iss.Title), q) || strings.Contains(strings.ToLower(iss.Identifier), q) || strings.Contains(strings.ToLower(iss.Body), q) {
+				hits = append(hits, SearchHit{Kind: "issue", ID: iss.Identifier, Title: iss.Title, Snippet: searchSnippet(iss.Body, q)})
 			}
 		}
 		for _, p := range m.Projects {
@@ -1077,9 +1114,14 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 				hits = append(hits, SearchHit{Kind: "view", ID: v.Slug, Title: v.Name})
 			}
 		}
+		for _, a := range m.ADRs {
+			if strings.Contains(strings.ToLower(a.Title), q) || strings.Contains(strings.ToLower(a.Identifier), q) || strings.Contains(strings.ToLower(a.Body+"\n"+a.PublishBody), q) {
+				hits = append(hits, SearchHit{Kind: "adr", ID: a.Identifier, Title: a.Title, Snippet: searchSnippet(a.Body+"\n"+a.PublishBody, q)})
+			}
+		}
 		for _, p := range m.Pages {
-			if strings.Contains(strings.ToLower(p.Title), q) || strings.Contains(strings.ToLower(p.Slug), q) {
-				hits = append(hits, SearchHit{Kind: "page", ID: p.Slug, Title: p.Title})
+			if strings.Contains(strings.ToLower(p.Title), q) || strings.Contains(strings.ToLower(p.Slug), q) || strings.Contains(strings.ToLower(p.Body), q) {
+				hits = append(hits, SearchHit{Kind: "page", ID: p.Slug, Title: p.Title, Snippet: searchSnippet(p.Body, q)})
 			}
 		}
 		if hits == nil {
@@ -1090,10 +1132,11 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 	return hits, err
 }
 
-func (s *Store) Counts() (issues, pages int, err error) {
+func (s *Store) Counts() (issues, pages, adrs int, err error) {
 	err = s.snapshot(func(m *mem) error {
 		issues = len(m.Issues)
 		pages = len(m.Pages)
+		adrs = len(m.ADRs)
 		return nil
 	})
 	return
@@ -1125,12 +1168,11 @@ func projectProgress(m *mem, id int64) float64 {
 }
 
 func issueByIdent(m *mem, ident string) (Issue, bool) {
-	for _, iss := range m.Issues {
-		if iss.Identifier == ident {
-			return iss, true
-		}
+	i := indexIssue(m, ident)
+	if i < 0 {
+		return Issue{}, false
 	}
-	return Issue{}, false
+	return m.Issues[i], true
 }
 
 func issueByID(m *mem, id int64) (Issue, bool) {
@@ -1143,12 +1185,33 @@ func issueByID(m *mem, id int64) (Issue, bool) {
 }
 
 func indexIssue(m *mem, ident string) int {
+	if n, ok := m.parseIssueIdent(ident); ok {
+		for i, iss := range m.Issues {
+			if iss.Number == n {
+				return i
+			}
+		}
+		return -1
+	}
 	for i, iss := range m.Issues {
 		if iss.Identifier == ident {
 			return i
 		}
 	}
 	return -1
+}
+
+func (m *mem) parseIssueIdent(id string) (int, bool) {
+	if n, ok := domain.ParseIdent(m.issuePrefix(), id); ok {
+		return n, true
+	}
+	if n, ok := domain.ParseIdent(domain.DefaultIssuePrefix, id); ok {
+		return n, true
+	}
+	if n, ok := domain.ParseIdent("SEN", id); ok {
+		return n, true
+	}
+	return parsePlainNumber(id)
 }
 
 func indexProject(m *mem, slug string) int {
@@ -1210,4 +1273,17 @@ func validColor(c string) bool {
 		}
 	}
 	return true
+}
+
+func searchSnippet(body, q string) string {
+	for _, line := range strings.Split(body, "\n") {
+		if strings.Contains(strings.ToLower(line), q) {
+			r := []rune(line)
+			if len(r) > 180 {
+				return string(r[:180]) + "…"
+			}
+			return line
+		}
+	}
+	return ""
 }

@@ -4,7 +4,7 @@ import { api } from '../api.ts';
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueList } from '../components/IssueList.tsx';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
-import type { Cycle, Issue, Project } from '../types.ts';
+import type { ADR, Page, Cycle, Issue, Project } from '../types.ts';
 
 export function ProjectsPage() {
   const projects = useLoaderData({ from: '/projects' }) as Project[];
@@ -66,6 +66,8 @@ export function ProjectDetailPage() {
   const data = useLoaderData({ from: '/projects/$slug' }) as {
     project: Project;
     issues: Issue[];
+    adrs: ADR[];
+    pages: Page[];
   };
   const router = useRouter();
   const navigate = useNavigate();
@@ -164,6 +166,51 @@ export function ProjectDetailPage() {
               />
             </label>
           </div>
+          <section aria-label="Project documents">
+            <h2>ADRs</h2>
+            <button
+              type="button"
+              onClick={() => {
+                const title = window.prompt('ADR title');
+                if (title?.trim())
+                  void api
+                    .createADR({ title, projectSlug: slug })
+                    .then((a) =>
+                      navigate({ to: '/adrs/$identifier', params: { identifier: a.identifier } }),
+                    );
+              }}
+            >
+              New ADR
+            </button>
+            <ul>
+              {data.adrs
+                .filter(
+                  (a) =>
+                    a.projectSlug === slug ||
+                    data.issues.some((i) => a.issueNumbers.includes(i.number)),
+                )
+                .map((a) => (
+                  <li key={a.identifier}>
+                    <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
+                      {a.identifier} {a.title}
+                    </Link>{' '}
+                    <span className="badge">{a.status}</span>
+                  </li>
+                ))}
+            </ul>
+            <h2>Pages</h2>
+            <ul>
+              {data.pages
+                .filter((p) => p.projectSlug === slug)
+                .map((p) => (
+                  <li key={p.slug}>
+                    <Link to="/pages/$slug" params={{ slug: p.slug }}>
+                      {p.title}
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          </section>
           <IssueList
             issues={data.issues}
             selectedId={selected}

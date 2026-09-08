@@ -39,10 +39,26 @@ func (s *Store) mutate(fn func(*mem) error) error {
 	if err != nil {
 		return err
 	}
+	before, err := workspaceFiles(m)
+	if err != nil {
+		return err
+	}
+	raw := map[string][]byte{}
+	for path := range before {
+		b, err := os.ReadFile(filepath.Join(s.root, path))
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		raw[path] = b
+	}
 	if err := fn(m); err != nil {
 		return err
 	}
-	return save(s.root, m)
+	after, err := workspaceFiles(m)
+	if err != nil {
+		return err
+	}
+	return commitFiles(s.root, before, after, raw)
 }
 
 func seed(root string) error {
@@ -74,6 +90,10 @@ func load(root string) (*mem, error) {
 	m := &mem{Comments: map[string][]Comment{}, commentSeq: map[string]int64{}}
 	if err := toml.Unmarshal(raw, &m.Workspace); err != nil {
 		return nil, fmt.Errorf("workspace.toml: %w", err)
+	}
+	if !domain.ValidPrefix(domain.NormalizePrefix(m.Workspace.IssuePrefix, domain.DefaultIssuePrefix)) ||
+		!domain.ValidPrefix(domain.NormalizePrefix(m.Workspace.ADRPrefix, domain.DefaultADRPrefix)) {
+		return nil, validationf("workspace prefixes must contain only ASCII letters, digits, underscores or hyphens")
 	}
 	if m.Workspace.NextID < 1 {
 		m.Workspace.NextID = 1
@@ -168,35 +188,11 @@ func load(root string) (*mem, error) {
 	}
 
 	issueDir := filepath.Join(root, "issues")
-	ents, err := os.ReadDir(issueDir)
-	if err != nil && !os.IsNotExist(err) {
+	if err := loadIssues(root, issueDir, m); err != nil {
 		return nil, err
 	}
-	for _, ent := range ents {
-		if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".md") {
-			continue
-		}
-		b, err := os.ReadFile(filepath.Join(issueDir, ent.Name()))
-		if err != nil {
-			return nil, err
-		}
-		iss, comments, err := parseIssueMarkdown(strings.TrimSuffix(ent.Name(), ".md"), string(b), m)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", ent.Name(), err)
-		}
-		m.Issues = append(m.Issues, iss)
-		m.Comments[iss.Identifier] = comments
-		var maxID int64
-		for _, c := range comments {
-			if c.ID > maxID {
-				maxID = c.ID
-			}
-		}
-		m.commentSeq[iss.Identifier] = maxID
-		if iss.Number > m.Workspace.IssueCounter {
-			m.Workspace.IssueCounter = iss.Number
-			m.dirtyMeta = true
-		}
+	if err := loadADRs(root, filepath.Join(root, "adr"), m); err != nil {
+		return nil, err
 	}
 
 	pageDir := filepath.Join(root, "pages")
@@ -240,12 +236,16 @@ func load(root string) (*mem, error) {
 
 	fillIssueRefs(m)
 	fillPageRefs(m)
+	fillADRRefs(m)
 	diagnose(m)
 	return m, nil
 }
 
 func save(root string, m *mem) error {
 	if err := os.MkdirAll(filepath.Join(root, "issues"), 0o755); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Join(root, "adr"), 0o755); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Join(root, "pages"), 0o755); err != nil {
@@ -306,18 +306,33 @@ func save(root string, m *mem) error {
 		return err
 	}
 
-	wantIssues := map[string]struct{}{}
+	wantIssueDirs := map[string]struct{}{}
 	for _, iss := range m.Issues {
-		name := iss.Identifier + ".md"
-		wantIssues[name] = struct{}{}
+		dirName := domain.DirName(iss.Number)
+		wantIssueDirs[dirName] = struct{}{}
 		md := renderIssueMarkdown(iss, m.Comments[iss.Identifier], m)
-		if err := atomicWrite(filepath.Join(root, "issues", name), []byte(md)); err != nil {
+		if err := atomicWrite(filepath.Join(root, "issues", dirName, "README.md"), []byte(md)); err != nil {
 			return err
 		}
 	}
-	if err := pruneDir(filepath.Join(root, "issues"), ".md", wantIssues); err != nil {
+	if err := pruneEntityDirs(filepath.Join(root, "issues"), wantIssueDirs); err != nil {
 		return err
 	}
+
+	for _, a := range m.ADRs {
+		dirName := domain.DirName(a.Number)
+		md := renderADRMarkdown(a)
+		if err := atomicWrite(filepath.Join(root, "adr", dirName, "README.md"), []byte(md)); err != nil {
+			return err
+		}
+		pubPath := filepath.Join(root, "adr", dirName, "PUBLISH.md")
+		if a.PublishBody != "" {
+			if err := atomicWrite(pubPath, []byte(a.PublishBody)); err != nil {
+				return err
+			}
+		}
+	}
+	// ADR directories are append-only, like RFCs. Do not remove numbered trees.
 
 	wantPages := map[string]struct{}{}
 	for _, p := range m.Pages {
@@ -354,7 +369,13 @@ func (s *Store) Snapshot(dest string) error {
 	if err != nil {
 		return err
 	}
-	return save(dest, m)
+	if err := save(dest, m); err != nil {
+		return err
+	}
+	if err := copyADRAssets(s.root, dest); err != nil {
+		return err
+	}
+	return copyWorkspaceTemplates(s.root, dest)
 }
 
 func (s *Store) ReplaceFrom(src string) error {
@@ -364,7 +385,13 @@ func (s *Store) ReplaceFrom(src string) error {
 	if err != nil {
 		return err
 	}
-	return save(s.root, m)
+	if err := save(s.root, m); err != nil {
+		return err
+	}
+	if err := replaceADRAssets(src, s.root); err != nil {
+		return err
+	}
+	return copyWorkspaceTemplates(src, s.root)
 }
 
 func readTOMLDir(dir string, fn func(name string, b []byte) error) error {
@@ -402,8 +429,21 @@ func atomicWrite(path string, data []byte) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+	f, err := os.CreateTemp(filepath.Dir(path), ".kotowari-*")
+	if err != nil {
+		return err
+	}
+	tmp := f.Name()
+	defer func() { _ = os.Remove(tmp) }()
+	if _, err := f.Write(data); err != nil {
+		_ = f.Close()
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
 		return err
 	}
 	return os.Rename(tmp, path)
@@ -431,11 +471,184 @@ func pruneDir(dir, ext string, keep map[string]struct{}) error {
 	return nil
 }
 
+func (m *mem) issuePrefix() string {
+	return domain.NormalizePrefix(m.Workspace.IssuePrefix, domain.DefaultIssuePrefix)
+}
+
+func (m *mem) adrPrefix() string {
+	return domain.NormalizePrefix(m.Workspace.ADRPrefix, domain.DefaultADRPrefix)
+}
+
+func loadIssues(root, issueDir string, m *mem) error {
+	ents, err := os.ReadDir(issueDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	seen := map[int]string{}
+	for _, ent := range ents {
+		if ent.IsDir() {
+			n, ok := domain.ParseDirName(ent.Name())
+			if !ok {
+				continue
+			}
+			b, err := os.ReadFile(filepath.Join(issueDir, ent.Name(), "README.md"))
+			if err != nil {
+				if os.IsNotExist(err) {
+					m.diag("issues/"+ent.Name(), "missing_readme", "README.md is missing")
+					continue
+				}
+				return err
+			}
+			ident := domain.Ident(m.issuePrefix(), n)
+			if err := absorbIssue(m, n, ident, string(b), "issues/"+ent.Name()+"/README.md", seen); err != nil {
+				return err
+			}
+			continue
+		}
+		if !strings.HasSuffix(ent.Name(), ".md") {
+			continue
+		}
+		stem := strings.TrimSuffix(ent.Name(), ".md")
+		n, ok := domain.ParseLegacyIssueStem(stem)
+		if !ok {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(issueDir, ent.Name()))
+		if err != nil {
+			return err
+		}
+		ident := domain.Ident(m.issuePrefix(), n)
+		if err := absorbIssue(m, n, ident, string(b), "issues/"+ent.Name(), seen); err != nil {
+			return err
+		}
+		m.dirtyMeta = true
+	}
+	_ = root
+	return nil
+}
+
+func absorbIssue(m *mem, n int, ident, raw, path string, seen map[int]string) error {
+	if prev, ok := seen[n]; ok {
+		m.diag(path, "duplicate_number", fmt.Sprintf("issue %d already loaded from %s", n, prev))
+		return nil
+	}
+	iss, comments, err := parseIssueMarkdown(n, ident, raw, m)
+	if err != nil {
+		return fmt.Errorf("%s: %w", path, err)
+	}
+	seen[n] = path
+	m.Issues = append(m.Issues, iss)
+	m.Comments[iss.Identifier] = comments
+	var maxID int64
+	for _, c := range comments {
+		if c.ID > maxID {
+			maxID = c.ID
+		}
+	}
+	m.commentSeq[iss.Identifier] = maxID
+	if iss.Number > m.Workspace.IssueCounter {
+		m.Workspace.IssueCounter = iss.Number
+		m.dirtyMeta = true
+	}
+	return nil
+}
+
+func loadADRs(_ string, adrDir string, m *mem) error {
+	ents, err := os.ReadDir(adrDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, ent := range ents {
+		if !ent.IsDir() {
+			continue
+		}
+		n, ok := domain.ParseDirName(ent.Name())
+		if !ok {
+			continue
+		}
+		// Reserve historical numbers even when their document is missing.
+		if n > m.Workspace.ADRCounter {
+			m.Workspace.ADRCounter = n
+			m.dirtyMeta = true
+		}
+		b, err := os.ReadFile(filepath.Join(adrDir, ent.Name(), "README.md"))
+		if err != nil {
+			if os.IsNotExist(err) {
+				m.diag("adr/"+ent.Name(), "missing_readme", "README.md is missing")
+				continue
+			}
+			return err
+		}
+		ident := domain.Ident(m.adrPrefix(), n)
+		a, err := parseADRMarkdown(n, ident, string(b), m)
+		if err != nil {
+			return fmt.Errorf("adr/%s/README.md: %w", ent.Name(), err)
+		}
+		if pub, err := os.ReadFile(filepath.Join(adrDir, ent.Name(), "PUBLISH.md")); err == nil {
+			a.PublishBody = string(pub)
+		}
+		m.ADRs = append(m.ADRs, a)
+		if a.Number > m.Workspace.ADRCounter {
+			m.Workspace.ADRCounter = a.Number
+			m.dirtyMeta = true
+		}
+	}
+	return nil
+}
+
+func pruneEntityDirs(dir string, keep map[string]struct{}) error {
+	ents, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, ent := range ents {
+		path := filepath.Join(dir, ent.Name())
+		if ent.IsDir() {
+			if _, ok := keep[ent.Name()]; ok {
+				continue
+			}
+			if err := os.RemoveAll(path); err != nil {
+				return err
+			}
+			continue
+		}
+		if strings.HasSuffix(ent.Name(), ".md") {
+			if err := os.Remove(path); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func fillADRRefs(m *mem) {
+	for i := range m.ADRs {
+		a := &m.ADRs[i]
+		a.ID = int64(a.Number)
+		a.Identifier = domain.Ident(m.adrPrefix(), a.Number)
+		if a.IssueNumbers == nil {
+			a.IssueNumbers = []int{}
+		}
+	}
+}
+
 func fillIssueRefs(m *mem) {
 	for i := range m.Issues {
 		iss := &m.Issues[i]
 		iss.ID = int64(iss.Number)
-		iss.Identifier = domain.Identifier(iss.Number)
+		iss.Identifier = domain.Ident(m.issuePrefix(), iss.Number)
+		if iss.ADRNumbers == nil {
+			iss.ADRNumbers = []int{}
+		}
 		if iss.Labels == nil {
 			iss.Labels = []Label{}
 		}

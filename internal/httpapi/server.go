@@ -6,29 +6,61 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+
+	"github.com/yashikota/kotowari/internal/acp"
 
 	"github.com/yashikota/kotowari/internal/store"
 )
 
 type Server struct {
-	store *store.Store
-	dist  fs.FS
-	mux   *http.ServeMux
+	aiMu     sync.Mutex
+	sessions map[string]*acp.Session
+	store    *store.Store
+	dist     fs.FS
+	mux      *http.ServeMux
 }
 
 func New(st *store.Store, dist fs.FS) *Server {
-	s := &Server{store: st, dist: dist, mux: http.NewServeMux()}
+	s := &Server{store: st, dist: dist, mux: http.NewServeMux(), sessions: map[string]*acp.Session{}}
 	s.routes()
 	return s
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if origin := r.Header.Get("Origin"); origin != "" {
+		u, err := url.Parse(origin)
+		if err != nil || u.Host != r.Host {
+			http.Error(w, "origin denied", http.StatusForbidden)
+			return
+		}
+	}
+	if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+		http.Error(w, "cross-site request denied", http.StatusForbidden)
+		return
+	}
 	s.mux.ServeHTTP(w, r)
 }
 
 func (s *Server) routes() {
+	s.mux.HandleFunc("GET /api/revision", func(w http.ResponseWriter, r *http.Request) {
+		hash, err := s.store.ContentHash()
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, 200, map[string]string{"revision": hash})
+	})
+	s.mux.HandleFunc("GET /api/ai/{kind}/{id}", s.getAI)
+	s.mux.HandleFunc("POST /api/ai/{kind}/{id}", s.postAI)
+	s.mux.HandleFunc("GET /api/documents/{kind}/{id}/{field}", s.getDocument)
+	s.mux.HandleFunc("PUT /api/documents/{kind}/{id}/{field}", s.saveDocument)
+	s.mux.HandleFunc("GET /api/documents/{kind}/{id}/{field}/history", s.documentHistory)
+	s.mux.HandleFunc("GET /api/adrs/{id}/assets/{path...}", s.adrAsset)
+	s.mux.HandleFunc("GET /api/adrs/{id}/export", s.exportADR)
 	s.mux.HandleFunc("GET /api/workspace", s.getWorkspace)
 	s.mux.HandleFunc("PATCH /api/workspace", s.patchWorkspace)
 	s.mux.HandleFunc("GET /api/labels", s.listLabels)
@@ -60,6 +92,16 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/pages/{slug}", s.getPage)
 	s.mux.HandleFunc("PATCH /api/pages/{slug}", s.patchPage)
 	s.mux.HandleFunc("DELETE /api/pages/{slug}", s.deletePage)
+	s.mux.HandleFunc("GET /api/adrs", s.listADRs)
+	s.mux.HandleFunc("POST /api/adrs", s.createADR)
+	s.mux.HandleFunc("GET /api/adrs/{id}", s.getADR)
+	s.mux.HandleFunc("PATCH /api/adrs/{id}", s.patchADR)
+	s.mux.HandleFunc("DELETE /api/adrs/{id}", s.deleteADR)
+	s.mux.HandleFunc("POST /api/adrs/{id}/publish", s.publishADR)
+	s.mux.HandleFunc("POST /api/adrs/{id}/links/issues", s.linkADRIssue)
+	s.mux.HandleFunc("DELETE /api/adrs/{id}/links/issues/{number}", s.unlinkADRIssue)
+	s.mux.HandleFunc("POST /api/issues/{id}/links/adrs", s.linkIssueADR)
+	s.mux.HandleFunc("DELETE /api/issues/{id}/links/adrs/{number}", s.unlinkIssueADR)
 	s.mux.HandleFunc("GET /api/search", s.search)
 	s.mux.HandleFunc("GET /api/commands", s.commands)
 	s.mux.HandleFunc("GET /api/diagnostics", s.listDiagnostics)
@@ -754,6 +796,8 @@ func (s *Server) commands(w http.ResponseWriter, _ *http.Request) {
 		{"id": "goto-projects", "title": "Go to Projects", "hint": ""},
 		{"id": "goto-cycles", "title": "Go to Cycles", "hint": ""},
 		{"id": "goto-pages", "title": "Go to Pages", "hint": ""},
+		{"id": "new-adr", "title": "Create ADR", "hint": "p"},
+		{"id": "goto-adrs", "title": "Go to ADRs", "hint": ""},
 		{"id": "set-status-backlog", "title": "Set status: Backlog", "hint": "s"},
 		{"id": "set-status-todo", "title": "Set status: Todo", "hint": "s"},
 		{"id": "set-status-in_progress", "title": "Set status: In Progress", "hint": "s"},

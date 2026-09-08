@@ -1,7 +1,7 @@
 export type KeyAction =
   | 'palette'
   | 'new-issue'
-  | 'new-page'
+  | 'new-adr'
   | 'move-down'
   | 'move-up'
   | 'open'
@@ -51,7 +51,7 @@ export function actionFromKeyboard(event: {
     case 'c':
       return 'new-issue';
     case 'p':
-      return 'new-page';
+      return 'new-adr';
     case 'j':
       return 'move-down';
     case 'k':

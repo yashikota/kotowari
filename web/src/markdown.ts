@@ -1,4 +1,4 @@
-const SAFE_HREF = /^(https?:|mailto:|\/|#)/i;
+import MarkdownIt from 'markdown-it';
 
 export function escapeHtml(s: string): string {
   return s
@@ -8,54 +8,51 @@ export function escapeHtml(s: string): string {
     .replaceAll('"', '&quot;');
 }
 
-const FENCE = '@@KOTOFENCE:';
-
-export function renderMarkdown(src: string): string {
-  const fences: string[] = [];
-  let text = src.replaceAll('\r\n', '\n').replace(/```([\s\S]*?)```/g, (_, code: string) => {
-    const i = fences.length;
-    fences.push(
-      `<pre><code>${escapeHtml(code.replace(/^\n/, '').replace(/\n$/, ''))}</code></pre>`,
-    );
-    return `${FENCE}${i}@@`;
-  });
-  text = escapeHtml(text);
-  const blocks = text.split(/\n{2,}/);
-  const html = blocks
-    .map((block) => {
-      const t = block.trim();
-      if (!t) {
-        return '';
-      }
-      if (t.startsWith(FENCE)) {
-        return t;
-      }
-      if (t.startsWith('# ')) {
-        return `<h1>${inline(t.slice(2))}</h1>`;
-      }
-      if (t.startsWith('## ')) {
-        return `<h2>${inline(t.slice(3))}</h2>`;
-      }
-      if (t.startsWith('### ')) {
-        return `<h3>${inline(t.slice(4))}</h3>`;
-      }
-      const lines = t.split('\n');
-      if (lines.every((l) => l.startsWith('- ') || l.startsWith('* '))) {
-        const items = lines.map((l) => `<li>${inline(l.slice(2))}</li>`).join('');
-        return `<ul>${items}</ul>`;
-      }
-      return `<p>${inline(t).replaceAll('\n', '<br />')}</p>`;
-    })
-    .join('');
-  return html.replace(/@@KOTOFENCE:(\d+)@@/g, (_, i: string) => fences[Number(i)] ?? '');
-}
-
-function inline(s: string): string {
-  let out = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label: string, href: string) => {
-    const safe = SAFE_HREF.test(href) ? href : '#';
-    return `<a href="${safe}" rel="noreferrer">${label}</a>`;
-  });
-  out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
-  return out;
+export function renderMarkdown(src: string, assetBase = '', headingPrefix = ''): string {
+  const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
+  const image = md.renderer.rules.image!;
+  const link = md.renderer.rules.link_open;
+  const fence = md.renderer.rules.fence!;
+  const used = new Map<string, number>();
+  md.renderer.rules.heading_open = (tokens, idx, options, _env, renderer) => {
+    const slug =
+      (tokens[idx + 1]?.content ?? '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, '-')
+        .replace(/^-|-$/g, '') || 'section';
+    const count = used.get(slug) ?? 0;
+    used.set(slug, count + 1);
+    tokens[idx]!.attrSet('id', `${headingPrefix}${slug}${count ? `-${count}` : ''}`);
+    return renderer.renderToken(tokens, idx, options);
+  };
+  const assetURL = (url: string) =>
+    assetBase && /^(?:\.\/)?assets\//.test(url) ? `${assetBase}${url.replace(/^\.\//, '')}` : url;
+  md.renderer.rules.image = (tokens, idx, options, env, renderer) => {
+    const token = tokens[idx]!;
+    const src = assetURL(String(token.attrGet('src') ?? ''));
+    token.attrSet('src', src);
+    if (assetBase && src.startsWith(`${assetBase}assets/`) && /\.html?(?:[?#]|$)/i.test(src)) {
+      return `<figure class="html-figure"><iframe sandbox="" title="${escapeHtml(token.content || 'Document diagram')}" src="${escapeHtml(src)}" loading="lazy"></iframe><figcaption>${escapeHtml(token.content)}</figcaption></figure>`;
+    }
+    return image(tokens, idx, options, env, renderer);
+  };
+  md.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
+    const token = tokens[idx]!;
+    let href = assetURL(String(token.attrGet('href') ?? ''));
+    if (href.startsWith('#')) href = `#${headingPrefix}${href.slice(1)}`;
+    token.attrSet('href', href);
+    token.attrSet('rel', 'noreferrer');
+    return link
+      ? link(tokens, idx, options, env, renderer)
+      : renderer.renderToken(tokens, idx, options);
+  };
+  md.renderer.rules.fence = (tokens, idx, options, env, renderer) => {
+    const token = tokens[idx]!;
+    if (token.info.trim() === 'html-diagram') {
+      const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">`;
+      return `<figure class="html-figure"><iframe sandbox="" title="Document diagram" srcdoc="${escapeHtml(csp + token.content)}"></iframe></figure>`;
+    }
+    return fence(tokens, idx, options, env, renderer);
+  };
+  return md.render(src);
 }

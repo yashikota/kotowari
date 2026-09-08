@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { Shell } from './components/Shell.tsx';
 import { BoardPage, IssueRoutePage, IssuesPage } from './pages/IssuesPages.tsx';
+import { ADRDetailPage, ADRsPage } from './pages/ADRsPages.tsx';
 import { PageDetailPage, PagesPage } from './pages/PagesPages.tsx';
 import {
   CycleDetailPage,
@@ -75,6 +76,20 @@ const boardRoute = createRoute({
   component: BoardPage,
 });
 
+const adrsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/adrs',
+  loader: () => api.adrs(),
+  component: ADRsPage,
+});
+
+const adrRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/adrs/$identifier',
+  loader: ({ params }) => api.adr(params.identifier),
+  component: ADRDetailPage,
+});
+
 const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects',
@@ -87,6 +102,8 @@ const projectRoute = createRoute({
   path: '/projects/$slug',
   loader: async ({ params }) => ({
     project: await api.project(params.slug),
+    adrs: await api.adrs(),
+    pages: await api.pages(),
     issues: await api.issues(`?project=${encodeURIComponent(params.slug)}`),
   }),
   component: ProjectDetailPage,
@@ -147,6 +164,8 @@ const routeTree = rootRoute.addChildren([
   issuesRoute,
   issueRoute,
   boardRoute,
+  adrsRoute,
+  adrRoute,
   projectsRoute,
   projectRoute,
   cyclesRoute,

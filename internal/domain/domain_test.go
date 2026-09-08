@@ -6,6 +6,55 @@ import (
 	"time"
 )
 
+func TestDirName(t *testing.T) {
+	t.Parallel()
+	if got := DirName(12); got != "00012" {
+		t.Fatalf("got %q", got)
+	}
+	n, ok := ParseDirName("00012")
+	if !ok || n != 12 {
+		t.Fatalf("parse: %d %v", n, ok)
+	}
+	if _, ok := ParseDirName("12"); ok {
+		t.Fatal("unpadded should be rejected")
+	}
+	if _, ok := ParseDirName("00000"); ok {
+		t.Fatal("zero should be rejected")
+	}
+}
+
+func TestIdentWithPrefix(t *testing.T) {
+	t.Parallel()
+	if got := Ident("ADR", 1); got != "ADR-1" {
+		t.Fatalf("got %q", got)
+	}
+	n, ok := ParseIdent("ADR", "ADR-1")
+	if !ok || n != 1 {
+		t.Fatalf("parse: %d %v", n, ok)
+	}
+	if _, ok := ParseIdent("ADR", "ISS-1"); ok {
+		t.Fatal("wrong prefix")
+	}
+	if _, ok := ParseIdent("ISS", "ISSUE-1"); ok {
+		t.Fatal("ISSUE-1 must not parse as ISS")
+	}
+}
+
+func TestLegacyIssueStem(t *testing.T) {
+	t.Parallel()
+	n, ok := ParseLegacyIssueStem("SEN-7")
+	if !ok || n != 7 {
+		t.Fatalf("SEN-7: %d %v", n, ok)
+	}
+	n, ok = ParseLegacyIssueStem("ISS-3")
+	if !ok || n != 3 {
+		t.Fatalf("ISS-3: %d %v", n, ok)
+	}
+	if _, ok := ParseLegacyIssueStem("ADR-1"); ok {
+		t.Fatal("ADR stem is not a legacy issue file")
+	}
+}
+
 func TestIdentifierRoundTrip(t *testing.T) {
 	t.Parallel()
 	id := Identifier(12)
@@ -126,6 +175,14 @@ func TestValidators(t *testing.T) {
 	}
 	if ValidCycleStatus("planned") {
 		t.Fatal("cycle must not use project statuses")
+	}
+	for _, s := range []string{"proposed", "rejected", "accepted", "deprecated", "superseded"} {
+		if !ValidADRStatus(s) {
+			t.Fatalf("adr status %q", s)
+		}
+	}
+	if ValidADRStatus("draft") {
+		t.Fatal("draft is not an ADR status")
 	}
 	for _, s := range []string{"proposed", "accepted", "deprecated", "superseded"} {
 		if !ValidPageStatus(s) {
