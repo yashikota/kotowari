@@ -21,7 +21,21 @@ type issueFM struct {
 	Created   string      `toml:"created"`
 	Updated   string      `toml:"updated"`
 	Completed *string     `toml:"completed,omitempty"`
+	ADRs      []int       `toml:"adrs,omitempty"`
 	Comments  []commentFM `toml:"comments,omitempty"`
+}
+
+type adrFM struct {
+	Project    *string `toml:"project,omitempty"`
+	Title      string  `toml:"title"`
+	Status     string  `toml:"status"`
+	Evaluation string  `toml:"evaluation,omitempty"`
+	Replay     string  `toml:"replay,omitempty"`
+	Workload   string  `toml:"workload,omitempty"`
+	Supersedes *int    `toml:"supersedes,omitempty"`
+	Issues     []int   `toml:"issues,omitempty"`
+	Created    string  `toml:"created"`
+	Updated    string  `toml:"updated"`
 }
 
 type commentFM struct {
@@ -58,12 +72,12 @@ func splitFrontmatter(raw string) (block, body string, err error) {
 	}
 	block = rest[:idx]
 	body = strings.TrimPrefix(rest[idx+4:], "\n")
+	body = strings.TrimPrefix(body, "\n")
 	return block, body, nil
 }
 
-func parseIssueMarkdown(ident string, raw string, m *mem) (Issue, []Comment, error) {
-	n, ok := domain.ParseIdentifier(ident)
-	if !ok {
+func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, error) {
+	if n < 1 {
 		return Issue{}, nil, fmt.Errorf("invalid identifier %q", ident)
 	}
 	block, body, err := splitFrontmatter(raw)
@@ -76,17 +90,8 @@ func parseIssueMarkdown(ident string, raw string, m *mem) (Issue, []Comment, err
 			return Issue{}, nil, err
 		}
 	}
-	if fm.Title == "" {
-		fm.Title = ident
-	}
 	if fm.Status == "" {
 		fm.Status = "backlog"
-	}
-	if fm.Created == "" {
-		fm.Created = domain.Now()
-	}
-	if fm.Updated == "" {
-		fm.Updated = fm.Created
 	}
 	iss := Issue{
 		ID:               int64(n),
@@ -104,6 +109,7 @@ func parseIssueMarkdown(ident string, raw string, m *mem) (Issue, []Comment, err
 		CreatedAt:        fm.Created,
 		UpdatedAt:        fm.Updated,
 		CompletedAt:      fm.Completed,
+		ADRNumbers:       fm.ADRs,
 		Labels:           []Label{},
 	}
 	for _, name := range fm.Labels {
@@ -169,6 +175,54 @@ func parsePageMarkdown(raw string, m *mem) (Page, error) {
 	return p, nil
 }
 
+func parseADRMarkdown(n int, ident, raw string, m *mem) (ADR, error) {
+	block, body, err := splitFrontmatter(raw)
+	if err != nil {
+		return ADR{}, err
+	}
+	var fm adrFM
+	if strings.TrimSpace(block) != "" {
+		if err := toml.Unmarshal([]byte(block), &fm); err != nil {
+			return ADR{}, err
+		}
+	}
+	if fm.Status == "" {
+		fm.Status = "proposed"
+	}
+	return ADR{
+		ProjectSlug:  fm.Project,
+		ID:           int64(n),
+		Number:       n,
+		Identifier:   ident,
+		Title:        fm.Title,
+		Body:         body,
+		Status:       fm.Status,
+		Evaluation:   fm.Evaluation,
+		Replay:       fm.Replay,
+		Workload:     fm.Workload,
+		Supersedes:   fm.Supersedes,
+		IssueNumbers: fm.Issues,
+		CreatedAt:    fm.Created,
+		UpdatedAt:    fm.Updated,
+	}, nil
+}
+
+func renderADRMarkdown(a ADR) string {
+	fm := adrFM{
+		Project:    a.ProjectSlug,
+		Title:      a.Title,
+		Status:     a.Status,
+		Evaluation: a.Evaluation,
+		Replay:     a.Replay,
+		Workload:   a.Workload,
+		Supersedes: a.Supersedes,
+		Issues:     a.IssueNumbers,
+		Created:    a.CreatedAt,
+		Updated:    a.UpdatedAt,
+	}
+	return marshalDoc(fm, a.Body)
+}
+
 func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 	fm := issueFM{
 		Title:     iss.Title,
@@ -179,6 +233,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		Created:   iss.CreatedAt,
 		Updated:   iss.UpdatedAt,
 		Completed: iss.CompletedAt,
+		ADRs:      iss.ADRNumbers,
 		Labels:    make([]string, 0, len(iss.Labels)),
 	}
 	if iss.ProjectID != nil {

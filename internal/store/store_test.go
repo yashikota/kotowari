@@ -172,7 +172,10 @@ func TestIssueParentWritesFrontmatter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, err := os.ReadFile(filepath.Join(dir, "issues", child.Identifier+".md"))
+	if child.Identifier != "ISS-2" {
+		t.Fatalf("child %s", child.Identifier)
+	}
+	raw, err := os.ReadFile(filepath.Join(dir, "issues", "00002", "README.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +217,10 @@ func TestIssueWritesMarkdownFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := os.ReadFile(filepath.Join(dir, "issues", iss.Identifier+".md"))
+	if iss.Identifier != "ISS-1" {
+		t.Fatalf("iss %s", iss.Identifier)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "issues", "00001", "README.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,7 +241,7 @@ func TestReloadSeesDiskEdits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(dir, "issues", iss.Identifier+".md")
+	path := filepath.Join(dir, "issues", "00001", "README.md")
 	b, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -267,7 +273,7 @@ func TestDiagnosticsDanglingProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(dir, "issues", iss.Identifier+".md")
+	path := filepath.Join(dir, "issues", "00001", "README.md")
 	b, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

@@ -30,6 +30,7 @@ type Manifest struct {
 	Version   string `json:"version"`
 	Issues    int    `json:"issues"`
 	Pages     int    `json:"pages"`
+	ADRs      int    `json:"adrs"`
 }
 
 type Service struct {
@@ -43,7 +44,7 @@ func (s *Service) Export(dir string) (*Manifest, error) {
 	if err := s.Store.Snapshot(dir); err != nil {
 		return nil, err
 	}
-	issues, pageCount, err := s.Store.Counts()
+	issues, pageCount, adrCount, err := s.Store.Counts()
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +53,7 @@ func (s *Service) Export(dir string) (*Manifest, error) {
 		Version:   s.Version,
 		Issues:    issues,
 		Pages:     pageCount,
+		ADRs:      adrCount,
 	}
 	raw, err := json.MarshalIndent(man, "", "  ")
 	if err != nil {
@@ -87,7 +89,16 @@ func (s *Service) Push(ctx context.Context) (string, string, error) {
 	if _, err := s.Registry.Push(ctx, ws.GHCRRef, "latest", dir); err != nil {
 		return "", "", fmt.Errorf("push latest after %s: %w", tag, err)
 	}
-	if err := s.Store.MarkPushed(digest); err != nil {
+	snapshotStore, err := store.Open(dir)
+	if err != nil {
+		return "", "", err
+	}
+	hash, err := snapshotStore.ContentHash()
+	_ = snapshotStore.Close()
+	if err != nil {
+		return "", "", err
+	}
+	if err := s.Store.MarkPushedContent(digest, hash); err != nil {
 		return "", "", err
 	}
 	return tag, digest, nil

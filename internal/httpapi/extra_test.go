@@ -32,7 +32,7 @@ func TestCommandsAndSearch(t *testing.T) {
 	for _, c := range cmds {
 		ids[c["id"]] = true
 	}
-	if !ids["new-issue"] || !ids["new-view"] || !ids["assign-cycle:none"] {
+	if !ids["new-issue"] || !ids["new-view"] || !ids["assign-cycle:none"] || !ids["new-adr"] || !ids["goto-adrs"] {
 		t.Fatalf("commands %#v", cmds)
 	}
 

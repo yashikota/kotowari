@@ -76,6 +76,7 @@ type Issue struct {
 	DueDate          *string `json:"dueDate"`
 	SortOrder        float64 `json:"sortOrder"`
 	Labels           []Label `json:"labels"`
+	ADRNumbers       []int   `json:"adrNumbers"`
 	CreatedAt        string  `json:"createdAt"`
 	UpdatedAt        string  `json:"updatedAt"`
 	CompletedAt      *string `json:"completedAt"`
@@ -141,6 +142,49 @@ func (v View) Filter() IssueFilter {
 	return f
 }
 
+type ADR struct {
+	ProjectSlug  *string `json:"projectSlug"`
+	ID           int64   `json:"id"`
+	Number       int     `json:"number"`
+	Identifier   string  `json:"identifier"`
+	Title        string  `json:"title"`
+	Body         string  `json:"body"`
+	PublishBody  string  `json:"publishBody"`
+	Status       string  `json:"status"`
+	Evaluation   string  `json:"evaluation"`
+	Replay       string  `json:"replay"`
+	Workload     string  `json:"workload"`
+	Supersedes   *int    `json:"supersedes"`
+	IssueNumbers []int   `json:"issueNumbers"`
+	CreatedAt    string  `json:"createdAt"`
+	UpdatedAt    string  `json:"updatedAt"`
+}
+
+type CreateADRInput struct {
+	ProjectSlug  *string
+	Title        string
+	Body         string
+	Status       string
+	Evaluation   string
+	Replay       string
+	Workload     string
+	IssueNumbers []int
+	Supersedes   *int
+}
+
+type PatchADRInput struct {
+	ProjectSlug  **string
+	Title        *string
+	Body         *string
+	PublishBody  *string
+	Status       *string
+	Evaluation   *string
+	Replay       *string
+	Workload     *string
+	Supersedes   **int
+	IssueNumbers *[]int
+}
+
 type Diagnostic struct {
 	Path    string `json:"path"`
 	Code    string `json:"code"`
@@ -148,9 +192,10 @@ type Diagnostic struct {
 }
 
 type SearchHit struct {
-	Kind  string `json:"kind"`
-	ID    string `json:"id"`
-	Title string `json:"title"`
+	Snippet string `json:"snippet,omitempty"`
+	Kind    string `json:"kind"`
+	ID      string `json:"id"`
+	Title   string `json:"title"`
 }
 
 type IssueFilter struct {
@@ -206,6 +251,7 @@ type mem struct {
 	Issues      []Issue
 	Comments    map[string][]Comment
 	Pages       []Page
+	ADRs        []ADR
 	Activities  []Activity
 	commentSeq  map[string]int64
 	dirtyMeta   bool
@@ -213,10 +259,14 @@ type mem struct {
 }
 
 type workspaceFile struct {
+	ContentHash      string  `toml:"contentHash,omitempty"`
 	Name             string  `toml:"name"`
 	GHCRRef          string  `toml:"ghcrRef"`
 	Timezone         string  `toml:"timezone"`
+	IssuePrefix      string  `toml:"issuePrefix,omitempty"`
+	ADRPrefix        string  `toml:"adrPrefix,omitempty"`
 	IssueCounter     int     `toml:"issueCounter"`
+	ADRCounter       int     `toml:"adrCounter"`
 	NextID           int64   `toml:"nextID"`
 	LastPushedAt     *string `toml:"lastPushedAt,omitempty"`
 	LastPushedDigest *string `toml:"lastPushedDigest,omitempty"`
@@ -244,6 +294,9 @@ func Open(root string) (*Store, error) {
 	m, err := load(root)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", root, err)
+	}
+	if err := writeBundledTemplates(root); err != nil {
+		return nil, err
 	}
 	if m.dirtyMeta {
 		if err := save(root, m); err != nil {
