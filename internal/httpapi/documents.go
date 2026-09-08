@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"archive/zip"
-	"bytes"
 	"io"
 	"io/fs"
 	"net/http"
@@ -96,8 +95,13 @@ func (s *Server) exportADR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer func() { _ = root.Close() }()
-	var buf bytes.Buffer
-	z := zip.NewWriter(&buf)
+	archive, err := os.CreateTemp("", "kotowari-export-*.zip")
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	defer func() { _ = archive.Close(); _ = os.Remove(archive.Name()) }()
+	z := zip.NewWriter(archive)
 	err = fs.WalkDir(root.FS(), ".", func(path string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -137,5 +141,10 @@ func (s *Server) exportADR(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", "attachment; filename=adr-"+domain.DirName(a.Number)+".zip")
-	_, _ = w.Write(buf.Bytes())
+	info, err := archive.Stat()
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	http.ServeContent(w, r, "adr.zip", info.ModTime(), archive)
 }

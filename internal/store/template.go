@@ -51,6 +51,7 @@ func copyWorkspaceTemplates(srcRoot, destRoot string) error {
 		return err
 	}
 	copied := false
+	keep := map[string]struct{}{}
 	for _, ent := range ents {
 		if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".md") {
 			continue
@@ -62,12 +63,13 @@ func copyWorkspaceTemplates(srcRoot, destRoot string) error {
 		if err := os.WriteFile(filepath.Join(destRoot, "TEMPLATE", ent.Name()), b, 0o644); err != nil {
 			return err
 		}
+		keep[ent.Name()] = struct{}{}
 		copied = true
 	}
 	if !copied {
 		return writeBundledTemplates(destRoot)
 	}
-	return nil
+	return pruneDir(filepath.Join(destRoot, "TEMPLATE"), ".md", keep)
 }
 
 func templateBody(root, name, fallback string) string {

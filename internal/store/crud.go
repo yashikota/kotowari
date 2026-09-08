@@ -633,10 +633,11 @@ func (s *Store) DeleteIssue(identifier string) error {
 func (s *Store) ListComments(identifier string) ([]Comment, error) {
 	var out []Comment
 	err := s.snapshot(func(m *mem) error {
-		if _, ok := issueByIdent(m, identifier); !ok {
+		iss, ok := issueByIdent(m, identifier)
+		if !ok {
 			return ErrNotFound
 		}
-		out = append([]Comment{}, m.Comments[identifier]...)
+		out = append([]Comment{}, m.Comments[iss.Identifier]...)
 		if out == nil {
 			out = []Comment{}
 		}
@@ -657,6 +658,7 @@ func (s *Store) AddComment(identifier, body string) (Comment, error) {
 			return ErrNotFound
 		}
 		now := domain.Now()
+		identifier = iss.Identifier
 		m.commentSeq[identifier]++
 		out = Comment{ID: m.commentSeq[identifier], IssueID: iss.ID, Body: body, CreatedAt: now}
 		m.Comments[identifier] = append(m.Comments[identifier], out)

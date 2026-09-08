@@ -77,6 +77,19 @@ func ValidADRStatus(s string) bool {
 	}
 }
 
+// ValidPrefix keeps identifiers safe as single URL path segments.
+func ValidPrefix(p string) bool {
+	if p == "" {
+		return false
+	}
+	for _, c := range p {
+		if (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '_' && c != '-' {
+			return false
+		}
+	}
+	return true
+}
+
 func NormalizePrefix(p, fallback string) string {
 	p = strings.TrimSpace(p)
 	p = strings.TrimSuffix(p, "-")

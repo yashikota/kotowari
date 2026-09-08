@@ -165,3 +165,46 @@ func TestPullRejectsLegacySQLiteArtifact(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestRepeatedPushPullHasCleanBaselineAndProtectsTemplates(t *testing.T) {
+	source, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = source.Close(); _ = target.Close() }()
+	ref := "ghcr.io/example/kotowari"
+	for _, st := range []*store.Store{source, target} {
+		if _, err := st.UpdateWorkspace(nil, &ref, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	reg := NewMemory()
+	push := &Service{Store: source, Registry: reg}
+	pull := &Service{Store: target, Registry: reg}
+	for _, title := range []string{"first", "second"} {
+		if _, err := source.CreateADR(store.CreateADRInput{Title: title}); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := push.Push(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		for range 2 {
+			if err := pull.Pull(context.Background(), "latest"); err != nil {
+				t.Fatal(err)
+			}
+			if dirty, err := target.Dirty(); err != nil || dirty {
+				t.Fatalf("pulled workspace dirty: %v %v", dirty, err)
+			}
+		}
+	}
+	if err := os.WriteFile(filepath.Join(target.Path(), "TEMPLATE", "ADR.md"), []byte("custom"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := pull.Pull(context.Background(), "latest"); !errors.Is(err, ErrDirty) {
+		t.Fatalf("template not protected: %v", err)
+	}
+}

@@ -533,6 +533,12 @@ func cmdADRSetStatus(stdout io.Writer, id, status string, by int) error {
 	if id == "" || status == "" {
 		return fmt.Errorf("usage: kotowari adr status <id> <status>")
 	}
+	if !domain.ValidADRStatus(status) {
+		return fmt.Errorf("invalid ADR status %q", status)
+	}
+	if by < 0 || (by > 0 && status != "superseded") {
+		return fmt.Errorf("--by requires status superseded and a positive ADR number")
+	}
 	st, err := openStore()
 	if err != nil {
 		return err

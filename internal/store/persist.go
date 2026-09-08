@@ -91,6 +91,10 @@ func load(root string) (*mem, error) {
 	if err := toml.Unmarshal(raw, &m.Workspace); err != nil {
 		return nil, fmt.Errorf("workspace.toml: %w", err)
 	}
+	if !domain.ValidPrefix(domain.NormalizePrefix(m.Workspace.IssuePrefix, domain.DefaultIssuePrefix)) ||
+		!domain.ValidPrefix(domain.NormalizePrefix(m.Workspace.ADRPrefix, domain.DefaultADRPrefix)) {
+		return nil, validationf("workspace prefixes must contain only ASCII letters, digits, underscores or hyphens")
+	}
 	if m.Workspace.NextID < 1 {
 		m.Workspace.NextID = 1
 	}
@@ -567,6 +571,11 @@ func loadADRs(_ string, adrDir string, m *mem) error {
 		n, ok := domain.ParseDirName(ent.Name())
 		if !ok {
 			continue
+		}
+		// Reserve historical numbers even when their document is missing.
+		if n > m.Workspace.ADRCounter {
+			m.Workspace.ADRCounter = n
+			m.dirtyMeta = true
 		}
 		b, err := os.ReadFile(filepath.Join(adrDir, ent.Name(), "README.md"))
 		if err != nil {

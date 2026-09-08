@@ -78,3 +78,32 @@ func TestInitCopiesSkills(t *testing.T) {
 		}
 	}
 }
+
+func TestADRInvalidStatusByDoesNotMutate(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("KOTOWARI_HOME", dir)
+	st, err := store.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = st.Close() }()
+	for _, title := range []string{"old", "next"} {
+		if _, err := st.CreateADR(store.CreateADRInput{Title: title}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, status := range []string{"invalid", "accepted"} {
+		err := cli.Run(context.Background(), []string{"kotowari", "adr", "status", "1", status, "--by", "2"}, ioDiscard{}, ioDiscard{}, "test")
+		if err == nil {
+			t.Fatal("expected validation error")
+		}
+		old, err := st.GetADR("1")
+		if err != nil || old.Status != "proposed" {
+			t.Fatalf("%+v %v", old, err)
+		}
+		next, err := st.GetADR("2")
+		if err != nil || next.Supersedes != nil {
+			t.Fatalf("%+v %v", next, err)
+		}
+	}
+}

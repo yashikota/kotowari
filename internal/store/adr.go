@@ -183,6 +183,9 @@ func (s *Store) UpdateADR(ident string, in PatchADRInput) (ADR, error) {
 			a.Workload = *in.Workload
 		}
 		if in.Supersedes != nil {
+			if a.Supersedes != nil && (*in.Supersedes == nil || **in.Supersedes != *a.Supersedes) {
+				return validationf("an established supersedes relationship cannot be changed")
+			}
 			if err := applySupersedes(m, *in.Supersedes, a.Number, domain.Now()); err != nil {
 				return err
 			}

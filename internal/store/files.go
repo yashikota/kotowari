@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/yashikota/kotowari/internal/domain"
@@ -96,6 +97,11 @@ func commitFiles(root string, before, after, raw map[string][]byte) error {
 		target := filepath.Join(root, p)
 		if b, ok := after[p]; ok {
 			if err := atomicWrite(target, b); err != nil {
+				return err
+			}
+		} else if strings.HasPrefix(p, "issues/") && strings.HasSuffix(p, "/README.md") {
+			// An issue deletion owns the whole issue directory, including auxiliary files.
+			if err := os.RemoveAll(filepath.Dir(target)); err != nil {
 				return err
 			}
 		} else if err := os.Remove(target); err != nil && !os.IsNotExist(err) {
