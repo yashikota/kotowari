@@ -67,7 +67,7 @@ jobs:
           cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Build SPA
-        run: pnpm install --dir web && pnpm --dir web exec vp build && rm -rf internal/webembed/dist && mkdir -p internal/webembed/dist && cp -a web/dist/. internal/webembed/dist/
+        run: pnpm install --dir web && pnpm --dir web exec vp build && rm -rf internal/webembed/dist && mkdir -p internal/webembed/dist && cp -a web/dist/. internal/webembed/dist/ && touch internal/webembed/dist/.keep
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
