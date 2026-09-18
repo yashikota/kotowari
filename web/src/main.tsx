@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
 import { router } from './router.tsx';
 import './index.css';
+import { Root } from './application/Root.tsx';
 
 const el = document.getElementById('root');
 if (!el) {
@@ -11,6 +12,8 @@ if (!el) {
 
 createRoot(el).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <Root navigate={(href) => router.navigate({ href })}>
+      <RouterProvider router={router} />
+    </Root>
   </StrictMode>,
 );

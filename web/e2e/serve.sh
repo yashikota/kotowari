@@ -12,6 +12,6 @@ if [ ! -f "$KOTOWARI_HOME/workspace.toml" ]; then
   fi
 fi
 if [ -n "$bin" ]; then
-  exec "$bin" serve --fg --strict-port --addr 127.0.0.1:7730
+  exec "$bin" serve --fg --strict-port --addr "127.0.0.1:${E2E_PORT:-7730}"
 fi
-exec go run . serve --fg --strict-port --addr 127.0.0.1:7730
+exec go run . serve --fg --strict-port --addr "127.0.0.1:${E2E_PORT:-7730}"

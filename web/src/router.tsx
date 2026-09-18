@@ -3,19 +3,10 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   redirect,
 } from '@tanstack/react-router';
 import { Shell } from './components/Shell.tsx';
-import { BoardPage, IssueRoutePage, IssuesPage } from './pages/IssuesPages.tsx';
-import { ADRDetailPage, ADRsPage } from './pages/ADRsPages.tsx';
-import { PageDetailPage, PagesPage } from './pages/PagesPages.tsx';
-import {
-  CycleDetailPage,
-  CyclesPage,
-  ProjectDetailPage,
-  ProjectsPage,
-} from './pages/ProjectsCycles.tsx';
-import { ViewPage } from './pages/ViewsPages.tsx';
 import { api, issuesQuery, parseIssueSearch, searchToFilter, type IssueSearch } from './api.ts';
 
 function NotFoundPage() {
@@ -57,14 +48,14 @@ const issuesRoute = createRoute({
   validateSearch: (raw: Record<string, unknown>) => parseIssueSearch(raw),
   loaderDeps: ({ search }) => search,
   loader: ({ deps }) => loadFilteredIssues(deps),
-  component: IssuesPage,
+  component: lazyRouteComponent(() => import('./pages/IssuesPages.tsx'), 'IssuesPage'),
 });
 
 const issueRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/issues/$identifier',
   loader: () => api.issues(),
-  component: IssueRoutePage,
+  component: lazyRouteComponent(() => import('./pages/IssuesPages.tsx'), 'IssueRoutePage'),
 });
 
 const boardRoute = createRoute({
@@ -73,47 +64,50 @@ const boardRoute = createRoute({
   validateSearch: (raw: Record<string, unknown>) => parseIssueSearch(raw),
   loaderDeps: ({ search }) => search,
   loader: ({ deps }) => loadFilteredIssues(deps),
-  component: BoardPage,
+  component: lazyRouteComponent(() => import('./pages/IssuesPages.tsx'), 'BoardPage'),
 });
 
 const adrsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/adrs',
   loader: () => api.adrs(),
-  component: ADRsPage,
+  component: lazyRouteComponent(() => import('./pages/ADRsPages.tsx'), 'ADRsPage'),
 });
 
 const adrRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/adrs/$identifier',
   loader: ({ params }) => api.adr(params.identifier),
-  component: ADRDetailPage,
+  component: lazyRouteComponent(() => import('./pages/ADRsPages.tsx'), 'ADRDetailPage'),
 });
 
 const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects',
   loader: () => api.projects(),
-  component: ProjectsPage,
+  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
 });
 
 const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects/$slug',
-  loader: async ({ params }) => ({
-    project: await api.project(params.slug),
-    adrs: await api.adrs(),
-    pages: await api.pages(),
-    issues: await api.issues(`?project=${encodeURIComponent(params.slug)}`),
-  }),
-  component: ProjectDetailPage,
+  loader: async ({ params }) => {
+    const [project, adrs, pages, issues] = await Promise.all([
+      api.project(params.slug),
+      api.adrs(),
+      api.pages(),
+      api.issues(`?project=${encodeURIComponent(params.slug)}`),
+    ]);
+    return { project, adrs, pages, issues };
+  },
+  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectDetailPage'),
 });
 
 const cyclesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/cycles',
   loader: () => api.cycles(),
-  component: CyclesPage,
+  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CyclesPage'),
 });
 
 const cycleRoute = createRoute({
@@ -121,12 +115,10 @@ const cycleRoute = createRoute({
   path: '/cycles/$number',
   loader: async ({ params }) => {
     const number = Number(params.number);
-    return {
-      cycle: await api.cycle(number),
-      issues: await api.issues(`?cycle=${number}`),
-    };
+    const [cycle, issues] = await Promise.all([api.cycle(number), api.issues(`?cycle=${number}`)]);
+    return { cycle, issues };
   },
-  component: CycleDetailPage,
+  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CycleDetailPage'),
 });
 
 const viewRoute = createRoute({
@@ -142,21 +134,21 @@ const viewRoute = createRoute({
     ]);
     return { view, issues, projects, cycles, labels };
   },
-  component: ViewPage,
+  component: lazyRouteComponent(() => import('./pages/ViewsPages.tsx'), 'ViewPage'),
 });
 
 const pagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/pages',
   loader: () => api.pages(),
-  component: PagesPage,
+  component: lazyRouteComponent(() => import('./pages/PagesPages.tsx'), 'PagesPage'),
 });
 
 const pageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/pages/$slug',
   loader: ({ params }) => api.page(params.slug),
-  component: PageDetailPage,
+  component: lazyRouteComponent(() => import('./pages/PagesPages.tsx'), 'PageDetailPage'),
 });
 
 const routeTree = rootRoute.addChildren([
@@ -178,7 +170,10 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
-  defaultPreloadStaleTime: 30_000,
+  // QueryCache owns freshness and mutation invalidation; route matches must re-read it.
+  defaultStaleTime: 0,
+  defaultPendingMs: 150,
+  defaultPreloadStaleTime: 0,
   scrollRestoration: true,
 });
 

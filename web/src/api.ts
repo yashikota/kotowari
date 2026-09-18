@@ -1,3 +1,5 @@
+import { queryCache } from './application/cache.ts';
+import { updateIssue } from './application/issues.ts';
 import type {
   Activity,
   Comment,
@@ -13,7 +15,7 @@ import type {
   Workspace,
 } from './types.ts';
 
-async function req<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
@@ -32,6 +34,13 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(err?.error ?? res.statusText);
   }
   return data as T;
+}
+
+function req<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!init?.method || init.method === 'GET')
+    return queryCache.read(path, () => request<T>(path, init));
+  queryCache.invalidate();
+  return request<T>(path, init).finally(() => queryCache.invalidate());
 }
 
 export const api = {
@@ -57,10 +66,12 @@ export const api = {
     labelIds?: number[];
   }) => req<Issue>('/api/issues', { method: 'POST', body: JSON.stringify(body) }),
   patchIssue: (id: string, body: Record<string, unknown>) =>
-    req<Issue>(`/api/issues/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-    }),
+    updateIssue(id, body, () =>
+      req<Issue>(`/api/issues/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    ),
   deleteIssue: (id: string) => req<void>(`/api/issues/${id}`, { method: 'DELETE' }),
   comments: (id: string) => req<Comment[]>(`/api/issues/${id}/comments`),
   addComment: (id: string, body: string) =>

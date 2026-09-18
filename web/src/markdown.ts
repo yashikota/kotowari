@@ -8,7 +8,7 @@ export function escapeHtml(s: string): string {
     .replaceAll('"', '&quot;');
 }
 
-export function renderMarkdown(src: string, assetBase = '', headingPrefix = ''): string {
+function render(src: string, assetBase = '', headingPrefix = ''): string {
   const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
   const image = md.renderer.rules.image!;
   const link = md.renderer.rules.link_open;
@@ -55,4 +55,24 @@ export function renderMarkdown(src: string, assetBase = '', headingPrefix = ''):
     return fence(tokens, idx, options, env, renderer);
   };
   return md.render(src);
+}
+
+const rendered = new Map<string, string>();
+let retained = 0;
+export function renderMarkdown(src: string, assetBase = '', headingPrefix = ''): string {
+  const key = JSON.stringify([src, assetBase, headingPrefix]);
+  const hit = rendered.get(key);
+  if (hit !== undefined) return hit;
+  const html = render(src, assetBase, headingPrefix);
+  if (key.length + html.length <= 500_000) {
+    while (rendered.size >= 64 || retained + key.length + html.length > 2_000_000) {
+      const oldest = rendered.entries().next().value;
+      if (!oldest) break;
+      retained -= oldest[0].length + oldest[1].length;
+      rendered.delete(oldest[0]);
+    }
+    rendered.set(key, html);
+    retained += key.length + html.length;
+  }
+  return html;
 }
