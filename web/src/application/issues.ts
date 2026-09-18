@@ -15,18 +15,17 @@ const subscribe = (fn: () => void) => {
 };
 const snapshot = () => revision;
 
+export function projectIssue(issue: Issue): Issue {
+  const patch = patches.get(issue.identifier);
+  // Server timestamps have second precision; equality cannot prove a read includes the write.
+  return patch && (!patch.confirmed || issue.updatedAt <= patch.confirmed)
+    ? { ...issue, ...patch.patch }
+    : issue;
+}
+
 export function useIssueProjection(issues: Issue[]) {
   const version = useSyncExternalStore(subscribe, snapshot);
-  return useMemo(
-    () =>
-      issues.map((issue) => {
-        const patch = patches.get(issue.identifier);
-        return patch && (!patch.confirmed || issue.updatedAt < patch.confirmed)
-          ? { ...issue, ...patch.patch }
-          : issue;
-      }),
-    [issues, version],
-  );
+  return useMemo(() => issues.map(projectIssue), [issues, version]);
 }
 
 /** Optimistic display only. The disk and server revision remain authoritative. */
@@ -42,7 +41,13 @@ export async function updateIssue(
   try {
     const issue = await commit();
     if (patches.get(id) === overlay) {
-      patches.set(id, { patch: issue, confirmed: issue.updatedAt });
+      // Confirm only changed fields so unrelated local drafts are not overwritten.
+      const confirmed = Object.fromEntries(
+        Object.keys(overlay.patch)
+          .filter((key) => key in issue)
+          .map((key) => [key, issue[key as keyof Issue]]),
+      ) as Partial<Issue>;
+      patches.set(id, { patch: confirmed, confirmed: issue.updatedAt });
       notify();
     }
     return issue;

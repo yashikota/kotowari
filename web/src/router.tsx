@@ -170,9 +170,10 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
-  defaultStaleTime: 30_000,
+  // QueryCache owns freshness and mutation invalidation; route matches must re-read it.
+  defaultStaleTime: 0,
   defaultPendingMs: 150,
-  defaultPreloadStaleTime: 30_000,
+  defaultPreloadStaleTime: 0,
   scrollRestoration: true,
 });
 

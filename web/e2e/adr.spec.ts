@@ -56,3 +56,26 @@ test('new ADR only inherits an issue on its detail route', async ({ page, reques
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByText(/Will link issue/)).toHaveCount(0);
 });
+
+test('returning to a cached list reflects an ADR unlink immediately', async ({ page, request }) => {
+  const issue = await json<{ identifier: string; number: number }>(
+    await request.post('/api/issues', { data: { title: `Unlink ${Date.now()}` } }),
+  );
+  const adr = await json<{ identifier: string }>(
+    await request.post('/api/adrs', {
+      data: { title: 'Linked decision', issueNumbers: [issue.number] },
+    }),
+  );
+  await page.goto('/issues');
+  const row = page
+    .getByRole('listbox', { name: 'Issues' })
+    .getByRole('option')
+    .filter({ hasText: issue.identifier });
+  await expect(row.getByText('1 ADR', { exact: true })).toBeVisible();
+  await row.click();
+  await page.getByRole('button', { name: `Unlink ${adr.identifier}`, exact: true }).click();
+  await expect(page.getByText('No linked decisions.', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Issues', exact: true }).click();
+  await expect(row).toBeVisible();
+  await expect(row.getByText('1 ADR', { exact: true })).toHaveCount(0);
+});
