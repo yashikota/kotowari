@@ -21,12 +21,9 @@ type Store struct {
 }
 
 type Workspace struct {
-	Name             string  `json:"name"`
-	GHCRRef          string  `json:"ghcrRef"`
-	Timezone         string  `json:"timezone"`
-	LastPushedAt     *string `json:"lastPushedAt"`
-	LastPushedDigest *string `json:"lastPushedDigest"`
-	UpdatedAt        string  `json:"updatedAt"`
+	Name      string `json:"name"`
+	Timezone  string `json:"timezone"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 type Label struct {
@@ -259,18 +256,14 @@ type mem struct {
 }
 
 type workspaceFile struct {
-	ContentHash      string  `toml:"contentHash,omitempty"`
-	Name             string  `toml:"name"`
-	GHCRRef          string  `toml:"ghcrRef"`
-	Timezone         string  `toml:"timezone"`
-	IssuePrefix      string  `toml:"issuePrefix,omitempty"`
-	ADRPrefix        string  `toml:"adrPrefix,omitempty"`
-	IssueCounter     int     `toml:"issueCounter"`
-	ADRCounter       int     `toml:"adrCounter"`
-	NextID           int64   `toml:"nextID"`
-	LastPushedAt     *string `toml:"lastPushedAt,omitempty"`
-	LastPushedDigest *string `toml:"lastPushedDigest,omitempty"`
-	UpdatedAt        string  `toml:"updatedAt"`
+	Name         string `toml:"name"`
+	Timezone     string `toml:"timezone"`
+	IssuePrefix  string `toml:"issuePrefix,omitempty"`
+	ADRPrefix    string `toml:"adrPrefix,omitempty"`
+	IssueCounter int    `toml:"issueCounter"`
+	ADRCounter   int    `toml:"adrCounter"`
+	NextID       int64  `toml:"nextID"`
+	UpdatedAt    string `toml:"updatedAt"`
 }
 
 type labelsFile struct {

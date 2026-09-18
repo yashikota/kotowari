@@ -20,16 +20,13 @@ func (s *Store) Workspace() (Workspace, error) {
 
 func workspaceFrom(m *mem) Workspace {
 	return Workspace{
-		Name:             m.Workspace.Name,
-		GHCRRef:          m.Workspace.GHCRRef,
-		Timezone:         m.Workspace.Timezone,
-		LastPushedAt:     m.Workspace.LastPushedAt,
-		LastPushedDigest: m.Workspace.LastPushedDigest,
-		UpdatedAt:        m.Workspace.UpdatedAt,
+		Name:      m.Workspace.Name,
+		Timezone:  m.Workspace.Timezone,
+		UpdatedAt: m.Workspace.UpdatedAt,
 	}
 }
 
-func (s *Store) UpdateWorkspace(name, ghcrRef, timezone *string) (Workspace, error) {
+func (s *Store) UpdateWorkspace(name, timezone *string) (Workspace, error) {
 	var ws Workspace
 	err := s.mutate(func(m *mem) error {
 		if name != nil {
@@ -37,9 +34,6 @@ func (s *Store) UpdateWorkspace(name, ghcrRef, timezone *string) (Workspace, err
 				return validationf("name required")
 			}
 			m.Workspace.Name = strings.TrimSpace(*name)
-		}
-		if ghcrRef != nil {
-			m.Workspace.GHCRRef = strings.TrimSpace(*ghcrRef)
 		}
 		if timezone != nil {
 			if strings.TrimSpace(*timezone) == "" {
@@ -52,57 +46,6 @@ func (s *Store) UpdateWorkspace(name, ghcrRef, timezone *string) (Workspace, err
 		return nil
 	})
 	return ws, err
-}
-
-func (s *Store) MarkPushed(digest string) error {
-	hash, err := s.ContentHash()
-	if err != nil {
-		return err
-	}
-	return s.MarkPushedContent(digest, hash)
-}
-
-func (s *Store) MarkPushedContent(digest, hash string) error {
-	return s.mutate(func(m *mem) error {
-		now := domain.Now()
-		m.Workspace.LastPushedAt = &now
-		m.Workspace.LastPushedDigest = &digest
-		m.Workspace.ContentHash = hash
-		m.Workspace.UpdatedAt = now
-		return nil
-	})
-}
-
-func (s *Store) HasUserContent() (bool, error) {
-	var n int
-	err := s.snapshot(func(m *mem) error {
-		n = len(m.Issues) + len(m.Projects) + len(m.Cycles) + len(m.Pages) + len(m.Views) + len(m.ADRs)
-		for _, cs := range m.Comments {
-			n += len(cs)
-		}
-		return nil
-	})
-	return n > 0, err
-}
-
-func (s *Store) Dirty() (bool, error) {
-	var expected string
-	if err := s.snapshot(func(m *mem) error { expected = m.Workspace.ContentHash; return nil }); err != nil {
-		return false, err
-	}
-	if expected != "" {
-		actual, err := s.ContentHash()
-		return actual != expected, err
-	}
-	ws, err := s.Workspace()
-	if err != nil {
-		return false, err
-	}
-	has, err := s.HasUserContent()
-	if err != nil {
-		return false, err
-	}
-	return domain.IsDirty(ws.UpdatedAt, ws.LastPushedAt, has), nil
 }
 
 func (s *Store) ListLabels() ([]Label, error) {

@@ -122,38 +122,6 @@ func TestADRCreateLinkAndSandbox(t *testing.T) {
 	}
 }
 
-func TestSnapshotOmitsADRExperiments(t *testing.T) {
-	dir := t.TempDir()
-	s, err := Open(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = s.Close() })
-	if _, err := s.CreateADR(CreateADRInput{Title: "snap"}); err != nil {
-		t.Fatal(err)
-	}
-	junk := filepath.Join(dir, "adr", "00001", "bench.go")
-	if err := os.WriteFile(junk, []byte("package main\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.PublishADR("ADR-1"); err != nil {
-		t.Fatal(err)
-	}
-	dest := t.TempDir()
-	if err := s.Snapshot(dest); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(dest, "adr", "00001", "README.md")); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(dest, "adr", "00001", "PUBLISH.md")); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(dest, "adr", "00001", "bench.go")); !os.IsNotExist(err) {
-		t.Fatalf("experiment file should not be snapshotted: %v", err)
-	}
-}
-
 func TestDeleteADRIsRejected(t *testing.T) {
 	dir := t.TempDir()
 	s, err := Open(dir)

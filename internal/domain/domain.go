@@ -170,13 +170,6 @@ func ValidSlug(s string) bool {
 	return true
 }
 
-func IsDirty(updatedAt string, lastPushedAt *string, hasUserContent bool) bool {
-	if lastPushedAt == nil || *lastPushedAt == "" {
-		return hasUserContent
-	}
-	return updatedAt > *lastPushedAt
-}
-
 func UniqueSlug(used map[string]struct{}, slug string) string {
 	if _, ok := used[slug]; !ok {
 		used[slug] = struct{}{}

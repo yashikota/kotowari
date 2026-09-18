@@ -168,7 +168,7 @@ func TestFilteredChildWithoutParentIsRoot(t *testing.T) {
 	}
 }
 
-func TestViewFileAndSearchAndDirty(t *testing.T) {
+func TestViewFileAndSearch(t *testing.T) {
 	dir := t.TempDir()
 	s, err := Open(dir)
 	if err != nil {
@@ -197,13 +197,6 @@ func TestViewFileAndSearchAndDirty(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("search %#v", hits)
-	}
-	dirty, err := s.Dirty()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !dirty {
-		t.Fatal("view-only workspace should be dirty")
 	}
 }
 

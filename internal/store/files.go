@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -105,88 +104,6 @@ func commitFiles(root string, before, after, raw map[string][]byte) error {
 				return err
 			}
 		} else if err := os.Remove(target); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-	}
-	return nil
-}
-
-// copyADRAssets copies only regular files from the explicit document asset tree.
-func copyADRAssets(src, dest string) error {
-	dirs, err := os.ReadDir(filepath.Join(src, "adr"))
-	if os.IsNotExist(err) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	for _, d := range dirs {
-		if _, ok := domain.ParseDirName(d.Name()); !ok || !d.IsDir() {
-			continue
-		}
-		base := filepath.Join(src, "adr", d.Name(), "assets")
-		if _, err := os.Lstat(base); os.IsNotExist(err) {
-			continue
-		}
-		err := filepath.WalkDir(base, func(path string, entry fs.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
-			}
-			if entry.Type()&os.ModeSymlink != 0 {
-				return validationf("asset symlinks are not supported: %s", path)
-			}
-			if entry.IsDir() {
-				return nil
-			}
-			if !entry.Type().IsRegular() {
-				return validationf("asset must be a regular file: %s", path)
-			}
-			rel, err := filepath.Rel(base, path)
-			if err != nil {
-				return err
-			}
-			b, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			return atomicWrite(filepath.Join(dest, "adr", d.Name(), "assets", rel), b)
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func replaceADRAssets(src, dest string) error {
-	// Validate and stage incoming assets before removing an old asset tree.
-	stage, err := os.MkdirTemp(dest, ".assets-*")
-	if err != nil {
-		return err
-	}
-	defer func() { _ = os.RemoveAll(stage) }()
-	if err := copyADRAssets(src, stage); err != nil {
-		return err
-	}
-	dirs, err := os.ReadDir(filepath.Join(dest, "adr"))
-	if err != nil {
-		return err
-	}
-	for _, d := range dirs {
-		if _, ok := domain.ParseDirName(d.Name()); !ok || !d.IsDir() {
-			continue
-		}
-		target := filepath.Join(dest, "adr", d.Name(), "assets")
-		incoming := filepath.Join(stage, "adr", d.Name(), "assets")
-		if err := os.RemoveAll(target); err != nil {
-			return err
-		}
-		if _, err := os.Stat(incoming); os.IsNotExist(err) {
-			continue
-		} else if err != nil {
-			return err
-		}
-		if err := os.Rename(incoming, target); err != nil {
 			return err
 		}
 	}

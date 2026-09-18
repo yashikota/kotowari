@@ -7,7 +7,7 @@ async function json<T>(res: APIResponse): Promise<T> {
   return (await res.json()) as T;
 }
 
-test('shortcuts, find, dirty, and project-scoped create', async ({ page, request }) => {
+test('shortcuts, find, and project-scoped create', async ({ page, request }) => {
   const stamp = `${Date.now()}`;
   const needle = `Needle ${stamp}`;
   const hay = `Haystack ${stamp}`;
@@ -19,7 +19,6 @@ test('shortcuts, find, dirty, and project-scoped create', async ({ page, request
 
   await page.goto('/issues');
   await page.getByRole('heading', { name: 'Issues' }).click();
-  await expect(page.getByText('Unpushed')).toBeVisible();
 
   await page.keyboard.press('?');
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();

@@ -81,37 +81,6 @@ func TestSingleActiveCycle(t *testing.T) {
 	}
 }
 
-func TestDirtyWithoutUserContentAllowsPull(t *testing.T) {
-	s := openTest(t)
-	dirty, err := s.Dirty()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if dirty {
-		t.Fatal("fresh workspace should not be dirty")
-	}
-	if _, err := s.CreateIssue(CreateIssueInput{Title: "x"}); err != nil {
-		t.Fatal(err)
-	}
-	dirty, err = s.Dirty()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !dirty {
-		t.Fatal("unpushed issue should be dirty")
-	}
-	if err := s.MarkPushed("sha256:abc"); err != nil {
-		t.Fatal(err)
-	}
-	dirty, err = s.Dirty()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if dirty {
-		t.Fatal("just pushed should not be dirty")
-	}
-}
-
 func TestCreateIssueValidation(t *testing.T) {
 	s := openTest(t)
 	_, err := s.CreateIssue(CreateIssueInput{Title: " "})

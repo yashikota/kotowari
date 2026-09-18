@@ -21,7 +21,6 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 	"github.com/yashikota/kotowari/internal/httpapi"
 	"github.com/yashikota/kotowari/internal/store"
-	"github.com/yashikota/kotowari/internal/syncer"
 	"github.com/yashikota/kotowari/internal/term"
 	"github.com/yashikota/kotowari/internal/webembed"
 	"github.com/yashikota/kotowari/skills"
@@ -104,29 +103,8 @@ func newRootCommand(stdout, stderr io.Writer, version string) *urfavecli.Command
 				},
 			},
 			{
-				Name:  "push",
-				Usage: "snapshot workspace to GHCR",
-				Action: func(ctx context.Context, _ *urfavecli.Command) error {
-					return cmdPush(ctx, stdout, version)
-				},
-			},
-			{
-				Name:  "pull",
-				Usage: "restore workspace from GHCR",
-				Flags: []urfavecli.Flag{
-					&urfavecli.StringFlag{
-						Name:  "tag",
-						Value: "latest",
-						Usage: "artifact tag",
-					},
-				},
-				Action: func(ctx context.Context, c *urfavecli.Command) error {
-					return cmdPull(ctx, c.String("tag"), stdout, c.ErrWriter)
-				},
-			},
-			{
 				Name:  "status",
-				Usage: "show path, dirty state, last digest",
+				Usage: "show workspace path and name",
 				Action: func(_ context.Context, _ *urfavecli.Command) error {
 					return cmdStatus(stdout)
 				},
@@ -356,57 +334,6 @@ func cmdServe(ctx context.Context, addr string, foreground, strictPort bool, std
 	return err
 }
 
-func newService(st *store.Store, version string, warn func(string)) (*syncer.Service, error) {
-	token, err := syncer.GitHubToken()
-	if err != nil {
-		return nil, err
-	}
-	return &syncer.Service{
-		Store:    st,
-		Registry: &syncer.ORAS{Token: token},
-		Version:  version,
-		Warn:     warn,
-	}, nil
-}
-
-func cmdPush(ctx context.Context, stdout io.Writer, version string) error {
-	st, err := openStore()
-	if err != nil {
-		return err
-	}
-	defer func() { _ = st.Close() }()
-	svc, err := newService(st, version, nil)
-	if err != nil {
-		return err
-	}
-	tag, digest, err := svc.Push(ctx)
-	if err != nil {
-		return err
-	}
-	term.For(stdout).Success(stdout, "pushed %s (%s)\n", tag, digest)
-	return nil
-}
-
-func cmdPull(ctx context.Context, tag string, stdout, stderr io.Writer) error {
-	st, err := openStore()
-	if err != nil {
-		return err
-	}
-	svc, err := newService(st, "", func(msg string) {
-		term.For(stderr).Warn(stderr, "%s\n", msg)
-	})
-	if err != nil {
-		_ = st.Close()
-		return err
-	}
-	if err := svc.Pull(ctx, tag); err != nil {
-		_ = st.Close()
-		return err
-	}
-	term.For(stdout).Success(stdout, "pulled %s into %s\n", tag, st.Path())
-	return nil
-}
-
 func cmdStatus(stdout io.Writer) error {
 	st, err := openStore()
 	if err != nil {
@@ -417,20 +344,9 @@ func cmdStatus(stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
-	dirty, err := st.Dirty()
-	if err != nil {
-		return err
-	}
-	digest := ""
-	if ws.LastPushedDigest != nil {
-		digest = *ws.LastPushedDigest
-	}
 	styl := term.For(stdout)
 	styl.Label(stdout, "path", st.Path())
 	styl.Label(stdout, "name", ws.Name)
-	styl.Label(stdout, "ghcr", ws.GHCRRef)
-	styl.Bool(stdout, "dirty", dirty)
-	styl.Label(stdout, "digest", digest)
 	return nil
 }
 

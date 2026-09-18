@@ -15,7 +15,7 @@ Linear の密度とキーボード操作を借りるが、チーム製品の複�
 担当者、メンバー、Inbox、通知、権限、リアルタイム共同編集は持たない。
 複数人で同じワークスペースを共有する前提も持たない。
 
-複数マシン間の受け渡しは、自分用のスナップショットとして `kotowari push` と `kotowari pull` で行う。
+共有・バックアップ・複数マシン間の同期は、このソフトの対象外とする。
 マージはしない。
 後勝ちの置き換えである。
 
@@ -109,9 +109,7 @@ UI と API でリンクしたときは両側を更新する。
 - `kotowari adr generate toc`：Markdown の目次を標準出力へ出す
 - `kotowari adr generate graph`：supersede 関係の Mermaid グラフを標準出力へ出す
 - `kotowari adr export <id>`：英語 `PUBLISH.md` を標準出力へ出す
-- `kotowari push`：自分の GHCR 参照へスナップショットを送る
-- `kotowari pull`：スナップショットでローカルを置き換える
-- `kotowari status`：未 push の有無と最後の digest
+- `kotowari status`：ワークスペースのパスと名前
 - `kotowari check`：ファイルの意味的な壊れを一覧する。片側リンク、存在しない `supersedes`、後続のない `superseded` を含む
 
 認証トークンはファイルに保存しない。
@@ -128,7 +126,7 @@ API の読み書きは毎回ディスクから読み直す。
 
 ### Workspace
 
-名前、GHCR 参照、タイムゾーン、Issue と ADR の接頭辞、`lastPushedAt`、`lastPushedDigest`、同期基準の `contentHash` を持つ。
+名前、タイムゾーン、Issue と ADR の接頭辞を持つ。
 ローカルに1つだけである。
 
 ### Project
@@ -274,19 +272,6 @@ KOTOWARI_ACP_COMMAND='["codex-acp"]' kotowari serve
 ACP プロセスの作業ディレクトリはワークスペースとする。
 サーバーの終了時は起動したプロセスを終了する。
 
-## 同期
-
-成果物の参照は `ghcr.io/<user>/kotowari` である。
-自分のマシン間のバックアップであり、共有ディレクトリではない。
-`kotowari pull` はローカルが dirty なら中止する。
-起動時自動同期と `--force` pull は持たない。
-スナップショットには管理対象の Markdown、設定、活動履歴、テンプレートと ADR の `assets/` を含める。
-`experiments/`、`.history/`、`.local/` は含めない。
-文書からアセットへのリンクは相対パスのまま保存する。
-同期対象の内容からハッシュを計算し、更新日時を書き換えない外部編集やアセットの追加・削除も dirty と判定する。
-push 中に変更が入った場合は、実際に送ったスナップショットを基準にするため未送信の変更が残る。
-pull はアセットを置き換え、ローカルの実験ディレクトリを保持する。
-
 ## 代替案
 
 Issue 番号と ADR 番号を同一にする案は採らない。
@@ -321,7 +306,7 @@ MADR の YAML frontmatter、`nnnn-title.md`、decision-makers / consulted / info
 
 | 改善 | 検証 |
 | --- | --- |
-| ADR 配下の図・画像、同期、ZIP 出力 | store/API テスト、ブラウザのダウンロード |
+| ADR 配下の図・画像、ZIP 出力 | store/API テスト、ブラウザのダウンロード |
 | Markdown と HTML/CSS 図の表示 | レンダラーの単体テスト、iframe のスクリプト禁止をブラウザで確認 |
 | 保存競合、下書き復元、履歴、外部更新 | store/API テスト、ブラウザで外部編集からの復旧 |
 | Project と ADR/Page の関連、ADR の絞り込みと後続作成 | store テスト、ADR のブラウザ操作 |

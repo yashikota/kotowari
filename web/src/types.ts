@@ -127,12 +127,8 @@ export type Activity = {
 
 export type Workspace = {
   name: string;
-  ghcrRef: string;
   timezone: string;
-  lastPushedAt: string | null;
-  lastPushedDigest: string | null;
   updatedAt: string;
-  dirty: boolean;
 };
 
 export type SearchHit = {

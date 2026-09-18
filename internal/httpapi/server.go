@@ -152,25 +152,13 @@ func decodeJSON(r *http.Request, v any) error {
 	return dec.Decode(v)
 }
 
-func (s *Server) writeWorkspace(w http.ResponseWriter, ws store.Workspace) {
-	dirty, err := s.store.Dirty()
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, struct {
-		store.Workspace
-		Dirty bool `json:"dirty"`
-	}{Workspace: ws, Dirty: dirty})
-}
-
 func (s *Server) getWorkspace(w http.ResponseWriter, _ *http.Request) {
 	ws, err := s.store.Workspace()
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	s.writeWorkspace(w, ws)
+	writeJSON(w, http.StatusOK, ws)
 }
 
 func (s *Server) listDiagnostics(w http.ResponseWriter, _ *http.Request) {
@@ -185,19 +173,18 @@ func (s *Server) listDiagnostics(w http.ResponseWriter, _ *http.Request) {
 func (s *Server) patchWorkspace(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Name     *string `json:"name"`
-		GHCRRef  *string `json:"ghcrRef"`
 		Timezone *string `json:"timezone"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	ws, err := s.store.UpdateWorkspace(in.Name, in.GHCRRef, in.Timezone)
+	ws, err := s.store.UpdateWorkspace(in.Name, in.Timezone)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	s.writeWorkspace(w, ws)
+	writeJSON(w, http.StatusOK, ws)
 }
 
 func (s *Server) listLabels(w http.ResponseWriter, _ *http.Request) {

@@ -56,7 +56,7 @@ func TestDocumentConflictHistoryAndUnrelatedFiles(t *testing.T) {
 	}
 }
 
-func TestAssetSnapshotAndDirty(t *testing.T) {
+func TestAssetChangesContentHash(t *testing.T) {
 	s := openTest(t)
 	if _, err := s.CreateADR(CreateADRInput{Title: "Assets"}); err != nil {
 		t.Fatal(err)
@@ -68,39 +68,16 @@ func TestAssetSnapshotAndDirty(t *testing.T) {
 	if err := atomicWrite(filepath.Join(s.Path(), "adr", "00001", "experiments", "main.go"), []byte("experiment")); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.MarkPushed("digest"); err != nil {
+	before, err := s.ContentHash()
+	if err != nil {
 		t.Fatal(err)
-	}
-	if dirty, err := s.Dirty(); err != nil || dirty {
-		t.Fatalf("dirty %v: %v", dirty, err)
 	}
 	if err := atomicWrite(asset, []byte("<p>changed</p>")); err != nil {
 		t.Fatal(err)
 	}
-	if dirty, err := s.Dirty(); err != nil || !dirty {
-		t.Fatalf("asset change not detected: %v %v", dirty, err)
-	}
-	dest := t.TempDir()
-	if err := s.Snapshot(dest); err != nil {
-		t.Fatal(err)
-	}
-	if b, err := os.ReadFile(filepath.Join(dest, "adr", "00001", "assets", "diagram.html")); err != nil || string(b) != "<p>changed</p>" {
-		t.Fatalf("asset missing %s %v", b, err)
-	}
-	if _, err := os.Stat(filepath.Join(dest, "adr", "00001", "experiments")); !os.IsNotExist(err) {
-		t.Fatal("experiments were included")
-	}
-	if err := os.Remove(filepath.Join(dest, "adr", "00001", "assets", "diagram.html")); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.ReplaceFrom(dest); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(asset); !os.IsNotExist(err) {
-		t.Fatal("deleted asset retained")
-	}
-	if _, err := os.Stat(filepath.Join(s.Path(), "adr", "00001", "experiments", "main.go")); err != nil {
-		t.Fatal("local experiments lost", err)
+	after, err := s.ContentHash()
+	if err != nil || before == after {
+		t.Fatalf("asset change not detected: %v", err)
 	}
 }
 

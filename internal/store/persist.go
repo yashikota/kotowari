@@ -362,38 +362,6 @@ func save(root string, m *mem) error {
 	return nil
 }
 
-func (s *Store) Snapshot(dest string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	m, err := load(s.root)
-	if err != nil {
-		return err
-	}
-	if err := save(dest, m); err != nil {
-		return err
-	}
-	if err := copyADRAssets(s.root, dest); err != nil {
-		return err
-	}
-	return copyWorkspaceTemplates(s.root, dest)
-}
-
-func (s *Store) ReplaceFrom(src string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	m, err := load(src)
-	if err != nil {
-		return err
-	}
-	if err := save(s.root, m); err != nil {
-		return err
-	}
-	if err := replaceADRAssets(src, s.root); err != nil {
-		return err
-	}
-	return copyWorkspaceTemplates(src, s.root)
-}
-
 func readTOMLDir(dir string, fn func(name string, b []byte) error) error {
 	ents, err := os.ReadDir(dir)
 	if err != nil {

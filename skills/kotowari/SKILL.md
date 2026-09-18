@@ -30,10 +30,10 @@ ADR: `issues = [12, 15]`
 
 UI / API でリンクしたときは両側が更新される。ファイルを直接いじって片側だけになったものは `kotowari check` が見つける。自動修復しない。直すときは両方を揃える。
 
-## git と同期
+## データの管理
 
 - `adr/` 全体は git に載せない（実験と日本語ドラフト）
-- `kotowari push` は Issue の README を送る。ADR は `README.md`、`PUBLISH.md`、`assets/` を送る。`experiments/` は送らない
+- 共有・バックアップ・複数マシン間の同期は kotowari の対象外
 - `$KOTOWARI_HOME` の外へは書かない。OSS リポの `docs/adr/` へ置くのは人間またはエージェントのコピー
 
 エージェントはファイルを直接書いてよい。次の API 読み込みで UI に載る。
