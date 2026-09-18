@@ -22,7 +22,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(list.getByRole('option', { name: new RegExp(hideTitle) })).toHaveCount(0);
 
   await page.getByLabel('New view name').fill(`Todo ${stamp}`);
-  await page.getByLabel('New view name').press('Enter');
+  await page.getByLabel('New view name').press('Control+Enter');
   await expect(page).toHaveURL(new RegExp(`/views/todo-${stamp}`));
   await expect(page.getByRole('heading', { name: `Todo ${stamp}` })).toBeVisible();
 
@@ -33,7 +33,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(page.locator('.title-input')).toHaveValue(keepTitle);
   const label = `Harbor ${stamp}`;
   await page.getByLabel('New label').fill(label);
-  await page.getByLabel('New label').press('Enter');
+  await page.getByLabel('New label').press('Control+Enter');
   await expect(page.getByRole('button', { name: label, exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',

@@ -178,8 +178,7 @@ nav {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
@@ -661,11 +660,6 @@ nav {
   border-color: var(--urgent);
 }
 
-.dirty {
-  color: var(--high);
-  font-size: 11px;
-}
-
 .crumb {
   background: transparent;
   border: 0;
@@ -846,4 +840,91 @@ nav {
   .document-comparison {
     grid-template-columns: 1fr;
   }
+}
+
+/* Interaction feedback must never wait for navigation or a layout animation. */
+.virtual-list {
+  max-height: calc(100dvh - 145px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  contain: layout paint;
+}
+.virtual-column {
+  max-height: calc(100dvh - 180px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  contain: layout paint;
+}
+.virtual-column .card {
+  height: 92px;
+  margin: 0 0 8px;
+  width: 100%;
+  overflow: hidden;
+}
+.virtual-column .card-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.virtual-list .row-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.dialog,
+.palette {
+  animation: surface-enter 100ms ease-out;
+  transform-origin: top center;
+}
+@keyframes surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.root-error {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  max-width: min(480px, 90vw);
+  padding: 12px;
+  border: 1px solid var(--urgent);
+  background: var(--surface);
+}
+.root-error button {
+  margin-left: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+}
+.dialog > textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 64px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+}
+.toolbar-save textarea {
+  resize: vertical;
 }

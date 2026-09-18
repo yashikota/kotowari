@@ -10,7 +10,7 @@ test('create issue, comment, and page', async ({ page }) => {
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('Smoke issue');
-  await issueTitle.press('Enter');
+  await issueTitle.press('Control+Enter');
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
   await expect(page).toHaveURL(/\/issues\/ISS-\d+/);
   const identifier = page.url().match(/ISS-\d+/)?.[0];
@@ -42,7 +42,7 @@ test('create issue, comment, and page', async ({ page }) => {
   const adrTitle = page.getByPlaceholder('ADR title');
   await expect(adrTitle).toBeFocused();
   await adrTitle.fill('local cache');
-  await adrTitle.press('Enter');
+  await adrTitle.press('Control+Enter');
   await expect(page).toHaveURL(/\/adrs\/ADR-\d+/);
   await expect(page.getByRole('textbox', { name: 'ADR title' })).toHaveValue('local cache');
   await page.getByRole('link', { name: identifier }).click();
@@ -51,7 +51,7 @@ test('create issue, comment, and page', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Projects' }).click();
   await page.getByLabel('New project name').fill('Atlas');
-  await page.getByLabel('New project name').press('Enter');
+  await page.getByLabel('New project name').press('Control+Enter');
   await expect(page).toHaveURL(/\/projects\/atlas/);
   await expect(page.getByRole('heading', { name: 'Atlas' })).toBeVisible();
 
@@ -79,7 +79,7 @@ test('create issue, comment, and page', async ({ page }) => {
   const pageTitle = page.getByPlaceholder('Page title');
   await expect(pageTitle).toBeFocused();
   await pageTitle.fill('ADR 1');
-  await pageTitle.press('Enter');
+  await pageTitle.press('Control+Enter');
   await expect(page).toHaveURL(/\/pages\//);
   await expect(page.getByRole('textbox', { name: 'Page title' })).toHaveValue('ADR 1');
   await page.getByLabel('Page project').selectOption({ label: 'Atlas' });
@@ -95,12 +95,12 @@ test('sub-issue and saved view', async ({ page }) => {
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('Parent job');
-  await issueTitle.press('Enter');
+  await issueTitle.press('Control+Enter');
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
   await expect(page.locator('.title-input')).toHaveValue('Parent job');
 
   await page.getByLabel('New sub-issue').fill('Child step');
-  await page.getByLabel('New sub-issue').press('Enter');
+  await page.getByLabel('New sub-issue').press('Control+Enter');
   await expect(page.getByRole('button', { name: /Child step/ })).toBeVisible();
 
   await page.getByRole('link', { name: 'Issues' }).click();
@@ -112,7 +112,7 @@ test('sub-issue and saved view', async ({ page }) => {
   const viewName = page.getByPlaceholder('View name');
   await expect(viewName).toBeFocused();
   await viewName.fill('Todos');
-  await viewName.press('Enter');
+  await viewName.press('Control+Enter');
   await expect(page).toHaveURL(/\/views\/todos/);
   await page.getByLabel('View status').selectOption('todo');
   await expect(page.getByLabel('View status')).toHaveValue('todo');

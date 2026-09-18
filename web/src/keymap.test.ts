@@ -1,3 +1,4 @@
+import { isSubmitShortcut } from './keymap.ts';
 import { describe, expect, it } from 'vite-plus/test';
 import { actionFromKeyboard, isTypingTarget } from './keymap.ts';
 
@@ -208,5 +209,19 @@ describe('actionFromKeyboard', () => {
         target: el('BODY'),
       }),
     ).toBeNull();
+  });
+});
+
+describe('submit shortcut', () => {
+  it('requires a modifier and ignores IME confirmation and key repeat', () => {
+    const key = { key: 'Enter', ctrlKey: false, metaKey: false };
+    expect(isSubmitShortcut(key)).toBe(false);
+    expect(isSubmitShortcut({ ...key, ctrlKey: true })).toBe(true);
+    expect(isSubmitShortcut({ ...key, metaKey: true })).toBe(true);
+    expect(isSubmitShortcut({ ...key, ctrlKey: true, isComposing: true })).toBe(false);
+    expect(isSubmitShortcut({ ...key, ctrlKey: true, nativeEvent: { isComposing: true } })).toBe(
+      false,
+    );
+    expect(isSubmitShortcut({ ...key, ctrlKey: true, repeat: true })).toBe(false);
   });
 });

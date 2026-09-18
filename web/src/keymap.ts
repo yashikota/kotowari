@@ -16,6 +16,27 @@ export type KeyAction =
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
+export function isSubmitShortcut(event: {
+  key: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey?: boolean;
+  repeat?: boolean;
+  isComposing?: boolean;
+  keyCode?: number;
+  nativeEvent?: { isComposing?: boolean };
+}): boolean {
+  return (
+    event.key === 'Enter' &&
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    !event.repeat &&
+    !event.isComposing &&
+    !event.nativeEvent?.isComposing &&
+    event.keyCode !== 229
+  );
+}
+
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (target === null || typeof target !== 'object') {
     return false;
@@ -29,11 +50,20 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 
 export function actionFromKeyboard(event: {
   key: string;
+  isComposing?: boolean;
+  repeat?: boolean;
+  defaultPrevented?: boolean;
   metaKey: boolean;
   ctrlKey: boolean;
   altKey?: boolean;
   target: EventTarget | null;
 }): KeyAction | null {
+  if (
+    event.isComposing ||
+    event.defaultPrevented ||
+    (event.repeat && !['j', 'k', 'ArrowDown', 'ArrowUp'].includes(event.key))
+  )
+    return null;
   const mod = event.metaKey || event.ctrlKey;
   if (mod && event.key.toLowerCase() === 'k') {
     return 'palette';
@@ -52,8 +82,10 @@ export function actionFromKeyboard(event: {
       return 'new-issue';
     case 'p':
       return 'new-adr';
+    case 'ArrowDown':
     case 'j':
       return 'move-down';
+    case 'ArrowUp':
     case 'k':
       return 'move-up';
     case 'Enter':

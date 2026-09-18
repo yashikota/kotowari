@@ -1,11 +1,16 @@
 import { mkdtempSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
+const port = process.env.E2E_PORT ?? '7730';
 const ci = Boolean(process.env.CI);
 process.env.E2E_KOTOWARI_HOME ??= mkdtempSync(join(tmpdir(), 'kotowari-e2e-'));
-process.env.KOTOWARI_ACP_COMMAND = JSON.stringify([process.execPath, resolve('e2e/acp-agent.mjs')]);
+process.env.KOTOWARI_ACP_COMMAND = JSON.stringify([
+  process.execPath,
+  fileURLToPath(new URL('./e2e/acp-agent.mjs', import.meta.url)),
+]);
 
 export default defineConfig({
   testDir: './e2e',
@@ -16,14 +21,14 @@ export default defineConfig({
   workers: 1,
   reporter: ci ? [['github'], ['html', { open: 'never' }], ['list']] : 'list',
   use: {
-    baseURL: 'http://127.0.0.1:7730',
+    baseURL: `http://127.0.0.1:${port}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'sh e2e/serve.sh',
-    url: 'http://127.0.0.1:7730',
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !ci,
     timeout: 120_000,
     stdout: 'pipe',

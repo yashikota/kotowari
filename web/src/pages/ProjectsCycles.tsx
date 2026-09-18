@@ -1,363 +1,320 @@
-import { Link, useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
-import { useState } from 'react';
-import { api } from '../api.ts';
+import { Link } from '@tanstack/react-router';
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueList } from '../components/IssueList.tsx';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
-import type { ADR, Page, Cycle, Issue, Project } from '../types.ts';
 
-export function ProjectsPage() {
-  const projects = useLoaderData({ from: '/projects' }) as Project[];
-  const [name, setName] = useState('');
-  const navigate = useNavigate();
-  return (
-    <div className="main single">
-      <section className="pane">
-        <div className="pane-head">
-          <h1>Projects</h1>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const n = name.trim();
-              if (!n) {
-                return;
-              }
-              const slug = n
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-|-$/g, '');
-              void api
-                .createProject({ name: n, slug })
-                .then((p) => navigate({ to: '/projects/$slug', params: { slug: p.slug } }));
-            }}
-          >
-            <input
-              className="field"
-              aria-label="New project name"
-              placeholder="New project"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </form>
-        </div>
-        {projects.length === 0 ? (
-          <div className="empty">No projects yet. Name one above.</div>
-        ) : (
-          <div className="list">
-            {projects.map((p) => (
-              <Link className="row" key={p.slug} to="/projects/$slug" params={{ slug: p.slug }}>
-                <span className="rail" />
-                <span className="ident">{p.status}</span>
-                <span>{p.name}</span>
-                <span className="progress" style={{ width: 72 }}>
-                  <span style={{ width: `${Math.round(p.progress * 100)}%` }} />
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-export function ProjectDetailPage() {
-  const { slug } = useParams({ from: '/projects/$slug' });
-  const data = useLoaderData({ from: '/projects/$slug' }) as {
-    project: Project;
-    issues: Issue[];
-    adrs: ADR[];
-    pages: Page[];
-  };
-  const router = useRouter();
-  const navigate = useNavigate();
-  const [selected, setSelected] = useState<string | null>(data.issues[0]?.identifier ?? null);
-  const [project, setProject] = useState(data.project);
-
-  if (project.slug !== data.project.slug) {
-    setProject(data.project);
-    setSelected(data.issues[0]?.identifier ?? null);
-  }
-
-  async function save(body: Record<string, unknown>) {
-    const next = await api.patchProject(slug, body);
-    setProject(next);
-    await router.invalidate();
-  }
-
-  return (
-    <div className="main">
-      <section className="pane">
-        <div className="pane-head">
-          <h1>{project.name}</h1>
-          <select
-            className="field"
-            aria-label="Project status"
-            value={project.status}
-            onChange={(e) => void save({ status: e.target.value })}
-          >
-            {PROJECT_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="ghost"
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent('kotowari:create-issue', { detail: { projectId: project.id } }),
-              )
-            }
-          >
-            New issue
-          </button>
-          <button
-            type="button"
-            className="ghost danger"
-            onClick={() => {
-              if (!window.confirm(`Delete project ${project.name}?`)) {
-                return;
-              }
-              void api.deleteProject(slug).then(async () => {
-                await router.invalidate();
-                await navigate({ to: '/projects' });
-              });
-            }}
-          >
-            Delete
-          </button>
-        </div>
-        <div className="detail">
-          <textarea
-            className="field"
-            aria-label="Project description"
-            placeholder="Description"
-            value={project.description}
-            onChange={(e) => setProject({ ...project, description: e.target.value })}
-            onBlur={() => void save({ description: project.description })}
-          />
-          <div className="props">
-            <label>
-              <span className="muted">Start</span>
-              <input
-                type="date"
-                aria-label="Start date"
-                value={project.startDate?.slice(0, 10) ?? ''}
-                onChange={(e) =>
-                  void save(
-                    e.target.value ? { startDate: e.target.value } : { clearStartDate: true },
-                  )
-                }
-              />
-            </label>
-            <label>
-              <span className="muted">Target</span>
-              <input
-                type="date"
-                aria-label="Target date"
-                value={project.targetDate?.slice(0, 10) ?? ''}
-                onChange={(e) =>
-                  void save(
-                    e.target.value ? { targetDate: e.target.value } : { clearTargetDate: true },
-                  )
-                }
-              />
-            </label>
-          </div>
-          <section aria-label="Project documents">
-            <h2>ADRs</h2>
-            <button
-              type="button"
-              onClick={() => {
-                const title = window.prompt('ADR title');
-                if (title?.trim())
-                  void api
-                    .createADR({ title, projectSlug: slug })
-                    .then((a) =>
-                      navigate({ to: '/adrs/$identifier', params: { identifier: a.identifier } }),
-                    );
-              }}
-            >
-              New ADR
-            </button>
-            <ul>
-              {data.adrs
-                .filter(
-                  (a) =>
-                    a.projectSlug === slug ||
-                    data.issues.some((i) => a.issueNumbers.includes(i.number)),
-                )
-                .map((a) => (
-                  <li key={a.identifier}>
-                    <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
-                      {a.identifier} {a.title}
-                    </Link>{' '}
-                    <span className="badge">{a.status}</span>
-                  </li>
+import { PresenterScope, useActions } from '../application/Root.tsx';
+import {
+  useCycleDetailPagePresenter,
+  useCyclesPagePresenter,
+  useProjectDetailPagePresenter,
+  useProjectsPagePresenter,
+} from '../presenters/ProjectsCycles.tsx';
+export function ProjectsPageView({
+  model,
+}: {
+  model: ReturnType<typeof useProjectsPagePresenter>;
+}) {
+  switch (model._view) {
+    case 0: {
+      const { projects, name, handlers } = model;
+      return (
+        <div className="main single">
+          <section className="pane">
+            <div className="pane-head">
+              <h1>Projects</h1>
+              <form onSubmit={handlers.onSubmit0}>
+                <textarea
+                  rows={2}
+                  className="field"
+                  aria-label="New project name"
+                  placeholder="New project"
+                  value={name}
+                  onChange={handlers.New_project_name_onChange1}
+                />
+              </form>
+            </div>
+            {projects.length === 0 ? (
+              <div className="empty">No projects yet. Name one above.</div>
+            ) : (
+              <div className="list">
+                {projects.map((p) => (
+                  <Link className="row" key={p.slug} to="/projects/$slug" params={{ slug: p.slug }}>
+                    <span className="rail" />
+                    <span className="ident">{p.status}</span>
+                    <span>{p.name}</span>
+                    <span className="progress" style={{ width: 72 }}>
+                      <span style={{ width: `${Math.round(p.progress * 100)}%` }} />
+                    </span>
+                  </Link>
                 ))}
-            </ul>
-            <h2>Pages</h2>
-            <ul>
-              {data.pages
-                .filter((p) => p.projectSlug === slug)
-                .map((p) => (
-                  <li key={p.slug}>
-                    <Link to="/pages/$slug" params={{ slug: p.slug }}>
-                      {p.title}
-                    </Link>
-                  </li>
-                ))}
-            </ul>
+              </div>
+            )}
           </section>
-          <IssueList
-            issues={data.issues}
-            selectedId={selected}
-            onSelect={setSelected}
-            openOnSelect={false}
-          />
         </div>
-      </section>
-      <section className="pane">
-        {selected ? (
-          <IssueDetail identifier={selected} />
-        ) : (
-          <div className="empty">Select an issue</div>
-        )}
-      </section>
-    </div>
+      );
+    }
+  }
+}
+export function ProjectsPage() {
+  return (
+    <PresenterScope name="ProjectsPage">
+      <ProjectsPageBinding />
+    </PresenterScope>
   );
 }
+function ProjectsPageBinding() {
+  const model = useProjectsPagePresenter();
+  const handlers = useActions(model.handlers);
+  return <ProjectsPageView model={{ ...model, handlers } as typeof model} />;
+}
 
-export function CyclesPage() {
-  const cycles = useLoaderData({ from: '/cycles' }) as Cycle[];
-  const navigate = useNavigate();
-  return (
-    <div className="main single">
-      <section className="pane">
-        <div className="pane-head">
-          <h1>Cycles</h1>
-          <button
-            className="ghost"
-            type="button"
-            onClick={() => {
-              const start = new Date();
-              const end = new Date(start.getTime() + 14 * 86400000);
-              void api
-                .createCycle({
-                  startsAt: start.toISOString(),
-                  endsAt: end.toISOString(),
-                })
-                .then((c) =>
-                  navigate({
-                    to: '/cycles/$number',
-                    params: { number: String(c.number) },
-                  }),
-                );
-            }}
-          >
-            New cycle
-          </button>
-        </div>
-        {cycles.length === 0 ? (
-          <div className="empty">No cycles yet. Start one to timebox work.</div>
-        ) : (
-          <div className="list">
-            {cycles.map((c) => (
-              <Link
-                className="row"
-                key={c.number}
-                to="/cycles/$number"
-                params={{ number: String(c.number) }}
+export function ProjectDetailPageView({
+  model,
+}: {
+  model: ReturnType<typeof useProjectDetailPagePresenter>;
+}) {
+  switch (model._view) {
+    case 0: {
+      const { slug, data, selected, project, handlers } = model;
+      return (
+        <div className="main">
+          <section className="pane">
+            <div className="pane-head">
+              <h1>{project.name}</h1>
+              <select
+                className="field"
+                aria-label="Project status"
+                value={project.status}
+                onChange={handlers.Project_status_onChange0}
               >
-                <span className="rail" />
-                <span className="ident">{c.number}</span>
-                <span>
-                  {c.status} · {c.startsAt.slice(0, 10)} → {c.endsAt.slice(0, 10)}
-                </span>
-                <span className="badge">{c.status}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+                {PROJECT_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="ghost" onClick={handlers.onClick1}>
+                New issue
+              </button>
+              <button type="button" className="ghost danger" onClick={handlers.onClick2}>
+                Delete
+              </button>
+            </div>
+            <div className="detail">
+              <textarea
+                className="field"
+                aria-label="Project description"
+                placeholder="Description"
+                value={project.description}
+                onChange={handlers.Project_description_onChange3}
+                onBlur={handlers.Project_description_onBlur4}
+              />
+              <div className="props">
+                <label>
+                  <span className="muted">Start</span>
+                  <input
+                    type="date"
+                    aria-label="Start date"
+                    value={project.startDate?.slice(0, 10) ?? ''}
+                    onChange={handlers.Start_date_onChange5}
+                  />
+                </label>
+                <label>
+                  <span className="muted">Target</span>
+                  <input
+                    type="date"
+                    aria-label="Target date"
+                    value={project.targetDate?.slice(0, 10) ?? ''}
+                    onChange={handlers.Target_date_onChange6}
+                  />
+                </label>
+              </div>
+              <section aria-label="Project documents">
+                <h2>ADRs</h2>
+                <button type="button" onClick={handlers.onClick7}>
+                  New ADR
+                </button>
+                <ul>
+                  {data.adrs
+                    .filter(
+                      (a) =>
+                        a.projectSlug === slug ||
+                        data.issues.some((i) => a.issueNumbers.includes(i.number)),
+                    )
+                    .map((a) => (
+                      <li key={a.identifier}>
+                        <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
+                          {a.identifier} {a.title}
+                        </Link>{' '}
+                        <span className="badge">{a.status}</span>
+                      </li>
+                    ))}
+                </ul>
+                <h2>Pages</h2>
+                <ul>
+                  {data.pages
+                    .filter((p) => p.projectSlug === slug)
+                    .map((p) => (
+                      <li key={p.slug}>
+                        <Link to="/pages/$slug" params={{ slug: p.slug }}>
+                          {p.title}
+                        </Link>
+                      </li>
+                    ))}
+                </ul>
+              </section>
+              <IssueList
+                issues={data.issues}
+                selectedId={selected}
+                onSelect={handlers.onSelect8}
+                openOnSelect={false}
+              />
+            </div>
+          </section>
+          <section className="pane">
+            {selected ? (
+              <IssueDetail identifier={selected} />
+            ) : (
+              <div className="empty">Select an issue</div>
+            )}
+          </section>
+        </div>
+      );
+    }
+  }
+}
+export function ProjectDetailPage() {
+  return (
+    <PresenterScope name="ProjectDetailPage">
+      <ProjectDetailPageBinding />
+    </PresenterScope>
   );
 }
+function ProjectDetailPageBinding() {
+  const model = useProjectDetailPagePresenter();
+  const handlers = useActions(model.handlers);
+  return <ProjectDetailPageView model={{ ...model, handlers } as typeof model} />;
+}
 
-export function CycleDetailPage() {
-  const data = useLoaderData({ from: '/cycles/$number' }) as {
-    cycle: Cycle;
-    issues: Issue[];
-  };
-  const router = useRouter();
-  const [selected, setSelected] = useState<string | null>(data.issues[0]?.identifier ?? null);
-  const [cycle, setCycle] = useState(data.cycle);
-  const done = data.issues.filter((i) => i.status === 'done' || i.status === 'canceled').length;
-
-  if (cycle.number !== data.cycle.number) {
-    setCycle(data.cycle);
-    setSelected(data.issues[0]?.identifier ?? null);
+export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPagePresenter> }) {
+  switch (model._view) {
+    case 0: {
+      const { cycles, handlers } = model;
+      return (
+        <div className="main single">
+          <section className="pane">
+            <div className="pane-head">
+              <h1>Cycles</h1>
+              <button className="ghost" type="button" onClick={handlers.onClick0}>
+                New cycle
+              </button>
+            </div>
+            {cycles.length === 0 ? (
+              <div className="empty">No cycles yet. Start one to timebox work.</div>
+            ) : (
+              <div className="list">
+                {cycles.map((c) => (
+                  <Link
+                    className="row"
+                    key={c.number}
+                    to="/cycles/$number"
+                    params={{ number: String(c.number) }}
+                  >
+                    <span className="rail" />
+                    <span className="ident">{c.number}</span>
+                    <span>
+                      {c.status} · {c.startsAt.slice(0, 10)} → {c.endsAt.slice(0, 10)}
+                    </span>
+                    <span className="badge">{c.status}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      );
+    }
   }
-
-  async function save(body: Record<string, unknown>) {
-    const next = await api.patchCycle(cycle.number, body);
-    setCycle(next);
-    await router.invalidate();
-  }
-
+}
+export function CyclesPage() {
   return (
-    <div className="main">
-      <section className="pane">
-        <div className="pane-head">
-          <h1>Cycle {cycle.number}</h1>
-          <span className="muted">
-            {done}/{data.issues.length}
-          </span>
-          <select
-            className="field"
-            aria-label="Cycle status"
-            value={cycle.status}
-            onChange={(e) => void save({ status: e.target.value })}
-          >
-            {CYCLE_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="ghost"
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent('kotowari:create-issue', { detail: { cycleId: cycle.id } }),
-              )
-            }
-          >
-            New issue
-          </button>
-        </div>
-        <div className="detail">
-          <div className="muted">
-            {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
-          </div>
-          <IssueList
-            issues={data.issues}
-            selectedId={selected}
-            onSelect={setSelected}
-            openOnSelect={false}
-          />
-        </div>
-      </section>
-      <section className="pane">
-        {selected ? (
-          <IssueDetail identifier={selected} />
-        ) : (
-          <div className="empty">Select an issue</div>
-        )}
-      </section>
-    </div>
+    <PresenterScope name="CyclesPage">
+      <CyclesPageBinding />
+    </PresenterScope>
   );
+}
+function CyclesPageBinding() {
+  const model = useCyclesPagePresenter();
+  const handlers = useActions(model.handlers);
+  return <CyclesPageView model={{ ...model, handlers } as typeof model} />;
+}
+
+export function CycleDetailPageView({
+  model,
+}: {
+  model: ReturnType<typeof useCycleDetailPagePresenter>;
+}) {
+  switch (model._view) {
+    case 0: {
+      const { data, selected, cycle, done, handlers } = model;
+      return (
+        <div className="main">
+          <section className="pane">
+            <div className="pane-head">
+              <h1>Cycle {cycle.number}</h1>
+              <span className="muted">
+                {done}/{data.issues.length}
+              </span>
+              <select
+                className="field"
+                aria-label="Cycle status"
+                value={cycle.status}
+                onChange={handlers.Cycle_status_onChange0}
+              >
+                {CYCLE_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="ghost" onClick={handlers.onClick1}>
+                New issue
+              </button>
+            </div>
+            <div className="detail">
+              <div className="muted">
+                {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
+              </div>
+              <IssueList
+                issues={data.issues}
+                selectedId={selected}
+                onSelect={handlers.onSelect2}
+                openOnSelect={false}
+              />
+            </div>
+          </section>
+          <section className="pane">
+            {selected ? (
+              <IssueDetail identifier={selected} />
+            ) : (
+              <div className="empty">Select an issue</div>
+            )}
+          </section>
+        </div>
+      );
+    }
+  }
+}
+export function CycleDetailPage() {
+  return (
+    <PresenterScope name="CycleDetailPage">
+      <CycleDetailPageBinding />
+    </PresenterScope>
+  );
+}
+function CycleDetailPageBinding() {
+  const model = useCycleDetailPagePresenter();
+  const handlers = useActions(model.handlers);
+  return <CycleDetailPageView model={{ ...model, handlers } as typeof model} />;
 }
