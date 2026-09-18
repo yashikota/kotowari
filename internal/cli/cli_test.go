@@ -76,7 +76,7 @@ func TestRunVersionFlag(t *testing.T) {
 	}
 }
 
-func TestInitCheckAndDirtyStatus(t *testing.T) {
+func TestInitCheckAndStatus(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("KOTOWARI_HOME", dir)
 
@@ -100,7 +100,7 @@ func TestInitCheckAndDirtyStatus(t *testing.T) {
 	if err := cli.Run(context.Background(), []string{"kotowari", "status"}, &stdout, ioDiscard{}, "test"); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(stdout.String(), "dirty\tfalse") {
+	if !strings.Contains(stdout.String(), "path\t"+dir) {
 		t.Fatalf("status %q", stdout.String())
 	}
 
@@ -176,29 +176,18 @@ func TestStatusAndCheckWithoutWorkspace(t *testing.T) {
 	}
 }
 
-func TestStatusDirtyAfterIssueFile(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("KOTOWARI_HOME", dir)
-	if err := cli.Run(context.Background(), []string{"kotowari", "init"}, ioDiscard{}, ioDiscard{}, "test"); err != nil {
-		t.Fatal(err)
-	}
-	issue := filepath.Join(dir, "issues")
-	if err := os.MkdirAll(issue, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	md := "+++\ntitle = 'real'\nstatus = 'todo'\npriority = 0\ncreated = '2026-01-01T00:00:00Z'\nupdated = '2026-01-01T00:00:00Z'\n+++\n\n"
-	if err := os.WriteFile(filepath.Join(issue, "ISS-1.md"), []byte(md), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	var stdout bytes.Buffer
-	if err := cli.Run(context.Background(), []string{"kotowari", "status"}, &stdout, ioDiscard{}, "test"); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(stdout.String(), "dirty\ttrue") {
-		t.Fatalf("status %q", stdout.String())
-	}
-}
-
 type ioDiscard struct{}
 
 func (ioDiscard) Write(p []byte) (int, error) { return len(p), nil }
+
+func TestSyncCommandsRemoved(t *testing.T) {
+	for _, command := range []string{"push", "pull"} {
+		t.Run(command, func(t *testing.T) {
+			var stdout bytes.Buffer
+			err := cli.Run(context.Background(), []string{"kotowari", command}, &stdout, ioDiscard{}, "test")
+			if err == nil || !strings.Contains(err.Error(), "No help topic") {
+				t.Fatalf("expected unknown command, got %v", err)
+			}
+		})
+	}
+}

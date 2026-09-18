@@ -96,29 +96,31 @@ func TestEstablishedSupersedesCannotBeChanged(t *testing.T) {
 	}
 }
 
-func TestTemplateChangesAreDirty(t *testing.T) {
+func TestTemplateChangesContentHash(t *testing.T) {
 	s := openTest(t)
 	path := filepath.Join(s.Path(), "TEMPLATE", "custom.md")
 	if err := atomicWrite(path, []byte("before")); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.MarkPushed("digest"); err != nil {
+	before, err := s.ContentHash()
+	if err != nil {
 		t.Fatal(err)
 	}
 	if err := atomicWrite(path, []byte("after")); err != nil {
 		t.Fatal(err)
 	}
-	if dirty, err := s.Dirty(); err != nil || !dirty {
-		t.Fatalf("%v %v", dirty, err)
+	if after, err := s.ContentHash(); err != nil || after == before {
+		t.Fatalf("hash unchanged: %v", err)
 	}
-	if err := s.MarkPushed("digest2"); err != nil {
+	before, err = s.ContentHash()
+	if err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Remove(path); err != nil {
 		t.Fatal(err)
 	}
-	if dirty, err := s.Dirty(); err != nil || !dirty {
-		t.Fatalf("%v %v", dirty, err)
+	if after, err := s.ContentHash(); err != nil || after == before {
+		t.Fatalf("hash unchanged: %v", err)
 	}
 }
 

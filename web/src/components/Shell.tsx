@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.ts';
 import { STATIC_COMMANDS, cycleCommands, filterCommands, projectCommands } from '../commands.ts';
 import { actionFromKeyboard } from '../keymap.ts';
-import { formatStamp } from '../time.ts';
 import { ISSUE_STATUSES, PRIORITY_LABEL, STATUS_LABEL } from '../types.ts';
 import type {
   Cycle,
@@ -553,7 +552,6 @@ export function Shell() {
               void api
                 .patchWorkspace({
                   name: workspace.name,
-                  ghcrRef: workspace.ghcrRef,
                   timezone: workspace.timezone,
                 })
                 .then(setWorkspace)
@@ -570,15 +568,6 @@ export function Shell() {
               value={workspace.name}
               onChange={(e) => setWorkspace({ ...workspace, name: e.target.value })}
             />
-            <label className="sr-only" htmlFor="ws-ghcr">
-              GHCR reference
-            </label>
-            <input
-              id="ws-ghcr"
-              value={workspace.ghcrRef}
-              placeholder="ghcr.io/user/kotowari"
-              onChange={(e) => setWorkspace({ ...workspace, ghcrRef: e.target.value })}
-            />
             <label className="sr-only" htmlFor="ws-tz">
               Timezone
             </label>
@@ -589,17 +578,6 @@ export function Shell() {
               placeholder="UTC"
               onChange={(e) => setWorkspace({ ...workspace, timezone: e.target.value })}
             />
-            {workspace.dirty ? (
-              <div className="dirty" role="status">
-                Unpushed
-              </div>
-            ) : workspace.lastPushedAt ? (
-              <div className="muted">
-                Pushed {formatStamp(workspace.lastPushedAt, workspace.timezone)}
-              </div>
-            ) : (
-              <div className="muted">Never pushed</div>
-            )}
             <button className="ghost" type="submit">
               Save
             </button>

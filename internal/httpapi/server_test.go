@@ -455,7 +455,7 @@ func TestLabelTimezoneSortOrderAndDeletes(t *testing.T) {
 	}
 }
 
-func TestWorkspaceDirtyAfterUserContent(t *testing.T) {
+func TestWorkspaceHasNoSyncMetadata(t *testing.T) {
 	s := testAPI(t)
 	rec := doJSON(t, s, "GET", "/api/workspace", "")
 	if rec.Code != http.StatusOK {
@@ -465,8 +465,10 @@ func TestWorkspaceDirtyAfterUserContent(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &ws); err != nil {
 		t.Fatal(err)
 	}
-	if ws["dirty"] != false {
-		t.Fatalf("empty workspace dirty %#v", ws["dirty"])
+	for _, key := range []string{"dirty", "ghcrRef", "lastPushedAt", "lastPushedDigest"} {
+		if _, ok := ws[key]; ok {
+			t.Fatalf("unexpected sync field %s", key)
+		}
 	}
 	rec = doJSON(t, s, "POST", "/api/issues", `{"title":"Work"}`)
 	if rec.Code != http.StatusCreated {
@@ -476,7 +478,7 @@ func TestWorkspaceDirtyAfterUserContent(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &ws); err != nil {
 		t.Fatal(err)
 	}
-	if ws["dirty"] != true {
-		t.Fatalf("after create dirty %#v", ws["dirty"])
+	if _, ok := ws["dirty"]; ok {
+		t.Fatalf("unexpected dirty field after creating issue")
 	}
 }

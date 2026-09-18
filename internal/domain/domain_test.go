@@ -73,23 +73,6 @@ func TestIdentifierRoundTrip(t *testing.T) {
 	}
 }
 
-func TestIsDirty(t *testing.T) {
-	t.Parallel()
-	pushed := "2026-08-18T00:00:00Z"
-	if IsDirty("2026-08-18T00:00:00Z", nil, false) {
-		t.Fatal("fresh init without user content is not dirty")
-	}
-	if !IsDirty("2026-08-18T00:00:00Z", nil, true) {
-		t.Fatal("unpushed user content is dirty")
-	}
-	if IsDirty("2026-08-18T00:00:00Z", &pushed, true) {
-		t.Fatal("equal timestamps are not dirty")
-	}
-	if !IsDirty("2026-08-18T00:00:01Z", &pushed, true) {
-		t.Fatal("later updated_at is dirty")
-	}
-}
-
 func TestUniqueSlug(t *testing.T) {
 	t.Parallel()
 	used := map[string]struct{}{}
@@ -207,17 +190,6 @@ func TestParseIdentifierRejectsJunk(t *testing.T) {
 	n, ok := ParseIdentifier("ISS-01")
 	if !ok || n != 1 {
 		t.Fatalf("ISS-01: %d %v", n, ok)
-	}
-}
-
-func TestIsDirtyEmptyLastPush(t *testing.T) {
-	t.Parallel()
-	empty := ""
-	if IsDirty("2026-08-18T00:00:00Z", &empty, false) {
-		t.Fatal("empty last push without content is not dirty")
-	}
-	if !IsDirty("2026-08-18T00:00:00Z", &empty, true) {
-		t.Fatal("empty last push with content is dirty")
 	}
 }
 

@@ -136,11 +136,11 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 func TestUpdateWorkspaceRejectsEmptyName(t *testing.T) {
 	s := openTest(t)
 	empty := "  "
-	if _, err := s.UpdateWorkspace(&empty, nil, nil); !errors.Is(err, ErrValidation) {
+	if _, err := s.UpdateWorkspace(&empty, nil); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty name: %v", err)
 	}
 	tz := ""
-	if _, err := s.UpdateWorkspace(nil, nil, &tz); !errors.Is(err, ErrValidation) {
+	if _, err := s.UpdateWorkspace(nil, &tz); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty timezone: %v", err)
 	}
 }
@@ -268,27 +268,6 @@ func TestYAMLFrontmatterRejected(t *testing.T) {
 	}
 	if _, err := s.GetIssue(iss.Identifier); err == nil {
 		t.Fatal("yaml frontmatter should fail")
-	}
-}
-
-func TestHasUserContentIgnoresSeededLabels(t *testing.T) {
-	s := openTest(t)
-	has, err := s.HasUserContent()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if has {
-		t.Fatal("seeded labels are not user content")
-	}
-	if _, err := s.CreatePage("ADR", "adr", "", "proposed", nil, nil, nil, nil); err != nil {
-		t.Fatal(err)
-	}
-	has, err = s.HasUserContent()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !has {
-		t.Fatal("page is user content")
 	}
 }
 

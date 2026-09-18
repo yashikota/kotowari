@@ -11,13 +11,10 @@ import (
 	"strings"
 )
 
-// ContentHash excludes synchronization metadata, experiments and local AI history.
+// ContentHash tracks local changes for UI revision polling, excluding experiments and AI history.
 func (s *Store) ContentHash() (string, error) {
 	var result string
 	err := s.snapshot(func(m *mem) error {
-		m.Workspace.ContentHash = ""
-		m.Workspace.LastPushedAt = nil
-		m.Workspace.LastPushedDigest = nil
 		m.Workspace.UpdatedAt = ""
 		files, err := workspaceFiles(m)
 		if err != nil {
@@ -99,7 +96,7 @@ func hashFile(w io.Writer, name, path string) error {
 		return err
 	}
 	if !info.Mode().IsRegular() {
-		return validationf("synchronized file must be regular: %s", name)
+		return validationf("workspace file must be regular: %s", name)
 	}
 	if _, err := fmt.Fprintf(w, "%d:%s:%d:", len(name), name, info.Size()); err != nil {
 		return err
