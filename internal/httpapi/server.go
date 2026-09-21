@@ -32,17 +32,30 @@ func New(st *store.Store, dist fs.FS) *Server {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if origin := r.Header.Get("Origin"); origin != "" {
-		u, err := url.Parse(origin)
-		if err != nil || u.Host != r.Host {
-			http.Error(w, "origin denied", http.StatusForbidden)
+		if !originAllowed(r, origin) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "origin denied"})
 			return
 		}
 	}
 	if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
-		http.Error(w, "cross-site request denied", http.StatusForbidden)
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "cross-site request denied"})
 		return
 	}
 	s.mux.ServeHTTP(w, r)
+}
+
+func originAllowed(r *http.Request, origin string) bool {
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	if u.Host == r.Host {
+		return true
+	}
+	if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" && u.Host == fwd {
+		return true
+	}
+	return false
 }
 
 func (s *Server) routes() {
@@ -172,14 +185,18 @@ func (s *Server) listDiagnostics(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) patchWorkspace(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name     *string `json:"name"`
-		Timezone *string `json:"timezone"`
+		Name        *string `json:"name"`
+		Timezone    *string `json:"timezone"`
+		Locale      *string `json:"locale"`
+		URL         *string `json:"url"`
+		Description *string `json:"description"`
+		GitHubURL   *string `json:"githubUrl"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	ws, err := s.store.UpdateWorkspace(in.Name, in.Timezone)
+	ws, err := s.store.UpdateWorkspace(in.Name, in.Timezone, in.Locale, in.URL, in.Description, in.GitHubURL)
 	if err != nil {
 		writeError(w, err)
 		return

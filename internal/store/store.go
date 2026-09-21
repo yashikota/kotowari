@@ -21,9 +21,13 @@ type Store struct {
 }
 
 type Workspace struct {
-	Name      string `json:"name"`
-	Timezone  string `json:"timezone"`
-	UpdatedAt string `json:"updatedAt"`
+	Name        string `json:"name"`
+	Timezone    string `json:"timezone"`
+	Locale      string `json:"locale"`
+	URL         string `json:"url"`
+	Description string `json:"description"`
+	GitHubURL   string `json:"githubUrl"`
+	UpdatedAt   string `json:"updatedAt"`
 }
 
 type Label struct {
@@ -258,6 +262,10 @@ type mem struct {
 type workspaceFile struct {
 	Name         string `toml:"name"`
 	Timezone     string `toml:"timezone"`
+	Locale       string `toml:"locale,omitempty"`
+	URL          string `toml:"url,omitempty"`
+	Description  string `toml:"description,omitempty"`
+	GitHubURL    string `toml:"githubUrl,omitempty"`
 	IssuePrefix  string `toml:"issuePrefix,omitempty"`
 	ADRPrefix    string `toml:"adrPrefix,omitempty"`
 	IssueCounter int    `toml:"issueCounter"`

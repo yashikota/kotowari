@@ -34,7 +34,7 @@ export function useIssueListPresenter({
       if (issue.parentId) counts.set(issue.parentId, (counts.get(issue.parentId) ?? 0) + 1);
     return counts;
   }, [issues]);
-  const windowed = useWindowedRows(issues.length, 38, ids.indexOf(selectedId ?? ''));
+  const windowed = useWindowedRows(issues.length, 36, ids.indexOf(selectedId ?? ''));
 
   useKeyboard((e) => {
     const action = actionFromKeyboard(e);

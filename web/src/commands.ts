@@ -16,6 +16,7 @@ export const STATIC_COMMANDS: Command[] = [
   { id: 'goto-projects', title: 'Go to Projects' },
   { id: 'goto-cycles', title: 'Go to Cycles' },
   { id: 'goto-pages', title: 'Go to Pages', keywords: 'docs memo' },
+  { id: 'goto-config', title: 'Go to Config', keywords: 'settings workspace timezone' },
   { id: 'goto-active-cycle', title: 'Go to active cycle', keywords: 'sprint current' },
   { id: 'copy-identifier', title: 'Copy identifier', keywords: 'id iss clipboard' },
   { id: 'keyboard-help', title: 'Keyboard shortcuts', hint: '?', keywords: 'help keys' },

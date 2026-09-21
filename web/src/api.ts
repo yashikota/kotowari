@@ -28,7 +28,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     return undefined as T;
   }
   const text = await res.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text) as unknown;
+    } catch {
+      if (!res.ok) {
+        throw new Error(text.trim() || res.statusText);
+      }
+      throw new Error(`invalid response: ${text.slice(0, 120)}`);
+    }
+  }
   if (!res.ok) {
     const err = data as { error?: string } | null;
     throw new Error(err?.error ?? res.statusText);

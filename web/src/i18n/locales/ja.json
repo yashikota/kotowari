@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "issues": "イシュー",
+    "board": "ボード",
+    "adrs": "ADR",
+    "projects": "プロジェクト",
+    "cycles": "サイクル",
+    "pages": "ページ",
+    "config": "設定",
+    "views": "ビュー",
+    "newView": "新規ビュー",
+    "cycleActive": "サイクル {{number}} 進行中"
+  },
+  "workspace": {
+    "defaultName": "ワークスペース"
+  },
+  "home": {
+    "title": "ホーム",
+    "namePlaceholder": "無題",
+    "editLink": "編集",
+    "save": "保存",
+    "saved": "保存しました",
+    "overview": "ワークスペース",
+    "openIssues": "未完了イシュー",
+    "totalIssues": "合計 {{count}} 件",
+    "projects": "プロジェクト",
+    "adrs": "ADR"
+  },
+  "config": {
+    "title": "設定",
+    "workspace": "ワークスペース",
+    "name": "名前",
+    "url": "Web サイト",
+    "urlPlaceholder": "https://example.com",
+    "githubUrl": "GitHub",
+    "githubUrlPlaceholder": "https://github.com/org/repo",
+    "description": "説明",
+    "descriptionPlaceholder": "このワークスペースの目的や背景",
+    "timezone": "タイムゾーン",
+    "language": "言語",
+    "noTimezone": "タイムゾーンがありません",
+    "saveWorkspace": "ワークスペースを保存",
+    "saved": "ワークスペースを保存しました",
+    "application": "アプリケーション",
+    "commandPalette": "コマンドパレット",
+    "keyboardShortcuts": "キーボードショートカット",
+    "diagnostics": "診断",
+    "noDiagnostics": "診断結果はありません。ワークスペースファイルは整合しています。"
+  },
+  "modal": {
+    "createIssue": "イシューを作成",
+    "createAdr": "ADR を作成",
+    "createPage": "ページを作成",
+    "createView": "ビューを作成",
+    "issueTitle": "イシューのタイトル",
+    "adrTitle": "ADR のタイトル",
+    "pageTitle": "ページのタイトル",
+    "viewName": "ビュー名",
+    "enterHint": "Enter で改行 · Ctrl/⌘+Enter で作成",
+    "create": "作成",
+    "willLinkIssue": "イシュー {{issue}} にリンクします"
+  },
+  "field": {
+    "status": "ステータス",
+    "priority": "優先度",
+    "project": "プロジェクト",
+    "cycle": "サイクル",
+    "noProject": "プロジェクトなし",
+    "noCycle": "サイクルなし",
+    "cycleN": "サイクル {{number}}"
+  },
+  "issueStatus": {
+    "backlog": "バックログ",
+    "todo": "Todo",
+    "in_progress": "進行中",
+    "done": "完了",
+    "canceled": "キャンセル"
+  },
+  "priority": {
+    "0": "優先度なし",
+    "1": "緊急",
+    "2": "高",
+    "3": "中",
+    "4": "低"
+  },
+  "adrStatus": {
+    "proposed": "提案",
+    "rejected": "却下",
+    "accepted": "承認",
+    "deprecated": "非推奨",
+    "superseded": "置換"
+  },
+  "activity": {
+    "created": "作成",
+    "createdWithId": "{{id}} を作成",
+    "statusChanged": "ステータス {{from}} → {{to}}",
+    "commented": "メモを追加"
+  },
+  "common": {
+    "error": "エラー",
+    "notFound": "見つかりません",
+    "dismiss": "閉じる",
+    "saveFailed": "保存に失敗しました"
+  }
+}

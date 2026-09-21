@@ -31,6 +31,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const [draft, setDraft] = useState('');
   const [subTitle, setSubTitle] = useState('');
   const [labelName, setLabelName] = useState('');
+  const [focusSub, setFocusSub] = useState(0);
+  const [focusLabel, setFocusLabel] = useState(0);
+  const [focusNote, setFocusNote] = useState(0);
   const [adrPick, setAdrPick] = useState('');
   const [timeZone, setTimeZone] = useState('UTC');
   const [copied, setCopied] = useState(false);
@@ -101,6 +104,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     }
     await api.createIssue({ title, parentId });
     setSubTitle('');
+    setFocusSub((n) => n + 1);
     await router.invalidate();
     signals.dispatchEvent(new Event('kotowari:refresh'));
     await reload();
@@ -116,6 +120,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       color: LABEL_COLORS[labels.length % LABEL_COLORS.length] ?? '#c4a574',
     });
     setLabelName('');
+    setFocusLabel((n) => n + 1);
     setLabels(await api.labels());
     await patch({ labelIds: [...(issue?.labels ?? []).map((l) => l.id), created.id] });
   }
@@ -143,6 +148,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     draft,
     subTitle,
     labelName,
+    focusSub,
+    focusLabel,
+    focusNote,
     adrPick,
     timeZone,
     copied,
@@ -271,6 +279,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
           }
           return api.addComment(identifier, body).then(async () => {
             setDraft('');
+            setFocusNote((n) => n + 1);
             setComments(await api.comments(identifier));
             setActivities(await api.activities(identifier));
           });

@@ -1,20 +1,42 @@
 import { Link } from '@tanstack/react-router';
+import {
+  Alert,
+  Button,
+  Grid,
+  Group,
+  NativeSelect,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
+import { useTranslation } from 'react-i18next';
+import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { formatActivity } from '../activity.ts';
+import { LabelChip, MetaBadge } from '../mantine-ui.tsx';
 import { formatStamp } from '../time.ts';
-import { ISSUE_STATUSES, PRIORITY_LABEL, STATUS_LABEL } from '../types.ts';
+import { ISSUE_STATUSES } from '../types.ts';
+import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
+
 export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDetailPresenter> }) {
+  useTranslation();
+
   switch (model._view) {
     case 0: {
       const { error } = model;
-      return <div className="error">{error}</div>;
+      return <Alert color="red">{error}</Alert>;
     }
     case 1: {
-      return <div className="empty">Loading…</div>;
+      return (
+        <Text c="dimmed" ta="center" py="xl">
+          Loading…
+        </Text>
+      );
     }
     case 2: {
       const {
@@ -28,6 +50,9 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
         draft,
         subTitle,
         labelName,
+        focusSub,
+        focusLabel,
+        focusNote,
         adrPick,
         timeZone,
         copied,
@@ -39,245 +64,263 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
         unlinkedAdrs,
         handlers,
       } = model;
+      const autofocusTitle = useAutofocusTarget('title');
+      const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [identifier]);
+      const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);
+      const labelRef = useFocusWhen<HTMLTextAreaElement>(focusLabel > 0, [focusLabel]);
+      const noteRef = useFocusWhen<HTMLTextAreaElement>(focusNote > 0, [focusNote]);
       return (
-        <div className="detail">
-          <div className="ident-row">
-            <button
-              type="button"
-              className="ident ident-copy"
-              aria-label="Copy identifier"
-              onClick={handlers.Copy_identifier_onClick0}
-            >
-              {copied ? 'Copied' : issue.identifier}
-            </button>
-            {issue.parentIdentifier ? (
-              <button type="button" className="crumb" onClick={handlers.onClick1}>
-                {issue.parentIdentifier}
-              </button>
-            ) : null}
-            <span className="muted">{formatStamp(issue.updatedAt, timeZone)}</span>
-            <button type="button" className="ghost danger" onClick={handlers.onClick2}>
+        <Stack gap="lg">
+          <Group justify="space-between" wrap="wrap">
+            <Group gap="sm">
+              <Button
+                type="button"
+                variant="subtle"
+                aria-label="Copy identifier"
+                onClick={handlers.Copy_identifier_onClick0}
+              >
+                {copied ? 'Copied' : issue.identifier}
+              </Button>
+              {issue.parentIdentifier ? (
+                <Button type="button" variant="subtle" onClick={handlers.onClick1}>
+                  {issue.parentIdentifier}
+                </Button>
+              ) : null}
+              <Text c="dimmed" size="sm">
+                {formatStamp(issue.updatedAt, timeZone)}
+              </Text>
+            </Group>
+            <Button type="button" variant="subtle" color="red" onClick={handlers.onClick2}>
               Delete
-            </button>
-          </div>
-          <input
-            className="title-input"
+            </Button>
+          </Group>
+
+          <TextInput
+            ref={titleRef}
             aria-label="Issue title"
             value={issue.title}
             onChange={handlers.Issue_title_onChange3}
             onBlur={handlers.Issue_title_onBlur4}
+            size="xl"
+            variant="unstyled"
           />
-          <div className="prop-grid">
-            <label>
-              <span>Status</span>
-              <select aria-label="Status" value={issue.status} onChange={handlers.Status_onChange5}>
-                {ISSUE_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABEL[s]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Priority</span>
-              <select
+
+          <Grid>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+              <NativeSelect
+                label="Status"
+                aria-label="Status"
+                value={issue.status}
+                onChange={handlers.Status_onChange5}
+                data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+              <NativeSelect
+                label="Priority"
                 aria-label="Priority"
-                value={issue.priority}
+                value={String(issue.priority)}
                 onChange={handlers.Priority_onChange6}
-              >
-                {PRIORITY_LABEL.map((label, i) => (
-                  <option key={label} value={i}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Project</span>
-              <select
+                data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+              <NativeSelect
+                label="Project"
                 aria-label="Project"
-                value={issue.projectId ?? ''}
+                value={issue.projectId != null ? String(issue.projectId) : ''}
                 onChange={handlers.Project_onChange7}
-              >
-                <option value="">No project</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Cycle</span>
-              <select
+                data={[
+                  { value: '', label: 'No project' },
+                  ...projects.map((p) => ({ value: String(p.id), label: p.name })),
+                ]}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+              <NativeSelect
+                label="Cycle"
                 aria-label="Cycle"
-                value={issue.cycleId ?? ''}
+                value={issue.cycleId != null ? String(issue.cycleId) : ''}
                 onChange={handlers.Cycle_onChange8}
-              >
-                <option value="">No cycle</option>
-                {cycles.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    Cycle {c.number}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Parent</span>
-              <select
+                data={[
+                  { value: '', label: 'No cycle' },
+                  ...cycles.map((c) => ({ value: String(c.id), label: `Cycle ${c.number}` })),
+                ]}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+              <NativeSelect
+                label="Parent"
                 aria-label="Parent"
-                value={issue.parentId ?? ''}
+                value={issue.parentId != null ? String(issue.parentId) : ''}
                 onChange={handlers.Parent_onChange9}
-              >
-                <option value="">No parent</option>
-                {parentOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.identifier} {p.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Due</span>
-              <input
+                data={[
+                  { value: '', label: 'No parent' },
+                  ...parentOptions.map((p) => ({
+                    value: String(p.id),
+                    label: `${p.identifier} ${p.title}`,
+                  })),
+                ]}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+              <TextInput
                 type="date"
+                label="Due"
                 aria-label="Due date"
                 value={due}
                 onChange={handlers.Due_date_onChange10}
               />
-            </label>
-          </div>
-          <div>
-            <div className="muted">Labels</div>
-            <div className="chips" role="group" aria-label="Labels">
+            </Grid.Col>
+          </Grid>
+
+          <Stack gap="xs">
+            <Text c="dimmed" size="sm">
+              Labels
+            </Text>
+            <Group gap="xs" role="group" aria-label="Labels">
               {labels.map((l) => {
                 const on = selectedLabelIds.has(l.id);
                 return (
-                  <button
-                    type="button"
+                  <LabelChip
                     key={l.id}
-                    className={`chip ${on ? 'on' : ''}`}
-                    aria-pressed={on}
-                    style={{ '--chip': l.color } as React.CSSProperties}
+                    name={l.name}
+                    color={l.color}
+                    selected={on}
                     onClick={() => handlers.onClick11(on, l)}
-                  >
-                    {l.name}
-                  </button>
+                  />
                 );
               })}
-            </div>
-            <textarea
+            </Group>
+            <Textarea
+              ref={labelRef}
               rows={2}
-              className="field"
               aria-label="New label"
               placeholder="New label"
               value={labelName}
               onChange={handlers.New_label_onChange12}
               onKeyDown={handlers.New_label_onKeyDown13}
             />
-          </div>
-          <div>
-            <div className="muted">ADRs</div>
+          </Stack>
+
+          <Stack gap="xs">
+            <Text c="dimmed" size="sm">
+              ADRs
+            </Text>
             {linkedAdrs.length === 0 ? (
-              <div className="empty-inline">No linked decisions.</div>
+              <Text c="dimmed" size="sm">
+                No linked decisions.
+              </Text>
             ) : (
-              <div className="list" role="list">
+              <Stack gap="xs" role="list">
                 {linkedAdrs.map((a) => (
-                  <div className="row" key={a.identifier}>
-                    <Link
-                      to="/adrs/$identifier"
-                      params={{ identifier: a.identifier }}
-                      className="ident"
-                    >
-                      {a.identifier}
-                    </Link>
-                    <span>{a.title}</span>
-                    <span className="badge">{a.status}</span>
-                    <button
+                  <Group key={a.identifier} justify="space-between" wrap="nowrap">
+                    <Group gap="sm" wrap="nowrap">
+                      <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
+                        {a.identifier}
+                      </Link>
+                      <Text>{a.title}</Text>
+                      <MetaBadge>{a.status}</MetaBadge>
+                    </Group>
+                    <Button
                       type="button"
-                      className="ghost"
+                      variant="subtle"
                       aria-label={`Unlink ${a.identifier}`}
                       onClick={() => handlers.onClick14(a)}
                     >
                       Unlink
-                    </button>
-                  </div>
+                    </Button>
+                  </Group>
                 ))}
-              </div>
+              </Stack>
             )}
-            <div className="props">
-              <label>
-                <span className="sr-only">Link ADR</span>
-                <select
-                  aria-label="Link ADR"
-                  value={adrPick}
-                  onChange={handlers.Link_ADR_onChange15}
-                >
-                  <option value="">Link an ADR</option>
-                  {unlinkedAdrs.map((a) => (
-                    <option key={a.identifier} value={String(a.number)}>
-                      {a.identifier} {a.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
+            <Group align="flex-end" wrap="wrap">
+              <NativeSelect
+                aria-label="Link ADR"
+                value={adrPick}
+                onChange={handlers.Link_ADR_onChange15}
+                data={[
+                  { value: '', label: 'Link an ADR' },
+                  ...unlinkedAdrs.map((a) => ({
+                    value: String(a.number),
+                    label: `${a.identifier} ${a.title}`,
+                  })),
+                ]}
+                style={{ flex: 1, minWidth: 200 }}
+              />
+              <Button
                 type="button"
-                className="ghost"
+                variant="subtle"
                 disabled={!adrPick}
                 onClick={handlers.onClick16}
               >
                 Link
-              </button>
-              <button type="button" className="ghost" onClick={handlers.onClick17}>
+              </Button>
+              <Button type="button" variant="subtle" onClick={handlers.onClick17}>
                 New ADR
-              </button>
-            </div>
-          </div>
+              </Button>
+            </Group>
+          </Stack>
+
           <AIPanel kind="issues" id={identifier} />
           <DocumentEditor documentKey={`issues/${identifier}/body`} />
-          <div>
-            <div className="muted">Sub-issues</div>
+
+          <Stack gap="xs">
+            <Text c="dimmed" size="sm">
+              Sub-issues
+            </Text>
             {children.length === 0 ? (
-              <div className="empty-inline">Break this into smaller work.</div>
+              <Text c="dimmed" size="sm">
+                Break this into smaller work.
+              </Text>
             ) : (
-              <div className="list">
+              <Stack gap="xs">
                 {children.map((c) => (
-                  <button
+                  <Button
                     type="button"
-                    className="row"
+                    variant="subtle"
                     key={c.identifier}
                     onClick={() => handlers.onClick18(c)}
+                    fullWidth
+                    styles={{ inner: { justifyContent: 'flex-start' } }}
                   >
-                    <span className="rail" />
-                    <span className="ident">{c.identifier}</span>
-                    <span>{c.title}</span>
-                    <span className="badge">{STATUS_LABEL[c.status]}</span>
-                  </button>
+                    <Group justify="space-between" wrap="nowrap" w="100%">
+                      <Group gap="sm" wrap="nowrap">
+                        <Text fw={500}>{c.identifier}</Text>
+                        <Text>{c.title}</Text>
+                      </Group>
+                      <MetaBadge>{issueStatusLabel(c.status)}</MetaBadge>
+                    </Group>
+                  </Button>
                 ))}
-              </div>
+              </Stack>
             )}
-            <textarea
+            <Textarea
+              ref={subRef}
               rows={2}
-              className="field"
               aria-label="New sub-issue"
               placeholder="Add sub-issue"
               value={subTitle}
               onChange={handlers.New_sub_issue_onChange19}
               onKeyDown={handlers.New_sub_issue_onKeyDown20}
             />
-          </div>
-          <div>
-            <div className="muted">Notes</div>
-            <div className="comments">
+          </Stack>
+
+          <Stack gap="xs">
+            <Text c="dimmed" size="sm">
+              Notes
+            </Text>
+            <Stack gap="sm">
               {comments.map((c) => (
-                <div className="comment" key={c.id}>
-                  <div className="muted">{formatStamp(c.createdAt, timeZone)}</div>
-                  <div>{c.body}</div>
-                </div>
+                <Stack key={c.id} gap={4}>
+                  <Text c="dimmed" size="sm">
+                    {formatStamp(c.createdAt, timeZone)}
+                  </Text>
+                  <Text>{c.body}</Text>
+                </Stack>
               ))}
-              <textarea
-                className="field"
+              <Textarea
+                ref={noteRef}
                 rows={3}
                 aria-label="New note"
                 placeholder="Note"
@@ -285,25 +328,33 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
                 onChange={handlers.New_note_onChange21}
                 onKeyDown={handlers.New_note_onKeyDown22}
               />
-              <span className="muted">Mod+Enter to save</span>
-            </div>
-          </div>
-          <div>
-            <div className="muted">Activity</div>
-            <div className="comments">
+              <Text c="dimmed" size="sm">
+                Mod+Enter to save
+              </Text>
+            </Stack>
+          </Stack>
+
+          <Stack gap="xs">
+            <Text c="dimmed" size="sm">
+              Activity
+            </Text>
+            <Stack gap="sm">
               {activities.map((a) => (
-                <div className="comment" key={a.id}>
-                  <span>{formatActivity(a.action, a.payload)}</span>{' '}
-                  <span className="muted">{formatStamp(a.createdAt, timeZone)}</span>
-                </div>
+                <Text key={a.id}>
+                  {formatActivity(a.action, a.payload)}{' '}
+                  <Text span c="dimmed" size="sm">
+                    {formatStamp(a.createdAt, timeZone)}
+                  </Text>
+                </Text>
               ))}
-            </div>
-          </div>
-        </div>
+            </Stack>
+          </Stack>
+        </Stack>
       );
     }
   }
 }
+
 export function IssueDetail(props: Parameters<typeof useIssueDetailPresenter>[0]) {
   return (
     <PresenterScope name="IssueDetail">
@@ -311,6 +362,7 @@ export function IssueDetail(props: Parameters<typeof useIssueDetailPresenter>[0]
     </PresenterScope>
   );
 }
+
 function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]) {
   const model = useIssueDetailPresenter(props);
   const handlers = useActions(model.handlers);

@@ -1,48 +1,66 @@
+import type * as React from 'react';
+import { Box, Group, Modal, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { Shortcut } from '../mantine-ui.tsx';
+
 import { PresenterScope, useActions } from '../application/Root.tsx';
+import { useFocusWhen } from '../focus.ts';
 import { usePalettePresenter } from '../presenters/Palette.tsx';
+
 export function PaletteView({ model }: { model: ReturnType<typeof usePalettePresenter> }) {
   switch (model._view) {
     case 0: {
       const { query, commands, active, handlers } = model;
+      const searchRef = useFocusWhen<HTMLInputElement>(true);
       return (
-        <div className="overlay" onClick={handlers.onClick0}>
-          <div
-            className="palette"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Command palette"
-            onClick={handlers.Command_palette_onClick1}
-          >
-            <input
-              autoFocus
+        <Modal
+          opened
+          onClose={() => handlers.onClick0({} as React.MouseEvent<HTMLDivElement>)}
+          title="Command palette"
+          aria-label="Command palette"
+          centered
+          size="lg"
+          withCloseButton={false}
+          autoFocus={false}
+        >
+          <Box onClick={handlers.Command_palette_onClick1}>
+            <TextInput
+              ref={searchRef}
               aria-label="Command search"
               placeholder="Type a command or search…"
               value={query}
               onChange={handlers.Command_search_onChange2}
               onKeyDown={handlers.Command_search_onKeyDown3}
+              mb="sm"
             />
-            <div className="palette-list" role="listbox">
-              {commands.map((c, i) => (
-                <button
-                  type="button"
-                  key={c.id + i}
-                  role="option"
-                  aria-selected={i === active}
-                  className={`palette-item ${i === active ? 'active' : ''}`}
-                  onMouseEnter={() => handlers.onMouseEnter4(i)}
-                  onClick={() => handlers.onClick5(c)}
-                >
-                  <span>{c.title}</span>
-                  {c.hint ? <span className="kbd">{c.hint}</span> : null}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+            <ScrollArea h={320} scrollbars="y">
+              <Box role="listbox">
+                {commands.map((c, i) => (
+                  <UnstyledButton
+                    key={c.id + i}
+                    role="option"
+                    aria-selected={i === active}
+                    w="100%"
+                    px="sm"
+                    py="xs"
+                    bg={i === active ? 'var(--mantine-color-gray-light)' : undefined}
+                    onMouseEnter={() => handlers.onMouseEnter4(i)}
+                    onClick={() => handlers.onClick5(c)}
+                  >
+                    <Group justify="space-between" wrap="nowrap">
+                      <Text size="sm">{c.title}</Text>
+                      {c.hint ? <Shortcut>{c.hint}</Shortcut> : null}
+                    </Group>
+                  </UnstyledButton>
+                ))}
+              </Box>
+            </ScrollArea>
+          </Box>
+        </Modal>
       );
     }
   }
 }
+
 export function Palette(props: Parameters<typeof usePalettePresenter>[0]) {
   return (
     <PresenterScope name="Palette">
@@ -50,6 +68,7 @@ export function Palette(props: Parameters<typeof usePalettePresenter>[0]) {
     </PresenterScope>
   );
 }
+
 function PaletteBinding(props: Parameters<typeof usePalettePresenter>[0]) {
   const model = usePalettePresenter(props);
   const handlers = useActions(model.handlers);

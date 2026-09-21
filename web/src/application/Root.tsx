@@ -9,6 +9,9 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Alert, Button, Group } from '@mantine/core';
+import { LocaleSync } from './LocaleSync.tsx';
 import { EventScope, mediator } from './mediator.ts';
 import type { Overlay } from './mediator.ts';
 import { isSubmitShortcut } from '../keymap.ts';
@@ -113,14 +116,22 @@ export function useOverlay() {
 }
 
 function ErrorNotice() {
+  const { t } = useTranslation();
   const error = useSyncExternalStore(mediator.subscribe, mediator.getError);
   return error ? (
-    <div className="root-error" role="alert">
-      {error}
-      <button type="button" onClick={() => mediator.clearError()}>
-        Dismiss
-      </button>
-    </div>
+    <Alert
+      color="red"
+      variant="filled"
+      role="alert"
+      styles={{ root: { position: 'fixed', bottom: 16, right: 16, zIndex: 1000, maxWidth: 420 } }}
+    >
+      <Group justify="space-between" wrap="nowrap" align="flex-start">
+        <span>{error}</span>
+        <Button type="button" variant="white" color="red" size="compact-xs" onClick={() => mediator.clearError()}>
+          {t('common.dismiss')}
+        </Button>
+      </Group>
+    </Alert>
   ) : null;
 }
 
@@ -216,6 +227,7 @@ export function Root({
   }, []);
   return (
     <ScopeContext.Provider value={mediator.root}>
+      <LocaleSync />
       <div
         style={{ display: 'contents' }}
         onClickCapture={(event) => {

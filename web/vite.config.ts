@@ -1,11 +1,38 @@
 import { defineConfig } from 'vite-plus';
 import react from '@vitejs/plugin-react';
 
+const devOrigin = process.env.VITE_DEV_ORIGIN;
+const devOriginUrl = devOrigin ? new URL(devOrigin) : null;
+
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '127.0.0.1',
+    port: 5182,
+    strictPort: false,
+    allowedHosts: true,
+    ...(devOriginUrl ? { origin: devOrigin } : {}),
+    ...(devOriginUrl?.protocol === 'https:'
+      ? {
+          ws: {
+            protocol: 'wss',
+            host: devOriginUrl.hostname,
+            clientPort: devOriginUrl.port ? Number(devOriginUrl.port) : 443,
+          },
+        }
+      : {}),
     proxy: {
-      '/api': 'http://127.0.0.1:7730',
+      '/api': {
+        target: 'http://127.0.0.1:7730',
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            const host = req.headers.host;
+            if (typeof host === 'string' && host) {
+              proxyReq.setHeader('X-Forwarded-Host', host);
+            }
+          });
+        },
+      },
     },
   },
   fmt: {

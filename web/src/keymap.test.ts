@@ -56,6 +56,15 @@ describe('actionFromKeyboard', () => {
         ctrlKey: false,
         target: body,
       }),
+    ).toBe('nav-1');
+    expect(
+      actionFromKeyboard({
+        key: '1',
+        shiftKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
     ).toBe('priority-1');
     expect(
       actionFromKeyboard({
@@ -116,10 +125,36 @@ describe('actionFromKeyboard', () => {
         ctrlKey: false,
         target: body,
       }),
+    ).toBe('nav-2');
+    expect(
+      actionFromKeyboard({
+        key: '3',
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('nav-3');
+    expect(
+      actionFromKeyboard({
+        key: '4',
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('nav-4');
+    expect(
+      actionFromKeyboard({
+        key: '2',
+        shiftKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
     ).toBe('priority-2');
     expect(
       actionFromKeyboard({
         key: '3',
+        shiftKey: true,
         metaKey: false,
         ctrlKey: false,
         target: body,
@@ -128,11 +163,20 @@ describe('actionFromKeyboard', () => {
     expect(
       actionFromKeyboard({
         key: '4',
+        shiftKey: true,
         metaKey: false,
         ctrlKey: false,
         target: body,
       }),
     ).toBe('priority-4');
+    expect(
+      actionFromKeyboard({
+        key: '0',
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('nav-0');
   });
 
   it('opens the palette with ctrl+k', () => {

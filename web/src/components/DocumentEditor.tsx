@@ -1,5 +1,25 @@
+import {
+  Accordion,
+  Alert,
+  Anchor,
+  Box,
+  Button,
+  Code,
+  Group,
+  List,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Text,
+  Textarea,
+  Title,
+} from '@mantine/core';
+import { MarkdownContent } from '../mantine-ui.tsx';
+
 import { PresenterScope, useActions } from '../application/Root.tsx';
+import { useFocusWhen } from '../focus.ts';
 import { useDocumentEditorPresenter, useEditorPresenter } from '../presenters/DocumentEditor.tsx';
+
 export function DocumentEditorView({
   model,
 }: {
@@ -12,6 +32,7 @@ export function DocumentEditorView({
     }
   }
 }
+
 export function DocumentEditor(props: Parameters<typeof useDocumentEditorPresenter>[0]) {
   return (
     <PresenterScope name="DocumentEditor">
@@ -19,6 +40,7 @@ export function DocumentEditor(props: Parameters<typeof useDocumentEditorPresent
     </PresenterScope>
   );
 }
+
 function DocumentEditorBinding(props: Parameters<typeof useDocumentEditorPresenter>[0]) {
   const model = useDocumentEditorPresenter(props);
   const handlers = useActions(model.handlers);
@@ -43,102 +65,132 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
         conflict,
         handlers,
       } = model;
+      const editRef = useFocusWhen<HTMLTextAreaElement>(mode === 'edit', [mode]);
       return (
-        <div className="md-field document-editor" aria-busy={busy}>
-          <div className="seg" aria-label="Document view">
-            <button type="button" aria-pressed={mode === 'preview'} onClick={handlers.onClick0}>
-              Preview
-            </button>
-            <button type="button" aria-pressed={mode === 'edit'} onClick={handlers.onClick1}>
-              Edit
-            </button>
-            <button type="button" aria-pressed={mode === 'compare'} onClick={handlers.onClick2}>
-              Compare
-            </button>
-            <button
-              type="button"
-              disabled={!server || busy || conflict || !dirty.current}
-              onClick={handlers.onClick3}
-            >
-              Save
-            </button>
-            <button type="button" onClick={handlers.onClick4}>
-              History
-            </button>
-            <span role="status">{status}</span>
-          </div>
-          {error && (
-            <p role="alert" className="error">
+        <Stack gap="md" aria-busy={busy}>
+          <Group justify="space-between" wrap="wrap">
+            <SegmentedControl
+              aria-label="Document view"
+              value={mode}
+              onChange={(value) => {
+                if (value === 'preview') handlers.onClick0();
+                else if (value === 'edit') handlers.onClick1();
+                else handlers.onClick2();
+              }}
+              data={[
+                { label: 'Preview', value: 'preview' },
+                { label: 'Edit', value: 'edit' },
+                { label: 'Compare', value: 'compare' },
+              ]}
+            />
+            <Group gap="xs">
+              <Button
+                type="button"
+                disabled={!server || busy || conflict || !dirty.current}
+                onClick={handlers.onClick3}
+              >
+                Save
+              </Button>
+              <Button type="button" variant="default" onClick={handlers.onClick4}>
+                History
+              </Button>
+              <Text component="span" role="status" size="sm" c="dimmed">
+                {status}
+              </Text>
+            </Group>
+          </Group>
+
+          {error ? (
+            <Alert color="red" role="alert">
               {error}
-            </p>
-          )}
-          {conflict && (
-            <div role="alert" className="diag">
+            </Alert>
+          ) : null}
+
+          {conflict ? (
+            <Alert color="yellow" role="alert" title="Document changed on disk">
               The document changed on disk. Your draft is preserved. Compare both versions, then
               merge your changes.
-              <button type="button" onClick={handlers.onClick5}>
-                Compare versions
-              </button>
-              <button type="button" onClick={handlers.onClick6}>
-                Use current version as base
-              </button>
-            </div>
-          )}
-          {history.length > 0 && (
-            <details open>
-              <summary>Previous versions</summary>
-              <ul>
-                {history.map((h) => (
-                  <li key={h.revision}>
-                    <button type="button" onClick={() => handlers.onClick7(h)}>
-                      {h.savedAt} — Restore as draft
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-          {mode !== 'preview' && (
-            <textarea
-              className="body-input"
+              <Group mt="sm" gap="xs">
+                <Button type="button" size="xs" onClick={handlers.onClick5}>
+                  Compare versions
+                </Button>
+                <Button type="button" size="xs" variant="default" onClick={handlers.onClick6}>
+                  Use current version as base
+                </Button>
+              </Group>
+            </Alert>
+          ) : null}
+
+          {history.length > 0 ? (
+            <Accordion defaultValue="history">
+              <Accordion.Item value="history">
+                <Accordion.Control>Previous versions</Accordion.Control>
+                <Accordion.Panel>
+                  <Stack gap="xs">
+                    {history.map((h) => (
+                      <Button
+                        type="button"
+                        key={h.revision}
+                        variant="subtle"
+                        onClick={() => handlers.onClick7(h)}
+                      >
+                        {h.savedAt} — Restore as draft
+                      </Button>
+                    ))}
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          ) : null}
+
+          {mode !== 'preview' ? (
+            <Textarea
+              ref={editRef}
               aria-label="Markdown body"
               disabled={!server || busy}
               value={draft}
               onChange={handlers.Markdown_body_onChange8}
               onKeyDown={handlers.Markdown_body_onKeyDown9}
+              minRows={16}
+              autosize
             />
-          )}
-          {mode === 'compare' && (
-            <div className="document-comparison">
-              <div>
-                <h3>Current document</h3>
-                <pre>{server?.body}</pre>
-              </div>
-              <div>
-                <h3>Your draft</h3>
-                <pre>{draft}</pre>
-              </div>
-            </div>
-          )}
-          {mode !== 'edit' && (
+          ) : null}
+
+          {mode === 'compare' ? (
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <Stack gap="xs">
+                <Title order={4}>Current document</Title>
+                <Code block>{server?.body}</Code>
+              </Stack>
+              <Stack gap="xs">
+                <Title order={4}>Your draft</Title>
+                <Code block>{draft}</Code>
+              </Stack>
+            </SimpleGrid>
+          ) : null}
+
+          {mode !== 'edit' ? (
             <>
               <nav aria-label="Document contents">
-                <ul>
+                <List size="sm">
                   {headings.map((h) => (
-                    <li key={h.id}>
-                      <a href={`#${h.id}`}>{h.text}</a>
-                    </li>
+                    <List.Item key={h.id}>
+                      <Anchor href={`#${h.id}`}>{h.text}</Anchor>
+                    </List.Item>
                   ))}
-                </ul>
+                </List>
               </nav>
-              <div ref={contentRef} className="md" dangerouslySetInnerHTML={{ __html: html }} />
+              <Box ref={contentRef}>
+                <MarkdownContent html={html} />
+              </Box>
             </>
-          )}
-        </div>
+          ) : null}
+        </Stack>
       );
     }
   }
 }
+
 export function Editor(props: Parameters<typeof useEditorPresenter>[0]) {
   return (
     <PresenterScope name="Editor">
@@ -146,6 +198,7 @@ export function Editor(props: Parameters<typeof useEditorPresenter>[0]) {
     </PresenterScope>
   );
 }
+
 function EditorBinding(props: Parameters<typeof useEditorPresenter>[0]) {
   const model = useEditorPresenter(props);
   const handlers = useActions(model.handlers);

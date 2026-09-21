@@ -1,12 +1,33 @@
-import { ISSUE_STATUSES, PRIORITY_LABEL, STATUS_LABEL } from '../types.ts';
+import { Box, Chip, Group, Select, TextInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
+import { ISSUE_STATUSES } from '../types.ts';
+import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
+import { LabelChip } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueFiltersPresenter } from '../presenters/IssueFilters.tsx';
+
+const filterSelectProps = {
+  size: 'xs' as const,
+  comboboxProps: { withinPortal: false },
+  styles: {
+    input: {
+      height: 28,
+      minHeight: 28,
+      fontSize: 12,
+      borderColor: 'var(--mantine-color-default-border)',
+      backgroundColor: 'transparent',
+    },
+  },
+};
+
 export function IssueFiltersView({
   model,
 }: {
   model: ReturnType<typeof useIssueFiltersPresenter>;
 }) {
+  useTranslation();
+
   switch (model._view) {
     case 0: {
       const {
@@ -14,106 +35,105 @@ export function IssueFiltersView({
         projects,
         cycles,
         labels,
-        onSaveView,
         find,
         onFind,
-        viewName,
         findRef,
         selectedLabels,
         handlers,
       } = model;
       return (
-        <div className="toolbar" role="search" aria-label="Issue filters">
-          <select
-            aria-label="Filter status"
-            value={search.status ?? ''}
-            onChange={handlers.Filter_status_onChange0}
-          >
-            <option value="">Any status</option>
-            {ISSUE_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label="Filter project"
-            value={search.project ?? ''}
-            onChange={handlers.Filter_project_onChange1}
-          >
-            <option value="">Any project</option>
-            {projects.map((p) => (
-              <option key={p.slug} value={p.slug}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label="Filter cycle"
-            value={search.cycle ?? ''}
-            onChange={handlers.Filter_cycle_onChange2}
-          >
-            <option value="">Any cycle</option>
-            {cycles.map((c) => (
-              <option key={c.id} value={c.number}>
-                Cycle {c.number}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label="Filter priority"
-            value={search.priority ?? ''}
-            onChange={handlers.Filter_priority_onChange3}
-          >
-            <option value="">Any priority</option>
-            {PRIORITY_LABEL.map((label, i) => (
-              <option key={label} value={i}>
-                {label}
-              </option>
-            ))}
-          </select>
-          {onFind ? (
-            <input
-              ref={findRef}
-              aria-label="Find issues"
-              placeholder="Find"
-              value={find ?? ''}
-              onChange={handlers.Find_issues_onChange4}
+        <Box
+          px="sm"
+          pb="xs"
+          mb="xs"
+          style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+        >
+          <Group role="search" aria-label="Issue filters" gap={6} wrap="wrap">
+            <Select
+              aria-label="Filter status"
+              placeholder="Status"
+              clearable
+              value={search.status ?? null}
+              onChange={handlers.Filter_status_onChange0}
+              data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
+              w={120}
+              {...filterSelectProps}
             />
-          ) : null}
-          <div className="chips toolbar-chips" role="group" aria-label="Filter labels">
-            {labels.map((l) => {
-              const on = selectedLabels.includes(l.name);
-              return (
-                <button
-                  type="button"
-                  key={l.id}
-                  className={`chip ${on ? 'on' : ''}`}
-                  aria-pressed={on}
-                  style={{ '--chip': l.color } as React.CSSProperties}
-                  onClick={() => handlers.onClick5(on, l)}
-                >
-                  {l.name}
-                </button>
-              );
-            })}
-          </div>
-          {onSaveView ? (
-            <form className="toolbar-save" onSubmit={handlers.onSubmit6}>
-              <textarea
-                rows={2}
-                aria-label="New view name"
-                placeholder="Save as view"
-                value={viewName}
-                onChange={handlers.New_view_name_onChange7}
+            <Select
+              aria-label="Filter project"
+              placeholder="Project"
+              clearable
+              searchable
+              value={search.project ?? null}
+              onChange={handlers.Filter_project_onChange1}
+              data={projects.map((p) => ({ value: p.slug, label: p.name }))}
+              w={120}
+              {...filterSelectProps}
+            />
+            <Select
+              aria-label="Filter cycle"
+              placeholder="Cycle"
+              clearable
+              value={search.cycle ? String(search.cycle) : null}
+              onChange={handlers.Filter_cycle_onChange2}
+              data={cycles.map((c) => ({ value: String(c.number), label: 'Cycle ' + c.number }))}
+              w={100}
+              {...filterSelectProps}
+            />
+            <Select
+              aria-label="Filter priority"
+              placeholder="Priority"
+              clearable
+              value={search.priority !== undefined ? String(search.priority) : null}
+              onChange={handlers.Filter_priority_onChange3}
+              data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
+              w={110}
+              {...filterSelectProps}
+            />
+            {onFind ? (
+              <TextInput
+                ref={findRef}
+                aria-label="Find issues"
+                placeholder="Find…"
+                value={find ?? ''}
+                onChange={handlers.Find_issues_onChange4}
+                size="xs"
+                w={140}
+                styles={{
+                  input: {
+                    height: 28,
+                    minHeight: 28,
+                    fontSize: 12,
+                    backgroundColor: 'transparent',
+                  },
+                }}
               />
-            </form>
+            ) : null}
+          </Group>
+          {labels.length > 0 ? (
+            <Group gap={4} role="group" aria-label="Filter labels" mt={6}>
+              <Chip.Group multiple>
+                {labels.map((l) => {
+                  const on = selectedLabels.includes(l.name);
+                  return (
+                    <LabelChip
+                      key={l.id}
+                      name={l.name}
+                      color={l.color}
+                      selected={on}
+                      onClick={() => handlers.onClick5(on, l)}
+                    />
+                  );
+                })}
+              </Chip.Group>
+            </Group>
           ) : null}
-        </div>
+        </Box>
       );
     }
   }
 }
+
 export function IssueFilters(props: Parameters<typeof useIssueFiltersPresenter>[0]) {
   return (
     <PresenterScope name="IssueFilters">
@@ -121,6 +141,7 @@ export function IssueFilters(props: Parameters<typeof useIssueFiltersPresenter>[
     </PresenterScope>
   );
 }
+
 function IssueFiltersBinding(props: Parameters<typeof useIssueFiltersPresenter>[0]) {
   const model = useIssueFiltersPresenter(props);
   const handlers = useActions(model.handlers);

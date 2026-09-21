@@ -1,3 +1,5 @@
+import { navActionFromKey } from './nav.ts';
+
 export type KeyAction =
   | 'palette'
   | 'new-issue'
@@ -11,6 +13,14 @@ export type KeyAction =
   | 'priority-2'
   | 'priority-3'
   | 'priority-4'
+  | 'nav-1'
+  | 'nav-2'
+  | 'nav-3'
+  | 'nav-4'
+  | 'nav-5'
+  | 'nav-6'
+  | 'nav-7'
+  | 'nav-0'
   | 'help'
   | 'find';
 
@@ -56,6 +66,7 @@ export function actionFromKeyboard(event: {
   metaKey: boolean;
   ctrlKey: boolean;
   altKey?: boolean;
+  shiftKey?: boolean;
   target: EventTarget | null;
 }): KeyAction | null {
   if (
@@ -77,6 +88,24 @@ export function actionFromKeyboard(event: {
   if (isTypingTarget(event.target)) {
     return null;
   }
+  if (event.shiftKey) {
+    switch (event.key) {
+      case '1':
+        return 'priority-1';
+      case '2':
+        return 'priority-2';
+      case '3':
+        return 'priority-3';
+      case '4':
+        return 'priority-4';
+      default:
+        break;
+    }
+  }
+  const nav = navActionFromKey(event.key);
+  if (nav) {
+    return nav;
+  }
   switch (event.key) {
     case 'c':
       return 'new-issue';
@@ -92,14 +121,6 @@ export function actionFromKeyboard(event: {
       return 'open';
     case 's':
       return 'status';
-    case '1':
-      return 'priority-1';
-    case '2':
-      return 'priority-2';
-    case '3':
-      return 'priority-3';
-    case '4':
-      return 'priority-4';
     case '?':
       return 'help';
     case '/':

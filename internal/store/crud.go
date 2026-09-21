@@ -19,14 +19,31 @@ func (s *Store) Workspace() (Workspace, error) {
 }
 
 func workspaceFrom(m *mem) Workspace {
+	locale := strings.TrimSpace(m.Workspace.Locale)
+	if locale == "" {
+		locale = "en"
+	}
 	return Workspace{
-		Name:      m.Workspace.Name,
-		Timezone:  m.Workspace.Timezone,
-		UpdatedAt: m.Workspace.UpdatedAt,
+		Name:        m.Workspace.Name,
+		Timezone:    m.Workspace.Timezone,
+		Locale:      locale,
+		URL:         strings.TrimSpace(m.Workspace.URL),
+		Description: m.Workspace.Description,
+		GitHubURL:   strings.TrimSpace(m.Workspace.GitHubURL),
+		UpdatedAt:   m.Workspace.UpdatedAt,
 	}
 }
 
-func (s *Store) UpdateWorkspace(name, timezone *string) (Workspace, error) {
+func validLocale(locale string) bool {
+	switch locale {
+	case "en", "ja":
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *Store) UpdateWorkspace(name, timezone, locale, url, description, githubURL *string) (Workspace, error) {
 	var ws Workspace
 	err := s.mutate(func(m *mem) error {
 		if name != nil {
@@ -40,6 +57,25 @@ func (s *Store) UpdateWorkspace(name, timezone *string) (Workspace, error) {
 				return validationf("timezone required")
 			}
 			m.Workspace.Timezone = strings.TrimSpace(*timezone)
+		}
+		if locale != nil {
+			next := strings.TrimSpace(*locale)
+			if next == "" {
+				return validationf("locale required")
+			}
+			if !validLocale(next) {
+				return validationf("unsupported locale")
+			}
+			m.Workspace.Locale = next
+		}
+		if url != nil {
+			m.Workspace.URL = strings.TrimSpace(*url)
+		}
+		if description != nil {
+			m.Workspace.Description = *description
+		}
+		if githubURL != nil {
+			m.Workspace.GitHubURL = strings.TrimSpace(*githubURL)
 		}
 		m.bump(domain.Now())
 		ws = workspaceFrom(m)

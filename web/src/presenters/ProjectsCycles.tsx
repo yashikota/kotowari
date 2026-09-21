@@ -27,7 +27,13 @@ export function useProjectsPagePresenter() {
           .replace(/^-|-$/g, '');
         return api
           .createProject({ name: n, slug })
-          .then((p) => navigate({ to: '/projects/$slug', params: { slug: p.slug } }));
+          .then((p) =>
+            navigate({
+              to: '/projects/$slug',
+              params: { slug: p.slug },
+              state: { autofocus: 'description' },
+            }),
+          );
       },
       New_project_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],

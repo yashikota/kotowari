@@ -1,15 +1,31 @@
 import { Link } from '@tanstack/react-router';
+import {
+  Box,
+  Button,
+  Group,
+  NativeSelect,
+  Progress,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+  Title,
+} from '@mantine/core';
+
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueList } from '../components/IssueList.tsx';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
+import { EmptyState, MetaBadge, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
+import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import {
   useCycleDetailPagePresenter,
   useCyclesPagePresenter,
   useProjectDetailPagePresenter,
   useProjectsPagePresenter,
 } from '../presenters/ProjectsCycles.tsx';
+
 export function ProjectsPageView({
   model,
 }: {
@@ -18,44 +34,68 @@ export function ProjectsPageView({
   switch (model._view) {
     case 0: {
       const { projects, name, handlers } = model;
+      const projectNameRef = useFocusWhen<HTMLTextAreaElement>(true);
       return (
-        <div className="main single">
-          <section className="pane">
-            <div className="pane-head">
-              <h1>Projects</h1>
-              <form onSubmit={handlers.onSubmit0}>
-                <textarea
-                  rows={2}
-                  className="field"
-                  aria-label="New project name"
-                  placeholder="New project"
-                  value={name}
-                  onChange={handlers.New_project_name_onChange1}
-                />
-              </form>
-            </div>
+        <SplitLayout single>
+          <Pane single>
+            <PageHeader
+              title="Projects"
+              actions={
+                <Box component="form" onSubmit={handlers.onSubmit0} style={{ minWidth: 240 }}>
+                  <Textarea
+                    ref={projectNameRef}
+                    rows={2}
+                    aria-label="New project name"
+                    placeholder="New project"
+                    value={name}
+                    onChange={handlers.New_project_name_onChange1}
+                  />
+                </Box>
+              }
+            />
             {projects.length === 0 ? (
-              <div className="empty">No projects yet. Name one above.</div>
+              <EmptyState>No projects yet. Name one above.</EmptyState>
             ) : (
-              <div className="list">
+              <Stack gap={0}>
                 {projects.map((p) => (
-                  <Link className="row" key={p.slug} to="/projects/$slug" params={{ slug: p.slug }}>
-                    <span className="rail" />
-                    <span className="ident">{p.status}</span>
-                    <span>{p.name}</span>
-                    <span className="progress" style={{ width: 72 }}>
-                      <span style={{ width: `${Math.round(p.progress * 100)}%` }} />
-                    </span>
+                  <Link
+                    key={p.slug}
+                    to="/projects/$slug"
+                    params={{ slug: p.slug }}
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                  >
+                    <Group
+                      wrap="nowrap"
+                      gap="xs"
+                      py={6}
+                      px="md"
+                      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                    >
+                      <Box
+                        w={2}
+                        h={16}
+                        bg="var(--mantine-color-default-border)"
+                        style={{ borderRadius: 1, flexShrink: 0 }}
+                      />
+                      <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
+                        {p.status}
+                      </Text>
+                      <Text flex={1} truncate>
+                        {p.name}
+                      </Text>
+                      <Progress value={Math.round(p.progress * 100)} w={72} size="sm" />
+                    </Group>
                   </Link>
                 ))}
-              </div>
+              </Stack>
             )}
-          </section>
-        </div>
+          </Pane>
+        </SplitLayout>
       );
     }
   }
 }
+
 export function ProjectsPage() {
   return (
     <PresenterScope name="ProjectsPage">
@@ -63,6 +103,7 @@ export function ProjectsPage() {
     </PresenterScope>
   );
 }
+
 function ProjectsPageBinding() {
   const model = useProjectsPagePresenter();
   const handlers = useActions(model.handlers);
@@ -77,113 +118,116 @@ export function ProjectDetailPageView({
   switch (model._view) {
     case 0: {
       const { slug, data, selected, project, handlers } = model;
+      const autofocusDescription = useAutofocusTarget('description');
+      const descriptionRef = useFocusWhen<HTMLTextAreaElement>(autofocusDescription, [slug]);
       return (
-        <div className="main">
-          <section className="pane">
-            <div className="pane-head">
-              <h1>{project.name}</h1>
-              <select
-                className="field"
-                aria-label="Project status"
-                value={project.status}
-                onChange={handlers.Project_status_onChange0}
-              >
-                {PROJECT_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <button type="button" className="ghost" onClick={handlers.onClick1}>
-                New issue
-              </button>
-              <button type="button" className="ghost danger" onClick={handlers.onClick2}>
-                Delete
-              </button>
-            </div>
-            <div className="detail">
-              <textarea
-                className="field"
-                aria-label="Project description"
-                placeholder="Description"
-                value={project.description}
-                onChange={handlers.Project_description_onChange3}
-                onBlur={handlers.Project_description_onBlur4}
+        <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
+          <SplitLayout>
+            <Pane>
+              <PageHeader
+                title={project.name}
+                actions={
+                  <Group gap="xs" wrap="wrap">
+                    <NativeSelect
+                      aria-label="Project status"
+                      value={project.status}
+                      onChange={handlers.Project_status_onChange0}
+                      data={PROJECT_STATUSES.map((s) => ({ value: s, label: s }))}
+                    />
+                    <Button type="button" variant="subtle" onClick={handlers.onClick1}>
+                      New issue
+                    </Button>
+                    <Button type="button" variant="subtle" color="red" onClick={handlers.onClick2}>
+                      Delete
+                    </Button>
+                  </Group>
+                }
               />
-              <div className="props">
-                <label>
-                  <span className="muted">Start</span>
-                  <input
+              <Stack gap="md">
+                <Textarea
+                  ref={descriptionRef}
+                  aria-label="Project description"
+                  placeholder="Description"
+                  value={project.description}
+                  onChange={handlers.Project_description_onChange3}
+                  onBlur={handlers.Project_description_onBlur4}
+                />
+                <Group gap="md" wrap="wrap" align="flex-end">
+                  <TextInput
                     type="date"
                     aria-label="Start date"
+                    label="Start"
                     value={project.startDate?.slice(0, 10) ?? ''}
                     onChange={handlers.Start_date_onChange5}
                   />
-                </label>
-                <label>
-                  <span className="muted">Target</span>
-                  <input
+                  <TextInput
                     type="date"
                     aria-label="Target date"
+                    label="Target"
                     value={project.targetDate?.slice(0, 10) ?? ''}
                     onChange={handlers.Target_date_onChange6}
                   />
-                </label>
-              </div>
-              <section aria-label="Project documents">
-                <h2>ADRs</h2>
-                <button type="button" onClick={handlers.onClick7}>
-                  New ADR
-                </button>
-                <ul>
-                  {data.adrs
-                    .filter(
-                      (a) =>
-                        a.projectSlug === slug ||
-                        data.issues.some((i) => a.issueNumbers.includes(i.number)),
-                    )
-                    .map((a) => (
-                      <li key={a.identifier}>
-                        <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
-                          {a.identifier} {a.title}
-                        </Link>{' '}
-                        <span className="badge">{a.status}</span>
-                      </li>
-                    ))}
-                </ul>
-                <h2>Pages</h2>
-                <ul>
-                  {data.pages
-                    .filter((p) => p.projectSlug === slug)
-                    .map((p) => (
-                      <li key={p.slug}>
-                        <Link to="/pages/$slug" params={{ slug: p.slug }}>
-                          {p.title}
-                        </Link>
-                      </li>
-                    ))}
-                </ul>
-              </section>
-              <IssueList
-                issues={data.issues}
-                selectedId={selected}
-                onSelect={handlers.onSelect8}
-                openOnSelect={false}
-              />
-            </div>
-          </section>
-          <section className="pane">
-            {selected ? (
-              <IssueDetail identifier={selected} />
-            ) : (
-              <div className="empty">Select an issue</div>
-            )}
-          </section>
-        </div>
+                </Group>
+                <Stack gap="md" aria-label="Project documents">
+                  <Stack gap="xs">
+                    <Title order={4}>ADRs</Title>
+                    <Button type="button" onClick={handlers.onClick7}>
+                      New ADR
+                    </Button>
+                    <Stack gap={4} component="ul" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                      {data.adrs
+                        .filter(
+                          (a) =>
+                            a.projectSlug === slug ||
+                            data.issues.some((i) => a.issueNumbers.includes(i.number)),
+                        )
+                        .map((a) => (
+                          <Group component="li" key={a.identifier} gap="xs" wrap="wrap">
+                            <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
+                              {a.identifier} {a.title}
+                            </Link>
+                            <MetaBadge>{a.status}</MetaBadge>
+                          </Group>
+                        ))}
+                    </Stack>
+                  </Stack>
+                  <Stack gap="xs">
+                    <Title order={4}>Pages</Title>
+                    <Stack gap={4} component="ul" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                      {data.pages
+                        .filter((p) => p.projectSlug === slug)
+                        .map((p) => (
+                          <Text component="li" key={p.slug} size="sm">
+                            <Link to="/pages/$slug" params={{ slug: p.slug }}>
+                              {p.title}
+                            </Link>
+                          </Text>
+                        ))}
+                    </Stack>
+                  </Stack>
+                </Stack>
+                <IssueList
+                  issues={data.issues}
+                  selectedId={selected}
+                  onSelect={handlers.onSelect8}
+                  openOnSelect={false}
+                />
+              </Stack>
+            </Pane>
+            <Pane variant="detail">
+              {selected ? (
+                <IssueDetail identifier={selected} />
+              ) : (
+                <EmptyState>Select an issue</EmptyState>
+              )}
+            </Pane>
+          </SplitLayout>
+        </Box>
       );
     }
   }
 }
+
 export function ProjectDetailPage() {
   return (
     <PresenterScope name="ProjectDetailPage">
@@ -191,6 +235,7 @@ export function ProjectDetailPage() {
     </PresenterScope>
   );
 }
+
 function ProjectDetailPageBinding() {
   const model = useProjectDetailPagePresenter();
   const handlers = useActions(model.handlers);
@@ -202,41 +247,59 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
     case 0: {
       const { cycles, handlers } = model;
       return (
-        <div className="main single">
-          <section className="pane">
-            <div className="pane-head">
-              <h1>Cycles</h1>
-              <button className="ghost" type="button" onClick={handlers.onClick0}>
-                New cycle
-              </button>
-            </div>
+        <SplitLayout single>
+          <Pane single>
+            <PageHeader
+              title="Cycles"
+              actions={
+                <Button type="button" variant="subtle" onClick={handlers.onClick0}>
+                  New cycle
+                </Button>
+              }
+            />
             {cycles.length === 0 ? (
-              <div className="empty">No cycles yet. Start one to timebox work.</div>
+              <EmptyState>No cycles yet. Start one to timebox work.</EmptyState>
             ) : (
-              <div className="list">
+              <Stack gap={0}>
                 {cycles.map((c) => (
                   <Link
-                    className="row"
                     key={c.number}
                     to="/cycles/$number"
                     params={{ number: String(c.number) }}
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
                   >
-                    <span className="rail" />
-                    <span className="ident">{c.number}</span>
-                    <span>
-                      {c.status} · {c.startsAt.slice(0, 10)} → {c.endsAt.slice(0, 10)}
-                    </span>
-                    <span className="badge">{c.status}</span>
+                    <Group
+                      wrap="nowrap"
+                      gap="xs"
+                      py={6}
+                      px="md"
+                      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                    >
+                      <Box
+                        w={2}
+                        h={16}
+                        bg="var(--mantine-color-default-border)"
+                        style={{ borderRadius: 1, flexShrink: 0 }}
+                      />
+                      <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
+                        {c.number}
+                      </Text>
+                      <Text flex={1} truncate>
+                        {c.status} · {c.startsAt.slice(0, 10)} → {c.endsAt.slice(0, 10)}
+                      </Text>
+                      <MetaBadge>{c.status}</MetaBadge>
+                    </Group>
                   </Link>
                 ))}
-              </div>
+              </Stack>
             )}
-          </section>
-        </div>
+          </Pane>
+        </SplitLayout>
       );
     }
   }
 }
+
 export function CyclesPage() {
   return (
     <PresenterScope name="CyclesPage">
@@ -244,6 +307,7 @@ export function CyclesPage() {
     </PresenterScope>
   );
 }
+
 function CyclesPageBinding() {
   const model = useCyclesPagePresenter();
   const handlers = useActions(model.handlers);
@@ -257,55 +321,53 @@ export function CycleDetailPageView({
 }) {
   switch (model._view) {
     case 0: {
-      const { data, selected, cycle, done, handlers } = model;
+      const { data, selected, cycle, handlers } = model;
       return (
-        <div className="main">
-          <section className="pane">
-            <div className="pane-head">
-              <h1>Cycle {cycle.number}</h1>
-              <span className="muted">
-                {done}/{data.issues.length}
-              </span>
-              <select
-                className="field"
-                aria-label="Cycle status"
-                value={cycle.status}
-                onChange={handlers.Cycle_status_onChange0}
-              >
-                {CYCLE_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <button type="button" className="ghost" onClick={handlers.onClick1}>
-                New issue
-              </button>
-            </div>
-            <div className="detail">
-              <div className="muted">
-                {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
-              </div>
-              <IssueList
-                issues={data.issues}
-                selectedId={selected}
-                onSelect={handlers.onSelect2}
-                openOnSelect={false}
+        <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
+          <SplitLayout>
+            <Pane>
+              <PageHeader
+                title={`Cycle ${cycle.number}`}
+                actions={
+                  <Group gap="xs" wrap="wrap">
+                    <NativeSelect
+                      aria-label="Cycle status"
+                      value={cycle.status}
+                      onChange={handlers.Cycle_status_onChange0}
+                      data={CYCLE_STATUSES.map((s) => ({ value: s, label: s }))}
+                    />
+                    <Button type="button" variant="subtle" onClick={handlers.onClick1}>
+                      New issue
+                    </Button>
+                  </Group>
+                }
               />
-            </div>
-          </section>
-          <section className="pane">
-            {selected ? (
-              <IssueDetail identifier={selected} />
-            ) : (
-              <div className="empty">Select an issue</div>
-            )}
-          </section>
-        </div>
+              <Stack gap="md">
+                <Text size="sm" c="dimmed">
+                  {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
+                </Text>
+                <IssueList
+                  issues={data.issues}
+                  selectedId={selected}
+                  onSelect={handlers.onSelect2}
+                  openOnSelect={false}
+                />
+              </Stack>
+            </Pane>
+            <Pane variant="detail">
+              {selected ? (
+                <IssueDetail identifier={selected} />
+              ) : (
+                <EmptyState>Select an issue</EmptyState>
+              )}
+            </Pane>
+          </SplitLayout>
+        </Box>
       );
     }
   }
 }
+
 export function CycleDetailPage() {
   return (
     <PresenterScope name="CycleDetailPage">
@@ -313,6 +375,7 @@ export function CycleDetailPage() {
     </PresenterScope>
   );
 }
+
 function CycleDetailPageBinding() {
   const model = useCycleDetailPagePresenter();
   const handlers = useActions(model.handlers);

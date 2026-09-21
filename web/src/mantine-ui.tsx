@@ -1,0 +1,177 @@
+import { Link, useMatchRoute, type LinkProps } from '@tanstack/react-router';
+import {
+  Badge,
+  Box,
+  Chip,
+  Group,
+  Kbd,
+  NavLink,
+  Paper,
+  Stack,
+  Text,
+  Title,
+  Typography,
+  type ChipProps,
+  type NavLinkProps,
+} from '@mantine/core';
+import type { ReactNode } from 'react';
+
+export function RouterNavLink({
+  to,
+  params,
+  search,
+  label,
+  leftSection,
+  fuzzy,
+  ...props
+}: NavLinkProps & {
+  to: LinkProps['to'];
+  params?: LinkProps['params'];
+  search?: LinkProps['search'];
+  label: ReactNode;
+  leftSection?: ReactNode;
+  fuzzy?: boolean;
+}) {
+  const matchRoute = useMatchRoute();
+  const active = !!matchRoute({ to, params, search, fuzzy });
+  return (
+    <NavLink
+      component={Link}
+      to={to}
+      params={params as never}
+      search={search as never}
+      label={label}
+      leftSection={leftSection}
+      active={active}
+      {...props}
+    />
+  );
+}
+
+export function PageHeader({
+  title,
+  actions,
+}: {
+  title: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <Group justify="space-between" mb="md" wrap="nowrap">
+      <Title order={2}>{title}</Title>
+      {actions ? (
+        <Group gap="xs" wrap="wrap">
+          {actions}
+        </Group>
+      ) : null}
+    </Group>
+  );
+}
+
+export function Pane({
+  children,
+  single,
+  variant = 'default',
+}: {
+  children: ReactNode;
+  single?: boolean;
+  variant?: 'default' | 'list' | 'detail';
+}) {
+  const variantStyle =
+    variant === 'list'
+      ? {
+          flex: '0 0 400px',
+          maxWidth: 440,
+          minWidth: 320,
+          borderRight: '1px solid var(--mantine-color-default-border)',
+          padding: 'var(--mantine-spacing-sm) 0 0',
+          display: 'flex',
+          flexDirection: 'column' as const,
+          overflow: 'hidden',
+        }
+      : variant === 'detail'
+        ? {
+            flex: '1 1 0',
+            minWidth: 0,
+            padding: 'var(--mantine-spacing-md)',
+            overflow: 'auto',
+          }
+        : {
+            flex: single ? '1 1 100%' : '1 1 0',
+            minWidth: 0,
+          };
+
+  return (
+    <Paper p={variant === 'list' ? 0 : 'md'} radius={0} bg="transparent" style={variantStyle}>
+      {children}
+    </Paper>
+  );
+}
+
+export function SplitLayout({ children, single }: { children: ReactNode; single?: boolean }) {
+  return (
+    <Group
+      align="stretch"
+      gap={0}
+      wrap={single ? 'wrap' : 'nowrap'}
+      style={{ height: '100%', minHeight: 0 }}
+    >
+      {children}
+    </Group>
+  );
+}
+
+export function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <Stack align="center" justify="center" py="xl" gap="xs">
+      <Text c="dimmed" ta="center">
+        {children}
+      </Text>
+    </Stack>
+  );
+}
+
+export function Shortcut({ children }: { children: ReactNode }) {
+  return <Kbd>{children}</Kbd>;
+}
+
+export function LabelChip({
+  name,
+  color,
+  selected,
+  onClick,
+}: {
+  name: string;
+  color: string;
+  selected: boolean;
+  onClick: ChipProps['onClick'];
+}) {
+  return (
+    <Chip checked={selected} onClick={onClick} variant={selected ? 'filled' : 'outline'} size="xs">
+      <Group gap={6} wrap="nowrap">
+        <Box
+          w={8}
+          h={8}
+          style={{ borderRadius: '50%', backgroundColor: color, flexShrink: 0 }}
+          aria-hidden
+        />
+        {name}
+      </Group>
+    </Chip>
+  );
+}
+
+export function MetaBadge({ children, color }: { children: ReactNode; color?: string }) {
+  return (
+    <Badge variant="light" color={color ?? 'gray'} size="sm">
+      {children}
+    </Badge>
+  );
+}
+
+export function MarkdownContent({ html }: { html: string }) {
+  return (
+    <Typography>
+      <Box dangerouslySetInnerHTML={{ __html: html }} />
+    </Typography>
+  );
+}

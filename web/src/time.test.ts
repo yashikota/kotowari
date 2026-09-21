@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { formatStamp } from './time.ts';
+import { formatStamp, formatTimeZoneLabel, listTimeZones, timeZoneChoices } from './time.ts';
 
 describe('formatStamp', () => {
   it('renders UTC instants in the workspace timezone', () => {
@@ -22,5 +22,23 @@ describe('formatStamp', () => {
     const out = formatStamp('2026-09-01T00:00:00Z', 'America/New_York');
     expect(out).toContain('2026-08-31');
     expect(out).toContain('20:00');
+  });
+});
+
+describe('time zones', () => {
+  it('lists zones from Intl when available', () => {
+    const zones = listTimeZones();
+    expect(zones.length).toBeGreaterThan(50);
+  });
+
+  it('keeps the current workspace zone in the choice list', () => {
+    const zones = timeZoneChoices('Not/A_Zone');
+    expect(zones[0]).toBe('Not/A_Zone');
+  });
+
+  it('builds labels with runtime offset metadata', () => {
+    const label = formatTimeZoneLabel('Asia/Tokyo');
+    expect(label).toContain('Asia/Tokyo');
+    expect(label).toMatch(/GMT|UTC|[+-]\d/);
   });
 });

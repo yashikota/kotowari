@@ -10,15 +10,14 @@ import { useIntent, useIntentHandler, useKeyboard, useOverlay } from '../applica
 import { STATIC_COMMANDS, cycleCommands, filterCommands, projectCommands } from '../commands.ts';
 import { Palette } from '../components/Palette.tsx';
 import { actionFromKeyboard } from '../keymap.ts';
+import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
 import type {
   Cycle,
-  Diagnostic,
   Issue,
   IssueStatus,
   Project,
   SearchHit,
   View,
-  Workspace,
 } from '../types.ts';
 
 function slugify(s: string): string {
@@ -83,10 +82,9 @@ export function useShellPresenter() {
     };
   }, [router]);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [views, setViews] = useState<View[]>([]);
+  const [workspaceName, setWorkspaceName] = useState('');
   const { overlay, set: setOverlay } = useOverlay();
   const paletteOpen = overlay === 'palette';
   const setPaletteOpen = setOverlay('palette');
@@ -117,15 +115,13 @@ export function useShellPresenter() {
 
   const loadWorkspace = useCallback(async () => {
     try {
-      const [ws, diags, cyc, vs, proj] = await Promise.all([
+      const [ws, cyc, vs, proj] = await Promise.all([
         api.workspace(),
-        api.diagnostics(),
         api.cycles(),
         api.views(),
         api.projects(),
       ]);
-      setWorkspace(ws);
-      setDiagnostics(diags);
+      setWorkspaceName(ws.name);
       setCycles(cyc);
       setViews(vs);
       setProjects(proj);
@@ -227,6 +223,9 @@ export function useShellPresenter() {
           return;
         case 'goto-pages':
           await navigate({ to: '/pages' });
+          return;
+        case 'goto-config':
+          await navigate({ to: '/config' });
           return;
         case 'goto-active-cycle': {
           const active = cycles.find((c) => c.status === 'active');
@@ -338,6 +337,18 @@ export function useShellPresenter() {
       document.querySelector<HTMLInputElement>('[aria-label="Find issues"]')?.focus();
       return true;
     }
+    if (action.startsWith('nav-')) {
+      const dest = navTargetForAction(action as NavShortcutAction);
+      if (dest) {
+        e.preventDefault();
+        void navigate({
+          to: dest.to,
+          search: dest.search,
+          params: dest.params,
+        });
+        return true;
+      }
+    }
     if (paletteOpen || createIssue || createADR || createPage || createView || helpOpen) {
       return true;
     }
@@ -405,6 +416,7 @@ export function useShellPresenter() {
     await navigate({
       to: '/issues/$identifier',
       params: { identifier: issue.identifier },
+      state: { autofocus: 'title' },
     });
   }
 
@@ -424,6 +436,7 @@ export function useShellPresenter() {
     await navigate({
       to: '/adrs/$identifier',
       params: { identifier: adr.identifier },
+      state: { autofocus: 'title' },
     });
   }
 
@@ -437,7 +450,7 @@ export function useShellPresenter() {
     setPageTitle('');
     setCreatePage(false);
     await router.invalidate();
-    await navigate({ to: '/pages/$slug', params: { slug: page.slug } });
+    await navigate({ to: '/pages/$slug', params: { slug: page.slug }, state: { autofocus: 'title' } });
   }
 
   async function submitView() {
@@ -451,13 +464,12 @@ export function useShellPresenter() {
     setCreateView(false);
     await loadWorkspace();
     await router.invalidate();
-    await navigate({ to: '/views/$slug', params: { slug: view.slug } });
+    await navigate({ to: '/views/$slug', params: { slug: view.slug }, state: { autofocus: 'name' } });
   }
 
   return {
     _view: 0 as const,
-    workspace,
-    diagnostics,
+    workspaceName,
     cycles,
     views,
     overlay,
@@ -486,24 +498,6 @@ export function useShellPresenter() {
       submitPage: () => send('submit:Page'),
       submitView: () => send('submit:View'),
       onClick0: () => setCreateView(true),
-      onClick1: () => setPaletteOpen(true),
-      onClick2: () => setHelpOpen(true),
-      onSubmit3: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
-        e.preventDefault();
-        if (!workspace) return;
-        return api
-          .patchWorkspace({
-            name: workspace.name,
-            timezone: workspace.timezone,
-          })
-          .then(setWorkspace)
-          .catch((err: unknown) => setError(err instanceof Error ? err.message : 'save failed'));
-      },
-      onChange4: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) =>
-        workspace && setWorkspace({ ...workspace, name: e.target.value }),
-      Timezone_onChange5: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => workspace && setWorkspace({ ...workspace, timezone: e.target.value }),
       onQuery6: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof Palette>['onQuery']>>
       ) => {

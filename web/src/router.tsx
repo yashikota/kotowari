@@ -1,20 +1,33 @@
 import {
-  Outlet,
   createRootRoute,
   createRoute,
   createRouter,
   lazyRouteComponent,
-  redirect,
 } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { Alert, Stack, Text } from '@mantine/core';
 import { Shell } from './components/Shell.tsx';
 import { api, issuesQuery, parseIssueSearch, searchToFilter, type IssueSearch } from './api.ts';
+import { EmptyState } from './mantine-ui.tsx';
 
 function NotFoundPage() {
-  return <div className="empty">Not found</div>;
+  const { t } = useTranslation();
+  return (
+    <EmptyState>
+      <Text>{t('common.notFound')}</Text>
+    </EmptyState>
+  );
 }
 
 function ErrorPage({ error }: { error: Error }) {
-  return <div className="error">{error.message}</div>;
+  const { t } = useTranslation();
+  return (
+    <Stack p="md">
+      <Alert color="red" title={t('common.error')}>
+        {error.message}
+      </Alert>
+    </Stack>
+  );
 }
 
 async function loadFilteredIssues(search: IssueSearch) {
@@ -36,10 +49,28 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: () => {
-    throw redirect({ to: '/issues', search: {} });
+  loader: async () => {
+    const [workspace, issues, projects, adrs] = await Promise.all([
+      api.workspace(),
+      api.issues(),
+      api.projects(),
+      api.adrs(),
+    ]);
+    const list = issues ?? [];
+    const openIssues = list.filter(
+      (issue) => issue.status !== 'done' && issue.status !== 'canceled',
+    ).length;
+    return {
+      workspace,
+      counts: {
+        issues: list.length,
+        openIssues,
+        projects: projects.length,
+        adrs: adrs.length,
+      },
+    };
   },
-  component: () => <Outlet />,
+  component: lazyRouteComponent(() => import('./pages/HomePages.tsx'), 'HomePage'),
 });
 
 const issuesRoute = createRoute({
@@ -151,6 +182,16 @@ const pageRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/PagesPages.tsx'), 'PageDetailPage'),
 });
 
+const configRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/config',
+  loader: async () => {
+    const [workspace, diagnostics] = await Promise.all([api.workspace(), api.diagnostics()]);
+    return { workspace, diagnostics };
+  },
+  component: lazyRouteComponent(() => import('./pages/ConfigPages.tsx'), 'ConfigPage'),
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   issuesRoute,
@@ -165,6 +206,7 @@ const routeTree = rootRoute.addChildren([
   viewRoute,
   pagesRoute,
   pageRoute,
+  configRoute,
 ]);
 
 export const router = createRouter({

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { ADR_STATUSES, ADR_STATUS_LABEL, entityDir } from './types.ts';
+import { ADR_STATUSES, entityDir } from './types.ts';
+import { adrStatusLabel } from './i18n/labels.ts';
 
 describe('ADR_STATUSES', () => {
   it('includes rejected between proposed and accepted', () => {
     expect(ADR_STATUSES).toEqual(['proposed', 'rejected', 'accepted', 'deprecated', 'superseded']);
-    expect(ADR_STATUS_LABEL.rejected).toBe('Rejected');
+    expect(adrStatusLabel('rejected')).toBe('Rejected');
   });
 });
 

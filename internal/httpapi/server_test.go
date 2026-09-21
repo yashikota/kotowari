@@ -482,3 +482,31 @@ func TestWorkspaceHasNoSyncMetadata(t *testing.T) {
 		t.Fatalf("unexpected dirty field after creating issue")
 	}
 }
+
+func TestOriginAllowedViaForwardedHost(t *testing.T) {
+	s := testAPI(t)
+	req := httptest.NewRequest("PATCH", "http://127.0.0.1:7730/api/workspace", strings.NewReader(`{"name":"dev"}`))
+	req.Header.Set("Origin", "http://127.0.0.1:5182")
+	req.Header.Set("X-Forwarded-Host", "127.0.0.1:5182")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestOriginDeniedWithoutForwardedHost(t *testing.T) {
+	s := testAPI(t)
+	req := httptest.NewRequest("PATCH", "http://127.0.0.1:7730/api/workspace", strings.NewReader(`{"name":"dev"}`))
+	req.Header.Set("Origin", "http://127.0.0.1:5182")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("code %d body %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "origin denied") {
+		t.Fatalf("body %s", rec.Body.String())
+	}
+}

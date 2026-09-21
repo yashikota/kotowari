@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "home": "Home",
+    "issues": "Issues",
+    "board": "Board",
+    "adrs": "ADRs",
+    "projects": "Projects",
+    "cycles": "Cycles",
+    "pages": "Pages",
+    "config": "Config",
+    "views": "Views",
+    "newView": "New view",
+    "cycleActive": "Cycle {{number}} active"
+  },
+  "workspace": {
+    "defaultName": "workspace"
+  },
+  "home": {
+    "title": "Home",
+    "namePlaceholder": "Untitled",
+    "editLink": "Edit",
+    "save": "Save",
+    "saved": "Saved",
+    "overview": "Overview",
+    "openIssues": "Open issues",
+    "totalIssues": "{{count}} total",
+    "projects": "Projects",
+    "adrs": "ADRs"
+  },
+  "config": {
+    "title": "Config",
+    "workspace": "Workspace",
+    "name": "Name",
+    "url": "Website",
+    "urlPlaceholder": "https://example.com",
+    "githubUrl": "GitHub",
+    "githubUrlPlaceholder": "https://github.com/org/repo",
+    "description": "Description",
+    "descriptionPlaceholder": "What is this workspace for?",
+    "timezone": "Timezone",
+    "language": "Language",
+    "noTimezone": "No timezone",
+    "saveWorkspace": "Save workspace",
+    "saved": "Workspace saved",
+    "application": "Application",
+    "commandPalette": "Command palette",
+    "keyboardShortcuts": "Keyboard shortcuts",
+    "diagnostics": "Diagnostics",
+    "noDiagnostics": "No diagnostics. Workspace files look consistent."
+  },
+  "modal": {
+    "createIssue": "Create issue",
+    "createAdr": "Create ADR",
+    "createPage": "Create page",
+    "createView": "Create view",
+    "issueTitle": "Issue title",
+    "adrTitle": "ADR title",
+    "pageTitle": "Page title",
+    "viewName": "View name",
+    "enterHint": "Enter to insert a line · Ctrl/⌘+Enter to create",
+    "create": "Create",
+    "willLinkIssue": "Will link issue {{issue}}"
+  },
+  "field": {
+    "status": "Status",
+    "priority": "Priority",
+    "project": "Project",
+    "cycle": "Cycle",
+    "noProject": "No project",
+    "noCycle": "No cycle",
+    "cycleN": "Cycle {{number}}"
+  },
+  "issueStatus": {
+    "backlog": "Backlog",
+    "todo": "Todo",
+    "in_progress": "In Progress",
+    "done": "Done",
+    "canceled": "Canceled"
+  },
+  "priority": {
+    "0": "No priority",
+    "1": "Urgent",
+    "2": "High",
+    "3": "Medium",
+    "4": "Low"
+  },
+  "adrStatus": {
+    "proposed": "Proposed",
+    "rejected": "Rejected",
+    "accepted": "Accepted",
+    "deprecated": "Deprecated",
+    "superseded": "Superseded"
+  },
+  "activity": {
+    "created": "Created",
+    "createdWithId": "Created {{id}}",
+    "statusChanged": "Status {{from}} → {{to}}",
+    "commented": "Added a note"
+  },
+  "common": {
+    "error": "Error",
+    "notFound": "Not found",
+    "dismiss": "Dismiss",
+    "saveFailed": "save failed"
+  }
+}

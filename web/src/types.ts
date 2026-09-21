@@ -128,6 +128,10 @@ export type Activity = {
 export type Workspace = {
   name: string;
   timezone: string;
+  locale: string;
+  url: string;
+  description: string;
+  githubUrl: string;
   updatedAt: string;
 };
 
@@ -139,16 +143,6 @@ export type SearchHit = {
 };
 
 export const ISSUE_STATUSES: IssueStatus[] = ['backlog', 'todo', 'in_progress', 'done', 'canceled'];
-
-export const STATUS_LABEL: Record<IssueStatus, string> = {
-  backlog: 'Backlog',
-  todo: 'Todo',
-  in_progress: 'In Progress',
-  done: 'Done',
-  canceled: 'Canceled',
-};
-
-export const PRIORITY_LABEL = ['No priority', 'Urgent', 'High', 'Medium', 'Low'];
 
 export const PROJECT_STATUSES = ['planned', 'started', 'completed', 'canceled'] as const;
 
@@ -163,14 +157,6 @@ export const ADR_STATUSES: ADRStatus[] = [
   'deprecated',
   'superseded',
 ];
-
-export const ADR_STATUS_LABEL: Record<ADRStatus, string> = {
-  proposed: 'Proposed',
-  rejected: 'Rejected',
-  accepted: 'Accepted',
-  deprecated: 'Deprecated',
-  superseded: 'Superseded',
-};
 
 export function entityDir(n: number): string {
   return String(n).padStart(5, '0');

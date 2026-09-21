@@ -1,7 +1,10 @@
+import { SegmentedControl, Stack, Text, Textarea } from '@mantine/core';
 import { renderMarkdown } from '../markdown.ts';
+import { MarkdownContent } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useMarkdownFieldPresenter } from '../presenters/MarkdownField.tsx';
+
 export function MarkdownFieldView({
   model,
 }: {
@@ -11,50 +14,41 @@ export function MarkdownFieldView({
     case 0: {
       const { value, placeholder, mode, handlers } = model;
       return (
-        <div className="md-field">
-          <div className="seg" role="tablist" aria-label="Body">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'edit'}
-              className={mode === 'edit' ? 'on' : ''}
-              onClick={handlers.onClick0}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'preview'}
-              className={mode === 'preview' ? 'on' : ''}
-              onClick={handlers.onClick1}
-            >
-              Preview
-            </button>
-          </div>
+        <Stack gap="sm">
+          <SegmentedControl
+            aria-label="Body"
+            role="tablist"
+            value={mode}
+            onChange={(next) => {
+              if (next === 'edit') handlers.onClick0();
+              else handlers.onClick1();
+            }}
+            data={[
+              { label: 'Edit', value: 'edit' },
+              { label: 'Preview', value: 'preview' },
+            ]}
+          />
           {mode === 'edit' ? (
-            <textarea
-              className="body-input"
+            <Textarea
               aria-label="Markdown body"
               value={value}
               placeholder={placeholder ?? 'Write markdown…'}
               onChange={handlers.Markdown_body_onChange2}
               onBlur={handlers.Markdown_body_onBlur3}
+              minRows={12}
+              autosize
             />
+          ) : value.trim() ? (
+            <MarkdownContent html={renderMarkdown(value)} />
           ) : (
-            <div
-              className="md"
-              // HTML is escaped by renderMarkdown before tags are added.
-              dangerouslySetInnerHTML={{
-                __html: value.trim() ? renderMarkdown(value) : '<p class="muted">Empty</p>',
-              }}
-            />
+            <Text c="dimmed">Empty</Text>
           )}
-        </div>
+        </Stack>
       );
     }
   }
 }
+
 export function MarkdownField(props: Parameters<typeof useMarkdownFieldPresenter>[0]) {
   return (
     <PresenterScope name="MarkdownField">
@@ -62,6 +56,7 @@ export function MarkdownField(props: Parameters<typeof useMarkdownFieldPresenter
     </PresenterScope>
   );
 }
+
 function MarkdownFieldBinding(props: Parameters<typeof useMarkdownFieldPresenter>[0]) {
   const model = useMarkdownFieldPresenter(props);
   const handlers = useActions(model.handlers);

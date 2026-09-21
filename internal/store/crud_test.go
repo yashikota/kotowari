@@ -136,11 +136,11 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 func TestUpdateWorkspaceRejectsEmptyName(t *testing.T) {
 	s := openTest(t)
 	empty := "  "
-	if _, err := s.UpdateWorkspace(&empty, nil); !errors.Is(err, ErrValidation) {
+	if _, err := s.UpdateWorkspace(&empty, nil, nil, nil, nil, nil); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty name: %v", err)
 	}
 	tz := ""
-	if _, err := s.UpdateWorkspace(nil, &tz); !errors.Is(err, ErrValidation) {
+	if _, err := s.UpdateWorkspace(nil, &tz, nil, nil, nil, nil); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty timezone: %v", err)
 	}
 }

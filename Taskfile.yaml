@@ -44,7 +44,14 @@ tasks:
     desc: Vite dev server (proxies /api to {{.SERVE_ADDR}})
     dir: web
     cmds:
-      - pnpm exec vp dev
+      - |
+        TS_HOST=$(tailscale status --json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Self',{}).get('DNSName','').rstrip('.'))" 2>/dev/null || true)
+        if [ -n "$TS_HOST" ]; then
+          export VITE_DEV_ORIGIN="https://${TS_HOST}:5182"
+          echo "HTTPS (Tailscale): $VITE_DEV_ORIGIN"
+        fi
+        echo "Local (HTTP, browser shows not secure): http://127.0.0.1:5182"
+        pnpm exec vp dev
 
   _run:
     internal: true
