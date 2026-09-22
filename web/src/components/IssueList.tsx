@@ -104,6 +104,9 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
                         <IssueLabelPill key={l.id} name={l.name} color={l.color} />
                       ))}
                       {childCount > 0 ? <IssueMetaText>{childCount}</IssueMetaText> : null}
+                      {(issue.adrNumbers?.length ?? 0) > 0 ? (
+                        <IssueMetaText>{issue.adrNumbers.length} ADR</IssueMetaText>
+                      ) : null}
                       {issue.projectSlug ? (
                         <IssueMetaText>{issue.projectSlug}</IssueMetaText>
                       ) : null}

@@ -1,4 +1,4 @@
-import { Box, Chip, Group, Select, TextInput } from '@mantine/core';
+import { Box, Chip, Group, NativeSelect, TextInput } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { ISSUE_STATUSES } from '../types.ts';
 import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
@@ -9,7 +9,6 @@ import { useIssueFiltersPresenter } from '../presenters/IssueFilters.tsx';
 
 const filterSelectProps = {
   size: 'xs' as const,
-  comboboxProps: { withinPortal: false },
   styles: {
     input: {
       height: 28,
@@ -40,44 +39,47 @@ export function IssueFiltersView({
           style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
         >
           <Group role="search" aria-label="Issue filters" gap={6} wrap="wrap">
-            <Select
+            <NativeSelect
               aria-label="Filter status"
-              placeholder="Status"
-              clearable
-              value={search.status ?? null}
-              onChange={handlers.Filter_status_onChange0}
-              data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
+              value={search.status ?? ''}
+              onChange={(e) => handlers.Filter_status_onChange0(e.target.value || null)}
+              data={[
+                { value: '', label: 'Status' },
+                ...ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) })),
+              ]}
               w={120}
               {...filterSelectProps}
             />
-            <Select
+            <NativeSelect
               aria-label="Filter project"
-              placeholder="Project"
-              clearable
-              searchable
-              value={search.project ?? null}
-              onChange={handlers.Filter_project_onChange1}
-              data={projects.map((p) => ({ value: p.slug, label: p.name }))}
+              value={search.project ?? ''}
+              onChange={(e) => handlers.Filter_project_onChange1(e.target.value || null)}
+              data={[
+                { value: '', label: 'Project' },
+                ...projects.map((p) => ({ value: p.slug, label: p.name })),
+              ]}
               w={120}
               {...filterSelectProps}
             />
-            <Select
+            <NativeSelect
               aria-label="Filter cycle"
-              placeholder="Cycle"
-              clearable
-              value={search.cycle ? String(search.cycle) : null}
-              onChange={handlers.Filter_cycle_onChange2}
-              data={cycles.map((c) => ({ value: String(c.number), label: 'Cycle ' + c.number }))}
+              value={search.cycle ? String(search.cycle) : ''}
+              onChange={(e) => handlers.Filter_cycle_onChange2(e.target.value || null)}
+              data={[
+                { value: '', label: 'Cycle' },
+                ...cycles.map((c) => ({ value: String(c.number), label: 'Cycle ' + c.number })),
+              ]}
               w={100}
               {...filterSelectProps}
             />
-            <Select
+            <NativeSelect
               aria-label="Filter priority"
-              placeholder="Priority"
-              clearable
-              value={search.priority !== undefined ? String(search.priority) : null}
-              onChange={handlers.Filter_priority_onChange3}
-              data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
+              value={search.priority !== undefined ? String(search.priority) : ''}
+              onChange={(e) => handlers.Filter_priority_onChange3(e.target.value || null)}
+              data={[
+                { value: '', label: 'Priority' },
+                ...[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) })),
+              ]}
               w={110}
               {...filterSelectProps}
             />
