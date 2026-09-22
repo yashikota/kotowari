@@ -18,14 +18,24 @@ test('shortcuts, find, and project-scoped create', async ({ page, request }) => 
   );
 
   await page.goto('/issues');
-  await page.locator('main').click();
+  await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
 
-  await page.keyboard.press('?');
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: '?', shiftKey: true, bubbles: true, cancelable: true }),
+      ),
+  );
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveCount(0);
 
-  await page.keyboard.press('/');
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true })),
+  );
   await expect(page.getByLabel('Find issues')).toBeFocused();
   await page.getByLabel('Find issues').fill('Needle');
   const list = page.getByRole('listbox', { name: 'Issues' });

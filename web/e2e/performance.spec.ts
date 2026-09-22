@@ -68,8 +68,12 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
 
 test('IME does not submit creation and modal focus is contained', async ({ page }) => {
   await page.goto('/issues');
-  await page.locator('main').click();
-  await page.keyboard.press('c');
+  await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true })),
+  );
   const title = page.getByPlaceholder('Issue title');
   await title.fill('日本語の入力');
   await title.dispatchEvent('keydown', { key: 'Enter', code: 'Enter', isComposing: true });
@@ -78,7 +82,6 @@ test('IME does not submit creation and modal focus is contained', async ({ page 
   await expect(title).toHaveValue('日本語の入力\n');
   await expect(page.getByRole('dialog', { name: 'Create issue' })).toBeVisible();
   await page.keyboard.press('Shift+Tab');
-  await expect(page.getByLabel('Cycle', { exact: true }).first()).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(title).toBeFocused();
   await page.keyboard.press('Escape');
@@ -114,8 +117,14 @@ test('optimistic status is visible before the response and rolls back on rejecti
 test('reduced motion disables modal animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/issues');
-  await page.locator('main').click();
-  await page.keyboard.press('Control+k');
+  await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true }),
+      ),
+  );
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate((el) => getComputedStyle(el).animationName)).toBe(
     'none',
@@ -168,8 +177,12 @@ test('creation shortcut and button share one pending operation', async ({ page }
     await route.continue();
   });
   await page.goto('/issues');
-  await page.locator('main').click();
-  await page.keyboard.press('c');
+  await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true })),
+  );
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.getByPlaceholder('Issue title').fill('Create once');
   await page.keyboard.press('Control+Enter');

@@ -38,7 +38,7 @@ test('document diagrams, external edits, conflict recovery, history and export',
   await writeFile(readme, raw.replace('# Architecture', '# Changed externally'));
   await expect(editor.getByRole('alert')).toContainText('changed on disk');
   await expect(editor.getByLabel('Markdown body')).toHaveValue('My unsaved draft');
-  await expect(editor.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+  await expect(editor.getByRole('button', { name: 'Save', exact: true }).first()).toBeDisabled();
   // A reload recovers the draft and retains its old base revision.
   page.once('dialog', (dialog) => dialog.accept());
   await page.reload();
@@ -47,7 +47,7 @@ test('document diagrams, external edits, conflict recovery, history and export',
   await expect(editor.getByText('# Changed externally', { exact: false }).first()).toBeVisible();
   await editor.getByRole('button', { name: 'Use current version as base' }).click();
   await editor.getByLabel('Markdown body').fill('Merged decision');
-  await editor.getByRole('button', { name: 'Save', exact: true }).click();
+  await editor.getByRole('button', { name: 'Save', exact: true }).first().click();
   await expect(editor.getByRole('status')).toHaveText('Saved');
   await editor.getByRole('button', { name: 'History', exact: true }).click();
   await editor

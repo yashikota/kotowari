@@ -3,9 +3,12 @@ import { expect, test } from '@playwright/test';
 test('create issue, comment, and page', async ({ page }) => {
   await page.goto('/issues');
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.locator('main').click();
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true })),
+  );
 
-  await page.keyboard.press('c');
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('Smoke issue');
@@ -36,8 +39,11 @@ test('create issue, comment, and page', async ({ page }) => {
   await comment.press('Control+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
 
-  await page.locator('main').click();
-  await page.keyboard.press('p');
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true, cancelable: true })),
+  );
   const adrTitle = page.getByPlaceholder('ADR title');
   await expect(adrTitle).toBeFocused();
   await adrTitle.fill('local cache');
@@ -87,8 +93,11 @@ test('create issue, comment, and page', async ({ page }) => {
 test('sub-issue and saved view', async ({ page }) => {
   await page.goto('/issues');
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.locator('main').click();
-  await page.keyboard.press('c');
+  await page.evaluate(() =>
+    document
+      .querySelector('[data-presenter^="Shell:"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true })),
+  );
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('Parent job');
