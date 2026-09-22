@@ -50,12 +50,7 @@ const NAV_ICONS: Record<string, ReactNode> = {
 
 export function ShellView({ model }: { model: ReturnType<typeof useShellPresenter> }) {
   const { t } = useTranslation();
-  const {
-    createIssue,
-    createADR,
-    createPage,
-    createView,
-  } = model;
+  const { createIssue, createADR, createPage, createView } = model;
   const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(createIssue);
   const adrTitleRef = useFocusWhen<HTMLTextAreaElement>(createADR);
   const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(createPage);
@@ -90,7 +85,11 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
       } = model;
       return (
         <>
-          <AppShell navbar={{ width: 260, breakpoint: 0 }} padding="md" styles={{ root: { height: '100dvh' } }}>
+          <AppShell
+            navbar={{ width: 260, breakpoint: 0 }}
+            padding="md"
+            styles={{ root: { height: '100dvh' } }}
+          >
             <AppShell.Navbar p="md">
               <AppShell.Section>
                 <Stack gap={4} mb="md">
@@ -139,7 +138,12 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                       leftSection={<IconFilter size={14} aria-hidden />}
                     />
                   ))}
-                  <Button type="button" variant="subtle" size="compact-sm" onClick={handlers.onClick0}>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    size="compact-sm"
+                    onClick={handlers.onClick0}
+                  >
                     New view
                   </Button>
                 </Stack>

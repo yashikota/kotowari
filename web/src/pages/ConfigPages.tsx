@@ -99,7 +99,12 @@ export function ConfigPageView({ model }: { model: ReturnType<typeof useConfigPa
                 ) : (
                   <Stack gap="sm">
                     {diagnostics.map((d) => (
-                      <Alert key={`${d.path}:${d.code}`} color="yellow" title={d.path} variant="light">
+                      <Alert
+                        key={`${d.path}:${d.code}`}
+                        color="yellow"
+                        title={d.path}
+                        variant="light"
+                      >
                         <Text size="sm">{d.message}</Text>
                         <Text size="xs" c="dimmed" mt={4}>
                           {d.code}

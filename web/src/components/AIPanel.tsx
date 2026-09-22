@@ -92,7 +92,10 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
                 : null}
 
               {state?.permissions.map((p) => (
-                <Fieldset key={p.id} legend={p.params.toolCall?.title ?? 'Agent requests permission'}>
+                <Fieldset
+                  key={p.id}
+                  legend={p.params.toolCall?.title ?? 'Agent requests permission'}
+                >
                   <Stack gap="sm">
                     <Accordion>
                       <Accordion.Item value="details">

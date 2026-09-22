@@ -52,9 +52,7 @@ export function useHomePagePresenter() {
             signals.dispatchEvent(new Event('kotowari:refresh'));
             await router.invalidate();
           })
-          .catch((err: unknown) =>
-            setError(err instanceof Error ? err.message : 'save failed'),
-          );
+          .catch((err: unknown) => setError(err instanceof Error ? err.message : 'save failed'));
       },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

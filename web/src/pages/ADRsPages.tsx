@@ -149,11 +149,7 @@ export function ADRDetailPageView({
               title={adr.identifier}
               actions={
                 <Group gap="xs" wrap="wrap">
-                  <Button
-                    component="a"
-                    href={`/api/adrs/${identifier}/export`}
-                    variant="subtle"
-                  >
+                  <Button component="a" href={`/api/adrs/${identifier}/export`} variant="subtle">
                     Export with assets
                   </Button>
                   <Button type="button" onClick={handlers.onClick0}>
@@ -217,7 +213,8 @@ export function ADRDetailPageView({
                         <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
                           {a.identifier} {a.title}
                         </Link>{' '}
-                        — {a.number === adr.supersedes ? 'Previous decision' : 'Successor'} ({a.status})
+                        — {a.number === adr.supersedes ? 'Previous decision' : 'Successor'} (
+                        {a.status})
                       </Text>
                     ))}
                 </Stack>
@@ -275,7 +272,12 @@ export function ADRDetailPageView({
                         <Link
                           to="/issues/$identifier"
                           params={{ identifier: iss.identifier }}
-                          style={{ flexShrink: 0, width: 72, fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 'var(--mantine-font-size-xs)' }}
+                          style={{
+                            flexShrink: 0,
+                            width: 72,
+                            fontFamily: 'var(--mantine-font-family-monospace)',
+                            fontSize: 'var(--mantine-font-size-xs)',
+                          }}
                         >
                           {iss.identifier}
                         </Link>

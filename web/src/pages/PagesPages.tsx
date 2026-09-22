@@ -1,13 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import {
-  Box,
-  Button,
-  Group,
-  NativeSelect,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Box, Button, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';

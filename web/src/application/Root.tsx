@@ -127,7 +127,13 @@ function ErrorNotice() {
     >
       <Group justify="space-between" wrap="nowrap" align="flex-start">
         <span>{error}</span>
-        <Button type="button" variant="white" color="red" size="compact-xs" onClick={() => mediator.clearError()}>
+        <Button
+          type="button"
+          variant="white"
+          color="red"
+          size="compact-xs"
+          onClick={() => mediator.clearError()}
+        >
           {t('common.dismiss')}
         </Button>
       </Group>

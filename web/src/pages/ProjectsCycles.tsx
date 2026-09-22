@@ -174,7 +174,11 @@ export function ProjectDetailPageView({
                     <Button type="button" onClick={handlers.onClick7}>
                       New ADR
                     </Button>
-                    <Stack gap={4} component="ul" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    <Stack
+                      gap={4}
+                      component="ul"
+                      style={{ listStyle: 'none', margin: 0, padding: 0 }}
+                    >
                       {data.adrs
                         .filter(
                           (a) =>
@@ -193,7 +197,11 @@ export function ProjectDetailPageView({
                   </Stack>
                   <Stack gap="xs">
                     <Title order={4}>Pages</Title>
-                    <Stack gap={4} component="ul" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    <Stack
+                      gap={4}
+                      component="ul"
+                      style={{ listStyle: 'none', margin: 0, padding: 0 }}
+                    >
                       {data.pages
                         .filter((p) => p.projectSlug === slug)
                         .map((p) => (

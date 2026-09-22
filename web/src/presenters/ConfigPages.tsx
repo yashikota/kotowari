@@ -26,10 +26,7 @@ export function useConfigPagePresenter() {
     setWorkspace(normalizeWorkspace(data.workspace));
   }, [data.workspace]);
 
-  const timeZones = useMemo(
-    () => timeZoneOptions(workspace.timezone),
-    [workspace.timezone],
-  );
+  const timeZones = useMemo(() => timeZoneOptions(workspace.timezone), [workspace.timezone]);
   const languages = useMemo(
     () => languageOptions(resolveLocale(workspace.locale)),
     [workspace.locale],
@@ -60,9 +57,7 @@ export function useConfigPagePresenter() {
             signals.dispatchEvent(new Event('kotowari:refresh'));
             await router.invalidate();
           })
-          .catch((err: unknown) =>
-            setError(err instanceof Error ? err.message : 'save failed'),
-          );
+          .catch((err: unknown) => setError(err instanceof Error ? err.message : 'save failed'));
       },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

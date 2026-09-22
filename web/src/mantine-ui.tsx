@@ -48,13 +48,7 @@ export function RouterNavLink({
   );
 }
 
-export function PageHeader({
-  title,
-  actions,
-}: {
-  title: ReactNode;
-  actions?: ReactNode;
-}) {
+export function PageHeader({ title, actions }: { title: ReactNode; actions?: ReactNode }) {
   return (
     <Group justify="space-between" mb="md" wrap="nowrap">
       <Title order={2}>{title}</Title>

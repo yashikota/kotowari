@@ -18,15 +18,33 @@ const STATUS_ICON_SIZE = 14;
 export function IssueStatusIcon({ status }: { status: IssueStatus }) {
   switch (status) {
     case 'backlog':
-      return <IconCircleDashed size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-gray-5)" />;
+      return (
+        <IconCircleDashed
+          size={STATUS_ICON_SIZE}
+          stroke={1.75}
+          color="var(--mantine-color-gray-5)"
+        />
+      );
     case 'todo':
-      return <IconCircle size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-gray-5)" />;
+      return (
+        <IconCircle size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-gray-5)" />
+      );
     case 'in_progress':
-      return <IconProgress size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-yellow-5)" />;
+      return (
+        <IconProgress size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-yellow-5)" />
+      );
     case 'done':
-      return <IconCircleCheck size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-teal-5)" />;
+      return (
+        <IconCircleCheck
+          size={STATUS_ICON_SIZE}
+          stroke={1.75}
+          color="var(--mantine-color-teal-5)"
+        />
+      );
     case 'canceled':
-      return <IconCircleX size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-gray-6)" />;
+      return (
+        <IconCircleX size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-gray-6)" />
+      );
   }
 }
 
@@ -68,7 +86,13 @@ export function IssueLabelPill({ name, color }: { name: string; color: string })
 
 export function IssueMetaText({ children, ...props }: BoxProps & { children: ReactNode }) {
   return (
-    <Text component="span" size="xs" c="dimmed" style={{ whiteSpace: 'nowrap', flexShrink: 0 }} {...props}>
+    <Text
+      component="span"
+      size="xs"
+      c="dimmed"
+      style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+      {...props}
+    >
       {children}
     </Text>
   );

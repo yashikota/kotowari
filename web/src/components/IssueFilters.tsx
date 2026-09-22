@@ -30,17 +30,8 @@ export function IssueFiltersView({
 
   switch (model._view) {
     case 0: {
-      const {
-        search,
-        projects,
-        cycles,
-        labels,
-        find,
-        onFind,
-        findRef,
-        selectedLabels,
-        handlers,
-      } = model;
+      const { search, projects, cycles, labels, find, onFind, findRef, selectedLabels, handlers } =
+        model;
       return (
         <Box
           px="sm"
