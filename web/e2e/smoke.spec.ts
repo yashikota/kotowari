@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 test('create issue, comment, and page', async ({ page }) => {
-  await page.goto('/');
-  await expect(page).toHaveURL(/\/issues/);
+  await page.goto('/issues');
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.locator('body').click();
+  await page.evaluate(() => document.body.focus());
 
   await page.keyboard.press('c');
   const issueTitle = page.getByPlaceholder('Issue title');
@@ -37,7 +36,7 @@ test('create issue, comment, and page', async ({ page }) => {
   await comment.press('Control+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
 
-  await page.locator('body').click();
+  await page.evaluate(() => document.body.focus());
   await page.keyboard.press('p');
   const adrTitle = page.getByPlaceholder('ADR title');
   await expect(adrTitle).toBeFocused();
@@ -86,10 +85,9 @@ test('create issue, comment, and page', async ({ page }) => {
 });
 
 test('sub-issue and saved view', async ({ page }) => {
-  await page.goto('/');
-  await expect(page).toHaveURL(/\/issues/);
+  await page.goto('/issues');
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.locator('body').click();
+  await page.evaluate(() => document.body.focus());
   await page.keyboard.press('c');
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();

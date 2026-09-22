@@ -68,7 +68,7 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
 
 test('IME does not submit creation and modal focus is contained', async ({ page }) => {
   await page.goto('/issues');
-  await page.locator('body').click();
+  await page.evaluate(() => document.body.focus());
   await page.keyboard.press('c');
   const title = page.getByPlaceholder('Issue title');
   await title.fill('日本語の入力');
@@ -78,7 +78,7 @@ test('IME does not submit creation and modal focus is contained', async ({ page 
   await expect(title).toHaveValue('日本語の入力\n');
   await expect(page.getByRole('dialog', { name: 'Create issue' })).toBeVisible();
   await page.keyboard.press('Shift+Tab');
-  await expect(page.getByLabel('Cycle', { exact: true })).toBeFocused();
+  await expect(page.getByLabel('Cycle', { exact: true }).first()).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(title).toBeFocused();
   await page.keyboard.press('Escape');
@@ -114,6 +114,7 @@ test('optimistic status is visible before the response and rolls back on rejecti
 test('reduced motion disables modal animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/issues');
+  await page.evaluate(() => document.body.focus());
   await page.keyboard.press('Control+k');
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate((el) => getComputedStyle(el).animationName)).toBe(
@@ -141,6 +142,7 @@ test('AI composer uses Enter for newline and Ctrl+Enter for one submission', asy
   await page.getByRole('button', { name: `Ask AI about ${adr.identifier}` }).click();
   const message = page.getByLabel('Message to AI');
   await message.fill('first line');
+  await message.press('End');
   await message.press('Enter');
   await message.press('a');
   await expect(message).toHaveValue('first line\na');
@@ -166,7 +168,7 @@ test('creation shortcut and button share one pending operation', async ({ page }
     await route.continue();
   });
   await page.goto('/issues');
-  await page.locator('body').click();
+  await page.evaluate(() => document.body.focus());
   await page.keyboard.press('c');
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.getByPlaceholder('Issue title').fill('Create once');

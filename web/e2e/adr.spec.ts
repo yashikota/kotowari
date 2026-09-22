@@ -29,6 +29,7 @@ test('ADR list, detail, link, and append-only', async ({ page, request }) => {
   await expect(page.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('ADR status')).toBeVisible();
   await expect(page.getByLabel('Supersedes ADR number')).toBeVisible();
+  await page.getByRole('radio', { name: 'Edit' }).first().scrollIntoViewIfNeeded();
   await page.getByRole('radio', { name: 'Edit' }).first().click({ force: true });
   await expect(page.getByLabel('Markdown body').first()).toHaveValue(/評価関数/);
 
