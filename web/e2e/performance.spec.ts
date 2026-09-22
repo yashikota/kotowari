@@ -68,7 +68,7 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
 
 test('IME does not submit creation and modal focus is contained', async ({ page }) => {
   await page.goto('/issues');
-  await page.evaluate(() => document.body.focus());
+  await page.getByRole('link', { name: 'Issues', exact: true }).focus();
   await page.keyboard.press('c');
   const title = page.getByPlaceholder('Issue title');
   await title.fill('日本語の入力');
@@ -114,7 +114,7 @@ test('optimistic status is visible before the response and rolls back on rejecti
 test('reduced motion disables modal animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/issues');
-  await page.evaluate(() => document.body.focus());
+  await page.getByRole('link', { name: 'Issues', exact: true }).focus();
   await page.keyboard.press('Control+k');
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate((el) => getComputedStyle(el).animationName)).toBe(
@@ -168,7 +168,7 @@ test('creation shortcut and button share one pending operation', async ({ page }
     await route.continue();
   });
   await page.goto('/issues');
-  await page.evaluate(() => document.body.focus());
+  await page.getByRole('link', { name: 'Issues', exact: true }).focus();
   await page.keyboard.press('c');
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.getByPlaceholder('Issue title').fill('Create once');

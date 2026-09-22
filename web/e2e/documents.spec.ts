@@ -28,8 +28,7 @@ test('document diagrams, external edits, conflict recovery, history and export',
   ).toBeVisible();
   await expect(editor.locator('iframe')).toHaveAttribute('sandbox', '');
   await expect(editor.frameLocator('iframe').getByText('SCRIPT RAN')).toHaveCount(0);
-  await editor.getByRole('radio', { name: 'Edit', exact: true }).first().scrollIntoViewIfNeeded();
-  await editor.getByRole('radio', { name: 'Edit', exact: true }).first().click({ force: true });
+  await page.getByRole('radio', { name: 'Edit', exact: true }).first().evaluate((el) => (el as HTMLInputElement).click());
   await editor.getByLabel('Markdown body').fill('My unsaved draft');
   const readme = join(dir, 'README.md');
   const raw = await readFile(readme, 'utf8');

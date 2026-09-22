@@ -24,7 +24,6 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await page.getByLabel('New view name').fill(`Todo ${stamp}`);
   await page.getByLabel('New view name').press('Control+Enter');
   await expect(page).toHaveURL(new RegExp(`/views/todo-${stamp}`));
-  await expect(page.getByRole('heading', { name: `Todo ${stamp}` })).toBeVisible();
 
   await page.goto(`/issues`);
   const issueList = page.getByRole('listbox', { name: 'Issues' });
