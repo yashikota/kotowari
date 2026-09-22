@@ -18,7 +18,7 @@ test('shortcuts, find, and project-scoped create', async ({ page, request }) => 
   );
 
   await page.goto('/issues');
-  await page.getByRole('link', { name: 'Issues', exact: true }).focus();
+  await page.locator('main').click();
 
   await page.keyboard.press('?');
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
