@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
-const port = process.env.E2E_PORT ?? '7730';
+const port = process.env.E2E_PORT ?? '5108';
 const ci = Boolean(process.env.CI);
 process.env.E2E_KOTOWARI_HOME ??= mkdtempSync(join(tmpdir(), 'kotowari-e2e-'));
 process.env.KOTOWARI_ACP_COMMAND = JSON.stringify([

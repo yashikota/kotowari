@@ -18,7 +18,7 @@ import (
 
 const (
 	defaultServeHost = "127.0.0.1"
-	defaultServePort = 7730
+	defaultServePort = 5108
 	maxPortAttempts  = 20
 	serveChildEnv    = "KOTOWARI_SERVE_FOREGROUND"
 )

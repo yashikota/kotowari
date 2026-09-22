@@ -23,7 +23,7 @@ export default defineConfig({
       : {}),
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:7730',
+        target: 'http://127.0.0.1:5108',
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
             const host = req.headers.host;

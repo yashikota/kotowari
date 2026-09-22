@@ -1,7 +1,9 @@
 import type { LinkProps } from '@tanstack/react-router';
 
+type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7';
+
 type NavTarget = {
-  key: string;
+  key: NavKey;
   label: string;
   to: LinkProps['to'];
   search?: LinkProps['search'];
@@ -23,13 +25,11 @@ export const CONFIG_NAV: NavTarget = { key: '0', label: 'Config', to: '/config' 
 
 export const SIDEBAR_NAV: NavTarget[] = [...PRIMARY_NAV, CONFIG_NAV];
 
-export type NavShortcutAction = `nav-${NavTarget['key']}`;
+export type NavShortcutAction = `nav-${NavKey}`;
 
 export function navActionFromKey(key: string): NavShortcutAction | null {
-  if (SIDEBAR_NAV.some((item) => item.key === key)) {
-    return `nav-${key}`;
-  }
-  return null;
+  const match = SIDEBAR_NAV.find((item) => item.key === key);
+  return match ? `nav-${match.key}` : null;
 }
 
 export function navTargetForAction(action: NavShortcutAction): NavTarget | undefined {

@@ -1,7 +1,7 @@
 version: "3"
 
 vars:
-  SERVE_ADDR: 127.0.0.1:7730
+  SERVE_ADDR: 127.0.0.1:5108
 
 tasks:
   default:

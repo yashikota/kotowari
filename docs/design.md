@@ -102,7 +102,7 @@ UI と API でリンクしたときは両側を更新する。
 `kotowari` は単一の Go バイナリである。短い別名は作らない。
 
 - `kotowari init`：`.kotowari/` と空の `workspace.toml` を作り、skills を `.agents/skills/` へコピーする
-- `kotowari serve`：JSON API と SPA を `127.0.0.1:7730` で出す。待ち受け先は loopback に限定する
+- `kotowari serve`：JSON API と SPA を `127.0.0.1:5108` で出す。待ち受け先は loopback に限定する
 - `kotowari list`：`--issues` と `--adr` で識別子とタイトルを一覧する。`--status` で絞り、`--long` で状態と日付も出す
 - `kotowari adr new [--supersedes N] [--status proposed] [--issue N] TITLE`：ADR を作る。エディタは開かない。`--supersedes` は旧 ADR を `superseded` にする
 - `kotowari adr status <id> <status>`：状態を変える。`superseded --by N` は後続 ADR の `supersedes` を結ぶ

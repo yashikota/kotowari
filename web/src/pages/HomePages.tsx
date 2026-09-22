@@ -132,22 +132,11 @@ function PropertyRow({
   );
 }
 
-function StatLink({
-  to,
-  search,
-  value,
-  label,
-}: {
-  to: string;
-  search?: Record<string, unknown>;
-  value: number;
-  label: string;
-}) {
+function StatLink({ to, value, label }: { to: string; value: number; label: string }) {
   return (
     <Anchor
       component={Link}
       to={to}
-      search={search}
       underline="never"
       c="inherit"
       style={{ textDecoration: 'none' }}
@@ -269,12 +258,7 @@ export function HomePageView({ model }: { model: ReturnType<typeof useHomePagePr
               <Divider my={40} color="var(--mantine-color-default-border)" />
 
               <Group gap={32} wrap="wrap" component="section" aria-label={t('home.overview')}>
-                <StatLink
-                  to="/issues"
-                  search={{}}
-                  value={counts.openIssues}
-                  label={t('home.openIssues')}
-                />
+                <StatLink to="/issues" value={counts.openIssues} label={t('home.openIssues')} />
                 <StatLink to="/projects" value={counts.projects} label={t('home.projects')} />
                 <StatLink to="/adrs" value={counts.adrs} label={t('home.adrs')} />
                 <Text size="sm" c="dimmed">

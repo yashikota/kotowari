@@ -67,7 +67,7 @@ func TestParseServeAddr(t *testing.T) {
 }
 
 func TestListenRejectsNonLoopback(t *testing.T) {
-	for _, addr := range []string{"0.0.0.0:7730", "[::]:7730", "192.0.2.1:7730"} {
+	for _, addr := range []string{"0.0.0.0:5108", "[::]:5108", "192.0.2.1:5108"} {
 		ln, _, err := listenTCP(addr, true, nil)
 		if ln != nil {
 			_ = ln.Close()

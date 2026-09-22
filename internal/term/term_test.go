@@ -27,8 +27,8 @@ func TestStyleHelpersPlain(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	st := term.For(os.Stdout)
 	var buf bytes.Buffer
-	st.Listen(&buf, "http://127.0.0.1:7730")
-	if !strings.Contains(buf.String(), "http://127.0.0.1:7730") {
+	st.Listen(&buf, "http://127.0.0.1:5108")
+	if !strings.Contains(buf.String(), "http://127.0.0.1:5108") {
 		t.Fatalf("listen output = %q", buf.String())
 	}
 }

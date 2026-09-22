@@ -10,9 +10,6 @@ export function isAppLocale(value: string): value is AppLocale {
 
 export function normalizeWorkspace(workspace: Workspace): Workspace {
   return {
-    url: '',
-    description: '',
-    githubUrl: '',
     ...workspace,
     locale: resolveLocale(workspace.locale),
   };

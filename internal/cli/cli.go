@@ -78,7 +78,7 @@ func newRootCommand(stdout, stderr io.Writer, version string) *urfavecli.Command
 				Flags: []urfavecli.Flag{
 					&urfavecli.StringFlag{
 						Name:  "addr",
-						Value: "127.0.0.1:7730",
+						Value: net.JoinHostPort(defaultServeHost, strconv.Itoa(defaultServePort)),
 						Usage: "listen address",
 					},
 					&urfavecli.BoolFlag{

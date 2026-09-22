@@ -485,7 +485,7 @@ func TestWorkspaceHasNoSyncMetadata(t *testing.T) {
 
 func TestOriginAllowedViaForwardedHost(t *testing.T) {
 	s := testAPI(t)
-	req := httptest.NewRequest("PATCH", "http://127.0.0.1:7730/api/workspace", strings.NewReader(`{"name":"dev"}`))
+	req := httptest.NewRequest("PATCH", "http://127.0.0.1:5108/api/workspace", strings.NewReader(`{"name":"dev"}`))
 	req.Header.Set("Origin", "http://127.0.0.1:5182")
 	req.Header.Set("X-Forwarded-Host", "127.0.0.1:5182")
 	req.Header.Set("Content-Type", "application/json")
@@ -498,7 +498,7 @@ func TestOriginAllowedViaForwardedHost(t *testing.T) {
 
 func TestOriginDeniedWithoutForwardedHost(t *testing.T) {
 	s := testAPI(t)
-	req := httptest.NewRequest("PATCH", "http://127.0.0.1:7730/api/workspace", strings.NewReader(`{"name":"dev"}`))
+	req := httptest.NewRequest("PATCH", "http://127.0.0.1:5108/api/workspace", strings.NewReader(`{"name":"dev"}`))
 	req.Header.Set("Origin", "http://127.0.0.1:5182")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
