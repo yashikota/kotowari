@@ -3,7 +3,7 @@ import { Box } from '@mantine/core';
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
-import { EmptyState, PageHeader, Pane, Shortcut, SplitLayout } from '../mantine-ui.tsx';
+import { EmptyState, PageHeader, Pane, Shortcut, SplitLayout, MetaBadge } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import {
@@ -20,12 +20,14 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
           <SplitLayout>
             <Pane variant="list">
+              <PageHeader title="Issues" actions={<MetaBadge>{issues.length}</MetaBadge>} />
               <IssueFilters
                 search={search}
                 projects={data.projects}
                 cycles={data.cycles}
                 labels={data.labels}
                 onChange={handlers.onChange0}
+                onSaveView={handlers.onSaveView1}
                 find={find}
                 onFind={handlers.onFind2}
               />

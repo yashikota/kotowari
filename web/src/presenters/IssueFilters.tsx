@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { IssueSearch } from '../api.ts';
 import type { Cycle, Label, Project } from '../types.ts';
 
@@ -9,6 +9,7 @@ type Props = {
   cycles: Cycle[];
   labels: Label[];
   onChange: (next: IssueSearch) => void;
+  onSaveView?: (name: string) => Promise<void>;
   find?: string;
   onFind?: (q: string) => void;
 };
@@ -19,9 +20,11 @@ export function useIssueFiltersPresenter({
   cycles,
   labels,
   onChange,
+  onSaveView,
   find,
   onFind,
 }: Props) {
+  const [viewName, setViewName] = useState('');
   const findRef = useRef<HTMLInputElement>(null);
 
   const selectedLabels = (search.labels ?? '')
@@ -40,8 +43,10 @@ export function useIssueFiltersPresenter({
     cycles,
     labels,
     onChange,
+    onSaveView,
     find,
     onFind,
+    viewName,
     findRef,
     selectedLabels,
     handlers: {
@@ -58,6 +63,15 @@ export function useIssueFiltersPresenter({
         const next = on ? selectedLabels.filter((n) => n !== l.name) : [...selectedLabels, l.name];
         set({ labels: next.length ? next.join(',') : undefined });
       },
+      onSubmit6: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
+        e.preventDefault();
+        const name = viewName.trim();
+        if (!name) return;
+        return onSaveView?.(name).then(() => setViewName(''));
+      },
+      New_view_name_onChange7: (
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+      ) => setViewName(e.target.value),
     },
   };
 }

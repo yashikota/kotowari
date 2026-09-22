@@ -1,4 +1,4 @@
-import { Box, Chip, Group, NativeSelect, TextInput } from '@mantine/core';
+import { Box, Chip, Group, NativeSelect, TextInput, Textarea } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { ISSUE_STATUSES } from '../types.ts';
 import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
@@ -29,8 +29,19 @@ export function IssueFiltersView({
 
   switch (model._view) {
     case 0: {
-      const { search, projects, cycles, labels, find, onFind, findRef, selectedLabels, handlers } =
-        model;
+      const {
+        search,
+        projects,
+        cycles,
+        labels,
+        onSaveView,
+        find,
+        onFind,
+        viewName,
+        findRef,
+        selectedLabels,
+        handlers,
+      } = model;
       return (
         <Box
           px="sm"
@@ -120,6 +131,20 @@ export function IssueFiltersView({
                 })}
               </Chip.Group>
             </Group>
+          ) : null}
+          {onSaveView ? (
+            <Box component="form" mt={6} onSubmit={handlers.onSubmit6}>
+              <Textarea
+                rows={2}
+                aria-label="New view name"
+                placeholder="Save as view"
+                value={viewName}
+                onChange={handlers.New_view_name_onChange7}
+                size="xs"
+                autosize
+                minRows={1}
+              />
+            </Box>
           ) : null}
         </Box>
       );

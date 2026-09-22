@@ -72,6 +72,7 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
             <SegmentedControl
               aria-label="Document view"
               value={mode}
+              transitionDuration={0}
               onChange={(value) => {
                 if (value === 'preview') handlers.onClick0();
                 else if (value === 'edit') handlers.onClick1();

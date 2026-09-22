@@ -30,7 +30,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   const issueList = page.getByRole('listbox', { name: 'Issues' });
   await issueList.getByRole('option', { name: new RegExp(keepTitle) }).click();
   await expect(page).toHaveURL(/\/issues\/ISS-/);
-  await expect(page.locator('.title-input')).toHaveValue(keepTitle);
+  await expect(page.getByLabel('Issue title')).toHaveValue(keepTitle);
   const label = `Harbor ${stamp}`;
   await page.getByLabel('New label').fill(label);
   await page.getByLabel('New label').press('Control+Enter');
