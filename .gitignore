@@ -22,3 +22,5 @@ coverage
 *.test
 docs/superpowers/*
 
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
