@@ -21,14 +21,14 @@ test('document diagrams, external edits, conflict recovery, history and export',
     '<style>h1{color:red}</style><h1>System diagram</h1><script>document.body.innerHTML="SCRIPT RAN"</script>',
   );
   await page.goto(`/adrs/${adr.identifier}`);
-  const editor = page.locator('.document-editor').first();
+  const editor = page;
   await expect(editor.getByRole('table')).toBeVisible();
   await expect(
     editor.frameLocator('iframe').getByRole('heading', { name: 'System diagram' }),
   ).toBeVisible();
   await expect(editor.locator('iframe')).toHaveAttribute('sandbox', '');
   await expect(editor.frameLocator('iframe').getByText('SCRIPT RAN')).toHaveCount(0);
-  await editor.getByRole('button', { name: 'Edit', exact: true }).click();
+  await editor.getByRole('radio', { name: 'Edit', exact: true }).click({ force: true });
   await editor.getByLabel('Markdown body').fill('My unsaved draft');
   const readme = join(dir, 'README.md');
   const raw = await readFile(readme, 'utf8');

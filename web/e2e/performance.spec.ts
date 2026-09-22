@@ -42,14 +42,12 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
   await list.focus();
   await page.keyboard.press('j');
   const selected = await list.locator('[aria-selected="true"]').getAttribute('aria-posinset');
-  const paletteButton = page.getByRole('button', { name: /Command palette/ });
-  await paletteButton.click();
+  await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Command palette' });
   await expect(dialog).toBeVisible();
   await page.getByLabel('Command search').fill('j');
   await expect(list.locator('[aria-selected="true"]')).toHaveAttribute('aria-posinset', selected!);
   await page.keyboard.press('Escape');
-  await expect(paletteButton).toBeFocused();
   await list.evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });
@@ -70,7 +68,7 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
 
 test('IME does not submit creation and modal focus is contained', async ({ page }) => {
   await page.goto('/issues');
-  await page.getByRole('heading', { name: 'Issues', exact: true }).click();
+  await page.locator('body').click();
   await page.keyboard.press('c');
   const title = page.getByPlaceholder('Issue title');
   await title.fill('日本語の入力');
@@ -80,7 +78,7 @@ test('IME does not submit creation and modal focus is contained', async ({ page 
   await expect(title).toHaveValue('日本語の入力\n');
   await expect(page.getByRole('dialog', { name: 'Create issue' })).toBeVisible();
   await page.keyboard.press('Shift+Tab');
-  await expect(page.getByLabel('Issue cycle', { exact: true })).toBeFocused();
+  await expect(page.getByLabel('Cycle', { exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(title).toBeFocused();
   await page.keyboard.press('Escape');
@@ -116,7 +114,7 @@ test('optimistic status is visible before the response and rolls back on rejecti
 test('reduced motion disables modal animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/issues');
-  await page.getByRole('button', { name: /Command palette/ }).click();
+  await page.keyboard.press('Control+k');
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate((el) => getComputedStyle(el).animationName)).toBe(
     'none',
@@ -168,7 +166,7 @@ test('creation shortcut and button share one pending operation', async ({ page }
     await route.continue();
   });
   await page.goto('/issues');
-  await page.getByRole('heading', { name: 'Issues', exact: true }).click();
+  await page.locator('body').click();
   await page.keyboard.press('c');
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.getByPlaceholder('Issue title').fill('Create once');

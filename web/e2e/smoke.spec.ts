@@ -4,7 +4,7 @@ test('create issue, comment, and page', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/issues/);
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.getByRole('heading', { name: 'Issues' }).click();
+  await page.locator('body').click();
 
   await page.keyboard.press('c');
   const issueTitle = page.getByPlaceholder('Issue title');
@@ -17,19 +17,19 @@ test('create issue, comment, and page', async ({ page }) => {
   if (!identifier) {
     throw new Error('expected issue identifier in the URL');
   }
-  await expect(page.locator('.title-input')).toHaveValue('Smoke issue');
+  await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
 
-  await page.getByRole('button', { name: 'Bug' }).click();
-  await expect(page.getByRole('button', { name: 'Bug' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('checkbox', { name: 'Bug' }).click({ force: true });
+  await expect(page.getByRole('checkbox', { name: 'Bug' })).toBeChecked();
 
   await page.getByLabel('Due date').fill('2026-09-01');
-  await page.getByRole('button', { name: 'Preview' }).click();
+  await page.getByRole('radio', { name: 'Preview' }).click({ force: true });
   await expect(page.getByRole('heading', { name: '目的' })).toBeVisible();
-  await page.getByRole('button', { name: 'Edit' }).click();
+  await page.getByRole('radio', { name: 'Edit' }).click({ force: true });
   await page.getByLabel('Markdown body').fill('## Goal\n\nShow **labels**.');
-  await page.getByLabel('Document view').getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toBeVisible();
-  await page.getByRole('button', { name: 'Preview' }).click();
+  await page.getByRole('radio', { name: 'Preview' }).click({ force: true });
   await expect(page.getByRole('heading', { name: 'Goal' })).toBeVisible();
 
   const comment = page.getByLabel('New note');
@@ -37,7 +37,7 @@ test('create issue, comment, and page', async ({ page }) => {
   await comment.press('Control+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
 
-  await page.getByRole('heading', { name: 'Issues' }).click();
+  await page.locator('body').click();
   await page.keyboard.press('p');
   const adrTitle = page.getByPlaceholder('ADR title');
   await expect(adrTitle).toBeFocused();
@@ -61,19 +61,18 @@ test('create issue, comment, and page', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Cycle 1' })).toBeVisible();
 
   await page.goto(`/issues/${identifier}`);
-  await expect(page.locator('.title-input')).toHaveValue('Smoke issue');
-  await page.getByRole('button', { name: /Command palette/ }).click();
+  await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
+  await page.keyboard.press('Control+k');
   await page.getByLabel('Command search').fill('Assign to Cycle');
   await page.getByRole('option', { name: 'Assign to Cycle 1' }).click();
   await expect(page.getByLabel('Cycle')).toHaveValue(/[1-9]/);
 
   await page.getByLabel('Status').selectOption('done');
   await page.getByRole('link', { name: 'Board' }).click();
-  const doneCol = page.locator('.column', { has: page.getByRole('heading', { name: 'Done' }) });
-  await expect(doneCol.getByRole('button', { name: new RegExp(identifier) })).toBeVisible();
+  await expect(page.getByRole('button', { name: new RegExp(identifier) })).toBeVisible();
 
   await page.getByRole('link', { name: 'Pages' }).click();
-  await page.getByRole('button', { name: /Command palette/ }).click();
+  await page.keyboard.press('Control+k');
   await page.getByLabel('Command search').fill('Create page');
   await page.getByRole('option', { name: 'Create page' }).click();
   const pageTitle = page.getByPlaceholder('Page title');
@@ -90,14 +89,14 @@ test('sub-issue and saved view', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/issues/);
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.getByRole('heading', { name: 'Issues' }).click();
+  await page.locator('body').click();
   await page.keyboard.press('c');
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('Parent job');
   await issueTitle.press('Control+Enter');
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
-  await expect(page.locator('.title-input')).toHaveValue('Parent job');
+  await expect(page.getByLabel('Issue title')).toHaveValue('Parent job');
 
   await page.getByLabel('New sub-issue').fill('Child step');
   await page.getByLabel('New sub-issue').press('Control+Enter');

@@ -34,10 +34,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   const label = `Harbor ${stamp}`;
   await page.getByLabel('New label').fill(label);
   await page.getByLabel('New label').press('Control+Enter');
-  await expect(page.getByRole('button', { name: label, exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(page.getByRole('checkbox', { name: label, exact: true })).toBeChecked();
 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Delete', exact: true }).click();

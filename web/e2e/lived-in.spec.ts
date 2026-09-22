@@ -70,12 +70,12 @@ test.describe('lived-in workspace', () => {
     await expect(viewList.getByRole('option', { name: new RegExp(childTitle) })).toBeVisible();
     await expect(viewList.getByRole('option', { name: new RegExp(doneTitle) })).toHaveCount(0);
 
-    await page.getByRole('button', { name: /Command palette/ }).click();
+    await page.keyboard.press('Control+k');
     const palette = page.getByRole('dialog', { name: 'Command palette' });
     await palette.getByLabel('Command search').fill(childTitle);
     await palette.getByRole('option', { name: new RegExp(childTitle) }).click();
     await expect(page).toHaveURL(/\/issues\/ISS-/);
-    await expect(page.locator('.title-input')).toHaveValue(childTitle);
+    await expect(page.getByLabel('Issue title')).toHaveValue(childTitle);
     await expect(page.getByLabel('Parent')).not.toHaveValue('');
   });
 });
