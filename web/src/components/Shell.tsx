@@ -1,7 +1,9 @@
 import { Outlet } from '@tanstack/react-router';
 import {
   Alert,
+  ActionIcon,
   AppShell,
+  Box,
   Button,
   Divider,
   Group,
@@ -11,15 +13,18 @@ import {
   Stack,
   Text,
   Textarea,
-  Title,
 } from '@mantine/core';
 import {
   IconBook,
+  IconChevronRight,
   IconCircleDot,
   IconFilter,
   IconHome,
   IconLayoutKanban,
   IconListCheck,
+  IconMenu2,
+  IconPlus,
+  IconSearch,
   IconScale,
   IconSettings,
   IconStack2,
@@ -60,6 +65,8 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
     case 0: {
       const {
         workspaceName,
+        routeTitle,
+        mobileNavigationOpen,
         cycles,
         views,
         paletteOpen,
@@ -86,19 +93,56 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
       return (
         <>
           <AppShell
-            navbar={{ width: 260, breakpoint: 0 }}
-            padding="md"
-            styles={{ root: { height: '100dvh' } }}
+            navbar={{ width: 244, breakpoint: 0 }}
+            padding={0}
+            className={`linear-shell${mobileNavigationOpen ? ' linear-mobile-nav-open' : ''}`}
+            styles={{ root: { height: '100dvh', overflow: 'hidden' } }}
           >
-            <AppShell.Navbar p="md">
-              <AppShell.Section>
-                <Stack gap={4} mb="md">
-                  <Title order={4}>{workspaceName || 'workspace'}</Title>
-                </Stack>
-              </AppShell.Section>
+            <AppShell.Navbar
+              p={0}
+              className="linear-sidebar"
+              onClick={(event) => {
+                if (event.target instanceof Element && event.target.closest('a')) {
+                  handlers.onCloseMobileNavigation();
+                }
+              }}
+            >
+              <header className="linear-sidebar-header">
+                <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
+                  <Box className="linear-workspace-mark" aria-hidden>
+                    {(workspaceName || 'K').slice(0, 1).toUpperCase()}
+                  </Box>
+                  <Text className="linear-workspace-name" title={workspaceName || 'Kotowari'}>
+                    {workspaceName || 'Kotowari'}
+                  </Text>
+                </Group>
+                <Group gap={2} wrap="nowrap">
+                  <ActionIcon
+                    type="button"
+                    variant="transparent"
+                    className="linear-icon-button"
+                    aria-label="Open command palette"
+                    title="Search · Ctrl K"
+                    onClick={handlers.onOpenPalette}
+                  >
+                    <IconSearch size={15} stroke={1.7} aria-hidden />
+                  </ActionIcon>
+                  <ActionIcon
+                    type="button"
+                    variant="transparent"
+                    className="linear-icon-button"
+                    aria-label={t('modal.createIssue')}
+                    title={`${t('modal.createIssue')} · C`}
+                    onClick={handlers.onCreateIssue}
+                  >
+                    <IconPlus size={16} stroke={1.7} aria-hidden />
+                  </ActionIcon>
+                </Group>
+              </header>
 
-              <AppShell.Section grow component={ScrollArea}>
+              <AppShell.Section grow component={ScrollArea} className="linear-sidebar-nav">
                 <Stack gap={0} component="nav" aria-label="Primary">
+                  <Text className="linear-sidebar-section-title">Workspace</Text>
                   {PRIMARY_NAV.map((item) => (
                     <RouterNavLink
                       key={item.to}
@@ -123,12 +167,10 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                     ))}
                 </Stack>
 
-                <Divider my="sm" />
+                <Divider className="linear-sidebar-divider" />
 
-                <Stack gap="xs">
-                  <Text size="xs" c="dimmed" tt="uppercase">
-                    Views
-                  </Text>
+                <Stack gap={0} component="nav" aria-label="Saved views">
+                  <Text className="linear-sidebar-section-title">{t('nav.views')}</Text>
                   {views.map((v) => (
                     <RouterNavLink
                       key={v.slug}
@@ -142,15 +184,18 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                     type="button"
                     variant="subtle"
                     size="compact-sm"
+                    className="linear-new-view"
                     onClick={handlers.onClick0}
                   >
-                    New view
+                    <Group gap={7} wrap="nowrap">
+                      <IconPlus size={14} stroke={1.6} aria-hidden />
+                      {t('nav.newView')}
+                    </Group>
                   </Button>
                 </Stack>
               </AppShell.Section>
 
-              <AppShell.Section>
-                <Divider my="sm" />
+              <AppShell.Section className="linear-sidebar-footer">
                 <Stack gap={0} component="nav" aria-label="Settings">
                   <RouterNavLink
                     to={CONFIG_NAV.to}
@@ -161,13 +206,59 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
               </AppShell.Section>
             </AppShell.Navbar>
 
-            <AppShell.Main>
-              {error ? (
-                <Alert color="red" variant="light" mb="md">
-                  {error}
-                </Alert>
-              ) : null}
-              <Outlet />
+            {mobileNavigationOpen ? (
+              <button
+                type="button"
+                className="linear-mobile-backdrop"
+                aria-label="Close navigation"
+                onClick={handlers.onCloseMobileNavigation}
+              />
+            ) : null}
+
+            <AppShell.Main className="linear-main">
+              <header className="linear-topbar">
+                <Box component="nav" aria-label="Breadcrumb" className="linear-breadcrumb">
+                  <Text size="sm" c="dimmed" truncate maw={180}>
+                    {workspaceName || 'Kotowari'}
+                  </Text>
+                  <IconChevronRight
+                    size={14}
+                    stroke={1.6}
+                    aria-hidden
+                    className="linear-breadcrumb-separator"
+                  />
+                  <Text className="linear-route-title">{routeTitle}</Text>
+                </Box>
+                <Group gap={4} wrap="nowrap">
+                  <ActionIcon
+                    type="button"
+                    variant="transparent"
+                    className="linear-icon-button linear-mobile-menu-button"
+                    aria-label={mobileNavigationOpen ? 'Close navigation' : 'Open navigation'}
+                    onClick={handlers.onToggleMobileNavigation}
+                  >
+                    <IconMenu2 size={16} stroke={1.7} aria-hidden />
+                  </ActionIcon>
+                  <ActionIcon
+                    type="button"
+                    variant="transparent"
+                    className="linear-icon-button"
+                    aria-label="Open command palette"
+                    title="Search · Ctrl K"
+                    onClick={handlers.onOpenPalette}
+                  >
+                    <IconSearch size={15} stroke={1.7} aria-hidden />
+                  </ActionIcon>
+                </Group>
+              </header>
+              <div className="linear-route-content">
+                {error ? (
+                  <Alert color="red" variant="light" m="sm">
+                    {error}
+                  </Alert>
+                ) : null}
+                <Outlet />
+              </div>
             </AppShell.Main>
           </AppShell>
 
@@ -192,6 +283,7 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
             <Stack gap="md">
               <Textarea
                 ref={issueTitleRef}
+                data-autofocus
                 rows={2}
                 aria-label={t('modal.issueTitle')}
                 placeholder={t('modal.issueTitle')}
@@ -259,6 +351,7 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
             <Stack gap="md">
               <Textarea
                 ref={adrTitleRef}
+                data-autofocus
                 rows={2}
                 aria-label={t('modal.adrTitle')}
                 placeholder={t('modal.adrTitle')}
@@ -292,6 +385,7 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
             <Stack gap="md">
               <Textarea
                 ref={pageTitleRef}
+                data-autofocus
                 rows={2}
                 aria-label={t('modal.pageTitle')}
                 placeholder={t('modal.pageTitle')}
@@ -320,6 +414,7 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
             <Stack gap="md">
               <Textarea
                 ref={viewNameRef}
+                data-autofocus
                 rows={2}
                 aria-label={t('modal.viewName')}
                 placeholder={t('modal.viewName')}

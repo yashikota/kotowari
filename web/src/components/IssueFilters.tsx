@@ -33,9 +33,9 @@ export function IssueFiltersView({
         model;
       return (
         <Box
+          className="linear-issue-list-toolbar"
           px="sm"
           pb="xs"
-          mb="xs"
           style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
         >
           <Group role="search" aria-label="Issue filters" gap={6} wrap="wrap">

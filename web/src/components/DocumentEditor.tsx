@@ -67,7 +67,13 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
       } = model;
       const editRef = useFocusWhen<HTMLTextAreaElement>(mode === 'edit', [mode]);
       return (
-        <Stack gap="md" aria-busy={busy}>
+        <Stack
+          component="section"
+          aria-label="Document editor"
+          className="document-editor"
+          gap="md"
+          aria-busy={busy}
+        >
           <Group justify="space-between" wrap="wrap">
             <SegmentedControl
               aria-label="Document view"

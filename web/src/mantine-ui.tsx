@@ -50,7 +50,7 @@ export function RouterNavLink({
 
 export function PageHeader({ title, actions }: { title: ReactNode; actions?: ReactNode }) {
   return (
-    <Group justify="space-between" mb="md" wrap="nowrap">
+    <Group justify="space-between" mb="md" wrap="nowrap" className="linear-page-header">
       <Title order={2}>{title}</Title>
       {actions ? (
         <Group gap="xs" wrap="wrap">
@@ -65,19 +65,21 @@ export function Pane({
   children,
   single,
   variant = 'default',
+  compact,
 }: {
   children: ReactNode;
   single?: boolean;
   variant?: 'default' | 'list' | 'detail';
+  compact?: boolean;
 }) {
   const variantStyle =
     variant === 'list'
       ? {
-          flex: '0 0 400px',
-          maxWidth: 440,
-          minWidth: 320,
+          flex: compact ? '0 0 320px' : '0 0 min(43%, 520px)',
+          maxWidth: compact ? 380 : 560,
+          minWidth: compact ? 280 : 320,
           borderRight: '1px solid var(--mantine-color-default-border)',
-          padding: 'var(--mantine-spacing-sm) 0 0',
+          padding: 0,
           display: 'flex',
           flexDirection: 'column' as const,
           overflow: 'hidden',
@@ -95,7 +97,13 @@ export function Pane({
           };
 
   return (
-    <Paper p={variant === 'list' ? 0 : 'md'} radius={0} bg="transparent" style={variantStyle}>
+    <Paper
+      p={variant === 'list' ? 0 : 'md'}
+      radius={0}
+      bg="transparent"
+      className={variant === 'list' ? 'linear-list-pane' : undefined}
+      style={variantStyle}
+    >
       {children}
     </Paper>
   );
@@ -107,7 +115,7 @@ export function SplitLayout({ children, single }: { children: ReactNode; single?
       align="stretch"
       gap={0}
       wrap={single ? 'wrap' : 'nowrap'}
-      style={{ height: '100%', minHeight: 0 }}
+      style={{ height: '100%', minHeight: 0, width: '100%' }}
     >
       {children}
     </Group>

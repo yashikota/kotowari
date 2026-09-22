@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vite-plus/test';
+import { beforeAll, describe, expect, it } from 'vite-plus/test';
 import { formatActivity } from './activity.ts';
+import i18n from './i18n/index.ts';
+
+beforeAll(async () => {
+  await i18n.changeLanguage('en');
+});
 
 describe('formatActivity', () => {
   it('describes a create', () => {

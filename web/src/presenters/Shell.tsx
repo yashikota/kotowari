@@ -105,6 +105,7 @@ export function useShellPresenter() {
   const [viewName, setViewName] = useState('');
   const [error, setError] = useState('');
   const [focusedIssue, setFocusedIssue] = useState<string | null>(null);
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
 
   const loadWorkspace = useCallback(async () => {
     try {
@@ -178,6 +179,31 @@ export function useShellPresenter() {
     pathname.startsWith('/issues/') && pathname.slice('/issues/'.length).length > 0
       ? pathname.slice('/issues/'.length)
       : focusedIssue;
+  const routeTitle = (() => {
+    if (pathname === '/') return 'Home';
+    if (pathname === '/issues') return 'Issues';
+    if (pathname.startsWith('/issues/'))
+      return pathname.slice('/issues/'.length).split('/')[0] ?? 'Issue';
+    if (pathname === '/board') return 'Board';
+    if (pathname === '/adrs') return 'ADRs';
+    if (pathname.startsWith('/adrs/'))
+      return pathname.slice('/adrs/'.length).split('/')[0] ?? 'ADR';
+    if (pathname === '/projects') return 'Projects';
+    if (pathname.startsWith('/projects/'))
+      return (
+        projects.find((project) => project.slug === pathname.slice('/projects/'.length))?.name ??
+        'Project'
+      );
+    if (pathname === '/cycles') return 'Cycles';
+    if (pathname.startsWith('/cycles/')) return `Cycle ${pathname.slice('/cycles/'.length)}`;
+    if (pathname === '/pages') return 'Pages';
+    if (pathname.startsWith('/pages/'))
+      return pathname.slice('/pages/'.length).replaceAll('-', ' ');
+    if (pathname.startsWith('/views/'))
+      return views.find((view) => view.slug === pathname.slice('/views/'.length))?.name ?? 'View';
+    if (pathname === '/config') return 'Settings';
+    return workspaceName || 'Workspace';
+  })();
 
   const runCommand = useCallback(
     async (id: string) => {
@@ -471,6 +497,8 @@ export function useShellPresenter() {
   return {
     _view: 0 as const,
     workspaceName,
+    routeTitle,
+    mobileNavigationOpen,
     cycles,
     views,
     overlay,
@@ -499,6 +527,13 @@ export function useShellPresenter() {
       submitPage: () => send('submit:Page'),
       submitView: () => send('submit:View'),
       onClick0: () => setCreateView(true),
+      onOpenPalette: () => {
+        setQuery('');
+        setPaletteOpen(true);
+      },
+      onCreateIssue: () => setCreateIssue(true),
+      onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
+      onCloseMobileNavigation: () => setMobileNavigationOpen(false),
       onQuery6: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof Palette>['onQuery']>>
       ) => {

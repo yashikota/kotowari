@@ -5,6 +5,7 @@ import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
+import { buildIssueListRows } from '../issue-list.ts';
 import type { BoardColumn } from '../components/IssueList.tsx';
 import { localToday } from '../due.ts';
 import { actionFromKeyboard } from '../keymap.ts';
@@ -28,13 +29,25 @@ export function useIssueListPresenter({
   const issues = useIssueProjection(initialIssues);
   const navigate = useNavigate();
   const ids = useMemo(() => issues.map((i) => i.identifier), [issues]);
+  const [collapsedPriorities, setCollapsedPriorities] = useState<number[]>([]);
+  const rows = buildIssueListRows(issues, new Set(collapsedPriorities));
+  const issuePositions = new Map(
+    rows
+      .filter(
+        (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',
+      )
+      .map((row, index) => [row.issue.identifier, index + 1]),
+  );
   const childCounts = useMemo(() => {
     const counts = new Map<number, number>();
     for (const issue of issues)
       if (issue.parentId) counts.set(issue.parentId, (counts.get(issue.parentId) ?? 0) + 1);
     return counts;
   }, [issues]);
-  const windowed = useWindowedRows(issues.length, 36, ids.indexOf(selectedId ?? ''));
+  const selectedRow = rows.findIndex(
+    (row) => row.kind === 'issue' && row.issue.identifier === selectedId,
+  );
+  const windowed = useWindowedRows(rows.length, 36, selectedRow);
 
   useKeyboard((e) => {
     const action = actionFromKeyboard(e);
@@ -82,7 +95,7 @@ export function useIssueListPresenter({
   }, [selectedId, sendIntent]);
 
   if (issues.length === 0) {
-    return { _view: 0 as const, issues, handlers: {} };
+    return { _view: 0 as const, issues, rows, handlers: {} };
   }
 
   const today = localToday();
@@ -91,6 +104,8 @@ export function useIssueListPresenter({
     _view: 1 as const,
     selectedId,
     issues,
+    rows,
+    issuePositions,
     childCounts,
     windowed,
     today,
@@ -103,6 +118,13 @@ export function useIssueListPresenter({
             params: { identifier: issue.identifier },
           });
         }
+      },
+      onToggleGroup1: (priority: number) => {
+        setCollapsedPriorities((current) =>
+          current.includes(priority)
+            ? current.filter((value) => value !== priority)
+            : [...current, priority],
+        );
       },
     },
   };

@@ -17,9 +17,10 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
     case 0: {
       const { data, search, find, issues, selected, handlers } = model;
       return (
-        <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
+        <Box className="linear-full-page" h="100%">
           <SplitLayout>
             <Pane variant="list">
+              <PageHeader title="Issues" />
               <IssueFilters
                 search={search}
                 projects={data.projects}
@@ -70,9 +71,9 @@ export function IssueRoutePageView({
     case 0: {
       const { identifier, issues, handlers } = model;
       return (
-        <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
+        <Box className="linear-full-page" h="100%">
           <SplitLayout>
-            <Pane variant="list">
+            <Pane variant="list" compact>
               <IssueList issues={issues} selectedId={identifier} onSelect={handlers.onSelect0} />
             </Pane>
             <Pane variant="detail">
@@ -104,7 +105,7 @@ export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPage
     case 0: {
       const { data, search, find, issues, handlers } = model;
       return (
-        <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
+        <Box className="linear-full-page" h="100%">
           <SplitLayout single>
             <Pane single>
               <PageHeader title="Board" />

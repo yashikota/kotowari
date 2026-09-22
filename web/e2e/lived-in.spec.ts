@@ -59,9 +59,11 @@ test.describe('lived-in workspace', () => {
     await page.goto('/issues');
     await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
     const issueList = page.getByRole('listbox', { name: 'Issues' });
-    await expect(issueList.getByRole('option', { name: new RegExp(epicTitle) })).toBeVisible();
-    await expect(issueList.getByRole('option', { name: new RegExp(childTitle) })).toBeVisible();
-    await expect(issueList.getByRole('option', { name: new RegExp(doneTitle) })).toBeVisible();
+    for (const title of [epicTitle, childTitle, doneTitle]) {
+      await page.getByLabel('Find issues').fill(title);
+      await expect(issueList.getByRole('option', { name: new RegExp(title) })).toBeVisible();
+    }
+    await page.getByLabel('Find issues').fill('');
 
     await page.getByRole('link', { name: viewName, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/views/harbor-todo-${stamp}`));
@@ -70,12 +72,12 @@ test.describe('lived-in workspace', () => {
     await expect(viewList.getByRole('option', { name: new RegExp(childTitle) })).toBeVisible();
     await expect(viewList.getByRole('option', { name: new RegExp(doneTitle) })).toHaveCount(0);
 
-    await page.getByRole('button', { name: /Command palette/ }).click();
+    await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
     const palette = page.getByRole('dialog', { name: 'Command palette' });
     await palette.getByLabel('Command search').fill(childTitle);
     await palette.getByRole('option', { name: new RegExp(childTitle) }).click();
     await expect(page).toHaveURL(/\/issues\/ISS-/);
-    await expect(page.locator('.title-input')).toHaveValue(childTitle);
+    await expect(page.getByLabel('Issue title')).toHaveValue(childTitle);
     await expect(page.getByLabel('Parent')).not.toHaveValue('');
   });
 });

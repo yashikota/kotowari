@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vite-plus/test';
+import { beforeAll, describe, expect, it } from 'vite-plus/test';
 import { ADR_STATUSES, entityDir } from './types.ts';
 import { adrStatusLabel } from './i18n/labels.ts';
+import i18n from './i18n/index.ts';
+
+beforeAll(async () => {
+  await i18n.changeLanguage('en');
+});
 
 describe('ADR_STATUSES', () => {
   it('includes rejected between proposed and accepted', () => {

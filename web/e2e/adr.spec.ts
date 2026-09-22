@@ -29,7 +29,11 @@ test('ADR list, detail, link, and append-only', async ({ page, request }) => {
   await expect(page.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('ADR status')).toBeVisible();
   await expect(page.getByLabel('Supersedes ADR number')).toBeVisible();
-  await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+  await page
+    .getByRole('radiogroup', { name: 'Document view' })
+    .first()
+    .getByText('Edit', { exact: true })
+    .click();
   await expect(page.getByLabel('Markdown body').first()).toHaveValue(/評価関数/);
 
   await page.getByLabel('Link issue').selectOption(String(issue.number));
@@ -46,7 +50,12 @@ test('new ADR only inherits an issue on its detail route', async ({ page, reques
     await request.post('/api/issues', { data: { title: `Context ${Date.now()}` } }),
   );
   await page.goto('/issues');
-  await page.getByRole('option').filter({ hasText: issue.identifier }).click();
+  await page.getByLabel('Find issues').fill(issue.identifier);
+  await page
+    .getByRole('listbox', { name: 'Issues' })
+    .getByRole('option')
+    .filter({ hasText: issue.identifier })
+    .click();
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}`));
   await page.keyboard.press('p');
   await expect(page.getByText(`Will link issue ${issue.number}`, { exact: true })).toBeVisible();
@@ -67,6 +76,7 @@ test('returning to a cached list reflects an ADR unlink immediately', async ({ p
     }),
   );
   await page.goto('/issues');
+  await page.getByLabel('Find issues').fill(issue.identifier);
   const row = page
     .getByRole('listbox', { name: 'Issues' })
     .getByRole('option')
@@ -76,6 +86,7 @@ test('returning to a cached list reflects an ADR unlink immediately', async ({ p
   await page.getByRole('button', { name: `Unlink ${adr.identifier}`, exact: true }).click();
   await expect(page.getByText('No linked decisions.', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Issues', exact: true }).click();
+  await page.getByLabel('Find issues').fill(issue.identifier);
   await expect(row).toBeVisible();
   await expect(row.getByText('1 ADR', { exact: true })).toHaveCount(0);
 });

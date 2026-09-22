@@ -20,9 +20,7 @@ export function ViewPageView({ model }: { model: ReturnType<typeof useViewPagePr
       const autofocusName = useAutofocusTarget('name');
       const viewNameRef = useFocusWhen<HTMLInputElement>(autofocusName, [view.slug]);
       return (
-        <Box
-          h={view.display === 'board' ? undefined : 'calc(100dvh - 2 * var(--mantine-spacing-md))'}
-        >
+        <Box className={view.display === 'board' ? undefined : 'linear-full-page'} h="100%">
           <SplitLayout single={view.display === 'board'}>
             <Pane single={view.display === 'board'}>
               <PageHeader

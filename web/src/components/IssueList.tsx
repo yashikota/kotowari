@@ -1,8 +1,10 @@
 import { Box, Group, ScrollArea, Text, UnstyledButton } from '@mantine/core';
+import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isOverdue, localToday } from '../due.ts';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import type { IssueStatus } from '../types.ts';
+import { priorityLabel } from '../i18n/labels.ts';
 import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -26,7 +28,8 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
       );
     }
     case 1: {
-      const { selectedId, issues, childCounts, windowed, today, handlers } = model;
+      const { selectedId, issues, rows, issuePositions, childCounts, windowed, today, handlers } =
+        model;
       return (
         <ScrollArea
           viewportRef={windowed.ref}
@@ -40,7 +43,29 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
         >
           <Box>
             <Box role="presentation" style={{ height: windowed.before, flexShrink: 0 }} />
-            {issues.slice(windowed.start, windowed.end).map((issue, offset) => {
+            {rows.slice(windowed.start, windowed.end).map((row) => {
+              if (row.kind === 'group') {
+                return (
+                  <UnstyledButton
+                    key={`priority-${row.priority}`}
+                    className="linear-priority-group"
+                    aria-label={`${priorityLabel(row.priority)} · ${row.count} issues`}
+                    aria-expanded={!row.collapsed}
+                    onClick={() => handlers.onToggleGroup1(row.priority)}
+                  >
+                    {row.collapsed ? (
+                      <IconChevronRight size={13} stroke={1.8} aria-hidden />
+                    ) : (
+                      <IconChevronDown size={13} stroke={1.8} aria-hidden />
+                    )}
+                    <Text className="linear-priority-group-name">
+                      {priorityLabel(row.priority)}
+                    </Text>
+                    <Text className="linear-priority-group-count">{row.count}</Text>
+                  </UnstyledButton>
+                );
+              }
+              const issue = row.issue;
               const childCount = childCounts.get(issue.id) ?? 0;
               const overdue = isOverdue(issue.dueDate, today);
               const selected = issue.identifier === selectedId;
@@ -49,24 +74,19 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
                 <UnstyledButton
                   key={issue.identifier}
                   role="option"
-                  aria-posinset={windowed.start + offset + 1}
+                  aria-posinset={issuePositions.get(issue.identifier)}
                   aria-setsize={issues.length}
                   tabIndex={selected ? 0 : -1}
                   aria-selected={selected}
                   w="100%"
                   px="sm"
+                  className="linear-issue-row"
                   styles={{
                     root: {
                       display: 'block',
                       height: ROW_HEIGHT,
                       flexShrink: 0,
                       borderBottom: '1px solid var(--mantine-color-default-border)',
-                      backgroundColor: selected ? 'var(--mantine-color-dark-6)' : undefined,
-                      '&:hover': {
-                        backgroundColor: selected
-                          ? 'var(--mantine-color-dark-6)'
-                          : 'var(--mantine-color-dark-7)',
-                      },
                     },
                   }}
                   onClick={() => handlers.onClick0(issue)}
@@ -194,6 +214,7 @@ export function BoardColumnView({ model }: { model: ReturnType<typeof useBoardCo
       const today = localToday();
       return (
         <Box
+          className="linear-board-column"
           p="xs"
           style={{
             flex: '1 1 0',
@@ -201,7 +222,7 @@ export function BoardColumnView({ model }: { model: ReturnType<typeof useBoardCo
             display: 'flex',
             flexDirection: 'column',
             borderRadius: 'var(--mantine-radius-sm)',
-            backgroundColor: 'var(--mantine-color-dark-7)',
+            backgroundColor: 'var(--mantine-color-gray-0)',
           }}
           onDragOver={handlers.onDragOver0}
           onDrop={handlers.onDrop1}
@@ -237,9 +258,7 @@ export function BoardColumnView({ model }: { model: ReturnType<typeof useBoardCo
                       textAlign: 'left',
                       cursor: 'grab',
                       borderRadius: 'var(--mantine-radius-sm)',
-                      backgroundColor: dragId
-                        ? 'var(--mantine-color-dark-6)'
-                        : 'var(--mantine-color-dark-8)',
+                      backgroundColor: dragId ? 'var(--mantine-color-gray-1)' : 'white',
                       border: overdue
                         ? '1px solid var(--mantine-color-red-8)'
                         : '1px solid var(--mantine-color-default-border)',

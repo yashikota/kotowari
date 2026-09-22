@@ -35,5 +35,5 @@ test('shortcuts, find, and project-scoped create', async ({ page, request }) => 
   await page.goto(`/projects/${project.slug}`);
   await page.getByRole('button', { name: 'New issue' }).click();
   await expect(page.getByRole('dialog', { name: 'Create issue' })).toBeVisible();
-  await expect(page.getByLabel('Issue project')).not.toHaveValue('');
+  await expect(page.getByRole('dialog').getByLabel('Project')).not.toHaveValue('');
 });

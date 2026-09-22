@@ -121,7 +121,7 @@ export function ProjectDetailPageView({
       const autofocusDescription = useAutofocusTarget('description');
       const descriptionRef = useFocusWhen<HTMLTextAreaElement>(autofocusDescription, [slug]);
       return (
-        <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
+        <Box className="linear-full-page" h="100%">
           <SplitLayout>
             <Pane>
               <PageHeader
@@ -331,7 +331,7 @@ export function CycleDetailPageView({
     case 0: {
       const { data, selected, cycle, handlers } = model;
       return (
-        <Box h="calc(100dvh - 2 * var(--mantine-spacing-md))">
+        <Box className="linear-full-page" h="100%">
           <SplitLayout>
             <Pane>
               <PageHeader

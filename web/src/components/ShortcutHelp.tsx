@@ -34,7 +34,7 @@ export function ShortcutHelpView({
         <Modal
           opened
           onClose={() => handlers.onClick0({} as React.MouseEvent<HTMLDivElement>)}
-          title="Keyboard"
+          title="Keyboard shortcuts"
           aria-label="Keyboard shortcuts"
           centered
           size="md"

@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import {
   Alert,
   Button,
-  Grid,
   Group,
   NativeSelect,
   Stack,
@@ -25,6 +24,17 @@ import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
 
 export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDetailPresenter> }) {
   useTranslation();
+  const autofocusTitle = useAutofocusTarget('title');
+  const identifier = model._view === 2 ? model.identifier : '';
+  const focusSub = model._view === 2 ? model.focusSub : 0;
+  const focusLabel = model._view === 2 ? model.focusLabel : 0;
+  const focusNote = model._view === 2 ? model.focusNote : 0;
+  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle && model._view === 2, [
+    identifier,
+  ]);
+  const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);
+  const labelRef = useFocusWhen<HTMLTextAreaElement>(focusLabel > 0, [focusLabel]);
+  const noteRef = useFocusWhen<HTMLTextAreaElement>(focusNote > 0, [focusNote]);
 
   switch (model._view) {
     case 0: {
@@ -50,9 +60,6 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
         draft,
         subTitle,
         labelName,
-        focusSub,
-        focusLabel,
-        focusNote,
         adrPick,
         timeZone,
         copied,
@@ -64,13 +71,8 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
         unlinkedAdrs,
         handlers,
       } = model;
-      const autofocusTitle = useAutofocusTarget('title');
-      const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [identifier]);
-      const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);
-      const labelRef = useFocusWhen<HTMLTextAreaElement>(focusLabel > 0, [focusLabel]);
-      const noteRef = useFocusWhen<HTMLTextAreaElement>(focusNote > 0, [focusNote]);
       return (
-        <Stack gap="lg">
+        <Stack gap="lg" className="linear-issue-detail-layout">
           <Group justify="space-between" wrap="wrap">
             <Group gap="sm">
               <Button
@@ -103,81 +105,68 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
             onBlur={handlers.Issue_title_onBlur4}
             size="xl"
             variant="unstyled"
+            className="linear-issue-title"
           />
 
-          <Grid>
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <NativeSelect
-                label="Status"
-                aria-label="Status"
-                value={issue.status}
-                onChange={handlers.Status_onChange5}
-                data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <NativeSelect
-                label="Priority"
-                aria-label="Priority"
-                value={String(issue.priority)}
-                onChange={handlers.Priority_onChange6}
-                data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <NativeSelect
-                label="Project"
-                aria-label="Project"
-                value={issue.projectId != null ? String(issue.projectId) : ''}
-                onChange={handlers.Project_onChange7}
-                data={[
-                  { value: '', label: 'No project' },
-                  ...projects.map((p) => ({ value: String(p.id), label: p.name })),
-                ]}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <NativeSelect
-                label="Cycle"
-                aria-label="Cycle"
-                value={issue.cycleId != null ? String(issue.cycleId) : ''}
-                onChange={handlers.Cycle_onChange8}
-                data={[
-                  { value: '', label: 'No cycle' },
-                  ...cycles.map((c) => ({ value: String(c.id), label: `Cycle ${c.number}` })),
-                ]}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <NativeSelect
-                label="Parent"
-                aria-label="Parent"
-                value={issue.parentId != null ? String(issue.parentId) : ''}
-                onChange={handlers.Parent_onChange9}
-                data={[
-                  { value: '', label: 'No parent' },
-                  ...parentOptions.map((p) => ({
-                    value: String(p.id),
-                    label: `${p.identifier} ${p.title}`,
-                  })),
-                ]}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <TextInput
-                type="date"
-                label="Due"
-                aria-label="Due date"
-                value={due}
-                onChange={handlers.Due_date_onChange10}
-              />
-            </Grid.Col>
-          </Grid>
+          <Stack gap="sm" className="linear-property-fields">
+            <NativeSelect
+              label="Status"
+              aria-label="Status"
+              value={issue.status}
+              onChange={handlers.Status_onChange5}
+              data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
+            />
+            <NativeSelect
+              label="Priority"
+              aria-label="Priority"
+              value={String(issue.priority)}
+              onChange={handlers.Priority_onChange6}
+              data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
+            />
+            <NativeSelect
+              label="Project"
+              aria-label="Project"
+              value={issue.projectId != null ? String(issue.projectId) : ''}
+              onChange={handlers.Project_onChange7}
+              data={[
+                { value: '', label: 'No project' },
+                ...projects.map((p) => ({ value: String(p.id), label: p.name })),
+              ]}
+            />
+            <NativeSelect
+              label="Cycle"
+              aria-label="Cycle"
+              value={issue.cycleId != null ? String(issue.cycleId) : ''}
+              onChange={handlers.Cycle_onChange8}
+              data={[
+                { value: '', label: 'No cycle' },
+                ...cycles.map((c) => ({ value: String(c.id), label: `Cycle ${c.number}` })),
+              ]}
+            />
+            <NativeSelect
+              label="Parent"
+              aria-label="Parent"
+              value={issue.parentId != null ? String(issue.parentId) : ''}
+              onChange={handlers.Parent_onChange9}
+              data={[
+                { value: '', label: 'No parent' },
+                ...parentOptions.map((p) => ({
+                  value: String(p.id),
+                  label: `${p.identifier} ${p.title}`,
+                })),
+              ]}
+            />
+            <TextInput
+              type="date"
+              label="Due"
+              aria-label="Due date"
+              value={due}
+              onChange={handlers.Due_date_onChange10}
+            />
+          </Stack>
 
-          <Stack gap="xs">
-            <Text c="dimmed" size="sm">
-              Labels
-            </Text>
+          <Stack gap="xs" className="linear-property-labels">
+            <Text className="linear-property-heading">Labels</Text>
             <Group gap="xs" role="group" aria-label="Labels">
               {labels.map((l) => {
                 const on = selectedLabelIds.has(l.id);

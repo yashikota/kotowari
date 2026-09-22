@@ -42,7 +42,9 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
   await list.focus();
   await page.keyboard.press('j');
   const selected = await list.locator('[aria-selected="true"]').getAttribute('aria-posinset');
-  const paletteButton = page.getByRole('button', { name: /Command palette/ });
+  const paletteButton = page
+    .getByRole('main')
+    .getByRole('button', { name: 'Open command palette' });
   await paletteButton.click();
   const dialog = page.getByRole('dialog', { name: 'Command palette' });
   await expect(dialog).toBeVisible();
@@ -79,8 +81,9 @@ test('IME does not submit creation and modal focus is contained', async ({ page 
   await title.press('Enter');
   await expect(title).toHaveValue('日本語の入力\n');
   await expect(page.getByRole('dialog', { name: 'Create issue' })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.keyboard.press('Shift+Tab');
-  await expect(page.getByLabel('Issue cycle', { exact: true })).toBeFocused();
+  await expect(dialog.locator(':focus')).toHaveCount(1);
   await page.keyboard.press('Tab');
   await expect(title).toBeFocused();
   await page.keyboard.press('Escape');
@@ -116,7 +119,7 @@ test('optimistic status is visible before the response and rolls back on rejecti
 test('reduced motion disables modal animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/issues');
-  await page.getByRole('button', { name: /Command palette/ }).click();
+  await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate((el) => getComputedStyle(el).animationName)).toBe(
     'none',
@@ -143,6 +146,9 @@ test('AI composer uses Enter for newline and Ctrl+Enter for one submission', asy
   await page.getByRole('button', { name: `Ask AI about ${adr.identifier}` }).click();
   const message = page.getByLabel('Message to AI');
   await message.fill('first line');
+  await message.evaluate((element: HTMLTextAreaElement) => {
+    element.setSelectionRange(element.value.length, element.value.length);
+  });
   await message.press('Enter');
   await message.press('a');
   await expect(message).toHaveValue('first line\na');

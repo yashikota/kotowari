@@ -10,6 +10,7 @@ export function escapeHtml(s: string): string {
 
 function render(src: string, assetBase = '', headingPrefix = ''): string {
   const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
+  md.enable('table');
   const image = md.renderer.rules.image!;
   const link = md.renderer.rules.link_open;
   const fence = md.renderer.rules.fence!;
