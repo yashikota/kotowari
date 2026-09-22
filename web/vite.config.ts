@@ -39,7 +39,7 @@ export default defineConfig({
     singleQuote: true,
   },
   lint: {
-    ignorePatterns: ['dist/**', 'e2e/**', 'playwright.config.ts'],
+    ignorePatterns: ['dist/**', 'e2e/**', 'playwright.config.ts', 'vite.config.ts'],
     jsPlugins: [{ name: 'vite-plus', specifier: 'vite-plus/oxlint-plugin' }],
     rules: { 'vite-plus/prefer-vite-plus-imports': 'error' },
     options: { typeAware: true, typeCheck: true },

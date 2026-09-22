@@ -11,14 +11,7 @@ import { STATIC_COMMANDS, cycleCommands, filterCommands, projectCommands } from 
 import { Palette } from '../components/Palette.tsx';
 import { actionFromKeyboard } from '../keymap.ts';
 import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
-import type {
-  Cycle,
-  Issue,
-  IssueStatus,
-  Project,
-  SearchHit,
-  View,
-} from '../types.ts';
+import type { Cycle, Issue, IssueStatus, Project, SearchHit, View } from '../types.ts';
 
 function slugify(s: string): string {
   return s
@@ -450,7 +443,11 @@ export function useShellPresenter() {
     setPageTitle('');
     setCreatePage(false);
     await router.invalidate();
-    await navigate({ to: '/pages/$slug', params: { slug: page.slug }, state: { autofocus: 'title' } });
+    await navigate({
+      to: '/pages/$slug',
+      params: { slug: page.slug },
+      state: { autofocus: 'title' },
+    });
   }
 
   async function submitView() {
@@ -464,7 +461,11 @@ export function useShellPresenter() {
     setCreateView(false);
     await loadWorkspace();
     await router.invalidate();
-    await navigate({ to: '/views/$slug', params: { slug: view.slug }, state: { autofocus: 'name' } });
+    await navigate({
+      to: '/views/$slug',
+      params: { slug: view.slug },
+      state: { autofocus: 'name' },
+    });
   }
 
   return {

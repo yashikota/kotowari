@@ -163,9 +163,7 @@ export function HomePageView({ model }: { model: ReturnType<typeof useHomePagePr
       return (
         <SplitLayout single>
           <Pane single>
-            <Box
-              component="style"
-            >{`
+            <Box component="style">{`
               .home-property-row:hover {
                 background: light-dark(
                   var(--mantine-color-gray-0),
