@@ -1,10 +1,11 @@
 import { Box, Group, ScrollArea, Text, UnstyledButton } from '@mantine/core';
-import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconChartBar, IconChevronDown, IconChevronRight, IconFolder } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isOverdue, localToday } from '../due.ts';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import type { IssueStatus } from '../types.ts';
-import { priorityLabel } from '../i18n/labels.ts';
+import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
+import type { IssueGroupBy } from '../issue-list.ts';
 import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -14,7 +15,7 @@ import {
   useIssueListPresenter,
 } from '../presenters/IssueList.tsx';
 
-const ROW_HEIGHT = 36;
+const ROW_HEIGHT = 40;
 
 export function IssueListView({ model }: { model: ReturnType<typeof useIssueListPresenter> }) {
   useTranslation();
@@ -45,23 +46,36 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
             <Box role="presentation" style={{ height: windowed.before, flexShrink: 0 }} />
             {rows.slice(windowed.start, windowed.end).map((row) => {
               if (row.kind === 'group') {
+                const groupLabel =
+                  row.groupBy === 'priority'
+                    ? row.priority === 0
+                      ? 'No priority'
+                      : priorityLabel(row.priority ?? 0)
+                    : row.groupBy === 'status' && row.status
+                      ? issueStatusLabel(row.status)
+                      : row.label;
                 return (
                   <UnstyledButton
-                    key={`priority-${row.priority}`}
-                    className="linear-priority-group"
-                    aria-label={`${priorityLabel(row.priority)} · ${row.count} issues`}
+                    key={row.key}
+                    className="linear-issue-group"
+                    aria-label={`${groupLabel} · ${row.count} issues`}
                     aria-expanded={!row.collapsed}
-                    onClick={() => handlers.onToggleGroup1(row.priority)}
+                    onClick={() => handlers.onToggleGroup1(row.key)}
                   >
                     {row.collapsed ? (
                       <IconChevronRight size={13} stroke={1.8} aria-hidden />
                     ) : (
                       <IconChevronDown size={13} stroke={1.8} aria-hidden />
                     )}
-                    <Text className="linear-priority-group-name">
-                      {priorityLabel(row.priority)}
-                    </Text>
-                    <Text className="linear-priority-group-count">{row.count}</Text>
+                    {row.groupBy === 'priority' ? (
+                      <IconChartBar size={14} stroke={1.8} aria-hidden />
+                    ) : row.groupBy === 'status' && row.status ? (
+                      <IssueStatusIcon status={row.status} />
+                    ) : (
+                      <IconFolder size={14} stroke={1.8} aria-hidden />
+                    )}
+                    <Text className="linear-issue-group-name">{groupLabel}</Text>
+                    <Text className="linear-issue-group-count">{row.count}</Text>
                   </UnstyledButton>
                 );
               }
@@ -99,7 +113,6 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
                     style={{ paddingLeft: 8 + (issue.depth ?? 0) * 14 }}
                   >
                     <Group gap={8} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-                      <IssueStatusIcon status={issue.status} />
                       <IssuePriorityIcon priority={issue.priority} />
                       <Text
                         size="xs"
@@ -108,6 +121,10 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
                         style={{ width: 58, flexShrink: 0 }}
                       >
                         {issue.identifier}
+                      </Text>
+                      <IssueStatusIcon status={issue.status} />
+                      <Text size="xs" c="dimmed" className="linear-issue-row-status">
+                        {issueStatusLabel(issue.status)}
                       </Text>
                       <Text
                         size="sm"
@@ -128,7 +145,9 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
                         <IssueMetaText>{issue.adrNumbers.length} ADR</IssueMetaText>
                       ) : null}
                       {issue.projectSlug ? (
-                        <IssueMetaText>{issue.projectSlug}</IssueMetaText>
+                        <IssueMetaText className="linear-issue-row-project">
+                          {issue.projectSlug}
+                        </IssueMetaText>
                       ) : null}
                       {issue.dueDate ? (
                         <Text
@@ -153,7 +172,9 @@ export function IssueListView({ model }: { model: ReturnType<typeof useIssueList
   }
 }
 
-export function IssueList(props: Parameters<typeof useIssueListPresenter>[0]) {
+export function IssueList(
+  props: Parameters<typeof useIssueListPresenter>[0] & { groupBy?: IssueGroupBy },
+) {
   return (
     <PresenterScope name="IssueList">
       <IssueListBinding {...props} />
@@ -161,7 +182,9 @@ export function IssueList(props: Parameters<typeof useIssueListPresenter>[0]) {
   );
 }
 
-function IssueListBinding(props: Parameters<typeof useIssueListPresenter>[0]) {
+function IssueListBinding(
+  props: Parameters<typeof useIssueListPresenter>[0] & { groupBy?: IssueGroupBy },
+) {
   const model = useIssueListPresenter(props);
   const handlers = useActions(model.handlers);
   return <IssueListView model={{ ...model, handlers } as typeof model} />;

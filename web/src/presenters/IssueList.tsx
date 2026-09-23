@@ -5,7 +5,7 @@ import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
-import { buildIssueListRows } from '../issue-list.ts';
+import { buildIssueListRows, type IssueGroupBy } from '../issue-list.ts';
 import type { BoardColumn } from '../components/IssueList.tsx';
 import { localToday } from '../due.ts';
 import { actionFromKeyboard } from '../keymap.ts';
@@ -17,6 +17,7 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   openOnSelect?: boolean;
+  groupBy?: IssueGroupBy;
 };
 
 export function useIssueListPresenter({
@@ -24,13 +25,14 @@ export function useIssueListPresenter({
   selectedId,
   onSelect,
   openOnSelect = true,
+  groupBy = 'priority',
 }: Props) {
   const sendIntent = useIntent();
   const issues = useIssueProjection(initialIssues);
   const navigate = useNavigate();
   const ids = useMemo(() => issues.map((i) => i.identifier), [issues]);
-  const [collapsedPriorities, setCollapsedPriorities] = useState<number[]>([]);
-  const rows = buildIssueListRows(issues, new Set(collapsedPriorities));
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+  const rows = buildIssueListRows(issues, new Set(collapsedGroups), groupBy);
   const issuePositions = new Map(
     rows
       .filter(
@@ -119,11 +121,9 @@ export function useIssueListPresenter({
           });
         }
       },
-      onToggleGroup1: (priority: number) => {
-        setCollapsedPriorities((current) =>
-          current.includes(priority)
-            ? current.filter((value) => value !== priority)
-            : [...current, priority],
+      onToggleGroup1: (key: string) => {
+        setCollapsedGroups((current) =>
+          current.includes(key) ? current.filter((value) => value !== key) : [...current, key],
         );
       },
     },

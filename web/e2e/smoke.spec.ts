@@ -8,7 +8,7 @@ test('create issue, comment, and page', async ({ page }) => {
     .replace(/^-|-$/g, '');
   await page.goto('/issues');
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.getByRole('heading', { name: 'Issues' }).click();
+  await page.getByRole('tab', { name: 'All issues' }).click();
 
   await page.keyboard.press('c');
   const issueTitle = page.getByPlaceholder('Issue title');
@@ -30,14 +30,12 @@ test('create issue, comment, and page', async ({ page }) => {
 
   await page.getByLabel('Due date').fill('2026-09-01');
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
-  const documentView = documentEditor.getByRole('radiogroup', { name: 'Document view' });
-  await documentView.getByText('Preview', { exact: true }).click();
   await expect(page.getByRole('heading', { name: '目的' })).toBeVisible();
-  await documentView.getByText('Edit', { exact: true }).click();
+  await documentEditor.getByRole('button', { name: 'Edit description' }).click();
   await documentEditor.getByLabel('Markdown body').fill('## Goal\n\nShow **labels**.');
   await documentEditor.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toBeVisible();
-  await documentView.getByText('Preview', { exact: true }).click();
+  await documentEditor.getByRole('button', { name: 'Preview', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Goal' })).toBeVisible();
 
   const comment = page.getByLabel('New note');
@@ -65,14 +63,21 @@ test('create issue, comment, and page', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Cycles' }).click();
   await page.getByRole('button', { name: 'New cycle' }).click();
-  await expect(page).toHaveURL(/\/cycles\/1/);
-  await expect(page.getByRole('heading', { name: 'Cycle 1' })).toBeVisible();
+  await expect(page).toHaveURL(/\/cycles\/\d+$/);
+  const cycleHeading = page.getByRole('heading', { name: /^Cycle \d+$/ });
+  await expect(cycleHeading).toBeVisible();
+  const cycleName = (await cycleHeading.textContent())?.trim();
+  if (!cycleName) {
+    throw new Error('expected cycle heading');
+  }
+  await expect(page.getByLabel('Cycle completion')).toHaveAttribute('aria-valuetext', '0%');
+  await expect(page.getByText('0 / 0')).toBeVisible();
 
   await page.goto(`/issues/${identifier}`);
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
   await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
-  await page.getByLabel('Command search').fill('Assign to Cycle');
-  await page.getByRole('option', { name: 'Assign to Cycle 1' }).click();
+  await page.getByLabel('Command search').fill(`Assign to ${cycleName}`);
+  await page.getByRole('option', { name: `Assign to ${cycleName}` }).click();
   await expect(page.getByLabel('Cycle')).toHaveValue(/[1-9]/);
 
   await page.getByLabel('Status').selectOption('done');
@@ -102,7 +107,7 @@ test('sub-issue and saved view', async ({ page }) => {
   const childTitle = `Child step ${stamp}`;
   await page.goto('/issues');
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
-  await page.getByRole('heading', { name: 'Issues' }).click();
+  await page.getByRole('tab', { name: 'All issues' }).click();
   await page.keyboard.press('c');
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
@@ -115,7 +120,7 @@ test('sub-issue and saved view', async ({ page }) => {
   await page.getByLabel('New sub-issue').press('Control+Enter');
   await expect(page.getByRole('button', { name: new RegExp(childTitle) })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Issues' }).click();
+  await page.getByRole('link', { name: 'Back to issues' }).click();
   const issueList = page.getByRole('listbox', { name: 'Issues' });
   await page.getByLabel('Find issues').fill(parentTitle);
   await expect(issueList.getByRole('option', { name: new RegExp(parentTitle) })).toBeVisible();

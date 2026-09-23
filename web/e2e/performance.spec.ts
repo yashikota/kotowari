@@ -72,7 +72,7 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
 
 test('IME does not submit creation and modal focus is contained', async ({ page }) => {
   await page.goto('/issues');
-  await page.getByRole('heading', { name: 'Issues', exact: true }).click();
+  await page.getByRole('tab', { name: 'All issues' }).click();
   await page.keyboard.press('c');
   const title = page.getByPlaceholder('Issue title');
   await title.fill('日本語の入力');
@@ -174,7 +174,7 @@ test('creation shortcut and button share one pending operation', async ({ page }
     await route.continue();
   });
   await page.goto('/issues');
-  await page.getByRole('heading', { name: 'Issues', exact: true }).click();
+  await page.getByRole('tab', { name: 'All issues' }).click();
   await page.keyboard.press('c');
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.getByPlaceholder('Issue title').fill('Create once');

@@ -125,4 +125,4 @@ tasks:
       - pnpm exec vp build
       - rm -rf ../internal/webembed/dist
       - mkdir -p ../internal/webembed/dist
-      - cp -a dist/. ../internal/webembed/dist/
+      - cp -R dist/. ../internal/webembed/dist/

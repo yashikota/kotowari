@@ -12,7 +12,6 @@ import {
   Title,
 } from '@mantine/core';
 
-import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueList } from '../components/IssueList.tsx';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
 import { EmptyState, MetaBadge, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
@@ -26,6 +25,15 @@ import {
   useProjectsPagePresenter,
 } from '../presenters/ProjectsCycles.tsx';
 
+function projectStatusLabel(status: string): string {
+  return status.replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function cycleStatusLabel(status: string): string {
+  if (status === 'active') return 'Current';
+  return projectStatusLabel(status);
+}
+
 export function ProjectsPageView({
   model,
 }: {
@@ -34,22 +42,28 @@ export function ProjectsPageView({
   switch (model._view) {
     case 0: {
       const { projects, name, handlers } = model;
-      const projectNameRef = useFocusWhen<HTMLTextAreaElement>(true);
+      const projectNameRef = useFocusWhen<HTMLInputElement>(true);
       return (
         <SplitLayout single>
           <Pane single>
             <PageHeader
               title="Projects"
               actions={
-                <Box component="form" onSubmit={handlers.onSubmit0} style={{ minWidth: 240 }}>
-                  <Textarea
+                <Box
+                  component="form"
+                  onSubmit={handlers.onSubmit0}
+                  className="linear-project-create"
+                >
+                  <TextInput
                     ref={projectNameRef}
-                    rows={2}
                     aria-label="New project name"
-                    placeholder="New project"
+                    placeholder="Project name"
                     value={name}
                     onChange={handlers.New_project_name_onChange1}
                   />
+                  <Button type="submit" variant="default">
+                    New project
+                  </Button>
                 </Box>
               }
             />
@@ -62,28 +76,26 @@ export function ProjectsPageView({
                     key={p.slug}
                     to="/projects/$slug"
                     params={{ slug: p.slug }}
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                    className="linear-project-link"
                   >
-                    <Group
-                      wrap="nowrap"
-                      gap="xs"
-                      py={6}
-                      px="md"
-                      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-                    >
+                    <Group wrap="nowrap" gap="sm" className="linear-project-row">
                       <Box
-                        w={2}
-                        h={16}
-                        bg="var(--mantine-color-default-border)"
-                        style={{ borderRadius: 1, flexShrink: 0 }}
+                        className={`linear-project-status linear-project-status-${p.status}`}
+                        aria-hidden
                       />
-                      <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
-                        {p.status}
-                      </Text>
-                      <Text flex={1} truncate>
+                      <Text className="linear-project-name" flex={1} truncate>
                         {p.name}
                       </Text>
-                      <Progress value={Math.round(p.progress * 100)} w={72} size="sm" />
+                      <MetaBadge>{projectStatusLabel(p.status)}</MetaBadge>
+                      <Progress
+                        aria-label={`Project progress ${Math.round(p.progress * 100)}%`}
+                        value={Math.round(p.progress * 100)}
+                        w={112}
+                        size="sm"
+                      />
+                      <Text size="xs" c="dimmed" className="linear-project-target">
+                        {p.targetDate ? p.targetDate.slice(0, 10) : 'No target date'}
+                      </Text>
                     </Group>
                   </Link>
                 ))}
@@ -121,9 +133,9 @@ export function ProjectDetailPageView({
       const autofocusDescription = useAutofocusTarget('description');
       const descriptionRef = useFocusWhen<HTMLTextAreaElement>(autofocusDescription, [slug]);
       return (
-        <Box className="linear-full-page" h="100%">
-          <SplitLayout>
-            <Pane>
+        <Box className="linear-full-page linear-project-detail" h="100%">
+          <SplitLayout single>
+            <Pane single>
               <PageHeader
                 title={project.name}
                 actions={
@@ -132,7 +144,10 @@ export function ProjectDetailPageView({
                       aria-label="Project status"
                       value={project.status}
                       onChange={handlers.Project_status_onChange0}
-                      data={PROJECT_STATUSES.map((s) => ({ value: s, label: s }))}
+                      data={PROJECT_STATUSES.map((s) => ({
+                        value: s,
+                        label: projectStatusLabel(s),
+                      }))}
                     />
                     <Button type="button" variant="subtle" onClick={handlers.onClick1}>
                       New issue
@@ -143,7 +158,7 @@ export function ProjectDetailPageView({
                   </Group>
                 }
               />
-              <Stack gap="md">
+              <Stack gap="md" className="linear-project-content">
                 <Textarea
                   ref={descriptionRef}
                   aria-label="Project description"
@@ -168,10 +183,10 @@ export function ProjectDetailPageView({
                     onChange={handlers.Target_date_onChange6}
                   />
                 </Group>
-                <Stack gap="md" aria-label="Project documents">
-                  <Stack gap="xs">
+                <Stack gap="md" aria-label="Project documents" className="linear-project-documents">
+                  <Stack gap="xs" className="linear-project-doc-section">
                     <Title order={4}>ADRs</Title>
-                    <Button type="button" onClick={handlers.onClick7}>
+                    <Button type="button" variant="subtle" size="xs" onClick={handlers.onClick7}>
                       New ADR
                     </Button>
                     <Stack
@@ -195,7 +210,7 @@ export function ProjectDetailPageView({
                         ))}
                     </Stack>
                   </Stack>
-                  <Stack gap="xs">
+                  <Stack gap="xs" className="linear-project-doc-section">
                     <Title order={4}>Pages</Title>
                     <Stack
                       gap={4}
@@ -218,16 +233,9 @@ export function ProjectDetailPageView({
                   issues={data.issues}
                   selectedId={selected}
                   onSelect={handlers.onSelect8}
-                  openOnSelect={false}
+                  groupBy="status"
                 />
               </Stack>
-            </Pane>
-            <Pane variant="detail">
-              {selected ? (
-                <IssueDetail identifier={selected} />
-              ) : (
-                <EmptyState>Select an issue</EmptyState>
-              )}
             </Pane>
           </SplitLayout>
         </Box>
@@ -254,6 +262,13 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
   switch (model._view) {
     case 0: {
       const { cycles, handlers } = model;
+      const sections = [
+        ['Upcoming', cycles.filter((cycle) => cycle.status === 'upcoming')],
+        ['Current', cycles.filter((cycle) => cycle.status === 'active')],
+        ['Completed', cycles.filter((cycle) => cycle.status === 'completed')],
+      ]
+        .map(([name, rows]) => ({ name: name as string, rows: rows as typeof cycles }))
+        .filter((section) => section.rows.length > 0);
       return (
         <SplitLayout single>
           <Pane single>
@@ -268,36 +283,58 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
             {cycles.length === 0 ? (
               <EmptyState>No cycles yet. Start one to timebox work.</EmptyState>
             ) : (
-              <Stack gap={0}>
-                {cycles.map((c) => (
-                  <Link
-                    key={c.number}
-                    to="/cycles/$number"
-                    params={{ number: String(c.number) }}
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-                  >
-                    <Group
-                      wrap="nowrap"
-                      gap="xs"
-                      py={6}
-                      px="md"
-                      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-                    >
-                      <Box
-                        w={2}
-                        h={16}
-                        bg="var(--mantine-color-default-border)"
-                        style={{ borderRadius: 1, flexShrink: 0 }}
-                      />
-                      <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
-                        {c.number}
+              <Stack gap="lg" className="linear-cycle-list">
+                {sections.map((section) => (
+                  <Stack gap={0} key={section.name} className="linear-cycle-section">
+                    <Group className="linear-cycle-section-heading" justify="space-between">
+                      <Text>{section.name}</Text>
+                      <Text c="dimmed" size="xs">
+                        {section.rows.length}
                       </Text>
-                      <Text flex={1} truncate>
-                        {c.status} · {c.startsAt.slice(0, 10)} → {c.endsAt.slice(0, 10)}
-                      </Text>
-                      <MetaBadge>{c.status}</MetaBadge>
                     </Group>
-                  </Link>
+                    {section.rows.map((cycle) => {
+                      const start = new Date(cycle.startsAt);
+                      const progress = cycle.issueCount
+                        ? Math.round((cycle.completedCount / cycle.issueCount) * 100)
+                        : 0;
+                      return (
+                        <Link
+                          key={cycle.number}
+                          to="/cycles/$number"
+                          params={{ number: String(cycle.number) }}
+                          className="linear-cycle-card"
+                        >
+                          <Box className="linear-cycle-date">
+                            <Text>{start.toLocaleString('en-US', { month: 'short' })}</Text>
+                            <Text>{start.getDate()}</Text>
+                          </Box>
+                          <Box className="linear-cycle-card-main">
+                            <Group gap="sm" wrap="nowrap">
+                              <Text fw={550}>Cycle {cycle.number}</Text>
+                              <MetaBadge>{cycleStatusLabel(cycle.status)}</MetaBadge>
+                            </Group>
+                            <Text size="xs" c="dimmed">
+                              {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
+                            </Text>
+                          </Box>
+                          <Box className="linear-cycle-card-stats">
+                            <Text size="xs" c="dimmed">
+                              {cycle.issueCount} in scope
+                            </Text>
+                            <Progress
+                              aria-label={`Cycle ${cycle.number} completion ${progress}%`}
+                              value={progress}
+                              size="xs"
+                              w={96}
+                            />
+                            <Text size="xs" c="dimmed">
+                              {cycle.completedCount}/{cycle.issueCount}
+                            </Text>
+                          </Box>
+                        </Link>
+                      );
+                    })}
+                  </Stack>
                 ))}
               </Stack>
             )}
@@ -329,11 +366,11 @@ export function CycleDetailPageView({
 }) {
   switch (model._view) {
     case 0: {
-      const { data, selected, cycle, handlers } = model;
+      const { data, selected, cycle, done, handlers } = model;
       return (
-        <Box className="linear-full-page" h="100%">
-          <SplitLayout>
-            <Pane>
+        <Box className="linear-full-page linear-cycle-detail" h="100%">
+          <SplitLayout single>
+            <Pane single>
               <PageHeader
                 title={`Cycle ${cycle.number}`}
                 actions={
@@ -342,7 +379,7 @@ export function CycleDetailPageView({
                       aria-label="Cycle status"
                       value={cycle.status}
                       onChange={handlers.Cycle_status_onChange0}
-                      data={CYCLE_STATUSES.map((s) => ({ value: s, label: s }))}
+                      data={CYCLE_STATUSES.map((s) => ({ value: s, label: cycleStatusLabel(s) }))}
                     />
                     <Button type="button" variant="subtle" onClick={handlers.onClick1}>
                       New issue
@@ -350,24 +387,44 @@ export function CycleDetailPageView({
                   </Group>
                 }
               />
-              <Stack gap="md">
-                <Text size="sm" c="dimmed">
-                  {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
-                </Text>
+              <Group className="linear-cycle-summary" gap="xl" wrap="wrap">
+                <Group gap={6}>
+                  <Text size="xs" c="dimmed">
+                    Dates
+                  </Text>
+                  <Text size="sm">
+                    {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
+                  </Text>
+                </Group>
+                <Group gap={6}>
+                  <Text size="xs" c="dimmed">
+                    Scope
+                  </Text>
+                  <Text size="sm">{data.issues.length} issues</Text>
+                </Group>
+                <Group gap={6}>
+                  <Text size="xs" c="dimmed">
+                    Completed
+                  </Text>
+                  <Text size="sm">
+                    {done} / {data.issues.length}
+                  </Text>
+                </Group>
+                <Progress
+                  aria-label="Cycle completion"
+                  value={data.issues.length ? (done / data.issues.length) * 100 : 0}
+                  w={132}
+                  size="sm"
+                />
+              </Group>
+              <Stack gap="sm" className="linear-cycle-issue-list">
                 <IssueList
                   issues={data.issues}
                   selectedId={selected}
                   onSelect={handlers.onSelect2}
-                  openOnSelect={false}
+                  groupBy="status"
                 />
               </Stack>
-            </Pane>
-            <Pane variant="detail">
-              {selected ? (
-                <IssueDetail identifier={selected} />
-              ) : (
-                <EmptyState>Select an issue</EmptyState>
-              )}
             </Pane>
           </SplitLayout>
         </Box>

@@ -8,6 +8,7 @@ import {
 import type * as React from 'react';
 import { useState } from 'react';
 import { api, parseIssueSearch, type IssueSearch } from '../api.ts';
+import type { IssueGroupBy } from '../issue-list.ts';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
@@ -42,11 +43,19 @@ export function useIssuesPagePresenter() {
   const search = useSearch({ from: '/issues' }) as IssueSearch;
   const navigate = useNavigate();
   const [find, setFind] = useState('');
-  const issues = (data.issues ?? []).filter((i) => matchesFind(i, find));
-  const [selected, setSelected] = useState<string | null>(issues[0]?.identifier ?? null);
-  if (selected && !issues.some((i) => i.identifier === selected)) {
-    setSelected(issues[0]?.identifier ?? null);
-  }
+  const [view, setView] = useState<'active' | 'backlog' | 'all'>('all');
+  const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
+  const [selected, setSelected] = useState<string | null>(null);
+  const issues = (data.issues ?? [])
+    .filter((i) => matchesFind(i, find))
+    .filter((i) =>
+      view === 'active'
+        ? i.status === 'todo' || i.status === 'in_progress'
+        : view === 'backlog'
+          ? i.status === 'backlog'
+          : true,
+    );
+  const selectedId = selected && issues.some((i) => i.identifier === selected) ? selected : null;
 
   return {
     _view: 0 as const,
@@ -54,7 +63,9 @@ export function useIssuesPagePresenter() {
     search,
     find,
     issues,
-    selected,
+    selected: selectedId,
+    view,
+    groupBy,
     handlers: {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
@@ -71,6 +82,8 @@ export function useIssuesPagePresenter() {
         const handle: NonNullable<React.ComponentProps<typeof IssueList>['onSelect']> = setSelected;
         return handle(...args);
       },
+      onView4: (next: 'active' | 'backlog' | 'all') => setView(next),
+      onGroupBy5: (next: IssueGroupBy) => setGroupBy(next),
     },
   };
 }

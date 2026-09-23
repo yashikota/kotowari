@@ -34,7 +34,7 @@ export function useProjectsPagePresenter() {
         );
       },
       New_project_name_onChange1: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setName(e.target.value),
     },
   };
@@ -51,12 +51,12 @@ export function useProjectDetailPagePresenter() {
   };
   const router = useRouter();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<string | null>(data.issues[0]?.identifier ?? null);
+  const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState(data.project);
 
   if (project.slug !== data.project.slug) {
     setProject(data.project);
-    setSelected(data.issues[0]?.identifier ?? null);
+    setSelected(null);
   }
 
   async function save(body: Record<string, unknown>) {
@@ -115,7 +115,15 @@ export function useProjectDetailPagePresenter() {
 }
 
 export function useCyclesPagePresenter() {
-  const cycles = useLoaderData({ from: '/cycles' }) as Cycle[];
+  const data = useLoaderData({ from: '/cycles' }) as { cycles: Cycle[]; issues: Issue[] };
+  const cycles = data.cycles.map((cycle) => {
+    const issues = data.issues.filter((issue) => issue.cycleId === cycle.id);
+    return {
+      ...cycle,
+      issueCount: issues.length,
+      completedCount: issues.filter((issue) => issue.status === 'done').length,
+    };
+  });
   const navigate = useNavigate();
   return {
     _view: 0 as const,
@@ -147,13 +155,13 @@ export function useCycleDetailPagePresenter() {
     issues: Issue[];
   };
   const router = useRouter();
-  const [selected, setSelected] = useState<string | null>(data.issues[0]?.identifier ?? null);
+  const [selected, setSelected] = useState<string | null>(null);
   const [cycle, setCycle] = useState(data.cycle);
   const done = data.issues.filter((i) => i.status === 'done' || i.status === 'canceled').length;
 
   if (cycle.number !== data.cycle.number) {
     setCycle(data.cycle);
-    setSelected(data.issues[0]?.identifier ?? null);
+    setSelected(null);
   }
 
   async function save(body: Record<string, unknown>) {

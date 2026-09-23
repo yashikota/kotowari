@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import {
   Alert,
+  Box,
   Button,
   Group,
   NativeSelect,
@@ -73,8 +74,11 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
       } = model;
       return (
         <Stack gap="lg" className="linear-issue-detail-layout">
-          <Group justify="space-between" wrap="wrap">
+          <Group justify="space-between" wrap="wrap" className="linear-issue-toolbar">
             <Group gap="sm">
+              <Link to="/issues" aria-label="Back to issues" className="linear-issue-back-link">
+                Issues
+              </Link>
               <Button
                 type="button"
                 variant="subtle"
@@ -108,64 +112,93 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
             className="linear-issue-title"
           />
 
-          <Stack gap="sm" className="linear-property-fields">
-            <NativeSelect
-              label="Status"
-              aria-label="Status"
-              value={issue.status}
-              onChange={handlers.Status_onChange5}
-              data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
-            />
-            <NativeSelect
-              label="Priority"
-              aria-label="Priority"
-              value={String(issue.priority)}
-              onChange={handlers.Priority_onChange6}
-              data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
-            />
-            <NativeSelect
-              label="Project"
-              aria-label="Project"
-              value={issue.projectId != null ? String(issue.projectId) : ''}
-              onChange={handlers.Project_onChange7}
-              data={[
-                { value: '', label: 'No project' },
-                ...projects.map((p) => ({ value: String(p.id), label: p.name })),
-              ]}
-            />
-            <NativeSelect
-              label="Cycle"
-              aria-label="Cycle"
-              value={issue.cycleId != null ? String(issue.cycleId) : ''}
-              onChange={handlers.Cycle_onChange8}
-              data={[
-                { value: '', label: 'No cycle' },
-                ...cycles.map((c) => ({ value: String(c.id), label: `Cycle ${c.number}` })),
-              ]}
-            />
-            <NativeSelect
-              label="Parent"
-              aria-label="Parent"
-              value={issue.parentId != null ? String(issue.parentId) : ''}
-              onChange={handlers.Parent_onChange9}
-              data={[
-                { value: '', label: 'No parent' },
-                ...parentOptions.map((p) => ({
-                  value: String(p.id),
-                  label: `${p.identifier} ${p.title}`,
-                })),
-              ]}
-            />
-            <TextInput
-              type="date"
-              label="Due"
-              aria-label="Due date"
-              value={due}
-              onChange={handlers.Due_date_onChange10}
-            />
+          <Box className="linear-issue-description">
+            <DocumentEditor documentKey={`issues/${identifier}/body`} inline />
+          </Box>
+
+          <Stack gap={4} className="linear-property-fields">
+            <Text className="linear-property-heading">Properties</Text>
+            <Group gap="xs" wrap="nowrap" className="linear-property-row">
+              <Text component="span" size="xs" c="dimmed">
+                Status
+              </Text>
+              <NativeSelect
+                aria-label="Status"
+                value={issue.status}
+                onChange={handlers.Status_onChange5}
+                data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
+              />
+            </Group>
+            <Group gap="xs" wrap="nowrap" className="linear-property-row">
+              <Text component="span" size="xs" c="dimmed">
+                Priority
+              </Text>
+              <NativeSelect
+                aria-label="Priority"
+                value={String(issue.priority)}
+                onChange={handlers.Priority_onChange6}
+                data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
+              />
+            </Group>
+            <Group gap="xs" wrap="nowrap" className="linear-property-row">
+              <Text component="span" size="xs" c="dimmed">
+                Project
+              </Text>
+              <NativeSelect
+                aria-label="Project"
+                value={issue.projectId != null ? String(issue.projectId) : ''}
+                onChange={handlers.Project_onChange7}
+                data={[
+                  { value: '', label: 'No project' },
+                  ...projects.map((p) => ({ value: String(p.id), label: p.name })),
+                ]}
+              />
+            </Group>
+            <Group gap="xs" wrap="nowrap" className="linear-property-row">
+              <Text component="span" size="xs" c="dimmed">
+                Cycle
+              </Text>
+              <NativeSelect
+                aria-label="Cycle"
+                value={issue.cycleId != null ? String(issue.cycleId) : ''}
+                onChange={handlers.Cycle_onChange8}
+                data={[
+                  { value: '', label: 'No cycle' },
+                  ...cycles.map((c) => ({ value: String(c.id), label: `Cycle ${c.number}` })),
+                ]}
+              />
+            </Group>
+            <Group gap="xs" wrap="nowrap" className="linear-property-row">
+              <Text component="span" size="xs" c="dimmed">
+                Parent
+              </Text>
+              <NativeSelect
+                aria-label="Parent"
+                value={issue.parentId != null ? String(issue.parentId) : ''}
+                onChange={handlers.Parent_onChange9}
+                data={[
+                  { value: '', label: 'No parent' },
+                  ...parentOptions.map((p) => ({
+                    value: String(p.id),
+                    label: `${p.identifier} ${p.title}`,
+                  })),
+                ]}
+              />
+            </Group>
+            <Group gap="xs" wrap="nowrap" className="linear-property-row">
+              <Text component="span" size="xs" c="dimmed">
+                Due date
+              </Text>
+              <TextInput
+                type="date"
+                aria-label="Due date"
+                value={due}
+                onChange={handlers.Due_date_onChange10}
+              />
+            </Group>
           </Stack>
 
-          <Stack gap="xs" className="linear-property-labels">
+          <Stack gap="xs" className="linear-property-labels linear-issue-labels">
             <Text className="linear-property-heading">Labels</Text>
             <Group gap="xs" role="group" aria-label="Labels">
               {labels.map((l) => {
@@ -192,7 +225,7 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
             />
           </Stack>
 
-          <Stack gap="xs">
+          <Stack gap="xs" className="linear-issue-adrs">
             <Text c="dimmed" size="sm">
               ADRs
             </Text>
@@ -251,10 +284,11 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
             </Group>
           </Stack>
 
-          <AIPanel kind="issues" id={identifier} />
-          <DocumentEditor documentKey={`issues/${identifier}/body`} />
+          <Box className="linear-issue-assistant">
+            <AIPanel kind="issues" id={identifier} />
+          </Box>
 
-          <Stack gap="xs">
+          <Stack gap="xs" className="linear-issue-subissues">
             <Text c="dimmed" size="sm">
               Sub-issues
             </Text>
@@ -295,7 +329,7 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
             />
           </Stack>
 
-          <Stack gap="xs">
+          <Stack gap="xs" className="linear-issue-notes">
             <Text c="dimmed" size="sm">
               Notes
             </Text>
@@ -323,7 +357,7 @@ export function IssueDetailView({ model }: { model: ReturnType<typeof useIssueDe
             </Stack>
           </Stack>
 
-          <Stack gap="xs">
+          <Stack gap="xs" className="linear-issue-activity">
             <Text c="dimmed" size="sm">
               Activity
             </Text>

@@ -1,4 +1,4 @@
-import { Box } from '@mantine/core';
+import { Box, Group, Text, UnstyledButton } from '@mantine/core';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
@@ -12,36 +12,69 @@ import {
   useIssuesPagePresenter,
 } from '../presenters/IssuesPages.tsx';
 
+const ISSUE_VIEW_TABS = [
+  ['active', 'Active'],
+  ['backlog', 'Backlog'],
+  ['all', 'All issues'],
+] as const;
+
 export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPagePresenter> }) {
   switch (model._view) {
     case 0: {
-      const { data, search, find, issues, selected, handlers } = model;
+      const { data, search, find, issues, selected, view, groupBy, handlers } = model;
       return (
-        <Box className="linear-full-page" h="100%">
-          <SplitLayout>
-            <Pane variant="list">
-              <PageHeader title="Issues" />
-              <IssueFilters
-                search={search}
-                projects={data.projects}
-                cycles={data.cycles}
-                labels={data.labels}
-                onChange={handlers.onChange0}
-                find={find}
-                onFind={handlers.onFind2}
-              />
-              <IssueList issues={issues} selectedId={selected} onSelect={handlers.onSelect3} />
-            </Pane>
-            <Pane variant="detail">
-              {selected ? (
-                <IssueDetail identifier={selected} />
-              ) : (
-                <EmptyState>
-                  Select an issue, or press <Shortcut>c</Shortcut> to create.
-                </EmptyState>
-              )}
-            </Pane>
-          </SplitLayout>
+        <Box className="linear-full-page linear-issues-page" h="100%">
+          <Box component="h2" className="linear-visually-hidden">
+            Issues
+          </Box>
+          <Group role="tablist" aria-label="Issue views" className="linear-issue-view-tabs">
+            {ISSUE_VIEW_TABS.map(([value, label], index) => (
+              <UnstyledButton
+                key={value}
+                role="tab"
+                aria-selected={view === value}
+                tabIndex={view === value ? 0 : -1}
+                className="linear-issue-view-tab"
+                onClick={() => handlers.onView4(value)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                  event.preventDefault();
+                  const nextIndex =
+                    (index + (event.key === 'ArrowRight' ? 1 : ISSUE_VIEW_TABS.length - 1)) %
+                    ISSUE_VIEW_TABS.length;
+                  const nextTab = ISSUE_VIEW_TABS[nextIndex];
+                  if (nextTab) handlers.onView4(nextTab[0]);
+                  event.currentTarget.parentElement
+                    ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+                    [nextIndex]?.focus();
+                }}
+              >
+                {label}
+              </UnstyledButton>
+            ))}
+            <Text className="linear-issue-view-count" aria-live="polite">
+              {issues.length}
+            </Text>
+          </Group>
+          <Box className="linear-issue-list-area">
+            <IssueFilters
+              search={search}
+              projects={data.projects}
+              cycles={data.cycles}
+              labels={data.labels}
+              onChange={handlers.onChange0}
+              find={find}
+              onFind={handlers.onFind2}
+              groupBy={groupBy}
+              onGroupBy={handlers.onGroupBy5}
+            />
+            <IssueList
+              issues={issues}
+              selectedId={selected}
+              onSelect={handlers.onSelect3}
+              groupBy={groupBy}
+            />
+          </Box>
         </Box>
       );
     }
@@ -69,17 +102,10 @@ export function IssueRoutePageView({
 }) {
   switch (model._view) {
     case 0: {
-      const { identifier, issues, handlers } = model;
+      const { identifier } = model;
       return (
-        <Box className="linear-full-page" h="100%">
-          <SplitLayout>
-            <Pane variant="list" compact>
-              <IssueList issues={issues} selectedId={identifier} onSelect={handlers.onSelect0} />
-            </Pane>
-            <Pane variant="detail">
-              <IssueDetail identifier={identifier} />
-            </Pane>
-          </SplitLayout>
+        <Box className="linear-full-page linear-issue-route" h="100%">
+          <IssueDetail identifier={identifier} />
         </Box>
       );
     }

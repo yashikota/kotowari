@@ -15,19 +15,23 @@ async function request(path: string, init?: RequestInit): Promise<Document> {
 export function useDocumentEditorPresenter({
   documentKey,
   assetBase = '',
+  inline = false,
 }: {
   documentKey: string;
   assetBase?: string;
+  inline?: boolean;
 }) {
-  return { _view: 0 as const, documentKey, assetBase, handlers: {} };
+  return { _view: 0 as const, documentKey, assetBase, inline, handlers: {} };
 }
 
 export function useEditorPresenter({
   documentKey,
   assetBase,
+  inline = false,
 }: {
   documentKey: string;
   assetBase: string;
+  inline?: boolean;
 }) {
   const path = `/api/documents/${documentKey}`;
   const draftKey = `kotowari:draft:${location.origin}:${documentKey}`;
@@ -164,6 +168,7 @@ export function useEditorPresenter({
   const conflict = !!server && dirty.current && server.revision !== base;
   return {
     _view: 0 as const,
+    inline,
     server,
     draft,
     base,

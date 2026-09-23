@@ -27,8 +27,10 @@ export function DocumentEditorView({
 }) {
   switch (model._view) {
     case 0: {
-      const { documentKey, assetBase } = model;
-      return <Editor key={documentKey} documentKey={documentKey} assetBase={assetBase} />;
+      const { documentKey, assetBase, inline } = model;
+      return (
+        <Editor key={documentKey} documentKey={documentKey} assetBase={assetBase} inline={inline} />
+      );
     }
   }
 }
@@ -51,6 +53,7 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
   switch (model._view) {
     case 0: {
       const {
+        inline,
         server,
         draft,
         mode,
@@ -70,39 +73,56 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
         <Stack
           component="section"
           aria-label="Document editor"
-          className="document-editor"
+          className={`document-editor${inline ? ' document-editor-inline' : ''}`}
           gap="md"
           aria-busy={busy}
         >
-          <Group justify="space-between" wrap="wrap">
-            <SegmentedControl
-              aria-label="Document view"
-              value={mode}
-              onChange={(value) => {
-                if (value === 'preview') handlers.onClick0();
-                else if (value === 'edit') handlers.onClick1();
-                else handlers.onClick2();
-              }}
-              data={[
-                { label: 'Preview', value: 'preview' },
-                { label: 'Edit', value: 'edit' },
-                { label: 'Compare', value: 'compare' },
-              ]}
-            />
+          <Group justify="space-between" wrap="wrap" className="document-editor-toolbar">
+            {inline ? (
+              mode === 'preview' && !server?.body.trim() ? null : (
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="subtle"
+                  onClick={mode === 'edit' ? handlers.onClick0 : handlers.onClick1}
+                >
+                  {mode === 'edit' ? 'Preview' : 'Edit description'}
+                </Button>
+              )
+            ) : (
+              <SegmentedControl
+                aria-label="Document view"
+                value={mode}
+                onChange={(value) => {
+                  if (value === 'preview') handlers.onClick0();
+                  else if (value === 'edit') handlers.onClick1();
+                  else handlers.onClick2();
+                }}
+                data={[
+                  { label: 'Preview', value: 'preview' },
+                  { label: 'Edit', value: 'edit' },
+                  { label: 'Compare', value: 'compare' },
+                ]}
+              />
+            )}
             <Group gap="xs">
-              <Button
-                type="button"
-                disabled={!server || busy || conflict || !dirty.current}
-                onClick={handlers.onClick3}
-              >
-                Save
-              </Button>
-              <Button type="button" variant="default" onClick={handlers.onClick4}>
-                History
-              </Button>
-              <Text component="span" role="status" size="sm" c="dimmed">
-                {status}
-              </Text>
+              {(!inline || mode !== 'preview') && (
+                <>
+                  <Button
+                    type="button"
+                    disabled={!server || busy || conflict || !dirty.current}
+                    onClick={handlers.onClick3}
+                  >
+                    Save
+                  </Button>
+                  <Button type="button" variant="default" onClick={handlers.onClick4}>
+                    History
+                  </Button>
+                  <Text component="span" role="status" size="sm" c="dimmed">
+                    {status}
+                  </Text>
+                </>
+              )}
             </Group>
           </Group>
 
@@ -186,8 +206,19 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
                   ))}
                 </List>
               </nav>
-              <Box ref={contentRef}>
-                <MarkdownContent html={html} />
+              <Box ref={contentRef} className="document-editor-content">
+                {inline && !server?.body.trim() ? (
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    className="linear-document-placeholder"
+                    onClick={handlers.onClick1}
+                  >
+                    Add description…
+                  </Button>
+                ) : (
+                  <MarkdownContent html={html} />
+                )}
               </Box>
             </>
           ) : null}

@@ -49,14 +49,67 @@ describe('buildIssueListRows', () => {
 
   it('omits empty groups and reports each group count', () => {
     expect(buildIssueListRows([issue(7, 4)])).toEqual([
-      { kind: 'group', priority: 4, count: 1, collapsed: false },
+      {
+        kind: 'group',
+        groupBy: 'priority',
+        key: 'priority:4',
+        label: '4',
+        priority: 4,
+        status: null,
+        count: 1,
+        collapsed: false,
+      },
       { kind: 'issue', issue: issue(7, 4) },
     ]);
   });
 
   it('keeps the group header and hides its issue rows when collapsed', () => {
-    expect(buildIssueListRows([issue(1, 2), issue(2, 2)], new Set([2]))).toEqual([
-      { kind: 'group', priority: 2, count: 2, collapsed: true },
+    expect(buildIssueListRows([issue(1, 2), issue(2, 2)], new Set(['priority:2']))).toEqual([
+      {
+        kind: 'group',
+        groupBy: 'priority',
+        key: 'priority:2',
+        label: '2',
+        priority: 2,
+        status: null,
+        count: 2,
+        collapsed: true,
+      },
+    ]);
+  });
+
+  it('groups by status in workflow order', () => {
+    const rows = buildIssueListRows(
+      [
+        { ...issue(1, 1), status: 'done' },
+        { ...issue(2, 2), status: 'backlog' },
+        { ...issue(3, 3), status: 'backlog' },
+      ],
+      new Set(),
+      'status',
+    );
+
+    expect(rows.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
+      'status:backlog',
+      'status:done',
+    ]);
+  });
+
+  it('groups by project and puts unassigned issues in a visible group', () => {
+    const rows = buildIssueListRows(
+      [
+        { ...issue(1, 1), projectSlug: 'web' },
+        { ...issue(2, 2), projectSlug: 'core' },
+        issue(3, 3),
+      ],
+      new Set(),
+      'project',
+    );
+
+    expect(rows.filter((row) => row.kind === 'group').map((row) => row.label)).toEqual([
+      'core',
+      'No project',
+      'web',
     ]);
   });
 });

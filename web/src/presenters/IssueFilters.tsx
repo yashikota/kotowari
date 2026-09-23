@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import { useRef } from 'react';
 import type { IssueSearch } from '../api.ts';
+import type { IssueGroupBy } from '../issue-list.ts';
 import type { Cycle, Label, Project } from '../types.ts';
 
 type Props = {
@@ -11,6 +12,8 @@ type Props = {
   onChange: (next: IssueSearch) => void;
   find?: string;
   onFind?: (q: string) => void;
+  groupBy?: IssueGroupBy;
+  onGroupBy?: (groupBy: IssueGroupBy) => void;
 };
 
 export function useIssueFiltersPresenter({
@@ -21,6 +24,8 @@ export function useIssueFiltersPresenter({
   onChange,
   find,
   onFind,
+  groupBy,
+  onGroupBy,
 }: Props) {
   const findRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +47,8 @@ export function useIssueFiltersPresenter({
     onChange,
     find,
     onFind,
+    groupBy,
+    onGroupBy,
     findRef,
     selectedLabels,
     handlers: {
@@ -54,6 +61,9 @@ export function useIssueFiltersPresenter({
       Find_issues_onChange4: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => onFind?.(e.target.value),
+      Display_options_onChange6: (
+        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
+      ) => onGroupBy?.(e.target.value as IssueGroupBy),
       onClick5: (on: boolean, l: Label) => {
         const next = on ? selectedLabels.filter((n) => n !== l.name) : [...selectedLabels, l.name];
         set({ labels: next.length ? next.join(',') : undefined });

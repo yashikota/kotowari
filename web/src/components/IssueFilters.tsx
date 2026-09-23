@@ -29,8 +29,19 @@ export function IssueFiltersView({
 
   switch (model._view) {
     case 0: {
-      const { search, projects, cycles, labels, find, onFind, findRef, selectedLabels, handlers } =
-        model;
+      const {
+        search,
+        projects,
+        cycles,
+        labels,
+        find,
+        onFind,
+        findRef,
+        selectedLabels,
+        groupBy,
+        onGroupBy,
+        handlers,
+      } = model;
       return (
         <Box
           className="linear-issue-list-toolbar"
@@ -100,6 +111,20 @@ export function IssueFiltersView({
                     backgroundColor: 'transparent',
                   },
                 }}
+              />
+            ) : null}
+            {onGroupBy ? (
+              <NativeSelect
+                aria-label="Display options"
+                value={groupBy ?? 'priority'}
+                onChange={handlers.Display_options_onChange6}
+                data={[
+                  { value: 'priority', label: 'Group: Priority' },
+                  { value: 'status', label: 'Group: Status' },
+                  { value: 'project', label: 'Group: Project' },
+                ]}
+                w={142}
+                {...filterSelectProps}
               />
             ) : null}
           </Group>
