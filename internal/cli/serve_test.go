@@ -2,23 +2,47 @@ package cli
 
 import (
 	"net"
+	"strconv"
 	"testing"
 )
 
 func TestListenTCPUsesNextPortWhenBusy(t *testing.T) {
-	occupied, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
+	var occupied net.Listener
+	var portStr string
+	for range 100 {
+		candidate, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, port, err := net.SplitHostPort(candidate.Addr().String())
+		if err != nil {
+			_ = candidate.Close()
+			t.Fatal(err)
+		}
+		portNum, err := strconv.Atoi(port)
+		if err != nil {
+			_ = candidate.Close()
+			t.Fatal(err)
+		}
+		if portNum < 65535 {
+			probe, probeErr := net.Listen("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(portNum+1)))
+			if probeErr == nil {
+				_ = probe.Close()
+				occupied = candidate
+				portStr = port
+				break
+			}
+		}
+		_ = candidate.Close()
+	}
+	if occupied == nil {
+		t.Fatal("could not find an available adjacent loopback port pair")
 	}
 	t.Cleanup(func() {
 		if err := occupied.Close(); err != nil {
 			t.Error(err)
 		}
 	})
-	_, portStr, err := net.SplitHostPort(occupied.Addr().String())
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	ln, addr, err := listenTCP("127.0.0.1:"+portStr, false, nil)
 	if err != nil {

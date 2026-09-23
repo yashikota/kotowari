@@ -116,13 +116,11 @@ tasks:
     desc: Build kotowari binary with embedded SPA
     deps: [web:build]
     cmds:
-      - go build -o kotowari .
+      - go build .
 
   web:build:
     desc: Build SPA and copy into go:embed dist
     dir: web
     cmds:
       - pnpm exec vp build
-      - rm -rf ../internal/webembed/dist
-      - mkdir -p ../internal/webembed/dist
-      - cp -R dist/. ../internal/webembed/dist/
+      - node e2e/copy-dist.mjs

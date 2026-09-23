@@ -1,0 +1,32 @@
+.groupButton {
+  height: 34px;
+  min-height: 34px;
+  padding-inline: var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  border-radius: 0;
+  font-size: var(--mantine-font-size-xs);
+}
+
+.groupButtonInner {
+  justify-content: flex-start;
+}
+
+.issueButton {
+  display: block;
+  height: 40px;
+  min-height: 40px;
+  padding-inline: var(--mantine-spacing-sm);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.issueButtonSelected {
+  background: var(--mantine-color-gray-1);
+}
+
+.issueButtonInner {
+  display: block;
+  width: 100%;
+}

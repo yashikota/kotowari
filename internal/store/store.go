@@ -120,6 +120,8 @@ type View struct {
 	Name      string   `json:"name" toml:"name"`
 	Slug      string   `json:"slug" toml:"slug"`
 	Display   string   `json:"display" toml:"display"`
+	GroupBy   string   `json:"groupBy" toml:"group_by"`
+	OrderBy   string   `json:"orderBy" toml:"order_by"`
 	Status    *string  `json:"status" toml:"status,omitempty"`
 	Project   *string  `json:"project" toml:"project,omitempty"`
 	Cycle     *int     `json:"cycle" toml:"cycle,omitempty"`
@@ -236,6 +238,8 @@ type CreateViewInput struct {
 	Name     string
 	Slug     string
 	Display  string
+	GroupBy  string
+	OrderBy  string
 	Status   *string
 	Project  *string
 	Cycle    *int

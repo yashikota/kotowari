@@ -8,9 +8,11 @@ import {
 import type * as React from 'react';
 import { useState } from 'react';
 import { api, parseIssueSearch, type IssueSearch } from '../api.ts';
-import type { IssueGroupBy } from '../issue-list.ts';
+import type { IssueGroupBy, IssueLayout, IssueOrderBy } from '../issue-list.ts';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
+import { isTypingTarget } from '../keymap.ts';
+import { useKeyboard } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 
 type IssueListData = {
@@ -42,10 +44,27 @@ export function useIssuesPagePresenter() {
   const data = useLoaderData({ from: '/issues' }) as IssueListData;
   const search = useSearch({ from: '/issues' }) as IssueSearch;
   const navigate = useNavigate();
+  const router = useRouter();
   const [find, setFind] = useState('');
   const [view, setView] = useState<'active' | 'backlog' | 'all'>('all');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
+  const [layout, setLayout] = useState<IssueLayout>('list');
+  const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
   const [selected, setSelected] = useState<string | null>(null);
+  useKeyboard((event) => {
+    if (
+      !(event.ctrlKey || event.metaKey) ||
+      event.altKey ||
+      event.shiftKey ||
+      event.repeat ||
+      event.key.toLowerCase() !== 'b' ||
+      isTypingTarget(event.target)
+    )
+      return false;
+    event.preventDefault();
+    setLayout((current) => (current === 'list' ? 'board' : 'list'));
+    return true;
+  });
   const issues = (data.issues ?? [])
     .filter((i) => matchesFind(i, find))
     .filter((i) =>
@@ -66,6 +85,8 @@ export function useIssuesPagePresenter() {
     selected: selectedId,
     view,
     groupBy,
+    layout,
+    orderBy,
     handlers: {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
@@ -82,8 +103,16 @@ export function useIssuesPagePresenter() {
         const handle: NonNullable<React.ComponentProps<typeof IssueList>['onSelect']> = setSelected;
         return handle(...args);
       },
-      onView4: (next: 'active' | 'backlog' | 'all') => setView(next),
+      onView4: (next: string | null) => {
+        if (next === 'active' || next === 'backlog' || next === 'all') setView(next);
+      },
       onGroupBy5: (next: IssueGroupBy) => setGroupBy(next),
+      onLayout6: (next: IssueLayout) => setLayout(next),
+      onOrderBy7: (next: IssueOrderBy) => setOrderBy(next),
+      onBoardOpen8: (id: string) =>
+        navigate({ to: '/issues/$identifier', params: { identifier: id } }),
+      onBoardMove9: (id: string, status: Issue['status'], sortOrder: number) =>
+        api.patchIssue(id, { status, sortOrder }).then(() => router.invalidate()),
     },
   };
 }

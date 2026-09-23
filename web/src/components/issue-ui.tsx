@@ -74,7 +74,7 @@ export function IssueLabelPill({ name, color }: { name: string; color: string })
       style={{
         borderRadius: 4,
         backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)`,
-        color: 'var(--linear-text, var(--mantine-color-text))',
+        color: 'var(--mantine-color-text)',
         whiteSpace: 'nowrap',
         flexShrink: 0,
       }}

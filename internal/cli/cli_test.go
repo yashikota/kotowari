@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -56,7 +57,11 @@ func TestRunUnknownCommand(t *testing.T) {
 
 func TestRunAcceptsGoRunBinaryPath(t *testing.T) {
 	var stdout bytes.Buffer
-	err := cli.Run(context.Background(), []string{"/tmp/go-build/exe/kotowari", "version"}, &stdout, ioDiscard{}, "9.9.9")
+	binary := filepath.Join(t.TempDir(), "go-build", "exe", "kotowari")
+	if runtime.GOOS == "windows" {
+		binary += ".exe"
+	}
+	err := cli.Run(context.Background(), []string{binary, "version"}, &stdout, ioDiscard{}, "9.9.9")
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}

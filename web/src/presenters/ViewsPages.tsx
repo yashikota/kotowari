@@ -1,8 +1,9 @@
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useState } from 'react';
-import { api } from '../api.ts';
-import { IssueBoard, IssueList } from '../components/IssueList.tsx';
+import { api, type IssueSearch } from '../api.ts';
+import type { IssueGroupBy, IssueLayout, IssueOrderBy } from '../issue-list.ts';
+import { IssueList } from '../components/IssueList.tsx';
 import type { Cycle, Issue, Label, Project, View } from '../types.ts';
 
 export function useViewPagePresenter() {
@@ -16,19 +17,53 @@ export function useViewPagePresenter() {
   };
   const router = useRouter();
   const navigate = useNavigate();
-  const issues = data.issues ?? [];
+  const [find, setFind] = useState('');
+  const [groupBy, setGroupBy] = useState<IssueGroupBy>(
+    (data.view.groupBy || 'priority') as IssueGroupBy,
+  );
+  const [orderBy, setOrderBy] = useState<IssueOrderBy>(
+    (data.view.orderBy || 'manual') as IssueOrderBy,
+  );
   const [view, setView] = useState(data.view);
+  const issues = (data.issues ?? []).filter((issue) => {
+    const query = find.trim().toLowerCase();
+    return (
+      !query ||
+      issue.title.toLowerCase().includes(query) ||
+      issue.identifier.toLowerCase().includes(query)
+    );
+  });
   const [selected, setSelected] = useState<string | null>(issues[0]?.identifier ?? null);
 
   if (view.slug !== data.view.slug || view.updatedAt !== data.view.updatedAt) {
     setView(data.view);
     setSelected((data.issues ?? [])[0]?.identifier ?? null);
+    setGroupBy((data.view.groupBy || 'priority') as IssueGroupBy);
+    setOrderBy((data.view.orderBy || 'manual') as IssueOrderBy);
   }
 
   async function save(body: Record<string, unknown>) {
     const next = await api.patchView(slug, body);
     setView(next);
     await router.invalidate();
+  }
+
+  const search: IssueSearch = {
+    status: view.status ?? undefined,
+    project: view.project ?? undefined,
+    cycle: view.cycle ?? undefined,
+    priority: view.priority ?? undefined,
+    labels: view.labels.length > 0 ? view.labels.join(',') : undefined,
+  };
+
+  function patchFilters(next: IssueSearch) {
+    return save({
+      status: next.status ?? '',
+      project: next.project ?? '',
+      cycle: next.cycle ?? 0,
+      priority: next.priority ?? -1,
+      labels: next.labels ? next.labels.split(',').filter(Boolean) : [],
+    });
   }
 
   return {
@@ -38,6 +73,10 @@ export function useViewPagePresenter() {
     issues,
     view,
     selected,
+    search,
+    find,
+    groupBy,
+    orderBy,
     handlers: {
       onClick0: () => {
         if (!window.confirm(`Delete view ${view.name}?`)) {
@@ -52,44 +91,27 @@ export function useViewPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setView({ ...view, name: e.target.value }),
       View_name_onBlur2: () => save({ name: view.name }),
-      View_display_onChange3: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ display: e.target.value }),
-      View_status_onChange4: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ status: e.target.value }),
-      View_project_onChange5: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ project: e.target.value }),
-      View_cycle_onChange6: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ cycle: e.target.value ? Number(e.target.value) : 0 }),
-      View_priority_onChange7: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) =>
-        save({
-          priority: e.target.value === '' ? -1 : Number(e.target.value),
-        }),
-      onClick8: (on: boolean, l: Label) => {
-        const next = on ? view.labels.filter((n) => n !== l.name) : [...view.labels, l.name];
-        return save({ labels: next });
-      },
-      onOpen9: (
-        id: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onOpen']>>[0],
-      ) => navigate({ to: '/issues/$identifier', params: { identifier: id } }),
-      onMove10: (
-        id: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[0],
-        status: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[1],
-        sortOrder: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[2],
-      ) => {
-        return api.patchIssue(id, { status, sortOrder }).then(() => router.invalidate());
-      },
       onSelect11: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {
         const handle: NonNullable<React.ComponentProps<typeof IssueList>['onSelect']> = setSelected;
         return handle(...args);
       },
+      onFilterChange12: (next: IssueSearch) => patchFilters(next),
+      onFind13: (query: string) => setFind(query),
+      onGroupBy14: (next: IssueGroupBy) => {
+        setGroupBy(next);
+        return save({ groupBy: next });
+      },
+      onLayout15: (next: IssueLayout) => save({ display: next }),
+      onOrderBy16: (next: IssueOrderBy) => {
+        setOrderBy(next);
+        return save({ orderBy: next });
+      },
+      onBoardOpen17: (id: string) =>
+        navigate({ to: '/issues/$identifier', params: { identifier: id } }),
+      onBoardMove18: (id: string, status: string, sortOrder: number) =>
+        api.patchIssue(id, { status, sortOrder }).then(() => router.invalidate()),
     },
   };
 }

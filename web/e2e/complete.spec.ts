@@ -15,17 +15,27 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await json(await request.post('/api/issues', { data: { title: hideTitle, status: 'done' } }));
 
   await page.goto('/issues');
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');
   await expect(page).toHaveURL(/status=todo/);
   const list = page.getByRole('listbox', { name: 'Issues' });
   await expect(list.getByRole('option', { name: new RegExp(keepTitle) })).toBeVisible();
   await expect(list.getByRole('option', { name: new RegExp(hideTitle) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Remove Status · Todo filter' }).click();
+  await expect(page).not.toHaveURL(/status=todo/);
+  await expect(list.getByRole('option', { name: new RegExp(hideTitle) })).toBeVisible();
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByLabel('Filter status').selectOption('todo');
 
   await page.getByRole('button', { name: 'New view', exact: true }).click();
   await page.getByLabel('View name').fill(`Todo ${stamp}`);
   await page.getByLabel('View name').press('Control+Enter');
   await expect(page).toHaveURL(new RegExp(`/views/todo-${stamp}`));
   await expect(page.getByRole('heading', { name: `Todo ${stamp}` })).toBeVisible();
+  const savedViewIssues = page.getByRole('listbox', { name: 'Issues' });
+  await expect(savedViewIssues.getByRole('option', { name: new RegExp(keepTitle) })).toBeVisible();
+  await expect(savedViewIssues.getByRole('option', { name: new RegExp(hideTitle) })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
 
   await page.goto(`/issues`);
   await page.getByLabel('Find issues').fill(keepTitle);

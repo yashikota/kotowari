@@ -161,6 +161,8 @@ export const api = {
     name: string;
     slug: string;
     display?: string;
+    groupBy?: string;
+    orderBy?: string;
     status?: string | null;
     project?: string | null;
     cycle?: number | null;

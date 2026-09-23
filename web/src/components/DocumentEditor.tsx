@@ -49,7 +49,13 @@ function DocumentEditorBinding(props: Parameters<typeof useDocumentEditorPresent
   return <DocumentEditorView model={{ ...model, handlers } as typeof model} />;
 }
 
-export function EditorView({ model }: { model: ReturnType<typeof useEditorPresenter> }) {
+export function EditorView({
+  model,
+  editRef,
+}: {
+  model: ReturnType<typeof useEditorPresenter>;
+  editRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
+}) {
   switch (model._view) {
     case 0: {
       const {
@@ -61,6 +67,7 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
         error,
         busy,
         history,
+        historyOpened,
         dirty,
         contentRef,
         headings,
@@ -68,23 +75,33 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
         conflict,
         handlers,
       } = model;
-      const editRef = useFocusWhen<HTMLTextAreaElement>(mode === 'edit', [mode]);
       return (
         <Stack
           component="section"
           aria-label="Document editor"
-          className={`document-editor${inline ? ' document-editor-inline' : ''}`}
-          gap="md"
+          gap={inline ? 'xs' : 'md'}
           aria-busy={busy}
         >
-          <Group justify="space-between" wrap="wrap" className="document-editor-toolbar">
+          <Group justify="space-between" wrap="wrap" mih={inline ? 24 : undefined}>
             {inline ? (
               mode === 'preview' && !server?.body.trim() ? null : (
                 <Button
                   type="button"
                   size="xs"
                   variant="subtle"
-                  onClick={mode === 'edit' ? handlers.onClick0 : handlers.onClick1}
+                  onClick={handlers.onToggleMode}
+                  styles={
+                    inline
+                      ? {
+                          root: {
+                            height: 24,
+                            paddingInline: 6,
+                            color: 'var(--mantine-color-dimmed)',
+                            fontSize: 'var(--mantine-font-size-xs)',
+                          },
+                        }
+                      : undefined
+                  }
                 >
                   {mode === 'edit' ? 'Preview' : 'Edit description'}
                 </Button>
@@ -93,11 +110,7 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
               <SegmentedControl
                 aria-label="Document view"
                 value={mode}
-                onChange={(value) => {
-                  if (value === 'preview') handlers.onClick0();
-                  else if (value === 'edit') handlers.onClick1();
-                  else handlers.onClick2();
-                }}
+                onChange={handlers.onModeChange}
                 data={[
                   { label: 'Preview', value: 'preview' },
                   { label: 'Edit', value: 'edit' },
@@ -148,7 +161,10 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
           ) : null}
 
           {history.length > 0 ? (
-            <Accordion defaultValue="history">
+            <Accordion
+              value={historyOpened ? 'history' : null}
+              onChange={handlers.onHistoryOpenChange}
+            >
               <Accordion.Item value="history">
                 <Accordion.Control>Previous versions</Accordion.Control>
                 <Accordion.Panel>
@@ -197,22 +213,32 @@ export function EditorView({ model }: { model: ReturnType<typeof useEditorPresen
 
           {mode !== 'edit' ? (
             <>
-              <nav aria-label="Document contents">
-                <List size="sm">
-                  {headings.map((h) => (
-                    <List.Item key={h.id}>
-                      <Anchor href={`#${h.id}`}>{h.text}</Anchor>
-                    </List.Item>
-                  ))}
-                </List>
-              </nav>
-              <Box ref={contentRef} className="document-editor-content">
+              {!inline ? (
+                <nav aria-label="Document contents">
+                  <List size="sm">
+                    {headings.map((h) => (
+                      <List.Item key={h.id}>
+                        <Anchor href={`#${h.id}`}>{h.text}</Anchor>
+                      </List.Item>
+                    ))}
+                  </List>
+                </nav>
+              ) : null}
+              <Box ref={contentRef}>
                 {inline && !server?.body.trim() ? (
                   <Button
                     type="button"
                     variant="subtle"
-                    className="linear-document-placeholder"
+                    size="compact-sm"
                     onClick={handlers.onClick1}
+                    styles={{
+                      root: {
+                        height: 28,
+                        padding: 0,
+                        color: 'var(--mantine-color-dimmed)',
+                        fontWeight: 400,
+                      },
+                    }}
                   >
                     Add description…
                   </Button>
@@ -239,5 +265,6 @@ export function Editor(props: Parameters<typeof useEditorPresenter>[0]) {
 function EditorBinding(props: Parameters<typeof useEditorPresenter>[0]) {
   const model = useEditorPresenter(props);
   const handlers = useActions(model.handlers);
-  return <EditorView model={{ ...model, handlers } as typeof model} />;
+  const editRef = useFocusWhen<HTMLTextAreaElement>(model.mode === 'edit', [model.mode]);
+  return <EditorView model={{ ...model, handlers } as typeof model} editRef={editRef} />;
 }

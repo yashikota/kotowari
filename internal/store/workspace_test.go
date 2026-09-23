@@ -175,15 +175,34 @@ func TestViewFileAndSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	if _, err := s.CreateView(CreateViewInput{Name: "Bugs", Slug: "bugs", Display: "board"}); err != nil {
+	created, err := s.CreateView(CreateViewInput{
+		Name: "Bugs", Slug: "bugs", Display: "board", GroupBy: "status", OrderBy: "title",
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(filepath.Join(dir, "views", "bugs.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), "name") || !strings.Contains(string(raw), "Bugs") {
+	if !strings.Contains(string(raw), "name") || !strings.Contains(string(raw), "Bugs") ||
+		!strings.Contains(string(raw), "group_by = 'status'") || !strings.Contains(string(raw), "order_by = 'title'") {
 		t.Fatalf("view file: %s", raw)
+	}
+	if created.GroupBy != "status" || created.OrderBy != "title" {
+		t.Fatalf("created view settings: %#v", created)
+	}
+	reopened, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = reopened.Close() }()
+	persisted, err := reopened.GetView("bugs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if persisted.GroupBy != "status" || persisted.OrderBy != "title" {
+		t.Fatalf("persisted view settings: %#v", persisted)
 	}
 	hits, err := s.Search("bug")
 	if err != nil {

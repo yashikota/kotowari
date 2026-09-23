@@ -154,6 +154,24 @@ func ValidViewDisplay(s string) bool {
 	return s == "list" || s == "board"
 }
 
+func ValidViewGroupBy(s string) bool {
+	switch s {
+	case "none", "priority", "status", "project", "cycle", "parent":
+		return true
+	default:
+		return false
+	}
+}
+
+func ValidViewOrderBy(s string) bool {
+	switch s {
+	case "manual", "priority", "updated", "dueDate", "title":
+		return true
+	default:
+		return false
+	}
+}
+
 func ValidSlug(s string) bool {
 	if s == "" {
 		return false

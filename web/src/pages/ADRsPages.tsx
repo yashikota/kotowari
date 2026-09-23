@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
   Alert,
@@ -23,8 +22,6 @@ import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { useADRDetailPagePresenter, useADRsPagePresenter } from '../presenters/ADRsPages.tsx';
 
 export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePresenter> }) {
-  useTranslation();
-
   switch (model._view) {
     case 0: {
       const { adrs, status, project, filtered, handlers } = model;
@@ -120,11 +117,11 @@ function ADRsPageBinding() {
 
 export function ADRDetailPageView({
   model,
+  titleRef,
 }: {
   model: ReturnType<typeof useADRDetailPagePresenter>;
+  titleRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
-  useTranslation();
-
   switch (model._view) {
     case 0: {
       const {
@@ -140,8 +137,6 @@ export function ADRDetailPageView({
         sandbox,
         handlers,
       } = model;
-      const autofocusTitle = useAutofocusTarget('title');
-      const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [identifier]);
       return (
         <SplitLayout single>
           <Pane single>
@@ -340,5 +335,7 @@ export function ADRDetailPage() {
 function ADRDetailPageBinding() {
   const model = useADRDetailPagePresenter();
   const handlers = useActions(model.handlers);
-  return <ADRDetailPageView model={{ ...model, handlers } as typeof model} />;
+  const autofocusTitle = useAutofocusTarget('title');
+  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [model.identifier]);
+  return <ADRDetailPageView model={{ ...model, handlers } as typeof model} titleRef={titleRef} />;
 }

@@ -5,8 +5,13 @@ import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
-import { buildIssueListRows, type IssueGroupBy } from '../issue-list.ts';
-import type { BoardColumn } from '../components/IssueList.tsx';
+import {
+  buildIssueListRows,
+  sortIssues,
+  type IssueGroupBy,
+  type IssueOrderBy,
+} from '../issue-list.ts';
+import type { IssueBoardColumnProps } from '../components/IssueBoardColumn.tsx';
 import { localToday } from '../due.ts';
 import { actionFromKeyboard } from '../keymap.ts';
 import type { Issue, IssueStatus } from '../types.ts';
@@ -18,6 +23,7 @@ type Props = {
   onSelect: (id: string) => void;
   openOnSelect?: boolean;
   groupBy?: IssueGroupBy;
+  orderBy?: IssueOrderBy;
 };
 
 export function useIssueListPresenter({
@@ -26,9 +32,10 @@ export function useIssueListPresenter({
   onSelect,
   openOnSelect = true,
   groupBy = 'priority',
+  orderBy = 'manual',
 }: Props) {
   const sendIntent = useIntent();
-  const issues = useIssueProjection(initialIssues);
+  const issues = sortIssues(useIssueProjection(initialIssues), orderBy);
   const navigate = useNavigate();
   const ids = useMemo(() => issues.map((i) => i.identifier), [issues]);
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
@@ -134,21 +141,27 @@ type BoardProps = {
   issues: Issue[];
   onOpen: (id: string) => void;
   onMove: (id: string, status: IssueStatus, sortOrder: number) => void;
+  orderBy?: IssueOrderBy;
 };
 
-function columnIssues(issues: Issue[], status: IssueStatus): Issue[] {
-  return issues
-    .filter((i) => i.status === status)
-    .slice()
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.number - b.number);
+function columnIssues(issues: Issue[], status: IssueStatus, orderBy: IssueOrderBy): Issue[] {
+  const matching = issues.filter((issue) => issue.status === status);
+  if (orderBy !== 'manual') return sortIssues(matching, orderBy);
+  return matching.sort((a, b) => a.sortOrder - b.sortOrder || a.number - b.number);
 }
 
-export function useIssueBoardPresenter({ issues: initialIssues, onOpen, onMove }: BoardProps) {
+export function useIssueBoardPresenter({
+  issues: initialIssues,
+  onOpen,
+  onMove,
+  orderBy = 'manual',
+}: BoardProps) {
   const issues = useIssueProjection(initialIssues);
   const [dragId, setDragId] = useState<string | null>(null);
   const columns = useMemo(
-    () => ISSUE_STATUSES.map((status) => ({ status, issues: columnIssues(issues, status) })),
-    [issues],
+    () =>
+      ISSUE_STATUSES.map((status) => ({ status, issues: columnIssues(issues, status, orderBy) })),
+    [issues, orderBy],
   );
   return {
     _view: 0 as const,
@@ -157,22 +170,16 @@ export function useIssueBoardPresenter({ issues: initialIssues, onOpen, onMove }
     dragId,
     columns,
     handlers: {
-      onDrag0: (
-        ...args: Parameters<NonNullable<React.ComponentProps<typeof BoardColumn>['onDrag']>>
-      ) => {
-        const handle: NonNullable<React.ComponentProps<typeof BoardColumn>['onDrag']> = setDragId;
+      onDrag0: (...args: Parameters<IssueBoardColumnProps['onDrag']>) => {
+        const handle: IssueBoardColumnProps['onDrag'] = setDragId;
         return handle(...args);
       },
-      onOpen1: (
-        ...args: Parameters<NonNullable<React.ComponentProps<typeof BoardColumn>['onOpen']>>
-      ) => {
-        const handle: NonNullable<React.ComponentProps<typeof BoardColumn>['onOpen']> = onOpen;
+      onOpen1: (...args: Parameters<IssueBoardColumnProps['onOpen']>) => {
+        const handle: IssueBoardColumnProps['onOpen'] = onOpen;
         return handle(...args);
       },
-      onMove2: (
-        ...args: Parameters<NonNullable<React.ComponentProps<typeof BoardColumn>['onMove']>>
-      ) => {
-        const handle: NonNullable<React.ComponentProps<typeof BoardColumn>['onMove']> = onMove;
+      onMove2: (...args: Parameters<IssueBoardColumnProps['onMove']>) => {
+        const handle: IssueBoardColumnProps['onMove'] = onMove;
         return handle(...args);
       },
     },
@@ -186,11 +193,7 @@ export function useBoardColumnPresenter({
   onDrag,
   onOpen,
   onMove,
-}: BoardProps & {
-  status: IssueStatus;
-  dragId: string | null;
-  onDrag: (id: string | null) => void;
-}) {
+}: IssueBoardColumnProps) {
   const windowed = useWindowedRows(issues.length, 100);
   function drop(beforeId: string | null) {
     if (dragId) onMove(dragId, status, sortOrderForDrop(issues, dragId, beforeId));

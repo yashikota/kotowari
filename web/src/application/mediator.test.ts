@@ -19,11 +19,38 @@ describe('Root mediator', () => {
   });
   it('has exactly one overlay state', () => {
     const mediator = new Mediator();
+    const changed = vi.fn();
+    mediator.subscribe(changed);
     mediator.open('palette');
     mediator.open('issue');
     expect(mediator.getOverlay()).toBe('issue');
+    expect(changed).toHaveBeenCalledTimes(2);
+    mediator.open('issue');
+    expect(changed).toHaveBeenCalledTimes(2);
     mediator.open('none');
     expect(mediator.getOverlay()).toBe('none');
+  });
+  it('arbitrates local view flags by scope and clears them on teardown', () => {
+    const mediator = new Mediator();
+    const first = new EventScope('first', mediator.root);
+    const second = new EventScope('second', mediator.root);
+    first.handlers.set('toggle', () => mediator.setFlag(`${first.id}:menu`, (open) => !open));
+    second.handlers.set('toggle', () => mediator.setFlag(`${second.id}:menu`, (open) => !open));
+    const changed = vi.fn();
+    mediator.subscribe(changed);
+    mediator.dispatch(first, 'toggle', undefined);
+    expect(mediator.getFlag('first:menu')).toBe(true);
+    expect(mediator.getFlag('second:menu')).toBe(false);
+    mediator.dispatch(second, 'toggle', undefined);
+    mediator.dispatch(first, 'toggle', undefined);
+    expect(mediator.getFlag('first:menu')).toBe(false);
+    expect(mediator.getFlag('second:menu')).toBe(true);
+    mediator.clearFlag('second:menu');
+    expect(mediator.getFlag('second:menu')).toBe(false);
+    expect(changed).toHaveBeenCalledTimes(4);
+    expect(mediator.getFlag('editor:history', true)).toBe(true);
+    mediator.setFlag('editor:history', false, true);
+    expect(mediator.getFlag('editor:history', true)).toBe(false);
   });
   it('rejects duplicate submissions until completion and surfaces failures', async () => {
     const mediator = new Mediator();
@@ -51,6 +78,13 @@ describe('Root mediator', () => {
     child.active = false;
     mediator.dispatch(child, 'save', {});
     expect(save).not.toHaveBeenCalled();
+  });
+  it('transitions successful asynchronous actions back to idle', async () => {
+    const mediator = new Mediator();
+    mediator.root.handlers.set('onSubmit', async () => 'saved');
+    expect(await mediator.dispatch(mediator.root, 'onSubmit', undefined)).toBe('saved');
+    expect(mediator.operations.get('Root:onSubmit')).toBeUndefined();
+    expect(mediator.getError()).toBe('');
   });
   it('stops keyboard propagation after a child consumes it', () => {
     const mediator = new Mediator();

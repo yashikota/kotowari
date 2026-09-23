@@ -2,6 +2,7 @@ import { useLoaderData, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
+import { useMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import { normalizeWorkspace } from '../i18n/locale.ts';
 import type { Workspace } from '../types.ts';
@@ -24,6 +25,8 @@ export function useHomePagePresenter() {
   const [workspace, setWorkspace] = useState(() => normalizeWorkspace(data.workspace));
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [urlEditing, setUrlEditing] = useMachineFlag('url-editor');
+  const [githubEditing, setGithubEditing] = useMachineFlag('github-editor');
 
   useEffect(() => {
     setWorkspace(normalizeWorkspace(data.workspace));
@@ -35,7 +38,13 @@ export function useHomePagePresenter() {
     counts: data.counts,
     error,
     saved,
+    urlEditing,
+    githubEditing,
     handlers: {
+      onEditUrl: () => setUrlEditing(true),
+      onBlurUrl: () => setUrlEditing(false),
+      onEditGithub: () => setGithubEditing(true),
+      onBlurGithub: () => setGithubEditing(false),
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
         e.preventDefault();
         setSaved(false);

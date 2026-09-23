@@ -11,6 +11,7 @@ import {
   NativeSelect,
   ScrollArea,
   Stack,
+  ThemeIcon,
   Text,
   Textarea,
 } from '@mantine/core';
@@ -38,6 +39,7 @@ import { RouterNavLink } from '../mantine-ui.tsx';
 import { CONFIG_NAV, PRIMARY_NAV } from '../nav.ts';
 import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
+import styles from './Shell.module.css';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useShellPresenter } from '../presenters/Shell.tsx';
@@ -53,14 +55,21 @@ const NAV_ICONS: Record<string, ReactNode> = {
   '/config': <IconSettings size={14} aria-hidden />,
 };
 
-export function ShellView({ model }: { model: ReturnType<typeof useShellPresenter> }) {
-  const { t } = useTranslation();
-  const { createIssue, createADR, createPage, createView } = model;
-  const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(createIssue);
-  const adrTitleRef = useFocusWhen<HTMLTextAreaElement>(createADR);
-  const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(createPage);
-  const viewNameRef = useFocusWhen<HTMLTextAreaElement>(createView);
-
+export function ShellView({
+  model,
+  t,
+  issueTitleRef,
+  adrTitleRef,
+  pageTitleRef,
+  viewNameRef,
+}: {
+  model: ReturnType<typeof useShellPresenter>;
+  t: ReturnType<typeof useTranslation>['t'];
+  issueTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
+  adrTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
+  pageTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
+  viewNameRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
+}) {
   switch (model._view) {
     case 0: {
       const {
@@ -95,32 +104,44 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
           <AppShell
             navbar={{ width: 244, breakpoint: 0 }}
             padding={0}
-            className={`linear-shell${mobileNavigationOpen ? ' linear-mobile-nav-open' : ''}`}
+            className={`${styles.shell} ${mobileNavigationOpen ? styles.navigationOpen : ''}`}
             styles={{ root: { height: '100dvh', overflow: 'hidden' } }}
           >
             <AppShell.Navbar
               p={0}
-              className="linear-sidebar"
-              onClick={(event) => {
-                if (event.target instanceof Element && event.target.closest('a')) {
-                  handlers.onCloseMobileNavigation();
-                }
+              className={styles.sidebar}
+              styles={{
+                navbar: {
+                  backgroundColor: 'var(--mantine-color-gray-0)',
+                  borderColor: 'var(--mantine-color-default-border)',
+                },
               }}
+              onClick={handlers.onNavbarClick}
             >
-              <header className="linear-sidebar-header">
+              <Group
+                component="header"
+                h={52}
+                px="sm"
+                gap="sm"
+                justify="space-between"
+                wrap="nowrap"
+                style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+              >
                 <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-                  <Box className="linear-workspace-mark" aria-hidden>
+                  <ThemeIcon size={20} radius="sm" color="indigo" aria-hidden>
                     {(workspaceName || 'K').slice(0, 1).toUpperCase()}
-                  </Box>
-                  <Text className="linear-workspace-name" title={workspaceName || 'Kotowari'}>
+                  </ThemeIcon>
+                  <Text size="sm" fw={600} truncate title={workspaceName || 'Kotowari'}>
                     {workspaceName || 'Kotowari'}
                   </Text>
                 </Group>
                 <Group gap={2} wrap="nowrap">
                   <ActionIcon
                     type="button"
-                    variant="transparent"
-                    className="linear-icon-button"
+                    variant="subtle"
+                    color="gray"
+                    w={28}
+                    h={28}
                     aria-label="Open command palette"
                     title="Search · Ctrl K"
                     onClick={handlers.onOpenPalette}
@@ -129,8 +150,10 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                   </ActionIcon>
                   <ActionIcon
                     type="button"
-                    variant="transparent"
-                    className="linear-icon-button"
+                    variant="subtle"
+                    color="gray"
+                    w={28}
+                    h={28}
                     aria-label={t('modal.createIssue')}
                     title={`${t('modal.createIssue')} · C`}
                     onClick={handlers.onCreateIssue}
@@ -138,11 +161,13 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                     <IconPlus size={16} stroke={1.7} aria-hidden />
                   </ActionIcon>
                 </Group>
-              </header>
+              </Group>
 
-              <AppShell.Section grow component={ScrollArea} className="linear-sidebar-nav">
+              <AppShell.Section grow component={ScrollArea} p="xs" style={{ minHeight: 0 }}>
                 <Stack gap={0} component="nav" aria-label="Primary">
-                  <Text className="linear-sidebar-section-title">Workspace</Text>
+                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
+                    Workspace
+                  </Text>
                   {PRIMARY_NAV.map((item) => (
                     <RouterNavLink
                       key={item.to}
@@ -167,10 +192,12 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                     ))}
                 </Stack>
 
-                <Divider className="linear-sidebar-divider" />
+                <Divider my="sm" mx="xs" />
 
                 <Stack gap={0} component="nav" aria-label="Saved views">
-                  <Text className="linear-sidebar-section-title">{t('nav.views')}</Text>
+                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
+                    {t('nav.views')}
+                  </Text>
                   {views.map((v) => (
                     <RouterNavLink
                       key={v.slug}
@@ -183,8 +210,10 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                   <Button
                     type="button"
                     variant="subtle"
+                    color="gray"
                     size="compact-sm"
-                    className="linear-new-view"
+                    justify="flex-start"
+                    px="xs"
                     onClick={handlers.onClick0}
                   >
                     <Group gap={7} wrap="nowrap">
@@ -195,7 +224,10 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                 </Stack>
               </AppShell.Section>
 
-              <AppShell.Section className="linear-sidebar-footer">
+              <AppShell.Section
+                p="xs"
+                style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
+              >
                 <Stack gap={0} component="nav" aria-label="Settings">
                   <RouterNavLink
                     to={CONFIG_NAV.to}
@@ -209,15 +241,29 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
             {mobileNavigationOpen ? (
               <button
                 type="button"
-                className="linear-mobile-backdrop"
+                className={styles.backdrop}
                 aria-label="Close navigation"
                 onClick={handlers.onCloseMobileNavigation}
               />
             ) : null}
 
-            <AppShell.Main className="linear-main">
-              <header className="linear-topbar">
-                <Box component="nav" aria-label="Breadcrumb" className="linear-breadcrumb">
+            <AppShell.Main className={styles.main}>
+              <Group
+                component="header"
+                justify="space-between"
+                gap="md"
+                h={44}
+                px="md"
+                wrap="nowrap"
+                style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+              >
+                <Group
+                  component="nav"
+                  aria-label="Breadcrumb"
+                  gap="sm"
+                  wrap="nowrap"
+                  style={{ minWidth: 0 }}
+                >
                   <Text size="sm" c="dimmed" truncate maw={180}>
                     {workspaceName || 'Kotowari'}
                   </Text>
@@ -225,15 +271,20 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                     size={14}
                     stroke={1.6}
                     aria-hidden
-                    className="linear-breadcrumb-separator"
+                    color="var(--mantine-color-dimmed)"
                   />
-                  <Text className="linear-route-title">{routeTitle}</Text>
-                </Box>
+                  <Text size="sm" fw={500} truncate>
+                    {routeTitle}
+                  </Text>
+                </Group>
                 <Group gap={4} wrap="nowrap">
                   <ActionIcon
                     type="button"
-                    variant="transparent"
-                    className="linear-icon-button linear-mobile-menu-button"
+                    variant="subtle"
+                    color="gray"
+                    w={28}
+                    h={28}
+                    className={styles.mobileMenuButton}
                     aria-label={mobileNavigationOpen ? 'Close navigation' : 'Open navigation'}
                     onClick={handlers.onToggleMobileNavigation}
                   >
@@ -241,8 +292,10 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                   </ActionIcon>
                   <ActionIcon
                     type="button"
-                    variant="transparent"
-                    className="linear-icon-button"
+                    variant="subtle"
+                    color="gray"
+                    w={28}
+                    h={28}
                     aria-label="Open command palette"
                     title="Search · Ctrl K"
                     onClick={handlers.onOpenPalette}
@@ -250,15 +303,15 @@ export function ShellView({ model }: { model: ReturnType<typeof useShellPresente
                     <IconSearch size={15} stroke={1.7} aria-hidden />
                   </ActionIcon>
                 </Group>
-              </header>
-              <div className="linear-route-content">
+              </Group>
+              <Box style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0, overflow: 'auto' }}>
                 {error ? (
                   <Alert color="red" variant="light" m="sm">
                     {error}
                   </Alert>
                 ) : null}
                 <Outlet />
-              </div>
+              </Box>
             </AppShell.Main>
           </AppShell>
 
@@ -449,5 +502,19 @@ export function Shell() {
 function ShellBinding() {
   const model = useShellPresenter();
   const handlers = useActions(model.handlers);
-  return <ShellView model={{ ...model, handlers } as typeof model} />;
+  const { t } = useTranslation();
+  const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createIssue);
+  const adrTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createADR);
+  const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createPage);
+  const viewNameRef = useFocusWhen<HTMLTextAreaElement>(model.createView);
+  return (
+    <ShellView
+      model={{ ...model, handlers } as typeof model}
+      t={t}
+      issueTitleRef={issueTitleRef}
+      adrTitleRef={adrTitleRef}
+      pageTitleRef={pageTitleRef}
+      viewNameRef={viewNameRef}
+    />
+  );
 }

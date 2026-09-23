@@ -21,7 +21,7 @@ test('document diagrams, external edits, conflict recovery, history and export',
     '<style>h1{color:red}</style><h1>System diagram</h1><script>document.body.innerHTML="SCRIPT RAN"</script>',
   );
   await page.goto(`/adrs/${adr.identifier}`);
-  const editor = page.locator('.document-editor').first();
+  const editor = page.getByRole('region', { name: 'Document editor' }).first();
   await expect(editor.getByRole('table')).toBeVisible();
   await expect(
     editor.frameLocator('iframe').getByRole('heading', { name: 'System diagram' }),

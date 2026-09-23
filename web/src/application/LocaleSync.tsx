@@ -3,7 +3,7 @@ import { api } from '../api.ts';
 import { applyLocale } from '../i18n/index.ts';
 import { signals } from './mediator.ts';
 
-export function LocaleSync() {
+export function useLocaleSync() {
   useEffect(() => {
     let active = true;
 
@@ -25,5 +25,4 @@ export function LocaleSync() {
       signals.removeEventListener('kotowari:refresh', syncLocale);
     };
   }, []);
-  return null;
 }

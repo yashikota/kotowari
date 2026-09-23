@@ -16,9 +16,13 @@ import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 import { useConfigPagePresenter } from '../presenters/ConfigPages.tsx';
 
-export function ConfigPageView({ model }: { model: ReturnType<typeof useConfigPagePresenter> }) {
-  const { t } = useTranslation();
-
+export function ConfigPageView({
+  model,
+  t,
+}: {
+  model: ReturnType<typeof useConfigPagePresenter>;
+  t: ReturnType<typeof useTranslation>['t'];
+}) {
   switch (model._view) {
     case 0: {
       const { workspace, timeZones, languages, diagnostics, error, saved, handlers } = model;
@@ -133,5 +137,6 @@ export function ConfigPage() {
 function ConfigPageBinding() {
   const model = useConfigPagePresenter();
   const handlers = useActions(model.handlers);
-  return <ConfigPageView model={{ ...model, handlers } as typeof model} />;
+  const { t } = useTranslation();
+  return <ConfigPageView model={{ ...model, handlers } as typeof model} t={t} />;
 }

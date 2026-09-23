@@ -44,14 +44,6 @@ func parseServeAddr(addr string) (host string, port int, err error) {
 	return h, n, nil
 }
 
-func isAddrInUse(err error) bool {
-	var opErr *net.OpError
-	if !errors.As(err, &opErr) {
-		return false
-	}
-	return errors.Is(opErr.Err, syscall.EADDRINUSE)
-}
-
 func listenTCP(addr string, strictPort bool, warn func(string)) (net.Listener, string, error) {
 	host, port, err := parseServeAddr(addr)
 	if err != nil {
@@ -66,6 +58,7 @@ func listenTCP(addr string, strictPort bool, warn func(string)) (net.Listener, s
 		return nil, "", fmt.Errorf("serve requires a loopback address (127.0.0.1 or ::1)")
 	}
 
+	var bindErr error
 	for i := range maxPortAttempts {
 		tryPort := port + i
 		tryAddr := net.JoinHostPort(host, strconv.Itoa(tryPort))
@@ -76,11 +69,12 @@ func listenTCP(addr string, strictPort bool, warn func(string)) (net.Listener, s
 			}
 			return ln, ln.Addr().String(), nil
 		}
-		if strictPort || !isAddrInUse(err) {
+		bindErr = err
+		if strictPort {
 			return nil, "", err
 		}
 	}
-	return nil, "", fmt.Errorf("no available port in range %d-%d", port, port+maxPortAttempts-1)
+	return nil, "", fmt.Errorf("no available port in range %d-%d: %w", port, port+maxPortAttempts-1, bindErr)
 }
 
 func servePIDPath() (string, error) {

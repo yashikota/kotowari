@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { queryCache } from '../application/cache.ts';
+import { useMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import { renderMarkdown } from '../markdown.ts';
 
@@ -44,6 +45,7 @@ export function useEditorPresenter({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Document[]>([]);
+  const [historyOpened, setHistoryOpened] = useMachineFlag('history', true);
   const loaded = useRef(false);
   const generation = useRef(0);
   const saving = useRef(false);
@@ -177,12 +179,18 @@ export function useEditorPresenter({
     error,
     busy,
     history,
+    historyOpened,
     dirty,
     contentRef,
     headings,
     html,
     conflict,
     handlers: {
+      onHistoryOpenChange: (value: string | null) => setHistoryOpened(value === 'history'),
+      onModeChange: (next: string) => {
+        if (next === 'preview' || next === 'edit' || next === 'compare') setMode(next);
+      },
+      onToggleMode: () => setMode((current) => (current === 'edit' ? 'preview' : 'edit')),
       onClick0: () => setMode('preview'),
       onClick1: () => setMode('edit'),
       onClick2: () => setMode('compare'),

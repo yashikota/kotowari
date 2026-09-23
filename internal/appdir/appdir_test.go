@@ -7,7 +7,16 @@ import (
 )
 
 func TestHomeDefaultIsDotKotowariInCwd(t *testing.T) {
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
 	dir := t.TempDir()
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
 	if err := os.Chdir(dir); err != nil {
 		t.Fatal(err)
 	}

@@ -190,7 +190,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"closed","status":"done"}`); rec.Code != http.StatusCreated {
 		t.Fatalf("done issue %d %s", rec.Code, rec.Body.String())
 	}
-	rec := doJSON(t, s, "POST", "/api/views", `{"name":"Open","slug":"open","display":"list","status":"todo"}`)
+	rec := doJSON(t, s, "POST", "/api/views", `{"name":"Open","slug":"open","display":"list","groupBy":"status","orderBy":"title","status":"todo"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("create view %d %s", rec.Code, rec.Body.String())
 	}
@@ -202,7 +202,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &view); err != nil {
 		t.Fatal(err)
 	}
-	if view["name"] != "Open" || view["status"] != "todo" {
+	if view["name"] != "Open" || view["status"] != "todo" || view["groupBy"] != "status" || view["orderBy"] != "title" {
 		t.Fatalf("view %#v", view)
 	}
 	rec = doJSON(t, s, "GET", "/api/issues?status=todo", "")
@@ -213,7 +213,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if len(issues) != 1 || issues[0]["title"] != "open" {
 		t.Fatalf("filtered %#v", issues)
 	}
-	rec = doJSON(t, s, "PATCH", "/api/views/open", `{"name":"Todos","display":"board"}`)
+	rec = doJSON(t, s, "PATCH", "/api/views/open", `{"name":"Todos","display":"board","groupBy":"cycle","orderBy":"updated"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("patch view %d %s", rec.Code, rec.Body.String())
 	}
@@ -222,7 +222,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &views); err != nil {
 		t.Fatal(err)
 	}
-	if len(views) != 1 || views[0]["name"] != "Todos" || views[0]["display"] != "board" {
+	if len(views) != 1 || views[0]["name"] != "Todos" || views[0]["display"] != "board" || views[0]["groupBy"] != "cycle" || views[0]["orderBy"] != "updated" {
 		t.Fatalf("list views %#v", views)
 	}
 	rec = doJSON(t, s, "DELETE", "/api/views/open", "")

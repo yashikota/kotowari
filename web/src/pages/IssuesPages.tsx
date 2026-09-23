@@ -1,8 +1,9 @@
-import { Box, Group, Text, UnstyledButton } from '@mantine/core';
+import { Box, VisuallyHidden } from '@mantine/core';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
+import { IssueViewTabs } from '../components/IssueViewTabs.tsx';
 import { EmptyState, PageHeader, Pane, Shortcut, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -12,51 +13,18 @@ import {
   useIssuesPagePresenter,
 } from '../presenters/IssuesPages.tsx';
 
-const ISSUE_VIEW_TABS = [
-  ['active', 'Active'],
-  ['backlog', 'Backlog'],
-  ['all', 'All issues'],
-] as const;
-
 export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPagePresenter> }) {
   switch (model._view) {
     case 0: {
-      const { data, search, find, issues, selected, view, groupBy, handlers } = model;
+      const { data, search, find, issues, selected, view, groupBy, layout, orderBy, handlers } =
+        model;
       return (
-        <Box className="linear-full-page linear-issues-page" h="100%">
-          <Box component="h2" className="linear-visually-hidden">
-            Issues
-          </Box>
-          <Group role="tablist" aria-label="Issue views" className="linear-issue-view-tabs">
-            {ISSUE_VIEW_TABS.map(([value, label], index) => (
-              <UnstyledButton
-                key={value}
-                role="tab"
-                aria-selected={view === value}
-                tabIndex={view === value ? 0 : -1}
-                className="linear-issue-view-tab"
-                onClick={() => handlers.onView4(value)}
-                onKeyDown={(event) => {
-                  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-                  event.preventDefault();
-                  const nextIndex =
-                    (index + (event.key === 'ArrowRight' ? 1 : ISSUE_VIEW_TABS.length - 1)) %
-                    ISSUE_VIEW_TABS.length;
-                  const nextTab = ISSUE_VIEW_TABS[nextIndex];
-                  if (nextTab) handlers.onView4(nextTab[0]);
-                  event.currentTarget.parentElement
-                    ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
-                    [nextIndex]?.focus();
-                }}
-              >
-                {label}
-              </UnstyledButton>
-            ))}
-            <Text className="linear-issue-view-count" aria-live="polite">
-              {issues.length}
-            </Text>
-          </Group>
-          <Box className="linear-issue-list-area">
+        <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <VisuallyHidden>
+            <h2>Issues</h2>
+          </VisuallyHidden>
+          <IssueViewTabs value={view} count={issues.length} onChange={handlers.onView4} />
+          <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
             <IssueFilters
               search={search}
               projects={data.projects}
@@ -67,13 +35,33 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               onFind={handlers.onFind2}
               groupBy={groupBy}
               onGroupBy={handlers.onGroupBy5}
+              layout={layout}
+              onLayout={handlers.onLayout6}
+              orderBy={orderBy}
+              onOrderBy={handlers.onOrderBy7}
             />
-            <IssueList
-              issues={issues}
-              selectedId={selected}
-              onSelect={handlers.onSelect3}
-              groupBy={groupBy}
-            />
+            {layout === 'list' ? (
+              <IssueList
+                issues={issues}
+                selectedId={selected}
+                onSelect={handlers.onSelect3}
+                groupBy={groupBy}
+                orderBy={orderBy}
+              />
+            ) : (
+              <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                {issues.length === 0 ? (
+                  <EmptyState>No issues match these filters.</EmptyState>
+                ) : (
+                  <IssueBoard
+                    issues={issues}
+                    onOpen={handlers.onBoardOpen8}
+                    onMove={handlers.onBoardMove9}
+                    orderBy={orderBy}
+                  />
+                )}
+              </Box>
+            )}
           </Box>
         </Box>
       );
@@ -104,7 +92,7 @@ export function IssueRoutePageView({
     case 0: {
       const { identifier } = model;
       return (
-        <Box className="linear-full-page linear-issue-route" h="100%">
+        <Box h="100%" style={{ overflow: 'auto' }}>
           <IssueDetail identifier={identifier} />
         </Box>
       );
@@ -131,7 +119,7 @@ export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPage
     case 0: {
       const { data, search, find, issues, handlers } = model;
       return (
-        <Box className="linear-full-page" h="100%">
+        <Box h="100%" style={{ overflow: 'hidden' }}>
           <SplitLayout single>
             <Pane single>
               <PageHeader title="Board" />

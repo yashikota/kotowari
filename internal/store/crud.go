@@ -949,6 +949,18 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if !domain.ValidViewDisplay(in.Display) {
 		return View{}, validationf("invalid display")
 	}
+	if in.GroupBy == "" {
+		in.GroupBy = "priority"
+	}
+	if !domain.ValidViewGroupBy(in.GroupBy) {
+		return View{}, validationf("invalid group by")
+	}
+	if in.OrderBy == "" {
+		in.OrderBy = "manual"
+	}
+	if !domain.ValidViewOrderBy(in.OrderBy) {
+		return View{}, validationf("invalid order by")
+	}
 	if in.Status != nil && *in.Status != "" && !domain.ValidIssueStatus(*in.Status) {
 		return View{}, validationf("invalid status")
 	}
@@ -963,6 +975,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 		}
 		out = View{
 			ID: m.nextID(), Name: in.Name, Slug: in.Slug, Display: in.Display,
+			GroupBy: in.GroupBy, OrderBy: in.OrderBy,
 			Status: in.Status, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
 			Priority: in.Priority, CreatedAt: now, UpdatedAt: now,
 		}
@@ -992,6 +1005,18 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 				return validationf("invalid display")
 			}
 			v.Display = in.Display
+		}
+		if in.GroupBy != "" {
+			if !domain.ValidViewGroupBy(in.GroupBy) {
+				return validationf("invalid group by")
+			}
+			v.GroupBy = in.GroupBy
+		}
+		if in.OrderBy != "" {
+			if !domain.ValidViewOrderBy(in.OrderBy) {
+				return validationf("invalid order by")
+			}
+			v.OrderBy = in.OrderBy
 		}
 		if in.Status != nil {
 			if *in.Status == "" {

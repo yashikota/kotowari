@@ -381,6 +381,8 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Name     string   `json:"name"`
 		Slug     string   `json:"slug"`
 		Display  string   `json:"display"`
+		GroupBy  string   `json:"groupBy"`
+		OrderBy  string   `json:"orderBy"`
 		Status   *string  `json:"status"`
 		Project  *string  `json:"project"`
 		Cycle    *int     `json:"cycle"`
@@ -391,7 +393,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		return store.CreateViewInput{}, err
 	}
 	return store.CreateViewInput{
-		Name: in.Name, Slug: in.Slug, Display: in.Display, Status: in.Status,
+		Name: in.Name, Slug: in.Slug, Display: in.Display, GroupBy: in.GroupBy, OrderBy: in.OrderBy, Status: in.Status,
 		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority,
 	}, nil
 }

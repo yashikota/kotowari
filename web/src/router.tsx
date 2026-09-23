@@ -9,22 +9,47 @@ import { Alert, Stack, Text } from '@mantine/core';
 import { Shell } from './components/Shell.tsx';
 import { api, issuesQuery, parseIssueSearch, searchToFilter, type IssueSearch } from './api.ts';
 import { EmptyState } from './mantine-ui.tsx';
+import { PresenterScope } from './application/Root.tsx';
 
 function NotFoundPage() {
+  return (
+    <PresenterScope name="NotFoundPage">
+      <NotFoundBinding />
+    </PresenterScope>
+  );
+}
+
+function NotFoundBinding() {
   const { t } = useTranslation();
+  return <NotFoundView message={t('common.notFound')} />;
+}
+
+function NotFoundView({ message }: { message: string }) {
   return (
     <EmptyState>
-      <Text>{t('common.notFound')}</Text>
+      <Text>{message}</Text>
     </EmptyState>
   );
 }
 
 function ErrorPage({ error }: { error: Error }) {
+  return (
+    <PresenterScope name="ErrorPage">
+      <ErrorBinding error={error} />
+    </PresenterScope>
+  );
+}
+
+function ErrorBinding({ error }: { error: Error }) {
   const { t } = useTranslation();
+  return <ErrorView title={t('common.error')} message={error.message} />;
+}
+
+function ErrorView({ title, message }: { title: string; message: string }) {
   return (
     <Stack p="md">
-      <Alert color="red" title={t('common.error')}>
-        {error.message}
+      <Alert color="red" title={title}>
+        {message}
       </Alert>
     </Stack>
   );

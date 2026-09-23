@@ -23,10 +23,7 @@ export function usePalettePresenter({ query, onQuery, commands, onPick, onClose 
     commands,
     active,
     handlers: {
-      onClick0: (...args: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>) => {
-        const handle: NonNullable<React.ComponentProps<'div'>['onClick']> = onClose;
-        return handle(...args);
-      },
+      onClick0: () => onClose(),
       Command_palette_onClick1: (
         e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
       ) => e.stopPropagation(),

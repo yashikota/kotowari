@@ -35,6 +35,35 @@ export function RouterNavLink({
   const matchRoute = useMatchRoute();
   const active = !!matchRoute({ to, params, search, fuzzy });
   return (
+    <RouterNavLinkView
+      to={to}
+      params={params}
+      search={search}
+      label={label}
+      leftSection={leftSection}
+      active={active}
+      {...props}
+    />
+  );
+}
+
+function RouterNavLinkView({
+  to,
+  params,
+  search,
+  label,
+  leftSection,
+  active,
+  ...props
+}: NavLinkProps & {
+  to: LinkProps['to'];
+  params?: LinkProps['params'];
+  search?: LinkProps['search'];
+  label: ReactNode;
+  leftSection?: ReactNode;
+  active: boolean;
+}) {
+  return (
     <NavLink
       component={Link}
       to={to}
@@ -50,13 +79,74 @@ export function RouterNavLink({
 
 export function PageHeader({ title, actions }: { title: ReactNode; actions?: ReactNode }) {
   return (
-    <Group justify="space-between" mb="md" wrap="nowrap" className="linear-page-header">
-      <Title order={2}>{title}</Title>
+    <Group
+      component="header"
+      justify="space-between"
+      gap="md"
+      wrap="nowrap"
+      mih={42}
+      px="md"
+      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+    >
+      <Title order={2} size="sm" fw={550} c="var(--mantine-color-text)">
+        {title}
+      </Title>
       {actions ? (
-        <Group gap="xs" wrap="wrap">
+        <Group gap="xs" wrap="wrap" justify="flex-end">
           {actions}
         </Group>
       ) : null}
+    </Group>
+  );
+}
+
+export function Section({
+  title,
+  action,
+  children,
+}: {
+  title: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Stack
+      component="section"
+      gap="xs"
+      pt="sm"
+      style={{
+        borderTop: '1px solid var(--mantine-color-default-border)',
+      }}
+    >
+      <Group justify="space-between" align="center" gap="sm">
+        <Text size="sm" fw={550} c="dimmed">
+          {title}
+        </Text>
+        {action}
+      </Group>
+      {children}
+    </Stack>
+  );
+}
+
+export function PropertyPanel({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Stack component="section" aria-label={title} gap={4}>
+      <Text size="sm" fw={550} c="dimmed" mb={2}>
+        {title}
+      </Text>
+      {children}
+    </Stack>
+  );
+}
+
+export function PropertyRow({ label, children }: { label: ReactNode; children: ReactNode }) {
+  return (
+    <Group gap="sm" wrap="nowrap" mih={32} px={6}>
+      <Text component="span" size="xs" c="dimmed" w={66} style={{ flex: '0 0 66px' }}>
+        {label}
+      </Text>
+      <Box style={{ flex: 1, minWidth: 0 }}>{children}</Box>
     </Group>
   );
 }
@@ -83,6 +173,7 @@ export function Pane({
           display: 'flex',
           flexDirection: 'column' as const,
           overflow: 'hidden',
+          backgroundColor: 'var(--mantine-color-body)',
         }
       : variant === 'detail'
         ? {
@@ -97,13 +188,7 @@ export function Pane({
           };
 
   return (
-    <Paper
-      p={variant === 'list' ? 0 : 'md'}
-      radius={0}
-      bg="transparent"
-      className={variant === 'list' ? 'linear-list-pane' : undefined}
-      style={variantStyle}
-    >
+    <Paper p={variant === 'list' ? 0 : 'md'} radius={0} bg="transparent" style={variantStyle}>
       {children}
     </Paper>
   );

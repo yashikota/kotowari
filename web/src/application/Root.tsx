@@ -11,7 +11,7 @@ import {
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Group } from '@mantine/core';
-import { LocaleSync } from './LocaleSync.tsx';
+import { useLocaleSync } from './LocaleSync.tsx';
 import { EventScope, mediator } from './mediator.ts';
 import type { Overlay } from './mediator.ts';
 import { isSubmitShortcut } from '../keymap.ts';
@@ -115,9 +115,29 @@ export function useOverlay() {
   return { overlay, set };
 }
 
-function ErrorNotice() {
-  const { t } = useTranslation();
-  const error = useSyncExternalStore(mediator.subscribe, mediator.getError);
+/** Presenter-owned transient UI state, arbitrated by the same Mediator as actions. */
+export function useMachineFlag(name: string, defaultValue = false) {
+  const scope = useContext(ScopeContext);
+  const key = `${scope.id}:${name}`;
+  const value = useSyncExternalStore(mediator.subscribe, () => mediator.getFlag(key, defaultValue));
+  useEffect(() => () => mediator.clearFlag(key), [key]);
+  const set = useMemo(
+    () => (next: boolean | ((previous: boolean) => boolean)) =>
+      mediator.setFlag(key, next, defaultValue),
+    [key, defaultValue],
+  );
+  return [value, set] as const;
+}
+
+function ErrorNoticeView({
+  error,
+  dismissLabel,
+  onDismiss,
+}: {
+  error: string;
+  dismissLabel: string;
+  onDismiss: () => void;
+}) {
   return error ? (
     <Alert
       color="red"
@@ -127,18 +147,25 @@ function ErrorNotice() {
     >
       <Group justify="space-between" wrap="nowrap" align="flex-start">
         <span>{error}</span>
-        <Button
-          type="button"
-          variant="white"
-          color="red"
-          size="compact-xs"
-          onClick={() => mediator.clearError()}
-        >
-          {t('common.dismiss')}
+        <Button type="button" variant="white" color="red" size="compact-xs" onClick={onDismiss}>
+          {dismissLabel}
         </Button>
       </Group>
     </Alert>
   ) : null;
+}
+
+function ErrorNoticeBinding() {
+  const { t } = useTranslation();
+  const error = useSyncExternalStore(mediator.subscribe, mediator.getError);
+  const actions = useActions({ onDismiss: () => mediator.clearError() });
+  return (
+    <ErrorNoticeView
+      error={error}
+      dismissLabel={t('common.dismiss')}
+      onDismiss={actions.onDismiss}
+    />
+  );
 }
 
 export function Root({
@@ -148,6 +175,7 @@ export function Root({
   children: ReactNode;
   navigate: (href: string) => Promise<void>;
 }) {
+  useLocaleSync();
   const overlay = useSyncExternalStore(mediator.subscribe, mediator.getOverlay);
   const restore = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
@@ -233,7 +261,6 @@ export function Root({
   }, []);
   return (
     <ScopeContext.Provider value={mediator.root}>
-      <LocaleSync />
       <div
         style={{ display: 'contents' }}
         onClickCapture={(event) => {
@@ -268,7 +295,9 @@ export function Root({
       >
         {children}
       </div>
-      <ErrorNotice />
+      <PresenterScope name="ErrorNotice">
+        <ErrorNoticeBinding />
+      </PresenterScope>
     </ScopeContext.Provider>
   );
 }

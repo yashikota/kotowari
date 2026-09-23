@@ -17,8 +17,9 @@ export function useMarkdownFieldPresenter({ value, placeholder, onChange, onSave
     onChange,
     mode,
     handlers: {
-      onClick0: () => setMode('edit'),
-      onClick1: () => setMode('preview'),
+      onModeChange: (next: string) => {
+        if (next === 'edit' || next === 'preview') setMode(next);
+      },
       Markdown_body_onChange2: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => onChange(e.target.value),

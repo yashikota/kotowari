@@ -98,14 +98,14 @@ function PagesPageBinding() {
 
 export function PageDetailPageView({
   model,
+  titleRef,
 }: {
   model: ReturnType<typeof usePageDetailPagePresenter>;
+  titleRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
   switch (model._view) {
     case 0: {
       const { slug, page, pages, projects, tagDraft, handlers } = model;
-      const autofocusTitle = useAutofocusTarget('title');
-      const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [slug]);
       return (
         <SplitLayout single>
           <Pane single>
@@ -203,5 +203,7 @@ export function PageDetailPage() {
 function PageDetailPageBinding() {
   const model = usePageDetailPagePresenter();
   const handlers = useActions(model.handlers);
-  return <PageDetailPageView model={{ ...model, handlers } as typeof model} />;
+  const autofocusTitle = useAutofocusTarget('title');
+  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [model.slug]);
+  return <PageDetailPageView model={{ ...model, handlers } as typeof model} titleRef={titleRef} />;
 }

@@ -15,7 +15,6 @@ const ROWS: { keys: string; action: string }[] = [
   { keys: '?', action: 'This help' },
 ];
 
-import type * as React from 'react';
 import { Box, Button, Group, Modal, Table, Text } from '@mantine/core';
 import { Shortcut } from '../mantine-ui.tsx';
 
@@ -33,7 +32,7 @@ export function ShortcutHelpView({
       return (
         <Modal
           opened
-          onClose={() => handlers.onClick0({} as React.MouseEvent<HTMLDivElement>)}
+          onClose={handlers.onClick0}
           title="Keyboard shortcuts"
           aria-label="Keyboard shortcuts"
           centered

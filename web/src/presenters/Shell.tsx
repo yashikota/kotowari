@@ -2,7 +2,7 @@ import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { api } from '../api.ts';
+import { api, parseIssueSearch } from '../api.ts';
 import { queryCache } from '../application/cache.ts';
 import { resetIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
@@ -75,6 +75,7 @@ export function useShellPresenter() {
     };
   }, [router]);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const routeSearch = useRouterState({ select: (s) => s.location.search });
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [views, setViews] = useState<View[]>([]);
   const [workspaceName, setWorkspaceName] = useState('');
@@ -482,7 +483,19 @@ export function useShellPresenter() {
       return;
     }
     const slug = slugify(name) || `view-${Date.now()}`;
-    const view = await api.createView({ name, slug, display: 'list' });
+    const filters = parseIssueSearch(routeSearch as Record<string, unknown>);
+    const view = await api.createView({
+      name,
+      slug,
+      display: 'list',
+      groupBy: 'priority',
+      orderBy: 'manual',
+      status: filters.status,
+      project: filters.project,
+      cycle: filters.cycle,
+      labels: filters.labels?.split(',').filter(Boolean),
+      priority: filters.priority,
+    });
     setViewName('');
     setCreateView(false);
     await loadWorkspace();
@@ -534,6 +547,10 @@ export function useShellPresenter() {
       onCreateIssue: () => setCreateIssue(true),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onCloseMobileNavigation: () => setMobileNavigationOpen(false),
+      onNavbarClick: (event: React.MouseEvent<HTMLElement>) => {
+        if (event.target instanceof Element && event.target.closest('a'))
+          setMobileNavigationOpen(false);
+      },
       onQuery6: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof Palette>['onQuery']>>
       ) => {

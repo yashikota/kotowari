@@ -82,9 +82,7 @@ test('create issue, comment, and page', async ({ page }) => {
 
   await page.getByLabel('Status').selectOption('done');
   await page.getByRole('link', { name: 'Board' }).click();
-  const doneCol = page.locator('.linear-board-column', {
-    has: page.getByText('done', { exact: true }),
-  });
+  const doneCol = page.getByRole('region', { name: 'done issues' });
   await expect(doneCol.getByRole('button', { name: new RegExp(identifier) })).toBeVisible();
 
   await page.getByRole('link', { name: 'Pages' }).click();
@@ -101,7 +99,7 @@ test('create issue, comment, and page', async ({ page }) => {
   await expect(page.getByLabel('Page project')).not.toHaveValue('');
 });
 
-test('sub-issue and saved view', async ({ page }) => {
+test('sub-issue and saved view', async ({ page, request }) => {
   const stamp = Date.now();
   const parentTitle = `Parent job ${stamp}`;
   const childTitle = `Child step ${stamp}`;
@@ -134,7 +132,42 @@ test('sub-issue and saved view', async ({ page }) => {
   await viewName.fill('Todos');
   await viewName.press('Control+Enter');
   await expect(page).toHaveURL(/\/views\/todos/);
-  await page.getByLabel('View status').selectOption('todo');
-  await expect(page.getByLabel('View status')).toHaveValue('todo');
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByLabel('Filter status').selectOption('todo');
+  await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Todos' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Group by').selectOption('status');
+  await expect
+    .poll(
+      async () =>
+        ((await (await request.get('/api/views/todos')).json()) as { groupBy: string }).groupBy,
+    )
+    .toBe('status');
+  await page.getByLabel('Order by').selectOption('title');
+  await expect
+    .poll(
+      async () =>
+        ((await (await request.get('/api/views/todos')).json()) as { orderBy: string }).orderBy,
+    )
+    .toBe('title');
+  await page
+    .getByRole('radiogroup', { name: 'Layout' })
+    .getByText('Board', { exact: true })
+    .click();
+  await expect
+    .poll(
+      async () =>
+        ((await (await request.get('/api/views/todos')).json()) as { display: string }).display,
+    )
+    .toBe('board');
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByLabel('Group by')).toHaveValue('status');
+  await expect(page.getByLabel('Order by')).toHaveValue('title');
+  await expect(page.getByRole('radio', { name: 'Board' })).toBeChecked();
 });

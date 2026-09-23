@@ -1,131 +1,92 @@
-import { useTranslation } from 'react-i18next';
-import { Box, Button, Grid, Group, NativeSelect, Stack, TextInput } from '@mantine/core';
+import { Box, Button, Group, Stack, TextInput } from '@mantine/core';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
-import { ISSUE_STATUSES } from '../types.ts';
-import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
-import { EmptyState, LabelChip, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
+import { IssueFilters } from '../components/IssueFilters.tsx';
+import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { useViewPagePresenter } from '../presenters/ViewsPages.tsx';
 
-export function ViewPageView({ model }: { model: ReturnType<typeof useViewPagePresenter> }) {
-  useTranslation();
-
+export function ViewPageView({
+  model,
+  viewNameRef,
+}: {
+  model: ReturnType<typeof useViewPagePresenter>;
+  viewNameRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+}) {
   switch (model._view) {
     case 0: {
-      const { data, issues, view, selected, handlers } = model;
-      const autofocusName = useAutofocusTarget('name');
-      const viewNameRef = useFocusWhen<HTMLInputElement>(autofocusName, [view.slug]);
+      const { data, issues, view, selected, search, find, groupBy, orderBy, handlers } = model;
       return (
-        <Box className={view.display === 'board' ? undefined : 'linear-full-page'} h="100%">
+        <Box
+          h="100%"
+          style={{
+            minHeight: 0,
+            overflow: view.display === 'board' ? 'auto' : 'hidden',
+          }}
+        >
           <SplitLayout single={view.display === 'board'}>
             <Pane single={view.display === 'board'}>
               <PageHeader
                 title={view.name}
                 actions={
-                  <Button type="button" variant="subtle" color="red" onClick={handlers.onClick0}>
-                    Delete
-                  </Button>
-                }
-              />
-              <Stack gap="md">
-                <Grid>
-                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                  <Group gap="xs" wrap="nowrap">
                     <TextInput
                       ref={viewNameRef}
                       aria-label="View name"
                       value={view.name}
                       onChange={handlers.View_name_onChange1}
                       onBlur={handlers.View_name_onBlur2}
+                      size="xs"
+                      w={180}
                     />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                    <NativeSelect
-                      aria-label="View display"
-                      value={view.display}
-                      onChange={handlers.View_display_onChange3}
-                      data={[
-                        { value: 'list', label: 'List' },
-                        { value: 'board', label: 'Board' },
-                      ]}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                    <NativeSelect
-                      aria-label="View status"
-                      value={view.status ?? ''}
-                      onChange={handlers.View_status_onChange4}
-                      data={[
-                        { value: '', label: 'Any status' },
-                        ...ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) })),
-                      ]}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                    <NativeSelect
-                      aria-label="View project"
-                      value={view.project ?? ''}
-                      onChange={handlers.View_project_onChange5}
-                      data={[
-                        { value: '', label: 'Any project' },
-                        ...data.projects.map((p) => ({ value: p.slug, label: p.name })),
-                      ]}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                    <NativeSelect
-                      aria-label="View cycle"
-                      value={view.cycle ?? ''}
-                      onChange={handlers.View_cycle_onChange6}
-                      data={[
-                        { value: '', label: 'Any cycle' },
-                        ...data.cycles.map((c) => ({
-                          value: String(c.number),
-                          label: `Cycle ${c.number}`,
-                        })),
-                      ]}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                    <NativeSelect
-                      aria-label="View priority"
-                      value={view.priority ?? ''}
-                      onChange={handlers.View_priority_onChange7}
-                      data={[
-                        { value: '', label: 'Any priority' },
-                        ...[0, 1, 2, 3, 4].map((i) => ({
-                          value: String(i),
-                          label: priorityLabel(i),
-                        })),
-                      ]}
-                    />
-                  </Grid.Col>
-                </Grid>
-                <Group gap="xs" role="group" aria-label="View labels">
-                  {data.labels.map((l) => {
-                    const on = view.labels.includes(l.name);
-                    return (
-                      <LabelChip
-                        key={l.id}
-                        name={l.name}
-                        color={l.color}
-                        selected={on}
-                        onClick={() => handlers.onClick8(on, l)}
-                      />
-                    );
-                  })}
-                </Group>
+                    <Button type="button" variant="subtle" color="red" onClick={handlers.onClick0}>
+                      Delete
+                    </Button>
+                  </Group>
+                }
+              />
+              <Stack gap={0} style={{ minHeight: 0, flex: 1 }}>
+                <IssueFilters
+                  search={search}
+                  projects={data.projects}
+                  cycles={data.cycles}
+                  labels={data.labels}
+                  onChange={handlers.onFilterChange12}
+                  find={find}
+                  onFind={handlers.onFind13}
+                  groupBy={groupBy}
+                  onGroupBy={handlers.onGroupBy14}
+                  layout={view.display}
+                  onLayout={handlers.onLayout15}
+                  orderBy={orderBy}
+                  onOrderBy={handlers.onOrderBy16}
+                />
                 {view.display === 'board' ? (
-                  <IssueBoard
-                    issues={issues}
-                    onOpen={handlers.onOpen9}
-                    onMove={handlers.onMove10}
-                  />
+                  <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                    {issues.length === 0 ? (
+                      <EmptyState>No issues match this view.</EmptyState>
+                    ) : (
+                      <IssueBoard
+                        issues={issues}
+                        onOpen={handlers.onBoardOpen17}
+                        onMove={handlers.onBoardMove18}
+                        orderBy={orderBy}
+                      />
+                    )}
+                  </Box>
+                ) : issues.length === 0 ? (
+                  <EmptyState>No issues match this view.</EmptyState>
                 ) : (
-                  <IssueList issues={issues} selectedId={selected} onSelect={handlers.onSelect11} />
+                  <IssueList
+                    issues={issues}
+                    selectedId={selected}
+                    onSelect={handlers.onSelect11}
+                    groupBy={groupBy}
+                    orderBy={orderBy}
+                  />
                 )}
               </Stack>
             </Pane>
@@ -156,5 +117,7 @@ export function ViewPage() {
 function ViewPageBinding() {
   const model = useViewPagePresenter();
   const handlers = useActions(model.handlers);
-  return <ViewPageView model={{ ...model, handlers } as typeof model} />;
+  const autofocusName = useAutofocusTarget('name');
+  const viewNameRef = useFocusWhen<HTMLInputElement>(autofocusName, [model.view.slug]);
+  return <ViewPageView model={{ ...model, handlers } as typeof model} viewNameRef={viewNameRef} />;
 }

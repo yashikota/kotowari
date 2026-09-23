@@ -1,0 +1,40 @@
+.board {
+  min-height: 480px;
+}
+
+.column {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 260px;
+  flex-direction: column;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-gray-0);
+}
+
+.issueCard {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: var(--mantine-spacing-xs);
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-white);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  cursor: grab;
+  text-align: left;
+}
+
+.issueCard:hover,
+.issueCard:focus-visible {
+  border-color: var(--mantine-primary-color-5);
+  outline: none;
+}
+
+.dragging {
+  background: var(--mantine-color-gray-1);
+}
+
+.overdue {
+  border-color: var(--mantine-color-red-8);
+}

@@ -94,6 +94,8 @@ export type View = {
   name: string;
   slug: string;
   display: 'list' | 'board';
+  groupBy: string;
+  orderBy: string;
   status: string | null;
   project: string | null;
   cycle: number | null;

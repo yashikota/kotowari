@@ -1,4 +1,3 @@
-import type * as React from 'react';
 import { Box, Group, Modal, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { Shortcut } from '../mantine-ui.tsx';
 
@@ -6,15 +5,20 @@ import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useFocusWhen } from '../focus.ts';
 import { usePalettePresenter } from '../presenters/Palette.tsx';
 
-export function PaletteView({ model }: { model: ReturnType<typeof usePalettePresenter> }) {
+export function PaletteView({
+  model,
+  searchRef,
+}: {
+  model: ReturnType<typeof usePalettePresenter>;
+  searchRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+}) {
   switch (model._view) {
     case 0: {
       const { query, commands, active, handlers } = model;
-      const searchRef = useFocusWhen<HTMLInputElement>(true);
       return (
         <Modal
           opened
-          onClose={() => handlers.onClick0({} as React.MouseEvent<HTMLDivElement>)}
+          onClose={handlers.onClick0}
           title="Command palette"
           aria-label="Command palette"
           centered
@@ -72,5 +76,6 @@ export function Palette(props: Parameters<typeof usePalettePresenter>[0]) {
 function PaletteBinding(props: Parameters<typeof usePalettePresenter>[0]) {
   const model = usePalettePresenter(props);
   const handlers = useActions(model.handlers);
-  return <PaletteView model={{ ...model, handlers } as typeof model} />;
+  const searchRef = useFocusWhen<HTMLInputElement>(true);
+  return <PaletteView model={{ ...model, handlers } as typeof model} searchRef={searchRef} />;
 }

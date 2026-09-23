@@ -156,12 +156,21 @@ func TestCreateViewValidation(t *testing.T) {
 	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open", Display: "table"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid display: %v", err)
 	}
+	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open", GroupBy: "assignee"}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid group by: %v", err)
+	}
+	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open", OrderBy: "random"}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid order by: %v", err)
+	}
 	v, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if v.Display != "list" {
 		t.Fatalf("default display %q", v.Display)
+	}
+	if v.GroupBy != "priority" || v.OrderBy != "manual" {
+		t.Fatalf("default display options: group=%q order=%q", v.GroupBy, v.OrderBy)
 	}
 	if _, err := s.CreateView(CreateViewInput{Name: "Again", Slug: "open"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate slug: %v", err)

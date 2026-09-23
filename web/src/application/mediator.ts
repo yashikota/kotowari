@@ -2,6 +2,13 @@ export type Overlay = 'none' | 'palette' | 'help' | 'issue' | 'adr' | 'page' | '
 export type Operation = 'idle' | 'running' | 'failed';
 export type Intent = { type: string; payload: unknown; source: EventScope };
 export type Handler = (payload: unknown) => unknown;
+type MachineEvent =
+  | { type: 'overlay.open'; overlay: Overlay }
+  | { type: 'error.report'; error: unknown }
+  | { type: 'error.clear' }
+  | { type: 'operation.start' | 'operation.finish' | 'operation.fail'; key: string }
+  | { type: 'flag.set'; key: string; value: boolean; defaultValue?: boolean }
+  | { type: 'flag.clear'; key: string };
 
 /** A scope can consume an intent or leave it to its parent. */
 export class EventScope {
@@ -28,6 +35,7 @@ export class Mediator {
   readonly operations = new Map<string, Operation>();
   readonly signals = new EventTarget();
   private overlay: Overlay = 'none';
+  private flags = new Map<string, boolean>();
   private listeners = new Set<() => void>();
   private error = '';
 
@@ -37,22 +45,65 @@ export class Mediator {
   };
   getOverlay = () => this.overlay;
   getError = () => this.error;
+  getFlag = (key: string, defaultValue = false) => this.flags.get(key) ?? defaultValue;
   private notify() {
     this.listeners.forEach((fn) => fn());
   }
 
-  open(overlay: Overlay) {
-    if (this.overlay === overlay) return;
-    this.overlay = overlay;
+  /** All shared UI and operation state changes pass through this transition table. */
+  transition(event: MachineEvent) {
+    switch (event.type) {
+      case 'overlay.open':
+        if (this.overlay === event.overlay) return;
+        this.overlay = event.overlay;
+        break;
+      case 'error.report':
+        this.error = event.error instanceof Error ? event.error.message : String(event.error);
+        break;
+      case 'error.clear':
+        if (!this.error) return;
+        this.error = '';
+        break;
+      case 'operation.start':
+        this.operations.set(event.key, 'running');
+        break;
+      case 'operation.finish':
+        this.operations.delete(event.key);
+        break;
+      case 'operation.fail':
+        this.operations.set(event.key, 'failed');
+        break;
+      case 'flag.set':
+        if (this.getFlag(event.key, event.defaultValue) === event.value) return;
+        this.flags.set(event.key, event.value);
+        break;
+      case 'flag.clear':
+        if (!this.flags.has(event.key)) return;
+        this.flags.delete(event.key);
+        break;
+    }
     this.notify();
+  }
+
+  open(overlay: Overlay) {
+    this.transition({ type: 'overlay.open', overlay });
   }
   report(error: unknown) {
-    this.error = error instanceof Error ? error.message : String(error);
-    this.notify();
+    this.transition({ type: 'error.report', error });
   }
   clearError() {
-    this.error = '';
-    this.notify();
+    this.transition({ type: 'error.clear' });
+  }
+  setFlag(key: string, value: boolean | ((previous: boolean) => boolean), defaultValue = false) {
+    this.transition({
+      type: 'flag.set',
+      key,
+      value: typeof value === 'function' ? value(this.getFlag(key, defaultValue)) : value,
+      defaultValue,
+    });
+  }
+  clearFlag(key: string) {
+    this.transition({ type: 'flag.clear', key });
   }
 
   dispatch(source: EventScope, type: string, payload: unknown): unknown {
@@ -64,21 +115,21 @@ export class Mediator {
     try {
       const result = resolved.handler(payload);
       if (result instanceof Promise) {
-        this.operations.set(key, 'running');
+        this.transition({ type: 'operation.start', key });
         return result.then(
           (value: unknown) => {
-            this.operations.delete(key);
+            this.transition({ type: 'operation.finish', key });
             return value;
           },
           (error: unknown) => {
-            this.operations.set(key, 'failed');
+            this.transition({ type: 'operation.fail', key });
             this.report(error);
           },
         );
       }
       return result;
     } catch (error) {
-      this.operations.set(key, 'failed');
+      this.transition({ type: 'operation.fail', key });
       this.report(error);
     }
   }

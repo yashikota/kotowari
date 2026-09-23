@@ -48,7 +48,10 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await noPriority.click();
   await expect(createdIssue).toBeVisible();
 
-  await page.getByLabel('Display options').selectOption('status');
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Group by').selectOption('status');
+  await page.getByLabel('Order by').selectOption('priority');
+  await page.keyboard.press('Escape');
   const todoGroup = page.getByRole('button', { name: /Todo · \d+ issues/ });
   await expect(todoGroup).toBeVisible();
   await todoGroup.click();
@@ -63,6 +66,16 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await page.getByRole('tab', { name: 'All issues' }).click();
   await expect(todoGroup).toHaveAttribute('aria-expanded', 'true');
   await expect(createdIssue).toBeVisible();
+
+  await page.locator('body').click({ position: { x: 700, y: 120 } });
+  await page.keyboard.press('Control+b');
+  const todoColumn = page.getByRole('region', { name: 'todo issues' });
+  await expect(
+    todoColumn.getByRole('button', { name: new RegExp(createdIssueTitle) }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('radiogroup', { name: 'Layout' }).getByText('List', { exact: true }).click();
+  await expect(page.getByRole('listbox', { name: 'Issues' })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeHidden();

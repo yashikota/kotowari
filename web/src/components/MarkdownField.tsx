@@ -19,10 +19,7 @@ export function MarkdownFieldView({
             aria-label="Body"
             role="tablist"
             value={mode}
-            onChange={(next) => {
-              if (next === 'edit') handlers.onClick0();
-              else handlers.onClick1();
-            }}
+            onChange={handlers.onModeChange}
             data={[
               { label: 'Edit', value: 'edit' },
               { label: 'Preview', value: 'preview' },

@@ -13,7 +13,6 @@ import {
 } from '@mantine/core';
 import { IconBrandGithub, IconLink } from '@tabler/icons-react';
 import type { ComponentProps, ReactNode } from 'react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { Pane, SplitLayout } from '../mantine-ui.tsx';
@@ -45,15 +44,20 @@ function LinkPropertyInput({
   placeholder,
   ariaLabel,
   editLabel,
+  editing,
+  onEdit,
+  onBlur,
 }: {
   value: string;
   onChange: ComponentProps<typeof TextInput>['onChange'];
   placeholder: string;
   ariaLabel: string;
   editLabel: string;
+  editing: boolean;
+  onEdit: () => void;
+  onBlur: () => void;
 }) {
   const href = externalHref(value);
-  const [editing, setEditing] = useState(false);
 
   if (href && !editing) {
     return (
@@ -74,7 +78,7 @@ function LinkPropertyInput({
           size="xs"
           c="dimmed"
           style={{ border: 0, background: 'none', cursor: 'pointer', flexShrink: 0 }}
-          onClick={() => setEditing(true)}
+          onClick={onEdit}
         >
           {editLabel}
         </Text>
@@ -90,7 +94,7 @@ function LinkPropertyInput({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      onBlur={() => setEditing(false)}
+      onBlur={onBlur}
       styles={{
         input: {
           ...unstyledField.input,
@@ -119,9 +123,7 @@ function PropertyRow({
       px={8}
       style={{
         borderRadius: 'var(--mantine-radius-sm)',
-        transition: 'background-color 120ms ease',
       }}
-      className="home-property-row"
     >
       <Group gap={8} wrap="nowrap" w={132} style={{ flexShrink: 0 }} c="dimmed">
         {icon}
@@ -153,25 +155,20 @@ function StatLink({ to, value, label }: { to: string; value: number; label: stri
   );
 }
 
-export function HomePageView({ model }: { model: ReturnType<typeof useHomePagePresenter> }) {
-  const { t } = useTranslation();
-
+export function HomePageView({
+  model,
+  t,
+}: {
+  model: ReturnType<typeof useHomePagePresenter>;
+  t: ReturnType<typeof useTranslation>['t'];
+}) {
   switch (model._view) {
     case 0: {
-      const { workspace, counts, error, saved, handlers } = model;
+      const { workspace, counts, error, saved, urlEditing, githubEditing, handlers } = model;
 
       return (
         <SplitLayout single>
           <Pane single>
-            <Box component="style">{`
-              .home-property-row:hover {
-                background: light-dark(
-                  var(--mantine-color-gray-0),
-                  var(--mantine-color-dark-6)
-                );
-              }
-            `}</Box>
-
             <Box maw={720} mx="auto" py={48} px="md">
               {error ? (
                 <Alert color="red" variant="light" mb="lg">
@@ -207,6 +204,9 @@ export function HomePageView({ model }: { model: ReturnType<typeof useHomePagePr
                       editLabel={t('home.editLink')}
                       placeholder={t('config.urlPlaceholder')}
                       value={workspace.url}
+                      editing={urlEditing}
+                      onEdit={handlers.onEditUrl}
+                      onBlur={handlers.onBlurUrl}
                       onChange={handlers.Workspace_url_onChange2}
                     />
                   </PropertyRow>
@@ -219,6 +219,9 @@ export function HomePageView({ model }: { model: ReturnType<typeof useHomePagePr
                       editLabel={t('home.editLink')}
                       placeholder={t('config.githubUrlPlaceholder')}
                       value={workspace.githubUrl}
+                      editing={githubEditing}
+                      onEdit={handlers.onEditGithub}
+                      onBlur={handlers.onBlurGithub}
                       onChange={handlers.Workspace_githubUrl_onChange3}
                     />
                   </PropertyRow>
@@ -282,5 +285,6 @@ export function HomePage() {
 function HomePageBinding() {
   const model = useHomePagePresenter();
   const handlers = useActions(model.handlers);
-  return <HomePageView model={{ ...model, handlers } as typeof model} />;
+  const { t } = useTranslation();
+  return <HomePageView model={{ ...model, handlers } as typeof model} t={t} />;
 }
