@@ -8,6 +8,11 @@ import { MantineProvider } from '@mantine/core';
 import { router } from './router.tsx';
 import { Root } from './application/Root.tsx';
 import { theme } from './theme.ts';
+import { installDemoApi } from './demo-api.ts';
+
+if (import.meta.env.VITE_DEMO === 'true') {
+  installDemoApi();
+}
 
 const el = document.getElementById('root');
 if (!el) {

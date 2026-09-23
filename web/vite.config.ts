@@ -5,6 +5,7 @@ const devOrigin = process.env.VITE_DEV_ORIGIN;
 const devOriginUrl = devOrigin ? new URL(devOrigin) : null;
 
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
   server: {
     host: '127.0.0.1',

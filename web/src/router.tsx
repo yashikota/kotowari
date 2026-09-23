@@ -239,6 +239,7 @@ const routeTree = rootRoute.addChildren([
 
 export const router = createRouter({
   routeTree,
+  basepath: import.meta.env.BASE_URL,
   defaultPreload: 'intent',
   // QueryCache owns freshness and mutation invalidation; route matches must re-read it.
   defaultStaleTime: 0,
