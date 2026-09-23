@@ -21,6 +21,5 @@ internal/webembed/dist/**
 coverage
 *.test
 docs/superpowers/*
-
-# Playwright CLI output (may contain credentials)
+*.exe
 .playwright-cli/
