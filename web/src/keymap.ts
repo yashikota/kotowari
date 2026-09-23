@@ -1,4 +1,5 @@
 import { navActionFromKey } from './nav.ts';
+import type { NavShortcutAction } from './nav.ts';
 
 export type KeyAction =
   | 'palette'
@@ -13,14 +14,7 @@ export type KeyAction =
   | 'priority-2'
   | 'priority-3'
   | 'priority-4'
-  | 'nav-1'
-  | 'nav-2'
-  | 'nav-3'
-  | 'nav-4'
-  | 'nav-5'
-  | 'nav-6'
-  | 'nav-7'
-  | 'nav-0'
+  | NavShortcutAction
   | 'help'
   | 'find';
 

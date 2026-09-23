@@ -1,4 +1,5 @@
 import { Box, VisuallyHidden } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
@@ -14,14 +15,32 @@ import {
 } from '../presenters/IssuesPages.tsx';
 
 export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPagePresenter> }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { data, search, find, issues, selected, view, groupBy, layout, orderBy, handlers } =
-        model;
+      const {
+        data,
+        search,
+        find,
+        issues,
+        selected,
+        view,
+        groupBy,
+        layout,
+        orderBy,
+        subGroupBy,
+        direction,
+        completedIssues,
+        showSubIssues,
+        nestedSubIssues,
+        showEmptyGroups,
+        displayProperties,
+        handlers,
+      } = model;
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <VisuallyHidden>
-            <h2>Issues</h2>
+            <h2>{t('nav.issues')}</h2>
           </VisuallyHidden>
           <IssueViewTabs value={view} count={issues.length} onChange={handlers.onView4} />
           <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
@@ -40,6 +59,20 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               onLayout={handlers.onLayout6}
               orderBy={orderBy}
               onOrderBy={handlers.onOrderBy7}
+              subGroupBy={subGroupBy}
+              onSubGroupBy={handlers.onSubGroupBy17}
+              direction={direction}
+              onDirection={handlers.onDirection18}
+              completedIssues={completedIssues}
+              onCompletedIssues={handlers.onCompletedIssues19}
+              showSubIssues={showSubIssues}
+              onShowSubIssues={handlers.onShowSubIssues20}
+              nestedSubIssues={nestedSubIssues}
+              onNestedSubIssues={handlers.onNestedSubIssues21}
+              showEmptyGroups={showEmptyGroups}
+              onShowEmptyGroups={handlers.onShowEmptyGroups22}
+              displayProperties={displayProperties}
+              onDisplayPropertyToggle={handlers.onDisplayPropertyToggle23}
             />
             {layout === 'list' ? (
               <IssueList
@@ -48,17 +81,24 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
                 onSelect={handlers.onSelect3}
                 groupBy={groupBy}
                 orderBy={orderBy}
+                subGroupBy={subGroupBy}
+                direction={direction}
+                showEmptyGroups={showEmptyGroups}
+                showSubIssues={showSubIssues}
+                displayProperties={displayProperties}
               />
             ) : (
               <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
                 {issues.length === 0 ? (
-                  <EmptyState>No issues match these filters.</EmptyState>
+                  <EmptyState>{t('ui.noIssuesMatchFilters')}</EmptyState>
                 ) : (
                   <IssueBoard
                     issues={issues}
                     onOpen={handlers.onBoardOpen8}
                     onMove={handlers.onBoardMove9}
                     orderBy={orderBy}
+                    direction={direction}
+                    showSubIssues={showSubIssues}
                   />
                 )}
               </Box>
@@ -116,6 +156,7 @@ function IssueRoutePageBinding() {
 }
 
 export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPagePresenter> }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const { data, search, find, issues, handlers } = model;
@@ -123,7 +164,7 @@ export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPage
         <Box h="100%" style={{ overflow: 'hidden' }}>
           <SplitLayout single>
             <Pane single>
-              <PageHeader title="Board" />
+              <PageHeader title={t('nav.board')} />
               <IssueFilters
                 search={search}
                 projects={data.projects}
@@ -135,7 +176,7 @@ export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPage
               />
               {issues.length === 0 ? (
                 <EmptyState>
-                  No issues. Press <Shortcut>c</Shortcut> to create.
+                  {t('ui.noIssuesStart')} <Shortcut>c</Shortcut> {t('ui.toCreate')}
                 </EmptyState>
               ) : (
                 <IssueBoard issues={issues} onOpen={handlers.onOpen3} onMove={handlers.onMove4} />

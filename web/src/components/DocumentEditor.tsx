@@ -15,6 +15,7 @@ import {
   Title,
 } from '@mantine/core';
 import { MarkdownContent } from '../mantine-ui.tsx';
+import { useTranslation } from 'react-i18next';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useFocusWhen } from '../focus.ts';
@@ -27,9 +28,15 @@ export function DocumentEditorView({
 }) {
   switch (model._view) {
     case 0: {
-      const { documentKey, assetBase, inline } = model;
+      const { documentKey, assetBase, inline, historyRequest } = model;
       return (
-        <Editor key={documentKey} documentKey={documentKey} assetBase={assetBase} inline={inline} />
+        <Editor
+          key={documentKey}
+          documentKey={documentKey}
+          assetBase={assetBase}
+          inline={inline}
+          historyRequest={historyRequest}
+        />
       );
     }
   }
@@ -56,6 +63,7 @@ export function EditorView({
   model: ReturnType<typeof useEditorPresenter>;
   editRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const {
@@ -67,6 +75,7 @@ export function EditorView({
         error,
         busy,
         history,
+        historyRequested,
         historyOpened,
         dirty,
         contentRef,
@@ -78,7 +87,7 @@ export function EditorView({
       return (
         <Stack
           component="section"
-          aria-label="Document editor"
+          aria-label={t('ui.documentEditor')}
           gap={inline ? 'xs' : 'md'}
           aria-busy={busy}
         >
@@ -103,19 +112,19 @@ export function EditorView({
                       : undefined
                   }
                 >
-                  {mode === 'edit' ? 'Preview' : 'Edit description'}
+                  {mode === 'edit' ? t('ui.preview') : t('ui.editDescription')}
                 </Button>
               )
             ) : (
               <SegmentedControl
-                aria-label="Document view"
+                aria-label={t('ui.documentView')}
                 value={mode}
                 transitionDuration={0}
                 onChange={handlers.onModeChange}
                 data={[
-                  { label: 'Preview', value: 'preview' },
-                  { label: 'Edit', value: 'edit' },
-                  { label: 'Compare', value: 'compare' },
+                  { label: t('ui.preview'), value: 'preview' },
+                  { label: t('ui.edit'), value: 'edit' },
+                  { label: t('ui.compare'), value: 'compare' },
                 ]}
               />
             )}
@@ -127,16 +136,16 @@ export function EditorView({
                     disabled={!server || busy || conflict || !dirty.current}
                     onClick={handlers.onClick3}
                   >
-                    Save
-                  </Button>
-                  <Button type="button" variant="default" onClick={handlers.onClick4}>
-                    History
+                    {t('common.save')}
                   </Button>
                   <Text component="span" role="status" size="sm" c="dimmed">
                     {status}
                   </Text>
                 </>
               )}
+              <Button type="button" variant="default" onClick={handlers.onClick4}>
+                {t('documentHistory.button')}
+              </Button>
             </Group>
           </Group>
 
@@ -147,29 +156,37 @@ export function EditorView({
           ) : null}
 
           {conflict ? (
-            <Alert color="yellow" role="alert" title="Document changed on disk">
-              The document changed on disk. Your draft is preserved. Compare both versions, then
-              merge your changes.
+            <Alert color="yellow" role="alert" title={t('ui.documentChangedOnDisk')}>
+              {t('ui.documentChangedDraftPreserved')}
               <Group mt="sm" gap="xs">
                 <Button type="button" size="xs" onClick={handlers.onClick5}>
-                  Compare versions
+                  {t('ui.compareVersions')}
                 </Button>
                 <Button type="button" size="xs" variant="default" onClick={handlers.onClick6}>
-                  Use current version as base
+                  {t('ui.useCurrentVersionAsBase')}
                 </Button>
               </Group>
             </Alert>
           ) : null}
 
-          {history.length > 0 ? (
+          {history.length > 0 || historyRequested ? (
             <Accordion
               value={historyOpened ? 'history' : null}
               onChange={handlers.onHistoryOpenChange}
             >
               <Accordion.Item value="history">
-                <Accordion.Control>Previous versions</Accordion.Control>
+                <Accordion.Control>{t('documentHistory.heading')}</Accordion.Control>
                 <Accordion.Panel>
                   <Stack gap="xs">
+                    <Text size="sm" fw={500}>
+                      {t('documentHistory.currentVersion')}
+                    </Text>
+                    <Code block>{server?.body ?? ''}</Code>
+                    {history.length === 0 ? (
+                      <Text size="sm" c="dimmed">
+                        {t('documentHistory.empty')}
+                      </Text>
+                    ) : null}
                     {history.map((h) => (
                       <Button
                         type="button"
@@ -177,7 +194,7 @@ export function EditorView({
                         variant="subtle"
                         onClick={() => handlers.onClick7(h)}
                       >
-                        {h.savedAt} — Restore as draft
+                        {t('documentHistory.restoreAsDraft', { date: h.savedAt })}
                       </Button>
                     ))}
                   </Stack>
@@ -189,7 +206,7 @@ export function EditorView({
           {mode !== 'preview' ? (
             <Textarea
               ref={editRef}
-              aria-label="Markdown body"
+              aria-label={t('ui.markdownBody')}
               disabled={!server || busy}
               value={draft}
               onChange={handlers.Markdown_body_onChange8}
@@ -202,11 +219,11 @@ export function EditorView({
           {mode === 'compare' ? (
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
               <Stack gap="xs">
-                <Title order={4}>Current document</Title>
+                <Title order={4}>{t('ui.currentDocument')}</Title>
                 <Code block>{server?.body}</Code>
               </Stack>
               <Stack gap="xs">
-                <Title order={4}>Your draft</Title>
+                <Title order={4}>{t('ui.yourDraft')}</Title>
                 <Code block>{draft}</Code>
               </Stack>
             </SimpleGrid>
@@ -215,7 +232,7 @@ export function EditorView({
           {mode !== 'edit' ? (
             <>
               {!inline ? (
-                <nav aria-label="Document contents">
+                <nav aria-label={t('ui.documentContents')}>
                   <List size="sm">
                     {headings.map((h) => (
                       <List.Item key={h.id}>
@@ -241,7 +258,7 @@ export function EditorView({
                       },
                     }}
                   >
-                    Add description…
+                    {t('ui.addDescription')}
                   </Button>
                 ) : (
                   <MarkdownContent html={html} />

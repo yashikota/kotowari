@@ -175,8 +175,12 @@ func TestViewFileAndSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
+	projectPriority := 2
 	created, err := s.CreateView(CreateViewInput{
 		Name: "Bugs", Slug: "bugs", Display: "board", GroupBy: "status", OrderBy: "title",
+		Content:   stringPointer("database migration"),
+		DateField: stringPointer("createdAt"), DateRange: stringPointer("weekAgo"),
+		ProjectStatus: stringPointer("started"), ProjectPriority: &projectPriority,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -189,7 +193,7 @@ func TestViewFileAndSearch(t *testing.T) {
 		!strings.Contains(string(raw), "group_by = 'status'") || !strings.Contains(string(raw), "order_by = 'title'") {
 		t.Fatalf("view file: %s", raw)
 	}
-	if created.GroupBy != "status" || created.OrderBy != "title" {
+	if created.GroupBy != "status" || created.OrderBy != "title" || created.Content == nil || *created.Content != "database migration" || created.DateField != "createdAt" || created.DateRange != "weekAgo" || created.ProjectStatus == nil || *created.ProjectStatus != "started" || created.ProjectPriority == nil || *created.ProjectPriority != 2 {
 		t.Fatalf("created view settings: %#v", created)
 	}
 	reopened, err := Open(dir)
@@ -201,7 +205,7 @@ func TestViewFileAndSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if persisted.GroupBy != "status" || persisted.OrderBy != "title" {
+	if persisted.GroupBy != "status" || persisted.OrderBy != "title" || persisted.Content == nil || *persisted.Content != "database migration" || persisted.DateField != "createdAt" || persisted.DateRange != "weekAgo" || persisted.ProjectStatus == nil || *persisted.ProjectStatus != "started" || persisted.ProjectPriority == nil || *persisted.ProjectPriority != 2 {
 		t.Fatalf("persisted view settings: %#v", persisted)
 	}
 	hits, err := s.Search("bug")

@@ -72,7 +72,7 @@ test.describe('lived-in workspace', () => {
     await expect(viewList.getByRole('option', { name: new RegExp(childTitle) })).toBeVisible();
     await expect(viewList.getByRole('option', { name: new RegExp(doneTitle) })).toHaveCount(0);
 
-    await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
+    await page.keyboard.press('ControlOrMeta+k');
     const palette = page.getByRole('dialog', { name: 'Command palette' });
     await palette.getByLabel('Command search').fill(childTitle);
     await palette.getByRole('option', { name: new RegExp(childTitle) }).click();

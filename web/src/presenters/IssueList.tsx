@@ -7,7 +7,9 @@ import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
 import {
   buildIssueListRows,
+  DEFAULT_DISPLAY_PROPERTIES,
   sortIssues,
+  type IssueDisplayProperty,
   type IssueGroupBy,
   type IssueOrderBy,
 } from '../issue-list.ts';
@@ -24,6 +26,11 @@ type Props = {
   openOnSelect?: boolean;
   groupBy?: IssueGroupBy;
   orderBy?: IssueOrderBy;
+  subGroupBy?: IssueGroupBy;
+  showEmptyGroups?: boolean;
+  showSubIssues?: boolean;
+  direction?: 'asc' | 'desc';
+  displayProperties?: IssueDisplayProperty[];
 };
 
 export function useIssueListPresenter({
@@ -33,26 +40,35 @@ export function useIssueListPresenter({
   openOnSelect = true,
   groupBy = 'priority',
   orderBy = 'manual',
+  subGroupBy = 'none',
+  showEmptyGroups = false,
+  showSubIssues = true,
+  direction,
+  displayProperties,
 }: Props) {
   const sendIntent = useIntent();
-  const issues = sortIssues(useIssueProjection(initialIssues), orderBy);
+  const projectedIssues = useIssueProjection(initialIssues);
+  const visibleIssues = showSubIssues
+    ? projectedIssues
+    : projectedIssues.filter((issue) => issue.parentId == null);
+  const issues = sortIssues(visibleIssues, orderBy, direction);
   const navigate = useNavigate();
-  const ids = useMemo(() => issues.map((i) => i.identifier), [issues]);
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
-  const rows = buildIssueListRows(issues, new Set(collapsedGroups), groupBy);
-  const issuePositions = new Map(
-    rows
-      .filter(
-        (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',
-      )
-      .map((row, index) => [row.issue.identifier, index + 1]),
+  const rows = buildIssueListRows(issues, new Set(collapsedGroups), groupBy, {
+    subGroupBy,
+    showEmptyGroups,
+  });
+  const issueRows = rows.filter(
+    (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',
   );
+  const ids = useMemo(() => issueRows.map((row) => row.issue.identifier), [issueRows]);
+  const issuePositions = new Map(issueRows.map((row, index) => [row.issue.identifier, index + 1]));
   const childCounts = useMemo(() => {
     const counts = new Map<number, number>();
-    for (const issue of issues)
+    for (const issue of projectedIssues)
       if (issue.parentId) counts.set(issue.parentId, (counts.get(issue.parentId) ?? 0) + 1);
     return counts;
-  }, [issues]);
+  }, [projectedIssues]);
   const selectedRow = rows.findIndex(
     (row) => row.kind === 'issue' && row.issue.identifier === selectedId,
   );
@@ -103,7 +119,7 @@ export function useIssueListPresenter({
     };
   }, [selectedId, sendIntent]);
 
-  if (issues.length === 0) {
+  if (rows.length === 0) {
     return { _view: 0 as const, issues, rows, handlers: {} };
   }
 
@@ -113,8 +129,10 @@ export function useIssueListPresenter({
     _view: 1 as const,
     selectedId,
     issues,
+    displayProperties: displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES],
     rows,
     issuePositions,
+    issueCount: issueRows.length,
     childCounts,
     windowed,
     today,
@@ -142,11 +160,18 @@ type BoardProps = {
   onOpen: (id: string) => void;
   onMove: (id: string, status: IssueStatus, sortOrder: number) => void;
   orderBy?: IssueOrderBy;
+  direction?: 'asc' | 'desc';
+  showSubIssues?: boolean;
 };
 
-function columnIssues(issues: Issue[], status: IssueStatus, orderBy: IssueOrderBy): Issue[] {
+function columnIssues(
+  issues: Issue[],
+  status: IssueStatus,
+  orderBy: IssueOrderBy,
+  direction?: 'asc' | 'desc',
+): Issue[] {
   const matching = issues.filter((issue) => issue.status === status);
-  if (orderBy !== 'manual') return sortIssues(matching, orderBy);
+  if (orderBy !== 'manual') return sortIssues(matching, orderBy, direction);
   return matching.sort((a, b) => a.sortOrder - b.sortOrder || a.number - b.number);
 }
 
@@ -155,13 +180,21 @@ export function useIssueBoardPresenter({
   onOpen,
   onMove,
   orderBy = 'manual',
+  direction,
+  showSubIssues = true,
 }: BoardProps) {
-  const issues = useIssueProjection(initialIssues);
+  const projectedIssues = useIssueProjection(initialIssues);
+  const issues = showSubIssues
+    ? projectedIssues
+    : projectedIssues.filter((issue) => issue.parentId == null);
   const [dragId, setDragId] = useState<string | null>(null);
   const columns = useMemo(
     () =>
-      ISSUE_STATUSES.map((status) => ({ status, issues: columnIssues(issues, status, orderBy) })),
-    [issues, orderBy],
+      ISSUE_STATUSES.map((status) => ({
+        status,
+        issues: columnIssues(issues, status, orderBy, direction),
+      })),
+    [issues, orderBy, direction],
   );
   return {
     _view: 0 as const,

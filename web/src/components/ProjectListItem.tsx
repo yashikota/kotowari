@@ -1,4 +1,5 @@
 import { Badge, Box, Group, Progress, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { RouterNavLink } from '../mantine-ui.tsx';
 import type { Project } from '../types.ts';
 
@@ -8,18 +9,15 @@ const STATUS_COLORS: Record<string, string> = {
   canceled: 'red',
 };
 
-function statusLabel(status: string) {
-  return status.replace(/^./, (letter) => letter.toUpperCase());
-}
-
 export function ProjectListItem({ project }: { project: Project }) {
+  const { t } = useTranslation();
   const progress = Math.round(project.progress * 100);
   const indicatorColor =
-    statusLabel(project.status) === 'Started'
+    project.status === 'started'
       ? 'var(--mantine-color-indigo-6)'
-      : statusLabel(project.status) === 'Completed'
+      : project.status === 'completed'
         ? 'var(--mantine-color-teal-6)'
-        : statusLabel(project.status) === 'Canceled'
+        : project.status === 'canceled'
           ? 'var(--mantine-color-red-6)'
           : 'var(--mantine-color-gray-5)';
 
@@ -39,10 +37,10 @@ export function ProjectListItem({ project }: { project: Project }) {
       rightSection={
         <Group gap="md" wrap="nowrap">
           <Badge variant="light" color={STATUS_COLORS[project.status] ?? 'gray'} size="sm">
-            {statusLabel(project.status)}
+            {t(`projectStatus.${project.status}`)}
           </Badge>
           <Progress
-            aria-label={`Project progress ${progress}%`}
+            aria-label={t('ui.projectProgress', { progress })}
             value={progress}
             w={112}
             size="sm"

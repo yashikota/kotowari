@@ -1,4 +1,5 @@
 import { SegmentedControl, Stack, Text, Textarea } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { renderMarkdown } from '../markdown.ts';
 import { MarkdownContent } from '../mantine-ui.tsx';
 
@@ -10,26 +11,27 @@ export function MarkdownFieldView({
 }: {
   model: ReturnType<typeof useMarkdownFieldPresenter>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const { value, placeholder, mode, handlers } = model;
       return (
         <Stack gap="sm">
           <SegmentedControl
-            aria-label="Body"
+            aria-label={t('ui.body')}
             role="tablist"
             value={mode}
             onChange={handlers.onModeChange}
             data={[
-              { label: 'Edit', value: 'edit' },
-              { label: 'Preview', value: 'preview' },
+              { label: t('ui.edit'), value: 'edit' },
+              { label: t('ui.preview'), value: 'preview' },
             ]}
           />
           {mode === 'edit' ? (
             <Textarea
-              aria-label="Markdown body"
+              aria-label={t('ui.markdownBody')}
               value={value}
-              placeholder={placeholder ?? 'Write markdown…'}
+              placeholder={placeholder ?? t('documentEditor.writeMarkdown')}
               onChange={handlers.Markdown_body_onChange2}
               onBlur={handlers.Markdown_body_onBlur3}
               minRows={12}
@@ -38,7 +40,7 @@ export function MarkdownFieldView({
           ) : value.trim() ? (
             <MarkdownContent html={renderMarkdown(value)} />
           ) : (
-            <Text c="dimmed">Empty</Text>
+            <Text c="dimmed">{t('ui.empty')}</Text>
           )}
         </Stack>
       );

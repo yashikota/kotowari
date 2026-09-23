@@ -9,20 +9,31 @@ import (
 )
 
 type issueFM struct {
-	Title     string      `toml:"title"`
-	Status    string      `toml:"status"`
-	Priority  int         `toml:"priority"`
-	Project   *string     `toml:"project,omitempty"`
-	Cycle     *int        `toml:"cycle,omitempty"`
-	Parent    *string     `toml:"parent,omitempty"`
-	Labels    []string    `toml:"labels"`
-	Due       *string     `toml:"due,omitempty"`
-	Sort      float64     `toml:"sort"`
-	Created   string      `toml:"created"`
-	Updated   string      `toml:"updated"`
-	Completed *string     `toml:"completed,omitempty"`
-	ADRs      []int       `toml:"adrs,omitempty"`
-	Comments  []commentFM `toml:"comments,omitempty"`
+	Title         string          `toml:"title"`
+	Status        string          `toml:"status"`
+	Type          string          `toml:"type,omitempty"`
+	Priority      int             `toml:"priority"`
+	Estimate      *int            `toml:"estimate,omitempty"`
+	Project       *string         `toml:"project,omitempty"`
+	Milestone     *int64          `toml:"milestone,omitempty"`
+	Cycle         *int            `toml:"cycle,omitempty"`
+	CycleAddedAt  *string         `toml:"cycle_added_at,omitempty"`
+	Parent        *string         `toml:"parent,omitempty"`
+	Labels        []string        `toml:"labels"`
+	Due           *string         `toml:"due,omitempty"`
+	Reminder      *string         `toml:"reminder_at,omitempty"`
+	Sort          float64         `toml:"sort"`
+	Created       string          `toml:"created"`
+	Updated       string          `toml:"updated"`
+	StatusChanged string          `toml:"status_changed,omitempty"`
+	Started       *string         `toml:"started_at,omitempty"`
+	Favorite      bool            `toml:"favorite,omitempty"`
+	Completed     *string         `toml:"completed,omitempty"`
+	ADRs          []int           `toml:"adrs,omitempty"`
+	Links         []IssueLink     `toml:"links,omitempty"`
+	Relations     []IssueRelation `toml:"relations,omitempty"`
+	RecurringSlug *string         `toml:"recurring_slug,omitempty"`
+	Comments      []commentFM     `toml:"comments,omitempty"`
 }
 
 type adrFM struct {
@@ -93,6 +104,12 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 	if fm.Status == "" {
 		fm.Status = "backlog"
 	}
+	if fm.StatusChanged == "" {
+		fm.StatusChanged = fm.Updated
+		if fm.StatusChanged == "" {
+			fm.StatusChanged = fm.Created
+		}
+	}
 	iss := Issue{
 		ID:               int64(n),
 		Number:           n,
@@ -100,16 +117,27 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		Title:            fm.Title,
 		Body:             body,
 		Status:           fm.Status,
+		Type:             fm.Type,
 		Priority:         fm.Priority,
+		Estimate:         fm.Estimate,
 		ProjectSlug:      fm.Project,
+		MilestoneID:      fm.Milestone,
 		CycleNumber:      fm.Cycle,
+		CycleAddedAt:     fm.CycleAddedAt,
 		ParentIdentifier: fm.Parent,
 		DueDate:          fm.Due,
+		ReminderAt:       fm.Reminder,
 		SortOrder:        fm.Sort,
 		CreatedAt:        fm.Created,
 		UpdatedAt:        fm.Updated,
+		StatusChangedAt:  fm.StatusChanged,
+		StartedAt:        fm.Started,
 		CompletedAt:      fm.Completed,
 		ADRNumbers:       fm.ADRs,
+		ExternalLinks:    fm.Links,
+		Relations:        fm.Relations,
+		RecurringSlug:    fm.RecurringSlug,
+		IsFavorite:       fm.Favorite,
 		Labels:           []Label{},
 	}
 	for _, name := range fm.Labels {
@@ -225,16 +253,27 @@ func renderADRMarkdown(a ADR) string {
 
 func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 	fm := issueFM{
-		Title:     iss.Title,
-		Status:    iss.Status,
-		Priority:  iss.Priority,
-		Due:       iss.DueDate,
-		Sort:      iss.SortOrder,
-		Created:   iss.CreatedAt,
-		Updated:   iss.UpdatedAt,
-		Completed: iss.CompletedAt,
-		ADRs:      iss.ADRNumbers,
-		Labels:    make([]string, 0, len(iss.Labels)),
+		Title:         iss.Title,
+		Status:        iss.Status,
+		Type:          iss.Type,
+		Priority:      iss.Priority,
+		Estimate:      iss.Estimate,
+		Milestone:     iss.MilestoneID,
+		CycleAddedAt:  iss.CycleAddedAt,
+		Due:           iss.DueDate,
+		Reminder:      iss.ReminderAt,
+		Sort:          iss.SortOrder,
+		Created:       iss.CreatedAt,
+		Updated:       iss.UpdatedAt,
+		StatusChanged: iss.StatusChangedAt,
+		Started:       iss.StartedAt,
+		Favorite:      iss.IsFavorite,
+		Completed:     iss.CompletedAt,
+		ADRs:          iss.ADRNumbers,
+		Links:         iss.ExternalLinks,
+		Relations:     iss.Relations,
+		RecurringSlug: iss.RecurringSlug,
+		Labels:        make([]string, 0, len(iss.Labels)),
 	}
 	if iss.ProjectID != nil {
 		if p, ok := projectByID(m, *iss.ProjectID); ok {

@@ -4,14 +4,22 @@ import type {
   Comment,
   Cycle,
   Issue,
+  IssueLink,
+  IssueRelation,
+  IssueTemplate,
   Label,
   Page,
   Project,
+  RecurringIssue,
   View,
   Workspace,
 } from './types.ts';
 
 const now = '2026-09-23T09:00:00Z';
+function localDateValue(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 const labels: Label[] = [
   { id: 1, name: 'frontend', color: '#7950f2' },
   { id: 2, name: 'backend', color: '#228be6' },
@@ -33,9 +41,12 @@ let projects: Project[] = [
     slug: 'launch',
     description: '公開に向けたプロダクト改善',
     status: 'started',
+    priority: 0,
     startDate: '2026-09-01',
     targetDate: '2026-10-15',
+    labels: ['frontend'],
     progress: 55,
+    milestones: [],
     createdAt: now,
     updatedAt: now,
   },
@@ -45,9 +56,12 @@ let projects: Project[] = [
     slug: 'docs',
     description: '利用ガイドと設計資料',
     status: 'planned',
+    priority: 0,
     startDate: null,
     targetDate: null,
+    labels: [],
     progress: 20,
+    milestones: [],
     createdAt: now,
     updatedAt: now,
   },
@@ -56,18 +70,26 @@ let cycles: Cycle[] = [
   {
     id: 1,
     number: 1,
+    name: 'Cycle 1',
+    description: '',
     startsAt: '2026-09-14',
     endsAt: '2026-09-27',
     status: 'active',
+    isFavorite: false,
+    resources: [],
     createdAt: now,
     updatedAt: now,
   },
   {
     id: 2,
     number: 2,
+    name: 'Cycle 2',
+    description: '',
     startsAt: '2026-09-28',
     endsAt: '2026-10-11',
     status: 'upcoming',
+    isFavorite: false,
+    resources: [],
     createdAt: now,
     updatedAt: now,
   },
@@ -148,12 +170,33 @@ let views: View[] = [
     slug: 'launch-backlog',
     display: 'board',
     groupBy: 'status',
+    subGroupBy: 'none',
     orderBy: 'manual',
+    direction: 'asc',
+    completedIssues: 'all',
+    showSubIssues: true,
+    nestedSubIssues: 'showMatching',
+    showEmptyGroups: false,
+    displayProperties: [
+      'id',
+      'status',
+      'priority',
+      'project',
+      'dueDate',
+      'milestone',
+      'cycle',
+      'estimate',
+      'labels',
+      'links',
+      'pullRequests',
+    ],
     status: null,
     project: 'launch',
     cycle: null,
     labels: [],
     priority: null,
+    type: null,
+    estimate: null,
     createdAt: now,
     updatedAt: now,
   },
@@ -161,6 +204,8 @@ let views: View[] = [
 let comments: Comment[] = [
   { id: 1, issueId: 1, body: 'GitHub Pagesで公開する方針。', createdAt: now },
 ];
+let issueTemplates: IssueTemplate[] = [];
+let recurringIssues: RecurringIssue[] = [];
 let revision = 1;
 
 function issue(
@@ -182,16 +227,25 @@ function issue(
     priority,
     projectId,
     projectSlug: projects.find((p) => p.id === projectId)?.slug,
+    milestoneId: null,
+    milestoneName: null,
     cycleId,
     cycleNumber: cycles.find((c) => c.id === cycleId)?.number,
+    cycleAddedAt: cycleId == null ? null : now,
     parentId: null,
     depth: 0,
     dueDate: null,
+    reminderAt: null,
     sortOrder: number,
     labels: issueLabels,
     adrNumbers: number === 1 ? [1] : [],
+    externalLinks: [],
+    relations: [],
+    isFavorite: false,
     createdAt: now,
     updatedAt: now,
+    statusChangedAt: now,
+    startedAt: status === 'in_progress' ? now : null,
     completedAt: status === 'done' ? now : null,
   };
 }
@@ -213,6 +267,63 @@ function findIssue(id: string): Issue | undefined {
     (item) => item.identifier === id || String(item.number) === id || String(item.id) === id,
   );
 }
+function reverseRelation(kind: IssueRelation['kind']): IssueRelation['kind'] {
+  if (kind === 'blocks') return 'blockedBy';
+  if (kind === 'blockedBy') return 'blocks';
+  if (kind === 'duplicateOf') return 'duplicateBy';
+  if (kind === 'duplicateBy') return 'duplicateOf';
+  return 'related';
+}
+function nextRecurringDate(value: string, interval: number, unit: RecurringIssue['unit']): string {
+  const current = new Date(`${value}T00:00:00Z`);
+  if (unit === 'day') current.setUTCDate(current.getUTCDate() + interval);
+  if (unit === 'week') current.setUTCDate(current.getUTCDate() + interval * 7);
+  if (unit === 'month' || unit === 'year') {
+    const originalDay = current.getUTCDate();
+    current.setUTCDate(1);
+    current.setUTCMonth(current.getUTCMonth() + interval * (unit === 'year' ? 12 : 1));
+    const lastDay = new Date(
+      Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    current.setUTCDate(Math.min(originalDay, lastDay));
+  }
+  return current.toISOString().slice(0, 10);
+}
+function createRecurringDemoInstance(schedule: RecurringIssue, dueDate: string): Issue {
+  const number = Math.max(0, ...issues.map((item) => item.number)) + 1;
+  const project = projects.find((item) => item.slug === schedule.projectSlug);
+  const item = issue(
+    number,
+    schedule.title,
+    'backlog',
+    schedule.priority,
+    project?.id ?? null,
+    null,
+    labels.filter((label) => schedule.labels.includes(label.name)),
+  );
+  item.body = schedule.body;
+  item.type = schedule.type;
+  item.estimate = schedule.estimate ?? null;
+  item.recurringSlug = schedule.slug;
+  item.dueDate = dueDate;
+  issues.push(item);
+  return item;
+}
+function processDemoRecurringIssues(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  for (const schedule of recurringIssues) {
+    if (!schedule.enabled) continue;
+    let instance = findIssue(schedule.lastIssueIdentifier ?? '');
+    if (!instance) continue;
+    while (instance.dueDate && instance.dueDate < today) {
+      const dueDate = nextRecurringDate(instance.dueDate, schedule.interval, schedule.unit);
+      instance = createRecurringDemoInstance(schedule, dueDate);
+      schedule.lastIssueIdentifier = instance.identifier;
+      schedule.nextDueDate = dueDate;
+      revision += 1;
+    }
+  }
+}
 function patch<T extends object>(item: T, changes: Record<string, unknown>): T {
   Object.assign(item, changes, { updatedAt: new Date().toISOString() });
   revision += 1;
@@ -228,7 +339,117 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   const path = url.pathname.slice(url.pathname.indexOf('/api/'));
   const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
   if (!path.startsWith('/api/')) return nativeFetch(input, init);
-  if (path === '/api/revision') return json({ revision: String(revision) });
+  if (path === '/api/revision') {
+    processDemoRecurringIssues();
+    return json({ revision: String(revision) });
+  }
+  if (path === '/api/issue-templates' && method === 'GET') return json(issueTemplates);
+  let match = path.match(/^\/api\/issue-templates\/([^/]+)$/);
+  if (match && method === 'DELETE') {
+    const slug = decodeURIComponent(match[1]!);
+    const index = issueTemplates.findIndex((template) => template.slug === slug);
+    if (index < 0) return notFound();
+    issueTemplates = issueTemplates.filter((template) => template.slug !== slug);
+    revision += 1;
+    return json(null, 204);
+  }
+  match = path.match(/^\/api\/issues\/([^/]+)\/templates$/);
+  if (match && method === 'POST') {
+    const source = findIssue(decodeURIComponent(match[1]!));
+    if (!source) return notFound();
+    const name = text(body(init).name).trim();
+    const slug = name
+      .toLocaleLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 48);
+    if (!slug || name.length > 100) return json({ error: 'invalid template name' }, 400);
+    if (issueTemplates.some((template) => template.slug === slug))
+      return json({ error: 'template name already exists' }, 409);
+    const template: IssueTemplate = {
+      slug,
+      name,
+      title: source.title,
+      body: source.body,
+      status: source.status,
+      type: source.type,
+      priority: source.priority,
+      estimate: source.estimate,
+      labels: source.labels.map((label) => label.name),
+    };
+    issueTemplates.push(template);
+    revision += 1;
+    return json(template, 201);
+  }
+  if (path === '/api/recurring-issues' && method === 'GET') {
+    processDemoRecurringIssues();
+    return json(recurringIssues);
+  }
+  match = path.match(/^\/api\/recurring-issues\/([^/]+)$/);
+  if (match) {
+    const slug = decodeURIComponent(match[1]!);
+    const schedule = recurringIssues.find((item) => item.slug === slug);
+    if (!schedule) return notFound();
+    if (method === 'PATCH') {
+      schedule.enabled = Boolean(body(init).enabled);
+      revision += 1;
+      return json(schedule);
+    }
+    if (method === 'DELETE') {
+      recurringIssues = recurringIssues.filter((item) => item !== schedule);
+      revision += 1;
+      return json(null, 204);
+    }
+  }
+  match = path.match(/^\/api\/issues\/([^/]+)\/recurrences$/);
+  if (match && method === 'POST') {
+    const source = findIssue(decodeURIComponent(match[1]!));
+    if (!source) return notFound();
+    const value = body(init);
+    const name = text(value.name).trim();
+    const slug = name
+      .toLocaleLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 48);
+    const interval = Number(value.interval);
+    const unit = text(value.unit) as RecurringIssue['unit'];
+    const firstDueDate = text(value.firstDueDate);
+    if (
+      !slug ||
+      name.length > 100 ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(firstDueDate) ||
+      !Number.isInteger(interval) ||
+      interval < 1 ||
+      interval > 365 ||
+      !['day', 'week', 'month', 'year'].includes(unit)
+    )
+      return json({ error: 'invalid recurring issue' }, 400);
+    if (recurringIssues.some((item) => item.slug === slug))
+      return json({ error: 'recurring issue already exists' }, 409);
+    const schedule: RecurringIssue = {
+      slug,
+      name,
+      title: source.title,
+      body: source.body,
+      status: 'backlog',
+      type: source.type,
+      priority: source.priority,
+      estimate: source.estimate,
+      projectSlug: source.projectSlug,
+      labels: source.labels.map((label) => label.name),
+      firstDueDate,
+      interval,
+      unit,
+      nextDueDate: firstDueDate,
+      enabled: true,
+    };
+    const first = createRecurringDemoInstance(schedule, firstDueDate);
+    schedule.lastIssueIdentifier = first.identifier;
+    recurringIssues.push(schedule);
+    revision += 1;
+    return json(schedule, 201);
+  }
   if (path === '/api/workspace') {
     if (method === 'PATCH') workspace = patch(workspace, body(init));
     return json(workspace);
@@ -244,16 +465,176 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     return json(labels);
   }
   if (path === '/api/issues' && method === 'GET') {
+    processDemoRecurringIssues();
     let result = [...issues];
     const status = url.searchParams.get('status');
     const project = url.searchParams.get('project');
+    const projectStatus = url.searchParams.get('projectStatus');
+    const projectPriority = url.searchParams.get('projectPriority');
+    const projectLabels = url.searchParams.get('projectLabels')?.split(',').filter(Boolean) ?? [];
     const cycle = url.searchParams.get('cycle');
+    const addedToCycle = url.searchParams.get('addedToCycle')?.split(',').filter(Boolean) ?? [];
     const priority = url.searchParams.get('priority');
+    const type = url.searchParams.get('type');
+    const estimate = url.searchParams.get('estimate');
+    const dueDateFilter = url.searchParams.get('dueDate');
+    const relationFilter = url.searchParams.get('relation');
+    const contentFilter = url.searchParams.get('content')?.trim().toLowerCase();
+    const milestoneNameFilter = url.searchParams.get('milestoneName')?.trim().toLowerCase();
+    const dateFieldFilter = url.searchParams.get('dateField');
+    const dateRangeFilter = url.searchParams.get('dateRange');
+    const dateAsOf = url.searchParams.get('dateAsOf') ?? localDateValue(new Date());
+    const asOf = url.searchParams.get('asOf') ?? localDateValue(new Date());
+    const favorite = url.searchParams.get('favorite');
     const wantedLabels = url.searchParams.get('labels')?.split(',');
     if (status) result = result.filter((i) => i.status === status);
     if (project) result = result.filter((i) => i.projectSlug === project);
+    if (projectStatus || projectPriority != null) {
+      result = result.filter((item) => {
+        const linkedProject = projects.find(
+          (candidate) => candidate.id === item.projectId || candidate.slug === item.projectSlug,
+        );
+        return (
+          linkedProject != null &&
+          (!projectStatus || linkedProject.status === projectStatus) &&
+          (projectPriority == null || linkedProject.priority === Number(projectPriority))
+        );
+      });
+    }
+    if (projectLabels.length > 0) {
+      result = result.filter((item) => {
+        const linkedProject = projects.find(
+          (candidate) => candidate.id === item.projectId || candidate.slug === item.projectSlug,
+        );
+        if (!linkedProject) return false;
+        const labels = linkedProject.labels ?? [];
+        return projectLabels.every((label) =>
+          label === '__none__' ? labels.length === 0 : labels.includes(label),
+        );
+      });
+    }
     if (cycle) result = result.filter((i) => i.cycleNumber === Number(cycle));
+    if (addedToCycle.length > 0) {
+      result = result.filter((item) => {
+        const linkedCycle = cycles.find(
+          (candidate) => candidate.id === item.cycleId || candidate.number === item.cycleNumber,
+        );
+        if (!linkedCycle) return false;
+        const addedAt = Date.parse(item.cycleAddedAt ?? item.createdAt);
+        const startValue = /^\d{4}-\d{2}-\d{2}$/.test(linkedCycle.startsAt)
+          ? `${linkedCycle.startsAt}T00:00:00Z`
+          : linkedCycle.startsAt;
+        const endValue = /^\d{4}-\d{2}-\d{2}$/.test(linkedCycle.endsAt)
+          ? `${linkedCycle.endsAt}T23:59:59.999Z`
+          : linkedCycle.endsAt;
+        const start = Date.parse(startValue);
+        const end = Date.parse(endValue);
+        const phase = addedAt < start ? 'planned' : addedAt > end ? 'after' : 'during';
+        return addedToCycle.includes(phase);
+      });
+    }
     if (priority) result = result.filter((i) => i.priority === Number(priority));
+    if (type) result = result.filter((i) => i.type === type);
+    if (estimate != null) result = result.filter((i) => i.estimate === Number(estimate));
+    if (dueDateFilter) {
+      const today = new Date(`${asOf}T00:00:00`);
+      const rangeDays: Record<string, number> = {
+        tomorrow: 1,
+        threeDays: 3,
+        week: 7,
+        month: 30,
+        quarter: 90,
+      };
+      const rangeEnd = new Date(today);
+      rangeEnd.setDate(rangeEnd.getDate() + (rangeDays[dueDateFilter] ?? 0));
+      const endValue = localDateValue(rangeEnd);
+      result = result.filter((item) => {
+        const due = item.dueDate?.slice(0, 10) ?? '';
+        if (dueDateFilter === 'none') return due === '';
+        if (dueDateFilter === 'overdue')
+          return due !== '' && due < asOf && item.status !== 'done' && item.status !== 'canceled';
+        if (dueDateFilter === 'today') return due === asOf;
+        if (dueDateFilter.startsWith('on:')) return due === dueDateFilter.slice(3);
+        if (dueDateFilter === 'custom') return false;
+        if (rangeDays[dueDateFilter]) return due > asOf && due <= endValue;
+        return false;
+      });
+    }
+    if (relationFilter) {
+      result = result.filter((item) => {
+        if (relationFilter === 'parent') return issues.some((child) => child.parentId === item.id);
+        if (relationFilter === 'subissue') return item.parentId != null;
+        if (relationFilter === 'recurring') return item.recurringSlug != null;
+        if (relationFilter === 'related') return item.relations.length > 0;
+        if (relationFilter === 'blocked')
+          return item.relations.some((relation) => relation.kind === 'blockedBy');
+        if (relationFilter === 'blocking')
+          return item.relations.some((relation) => relation.kind === 'blocks');
+        if (relationFilter === 'duplicate')
+          return item.relations.some(
+            (relation) => relation.kind === 'duplicateOf' || relation.kind === 'duplicateBy',
+          );
+        return false;
+      });
+    }
+    if (contentFilter) {
+      result = result.filter((item) =>
+        [item.identifier, item.title, item.body].some((value) =>
+          value.toLowerCase().includes(contentFilter),
+        ),
+      );
+    }
+    if (milestoneNameFilter) {
+      result = result.filter((item) =>
+        item.milestoneName?.toLowerCase().includes(milestoneNameFilter),
+      );
+    }
+    if (dateFieldFilter && dateRangeFilter) {
+      const rangeDays: Record<string, number> = {
+        dayAgo: 1,
+        threeDaysAgo: 3,
+        weekAgo: 7,
+        twoWeeksAgo: 14,
+        monthAgo: 30,
+        quarterAgo: 90,
+        halfYearAgo: 180,
+        yearAgo: 365,
+      };
+      const rangeStart = new Date(`${dateAsOf}T00:00:00`);
+      rangeStart.setDate(rangeStart.getDate() - (rangeDays[dateRangeFilter] ?? 0));
+      const startValue = localDateValue(rangeStart);
+      result = result.filter((item) => {
+        const rawDate =
+          dateFieldFilter === 'createdAt'
+            ? item.createdAt
+            : dateFieldFilter === 'updatedAt'
+              ? item.updatedAt
+              : dateFieldFilter === 'startedAt'
+                ? item.startedAt
+                : dateFieldFilter === 'completedAt'
+                  ? item.completedAt
+                  : dateFieldFilter === 'timeInCurrentStatus'
+                    ? item.statusChangedAt
+                    : null;
+        const date = rawDate?.slice(0, 10) ?? '';
+        if (dateRangeFilter.startsWith('on:')) return date === dateRangeFilter.slice(3);
+        if (dateFieldFilter === 'timeInCurrentStatus') {
+          const statusChangedAt = Date.parse(item.statusChangedAt ?? '');
+          return (
+            rangeDays[dateRangeFilter] != null &&
+            !Number.isNaN(statusChangedAt) &&
+            statusChangedAt <= Date.now() - rangeDays[dateRangeFilter]! * 24 * 60 * 60 * 1000
+          );
+        }
+        return (
+          rangeDays[dateRangeFilter] != null &&
+          date !== '' &&
+          date >= startValue &&
+          date <= dateAsOf
+        );
+      });
+    }
+    if (favorite != null) result = result.filter((i) => i.isFavorite === (favorite === 'true'));
     if (wantedLabels?.length)
       result = result.filter((i) =>
         wantedLabels.every((name) => i.labels.some((label) => label.name === name)),
@@ -262,6 +643,12 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   }
   if (path === '/api/issues' && method === 'POST') {
     const value = body(init);
+    const milestoneId = value.milestoneId == null ? null : Number(value.milestoneId);
+    const milestone =
+      milestoneId == null
+        ? undefined
+        : projects.flatMap((project) => project.milestones).find((item) => item.id === milestoneId);
+    if (milestoneId != null && !milestone) return json({ error: 'invalid milestone' }, 400);
     const number = Math.max(0, ...issues.map((i) => i.number)) + 1;
     const item = issue(
       number,
@@ -272,11 +659,74 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       value.cycleId == null ? null : Number(value.cycleId),
       [],
     );
+    item.type = ['bug', 'feature', 'improvement', 'task'].includes(String(value.type))
+      ? (String(value.type) as Issue['type'])
+      : undefined;
+    item.estimate = typeof value.estimate === 'number' ? value.estimate : null;
+    const labelIds = Array.isArray(value.labelIds) ? value.labelIds.map(Number) : [];
+    item.labels = labels.filter((label) => labelIds.includes(label.id));
+    if (milestone) {
+      const project = projects.find((candidate) =>
+        candidate.milestones.some((candidateMilestone) => candidateMilestone.id === milestone.id),
+      );
+      if (value.projectId != null && Number(value.projectId) !== project?.id)
+        return json({ error: 'milestone must belong to the issue project' }, 400);
+      item.projectId = project?.id ?? item.projectId;
+      item.projectSlug = project?.slug;
+      item.milestoneId = milestone.id;
+      item.milestoneName = milestone.name;
+    }
+    item.body = text(value.body);
     issues.push(item);
     revision += 1;
     return json(item, 201);
   }
-  let match = path.match(/^\/api\/issues\/([^/]+)$/);
+  match = path.match(/^\/api\/issues\/([^/]+)\/projects$/);
+  if (match && method === 'POST') {
+    const item = findIssue(decodeURIComponent(match[1]!));
+    if (!item) return notFound();
+    const value = body(init);
+    const name = text(value.name).trim();
+    const priority = Number(value.priority ?? 0);
+    const status = text(value.status) || 'planned';
+    if (!name) return json({ error: 'project name required' }, 400);
+    if (!Number.isInteger(priority) || priority < 0 || priority > 4)
+      return json({ error: 'invalid project priority' }, 400);
+    if (!['backlog', 'planned', 'started', 'completed', 'canceled'].includes(status))
+      return json({ error: 'invalid project status' }, 400);
+    const base =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || `project-${item.number}`;
+    let slug = base;
+    for (let suffix = 2; projects.some((project) => project.slug === slug); suffix++)
+      slug = `${base}-${suffix}`;
+    const timestamp = new Date().toISOString();
+    const project: Project = {
+      id: Math.max(0, ...projects.map((candidate) => candidate.id)) + 1,
+      name,
+      slug,
+      description: text(value.description),
+      status,
+      priority,
+      startDate: text(value.startDate) || null,
+      targetDate: text(value.targetDate) || null,
+      progress: 0,
+      milestones: [],
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    projects.push(project);
+    item.projectId = project.id;
+    item.projectSlug = project.slug;
+    item.milestoneId = null;
+    item.milestoneName = null;
+    item.updatedAt = timestamp;
+    revision += 1;
+    return json({ project, issue: item }, 201);
+  }
+  match = path.match(/^\/api\/issues\/([^/]+)$/);
   if (match) {
     const item = findIssue(decodeURIComponent(match[1]!));
     if (!item) return notFound();
@@ -285,8 +735,150 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       revision += 1;
       return json(null, 204);
     }
-    if (method === 'PATCH') patch(item, body(init));
+    if (method === 'PATCH') {
+      const previousStatus = item.status;
+      const changes = body(init);
+      const previousCycleId = item.cycleId;
+      if ('cycleId' in changes && changes.cycleId != null) {
+        const cycleId = Number(changes.cycleId);
+        if (!cycles.some((cycle) => cycle.id === cycleId))
+          return json({ error: 'cycle not found' }, 400);
+      }
+      patch(item, changes);
+      if ('cycleId' in changes && Number(changes.cycleId ?? 0) !== previousCycleId) {
+        const cycleId = changes.cycleId == null ? null : Number(changes.cycleId);
+        item.cycleId = cycleId;
+        item.cycleNumber = cycles.find((cycle) => cycle.id === cycleId)?.number ?? null;
+        item.cycleAddedAt = cycleId == null ? null : new Date().toISOString();
+      }
+      if (item.status !== previousStatus) {
+        const changedAt = new Date().toISOString();
+        item.statusChangedAt = changedAt;
+        if (item.status === 'in_progress' && !item.startedAt) item.startedAt = changedAt;
+        item.completedAt = item.status === 'done' || item.status === 'canceled' ? changedAt : null;
+      }
+    }
+    if (method === 'PATCH') {
+      const value = body(init);
+      if ('projectId' in value && Number(value.projectId) !== item.projectId) {
+        item.milestoneId = null;
+        item.milestoneName = null;
+      }
+      if ('milestoneId' in value) {
+        const milestoneId = value.milestoneId == null ? null : Number(value.milestoneId);
+        const match =
+          milestoneId == null
+            ? undefined
+            : projects
+                .flatMap((project) =>
+                  project.milestones.map((milestone) => ({ project, milestone })),
+                )
+                .find(({ milestone }) => milestone.id === milestoneId);
+        if (milestoneId != null && !match) return json({ error: 'invalid milestone' }, 400);
+        if (match && item.projectId != null && item.projectId !== match.project.id)
+          return json({ error: 'milestone must belong to the issue project' }, 400);
+        item.milestoneId = match?.milestone.id ?? null;
+        item.milestoneName = match?.milestone.name ?? null;
+        if (match) {
+          item.projectId = match.project.id;
+          item.projectSlug = match.project.slug;
+        }
+      }
+    }
     return json(item);
+  }
+  match = path.match(/^\/api\/issues\/([^/]+)\/links(?:\/([^/]+))?$/);
+  if (match) {
+    const item = findIssue(decodeURIComponent(match[1]!));
+    if (!item) return notFound();
+    const matchedLinkId = match[2];
+    if (matchedLinkId) {
+      if (method !== 'DELETE') return notFound();
+      const index = item.externalLinks.findIndex((link) => link.id === Number(matchedLinkId));
+      if (index < 0) return notFound();
+      item.externalLinks.splice(index, 1);
+      patch(item, {});
+      return json(null, 204);
+    }
+    if (method !== 'POST') return notFound();
+    const value = body(init);
+    const url = text(value.url).trim();
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return json({ error: 'invalid URL' }, 400);
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) return json({ error: 'invalid URL' }, 400);
+    const kind = text(value.kind) || 'link';
+    if (!['link', 'pullRequest', 'document'].includes(kind))
+      return json({ error: 'invalid link kind' }, 400);
+    if (item.externalLinks.some((link) => link.url === url))
+      return json({ error: 'link already exists' }, 409);
+    const link = {
+      id: Math.max(0, ...item.externalLinks.map((existing) => existing.id)) + 1,
+      url,
+      title: text(value.title).trim() || undefined,
+      kind: kind as IssueLink['kind'],
+      createdAt: new Date().toISOString(),
+    };
+    item.externalLinks.push(link);
+    patch(item, {});
+    return json(link, 201);
+  }
+  match = path.match(/^\/api\/issues\/([^/]+)\/relations(?:\/([^/]+))?$/);
+  if (match) {
+    const item = findIssue(decodeURIComponent(match[1]!));
+    if (!item) return notFound();
+    const relationId = match[2];
+    if (relationId) {
+      if (method !== 'DELETE') return notFound();
+      const index = item.relations.findIndex((relation) => relation.id === Number(relationId));
+      if (index < 0) return notFound();
+      const [relation] = item.relations.splice(index, 1);
+      const target = findIssue(relation!.targetIdentifier);
+      if (target) {
+        const inverseIndex = target.relations.findIndex(
+          (candidate) =>
+            candidate.kind === reverseRelation(relation!.kind) &&
+            candidate.targetIdentifier === item.identifier,
+        );
+        if (inverseIndex >= 0) target.relations.splice(inverseIndex, 1);
+        patch(target, {});
+      }
+      patch(item, {});
+      return json(null, 204);
+    }
+    if (method !== 'POST') return notFound();
+    const value = body(init);
+    const target = findIssue(text(value.targetIdentifier));
+    const kind = text(value.kind) as IssueRelation['kind'];
+    if (!target || target === item) return json({ error: 'invalid related issue' }, 400);
+    if (!['related', 'blocks', 'blockedBy', 'duplicateOf', 'duplicateBy'].includes(kind))
+      return json({ error: 'invalid relation kind' }, 400);
+    if (
+      item.relations.some(
+        (relation) =>
+          relation.targetIdentifier === target.identifier &&
+          (relation.kind === kind || reverseRelation(relation.kind) === kind),
+      )
+    )
+      return json({ error: 'issue relation already exists' }, 409);
+    const relation: IssueRelation = {
+      id: Math.max(0, ...item.relations.map((existing) => existing.id)) + 1,
+      kind,
+      targetIdentifier: target.identifier,
+    };
+    const inverse: IssueRelation = {
+      id: Math.max(0, ...target.relations.map((existing) => existing.id)) + 1,
+      kind: reverseRelation(kind),
+      targetIdentifier: item.identifier,
+    };
+    item.relations.push(relation);
+    target.relations.push(inverse);
+    patch(item, {});
+    patch(target, {});
+    return json(relation, 201);
   }
   match = path.match(/^\/api\/issues\/([^/]+)\/(comments|activities)$/);
   if (match) {
@@ -323,6 +915,23 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const value = body(init);
     const id = Math.max(0, ...collection.map((x) => x.id)) + 1;
     const created = { ...value, id, createdAt: now, updatedAt: now } as never;
+    if (path === '/api/cycles')
+      Object.assign(created, {
+        number: Math.max(0, ...cycles.map((cycle) => cycle.number)) + 1,
+        name: `Cycle ${Math.max(0, ...cycles.map((cycle) => cycle.number)) + 1}`,
+        description: '',
+        startsAt: value.startsAt,
+        endsAt: value.endsAt,
+        status: value.status ?? 'upcoming',
+        isFavorite: false,
+        resources: [],
+      });
+    if (path === '/api/projects')
+      Object.assign(created, {
+        priority: value.priority ?? 0,
+        labels: value.labels ?? [],
+        milestones: [],
+      });
     if (path === '/api/adrs')
       Object.assign(created, {
         number: id,
@@ -349,16 +958,144 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       Object.assign(created, {
         display: value.display ?? 'list',
         groupBy: value.groupBy ?? 'status',
+        subGroupBy: value.subGroupBy ?? 'none',
         orderBy: value.orderBy ?? 'manual',
+        direction: value.direction ?? 'asc',
+        completedIssues: value.completedIssues ?? 'all',
+        showSubIssues: value.showSubIssues ?? true,
+        nestedSubIssues: value.nestedSubIssues ?? 'showMatching',
+        showEmptyGroups: value.showEmptyGroups ?? false,
+        displayProperties: value.displayProperties ?? [
+          'id',
+          'status',
+          'priority',
+          'project',
+          'dueDate',
+          'milestone',
+          'cycle',
+          'estimate',
+          'labels',
+          'links',
+          'pullRequests',
+        ],
         status: value.status ?? null,
         project: value.project ?? null,
         cycle: value.cycle ?? null,
         labels: value.labels ?? [],
         priority: value.priority ?? null,
+        type: value.type ?? null,
+        estimate: value.estimate ?? null,
+        projectStatus: value.projectStatus ?? null,
+        projectPriority: value.projectPriority ?? null,
+        projectLabels: value.projectLabels ?? [],
+        addedToCycle: value.addedToCycle ?? [],
       });
     (collection as unknown[]).push(created);
     revision += 1;
     return json(created, 201);
+  }
+  match = path.match(/^\/api\/cycles\/([^/]+)\/links(?:\/([^/]+))?$/);
+  if (match) {
+    const cycle = cycles.find((item) => item.number === Number(match![1]));
+    if (!cycle) return notFound();
+    const resourceId = match[2] == null ? null : Number(match[2]);
+    if (match[2] != null && !Number.isSafeInteger(resourceId))
+      return json({ error: 'invalid resource id' }, 400);
+    if (method === 'POST' && resourceId == null) {
+      const value = body(init);
+      const resourceURL = text(value.url).trim();
+      let parsed: URL;
+      try {
+        parsed = new URL(resourceURL);
+      } catch {
+        return json({ error: 'link URL must be an absolute http or https URL' }, 400);
+      }
+      if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || !parsed.host)
+        return json({ error: 'link URL must be an absolute http or https URL' }, 400);
+      const kind = text(value.kind) || 'link';
+      if (kind !== 'link' && kind !== 'document')
+        return json({ error: 'invalid cycle resource kind' }, 400);
+      const resources = (cycle.resources ??= []);
+      if (resources.some((resource) => resource.url === resourceURL))
+        return json({ error: 'resource already exists' }, 409);
+      const resource: IssueLink = {
+        id: Math.max(0, ...resources.map((item) => item.id)) + 1,
+        url: resourceURL,
+        title: text(value.title).trim(),
+        kind,
+        createdAt: new Date().toISOString(),
+      };
+      resources.push(resource);
+      patch(cycle, {});
+      return json(resource, 201);
+    }
+    if (method === 'DELETE' && resourceId != null) {
+      const resources = (cycle.resources ??= []);
+      const index = resources.findIndex((resource) => resource.id === resourceId);
+      if (index < 0) return notFound();
+      resources.splice(index, 1);
+      patch(cycle, {});
+      return json(null, 204);
+    }
+    return notFound();
+  }
+  match = path.match(/^\/api\/projects\/([^/]+)\/milestones(?:\/([^/]+))?$/);
+  if (match) {
+    const projectSlug = decodeURIComponent(match[1]!);
+    const project = projects.find((item) => item.slug === projectSlug);
+    if (!project) return notFound();
+    const milestoneId = match[2] == null ? null : Number(match[2]);
+    if (milestoneId != null && !Number.isSafeInteger(milestoneId))
+      return json({ error: 'invalid milestone id' }, 400);
+    if (milestoneId == null && method === 'POST') {
+      const value = body(init);
+      const name = text(value.name).trim();
+      if (!name) return json({ error: 'milestone name required' }, 400);
+      const created = {
+        id:
+          Math.max(
+            0,
+            ...projects.flatMap((item) => item.milestones.map((milestone) => milestone.id)),
+          ) + 1,
+        name,
+        targetDate: text(value.targetDate) || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      project.milestones.push(created);
+      patch(project, {});
+      return json(created, 201);
+    }
+    const milestoneIndex = project.milestones.findIndex((item) => item.id === milestoneId);
+    if (milestoneIndex < 0) return notFound();
+    if (method === 'DELETE') {
+      project.milestones.splice(milestoneIndex, 1);
+      for (const issue of issues) {
+        if (issue.milestoneId === milestoneId) {
+          issue.milestoneId = null;
+          issue.milestoneName = null;
+        }
+      }
+      patch(project, {});
+      return json(null, 204);
+    }
+    if (method === 'PATCH') {
+      const value = body(init);
+      const milestone = project.milestones[milestoneIndex]!;
+      if ('name' in value) {
+        const name = text(value.name).trim();
+        if (!name) return json({ error: 'milestone name required' }, 400);
+        milestone.name = name;
+        for (const issue of issues) {
+          if (issue.milestoneId === milestoneId) issue.milestoneName = name;
+        }
+      }
+      if ('targetDate' in value) milestone.targetDate = text(value.targetDate) || null;
+      milestone.updatedAt = new Date().toISOString();
+      patch(project, {});
+      return json(milestone);
+    }
+    return notFound();
   }
   match = path.match(/^\/api\/(projects|cycles|pages|adrs|views)\/([^/]+)(?:\/(publish))?$/);
   if (match) {

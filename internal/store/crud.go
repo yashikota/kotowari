@@ -2,9 +2,12 @@ package store
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/yashikota/kotowari/internal/domain"
 )
@@ -121,6 +124,9 @@ func (s *Store) ListProjects() ([]Project, error) {
 		copy(out, m.Projects)
 		for i := range out {
 			out[i].Progress = projectProgress(m, out[i].ID)
+			if out[i].Labels == nil {
+				out[i].Labels = []string{}
+			}
 		}
 		return nil
 	})
@@ -135,6 +141,9 @@ func (s *Store) GetProject(slug string) (Project, error) {
 			return ErrNotFound
 		}
 		got.Progress = projectProgress(m, got.ID)
+		if got.Labels == nil {
+			got.Labels = []string{}
+		}
 		p = got
 		return nil
 	})
@@ -142,6 +151,10 @@ func (s *Store) GetProject(slug string) (Project, error) {
 }
 
 func (s *Store) CreateProject(name, slug, description, status string, start, target *string) (Project, error) {
+	return s.CreateProjectWithPriority(name, slug, description, status, 0, start, target)
+}
+
+func (s *Store) CreateProjectWithPriority(name, slug, description, status string, priority int, start, target *string) (Project, error) {
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
@@ -156,6 +169,12 @@ func (s *Store) CreateProject(name, slug, description, status string, start, tar
 	if !domain.ValidProjectStatus(status) {
 		return Project{}, validationf("invalid status")
 	}
+	if !domain.ValidPriority(priority) {
+		return Project{}, validationf("invalid priority")
+	}
+	if !validMilestoneDate(start) || !validMilestoneDate(target) {
+		return Project{}, validationf("project dates must use YYYY-MM-DD")
+	}
 	now := domain.Now()
 	var out Project
 	err := s.mutate(func(m *mem) error {
@@ -164,7 +183,8 @@ func (s *Store) CreateProject(name, slug, description, status string, start, tar
 		}
 		out = Project{
 			ID: m.nextID(), Name: name, Slug: slug, Description: description, Status: status,
-			StartDate: start, TargetDate: target, CreatedAt: now, UpdatedAt: now,
+			Priority: priority, StartDate: start, TargetDate: target,
+			Labels: []string{}, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
 		}
 		m.Projects = append(m.Projects, out)
 		addActivity(m, "project", out.ID, "created", map[string]any{"slug": slug}, now)
@@ -174,7 +194,141 @@ func (s *Store) CreateProject(name, slug, description, status string, start, tar
 	return out, err
 }
 
-func (s *Store) UpdateProject(slug string, name, description, status *string, start, target **string) (Project, error) {
+func validMilestoneDate(value *string) bool {
+	if value == nil || strings.TrimSpace(*value) == "" {
+		return true
+	}
+	parsed, err := time.Parse("2006-01-02", strings.TrimSpace(*value))
+	return err == nil && parsed.Format("2006-01-02") == strings.TrimSpace(*value)
+}
+
+func (s *Store) CreateMilestone(projectSlug, name string, targetDate *string) (Milestone, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return Milestone{}, validationf("milestone name required")
+	}
+	if !validMilestoneDate(targetDate) {
+		return Milestone{}, validationf("invalid milestone target date")
+	}
+	var out Milestone
+	err := s.mutate(func(m *mem) error {
+		projectIndex := indexProject(m, projectSlug)
+		if projectIndex < 0 {
+			return ErrNotFound
+		}
+		project := m.Projects[projectIndex]
+		for _, existing := range project.Milestones {
+			if strings.EqualFold(existing.Name, name) {
+				return errf(ErrConflict, "milestone name")
+			}
+		}
+		now := domain.Now()
+		out = Milestone{ID: m.nextID(), Name: name, TargetDate: targetDate, CreatedAt: now, UpdatedAt: now}
+		project.Milestones = append(project.Milestones, out)
+		project.UpdatedAt = now
+		m.Projects[projectIndex] = project
+		addActivity(m, "project", project.ID, "milestone_created", map[string]any{"milestoneId": out.ID, "name": out.Name}, now)
+		m.bump(now)
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) UpdateMilestone(projectSlug string, milestoneID int64, name *string, targetDate **string) (Milestone, error) {
+	if name != nil && strings.TrimSpace(*name) == "" {
+		return Milestone{}, validationf("milestone name required")
+	}
+	if targetDate != nil && !validMilestoneDate(*targetDate) {
+		return Milestone{}, validationf("invalid milestone target date")
+	}
+	var out Milestone
+	err := s.mutate(func(m *mem) error {
+		projectIndex := indexProject(m, projectSlug)
+		if projectIndex < 0 {
+			return ErrNotFound
+		}
+		project := m.Projects[projectIndex]
+		milestoneIndex := -1
+		for i := range project.Milestones {
+			if project.Milestones[i].ID == milestoneID {
+				milestoneIndex = i
+				break
+			}
+		}
+		if milestoneIndex < 0 {
+			return ErrNotFound
+		}
+		milestone := project.Milestones[milestoneIndex]
+		if name != nil {
+			nextName := strings.TrimSpace(*name)
+			for i, existing := range project.Milestones {
+				if i != milestoneIndex && strings.EqualFold(existing.Name, nextName) {
+					return errf(ErrConflict, "milestone name")
+				}
+			}
+			milestone.Name = nextName
+		}
+		if targetDate != nil {
+			milestone.TargetDate = *targetDate
+		}
+		now := domain.Now()
+		milestone.UpdatedAt = now
+		project.Milestones[milestoneIndex] = milestone
+		project.UpdatedAt = now
+		m.Projects[projectIndex] = project
+		for i := range m.Issues {
+			if m.Issues[i].MilestoneID != nil && *m.Issues[i].MilestoneID == milestone.ID {
+				if name != nil {
+					newName := milestone.Name
+					m.Issues[i].MilestoneName = &newName
+				}
+				m.Issues[i].UpdatedAt = now
+			}
+		}
+		addActivity(m, "project", project.ID, "milestone_updated", map[string]any{"milestoneId": milestone.ID, "name": milestone.Name}, now)
+		m.bump(now)
+		out = milestone
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) DeleteMilestone(projectSlug string, milestoneID int64) error {
+	return s.mutate(func(m *mem) error {
+		projectIndex := indexProject(m, projectSlug)
+		if projectIndex < 0 {
+			return ErrNotFound
+		}
+		project := m.Projects[projectIndex]
+		milestoneIndex := -1
+		for i := range project.Milestones {
+			if project.Milestones[i].ID == milestoneID {
+				milestoneIndex = i
+				break
+			}
+		}
+		if milestoneIndex < 0 {
+			return ErrNotFound
+		}
+		milestone := project.Milestones[milestoneIndex]
+		project.Milestones = append(project.Milestones[:milestoneIndex], project.Milestones[milestoneIndex+1:]...)
+		now := domain.Now()
+		project.UpdatedAt = now
+		m.Projects[projectIndex] = project
+		for i := range m.Issues {
+			if m.Issues[i].MilestoneID != nil && *m.Issues[i].MilestoneID == milestone.ID {
+				m.Issues[i].MilestoneID = nil
+				m.Issues[i].MilestoneName = nil
+				m.Issues[i].UpdatedAt = now
+			}
+		}
+		addActivity(m, "project", project.ID, "milestone_deleted", map[string]any{"milestoneId": milestone.ID, "name": milestone.Name}, now)
+		m.bump(now)
+		return nil
+	})
+}
+
+func (s *Store) UpdateProject(slug string, name, description, status *string, priority *int, start, target **string, labels *[]string) (Project, error) {
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)
@@ -197,11 +351,48 @@ func (s *Store) UpdateProject(slug string, name, description, status *string, st
 			}
 			p.Status = *status
 		}
+		if priority != nil {
+			if !domain.ValidPriority(*priority) {
+				return validationf("invalid priority")
+			}
+			p.Priority = *priority
+		}
 		if start != nil {
+			if !validMilestoneDate(*start) {
+				return validationf("project dates must use YYYY-MM-DD")
+			}
 			p.StartDate = *start
 		}
 		if target != nil {
+			if !validMilestoneDate(*target) {
+				return validationf("project dates must use YYYY-MM-DD")
+			}
 			p.TargetDate = *target
+		}
+		if labels != nil {
+			available := make(map[string]string, len(m.Labels))
+			for _, label := range m.Labels {
+				available[strings.ToLower(label.Name)] = label.Name
+			}
+			seen := make(map[string]struct{}, len(*labels))
+			nextLabels := make([]string, 0, len(*labels))
+			for _, label := range *labels {
+				name := strings.TrimSpace(label)
+				if name == "" {
+					return validationf("project labels must not be empty")
+				}
+				canonical, ok := available[strings.ToLower(name)]
+				if !ok {
+					return validationf("unknown project label %q", name)
+				}
+				key := strings.ToLower(canonical)
+				if _, ok := seen[key]; ok {
+					continue
+				}
+				seen[key] = struct{}{}
+				nextLabels = append(nextLabels, canonical)
+			}
+			p.Labels = nextLabels
 		}
 		now := domain.Now()
 		p.UpdatedAt = now
@@ -237,6 +428,8 @@ func (s *Store) DeleteProject(slug string) error {
 			if m.Issues[j].ProjectID != nil && *m.Issues[j].ProjectID == id {
 				m.Issues[j].ProjectID = nil
 				m.Issues[j].ProjectSlug = nil
+				m.Issues[j].MilestoneID = nil
+				m.Issues[j].MilestoneName = nil
 			}
 		}
 		m.bump(domain.Now())
@@ -248,6 +441,11 @@ func (s *Store) ListCycles() ([]Cycle, error) {
 	var out []Cycle
 	err := s.snapshot(func(m *mem) error {
 		out = append([]Cycle{}, m.Cycles...)
+		for i := range out {
+			if out[i].Resources == nil {
+				out[i].Resources = []IssueLink{}
+			}
+		}
 		return nil
 	})
 	return out, err
@@ -261,6 +459,9 @@ func (s *Store) GetCycle(number int) (Cycle, error) {
 			return ErrNotFound
 		}
 		c = got
+		if c.Resources == nil {
+			c.Resources = []IssueLink{}
+		}
 		return nil
 	})
 	return c, err
@@ -292,7 +493,12 @@ func (s *Store) CreateCycle(startsAt, endsAt, status string) (Cycle, error) {
 			status = "active"
 		}
 		ensureSingleActive(m, 0, status)
-		out = Cycle{ID: m.nextID(), Number: next, StartsAt: startsAt, EndsAt: endsAt, Status: status, CreatedAt: now, UpdatedAt: now}
+		start, _ := time.Parse(time.RFC3339, startsAt)
+		end, _ := time.Parse(time.RFC3339, endsAt)
+		if !end.After(start) {
+			return validationf("cycle end must be after start")
+		}
+		out = Cycle{ID: m.nextID(), Number: next, Name: fmt.Sprintf("Cycle %d", next), StartsAt: startsAt, EndsAt: endsAt, Status: status, Resources: []IssueLink{}, CreatedAt: now, UpdatedAt: now}
 		m.Cycles = append(m.Cycles, out)
 		addActivity(m, "cycle", out.ID, "created", map[string]any{"number": next}, now)
 		m.bump(now)
@@ -301,7 +507,74 @@ func (s *Store) CreateCycle(startsAt, endsAt, status string) (Cycle, error) {
 	return out, err
 }
 
-func (s *Store) UpdateCycle(number int, startsAt, endsAt, status *string) (Cycle, error) {
+func (s *Store) AddCycleLink(number int, in CreateIssueLinkInput) (IssueLink, error) {
+	in.URL = strings.TrimSpace(in.URL)
+	in.Title = strings.TrimSpace(in.Title)
+	in.Kind = strings.TrimSpace(in.Kind)
+	parsed, err := url.Parse(in.URL)
+	if err != nil || !parsed.IsAbs() || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return IssueLink{}, validationf("link URL must be an absolute http or https URL")
+	}
+	if in.Kind == "" {
+		in.Kind = "link"
+	}
+	if in.Kind != "link" && in.Kind != "document" {
+		return IssueLink{}, validationf("invalid cycle resource kind")
+	}
+	var out IssueLink
+	err = s.mutate(func(m *mem) error {
+		i := indexCycle(m, number)
+		if i < 0 {
+			return ErrNotFound
+		}
+		cycle := m.Cycles[i]
+		for _, existing := range cycle.Resources {
+			if existing.URL == in.URL {
+				return errf(ErrConflict, "resource already exists")
+			}
+		}
+		var id int64 = 1
+		for _, existing := range cycle.Resources {
+			if existing.ID >= id {
+				id = existing.ID + 1
+			}
+		}
+		now := domain.Now()
+		out = IssueLink{ID: id, URL: in.URL, Title: in.Title, Kind: in.Kind, CreatedAt: now}
+		cycle.Resources = append(cycle.Resources, out)
+		cycle.UpdatedAt = now
+		m.Cycles[i] = cycle
+		m.bump(now)
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) RemoveCycleLink(number int, linkID int64) error {
+	if linkID < 1 {
+		return validationf("invalid resource id")
+	}
+	return s.mutate(func(m *mem) error {
+		i := indexCycle(m, number)
+		if i < 0 {
+			return ErrNotFound
+		}
+		cycle := m.Cycles[i]
+		for index, resource := range cycle.Resources {
+			if resource.ID != linkID {
+				continue
+			}
+			cycle.Resources = append(cycle.Resources[:index], cycle.Resources[index+1:]...)
+			cycle.UpdatedAt = domain.Now()
+			m.Cycles[i] = cycle
+			m.bump(cycle.UpdatedAt)
+			return nil
+		}
+		return ErrNotFound
+	})
+}
+
+func (s *Store) UpdateCycle(number int, in UpdateCycleInput) (Cycle, error) {
 	var out Cycle
 	err := s.mutate(func(m *mem) error {
 		i := indexCycle(m, number)
@@ -309,23 +582,47 @@ func (s *Store) UpdateCycle(number int, startsAt, endsAt, status *string) (Cycle
 			return ErrNotFound
 		}
 		c := m.Cycles[i]
-		if startsAt != nil {
-			if err := parseTime(*startsAt); err != nil {
+		if c.Name == "" {
+			c.Name = fmt.Sprintf("Cycle %d", c.Number)
+		}
+		if in.Name != nil {
+			name := strings.TrimSpace(*in.Name)
+			if name == "" || len(name) > 512 {
+				return validationf("invalid cycle name")
+			}
+			c.Name = name
+		}
+		if in.Description != nil {
+			if len(*in.Description) > 20000 {
+				return validationf("cycle description is too long")
+			}
+			c.Description = *in.Description
+		}
+		if in.StartsAt != nil {
+			if err := parseTime(*in.StartsAt); err != nil {
 				return err
 			}
-			c.StartsAt = *startsAt
+			c.StartsAt = *in.StartsAt
 		}
-		if endsAt != nil {
-			if err := parseTime(*endsAt); err != nil {
+		if in.EndsAt != nil {
+			if err := parseTime(*in.EndsAt); err != nil {
 				return err
 			}
-			c.EndsAt = *endsAt
+			c.EndsAt = *in.EndsAt
 		}
-		if status != nil {
-			if !domain.ValidCycleStatus(*status) {
+		start, _ := time.Parse(time.RFC3339, c.StartsAt)
+		end, _ := time.Parse(time.RFC3339, c.EndsAt)
+		if !end.After(start) {
+			return validationf("cycle end must be after start")
+		}
+		if in.Status != nil {
+			if !domain.ValidCycleStatus(*in.Status) {
 				return validationf("invalid status")
 			}
-			c.Status = *status
+			c.Status = *in.Status
+		}
+		if in.IsFavorite != nil {
+			c.IsFavorite = *in.IsFavorite
 		}
 		now := domain.Now()
 		ensureSingleActive(m, c.ID, c.Status)
@@ -353,8 +650,144 @@ func ensureSingleActive(m *mem, id int64, status string) {
 
 func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	var out []Issue
+	if f.ProjectStatus != "" && !domain.ValidProjectStatus(f.ProjectStatus) {
+		return nil, validationf("invalid project status")
+	}
+	if f.ProjectPriority != nil && !domain.ValidPriority(*f.ProjectPriority) {
+		return nil, validationf("invalid project priority")
+	}
+	if utf8.RuneCountInString(f.Content) > 512 {
+		return nil, validationf("content filter is too long")
+	}
+	if utf8.RuneCountInString(f.MilestoneName) > 512 {
+		return nil, validationf("milestone name filter is too long")
+	}
+	if len(f.ProjectLabels) > 32 {
+		return nil, validationf("too many project labels in filter")
+	}
+	for _, name := range f.ProjectLabels {
+		if utf8.RuneCountInString(name) > 100 {
+			return nil, validationf("project label filter is too long")
+		}
+	}
+	if err := validateAddedToCycle(f.AddedToCycle); err != nil {
+		return nil, err
+	}
+	if !domain.ValidIssueRelationFilter(f.Relation) {
+		return nil, validationf("invalid issue relation filter")
+	}
+	asOf := f.DueDateAsOf
+	if f.DueDate != "" && !domain.ValidDueDateFilter(f.DueDate) {
+		return nil, validationf("invalid due date filter")
+	}
+	if asOf != "" && !domain.ValidDate(asOf) {
+		return nil, validationf("invalid date filter anchor")
+	}
+	if asOf == "" {
+		asOf = domain.Now()[:10]
+	}
+	dateAsOf := f.DateAsOf
+	if dateAsOf == "" {
+		dateAsOf = asOf
+	}
+	if !domain.ValidIssueDateFilter(f.DateField, f.DateRange) {
+		return nil, validationf("invalid issue date filter")
+	}
+	if dateAsOf != "" && !domain.ValidDate(dateAsOf) {
+		return nil, validationf("invalid date filter anchor")
+	}
+	rangeDays := map[string]int{"tomorrow": 1, "threeDays": 3, "week": 7, "month": 30, "quarter": 90}
+	rangeEnd := ""
+	if days := rangeDays[f.DueDate]; days > 0 {
+		day, err := time.Parse("2006-01-02", asOf)
+		if err != nil {
+			return nil, validationf("invalid date filter anchor")
+		}
+		rangeEnd = day.AddDate(0, 0, days).Format("2006-01-02")
+	}
+	dateRangeDays := map[string]int{"dayAgo": 1, "threeDaysAgo": 3, "weekAgo": 7, "twoWeeksAgo": 14, "monthAgo": 30, "quarterAgo": 90, "halfYearAgo": 180, "yearAgo": 365}
+	statusAgeDays := map[string]int{"dayAgo": 1, "weekAgo": 7, "twoWeeksAgo": 14, "monthAgo": 30, "quarterAgo": 90, "halfYearAgo": 180}
+	statusAgeAnchor := time.Now().UTC()
+	dateRangeStart := ""
+	if days := dateRangeDays[f.DateRange]; days > 0 {
+		day, err := time.Parse("2006-01-02", dateAsOf)
+		if err != nil {
+			return nil, validationf("invalid date filter anchor")
+		}
+		dateRangeStart = day.AddDate(0, 0, -days).Format("2006-01-02")
+	}
+	customDueDate := strings.TrimPrefix(f.DueDate, "on:")
 	err := s.snapshot(func(m *mem) error {
 		for _, iss := range m.Issues {
+			if f.DateRange != "" {
+				date := ""
+				switch f.DateField {
+				case "createdAt":
+					date = iss.CreatedAt
+				case "updatedAt":
+					date = iss.UpdatedAt
+				case "startedAt":
+					if iss.StartedAt != nil {
+						date = *iss.StartedAt
+					}
+				case "completedAt":
+					if iss.CompletedAt != nil {
+						date = *iss.CompletedAt
+					}
+				case "timeInCurrentStatus":
+					date = iss.StatusChangedAt
+				}
+				if f.DateField == "timeInCurrentStatus" {
+					changedAt, err := time.Parse(time.RFC3339, date)
+					if err != nil || changedAt.After(statusAgeAnchor.Add(-time.Duration(statusAgeDays[f.DateRange])*24*time.Hour)) {
+						continue
+					}
+				} else {
+					if len(date) > 10 {
+						date = date[:10]
+					}
+					matches := false
+					if strings.HasPrefix(f.DateRange, "on:") {
+						matches = date == strings.TrimPrefix(f.DateRange, "on:")
+					} else if dateRangeStart != "" {
+						matches = date != "" && date >= dateRangeStart && date <= dateAsOf
+					}
+					if !matches {
+						continue
+					}
+				}
+			}
+			if f.Content != "" {
+				needle := strings.ToLower(strings.TrimSpace(f.Content))
+				if !strings.Contains(strings.ToLower(iss.Title), needle) &&
+					!strings.Contains(strings.ToLower(iss.Identifier), needle) &&
+					!strings.Contains(strings.ToLower(iss.Body), needle) {
+					continue
+				}
+			}
+			if f.MilestoneName != "" && (iss.MilestoneName == nil || !strings.Contains(strings.ToLower(*iss.MilestoneName), strings.ToLower(strings.TrimSpace(f.MilestoneName)))) {
+				continue
+			}
+			if f.Relation != "" && !matchesIssueRelationFilter(m, iss, f.Relation) {
+				continue
+			}
+			if f.DueDate != "" {
+				date := ""
+				if iss.DueDate != nil {
+					date = *iss.DueDate
+					if len(date) > 10 {
+						date = date[:10]
+					}
+				}
+				matches := f.DueDate == "none" && date == "" ||
+					f.DueDate == "overdue" && date != "" && date < asOf && iss.Status != "done" && iss.Status != "canceled" ||
+					f.DueDate == "today" && date == asOf ||
+					strings.HasPrefix(f.DueDate, "on:") && date == customDueDate ||
+					rangeEnd != "" && date > asOf && date <= rangeEnd
+				if !matches {
+					continue
+				}
+			}
 			if f.Status != "" && iss.Status != f.Status {
 				continue
 			}
@@ -364,6 +797,56 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 						continue
 					}
 				} else {
+					continue
+				}
+			}
+			if f.ProjectStatus != "" || f.ProjectPriority != nil {
+				project, found := Project{}, false
+				if iss.ProjectID != nil {
+					project, found = projectByID(m, *iss.ProjectID)
+				}
+				if !found && iss.ProjectSlug != nil {
+					for _, candidate := range m.Projects {
+						if candidate.Slug == *iss.ProjectSlug {
+							project, found = candidate, true
+							break
+						}
+					}
+				}
+				if !found || (f.ProjectStatus != "" && project.Status != f.ProjectStatus) ||
+					(f.ProjectPriority != nil && project.Priority != *f.ProjectPriority) {
+					continue
+				}
+			}
+			if len(f.ProjectLabels) > 0 {
+				project, found := Project{}, false
+				if iss.ProjectID != nil {
+					project, found = projectByID(m, *iss.ProjectID)
+				}
+				if !found && iss.ProjectSlug != nil {
+					project, found = projectBySlug(m, *iss.ProjectSlug)
+				}
+				if !found {
+					continue
+				}
+				have := make(map[string]struct{}, len(project.Labels))
+				for _, name := range project.Labels {
+					have[strings.ToLower(name)] = struct{}{}
+				}
+				matches := true
+				for _, name := range f.ProjectLabels {
+					if name == "__none__" {
+						if len(have) != 0 {
+							matches = false
+						}
+						continue
+					}
+					if _, ok := have[strings.ToLower(name)]; !ok {
+						matches = false
+						break
+					}
+				}
+				if !matches {
 					continue
 				}
 			}
@@ -378,7 +861,29 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 					continue
 				}
 			}
+			if len(f.AddedToCycle) > 0 {
+				phase := addedToCyclePhase(m, iss)
+				matches := false
+				for _, wanted := range f.AddedToCycle {
+					if phase == wanted {
+						matches = true
+						break
+					}
+				}
+				if !matches {
+					continue
+				}
+			}
 			if f.Priority != nil && iss.Priority != *f.Priority {
+				continue
+			}
+			if f.Type != "" && iss.Type != f.Type {
+				continue
+			}
+			if f.Estimate != nil && (iss.Estimate == nil || *iss.Estimate != *f.Estimate) {
+				continue
+			}
+			if f.IsFavorite != nil && iss.IsFavorite != *f.IsFavorite {
 				continue
 			}
 			if len(f.Labels) > 0 {
@@ -408,6 +913,86 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	return out, err
 }
 
+func validateAddedToCycle(values []string) error {
+	if len(values) > 3 {
+		return validationf("too many added-to-cycle filters")
+	}
+	for _, value := range values {
+		if value != "planned" && value != "during" && value != "after" {
+			return validationf("invalid added-to-cycle filter")
+		}
+	}
+	return nil
+}
+
+func addedToCyclePhase(m *mem, issue Issue) string {
+	cycle, found := Cycle{}, false
+	if issue.CycleID != nil {
+		cycle, found = cycleByID(m, *issue.CycleID)
+	}
+	if !found && issue.CycleNumber != nil {
+		cycle, found = cycleByNumber(m, *issue.CycleNumber)
+	}
+	if !found {
+		return ""
+	}
+	addedAt := issue.CreatedAt
+	if issue.CycleAddedAt != nil {
+		addedAt = *issue.CycleAddedAt
+	}
+	added, addedErr := time.Parse(time.RFC3339, addedAt)
+	start, startErr := time.Parse(time.RFC3339, cycle.StartsAt)
+	end, endErr := time.Parse(time.RFC3339, cycle.EndsAt)
+	if addedErr != nil || startErr != nil || endErr != nil {
+		return ""
+	}
+	if added.Before(start) {
+		return "planned"
+	}
+	if added.After(end) {
+		return "after"
+	}
+	return "during"
+}
+
+func matchesIssueRelationFilter(m *mem, issue Issue, filter string) bool {
+	switch filter {
+	case "parent":
+		for _, child := range m.Issues {
+			if child.ParentID != nil && *child.ParentID == issue.ID {
+				return true
+			}
+		}
+		return false
+	case "subissue":
+		return issue.ParentID != nil
+	case "recurring":
+		return issue.RecurringSlug != nil
+	case "related":
+		return len(issue.Relations) > 0
+	case "blocked", "blocking", "duplicate":
+		for _, relation := range issue.Relations {
+			switch filter {
+			case "blocked":
+				if relation.Kind == "blockedBy" {
+					return true
+				}
+			case "blocking":
+				if relation.Kind == "blocks" {
+					return true
+				}
+			case "duplicate":
+				if relation.Kind == "duplicateOf" || relation.Kind == "duplicateBy" {
+					return true
+				}
+			}
+		}
+		return false
+	default:
+		return false
+	}
+}
+
 func (s *Store) GetIssue(identifier string) (Issue, error) {
 	var iss Issue
 	err := s.snapshot(func(m *mem) error {
@@ -435,6 +1020,12 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 	if !domain.ValidPriority(in.Priority) {
 		return Issue{}, validationf("invalid priority")
 	}
+	if !domain.ValidIssueType(in.Type) {
+		return Issue{}, validationf("invalid issue type")
+	}
+	if !domain.ValidEstimate(in.Estimate) {
+		return Issue{}, validationf("invalid estimate")
+	}
 	now := domain.Now()
 	if strings.TrimSpace(in.Body) == "" {
 		in.Body = templateBody(s.root, "ISSUE.md", "")
@@ -450,11 +1041,35 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 				sort = iss.SortOrder + 1
 			}
 		}
+		var startedAt *string
+		if in.Status == "in_progress" {
+			startedAt = &now
+		}
+		var cycleAddedAt *string
+		if in.CycleID != nil {
+			if _, ok := cycleByID(m, *in.CycleID); !ok {
+				return validationf("cycle not found")
+			}
+			cycleAddedAt = &now
+		}
 		out = Issue{
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
-			Status: in.Status, Priority: in.Priority, ProjectID: in.ProjectID, CycleID: in.CycleID,
-			DueDate: in.DueDate, SortOrder: sort, CreatedAt: now, UpdatedAt: now,
-			CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{},
+			Status: in.Status, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
+			DueDate: in.DueDate, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
+			StartedAt: startedAt, CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{},
+		}
+		if in.MilestoneID != nil {
+			p, milestone, ok := milestoneByID(m, *in.MilestoneID)
+			if !ok || (in.ProjectID != nil && *in.ProjectID != p.ID) {
+				return validationf("milestone must belong to the issue project")
+			}
+			projectID := p.ID
+			projectSlug := p.Slug
+			milestoneName := milestone.Name
+			out.ProjectID = &projectID
+			out.ProjectSlug = &projectSlug
+			out.MilestoneID = in.MilestoneID
+			out.MilestoneName = &milestoneName
 		}
 		if in.ProjectID != nil {
 			if p, ok := projectByID(m, *in.ProjectID); ok {
@@ -503,6 +1118,13 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		}
 		iss := m.Issues[i]
 		oldStatus := iss.Status
+		oldType := iss.Type
+		oldEstimate := iss.Estimate
+		oldFavorite := iss.IsFavorite
+		oldReminderAt := iss.ReminderAt
+		oldMilestoneID := iss.MilestoneID
+		oldMilestoneName := iss.MilestoneName
+		oldCycleID := iss.CycleID
 		if in.Title != nil {
 			if strings.TrimSpace(*in.Title) == "" {
 				return validationf("title required")
@@ -518,13 +1140,26 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			}
 			iss.Status = *in.Status
 		}
+		if in.Type != nil {
+			if !domain.ValidIssueType(*in.Type) {
+				return validationf("invalid issue type")
+			}
+			iss.Type = *in.Type
+		}
 		if in.Priority != nil {
 			if !domain.ValidPriority(*in.Priority) {
 				return validationf("invalid priority")
 			}
 			iss.Priority = *in.Priority
 		}
+		if in.Estimate != nil {
+			if !domain.ValidEstimate(*in.Estimate) {
+				return validationf("invalid estimate")
+			}
+			iss.Estimate = *in.Estimate
+		}
 		if in.ProjectID != nil {
+			oldProjectID := iss.ProjectID
 			iss.ProjectID = *in.ProjectID
 			iss.ProjectSlug = nil
 			if iss.ProjectID != nil {
@@ -533,15 +1168,37 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 					iss.ProjectSlug = &slug
 				}
 			}
+			if !sameInt64(oldProjectID, iss.ProjectID) {
+				iss.MilestoneID = nil
+				iss.MilestoneName = nil
+			}
+		}
+		if in.MilestoneID != nil {
+			iss.MilestoneID = *in.MilestoneID
+			iss.MilestoneName = nil
+			if iss.MilestoneID != nil {
+				p, milestone, ok := milestoneByID(m, *iss.MilestoneID)
+				if !ok || (iss.ProjectID != nil && *iss.ProjectID != p.ID) {
+					return validationf("milestone must belong to the issue project")
+				}
+				projectID := p.ID
+				projectSlug := p.Slug
+				milestoneName := milestone.Name
+				iss.ProjectID = &projectID
+				iss.ProjectSlug = &projectSlug
+				iss.MilestoneName = &milestoneName
+			}
 		}
 		if in.CycleID != nil {
 			iss.CycleID = *in.CycleID
 			iss.CycleNumber = nil
 			if iss.CycleID != nil {
-				if c, ok := cycleByID(m, *iss.CycleID); ok {
-					n := c.Number
-					iss.CycleNumber = &n
+				c, ok := cycleByID(m, *iss.CycleID)
+				if !ok {
+					return validationf("cycle not found")
 				}
+				n := c.Number
+				iss.CycleNumber = &n
 			}
 		}
 		if in.ParentID != nil {
@@ -560,10 +1217,37 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		if in.DueDate != nil {
 			iss.DueDate = *in.DueDate
 		}
+		if in.ReminderAt != nil {
+			iss.ReminderAt = *in.ReminderAt
+			if iss.ReminderAt != nil {
+				parsed, err := time.Parse(time.RFC3339, *iss.ReminderAt)
+				if err != nil {
+					return validationf("invalid reminder date")
+				}
+				value := parsed.UTC().Format(time.RFC3339)
+				iss.ReminderAt = &value
+			}
+		}
 		if in.SortOrder != nil {
 			iss.SortOrder = *in.SortOrder
 		}
+		if in.IsFavorite != nil {
+			iss.IsFavorite = *in.IsFavorite
+		}
 		now := domain.Now()
+		if !sameInt64(oldCycleID, iss.CycleID) {
+			if iss.CycleID == nil {
+				iss.CycleAddedAt = nil
+			} else {
+				iss.CycleAddedAt = &now
+			}
+		}
+		if iss.Status != oldStatus {
+			iss.StatusChangedAt = now
+			if iss.Status == "in_progress" && iss.StartedAt == nil {
+				iss.StartedAt = &now
+			}
+		}
 		iss.CompletedAt = completedAt(iss.Status, now, iss.CompletedAt)
 		iss.UpdatedAt = now
 		if in.LabelIDs != nil {
@@ -577,6 +1261,35 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		m.Issues[i] = iss
 		if in.Status != nil && *in.Status != oldStatus {
 			addActivity(m, "issue", iss.ID, "status_changed", map[string]any{"from": oldStatus, "to": iss.Status}, now)
+		}
+		if in.Type != nil && *in.Type != oldType {
+			addActivity(m, "issue", iss.ID, "type_changed", map[string]any{"from": oldType, "to": iss.Type}, now)
+		}
+		if in.Estimate != nil && !sameEstimate(oldEstimate, iss.Estimate) {
+			addActivity(m, "issue", iss.ID, "estimate_changed", map[string]any{"from": oldEstimate, "to": iss.Estimate}, now)
+		}
+		if in.IsFavorite != nil && oldFavorite != iss.IsFavorite {
+			addActivity(m, "issue", iss.ID, "favorite_changed", map[string]any{"favorite": iss.IsFavorite}, now)
+		}
+		if !sameString(oldReminderAt, iss.ReminderAt) {
+			from, to := "", ""
+			if oldReminderAt != nil {
+				from = *oldReminderAt
+			}
+			if iss.ReminderAt != nil {
+				to = *iss.ReminderAt
+			}
+			addActivity(m, "issue", iss.ID, "reminder_changed", map[string]any{"from": from, "to": to}, now)
+		}
+		if !sameInt64(oldMilestoneID, iss.MilestoneID) {
+			from, to := "", ""
+			if oldMilestoneName != nil {
+				from = *oldMilestoneName
+			}
+			if iss.MilestoneName != nil {
+				to = *iss.MilestoneName
+			}
+			addActivity(m, "issue", iss.ID, "milestone_changed", map[string]any{"from": from, "to": to}, now)
 		}
 		m.bump(now)
 		out = iss
@@ -593,9 +1306,17 @@ func (s *Store) DeleteIssue(identifier string) error {
 		}
 		deletedID := m.Issues[i].ID
 		deletedNum := m.Issues[i].Number
+		deletedIdentifier := m.Issues[i].Identifier
 		m.Issues = append(m.Issues[:i], m.Issues[i+1:]...)
 		delete(m.Comments, identifier)
 		for j := range m.Issues {
+			relations := m.Issues[j].Relations[:0]
+			for _, relation := range m.Issues[j].Relations {
+				if relation.TargetIdentifier != deletedIdentifier {
+					relations = append(relations, relation)
+				}
+			}
+			m.Issues[j].Relations = relations
 			if m.Issues[j].ParentID != nil && *m.Issues[j].ParentID == deletedID {
 				m.Issues[j].ParentID = nil
 				m.Issues[j].ParentIdentifier = nil
@@ -606,6 +1327,76 @@ func (s *Store) DeleteIssue(identifier string) error {
 		}
 		m.bump(domain.Now())
 		return nil
+	})
+}
+
+func (s *Store) AddIssueLink(identifier string, in CreateIssueLinkInput) (IssueLink, error) {
+	in.URL = strings.TrimSpace(in.URL)
+	in.Title = strings.TrimSpace(in.Title)
+	in.Kind = strings.TrimSpace(in.Kind)
+	parsed, err := url.Parse(in.URL)
+	if err != nil || !parsed.IsAbs() || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return IssueLink{}, validationf("link URL must be an absolute http or https URL")
+	}
+	if in.Kind == "" {
+		in.Kind = "link"
+	}
+	if in.Kind != "link" && in.Kind != "pullRequest" && in.Kind != "document" {
+		return IssueLink{}, validationf("invalid link kind")
+	}
+	var out IssueLink
+	err = s.mutate(func(m *mem) error {
+		i := indexIssue(m, identifier)
+		if i < 0 {
+			return ErrNotFound
+		}
+		iss := m.Issues[i]
+		for _, existing := range iss.ExternalLinks {
+			if existing.URL == in.URL {
+				return errf(ErrConflict, "link already exists")
+			}
+		}
+		var id int64 = 1
+		for _, existing := range iss.ExternalLinks {
+			if existing.ID >= id {
+				id = existing.ID + 1
+			}
+		}
+		now := domain.Now()
+		out = IssueLink{ID: id, URL: in.URL, Title: in.Title, Kind: in.Kind, CreatedAt: now}
+		iss.ExternalLinks = append(iss.ExternalLinks, out)
+		iss.UpdatedAt = now
+		m.Issues[i] = iss
+		addActivity(m, "issue", iss.ID, "link_added", map[string]any{"url": out.URL, "title": out.Title, "kind": out.Kind}, now)
+		m.bump(now)
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) RemoveIssueLink(identifier string, linkID int64) error {
+	if linkID < 1 {
+		return validationf("invalid link id")
+	}
+	return s.mutate(func(m *mem) error {
+		i := indexIssue(m, identifier)
+		if i < 0 {
+			return ErrNotFound
+		}
+		iss := m.Issues[i]
+		for index, link := range iss.ExternalLinks {
+			if link.ID != linkID {
+				continue
+			}
+			iss.ExternalLinks = append(iss.ExternalLinks[:index], iss.ExternalLinks[index+1:]...)
+			now := domain.Now()
+			iss.UpdatedAt = now
+			m.Issues[i] = iss
+			addActivity(m, "issue", iss.ID, "link_removed", map[string]any{"url": link.URL, "title": link.Title, "kind": link.Kind}, now)
+			m.bump(now)
+			return nil
+		}
+		return ErrNotFound
 	})
 }
 
@@ -961,11 +1752,104 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if !domain.ValidViewOrderBy(in.OrderBy) {
 		return View{}, validationf("invalid order by")
 	}
+	if in.SubGroupBy == "" {
+		in.SubGroupBy = "none"
+	}
+	if !domain.ValidViewGroupBy(in.SubGroupBy) {
+		return View{}, validationf("invalid sub-group by")
+	}
+	if in.Direction == "" {
+		in.Direction = "asc"
+	}
+	if !domain.ValidViewDirection(in.Direction) {
+		return View{}, validationf("invalid order direction")
+	}
+	if in.CompletedIssues == "" {
+		in.CompletedIssues = "all"
+	}
+	if !domain.ValidCompletedIssues(in.CompletedIssues) {
+		return View{}, validationf("invalid completed issues filter")
+	}
+	if in.NestedSubIssues == "" {
+		in.NestedSubIssues = "showMatching"
+	}
+	if !domain.ValidNestedSubIssues(in.NestedSubIssues) {
+		return View{}, validationf("invalid nested sub-issues mode")
+	}
 	if in.Status != nil && *in.Status != "" && !domain.ValidIssueStatus(*in.Status) {
 		return View{}, validationf("invalid status")
 	}
 	if in.Priority != nil && !domain.ValidPriority(*in.Priority) {
 		return View{}, validationf("invalid priority")
+	}
+	if in.Type != nil && !domain.ValidIssueType(*in.Type) {
+		return View{}, validationf("invalid issue type")
+	}
+	if !domain.ValidEstimate(in.Estimate) {
+		return View{}, validationf("invalid estimate")
+	}
+	if in.DueDate != nil && !domain.ValidDueDateFilter(*in.DueDate) {
+		return View{}, validationf("invalid due date filter")
+	}
+	if in.Relation != nil && !domain.ValidIssueRelationFilter(*in.Relation) {
+		return View{}, validationf("invalid issue relation filter")
+	}
+	if in.ProjectStatus != nil && *in.ProjectStatus != "" && !domain.ValidProjectStatus(*in.ProjectStatus) {
+		return View{}, validationf("invalid project status")
+	}
+	if in.ProjectPriority != nil && !domain.ValidPriority(*in.ProjectPriority) {
+		return View{}, validationf("invalid project priority")
+	}
+	if in.Content != nil {
+		content := *in.Content
+		if utf8.RuneCountInString(content) > 512 {
+			return View{}, validationf("content filter is too long")
+		}
+		if strings.TrimSpace(content) == "" {
+			in.Content = nil
+		}
+	}
+	if in.MilestoneName != nil {
+		milestoneName := *in.MilestoneName
+		if utf8.RuneCountInString(milestoneName) > 512 {
+			return View{}, validationf("milestone name filter is too long")
+		}
+		if strings.TrimSpace(milestoneName) == "" {
+			in.MilestoneName = nil
+		}
+	}
+	if len(in.ProjectLabels) > 32 {
+		return View{}, validationf("too many project labels in filter")
+	}
+	if err := validateAddedToCycle(in.AddedToCycle); err != nil {
+		return View{}, err
+	}
+	for _, name := range in.ProjectLabels {
+		if utf8.RuneCountInString(name) > 100 {
+			return View{}, validationf("project label filter is too long")
+		}
+	}
+	dateField, dateRange := "", ""
+	if in.DateField != nil {
+		dateField = *in.DateField
+	}
+	if in.DateRange != nil {
+		dateRange = *in.DateRange
+	}
+	if !domain.ValidIssueDateFilter(dateField, dateRange) {
+		return View{}, validationf("invalid issue date filter")
+	}
+	for _, property := range in.DisplayProperties {
+		if !domain.ValidDisplayProperty(property) {
+			return View{}, validationf("invalid display property")
+		}
+	}
+	if in.ShowSubIssues == nil {
+		showSubIssues := true
+		in.ShowSubIssues = &showSubIssues
+	}
+	if in.DisplayProperties == nil {
+		in.DisplayProperties = []string{"id", "status", "priority", "project", "dueDate", "milestone", "cycle", "estimate", "labels", "links", "pullRequests"}
 	}
 	now := domain.Now()
 	var out View
@@ -975,12 +1859,24 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 		}
 		out = View{
 			ID: m.nextID(), Name: in.Name, Slug: in.Slug, Display: in.Display,
-			GroupBy: in.GroupBy, OrderBy: in.OrderBy,
+			GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy, Direction: in.Direction,
+			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
+			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 			Status: in.Status, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
-			Priority: in.Priority, CreatedAt: now, UpdatedAt: now,
+			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, Content: in.Content, DateField: dateField, DateRange: dateRange,
+			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
+		}
+		if in.DueDate != nil {
+			out.DueDate = *in.DueDate
 		}
 		if out.Labels == nil {
 			out.Labels = []string{}
+		}
+		if out.ProjectLabels == nil {
+			out.ProjectLabels = []string{}
+		}
+		if out.AddedToCycle == nil {
+			out.AddedToCycle = []string{}
 		}
 		m.Views = append(m.Views, out)
 		m.bump(now)
@@ -1018,6 +1914,44 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 			}
 			v.OrderBy = in.OrderBy
 		}
+		if in.SubGroupBy != "" {
+			if !domain.ValidViewGroupBy(in.SubGroupBy) {
+				return validationf("invalid sub-group by")
+			}
+			v.SubGroupBy = in.SubGroupBy
+		}
+		if in.Direction != "" {
+			if !domain.ValidViewDirection(in.Direction) {
+				return validationf("invalid order direction")
+			}
+			v.Direction = in.Direction
+		}
+		if in.CompletedIssues != "" {
+			if !domain.ValidCompletedIssues(in.CompletedIssues) {
+				return validationf("invalid completed issues filter")
+			}
+			v.CompletedIssues = in.CompletedIssues
+		}
+		if in.ShowSubIssues != nil {
+			v.ShowSubIssues = in.ShowSubIssues
+		}
+		if in.NestedSubIssues != "" {
+			if !domain.ValidNestedSubIssues(in.NestedSubIssues) {
+				return validationf("invalid nested sub-issues mode")
+			}
+			v.NestedSubIssues = in.NestedSubIssues
+		}
+		if in.ShowEmptyGroups != nil {
+			v.ShowEmptyGroups = *in.ShowEmptyGroups
+		}
+		if in.DisplayProperties != nil {
+			for _, property := range in.DisplayProperties {
+				if !domain.ValidDisplayProperty(property) {
+					return validationf("invalid display property")
+				}
+			}
+			v.DisplayProperties = in.DisplayProperties
+		}
 		if in.Status != nil {
 			if *in.Status == "" {
 				v.Status = nil
@@ -1045,6 +1979,23 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 		if in.Labels != nil {
 			v.Labels = in.Labels
 		}
+		if in.ProjectLabels != nil {
+			if len(in.ProjectLabels) > 32 {
+				return validationf("too many project labels in filter")
+			}
+			for _, name := range in.ProjectLabels {
+				if utf8.RuneCountInString(name) > 100 {
+					return validationf("project label filter is too long")
+				}
+			}
+			v.ProjectLabels = in.ProjectLabels
+		}
+		if in.AddedToCycle != nil {
+			if err := validateAddedToCycle(in.AddedToCycle); err != nil {
+				return err
+			}
+			v.AddedToCycle = in.AddedToCycle
+		}
 		if in.Priority != nil {
 			if *in.Priority < 0 {
 				v.Priority = nil
@@ -1053,6 +2004,97 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 					return validationf("invalid priority")
 				}
 				v.Priority = in.Priority
+			}
+		}
+		if in.Type != nil {
+			if *in.Type == "" {
+				v.Type = nil
+			} else {
+				if !domain.ValidIssueType(*in.Type) {
+					return validationf("invalid issue type")
+				}
+				v.Type = in.Type
+			}
+		}
+		if in.Estimate != nil {
+			if *in.Estimate < 0 {
+				v.Estimate = nil
+			} else {
+				if !domain.ValidEstimate(in.Estimate) {
+					return validationf("invalid estimate")
+				}
+				v.Estimate = in.Estimate
+			}
+		}
+		if in.DueDate != nil {
+			if !domain.ValidDueDateFilter(*in.DueDate) {
+				return validationf("invalid due date filter")
+			}
+			v.DueDate = *in.DueDate
+		}
+		if in.Relation != nil {
+			if !domain.ValidIssueRelationFilter(*in.Relation) {
+				return validationf("invalid issue relation filter")
+			}
+			if *in.Relation == "" {
+				v.Relation = nil
+			} else {
+				v.Relation = in.Relation
+			}
+		}
+		if in.Content != nil {
+			content := *in.Content
+			if utf8.RuneCountInString(content) > 512 {
+				return validationf("content filter is too long")
+			}
+			if strings.TrimSpace(content) == "" {
+				v.Content = nil
+			} else {
+				v.Content = &content
+			}
+		}
+		if in.MilestoneName != nil {
+			milestoneName := *in.MilestoneName
+			if utf8.RuneCountInString(milestoneName) > 512 {
+				return validationf("milestone name filter is too long")
+			}
+			if strings.TrimSpace(milestoneName) == "" {
+				v.MilestoneName = nil
+			} else {
+				v.MilestoneName = &milestoneName
+			}
+		}
+		if in.DateField != nil || in.DateRange != nil {
+			dateField, dateRange := v.DateField, v.DateRange
+			if in.DateField != nil {
+				dateField = *in.DateField
+			}
+			if in.DateRange != nil {
+				dateRange = *in.DateRange
+			}
+			if !domain.ValidIssueDateFilter(dateField, dateRange) {
+				return validationf("invalid issue date filter")
+			}
+			v.DateField, v.DateRange = dateField, dateRange
+		}
+		if in.ProjectStatus != nil {
+			if *in.ProjectStatus == "" {
+				v.ProjectStatus = nil
+			} else {
+				if !domain.ValidProjectStatus(*in.ProjectStatus) {
+					return validationf("invalid project status")
+				}
+				v.ProjectStatus = in.ProjectStatus
+			}
+		}
+		if in.ProjectPriority != nil {
+			if *in.ProjectPriority < 0 {
+				v.ProjectPriority = nil
+			} else {
+				if !domain.ValidPriority(*in.ProjectPriority) {
+					return validationf("invalid project priority")
+				}
+				v.ProjectPriority = in.ProjectPriority
 			}
 		}
 		now := domain.Now()
@@ -1153,6 +2195,27 @@ func addActivity(m *mem, entityType string, entityID int64, action string, paylo
 		ID: id, EntityType: entityType, EntityID: entityID, Action: action,
 		Payload: json.RawMessage(raw), CreatedAt: now,
 	})
+}
+
+func sameEstimate(a, b *int) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
+}
+
+func sameInt64(a, b *int64) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
+}
+
+func sameString(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
 }
 
 func projectProgress(m *mem, id int64) float64 {

@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -22,6 +23,7 @@ import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { useADRDetailPagePresenter, useADRsPagePresenter } from '../presenters/ADRsPages.tsx';
 
 export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePresenter> }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const { adrs, status, project, filtered, handlers } = model;
@@ -29,24 +31,24 @@ export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePr
         <SplitLayout single>
           <Pane single>
             <PageHeader
-              title="ADRs"
+              title={t('nav.adrs')}
               actions={
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect
-                    aria-label="Filter ADR status"
+                    aria-label={t('ui.filterAdrStatus')}
                     value={status}
                     onChange={handlers.Filter_ADR_status_onChange0}
                     data={[
-                      { value: '', label: 'All statuses' },
-                      ...ADR_STATUSES.map((s) => ({ value: s, label: s })),
+                      { value: '', label: t('ui.allStatuses') },
+                      ...ADR_STATUSES.map((s) => ({ value: s, label: adrStatusLabel(s) })),
                     ]}
                   />
                   <NativeSelect
-                    aria-label="Filter ADR project"
+                    aria-label={t('ui.filterAdrProject')}
                     value={project}
                     onChange={handlers.Filter_ADR_project_onChange1}
                     data={[
-                      { value: '', label: 'All projects' },
+                      { value: '', label: t('ui.allProjects') },
                       ...[...new Set(adrs.map((a) => a.projectSlug).filter(Boolean))].map((p) => ({
                         value: p!,
                         label: p!,
@@ -58,7 +60,7 @@ export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePr
             />
             {adrs.length === 0 ? (
               <EmptyState>
-                No ADRs. Press <Shortcut>p</Shortcut> to create one.
+                {t('ui.noAdrsStart')} <Shortcut>p</Shortcut> {t('ui.toCreateOne')}
               </EmptyState>
             ) : (
               <Stack gap={0} role="list">
@@ -122,6 +124,7 @@ export function ADRDetailPageView({
   model: ReturnType<typeof useADRDetailPagePresenter>;
   titleRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const {
@@ -145,19 +148,19 @@ export function ADRDetailPageView({
               actions={
                 <Group gap="xs" wrap="wrap">
                   <Button component="a" href={`/api/adrs/${identifier}/export`} variant="subtle">
-                    Export with assets
+                    {t('ui.exportWithAssets')}
                   </Button>
                   <Button type="button" onClick={handlers.onClick0}>
-                    Revisit decision
+                    {t('ui.revisitDecision')}
                   </Button>
                   <NativeSelect
-                    aria-label="ADR status"
+                    aria-label={t('ui.adrStatus')}
                     value={adr.status}
                     onChange={handlers.ADR_status_onChange1}
                     data={ADR_STATUSES.map((s) => ({ value: s, label: adrStatusLabel(s) }))}
                   />
                   <Button type="button" variant="subtle" onClick={handlers.onClick2}>
-                    Publish
+                    {t('ui.publish')}
                   </Button>
                 </Group>
               }
@@ -170,7 +173,7 @@ export function ADRDetailPageView({
               ) : null}
               <TextInput
                 ref={titleRef}
-                aria-label="ADR title"
+                aria-label={t('ui.adrTitle')}
                 value={adr.title}
                 onChange={handlers.ADR_title_onChange3}
                 onBlur={handlers.ADR_title_onBlur4}
@@ -184,21 +187,20 @@ export function ADRDetailPageView({
                 }}
               />
               <Text size="sm" c="dimmed">
-                Sandbox {sandbox} (experiments stay here; kotowari does not run them). ADRs are
-                append-only; supersede instead of deleting.
+                {t('ui.sandbox')} {sandbox} {t('ui.sandboxDisclaimer')}
               </Text>
               <NativeSelect
-                label="Project"
-                aria-label="ADR project"
+                label={t('field.project')}
+                aria-label={t('ui.adrProject')}
                 value={adr.projectSlug ?? ''}
                 onChange={handlers.ADR_project_onChange5}
                 data={[
-                  { value: '', label: 'No project' },
+                  { value: '', label: t('field.noProject') },
                   ...projects.map((p) => ({ value: p.slug, label: p.name })),
                 ]}
               />
-              <Stack gap="xs" aria-label="Decision history">
-                <Title order={4}>Decision history</Title>
+              <Stack gap="xs" aria-label={t('ui.decisionHistory')}>
+                <Title order={4}>{t('ui.decisionHistory')}</Title>
                 <Stack gap={4} component="ul" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                   {allADRs
                     .filter((a) => a.number === adr.supersedes || a.supersedes === adr.number)
@@ -208,15 +210,16 @@ export function ADRDetailPageView({
                         <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
                           {a.identifier} {a.title}
                         </Link>{' '}
-                        — {a.number === adr.supersedes ? 'Previous decision' : 'Successor'} (
-                        {a.status})
+                        —{' '}
+                        {a.number === adr.supersedes ? t('ui.previousDecision') : t('ui.successor')}{' '}
+                        ({adrStatusLabel(a.status)})
                       </Text>
                     ))}
                 </Stack>
               </Stack>
               <TextInput
-                aria-label="Evaluation"
-                placeholder="Evaluation function (one line)"
+                aria-label={t('ui.evaluation')}
+                placeholder={t('ui.evaluationFunctionOneLine')}
                 value={adr.evaluation}
                 onChange={handlers.Evaluation_onChange6}
                 onBlur={handlers.Evaluation_onBlur7}
@@ -224,9 +227,9 @@ export function ADRDetailPageView({
               <TextInput
                 type="number"
                 min={1}
-                aria-label="Supersedes ADR number"
+                aria-label={t('ui.supersedesAdrNumber')}
                 disabled={initial.supersedes != null}
-                placeholder="Supersedes ADR number"
+                placeholder={t('ui.supersedesAdrNumber')}
                 value={adr.supersedes ?? ''}
                 onChange={handlers.Supersedes_ADR_number_onChange8}
                 onBlur={handlers.Supersedes_ADR_number_onBlur9}
@@ -238,7 +241,7 @@ export function ADRDetailPageView({
               />
               <Stack gap="xs">
                 <Text size="sm" c="dimmed">
-                  PUBLISH.md (English)
+                  {t('ui.publishMdEnglish')}
                 </Text>
                 <DocumentEditor
                   documentKey={`adrs/${identifier}/publishBody`}
@@ -247,11 +250,11 @@ export function ADRDetailPageView({
               </Stack>
               <Stack gap="xs">
                 <Text size="sm" c="dimmed">
-                  Linked issues
+                  {t('ui.linkedIssues')}
                 </Text>
                 {linked.length === 0 ? (
                   <Text size="sm" c="dimmed">
-                    No issues. Work can stay on the ADR alone.
+                    {t('ui.noIssuesWorkCanStayOnAdrAlone')}
                   </Text>
                 ) : (
                   <Stack gap={0} role="list">
@@ -283,10 +286,10 @@ export function ADRDetailPageView({
                           type="button"
                           variant="subtle"
                           size="compact-sm"
-                          aria-label={`Unlink ${iss.identifier}`}
+                          aria-label={t('issueADRs.unlink', { identifier: iss.identifier })}
                           onClick={() => handlers.onClick10(iss)}
                         >
-                          Unlink
+                          {t('ui.unlink')}
                         </Button>
                       </Group>
                     ))}
@@ -294,11 +297,11 @@ export function ADRDetailPageView({
                 )}
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect
-                    aria-label="Link issue"
+                    aria-label={t('ui.linkIssue')}
                     value={linkNumber}
                     onChange={handlers.Link_issue_onChange11}
                     data={[
-                      { value: '', label: 'Link an issue' },
+                      { value: '', label: t('ui.chooseIssue') },
                       ...unlinked.map((iss) => ({
                         value: String(iss.number),
                         label: `${iss.identifier} ${iss.title}`,
@@ -312,7 +315,7 @@ export function ADRDetailPageView({
                     disabled={!linkNumber}
                     onClick={handlers.onClick12}
                   >
-                    Link
+                    {t('ui.link')}
                   </Button>
                 </Group>
               </Stack>

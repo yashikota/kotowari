@@ -17,22 +17,26 @@ export function useDocumentEditorPresenter({
   documentKey,
   assetBase = '',
   inline = false,
+  historyRequest = 0,
 }: {
   documentKey: string;
   assetBase?: string;
   inline?: boolean;
+  historyRequest?: number;
 }) {
-  return { _view: 0 as const, documentKey, assetBase, inline, handlers: {} };
+  return { _view: 0 as const, documentKey, assetBase, inline, historyRequest, handlers: {} };
 }
 
 export function useEditorPresenter({
   documentKey,
   assetBase,
   inline = false,
+  historyRequest = 0,
 }: {
   documentKey: string;
   assetBase: string;
   inline?: boolean;
+  historyRequest?: number;
 }) {
   const path = `/api/documents/${documentKey}`;
   const draftKey = `kotowari:draft:${location.origin}:${documentKey}`;
@@ -45,6 +49,7 @@ export function useEditorPresenter({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Document[]>([]);
+  const [historyRequested, setHistoryRequested] = useState(false);
   const [historyOpened, setHistoryOpened] = useMachineFlag('history', true);
   const loaded = useRef(false);
   const generation = useRef(0);
@@ -117,6 +122,18 @@ export function useEditorPresenter({
   }, [path, draftKey]);
 
   useEffect(() => {
+    if (historyRequest < 1) return;
+    setHistoryRequested(true);
+    setHistoryOpened(true);
+    void fetch(`${path}/history`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to load history');
+        setHistory((await response.json()) as Document[]);
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+  }, [historyRequest, path, setHistoryOpened]);
+
+  useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (dirty.current) event.preventDefault();
     };
@@ -179,6 +196,7 @@ export function useEditorPresenter({
     error,
     busy,
     history,
+    historyRequested,
     historyOpened,
     dirty,
     contentRef,
@@ -196,6 +214,8 @@ export function useEditorPresenter({
       onClick2: () => setMode('compare'),
       onClick3: () => save(),
       onClick4: () => {
+        setHistoryRequested(true);
+        setHistoryOpened(true);
         return fetch(`${path}/history`)
           .then(async (r) => {
             if (!r.ok) throw new Error('Unable to load history');

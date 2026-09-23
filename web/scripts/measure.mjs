@@ -10,6 +10,8 @@ const issues = Array.from({ length: 5000 }, (_, i) => ({
   priority: 0,
   labels: [],
   adrNumbers: [],
+  externalLinks: [],
+  isFavorite: false,
   depth: 0,
   sortOrder: i,
   body: '',

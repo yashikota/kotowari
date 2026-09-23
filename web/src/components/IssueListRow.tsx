@@ -1,9 +1,19 @@
 import { Button, Group, Text } from '@mantine/core';
-import { IconChartBar, IconChevronDown, IconChevronRight, IconFolder } from '@tabler/icons-react';
+import {
+  IconChartBar,
+  IconChevronDown,
+  IconChevronRight,
+  IconFolder,
+  IconGitPullRequest,
+  IconLink,
+  IconStar,
+} from '@tabler/icons-react';
 import { isOverdue } from '../due.ts';
-import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
+import { issueStatusLabel, issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
+import i18n from '../i18n/index.ts';
 import type { IssueListRow as IssueListRowModel } from '../issue-list.ts';
-import type { Issue } from '../types.ts';
+import type { IssueDisplayProperty } from '../issue-list.ts';
+import type { Issue, IssueType } from '../types.ts';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssueListRow.module.css';
 
@@ -15,15 +25,33 @@ export function IssueGroupRow({
   onToggle: (key: string) => void;
 }) {
   const label =
-    row.groupBy === 'priority'
-      ? row.priority === 0
-        ? 'No priority'
-        : priorityLabel(row.priority ?? 0)
-      : row.groupBy === 'status' && row.status
-        ? issueStatusLabel(row.status)
-        : row.label;
+    row.groupBy === 'type'
+      ? row.label
+        ? issueTypeLabel(row.label as IssueType)
+        : i18n.t('issueProperties.noType')
+      : row.groupBy === 'estimate'
+        ? row.label || i18n.t('issueProperties.noEstimate')
+        : row.groupBy === 'priority'
+          ? priorityLabel(row.priority ?? 0)
+          : row.groupBy === 'status' && row.status
+            ? issueStatusLabel(row.status)
+            : row.groupBy === 'project' && row.label === 'No project'
+              ? i18n.t('issueProperties.noProject')
+              : row.groupBy === 'cycle' && row.label === 'No cycle'
+                ? i18n.t('field.noCycle')
+                : row.groupBy === 'cycle' && row.label.startsWith('Cycle ')
+                  ? i18n.t('field.cycleN', { number: row.label.slice(6) })
+                  : row.groupBy === 'label' && row.label === 'No label'
+                    ? i18n.t('issueProperties.noLabels')
+                    : row.groupBy === 'parent' && row.label === 'No parent'
+                      ? i18n.t('issueProperties.noParent')
+                      : row.label;
   const icon =
-    row.groupBy === 'priority' ? (
+    row.groupBy === 'type' ? (
+      <IconFolder size={14} stroke={1.8} aria-hidden />
+    ) : row.groupBy === 'estimate' ? (
+      <IconChartBar size={14} stroke={1.8} aria-hidden />
+    ) : row.groupBy === 'priority' ? (
       <IconChartBar size={14} stroke={1.8} aria-hidden />
     ) : row.groupBy === 'status' && row.status ? (
       <IssueStatusIcon status={row.status} />
@@ -38,7 +66,7 @@ export function IssueGroupRow({
       color="gray"
       fullWidth
       justify="flex-start"
-      aria-label={`${label} · ${row.count} issues`}
+      aria-label={i18n.t('ui.issueGroupCount', { label, count: row.count })}
       aria-expanded={!row.collapsed}
       onClick={() => onToggle(row.key)}
       classNames={{ root: styles.groupButton, inner: styles.groupButtonInner }}
@@ -61,6 +89,17 @@ export function IssueGroupRow({
   );
 }
 
+function statusDuration(statusChangedAt: string | undefined, updatedAt: string): string {
+  const elapsed = Math.max(0, Date.now() - Date.parse(statusChangedAt || updatedAt));
+  const minutes = Math.floor(elapsed / 60_000);
+  if (minutes < 60) return `${Math.max(1, minutes)}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return `${Math.floor(days / 7)}w`;
+}
+
 export function IssueListRow({
   issue,
   selected,
@@ -68,6 +107,7 @@ export function IssueListRow({
   setSize,
   childCount,
   today,
+  displayProperties,
   hideProjectSlug = false,
   onSelect,
 }: {
@@ -77,11 +117,15 @@ export function IssueListRow({
   setSize: number;
   childCount: number;
   today: string;
+  displayProperties: IssueDisplayProperty[];
   hideProjectSlug?: boolean;
   onSelect: (issue: Issue) => void;
 }) {
   const overdue = isOverdue(issue.dueDate, today);
+  const pullRequestCount =
+    issue.externalLinks?.filter((link) => link.kind === 'pullRequest').length ?? 0;
   const canceled = issue.status === 'canceled';
+  const shows = (property: IssueDisplayProperty) => displayProperties.includes(property);
 
   return (
     <Button
@@ -108,14 +152,28 @@ export function IssueListRow({
           wrap="nowrap"
           style={{ minWidth: 0, flex: 1, paddingLeft: 8 + issue.depth * 14 }}
         >
-          <IssuePriorityIcon priority={issue.priority} />
-          <Text size="xs" c="dimmed" ff="var(--mantine-font-family-monospace)" w={58} truncate>
-            {issue.identifier}
-          </Text>
-          <IssueStatusIcon status={issue.status} />
-          <Text size="xs" c="dimmed" w={86} truncate visibleFrom="sm">
-            {issueStatusLabel(issue.status)}
-          </Text>
+          {issue.isFavorite ? (
+            <IconStar
+              size={13}
+              stroke={1.8}
+              color="var(--mantine-color-yellow-6)"
+              aria-hidden="true"
+            />
+          ) : null}
+          {shows('priority') ? <IssuePriorityIcon priority={issue.priority} /> : null}
+          {shows('id') ? (
+            <Text size="xs" c="dimmed" ff="var(--mantine-font-family-monospace)" w={58} truncate>
+              {issue.identifier}
+            </Text>
+          ) : null}
+          {shows('status') ? (
+            <>
+              <IssueStatusIcon status={issue.status} />
+              <Text size="xs" c="dimmed" w={86} truncate visibleFrom="sm">
+                {issueStatusLabel(issue.status)}
+              </Text>
+            </>
+          ) : null}
           <Text
             size="sm"
             truncate
@@ -127,20 +185,60 @@ export function IssueListRow({
           </Text>
         </Group>
         <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
-          {issue.labels.slice(0, 2).map((label) => (
-            <IssueLabelPill key={label.id} name={label.name} color={label.color} />
-          ))}
-          {childCount > 0 ? <IssueMetaText>{childCount}</IssueMetaText> : null}
-          {issue.adrNumbers.length > 0 ? (
-            <IssueMetaText>{issue.adrNumbers.length} ADR</IssueMetaText>
+          {shows('labels')
+            ? issue.labels
+                .slice(0, 2)
+                .map((label) => (
+                  <IssueLabelPill key={label.id} name={label.name} color={label.color} />
+                ))
+            : null}
+          {issue.type ? <IssueMetaText>{issueTypeLabel(issue.type)}</IssueMetaText> : null}
+          {shows('estimate') && issue.estimate != null ? (
+            <IssueMetaText>{issue.estimate}</IssueMetaText>
           ) : null}
-          {!hideProjectSlug && issue.projectSlug ? (
+          {childCount > 0 ? <IssueMetaText>{childCount}</IssueMetaText> : null}
+          {shows('links') && (issue.externalLinks?.length ?? 0) > 0 ? (
+            <IssueMetaText
+              aria-label={i18n.t('issueLinks.count', { count: issue.externalLinks.length })}
+            >
+              <IconLink size={12} stroke={1.7} aria-hidden="true" />{' '}
+              {i18n.t('issueLinks.count', { count: issue.externalLinks.length })}
+            </IssueMetaText>
+          ) : null}
+          {shows('pullRequests') && pullRequestCount > 0 ? (
+            <IssueMetaText
+              aria-label={i18n.t('issueLinks.pullRequestCount', {
+                count: pullRequestCount,
+              })}
+            >
+              <IconGitPullRequest size={12} stroke={1.7} aria-hidden="true" /> {pullRequestCount}
+            </IssueMetaText>
+          ) : null}
+          {(issue.adrNumbers?.length ?? 0) > 0 ? (
+            <IssueMetaText
+              aria-label={i18n.t('issueADRs.count', { count: issue.adrNumbers.length })}
+            >
+              {i18n.t('issueADRs.count', { count: issue.adrNumbers.length })}
+            </IssueMetaText>
+          ) : null}
+          {shows('cycle') && issue.cycleNumber != null ? (
+            <IssueMetaText>{i18n.t('field.cycleN', { number: issue.cycleNumber })}</IssueMetaText>
+          ) : null}
+          {shows('milestone') && issue.milestoneName ? (
+            <IssueMetaText>{issue.milestoneName}</IssueMetaText>
+          ) : null}
+          {shows('project') && !hideProjectSlug && issue.projectSlug ? (
             <IssueMetaText>{issue.projectSlug}</IssueMetaText>
           ) : null}
-          {issue.dueDate ? (
+          {shows('dueDate') && issue.dueDate ? (
             <Text component="span" size="xs" c={overdue ? 'red.4' : 'dimmed'}>
               {issue.dueDate.slice(5, 10)}
             </Text>
+          ) : null}
+          {shows('created') ? <IssueMetaText>{issue.createdAt.slice(0, 10)}</IssueMetaText> : null}
+          {shows('updated') ? <IssueMetaText>{issue.updatedAt.slice(0, 10)}</IssueMetaText> : null}
+          {shows('timeInStatus') ? (
+            <IssueMetaText>{statusDuration(issue.statusChangedAt, issue.updatedAt)}</IssueMetaText>
           ) : null}
         </Group>
       </Group>

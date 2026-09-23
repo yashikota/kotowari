@@ -6,10 +6,15 @@ import type {
   Cycle,
   Diagnostic,
   Issue,
+  IssueLink,
+  IssueRelation,
+  IssueTemplate,
   Label,
   Page,
   ADR,
   Project,
+  ProjectMilestone,
+  RecurringIssue,
   SearchHit,
   View,
   Workspace,
@@ -65,15 +70,59 @@ export const api = {
     req<Label>('/api/labels', { method: 'POST', body: JSON.stringify(body) }),
   diagnostics: () => req<Diagnostic[]>('/api/diagnostics'),
   issues: (q = '') => req<Issue[]>(`/api/issues${q}`),
+  issueTemplates: () => req<IssueTemplate[]>('/api/issue-templates'),
+  createIssueTemplate: (identifier: string, name: string) =>
+    req<IssueTemplate>(`/api/issues/${identifier}/templates`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  deleteIssueTemplate: (slug: string) =>
+    req<void>(`/api/issue-templates/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
+  recurringIssues: () => req<RecurringIssue[]>('/api/recurring-issues'),
+  createRecurringIssue: (
+    identifier: string,
+    body: { name: string; firstDueDate: string; interval: number; unit: RecurringIssue['unit'] },
+  ) =>
+    req<RecurringIssue>(`/api/issues/${identifier}/recurrences`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  patchRecurringIssue: (slug: string, body: { enabled: boolean }) =>
+    req<RecurringIssue>(`/api/recurring-issues/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteRecurringIssue: (slug: string) =>
+    req<void>(`/api/recurring-issues/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
   issue: (id: string) => req<Issue>(`/api/issues/${id}`),
+  convertIssueToProject: (
+    identifier: string,
+    body: {
+      name: string;
+      description: string;
+      status: string;
+      priority: number;
+      startDate?: string;
+      targetDate?: string;
+    },
+  ) =>
+    req<{ project: Project; issue: Issue }>(`/api/issues/${identifier}/projects`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   createIssue: (body: {
     title: string;
+    body?: string;
     status?: string;
+    type?: string;
     priority?: number;
+    estimate?: number | null;
     parentId?: number;
     projectId?: number;
+    milestoneId?: number;
     cycleId?: number;
     labelIds?: number[];
+    dueDate?: string;
   }) => req<Issue>('/api/issues', { method: 'POST', body: JSON.stringify(body) }),
   patchIssue: (id: string, body: Record<string, unknown>) =>
     updateIssue(id, body, () =>
@@ -83,6 +132,17 @@ export const api = {
       }),
     ),
   deleteIssue: (id: string) => req<void>(`/api/issues/${id}`, { method: 'DELETE' }),
+  addIssueLink: (id: string, body: { url: string; title?: string; kind?: IssueLink['kind'] }) =>
+    req<IssueLink>(`/api/issues/${id}/links`, { method: 'POST', body: JSON.stringify(body) }),
+  removeIssueLink: (id: string, linkId: number) =>
+    req<void>(`/api/issues/${id}/links/${linkId}`, { method: 'DELETE' }),
+  addIssueRelation: (id: string, body: { targetIdentifier: string; kind: IssueRelation['kind'] }) =>
+    req<IssueRelation>(`/api/issues/${id}/relations`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  removeIssueRelation: (id: string, relationId: number) =>
+    req<void>(`/api/issues/${id}/relations/${relationId}`, { method: 'DELETE' }),
   comments: (id: string) => req<Comment[]>(`/api/issues/${id}/comments`),
   addComment: (id: string, body: string) =>
     req<Comment>(`/api/issues/${id}/comments`, {
@@ -92,13 +152,32 @@ export const api = {
   activities: (id: string) => req<Activity[]>(`/api/issues/${id}/activities`),
   projects: () => req<Project[]>('/api/projects'),
   project: (slug: string) => req<Project>(`/api/projects/${slug}`),
-  createProject: (body: { name: string; slug: string; description?: string }) =>
-    req<Project>('/api/projects', { method: 'POST', body: JSON.stringify(body) }),
+  createProject: (body: {
+    name: string;
+    slug: string;
+    description?: string;
+    status?: string;
+    priority?: number;
+    startDate?: string;
+    targetDate?: string;
+  }) => req<Project>('/api/projects', { method: 'POST', body: JSON.stringify(body) }),
   patchProject: (slug: string, body: Record<string, unknown>) =>
     req<Project>(`/api/projects/${slug}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
     }),
+  createMilestone: (slug: string, body: { name: string; targetDate?: string }) =>
+    req<ProjectMilestone>(`/api/projects/${slug}/milestones`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  patchMilestone: (slug: string, id: number, body: Record<string, unknown>) =>
+    req<ProjectMilestone>(`/api/projects/${slug}/milestones/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteMilestone: (slug: string, id: number) =>
+    req<void>(`/api/projects/${slug}/milestones/${id}`, { method: 'DELETE' }),
   deleteProject: (slug: string) => req<void>(`/api/projects/${slug}`, { method: 'DELETE' }),
   cycles: () => req<Cycle[]>('/api/cycles'),
   cycle: (n: number) => req<Cycle>(`/api/cycles/${n}`),
@@ -109,6 +188,12 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(body),
     }),
+  addCycleResource: (
+    n: number,
+    body: { url: string; title?: string; kind?: 'link' | 'document' },
+  ) => req<IssueLink>(`/api/cycles/${n}/links`, { method: 'POST', body: JSON.stringify(body) }),
+  removeCycleResource: (n: number, resourceId: number) =>
+    req<void>(`/api/cycles/${n}/links/${resourceId}`, { method: 'DELETE' }),
   pages: () => req<Page[]>('/api/pages'),
   page: (slug: string) => req<Page>(`/api/pages/${slug}`),
   createPage: (body: {
@@ -162,12 +247,31 @@ export const api = {
     slug: string;
     display?: string;
     groupBy?: string;
+    subGroupBy?: string;
     orderBy?: string;
+    direction?: string;
+    completedIssues?: string;
+    showSubIssues?: boolean;
+    nestedSubIssues?: string;
+    showEmptyGroups?: boolean;
+    displayProperties?: string[];
     status?: string | null;
     project?: string | null;
     cycle?: number | null;
     labels?: string[];
     priority?: number | null;
+    type?: string | null;
+    estimate?: number | null;
+    dueDate?: string;
+    relation?: string;
+    content?: string;
+    milestoneName?: string;
+    dateField?: string;
+    dateRange?: string;
+    projectStatus?: string;
+    projectPriority?: number | null;
+    projectLabels?: string[];
+    addedToCycle?: string[];
   }) => req<View>('/api/views', { method: 'POST', body: JSON.stringify(body) }),
   patchView: (slug: string, body: Record<string, unknown>) =>
     req<View>(`/api/views/${slug}`, {
@@ -184,6 +288,20 @@ export function issuesQuery(filter: {
   cycle?: number | null;
   labels?: string[] | null;
   priority?: number | null;
+  type?: string | null;
+  estimate?: number | null;
+  dueDate?: string | null;
+  asOf?: string | null;
+  relation?: string | null;
+  content?: string | null;
+  milestoneName?: string | null;
+  dateField?: string | null;
+  dateRange?: string | null;
+  dateAsOf?: string | null;
+  projectStatus?: string | null;
+  projectPriority?: number | null;
+  projectLabels?: string[] | null;
+  addedToCycle?: string[] | null;
 }): string {
   const q = new URLSearchParams();
   if (filter.status) {
@@ -201,6 +319,28 @@ export function issuesQuery(filter: {
   if (filter.priority != null && filter.priority >= 0) {
     q.set('priority', String(filter.priority));
   }
+  if (filter.type) {
+    q.set('type', filter.type);
+  }
+  if (filter.estimate != null && filter.estimate >= 0) {
+    q.set('estimate', String(filter.estimate));
+  }
+  if (filter.dueDate) {
+    q.set('dueDate', filter.dueDate);
+    q.set('asOf', filter.asOf ?? localDateValue(new Date()));
+  }
+  if (filter.relation) q.set('relation', filter.relation);
+  if (filter.content?.trim()) q.set('content', filter.content.trim());
+  if (filter.milestoneName?.trim()) q.set('milestoneName', filter.milestoneName.trim());
+  if (filter.dateField && filter.dateRange && filter.dateRange !== 'custom') {
+    q.set('dateField', filter.dateField);
+    q.set('dateRange', filter.dateRange);
+    q.set('dateAsOf', filter.dateAsOf ?? localDateValue(new Date()));
+  }
+  if (filter.projectStatus) q.set('projectStatus', filter.projectStatus);
+  if (filter.projectPriority != null) q.set('projectPriority', String(filter.projectPriority));
+  if (filter.projectLabels?.length) q.set('projectLabels', filter.projectLabels.join(','));
+  if (filter.addedToCycle?.length) q.set('addedToCycle', filter.addedToCycle.join(','));
   const s = q.toString();
   return s ? `?${s}` : '';
 }
@@ -210,8 +350,44 @@ export type IssueSearch = {
   project?: string;
   cycle?: number;
   priority?: number;
+  type?: string;
+  estimate?: number;
   labels?: string;
+  dueDate?:
+    | 'overdue'
+    | 'today'
+    | 'tomorrow'
+    | 'threeDays'
+    | 'week'
+    | 'month'
+    | 'quarter'
+    | 'custom'
+    | 'none'
+    | `on:${string}`;
+  relation?: 'parent' | 'subissue' | 'blocked' | 'blocking' | 'recurring' | 'related' | 'duplicate';
+  content?: string;
+  milestoneName?: string;
+  dateField?: 'createdAt' | 'updatedAt' | 'startedAt' | 'completedAt' | 'timeInCurrentStatus';
+  dateRange?:
+    | 'dayAgo'
+    | 'threeDaysAgo'
+    | 'weekAgo'
+    | 'twoWeeksAgo'
+    | 'monthAgo'
+    | 'quarterAgo'
+    | 'halfYearAgo'
+    | 'yearAgo'
+    | 'custom'
+    | `on:${string}`;
+  projectStatus?: string;
+  projectPriority?: number;
+  projectLabels?: string[];
+  addedToCycle?: ('planned' | 'during' | 'after')[];
 };
+
+function localDateValue(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
 export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   const out: IssueSearch = {};
@@ -236,6 +412,124 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   if (typeof raw.labels === 'string' && raw.labels) {
     out.labels = raw.labels;
   }
+  const dueDateFilters = [
+    'overdue',
+    'today',
+    'tomorrow',
+    'threeDays',
+    'week',
+    'month',
+    'quarter',
+    'custom',
+    'none',
+  ];
+  if (typeof raw.dueDate === 'string' && dueDateFilters.includes(raw.dueDate)) {
+    out.dueDate = raw.dueDate as IssueSearch['dueDate'];
+  } else if (typeof raw.dueDate === 'string' && raw.dueDate.startsWith('on:')) {
+    const date = raw.dueDate.slice(3);
+    const parsed = new Date(`${date}T00:00:00`);
+    if (
+      /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+      !Number.isNaN(parsed.getTime()) &&
+      localDateValue(parsed) === date
+    ) {
+      out.dueDate = raw.dueDate as IssueSearch['dueDate'];
+    }
+  }
+  const relationFilters = [
+    'parent',
+    'subissue',
+    'blocked',
+    'blocking',
+    'recurring',
+    'related',
+    'duplicate',
+  ];
+  if (typeof raw.relation === 'string' && relationFilters.includes(raw.relation)) {
+    out.relation = raw.relation as IssueSearch['relation'];
+  }
+  if (typeof raw.content === 'string' && raw.content.trim()) {
+    out.content = raw.content.slice(0, 512);
+  }
+  if (typeof raw.milestoneName === 'string' && raw.milestoneName.trim()) {
+    out.milestoneName = raw.milestoneName.slice(0, 512);
+  }
+  if (
+    typeof raw.projectStatus === 'string' &&
+    ['backlog', 'planned', 'started', 'completed', 'canceled'].includes(raw.projectStatus)
+  ) {
+    out.projectStatus = raw.projectStatus;
+  }
+  if (raw.projectPriority !== undefined && raw.projectPriority !== '') {
+    const projectPriority = Number(raw.projectPriority);
+    if (Number.isInteger(projectPriority) && projectPriority >= 0 && projectPriority <= 4) {
+      out.projectPriority = projectPriority;
+    }
+  }
+  if (typeof raw.projectLabels === 'string' && raw.projectLabels.trim()) {
+    const projectLabels = raw.projectLabels
+      .split(',')
+      .map((label) => label.trim())
+      .filter(Boolean);
+    if (projectLabels.length <= 32 && projectLabels.every((label) => label.length <= 100)) {
+      out.projectLabels = [...new Set(projectLabels)];
+    }
+  }
+  if (typeof raw.addedToCycle === 'string' && raw.addedToCycle.trim()) {
+    const phases = raw.addedToCycle
+      .split(',')
+      .map((phase) => phase.trim())
+      .filter((phase): phase is 'planned' | 'during' | 'after' =>
+        ['planned', 'during', 'after'].includes(phase),
+      );
+    if (phases.length <= 3) out.addedToCycle = [...new Set(phases)];
+  }
+  const dateFields = ['createdAt', 'updatedAt', 'startedAt', 'completedAt', 'timeInCurrentStatus'];
+  const dateRanges = [
+    'dayAgo',
+    'threeDaysAgo',
+    'weekAgo',
+    'twoWeeksAgo',
+    'monthAgo',
+    'quarterAgo',
+    'halfYearAgo',
+    'yearAgo',
+  ];
+  if (
+    typeof raw.dateField === 'string' &&
+    dateFields.includes(raw.dateField) &&
+    typeof raw.dateRange === 'string' &&
+    raw.dateRange === 'custom'
+  ) {
+    out.dateField = raw.dateField as IssueSearch['dateField'];
+    out.dateRange = 'custom';
+  } else if (
+    typeof raw.dateField === 'string' &&
+    dateFields.includes(raw.dateField) &&
+    typeof raw.dateRange === 'string'
+  ) {
+    const exactDate = raw.dateRange.startsWith('on:') ? raw.dateRange.slice(3) : '';
+    const exactDateValue = new Date(`${exactDate}T00:00:00`);
+    if (
+      dateRanges.includes(raw.dateRange) ||
+      (/^\d{4}-\d{2}-\d{2}$/.test(exactDate) &&
+        !Number.isNaN(exactDateValue.getTime()) &&
+        localDateValue(exactDateValue) === exactDate)
+    ) {
+      out.dateField = raw.dateField as IssueSearch['dateField'];
+      out.dateRange = raw.dateRange as IssueSearch['dateRange'];
+    }
+  }
+  if (
+    typeof raw.type === 'string' &&
+    ['bug', 'feature', 'improvement', 'task'].includes(raw.type)
+  ) {
+    out.type = raw.type;
+  }
+  if (raw.estimate !== undefined && raw.estimate !== '') {
+    const n = Number(raw.estimate);
+    if (Number.isInteger(n) && n >= 0 && n <= 999) out.estimate = n;
+  }
   return out;
 }
 
@@ -245,6 +539,18 @@ export function searchToFilter(search: IssueSearch): {
   cycle?: number;
   labels?: string[];
   priority?: number;
+  type?: string;
+  estimate?: number;
+  dueDate?: string;
+  relation?: string;
+  content?: string;
+  milestoneName?: string;
+  dateField?: string;
+  dateRange?: string;
+  projectStatus?: string;
+  projectPriority?: number;
+  projectLabels?: string[];
+  addedToCycle?: ('planned' | 'during' | 'after')[];
 } {
   return {
     status: search.status,
@@ -257,5 +563,17 @@ export function searchToFilter(search: IssueSearch): {
           .filter(Boolean)
       : undefined,
     priority: search.priority,
+    type: search.type,
+    estimate: search.estimate,
+    dueDate: search.dueDate,
+    relation: search.relation,
+    content: search.content,
+    milestoneName: search.milestoneName,
+    dateField: search.dateRange === 'custom' ? undefined : search.dateField,
+    dateRange: search.dateRange === 'custom' ? undefined : search.dateRange,
+    projectStatus: search.projectStatus,
+    projectPriority: search.projectPriority,
+    projectLabels: search.projectLabels,
+    addedToCycle: search.addedToCycle,
   };
 }

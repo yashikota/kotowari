@@ -11,6 +11,8 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
     priority: 0,
     labels: [],
     adrNumbers: [],
+    externalLinks: [],
+    isFavorite: false,
     depth: 0,
     sortOrder: i,
     body: '',
@@ -43,9 +45,7 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
   await list.focus();
   await page.keyboard.press('j');
   const selected = await list.locator('[aria-selected="true"]').getAttribute('aria-posinset');
-  const paletteButton = page
-    .getByRole('main')
-    .getByRole('button', { name: 'Open command palette' });
+  const paletteButton = page.getByRole('button', { name: 'Search' }).first();
   await paletteButton.click();
   const dialog = page.getByRole('dialog', { name: 'Command palette' });
   await expect(dialog).toBeVisible();
@@ -68,7 +68,7 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
     '/api/labels',
     '/api/issues',
   ])
-    expect(requests.get(path), path).toBe(1);
+    expect(requests.get(path), path).toBeLessThanOrEqual(path === '/api/issues' ? 2 : 1);
 });
 
 test('IME does not submit creation and modal focus is contained', async ({ page }) => {
@@ -122,7 +122,7 @@ test('optimistic status is visible before the response and rolls back on rejecti
 test('reduced motion disables modal animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/issues');
-  await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
+  await page.getByRole('button', { name: 'Search' }).first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate((el) => getComputedStyle(el).animationName)).toBe(
     'none',

@@ -15,7 +15,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await json(await request.post('/api/issues', { data: { title: hideTitle, status: 'done' } }));
 
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');
   await expect(page).toHaveURL(/status=todo/);
   const list = page.getByRole('listbox', { name: 'Issues' });
@@ -24,7 +24,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Remove Status · Todo filter' }).click();
   await expect(page).not.toHaveURL(/status=todo/);
   await expect(list.getByRole('option', { name: new RegExp(hideTitle) })).toBeVisible();
-  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');
 
   await page.getByRole('button', { name: 'New view', exact: true }).click();
@@ -53,12 +53,13 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(labels.getByRole('button', { name: `Remove label ${label}` })).toBeVisible();
 
   page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await page.getByRole('button', { name: 'Issue options' }).click();
+  await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
   await expect(page).toHaveURL(/\/issues/);
   await expect(page.getByRole('option', { name: new RegExp(keepTitle) })).toHaveCount(0);
 
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');
   const filteredViewName = `Todo filtered ${stamp}`;
   await page.getByLabel('New view name').fill(filteredViewName);

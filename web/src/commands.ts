@@ -5,52 +5,83 @@ export type Command = {
   keywords?: string;
 };
 
-export const STATIC_COMMANDS: Command[] = [
-  { id: 'new-issue', title: 'Create issue', hint: 'c', keywords: 'new' },
-  { id: 'new-adr', title: 'Create ADR', hint: 'p', keywords: 'new decision' },
-  { id: 'new-page', title: 'Create page', keywords: 'new memo docs' },
-  { id: 'new-view', title: 'Create view', keywords: 'new filter saved' },
-  { id: 'goto-issues', title: 'Go to Issues', keywords: 'list' },
-  { id: 'goto-board', title: 'Go to Board', keywords: 'kanban' },
-  { id: 'goto-adrs', title: 'Go to ADRs', keywords: 'decision' },
-  { id: 'goto-projects', title: 'Go to Projects' },
-  { id: 'goto-cycles', title: 'Go to Cycles' },
-  { id: 'goto-pages', title: 'Go to Pages', keywords: 'docs memo' },
-  { id: 'goto-config', title: 'Go to Config', keywords: 'settings workspace timezone' },
-  { id: 'goto-active-cycle', title: 'Go to active cycle', keywords: 'sprint current' },
-  { id: 'copy-identifier', title: 'Copy identifier', keywords: 'id iss clipboard' },
-  { id: 'keyboard-help', title: 'Keyboard shortcuts', hint: '?', keywords: 'help keys' },
-  { id: 'set-status-backlog', title: 'Set status: Backlog', hint: 's' },
-  { id: 'set-status-todo', title: 'Set status: Todo', hint: 's' },
-  { id: 'set-status-in_progress', title: 'Set status: In Progress', hint: 's' },
-  { id: 'set-status-done', title: 'Set status: Done', hint: 's' },
-  { id: 'set-status-canceled', title: 'Set status: Canceled', hint: 's' },
-];
+export type TranslateCommand = (key: string, values?: Record<string, string | number>) => string;
 
-export function cycleCommands(cycles: { id: number; number: number; status: string }[]): Command[] {
+export function staticCommands(t: TranslateCommand): Command[] {
+  return [
+    { id: 'new-issue', title: t('commands.createIssue'), hint: 'c' },
+    { id: 'new-adr', title: t('commands.createAdr'), hint: 'p' },
+    { id: 'new-page', title: t('commands.createPage') },
+    { id: 'new-view', title: t('commands.createView') },
+    { id: 'goto-issues', title: t('commands.goToIssues') },
+    { id: 'goto-board', title: t('commands.goToBoard') },
+    { id: 'goto-adrs', title: t('commands.goToAdrs') },
+    { id: 'goto-projects', title: t('commands.goToProjects') },
+    { id: 'goto-cycles', title: t('commands.goToCycles') },
+    { id: 'goto-pages', title: t('commands.goToPages') },
+    { id: 'goto-config', title: t('commands.goToConfig') },
+    { id: 'goto-agent', title: t('commands.goToAgent') },
+    { id: 'goto-active-cycle', title: t('commands.goToActiveCycle') },
+    { id: 'copy-identifier', title: t('commands.copyIdentifier') },
+    { id: 'keyboard-help', title: t('commands.keyboardHelp'), hint: '?' },
+    {
+      id: 'set-status-backlog',
+      title: t('commands.setStatus', { status: t('issueStatus.backlog') }),
+      hint: 's',
+    },
+    {
+      id: 'set-status-todo',
+      title: t('commands.setStatus', { status: t('issueStatus.todo') }),
+      hint: 's',
+    },
+    {
+      id: 'set-status-in_progress',
+      title: t('commands.setStatus', { status: t('issueStatus.in_progress') }),
+      hint: 's',
+    },
+    {
+      id: 'set-status-done',
+      title: t('commands.setStatus', { status: t('issueStatus.done') }),
+      hint: 's',
+    },
+    {
+      id: 'set-status-canceled',
+      title: t('commands.setStatus', { status: t('issueStatus.canceled') }),
+      hint: 's',
+    },
+  ];
+}
+
+export function cycleCommands(
+  cycles: { id: number; number: number; status: string }[],
+  t: TranslateCommand,
+): Command[] {
   const cmds = cycles.map((c) => ({
     id: `assign-cycle:${c.id}`,
-    title: `Assign to Cycle ${c.number}`,
-    keywords: `cycle ${c.status} sprint`,
+    title: t('commands.assignToCycle', { number: c.number }),
+    keywords: `${t('field.cycle')} ${t(`cycle.status.${c.status}`)}`,
   }));
   cmds.push({
     id: 'assign-cycle:none',
-    title: 'Remove from cycle',
-    keywords: 'unassign cycle none',
+    title: t('commands.removeFromCycle'),
+    keywords: `${t('commands.keywordUnassign')} ${t('field.cycle')}`,
   });
   return cmds;
 }
 
-export function projectCommands(projects: { id: number; name: string; slug: string }[]): Command[] {
+export function projectCommands(
+  projects: { id: number; name: string; slug: string }[],
+  t: TranslateCommand,
+): Command[] {
   const cmds = projects.map((p) => ({
     id: `assign-project:${p.id}`,
-    title: `Assign to ${p.name}`,
-    keywords: `project ${p.slug}`,
+    title: t('commands.assignToProject', { name: p.name }),
+    keywords: `${t('field.project')} ${p.slug}`,
   }));
   cmds.push({
     id: 'assign-project:none',
-    title: 'Remove from project',
-    keywords: 'unassign project none',
+    title: t('commands.removeFromProject'),
+    keywords: `${t('commands.keywordUnassign')} ${t('field.project')}`,
   });
   return cmds;
 }

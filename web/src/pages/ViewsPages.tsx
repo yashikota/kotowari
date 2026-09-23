@@ -1,4 +1,5 @@
 import { Box, Button, Group, Stack, TextInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
@@ -16,9 +17,27 @@ export function ViewPageView({
   model: ReturnType<typeof useViewPagePresenter>;
   viewNameRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { data, issues, view, selected, search, find, groupBy, orderBy, handlers } = model;
+      const {
+        data,
+        issues,
+        view,
+        selected,
+        search,
+        find,
+        groupBy,
+        orderBy,
+        subGroupBy,
+        direction,
+        completedIssues,
+        showSubIssues,
+        nestedSubIssues,
+        showEmptyGroups,
+        displayProperties,
+        handlers,
+      } = model;
       return (
         <Box
           h="100%"
@@ -35,7 +54,7 @@ export function ViewPageView({
                   <Group gap="xs" wrap="nowrap">
                     <TextInput
                       ref={viewNameRef}
-                      aria-label="View name"
+                      aria-label={t('ui.viewName')}
                       value={view.name}
                       onChange={handlers.View_name_onChange1}
                       onBlur={handlers.View_name_onBlur2}
@@ -43,7 +62,7 @@ export function ViewPageView({
                       w={180}
                     />
                     <Button type="button" variant="subtle" color="red" onClick={handlers.onClick0}>
-                      Delete
+                      {t('ui.delete')}
                     </Button>
                   </Group>
                 }
@@ -63,22 +82,36 @@ export function ViewPageView({
                   onLayout={handlers.onLayout15}
                   orderBy={orderBy}
                   onOrderBy={handlers.onOrderBy16}
+                  subGroupBy={subGroupBy}
+                  onSubGroupBy={handlers.onSubGroupBy19}
+                  direction={direction}
+                  onDirection={handlers.onDirection20}
+                  completedIssues={completedIssues}
+                  onCompletedIssues={handlers.onCompletedIssues21}
+                  showSubIssues={showSubIssues}
+                  onShowSubIssues={handlers.onShowSubIssues22}
+                  nestedSubIssues={nestedSubIssues}
+                  onNestedSubIssues={handlers.onNestedSubIssues23}
+                  showEmptyGroups={showEmptyGroups}
+                  onShowEmptyGroups={handlers.onShowEmptyGroups24}
+                  displayProperties={displayProperties}
+                  onDisplayPropertyToggle={handlers.onDisplayPropertyToggle25}
                 />
                 {view.display === 'board' ? (
                   <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
                     {issues.length === 0 ? (
-                      <EmptyState>No issues match this view.</EmptyState>
+                      <EmptyState>{t('ui.noIssuesMatchView')}</EmptyState>
                     ) : (
                       <IssueBoard
                         issues={issues}
                         onOpen={handlers.onBoardOpen17}
                         onMove={handlers.onBoardMove18}
                         orderBy={orderBy}
+                        direction={direction}
+                        showSubIssues={showSubIssues}
                       />
                     )}
                   </Box>
-                ) : issues.length === 0 ? (
-                  <EmptyState>No issues match this view.</EmptyState>
                 ) : (
                   <IssueList
                     issues={issues}
@@ -86,6 +119,11 @@ export function ViewPageView({
                     onSelect={handlers.onSelect11}
                     groupBy={groupBy}
                     orderBy={orderBy}
+                    subGroupBy={subGroupBy}
+                    direction={direction}
+                    showEmptyGroups={showEmptyGroups}
+                    showSubIssues={showSubIssues}
+                    displayProperties={displayProperties}
                   />
                 )}
               </Stack>
@@ -95,7 +133,7 @@ export function ViewPageView({
                 {selected ? (
                   <IssueDetail identifier={selected} />
                 ) : (
-                  <EmptyState>Select an issue</EmptyState>
+                  <EmptyState>{t('ui.selectIssue')}</EmptyState>
                 )}
               </Pane>
             ) : null}

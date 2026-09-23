@@ -1,17 +1,27 @@
 import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useState } from 'react';
 import { api, parseIssueSearch } from '../api.ts';
 import { queryCache } from '../application/cache.ts';
 import { resetIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
 import { useIntent, useIntentHandler, useKeyboard, useOverlay } from '../application/Root.tsx';
-import { STATIC_COMMANDS, cycleCommands, filterCommands, projectCommands } from '../commands.ts';
+import { cycleCommands, filterCommands, projectCommands, staticCommands } from '../commands.ts';
 import { Palette } from '../components/Palette.tsx';
 import { actionFromKeyboard } from '../keymap.ts';
 import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
-import type { Cycle, Issue, IssueStatus, Project, SearchHit, View } from '../types.ts';
+import type {
+  Cycle,
+  Issue,
+  IssueStatus,
+  IssueTemplate,
+  Label,
+  Project,
+  SearchHit,
+  View,
+} from '../types.ts';
 
 function slugify(s: string): string {
   return s
@@ -34,6 +44,7 @@ function issueNumberFromIdent(id: string | null): number | undefined {
 }
 
 export function useShellPresenter() {
+  const { t } = useTranslation();
   const send = useIntent();
   const navigate = useNavigate();
   const router = useRouter();
@@ -78,6 +89,7 @@ export function useShellPresenter() {
   const routeSearch = useRouterState({ select: (s) => s.location.search });
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [views, setViews] = useState<View[]>([]);
+  const [favoriteIssues, setFavoriteIssues] = useState<Issue[]>([]);
   const [workspaceName, setWorkspaceName] = useState('');
   const { overlay, set: setOverlay } = useOverlay();
   const paletteOpen = overlay === 'palette';
@@ -95,6 +107,13 @@ export function useShellPresenter() {
   const [issueTitle, setIssueTitle] = useState('');
   const [issueStatus, setIssueStatus] = useState<IssueStatus>('todo');
   const [issuePriority, setIssuePriority] = useState(0);
+  const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
+  const [issueEstimate, setIssueEstimate] = useState('');
+  const [issueBody, setIssueBody] = useState('');
+  const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
+  const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
+  const [issueTemplateSlug, setIssueTemplateSlug] = useState('');
+  const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
   const helpOpen = overlay === 'help';
@@ -110,16 +129,18 @@ export function useShellPresenter() {
 
   const loadWorkspace = useCallback(async () => {
     try {
-      const [ws, cyc, vs, proj] = await Promise.all([
+      const [ws, cyc, vs, proj, favorites] = await Promise.all([
         api.workspace(),
         api.cycles(),
         api.views(),
         api.projects(),
+        api.issues('?favorite=true'),
       ]);
       setWorkspaceName(ws.name);
       setCycles(cyc);
       setViews(vs);
       setProjects(proj);
+      setFavoriteIssues(favorites);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'failed to load workspace');
     }
@@ -135,10 +156,17 @@ export function useShellPresenter() {
     if (!createIssue) {
       return;
     }
-    void api
-      .projects()
-      .then(setProjects)
-      .catch(() => setProjects([]));
+    void Promise.all([api.projects(), api.issueTemplates(), api.labels()])
+      .then(([nextProjects, templates, nextLabels]) => {
+        setProjects(nextProjects);
+        setIssueTemplates(templates);
+        setAvailableLabels(nextLabels);
+      })
+      .catch(() => {
+        setProjects([]);
+        setIssueTemplates([]);
+        setAvailableLabels([]);
+      });
   }, [createIssue]);
 
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
@@ -182,6 +210,9 @@ export function useShellPresenter() {
       : focusedIssue;
   const routeTitle = (() => {
     if (pathname === '/') return 'Home';
+    if (pathname === '/reminders') return 'Reminders';
+    if (pathname === '/templates') return 'Templates';
+    if (pathname === '/recurring') return 'Recurring issues';
     if (pathname === '/issues') return 'Issues';
     if (pathname.startsWith('/issues/'))
       return pathname.slice('/issues/'.length).split('/')[0] ?? 'Issue';
@@ -239,13 +270,16 @@ export function useShellPresenter() {
           await navigate({ to: '/projects' });
           return;
         case 'goto-cycles':
-          await navigate({ to: '/cycles' });
+          await navigate({ to: '/cycles', search: { scope: 'all' } });
           return;
         case 'goto-pages':
           await navigate({ to: '/pages' });
           return;
         case 'goto-config':
           await navigate({ to: '/config' });
+          return;
+        case 'goto-agent':
+          await navigate({ to: '/agent' });
           return;
         case 'goto-active-cycle': {
           const active = cycles.find((c) => c.status === 'active');
@@ -255,7 +289,7 @@ export function useShellPresenter() {
               params: { number: String(active.number) },
             });
           } else {
-            await navigate({ to: '/cycles' });
+            await navigate({ to: '/cycles', search: { scope: 'all' } });
           }
           return;
         }
@@ -404,9 +438,24 @@ export function useShellPresenter() {
       id: `open-${h.kind}:${h.id}`,
       title: `${h.kind} ${h.id}  ${h.title}${h.snippet ? ` — ${h.snippet}` : ''}`,
     })),
-    ...filterCommands(STATIC_COMMANDS, query),
-    ...(currentIdentifier ? filterCommands(cycleCommands(cycles), query) : []),
-    ...(currentIdentifier ? filterCommands(projectCommands(projects), query) : []),
+    ...filterCommands(
+      staticCommands((key, values) => t(key, values as Record<string, string | number>)),
+      query,
+    ),
+    ...(currentIdentifier
+      ? filterCommands(
+          cycleCommands(cycles, (key, values) => t(key, values as Record<string, string | number>)),
+          query,
+        )
+      : []),
+    ...(currentIdentifier
+      ? filterCommands(
+          projectCommands(projects, (key, values) =>
+            t(key, values as Record<string, string | number>),
+          ),
+          query,
+        )
+      : []),
   ];
 
   useIntentHandler('submit:Issue', submitIssue);
@@ -421,14 +470,25 @@ export function useShellPresenter() {
     }
     const issue: Issue = await api.createIssue({
       title,
+      body: issueBody,
       status: issueStatus,
       priority: issuePriority,
+      type: issueType || undefined,
+      estimate: issueEstimate ? Number(issueEstimate) : null,
       projectId: issueProjectId ? Number(issueProjectId) : undefined,
       cycleId: issueCycleId ? Number(issueCycleId) : undefined,
+      labelIds: availableLabels
+        .filter((label) => issueLabelNames.includes(label.name))
+        .map((label) => label.id),
     });
     setIssueTitle('');
+    setIssueBody('');
     setIssueStatus('todo');
     setIssuePriority(0);
+    setIssueType('');
+    setIssueEstimate('');
+    setIssueLabelNames([]);
+    setIssueTemplateSlug('');
     setIssueProjectId('');
     setIssueCycleId('');
     setCreateIssue(false);
@@ -514,6 +574,7 @@ export function useShellPresenter() {
     mobileNavigationOpen,
     cycles,
     views,
+    favoriteIssues,
     overlay,
     paletteOpen,
     query,
@@ -524,6 +585,13 @@ export function useShellPresenter() {
     issueTitle,
     issueStatus,
     issuePriority,
+    issueType,
+    issueEstimate,
+    issueBody,
+    issueLabelNames,
+    issueTemplates,
+    issueTemplateSlug,
+    availableLabels,
     issueProjectId,
     issueCycleId,
     helpOpen,
@@ -584,6 +652,38 @@ export function useShellPresenter() {
       Issue_priority_onChange15: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssuePriority(Number(e.target.value)),
+      Issue_template_onChange30: (slug: string | null) => {
+        const template = issueTemplates.find((candidate) => candidate.slug === slug);
+        setIssueTemplateSlug(template?.slug ?? '');
+        if (!template) {
+          setIssueTitle('');
+          setIssueBody('');
+          setIssueStatus('todo');
+          setIssuePriority(0);
+          setIssueType('');
+          setIssueEstimate('');
+          setIssueLabelNames([]);
+          return;
+        }
+        setIssueTitle(template.title);
+        setIssueBody(template.body);
+        setIssueStatus(template.status);
+        setIssuePriority(template.priority);
+        setIssueType(template.type ?? '');
+        setIssueEstimate(template.estimate == null ? '' : String(template.estimate));
+        const available = new Set(availableLabels.map((label) => label.name));
+        setIssueLabelNames(template.labels.filter((name) => available.has(name)));
+      },
+      Issue_body_onChange31: (
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+      ) => setIssueBody(e.target.value),
+      Issue_type_onChange32: (
+        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
+      ) => setIssueType(e.target.value as Issue['type'] | ''),
+      Issue_estimate_onChange33: (
+        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
+      ) => setIssueEstimate(e.target.value),
+      Issue_labels_onChange34: (values: string[]) => setIssueLabelNames(values),
       Issue_project_onChange16: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueProjectId(e.target.value),

@@ -1,69 +1,111 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { STATIC_COMMANDS, cycleCommands, filterCommands, projectCommands } from './commands.ts';
+import { cycleCommands, filterCommands, projectCommands, staticCommands } from './commands.ts';
+
+const english: Record<string, string> = {
+  'commands.createIssue': 'Create issue',
+  'commands.createAdr': 'Create ADR',
+  'commands.createPage': 'Create page',
+  'commands.createView': 'Create view',
+  'commands.goToIssues': 'Go to Issues',
+  'commands.goToBoard': 'Go to Board',
+  'commands.goToAdrs': 'Go to ADRs',
+  'commands.goToProjects': 'Go to Projects',
+  'commands.goToCycles': 'Go to Cycles',
+  'commands.goToPages': 'Go to Pages',
+  'commands.goToConfig': 'Go to Config',
+  'commands.goToAgent': 'Go to Agent',
+  'commands.goToActiveCycle': 'Go to active cycle',
+  'commands.copyIdentifier': 'Copy identifier',
+  'commands.keyboardHelp': 'Keyboard shortcuts',
+  'commands.setStatus': 'Set status: {{status}}',
+  'issueStatus.backlog': 'Backlog',
+  'issueStatus.todo': 'Todo',
+  'issueStatus.in_progress': 'In Progress',
+  'issueStatus.done': 'Done',
+  'issueStatus.canceled': 'Canceled',
+  'commands.assignToCycle': 'Assign to Cycle {{number}}',
+  'commands.removeFromCycle': 'Remove from cycle',
+  'commands.assignToProject': 'Assign to {{name}}',
+  'commands.removeFromProject': 'Remove from project',
+  'commands.keywordUnassign': 'unassign',
+  'field.cycle': 'Cycle',
+  'cycle.status.active': 'Current',
+  'cycle.status.upcoming': 'Upcoming',
+  'field.project': 'Project',
+};
+
+const t = (key: string, values?: Record<string, string | number>) =>
+  Object.entries(values ?? {}).reduce(
+    (result, [name, value]) => result.replaceAll(`{{${name}}}`, String(value)),
+    english[key] ?? key,
+  );
+const commands = staticCommands(t);
 
 describe('filterCommands', () => {
   it('returns all commands for an empty query', () => {
-    expect(filterCommands(STATIC_COMMANDS, '')).toHaveLength(STATIC_COMMANDS.length);
+    expect(filterCommands(commands, '')).toHaveLength(commands.length);
   });
 
-  it('matches title and keywords', () => {
-    const hits = filterCommands(STATIC_COMMANDS, 'adr');
-    expect(hits.map((c) => c.id)).toContain('new-adr');
-    expect(hits.map((c) => c.id)).toContain('goto-adrs');
+  it('matches titles and stable command ids', () => {
+    const hits = filterCommands(commands, 'adr');
+    expect(hits.map((command) => command.id)).toContain('new-adr');
+    expect(hits.map((command) => command.id)).toContain('goto-adrs');
   });
 
-  it('matches status commands', () => {
-    const hits = filterCommands(STATIC_COMMANDS, 'done');
+  it('matches status commands through localized status labels and ids', () => {
+    const hits = filterCommands(commands, 'done');
     expect(hits).toHaveLength(1);
     expect(hits[0]?.id).toBe('set-status-done');
   });
 
-  it('matches by command id', () => {
-    const hits = filterCommands(STATIC_COMMANDS, 'keyboard-help');
-    expect(hits.map((c) => c.id)).toEqual(['keyboard-help']);
-  });
-
-  it('returns no matches for unknown text', () => {
-    expect(filterCommands(STATIC_COMMANDS, 'assignee')).toEqual([]);
+  it('matches by command id and returns no unknown matches', () => {
+    expect(filterCommands(commands, 'keyboard-help').map((command) => command.id)).toEqual([
+      'keyboard-help',
+    ]);
+    expect(filterCommands(commands, 'assignee')).toEqual([]);
   });
 });
 
 describe('cycleCommands', () => {
-  it('builds assign and remove commands from cycles', () => {
-    const cmds = cycleCommands([
-      { id: 10, number: 1, status: 'active' },
-      { id: 11, number: 2, status: 'upcoming' },
-    ]);
-    expect(cmds.map((c) => c.id)).toEqual([
+  it('builds localized assign and remove commands from cycles', () => {
+    const result = cycleCommands(
+      [
+        { id: 10, number: 1, status: 'active' },
+        { id: 11, number: 2, status: 'upcoming' },
+      ],
+      t,
+    );
+    expect(result.map((command) => command.id)).toEqual([
       'assign-cycle:10',
       'assign-cycle:11',
       'assign-cycle:none',
     ]);
-    expect(cmds[0]?.title).toBe('Assign to Cycle 1');
+    expect(result[0]?.title).toBe('Assign to Cycle 1');
+  });
+
+  it('still offers remove when there are no cycles', () => {
+    expect(cycleCommands([], t).map((command) => command.id)).toEqual(['assign-cycle:none']);
   });
 });
 
 describe('projectCommands', () => {
-  it('builds assign and remove commands from projects', () => {
-    const cmds = projectCommands([
-      { id: 4, name: 'Harbor', slug: 'harbor' },
-      { id: 5, name: 'Dock', slug: 'dock' },
-    ]);
-    expect(cmds.map((c) => c.id)).toEqual([
+  it('builds localized assign and remove commands from projects', () => {
+    const result = projectCommands(
+      [
+        { id: 4, name: 'Harbor', slug: 'harbor' },
+        { id: 5, name: 'Dock', slug: 'dock' },
+      ],
+      t,
+    );
+    expect(result.map((command) => command.id)).toEqual([
       'assign-project:4',
       'assign-project:5',
       'assign-project:none',
     ]);
-    expect(cmds[0]?.title).toBe('Assign to Harbor');
+    expect(result[0]?.title).toBe('Assign to Harbor');
   });
 
   it('still offers remove when there are no projects', () => {
-    expect(projectCommands([]).map((c) => c.id)).toEqual(['assign-project:none']);
-  });
-});
-
-describe('cycleCommands empty', () => {
-  it('still offers remove when there are no cycles', () => {
-    expect(cycleCommands([]).map((c) => c.id)).toEqual(['assign-cycle:none']);
+    expect(projectCommands([], t).map((command) => command.id)).toEqual(['assign-project:none']);
   });
 });

@@ -14,9 +14,11 @@ import {
 } from '@mantine/core';
 import {
   IconCalendarEvent,
+  IconChartBar,
   IconCheck,
   IconChevronDown,
   IconFolder,
+  IconFlag,
   IconGitBranch,
   IconPlus,
   IconRefresh,
@@ -24,6 +26,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ISSUE_STATUSES } from '../types.ts';
 import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
 import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
@@ -39,6 +42,7 @@ export function IssuePropertiesPanel({
     IssueDetailModel,
     | 'issue'
     | 'projects'
+    | 'milestones'
     | 'cycles'
     | 'parentOptions'
     | 'labels'
@@ -48,9 +52,11 @@ export function IssuePropertiesPanel({
     | 'handlers'
   >;
 }) {
+  const { t } = useTranslation();
   const {
     issue,
     projects,
+    milestones,
     cycles,
     parentOptions,
     labels,
@@ -62,13 +68,13 @@ export function IssuePropertiesPanel({
   const selectedLabels = labels.filter((label) => selectedLabelIds.has(label.id));
 
   return (
-    <Box component="aside" aria-label="Issue properties" className={styles.aside}>
-      <Stack component="section" aria-label="Properties" gap={5}>
-        <Text className={styles.heading}>Properties</Text>
+    <Box component="aside" aria-label={t('issueProperties.ariaLabel')} className={styles.aside}>
+      <Stack component="section" aria-label={t('issueProperties.heading')} gap={5}>
+        <Text className={styles.heading}>{t('issueProperties.heading')}</Text>
 
-        <PropertyRow label="Status" icon={<IssueStatusIcon status={issue.status} />}>
+        <PropertyRow label={t('field.status')} icon={<IssueStatusIcon status={issue.status} />}>
           <PropertySelect
-            aria-label="Status"
+            aria-label={t('field.status')}
             value={issue.status}
             onChange={handlers.Status_onChange5}
             data={ISSUE_STATUSES.map((status) => ({
@@ -87,9 +93,12 @@ export function IssuePropertiesPanel({
           />
         </PropertyRow>
 
-        <PropertyRow label="Priority" icon={<IssuePriorityIcon priority={issue.priority} />}>
+        <PropertyRow
+          label={t('field.priority')}
+          icon={<IssuePriorityIcon priority={issue.priority} />}
+        >
           <PropertySelect
-            aria-label="Priority"
+            aria-label={t('field.priority')}
             value={String(issue.priority)}
             onChange={handlers.Priority_onChange6}
             data={[0, 1, 2, 3, 4].map((priority) => ({
@@ -105,73 +114,129 @@ export function IssuePropertiesPanel({
           />
         </PropertyRow>
 
-        <PropertyRow label="Project" icon={<IconFolder size={14} stroke={1.7} />}>
+        <PropertyRow label={t('field.project')} icon={<IconFolder size={14} stroke={1.7} />}>
           <PropertySelect
-            aria-label="Project"
+            aria-label={t('field.project')}
             value={issue.projectId != null ? String(issue.projectId) : 'none'}
             onChange={handlers.Project_onChange7}
             data={[
-              { value: 'none', label: 'No project' },
+              { value: 'none', label: t('issueProperties.noProject') },
               ...projects.map((project) => ({ value: String(project.id), label: project.name })),
             ]}
             searchable
-            nothingFoundMessage="No projects found"
+            nothingFoundMessage={t('issueProperties.noProjectsFound')}
           />
         </PropertyRow>
 
-        <PropertyRow label="Cycle" icon={<IconRefresh size={14} stroke={1.7} />}>
+        <PropertyRow label={t('field.milestone')} icon={<IconFlag size={14} stroke={1.7} />}>
           <PropertySelect
-            aria-label="Cycle"
-            value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
-            onChange={handlers.Cycle_onChange8}
+            aria-label={t('field.milestone')}
+            value={issue.milestoneId != null ? String(issue.milestoneId) : 'none'}
+            onChange={handlers.Milestone_onChange43}
             data={[
-              { value: 'none', label: 'No cycle' },
-              ...cycles.map((cycle) => ({
-                value: String(cycle.id),
-                label: `Cycle ${cycle.number}`,
+              { value: 'none', label: t('issueProperties.noMilestone') },
+              ...milestones.map((milestone) => ({
+                value: String(milestone.id),
+                label: milestone.name,
               })),
             ]}
             searchable
-            nothingFoundMessage="No cycles found"
+            disabled={issue.projectId == null || milestones.length === 0}
+            nothingFoundMessage={t('issueProperties.noMilestonesFound')}
           />
         </PropertyRow>
 
-        <PropertyRow label="Parent" icon={<IconGitBranch size={14} stroke={1.7} />}>
+        <PropertyRow label={t('field.type')} icon={<IconTag size={14} stroke={1.7} />}>
           <PropertySelect
-            aria-label="Parent"
+            aria-label={t('field.type')}
+            value={issue.type ?? 'none'}
+            onChange={handlers.Type_onChange14}
+            data={[
+              { value: 'none', label: t('issueProperties.noType') },
+              ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
+                value: type,
+                label: t(`issueType.${type}`),
+              })),
+            ]}
+          />
+        </PropertyRow>
+
+        <PropertyRow label={t('field.estimate')} icon={<IconChartBar size={14} stroke={1.7} />}>
+          <PropertySelect
+            aria-label={t('field.estimate')}
+            value={issue.estimate == null ? 'none' : String(issue.estimate)}
+            onChange={handlers.Estimate_onChange15}
+            data={[
+              { value: 'none', label: t('issueProperties.noEstimate') },
+              ...Array.from(new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, issue.estimate]))
+                .filter((estimate): estimate is number => estimate != null)
+                .map((estimate) => ({ value: String(estimate), label: String(estimate) })),
+            ]}
+          />
+        </PropertyRow>
+
+        <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
+          <PropertySelect
+            aria-label={t('field.cycle')}
+            value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
+            onChange={handlers.Cycle_onChange8}
+            data={[
+              { value: 'none', label: t('field.noCycle') },
+              ...cycles.map((cycle) => ({
+                value: String(cycle.id),
+                label: t('field.cycleN', { number: cycle.number }),
+              })),
+            ]}
+            searchable
+            nothingFoundMessage={t('issueProperties.noCyclesFound')}
+          />
+        </PropertyRow>
+
+        <PropertyRow
+          label={t('issueProperties.parent')}
+          icon={<IconGitBranch size={14} stroke={1.7} />}
+        >
+          <PropertySelect
+            aria-label={t('issueProperties.parent')}
             value={issue.parentId != null ? String(issue.parentId) : 'none'}
             onChange={handlers.Parent_onChange9}
             data={[
-              { value: 'none', label: 'No parent' },
+              { value: 'none', label: t('issueProperties.noParent') },
               ...parentOptions.map((parent) => ({
                 value: String(parent.id),
                 label: `${parent.identifier} ${parent.title}`,
               })),
             ]}
             searchable
-            nothingFoundMessage="No issues found"
+            nothingFoundMessage={t('issueProperties.noIssuesFound')}
           />
         </PropertyRow>
 
-        <PropertyRow label="Due date" icon={<IconCalendarEvent size={14} stroke={1.7} />}>
+        <PropertyRow
+          label={t('issueProperties.dueDate')}
+          icon={<IconCalendarEvent size={14} stroke={1.7} />}
+        >
           <TextInput
             size="sm"
             type="date"
-            aria-label="Due date"
+            aria-label={t('issueProperties.dueDate')}
             value={due}
             onChange={handlers.Due_date_onChange10}
             classNames={{ input: styles.input, root: styles.dateInput }}
           />
         </PropertyRow>
 
-        <Box role="group" aria-label="Labels">
-          <PropertyRow label="Labels" icon={<IconTag size={14} stroke={1.7} />}>
+        <Box role="group" aria-label={t('issueProperties.labels')}>
+          <PropertyRow
+            label={t('issueProperties.labels')}
+            icon={<IconTag size={14} stroke={1.7} />}
+          >
             <Group gap={5} wrap="wrap" className={styles.labels}>
               {selectedLabels.map((label) => (
                 <UnstyledButton
                   key={label.id}
                   type="button"
-                  aria-label={`Remove label ${label.name}`}
+                  aria-label={t('issueProperties.removeLabel', { name: label.name })}
                   onClick={() => handlers.onClick11(true, label)}
                   className={styles.labelPill}
                   style={{
@@ -186,7 +251,7 @@ export function IssuePropertiesPanel({
               <Popover position="bottom-end" shadow="md" width={264} withinPortal>
                 <Popover.Target>
                   <ActionIcon
-                    aria-label="Add labels"
+                    aria-label={t('issueProperties.addLabels')}
                     variant="subtle"
                     color="gray"
                     size="sm"
@@ -197,8 +262,8 @@ export function IssuePropertiesPanel({
                 </Popover.Target>
                 <Popover.Dropdown className={styles.labelPicker}>
                   <TextInput
-                    aria-label="New label"
-                    placeholder="Find or create a label…"
+                    aria-label={t('issueProperties.newLabel')}
+                    placeholder={t('issueProperties.findOrCreateLabel')}
                     value={labelName}
                     onChange={handlers.New_label_onChange12}
                     onKeyDown={handlers.New_label_onKeyDown13}
@@ -246,7 +311,7 @@ export function IssuePropertiesPanel({
                       mt="xs"
                       onClick={handlers.New_label_onClick23}
                     >
-                      Create “{labelName.trim()}”
+                      {t('issueProperties.createLabel', { name: labelName.trim() })}
                     </Button>
                   ) : null}
                 </Popover.Dropdown>

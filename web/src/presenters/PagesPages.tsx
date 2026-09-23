@@ -2,6 +2,7 @@ import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/reac
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
+import i18n from '../i18n/index.ts';
 import type { Page, Project } from '../types.ts';
 
 export function usePagesPagePresenter() {
@@ -49,7 +50,7 @@ export function usePageDetailPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ status: e.target.value }),
       onClick1: () => {
-        if (!window.confirm(`Delete page ${page.slug}?`)) {
+        if (!window.confirm(i18n.t('ui.deletePageConfirmation', { slug: page.slug }))) {
           return;
         }
         return api.deletePage(slug).then(async () => {

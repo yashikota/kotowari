@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
 
-test('create issue, comment, and page', async ({ page }) => {
+test('create issue, comment, and page', async ({ page, request }) => {
   const projectName = `Atlas ${Date.now()}`;
   const projectSlug = projectName
     .toLowerCase()
@@ -60,10 +60,29 @@ test('create issue, comment, and page', async ({ page }) => {
   await expect(page.getByRole('link', { name: /ADR-/ })).toBeVisible();
 
   await page.getByRole('link', { name: 'Projects' }).click();
-  await page.getByLabel('New project name').fill(projectName);
-  await page.getByLabel('New project name').press('ControlOrMeta+Enter');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+  const projectDialog = page.getByRole('dialog', { name: 'Create project' });
+  await projectDialog.getByLabel('Project name').fill(projectName);
+  await projectDialog.getByLabel('Description').fill('A user-created project');
+  await projectDialog.getByLabel('Status').selectOption('started');
+  await projectDialog.getByLabel('Priority').selectOption('2');
+  await projectDialog.getByLabel('Start date').fill('2026-09-01');
+  await projectDialog.getByLabel('Target date').fill('2026-10-01');
+  await projectDialog.getByRole('button', { name: 'Create project' }).click();
   await expect(page).toHaveURL(new RegExp(`/projects/${projectSlug}`));
   await expect(page.getByRole('heading', { name: projectName })).toBeVisible();
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/projects/${projectSlug}`);
+      return await response.json();
+    })
+    .toMatchObject({
+      description: 'A user-created project',
+      status: 'started',
+      priority: 2,
+      startDate: '2026-09-01',
+      targetDate: '2026-10-01',
+    });
 
   await page.getByRole('link', { name: 'Cycles' }).click();
   await page.getByRole('button', { name: 'New cycle' }).click();
@@ -79,7 +98,7 @@ test('create issue, comment, and page', async ({ page }) => {
 
   await page.goto(`/issues/${identifier}`);
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
-  await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
+  await page.getByRole('button', { name: 'Search' }).first().click();
   await page.getByLabel('Command search').fill(`Assign to ${cycleName}`);
   await page.getByRole('option', { name: `Assign to ${cycleName}` }).click();
   await expect(page.getByRole('combobox', { name: 'Cycle' })).toHaveValue(/Cycle [1-9]/);
@@ -90,7 +109,7 @@ test('create issue, comment, and page', async ({ page }) => {
   await expect(doneCol.getByRole('button', { name: new RegExp(identifier) })).toBeVisible();
 
   await page.getByRole('link', { name: 'Pages' }).click();
-  await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
+  await page.getByRole('button', { name: 'Search' }).first().click();
   await page.getByLabel('Command search').fill('Create page');
   await page.getByRole('option', { name: 'Create page' }).click();
   const pageTitle = page.getByPlaceholder('Page title');
@@ -99,8 +118,8 @@ test('create issue, comment, and page', async ({ page }) => {
   await pageTitle.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/pages\//);
   await expect(page.getByRole('textbox', { name: 'Page title' }).first()).toHaveValue('ADR 1');
-  await page.getByLabel('Page project').selectOption({ label: projectName });
-  await expect(page.getByLabel('Page project')).not.toHaveValue('');
+  await page.getByLabel('Project').selectOption({ label: projectName });
+  await expect(page.getByLabel('Project')).not.toHaveValue('');
 });
 
 test('sub-issue and saved view', async ({ page, request }) => {
@@ -136,7 +155,7 @@ test('sub-issue and saved view', async ({ page, request }) => {
   await viewName.fill('Todos');
   await viewName.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/views\/todos/);
-  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');
   await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
   await page.reload();
@@ -144,14 +163,16 @@ test('sub-issue and saved view', async ({ page, request }) => {
   await expect(page.getByRole('link', { name: 'Todos' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Display options' }).click();
-  await page.getByLabel('Group by').selectOption('status');
+  await page.getByLabel('Grouping', { exact: true }).selectOption('status');
+  await expect(page.getByLabel('Grouping', { exact: true })).toHaveValue('status');
   await expect
     .poll(
       async () =>
         ((await (await request.get('/api/views/todos')).json()) as { groupBy: string }).groupBy,
+      { timeout: 10_000 },
     )
     .toBe('status');
-  await page.getByLabel('Order by').selectOption('title');
+  await page.getByLabel('Ordering', { exact: true }).selectOption('title');
   await expect
     .poll(
       async () =>
@@ -171,7 +192,7 @@ test('sub-issue and saved view', async ({ page, request }) => {
 
   await page.reload();
   await page.getByRole('button', { name: 'Display options' }).click();
-  await expect(page.getByLabel('Group by')).toHaveValue('status');
-  await expect(page.getByLabel('Order by')).toHaveValue('title');
+  await expect(page.getByLabel('Grouping', { exact: true })).toHaveValue('status');
+  await expect(page.getByLabel('Ordering', { exact: true })).toHaveValue('title');
   await expect(page.getByRole('radio', { name: 'Board' })).toBeChecked();
 });

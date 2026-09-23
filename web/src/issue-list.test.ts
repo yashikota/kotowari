@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { buildIssueListRows, sortIssues } from './issue-list.ts';
-import type { Issue } from './types.ts';
+import {
+  buildIssueListRows,
+  filterCompletedIssues,
+  includeNestedIssueMatches,
+  sortIssues,
+} from './issue-list.ts';
+import type { Cycle, Issue } from './types.ts';
 
 function issue(number: number, priority: number): Issue {
   return {
@@ -12,13 +17,18 @@ function issue(number: number, priority: number): Issue {
     status: 'todo',
     priority,
     projectId: null,
+    milestoneId: null,
     cycleId: null,
     parentId: null,
     depth: 0,
     dueDate: null,
+    reminderAt: null,
     sortOrder: number,
     labels: [],
     adrNumbers: [],
+    externalLinks: [],
+    relations: [],
+    isFavorite: false,
     createdAt: '',
     updatedAt: '',
     completedAt: null,
@@ -140,12 +150,62 @@ describe('buildIssueListRows', () => {
     ]);
   });
 
+  it('groups by issue type and estimate, including unassigned values', () => {
+    const issues: Issue[] = [
+      { ...issue(1, 1), type: 'feature', estimate: 8 },
+      { ...issue(2, 1), type: 'bug', estimate: 3 },
+      issue(3, 1),
+    ];
+    const byType = buildIssueListRows(issues, new Set(), 'type');
+    expect(byType.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
+      'type:none',
+      'type:bug',
+      'type:feature',
+    ]);
+
+    const byEstimate = buildIssueListRows(issues, new Set(), 'estimate');
+    expect(byEstimate.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
+      'estimate:3',
+      'estimate:8',
+      'estimate:none',
+    ]);
+  });
+
+  it('groups by label, including issues without a label', () => {
+    const rows = buildIssueListRows(
+      [{ ...issue(1, 1), labels: [{ id: 1, name: 'frontend', color: '#fff' }] }, issue(2, 1)],
+      new Set(),
+      'label',
+    );
+    expect(rows.filter((row) => row.kind === 'group').map((row) => row.label)).toEqual([
+      'No label',
+      'frontend',
+    ]);
+    expect(rows.filter((row) => row.kind === 'issue').map((row) => row.issue.number)).toEqual([
+      2, 1,
+    ]);
+  });
+
   it('removes headers when grouping is disabled', () => {
     const rows = buildIssueListRows([issue(1, 1), issue(2, 2)], new Set(), 'none');
     expect(rows).toEqual([
       { kind: 'issue', issue: issue(1, 1) },
       { kind: 'issue', issue: issue(2, 2) },
     ]);
+  });
+
+  it('shows the known empty priority and status groups when requested', () => {
+    const rows = buildIssueListRows([issue(1, 1)], new Set(), 'status', {
+      showEmptyGroups: true,
+    });
+    expect(rows.filter((row) => row.kind === 'group').map((row) => row.label)).toEqual([
+      'backlog',
+      'todo',
+      'in_progress',
+      'done',
+      'canceled',
+    ]);
+    expect(rows.filter((row) => row.kind === 'issue')).toHaveLength(1);
   });
 });
 
@@ -166,5 +226,94 @@ describe('sortIssues', () => {
 
   it('preserves the input order in manual mode', () => {
     expect(sortIssues(issues, 'manual')).toEqual(issues);
+  });
+
+  it('orders estimates numerically and leaves unestimated issues at the end', () => {
+    const rows = [
+      { ...issue(1, 1), estimate: 13 },
+      { ...issue(2, 1), estimate: null },
+      { ...issue(3, 1), estimate: 3 },
+    ];
+    expect(sortIssues(rows, 'estimate').map((row) => row.number)).toEqual([3, 1, 2]);
+  });
+
+  it('reverses an explicit direction for non-manual orderings', () => {
+    expect(sortIssues(issues, 'title', 'desc').map((row) => row.number)).toEqual([1, 3, 2]);
+  });
+
+  it('orders by workflow status, external link count, and status age', () => {
+    const rows = [
+      {
+        ...issue(1, 1),
+        status: 'done' as const,
+        adrNumbers: [1],
+        externalLinks: [
+          { id: 1, url: 'https://example.test', kind: 'link' as const, createdAt: '' },
+        ],
+        statusChangedAt: '2026-04-03',
+      },
+      { ...issue(2, 1), status: 'backlog' as const, adrNumbers: [], statusChangedAt: '2026-04-01' },
+      {
+        ...issue(3, 1),
+        status: 'todo' as const,
+        adrNumbers: [1, 2],
+        externalLinks: [
+          { id: 1, url: 'https://one.test', kind: 'link' as const, createdAt: '' },
+          { id: 2, url: 'https://two.test', kind: 'document' as const, createdAt: '' },
+        ],
+        statusChangedAt: '2026-04-02',
+      },
+    ];
+    expect(sortIssues(rows, 'status').map((row) => row.number)).toEqual([2, 3, 1]);
+    expect(sortIssues(rows, 'linkCount').map((row) => row.number)).toEqual([2, 1, 3]);
+    expect(sortIssues(rows, 'timeInStatus').map((row) => row.number)).toEqual([1, 3, 2]);
+  });
+});
+
+describe('display issue filters', () => {
+  it('includes descendants of matching issues only in show-all mode', () => {
+    const parent = issue(1, 1);
+    const child = { ...issue(2, 1), parentId: parent.id, depth: 1 };
+    const grandchild = { ...issue(3, 1), parentId: child.id, depth: 2 };
+    const unrelated = issue(4, 1);
+    const candidates = [unrelated, grandchild, child, parent];
+
+    expect(includeNestedIssueMatches([parent], candidates, 'showMatching')).toEqual([parent]);
+    expect(includeNestedIssueMatches([parent], candidates, 'showAll')).toEqual([
+      grandchild,
+      child,
+      parent,
+    ]);
+  });
+
+  it('limits completed work by age or the active cycle while retaining open issues', () => {
+    const now = Date.parse('2026-09-23T12:00:00Z');
+    const open = issue(1, 1);
+    const yesterday = {
+      ...issue(2, 1),
+      status: 'done' as const,
+      completedAt: '2026-09-22T12:00:00Z',
+    };
+    const old = { ...issue(3, 1), status: 'done' as const, completedAt: '2026-09-01T12:00:00Z' };
+    const currentCycle: Cycle[] = [
+      {
+        id: 1,
+        number: 4,
+        startsAt: '2026-09-20T00:00:00Z',
+        endsAt: '2026-09-30T23:59:59Z',
+        status: 'active',
+        createdAt: '',
+        updatedAt: '',
+      },
+    ];
+
+    expect(filterCompletedIssues([open, yesterday, old], 'pastDay', [], now)).toEqual([
+      open,
+      yesterday,
+    ]);
+    expect(
+      filterCompletedIssues([open, yesterday, old], 'currentCycle', currentCycle, now),
+    ).toEqual([open, yesterday]);
+    expect(filterCompletedIssues([open, yesterday, old], 'none', [], now)).toEqual([open]);
   });
 });

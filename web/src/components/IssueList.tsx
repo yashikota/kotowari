@@ -1,8 +1,10 @@
 import { Box, Group, ScrollArea } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import type { IssueGroupBy } from '../issue-list.ts';
 import { IssueGroupRow, IssueListRow } from './IssueListRow.tsx';
 import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 import { IssueBoardColumn } from './IssueBoardColumn.tsx';
+import styles from './IssueBoardColumn.module.css';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueBoardPresenter, useIssueListPresenter } from '../presenters/IssueList.tsx';
@@ -14,17 +16,27 @@ export function IssueListView({
   model: ReturnType<typeof useIssueListPresenter>;
   hideProjectSlug?: boolean;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       return (
         <EmptyState>
-          No issues. Press <Shortcut>c</Shortcut> to create.
+          {t('ui.noIssuesStart')} <Shortcut>c</Shortcut> {t('ui.toCreate')}
         </EmptyState>
       );
     }
     case 1: {
-      const { selectedId, issues, rows, issuePositions, childCounts, windowed, today, handlers } =
-        model;
+      const {
+        selectedId,
+        rows,
+        issuePositions,
+        issueCount,
+        childCounts,
+        windowed,
+        today,
+        displayProperties,
+        handlers,
+      } = model;
       return (
         <ScrollArea
           viewportRef={windowed.ref}
@@ -33,14 +45,18 @@ export function IssueListView({
           viewportProps={{
             tabIndex: 0,
             role: 'listbox',
-            'aria-label': 'Issues',
+            'aria-label': t('nav.issues'),
           }}
         >
           <Box>
             <Box role="presentation" style={{ height: windowed.before, flexShrink: 0 }} />
             {rows.slice(windowed.start, windowed.end).map((row) => {
               if (row.kind === 'group') {
-                return <IssueGroupRow key={row.key} row={row} onToggle={handlers.onToggleGroup1} />;
+                return (
+                  <Box key={row.key} ml={row.level ? row.level * 20 : 0}>
+                    <IssueGroupRow row={row} onToggle={handlers.onToggleGroup1} />
+                  </Box>
+                );
               }
               const issue = row.issue;
               return (
@@ -49,9 +65,10 @@ export function IssueListView({
                   issue={issue}
                   selected={issue.identifier === selectedId}
                   position={issuePositions.get(issue.identifier)}
-                  setSize={issues.length}
+                  setSize={issueCount}
                   childCount={childCounts.get(issue.id) ?? 0}
                   today={today}
+                  displayProperties={displayProperties}
                   hideProjectSlug={hideProjectSlug}
                   onSelect={handlers.onClick0}
                 />
@@ -94,7 +111,7 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
     case 0: {
       const { dragId, columns, handlers } = model;
       return (
-        <Group align="stretch" gap="md" wrap="nowrap" style={{ minHeight: 480 }}>
+        <Group align="stretch" gap="md" wrap="nowrap" className={styles.board}>
           {columns.map((column) => (
             <IssueBoardColumn
               key={column.status}

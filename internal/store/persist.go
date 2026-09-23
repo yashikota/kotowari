@@ -132,6 +132,16 @@ func load(root string) (*mem, error) {
 		} else {
 			m.observeID(p.ID)
 		}
+		if p.Milestones == nil {
+			p.Milestones = []Milestone{}
+		}
+		for i := range p.Milestones {
+			if p.Milestones[i].ID == 0 {
+				p.Milestones[i].ID = m.nextID()
+			} else {
+				m.observeID(p.Milestones[i].ID)
+			}
+		}
 		m.Projects = append(m.Projects, p)
 		return nil
 	}); err != nil {
@@ -617,6 +627,12 @@ func fillIssueRefs(m *mem) {
 		if iss.ADRNumbers == nil {
 			iss.ADRNumbers = []int{}
 		}
+		if iss.ExternalLinks == nil {
+			iss.ExternalLinks = []IssueLink{}
+		}
+		if iss.Relations == nil {
+			iss.Relations = []IssueRelation{}
+		}
 		if iss.Labels == nil {
 			iss.Labels = []Label{}
 		}
@@ -624,6 +640,18 @@ func fillIssueRefs(m *mem) {
 			if p, ok := projectBySlug(m, *iss.ProjectSlug); ok {
 				id := p.ID
 				iss.ProjectID = &id
+			}
+		}
+		if iss.MilestoneID != nil {
+			if p, milestone, ok := milestoneByID(m, *iss.MilestoneID); ok {
+				projectID := p.ID
+				iss.ProjectID = &projectID
+				slug := p.Slug
+				iss.ProjectSlug = &slug
+				name := milestone.Name
+				iss.MilestoneName = &name
+			} else {
+				iss.MilestoneID = nil
 			}
 		}
 		if iss.CycleNumber != nil {
@@ -675,6 +703,17 @@ func projectByID(m *mem, id int64) (Project, bool) {
 		}
 	}
 	return Project{}, false
+}
+
+func milestoneByID(m *mem, id int64) (Project, Milestone, bool) {
+	for _, p := range m.Projects {
+		for _, milestone := range p.Milestones {
+			if milestone.ID == id {
+				return p, milestone, true
+			}
+		}
+	}
+	return Project{}, Milestone{}, false
 }
 
 func cycleByNumber(m *mem, n int) (Cycle, bool) {

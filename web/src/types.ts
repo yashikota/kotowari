@@ -1,9 +1,24 @@
 export type IssueStatus = 'backlog' | 'todo' | 'in_progress' | 'done' | 'canceled';
+export type IssueType = 'bug' | 'feature' | 'improvement' | 'task';
 
 export type Label = {
   id: number;
   name: string;
   color: string;
+};
+
+export type IssueLink = {
+  id: number;
+  url: string;
+  title?: string;
+  kind: 'link' | 'pullRequest' | 'document';
+  createdAt: string;
+};
+
+export type IssueRelation = {
+  id: number;
+  kind: 'related' | 'blocks' | 'blockedBy' | 'duplicateOf' | 'duplicateBy';
+  targetIdentifier: string;
 };
 
 export type Issue = {
@@ -13,21 +28,64 @@ export type Issue = {
   title: string;
   body: string;
   status: IssueStatus;
+  type?: IssueType;
   priority: number;
+  estimate?: number | null;
   projectId: number | null;
   projectSlug?: string | null;
+  milestoneId: number | null;
+  milestoneName?: string | null;
   cycleId: number | null;
   cycleNumber?: number | null;
+  cycleAddedAt?: string | null;
   parentId: number | null;
   parentIdentifier?: string | null;
+  recurringSlug?: string | null;
   depth: number;
   dueDate: string | null;
+  reminderAt: string | null;
   sortOrder: number;
   labels: Label[];
   adrNumbers: number[];
+  externalLinks: IssueLink[];
+  relations: IssueRelation[];
+  isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
+  statusChangedAt?: string;
+  startedAt?: string | null;
   completedAt: string | null;
+};
+
+export type IssueTemplate = {
+  slug: string;
+  name: string;
+  title: string;
+  body: string;
+  status: IssueStatus;
+  type?: IssueType;
+  priority: number;
+  estimate?: number | null;
+  labels: string[];
+};
+
+export type RecurringIssue = {
+  slug: string;
+  name: string;
+  title: string;
+  body: string;
+  status: IssueStatus;
+  type?: IssueType;
+  priority: number;
+  estimate?: number | null;
+  projectSlug?: string | null;
+  labels: string[];
+  firstDueDate: string;
+  interval: number;
+  unit: 'day' | 'week' | 'month' | 'year';
+  nextDueDate: string;
+  lastIssueIdentifier?: string;
+  enabled: boolean;
 };
 
 export type Project = {
@@ -36,9 +94,20 @@ export type Project = {
   slug: string;
   description: string;
   status: string;
+  priority: number;
   startDate: string | null;
   targetDate: string | null;
+  labels?: string[];
   progress: number;
+  milestones: ProjectMilestone[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProjectMilestone = {
+  id: number;
+  name: string;
+  targetDate: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -46,9 +115,13 @@ export type Project = {
 export type Cycle = {
   id: number;
   number: number;
+  name?: string;
+  description?: string;
   startsAt: string;
   endsAt: string;
   status: string;
+  isFavorite?: boolean;
+  resources?: IssueLink[];
   createdAt: string;
   updatedAt: string;
 };
@@ -95,12 +168,31 @@ export type View = {
   slug: string;
   display: 'list' | 'board';
   groupBy: string;
+  subGroupBy?: string;
   orderBy: string;
+  direction?: 'asc' | 'desc';
+  completedIssues?: string;
+  showSubIssues?: boolean | null;
+  nestedSubIssues?: string;
+  showEmptyGroups?: boolean;
+  displayProperties?: string[];
   status: string | null;
   project: string | null;
   cycle: number | null;
   labels: string[];
   priority: number | null;
+  type: IssueType | null;
+  estimate: number | null;
+  dueDate?: string;
+  relation?: string | null;
+  content?: string | null;
+  milestoneName?: string | null;
+  dateField?: string;
+  dateRange?: string;
+  projectStatus?: string | null;
+  projectPriority?: number | null;
+  projectLabels?: string[];
+  addedToCycle?: ('planned' | 'during' | 'after')[];
   createdAt: string;
   updatedAt: string;
 };
@@ -144,9 +236,15 @@ export type SearchHit = {
   title: string;
 };
 
+export type AgentChat = {
+  id: string;
+  title: string;
+  updatedAt: number;
+};
+
 export const ISSUE_STATUSES: IssueStatus[] = ['backlog', 'todo', 'in_progress', 'done', 'canceled'];
 
-export const PROJECT_STATUSES = ['planned', 'started', 'completed', 'canceled'] as const;
+export const PROJECT_STATUSES = ['backlog', 'planned', 'started', 'completed', 'canceled'] as const;
 
 export const CYCLE_STATUSES = ['upcoming', 'active', 'completed'] as const;
 

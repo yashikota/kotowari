@@ -88,6 +88,14 @@ describe('actionFromKeyboard', () => {
     const body = el('BODY');
     expect(
       actionFromKeyboard({
+        key: 'a',
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('nav-a');
+    expect(
+      actionFromKeyboard({
         key: 'p',
         metaKey: false,
         ctrlKey: false,

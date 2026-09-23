@@ -93,6 +93,7 @@ tasks:
     dir: web
     cmds:
       - pnpm exec vp check --fix
+      - node scripts/check-ui-i18n.mjs
 
   web:test:
     desc: SPA unit tests

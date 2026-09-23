@@ -1,5 +1,6 @@
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
+import i18n from '../i18n/index.ts';
 
 type Update = {
   update?: {
@@ -25,8 +26,18 @@ type State = {
 export function useAIPanelPresenter({ kind, id }: { kind: string; id: string }) {
   return { _view: 0 as const, kind, id, handlers: {} };
 }
-export function usePanelPresenter({ kind, id }: { kind: string; id: string }) {
-  const [open, setOpen] = useState(false);
+export function usePanelPresenter({
+  kind,
+  id,
+  standalone = false,
+  onPromptSubmitted,
+}: {
+  kind: string;
+  id: string;
+  standalone?: boolean;
+  onPromptSubmitted?: (prompt: string) => void;
+}) {
+  const [open, setOpen] = useState(standalone);
   const [state, setState] = useState<State | null>(null);
   const [prompt, setPrompt] = useState('');
   const [error, setError] = useState('');
@@ -63,6 +74,7 @@ export function usePanelPresenter({ kind, id }: { kind: string; id: string }) {
   async function action(body: Record<string, unknown>) {
     setSending(true);
     setError('');
+    const submittedPrompt = body.action === 'prompt' ? prompt : '';
     try {
       const r = await fetch(path, {
         method: 'POST',
@@ -72,7 +84,10 @@ export function usePanelPresenter({ kind, id }: { kind: string; id: string }) {
       const next = (await r.json()) as State;
       if (!r.ok) throw new Error(next.error ?? r.statusText);
       setState(next);
-      if (body.action === 'prompt') setPrompt('');
+      if (body.action === 'prompt') {
+        setPrompt('');
+        onPromptSubmitted?.(submittedPrompt);
+      }
     } catch (e) {
       setError(String(e));
     } finally {
@@ -84,10 +99,10 @@ export function usePanelPresenter({ kind, id }: { kind: string; id: string }) {
     const update = e.data?.update;
     const role =
       e.kind === 'user' || update?.sessionUpdate === 'user_message_chunk'
-        ? 'You'
+        ? 'you'
         : update?.sessionUpdate === 'agent_message_chunk'
-          ? 'Agent'
-          : 'Activity';
+          ? 'agent'
+          : 'activity';
     const text =
       e.text ?? update?.content?.text ?? [update?.title, update?.status].filter(Boolean).join(' ');
     if (!text) continue;
@@ -97,6 +112,7 @@ export function usePanelPresenter({ kind, id }: { kind: string; id: string }) {
   }
   return {
     _view: 0 as const,
+    standalone,
     id,
     open,
     state,
@@ -124,7 +140,7 @@ export function usePanelPresenter({ kind, id }: { kind: string; id: string }) {
       ) => setPrompt(e.target.value),
       onClick5: () => action({ action: 'cancel' }),
       onClick6: () => {
-        if (window.confirm('Start a new conversation for this document?'))
+        if (window.confirm(i18n.t('ui.startNewConversationConfirmation')))
           return action({ action: 'reset' });
       },
     },

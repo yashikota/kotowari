@@ -44,11 +44,283 @@ func TestListIssuesEmptyJSONArray(t *testing.T) {
 	}
 }
 
+func TestListIssuesByDueDateFilterValidatesAnchor(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"overdue","status":"todo","dueDate":"2026-05-14"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	closed := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"completed overdue","status":"done","dueDate":"2026-05-14"}`)
+	if closed.Code != http.StatusCreated {
+		t.Fatalf("create completed issue %d %s", closed.Code, closed.Body.String())
+	}
+
+	filtered := doJSON(t, s, http.MethodGet, "/api/issues?dueDate=overdue&asOf=2026-05-15", "")
+	if filtered.Code != http.StatusOK {
+		t.Fatalf("filter issues %d %s", filtered.Code, filtered.Body.String())
+	}
+	var issues []struct {
+		Title string `json:"title"`
+	}
+	if err := json.Unmarshal(filtered.Body.Bytes(), &issues); err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 1 || issues[0].Title != "overdue" {
+		t.Fatalf("unexpected overdue issues %#v", issues)
+	}
+
+	for _, path := range []string{
+		"/api/issues?dueDate=tomorrowish&asOf=2026-05-15",
+		"/api/issues?dueDate=today&asOf=2026-02-30",
+	} {
+		bad := doJSON(t, s, http.MethodGet, path, "")
+		if bad.Code != http.StatusBadRequest {
+			t.Errorf("invalid filter %s: status %d body %s", path, bad.Code, bad.Body.String())
+		}
+	}
+}
+
 func TestCreateIssueRequiresTitle(t *testing.T) {
 	s := testAPI(t)
 	rec := doJSON(t, s, "POST", "/api/issues", `{"title":""}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("code %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestConvertIssueToProjectPreservesIssue(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Release plan","body":"Context","status":"in_progress","priority":2}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	var source struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &source); err != nil {
+		t.Fatal(err)
+	}
+	converted := doJSON(t, s, http.MethodPost, "/api/issues/"+source.Identifier+"/projects", `{"name":"Release plan","description":"Context","status":"started","priority":2,"startDate":"2026-09-01"}`)
+	if converted.Code != http.StatusCreated {
+		t.Fatalf("convert issue %d %s", converted.Code, converted.Body.String())
+	}
+	var result struct {
+		Project struct {
+			Slug     string `json:"slug"`
+			Priority int    `json:"priority"`
+		} `json:"project"`
+		Issue struct {
+			Identifier string `json:"identifier"`
+			Title      string `json:"title"`
+			Body       string `json:"body"`
+			Status     string `json:"status"`
+			ProjectID  *int64 `json:"projectId"`
+		} `json:"issue"`
+	}
+	if err := json.Unmarshal(converted.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Project.Slug != "release-plan" || result.Project.Priority != 2 || result.Issue.Identifier != source.Identifier ||
+		result.Issue.Title != "Release plan" || strings.TrimSpace(result.Issue.Body) != "Context" || result.Issue.Status != "in_progress" || result.Issue.ProjectID == nil {
+		t.Fatalf("converted result %#v", result)
+	}
+}
+
+func TestIssueTypeAndEstimateAPI(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"typed","type":"feature","estimate":8}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", rec.Code, rec.Body.String())
+	}
+	var created struct {
+		Identifier string `json:"identifier"`
+		Type       string `json:"type"`
+		Estimate   *int   `json:"estimate"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Type != "feature" || created.Estimate == nil || *created.Estimate != 8 {
+		t.Fatalf("created properties: %#v", created)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?type=feature&estimate=8", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("filter %d %s", rec.Code, rec.Body.String())
+	}
+	var filtered []struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &filtered); err != nil {
+		t.Fatal(err)
+	}
+	if len(filtered) != 1 || filtered[0].Identifier != created.Identifier {
+		t.Fatalf("filtered issues: %#v", filtered)
+	}
+
+	rec = doJSON(t, s, "POST", "/api/views", `{"name":"Feature eight","slug":"feature-eight","type":"feature","estimate":8}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create view %d %s", rec.Code, rec.Body.String())
+	}
+	var savedView struct {
+		Type     *string `json:"type"`
+		Estimate *int    `json:"estimate"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &savedView); err != nil {
+		t.Fatal(err)
+	}
+	if savedView.Type == nil || *savedView.Type != "feature" || savedView.Estimate == nil || *savedView.Estimate != 8 {
+		t.Fatalf("saved filters: %#v", savedView)
+	}
+	rec = doJSON(t, s, "PATCH", "/api/views/feature-eight", `{"type":"","estimate":-1}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("clear view filters %d %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &savedView); err != nil {
+		t.Fatal(err)
+	}
+	if savedView.Type != nil || savedView.Estimate != nil {
+		t.Fatalf("cleared saved filters: %#v", savedView)
+	}
+
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"type":"bug","estimate":13}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("patch %d %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Type != "bug" || created.Estimate == nil || *created.Estimate != 13 {
+		t.Fatalf("updated properties: %#v", created)
+	}
+
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"type":null,"estimate":null}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("clear %d %s", rec.Code, rec.Body.String())
+	}
+	created = struct {
+		Identifier string `json:"identifier"`
+		Type       string `json:"type"`
+		Estimate   *int   `json:"estimate"`
+	}{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Type != "" || created.Estimate != nil {
+		t.Fatalf("cleared properties: %#v", created)
+	}
+
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"type":"epic"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid type code %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestIssueReminderAPI(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"reminded"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", rec.Code, rec.Body.String())
+	}
+	var created struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"reminderAt":"2026-09-25T00:30:00+09:00"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("set reminder %d %s", rec.Code, rec.Body.String())
+	}
+	var updated struct {
+		ReminderAt *string `json:"reminderAt"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	if updated.ReminderAt == nil || *updated.ReminderAt != "2026-09-24T15:30:00Z" {
+		t.Fatalf("reminder %#v", updated.ReminderAt)
+	}
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"reminderAt":"not-a-date"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid reminder %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"reminderAt":null}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("clear reminder %d %s", rec.Code, rec.Body.String())
+	}
+	updated = struct {
+		ReminderAt *string `json:"reminderAt"`
+	}{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	if updated.ReminderAt != nil {
+		t.Fatalf("reminder wasn't cleared: %#v", updated.ReminderAt)
+	}
+}
+
+func TestProjectMilestoneAPIAssignsAndClearsIssueProperty(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "POST", "/api/projects", `{"name":"Release","slug":"release"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", rec.Code, rec.Body.String())
+	}
+	var project struct {
+		ID   int64  `json:"id"`
+		Slug string `json:"slug"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &project); err != nil {
+		t.Fatal(err)
+	}
+	rec = doJSON(t, s, "POST", "/api/projects/release/milestones", `{"name":"Beta","targetDate":"2026-11-15"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create milestone %d %s", rec.Code, rec.Body.String())
+	}
+	var milestone store.Milestone
+	if err := json.Unmarshal(rec.Body.Bytes(), &milestone); err != nil {
+		t.Fatal(err)
+	}
+	rec = doJSON(t, s, "POST", "/api/issues", `{"title":"Ship beta","projectId":`+strconv.FormatInt(project.ID, 10)+`}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", rec.Code, rec.Body.String())
+	}
+	var issue struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+issue.Identifier, `{"milestoneId":`+strconv.FormatInt(milestone.ID, 10)+`}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("assign milestone %d %s", rec.Code, rec.Body.String())
+	}
+	var updated struct {
+		MilestoneID   *int64  `json:"milestoneId"`
+		MilestoneName *string `json:"milestoneName"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	if updated.MilestoneID == nil || *updated.MilestoneID != milestone.ID || updated.MilestoneName == nil || *updated.MilestoneName != milestone.Name {
+		t.Fatalf("assigned milestone %#v", updated)
+	}
+	rec = doJSON(t, s, "DELETE", "/api/projects/release/milestones/"+strconv.FormatInt(milestone.ID, 10), "")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("delete milestone %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/issues/"+issue.Identifier, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("get issue %d %s", rec.Code, rec.Body.String())
+	}
+	updated = struct {
+		MilestoneID   *int64  `json:"milestoneId"`
+		MilestoneName *string `json:"milestoneName"`
+	}{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	if updated.MilestoneID != nil || updated.MilestoneName != nil {
+		t.Fatalf("milestone not cleared after delete: %#v", updated)
 	}
 }
 
@@ -140,6 +412,211 @@ func TestIssueLabelsDueAndDiagnostics(t *testing.T) {
 	}
 }
 
+func TestIssueExternalLinksAPI(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"resources"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", rec.Code, rec.Body.String())
+	}
+	var issue map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	identifier := issue["identifier"].(string)
+	rec = doJSON(t, s, "POST", "/api/issues/"+identifier+"/links", `{"url":"https://example.test/docs","title":"API guide","kind":"document"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("add link %d %s", rec.Code, rec.Body.String())
+	}
+	var link map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &link); err != nil {
+		t.Fatal(err)
+	}
+	if link["url"] != "https://example.test/docs" || link["kind"] != "document" {
+		t.Fatalf("link response %#v", link)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues/"+identifier, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("get linked issue %d %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	links, ok := issue["externalLinks"].([]any)
+	if !ok || len(links) != 1 {
+		t.Fatalf("external links %#v", issue["externalLinks"])
+	}
+	linkID := int64(link["id"].(float64))
+	rec = doJSON(t, s, "POST", "/api/issues/"+identifier+"/links", `{"url":"https://example.test/docs","kind":"document"}`)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate link %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "POST", "/api/issues/"+identifier+"/links", `{"url":"javascript:alert(1)"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("unsafe link %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "DELETE", "/api/issues/"+identifier+"/links/"+strconv.FormatInt(linkID, 10), "")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("remove link %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCycleResourcesAPI(t *testing.T) {
+	s := testAPI(t)
+	start := "2026-09-24T00:00:00Z"
+	end := "2026-10-01T00:00:00Z"
+	rec := doJSON(t, s, http.MethodPost, "/api/cycles", `{"startsAt":"`+start+`","endsAt":"`+end+`","status":"upcoming"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create cycle %d %s", rec.Code, rec.Body.String())
+	}
+	var cycle map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &cycle); err != nil {
+		t.Fatal(err)
+	}
+	number := int(cycle["number"].(float64))
+	path := "/api/cycles/" + strconv.Itoa(number) + "/links"
+	rec = doJSON(t, s, http.MethodPost, path, `{"url":"https://example.test/cycle/brief","title":"Cycle brief","kind":"document"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("add cycle resource %d %s", rec.Code, rec.Body.String())
+	}
+	var resource map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &resource); err != nil {
+		t.Fatal(err)
+	}
+	if resource["url"] != "https://example.test/cycle/brief" || resource["kind"] != "document" {
+		t.Fatalf("resource response %#v", resource)
+	}
+	cyclePath := "/api/cycles/" + strconv.Itoa(number)
+	rec = doJSON(t, s, http.MethodGet, cyclePath, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("get linked cycle %d %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &cycle); err != nil {
+		t.Fatal(err)
+	}
+	resources, ok := cycle["resources"].([]any)
+	if !ok || len(resources) != 1 {
+		t.Fatalf("cycle resources %#v", cycle["resources"])
+	}
+	rec = doJSON(t, s, http.MethodPost, path, `{"url":"https://example.test/cycle/brief"}`)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate resource %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, http.MethodPost, path, `{"url":"javascript:alert(1)"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("unsafe resource %d %s", rec.Code, rec.Body.String())
+	}
+	resourceID := int64(resource["id"].(float64))
+	rec = doJSON(t, s, http.MethodDelete, path+"/"+strconv.FormatInt(resourceID, 10), "")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("remove cycle resource %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestIssueFavoriteAPI(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"favorite me"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", rec.Code, rec.Body.String())
+	}
+	var issue map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	identifier := issue["identifier"].(string)
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+identifier, `{"isFavorite":true}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("favorite issue %d %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	if issue["isFavorite"] != true {
+		t.Fatalf("favorite response %#v", issue["isFavorite"])
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?favorite=true", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("favorite filter %d %s", rec.Code, rec.Body.String())
+	}
+	var favorites []map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &favorites); err != nil {
+		t.Fatal(err)
+	}
+	if len(favorites) != 1 || favorites[0]["identifier"] != identifier {
+		t.Fatalf("favorite issues %#v", favorites)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?favorite=maybe", "")
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid favorite filter %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestIssueRelationsAPI(t *testing.T) {
+	s := testAPI(t)
+	create := func(title string) map[string]any {
+		rec := doJSON(t, s, "POST", "/api/issues", `{"title":"`+title+`"}`)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("create issue %d %s", rec.Code, rec.Body.String())
+		}
+		var issue map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &issue); err != nil {
+			t.Fatal(err)
+		}
+		return issue
+	}
+	first := create("relation source")
+	second := create("relation target")
+	firstID := first["identifier"].(string)
+	secondID := second["identifier"].(string)
+	body := `{"targetIdentifier":"` + secondID + `","kind":"blocks"}`
+	rec := doJSON(t, s, "POST", "/api/issues/"+firstID+"/relations", body)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("add relation %d %s", rec.Code, rec.Body.String())
+	}
+	var relation map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &relation); err != nil {
+		t.Fatal(err)
+	}
+	if relation["kind"] != "blocks" || relation["targetIdentifier"] != secondID {
+		t.Fatalf("relation response %#v", relation)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues/"+secondID, "")
+	var target map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &target); err != nil {
+		t.Fatal(err)
+	}
+	relations, ok := target["relations"].([]any)
+	if !ok || len(relations) != 1 || relations[0].(map[string]any)["kind"] != "blockedBy" {
+		t.Fatalf("reciprocal relations %#v", target["relations"])
+	}
+	for filter, want := range map[string]string{"blocking": firstID, "blocked": secondID} {
+		filtered := doJSON(t, s, http.MethodGet, "/api/issues?relation="+filter, "")
+		var issues []map[string]any
+		if filtered.Code != http.StatusOK || json.Unmarshal(filtered.Body.Bytes(), &issues) != nil || len(issues) != 1 || issues[0]["identifier"] != want {
+			t.Errorf("relation filter %q returned %d %s", filter, filtered.Code, filtered.Body.String())
+		}
+	}
+	invalidFilter := doJSON(t, s, http.MethodGet, "/api/issues?relation=unknown", "")
+	if invalidFilter.Code != http.StatusBadRequest {
+		t.Fatalf("invalid relation filter %d %s", invalidFilter.Code, invalidFilter.Body.String())
+	}
+	rec = doJSON(t, s, "POST", "/api/issues/"+firstID+"/relations", body)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate relation %d %s", rec.Code, rec.Body.String())
+	}
+	relationID := int64(relation["id"].(float64))
+	rec = doJSON(t, s, "DELETE", "/api/issues/"+firstID+"/relations/"+strconv.FormatInt(relationID, 10), "")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("remove relation %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/issues/"+secondID, "")
+	if err := json.Unmarshal(rec.Body.Bytes(), &target); err != nil {
+		t.Fatal(err)
+	}
+	if got := target["relations"].([]any); len(got) != 0 {
+		t.Fatalf("relations after removal %#v", got)
+	}
+}
+
 func TestIssueParentAndListDepth(t *testing.T) {
 	s := testAPI(t)
 	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"root"}`)
@@ -190,7 +667,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"closed","status":"done"}`); rec.Code != http.StatusCreated {
 		t.Fatalf("done issue %d %s", rec.Code, rec.Body.String())
 	}
-	rec := doJSON(t, s, "POST", "/api/views", `{"name":"Open","slug":"open","display":"list","groupBy":"status","orderBy":"title","status":"todo"}`)
+	rec := doJSON(t, s, "POST", "/api/views", `{"name":"Open","slug":"open","display":"list","groupBy":"status","subGroupBy":"priority","orderBy":"title","direction":"desc","completedIssues":"pastWeek","showSubIssues":false,"nestedSubIssues":"showAll","showEmptyGroups":true,"displayProperties":["id","cycle"],"status":"todo"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("create view %d %s", rec.Code, rec.Body.String())
 	}
@@ -202,8 +679,11 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &view); err != nil {
 		t.Fatal(err)
 	}
-	if view["name"] != "Open" || view["status"] != "todo" || view["groupBy"] != "status" || view["orderBy"] != "title" {
+	if view["name"] != "Open" || view["status"] != "todo" || view["groupBy"] != "status" || view["subGroupBy"] != "priority" || view["orderBy"] != "title" || view["direction"] != "desc" || view["completedIssues"] != "pastWeek" || view["showSubIssues"] != false || view["nestedSubIssues"] != "showAll" || view["showEmptyGroups"] != true {
 		t.Fatalf("view %#v", view)
+	}
+	if got, ok := view["displayProperties"].([]any); !ok || len(got) != 2 || got[0] != "id" || got[1] != "cycle" {
+		t.Fatalf("view display properties %#v", view["displayProperties"])
 	}
 	rec = doJSON(t, s, "GET", "/api/issues?status=todo", "")
 	var issues []map[string]any
@@ -213,7 +693,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if len(issues) != 1 || issues[0]["title"] != "open" {
 		t.Fatalf("filtered %#v", issues)
 	}
-	rec = doJSON(t, s, "PATCH", "/api/views/open", `{"name":"Todos","display":"board","groupBy":"cycle","orderBy":"updated"}`)
+	rec = doJSON(t, s, "PATCH", "/api/views/open", `{"name":"Todos","display":"board","groupBy":"cycle","subGroupBy":"none","orderBy":"updated","direction":"asc","completedIssues":"none","showSubIssues":true,"nestedSubIssues":"showMatching","showEmptyGroups":false,"displayProperties":["status","estimate"]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("patch view %d %s", rec.Code, rec.Body.String())
 	}
@@ -222,8 +702,11 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &views); err != nil {
 		t.Fatal(err)
 	}
-	if len(views) != 1 || views[0]["name"] != "Todos" || views[0]["display"] != "board" || views[0]["groupBy"] != "cycle" || views[0]["orderBy"] != "updated" {
+	if len(views) != 1 || views[0]["name"] != "Todos" || views[0]["display"] != "board" || views[0]["groupBy"] != "cycle" || views[0]["orderBy"] != "updated" || views[0]["direction"] != "asc" || views[0]["completedIssues"] != "none" || views[0]["showSubIssues"] != true || views[0]["showEmptyGroups"] != false {
 		t.Fatalf("list views %#v", views)
+	}
+	if got, ok := views[0]["displayProperties"].([]any); !ok || len(got) != 2 || got[0] != "status" || got[1] != "estimate" {
+		t.Fatalf("patched display properties %#v", views[0]["displayProperties"])
 	}
 	rec = doJSON(t, s, "DELETE", "/api/views/open", "")
 	if rec.Code != http.StatusNoContent {
@@ -253,6 +736,60 @@ func TestListIssuesPriorityQuery(t *testing.T) {
 	}
 	if len(issues) != 1 || issues[0]["title"] != "hot" {
 		t.Fatalf("got %#v", issues)
+	}
+}
+
+func TestIssueMilestoneNameFilterAndSavedViewAPI(t *testing.T) {
+	s := testAPI(t)
+	projectResponse := doJSON(t, s, "POST", "/api/projects", `{"name":"Release","slug":"release"}`)
+	if projectResponse.Code != http.StatusCreated {
+		t.Fatalf("project %d %s", projectResponse.Code, projectResponse.Body.String())
+	}
+	var project store.Project
+	if err := json.Unmarshal(projectResponse.Body.Bytes(), &project); err != nil {
+		t.Fatal(err)
+	}
+	milestoneResponse := doJSON(t, s, "POST", "/api/projects/release/milestones", `{"name":"Beta rollout"}`)
+	if milestoneResponse.Code != http.StatusCreated {
+		t.Fatalf("milestone %d %s", milestoneResponse.Code, milestoneResponse.Body.String())
+	}
+	var milestone store.Milestone
+	if err := json.Unmarshal(milestoneResponse.Body.Bytes(), &milestone); err != nil {
+		t.Fatal(err)
+	}
+	issueResponse := doJSON(t, s, "POST", "/api/issues", `{"title":"Ship beta","projectId":`+strconv.FormatInt(project.ID, 10)+`}`)
+	if issueResponse.Code != http.StatusCreated {
+		t.Fatalf("issue %d %s", issueResponse.Code, issueResponse.Body.String())
+	}
+	var issue store.Issue
+	if err := json.Unmarshal(issueResponse.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	assign := doJSON(t, s, "PATCH", "/api/issues/"+issue.Identifier, `{"milestoneId":`+strconv.FormatInt(milestone.ID, 10)+`}`)
+	if assign.Code != http.StatusOK {
+		t.Fatalf("assign milestone %d %s", assign.Code, assign.Body.String())
+	}
+	filtered := doJSON(t, s, "GET", "/api/issues?milestoneName=beta+roll", "")
+	if filtered.Code != http.StatusOK {
+		t.Fatalf("filter issues %d %s", filtered.Code, filtered.Body.String())
+	}
+	var issues []store.Issue
+	if err := json.Unmarshal(filtered.Body.Bytes(), &issues); err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 1 || issues[0].Identifier != issue.Identifier {
+		t.Fatalf("milestone-filtered issues %#v", issues)
+	}
+	createdView := doJSON(t, s, "POST", "/api/views", `{"name":"Beta rollout","slug":"beta-rollout","milestoneName":"Beta roll"}`)
+	if createdView.Code != http.StatusCreated {
+		t.Fatalf("create view %d %s", createdView.Code, createdView.Body.String())
+	}
+	var view store.View
+	if err := json.Unmarshal(createdView.Body.Bytes(), &view); err != nil {
+		t.Fatal(err)
+	}
+	if view.MilestoneName == nil || *view.MilestoneName != "Beta roll" {
+		t.Fatalf("saved milestone filter %#v", view)
 	}
 }
 
@@ -307,9 +844,20 @@ func TestLivedInWorkspaceHTTP(t *testing.T) {
 	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"Old","status":"done"}`); rec.Code != http.StatusCreated {
 		t.Fatalf("done %d %s", rec.Code, rec.Body.String())
 	}
-	rec = doJSON(t, s, "POST", "/api/views", `{"name":"Atlas todo","slug":"atlas-todo","display":"list","status":"todo","project":"atlas"}`)
+	rec = doJSON(t, s, "POST", "/api/views", `{"name":"Atlas todo","slug":"atlas-todo","display":"list","status":"todo","project":"atlas","dateField":"createdAt","dateRange":"weekAgo","projectStatus":"planned","projectPriority":0}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("view %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/views/atlas-todo", "")
+	var savedView struct {
+		ProjectStatus   *string `json:"projectStatus"`
+		ProjectPriority *int    `json:"projectPriority"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &savedView); err != nil {
+		t.Fatal(err)
+	}
+	if savedView.ProjectStatus == nil || *savedView.ProjectStatus != "planned" || savedView.ProjectPriority == nil || *savedView.ProjectPriority != 0 {
+		t.Fatalf("saved project filters %#v", savedView)
 	}
 	rec = doJSON(t, s, "GET", "/api/issues", "")
 	if rec.Code != http.StatusOK {
@@ -329,8 +877,26 @@ func TestLivedInWorkspaceHTTP(t *testing.T) {
 	if len(issues) != 2 {
 		t.Fatalf("atlas todo %#v", issues)
 	}
+	rec = doJSON(t, s, "GET", "/api/issues?projectStatus=planned&projectPriority=0", "")
+	if err := json.Unmarshal(rec.Body.Bytes(), &issues); err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 2 {
+		t.Fatalf("project property filters %#v", issues)
+	}
 	if issues[0]["identifier"] != "ISS-1" || issues[1]["depth"].(float64) != 1 {
 		t.Fatalf("tree %#v", issues)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?content=Ship", "")
+	if err := json.Unmarshal(rec.Body.Bytes(), &issues); err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 1 || issues[0]["title"] != "Ship" {
+		t.Fatalf("content filter %#v", issues)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?dateField=createdAt&dateRange=weekAgo&dateAsOf=2026-09-25", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("date filter %d %s", rec.Code, rec.Body.String())
 	}
 	rec = doJSON(t, s, "GET", "/api/issues?labels="+labels[0]["name"].(string), "")
 	if err := json.Unmarshal(rec.Body.Bytes(), &issues); err != nil {
@@ -370,12 +936,39 @@ func TestListViewsEmptyJSONArray(t *testing.T) {
 
 func TestCreateCycle(t *testing.T) {
 	s := testAPI(t)
-	start := time.Now().UTC().Format(time.RFC3339)
-	end := time.Now().UTC().Add(7 * 24 * time.Hour).Format(time.RFC3339)
+	startTime := time.Now().UTC()
+	start := startTime.Format(time.RFC3339)
+	end := startTime.Add(7 * 24 * time.Hour).Format(time.RFC3339)
 	body := `{"startsAt":"` + start + `","endsAt":"` + end + `"}`
 	rec := doJSON(t, s, "POST", "/api/cycles", body)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("code %d %s", rec.Code, rec.Body.String())
+	}
+	var cycle struct {
+		Number int    `json:"number"`
+		Name   string `json:"name"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &cycle); err != nil {
+		t.Fatal(err)
+	}
+	if cycle.Number != 1 || cycle.Name != "Cycle 1" {
+		t.Fatalf("default cycle values %#v", cycle)
+	}
+
+	updated := doJSON(t, s, http.MethodPatch, "/api/cycles/1", `{"name":"Planning","description":"Release preparation","isFavorite":true}`)
+	if updated.Code != http.StatusOK {
+		t.Fatalf("update cycle %d %s", updated.Code, updated.Body.String())
+	}
+	var saved map[string]any
+	if err := json.Unmarshal(updated.Body.Bytes(), &saved); err != nil {
+		t.Fatal(err)
+	}
+	if saved["name"] != "Planning" || saved["description"] != "Release preparation" || saved["isFavorite"] != true {
+		t.Fatalf("updated cycle %#v", saved)
+	}
+	invalid := doJSON(t, s, http.MethodPatch, "/api/cycles/1", `{"endsAt":"`+start+`"}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid cycle dates %d %s", invalid.Code, invalid.Body.String())
 	}
 }
 

@@ -93,3 +93,11 @@ func TestCrossOriginAgentRequestDenied(t *testing.T) {
 		t.Fatalf("%d", rec.Code)
 	}
 }
+
+func TestStandaloneAgentConversationDoesNotRequireDocument(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "GET", "/api/ai/agent/chat-123", "")
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"events":[]`) {
+		t.Fatalf("%d: %s", rec.Code, rec.Body.String())
+	}
+}

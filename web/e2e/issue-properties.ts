@@ -5,5 +5,8 @@ export async function chooseIssueProperty(page: Page, name: string, option: stri
     .getByRole('complementary', { name: 'Issue properties' })
     .getByRole('combobox', { name });
   await picker.click();
-  await page.getByRole('option', { name: option, exact: true }).click();
+  await page
+    .getByRole('listbox', { name })
+    .getByRole('option', { name: option, exact: true })
+    .click();
 }

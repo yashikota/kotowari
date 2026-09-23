@@ -16,8 +16,9 @@ var (
 )
 
 type Store struct {
-	mu   sync.Mutex
-	root string
+	mu          sync.Mutex
+	recurringMu sync.Mutex
+	root        string
 }
 
 type Workspace struct {
@@ -37,50 +38,114 @@ type Label struct {
 }
 
 type Project struct {
-	ID          int64   `json:"id" toml:"id"`
-	Name        string  `json:"name" toml:"name"`
-	Slug        string  `json:"slug" toml:"slug"`
-	Description string  `json:"description" toml:"description"`
-	Status      string  `json:"status" toml:"status"`
-	StartDate   *string `json:"startDate" toml:"startDate,omitempty"`
-	TargetDate  *string `json:"targetDate" toml:"targetDate,omitempty"`
-	Progress    float64 `json:"progress" toml:"-"`
-	CreatedAt   string  `json:"createdAt" toml:"createdAt"`
-	UpdatedAt   string  `json:"updatedAt" toml:"updatedAt"`
+	ID          int64       `json:"id" toml:"id"`
+	Name        string      `json:"name" toml:"name"`
+	Slug        string      `json:"slug" toml:"slug"`
+	Description string      `json:"description" toml:"description"`
+	Status      string      `json:"status" toml:"status"`
+	Priority    int         `json:"priority" toml:"priority"`
+	StartDate   *string     `json:"startDate" toml:"startDate,omitempty"`
+	TargetDate  *string     `json:"targetDate" toml:"targetDate,omitempty"`
+	Labels      []string    `json:"labels" toml:"labels,omitempty"`
+	Progress    float64     `json:"progress" toml:"-"`
+	Milestones  []Milestone `json:"milestones" toml:"milestones,omitempty"`
+	CreatedAt   string      `json:"createdAt" toml:"createdAt"`
+	UpdatedAt   string      `json:"updatedAt" toml:"updatedAt"`
+}
+
+type Milestone struct {
+	ID         int64   `json:"id" toml:"id"`
+	Name       string  `json:"name" toml:"name"`
+	TargetDate *string `json:"targetDate" toml:"targetDate,omitempty"`
+	CreatedAt  string  `json:"createdAt" toml:"createdAt"`
+	UpdatedAt  string  `json:"updatedAt" toml:"updatedAt"`
 }
 
 type Cycle struct {
-	ID        int64  `json:"id" toml:"id"`
-	Number    int    `json:"number" toml:"number"`
-	StartsAt  string `json:"startsAt" toml:"startsAt"`
-	EndsAt    string `json:"endsAt" toml:"endsAt"`
-	Status    string `json:"status" toml:"status"`
-	CreatedAt string `json:"createdAt" toml:"createdAt"`
-	UpdatedAt string `json:"updatedAt" toml:"updatedAt"`
+	ID          int64       `json:"id" toml:"id"`
+	Number      int         `json:"number" toml:"number"`
+	Name        string      `json:"name" toml:"name"`
+	Description string      `json:"description,omitempty" toml:"description,omitempty"`
+	StartsAt    string      `json:"startsAt" toml:"startsAt"`
+	EndsAt      string      `json:"endsAt" toml:"endsAt"`
+	Status      string      `json:"status" toml:"status"`
+	IsFavorite  bool        `json:"isFavorite,omitempty" toml:"is_favorite,omitempty"`
+	Resources   []IssueLink `json:"resources,omitempty" toml:"resources,omitempty"`
+	CreatedAt   string      `json:"createdAt" toml:"createdAt"`
+	UpdatedAt   string      `json:"updatedAt" toml:"updatedAt"`
+}
+
+type UpdateCycleInput struct {
+	Name        *string
+	Description *string
+	StartsAt    *string
+	EndsAt      *string
+	Status      *string
+	IsFavorite  *bool
 }
 
 type Issue struct {
-	ID               int64   `json:"id"`
-	Number           int     `json:"number"`
-	Identifier       string  `json:"identifier"`
-	Title            string  `json:"title"`
-	Body             string  `json:"body"`
-	Status           string  `json:"status"`
-	Priority         int     `json:"priority"`
-	ProjectID        *int64  `json:"projectId"`
-	ProjectSlug      *string `json:"projectSlug,omitempty"`
-	CycleID          *int64  `json:"cycleId"`
-	CycleNumber      *int    `json:"cycleNumber,omitempty"`
-	ParentID         *int64  `json:"parentId"`
-	ParentIdentifier *string `json:"parentIdentifier,omitempty"`
-	Depth            int     `json:"depth"`
-	DueDate          *string `json:"dueDate"`
-	SortOrder        float64 `json:"sortOrder"`
-	Labels           []Label `json:"labels"`
-	ADRNumbers       []int   `json:"adrNumbers"`
-	CreatedAt        string  `json:"createdAt"`
-	UpdatedAt        string  `json:"updatedAt"`
-	CompletedAt      *string `json:"completedAt"`
+	ID               int64           `json:"id"`
+	Number           int             `json:"number"`
+	Identifier       string          `json:"identifier"`
+	Title            string          `json:"title"`
+	Body             string          `json:"body"`
+	Status           string          `json:"status"`
+	Type             string          `json:"type,omitempty"`
+	Priority         int             `json:"priority"`
+	Estimate         *int            `json:"estimate,omitempty"`
+	ProjectID        *int64          `json:"projectId"`
+	ProjectSlug      *string         `json:"projectSlug,omitempty"`
+	MilestoneID      *int64          `json:"milestoneId"`
+	MilestoneName    *string         `json:"milestoneName,omitempty"`
+	CycleID          *int64          `json:"cycleId"`
+	CycleNumber      *int            `json:"cycleNumber,omitempty"`
+	CycleAddedAt     *string         `json:"cycleAddedAt,omitempty" toml:"cycle_added_at,omitempty"`
+	ParentID         *int64          `json:"parentId"`
+	ParentIdentifier *string         `json:"parentIdentifier,omitempty"`
+	Depth            int             `json:"depth"`
+	DueDate          *string         `json:"dueDate"`
+	ReminderAt       *string         `json:"reminderAt"`
+	SortOrder        float64         `json:"sortOrder"`
+	Labels           []Label         `json:"labels"`
+	ADRNumbers       []int           `json:"adrNumbers"`
+	ExternalLinks    []IssueLink     `json:"externalLinks"`
+	Relations        []IssueRelation `json:"relations"`
+	RecurringSlug    *string         `json:"-"`
+	IsFavorite       bool            `json:"isFavorite"`
+	CreatedAt        string          `json:"createdAt"`
+	UpdatedAt        string          `json:"updatedAt"`
+	StatusChangedAt  string          `json:"statusChangedAt"`
+	StartedAt        *string         `json:"startedAt,omitempty" toml:"started_at,omitempty"`
+	CompletedAt      *string         `json:"completedAt"`
+}
+
+// IssueLink is a user-managed external resource attached to an issue.
+// Kind distinguishes ordinary links, pull requests, and documents without
+// requiring a multi-user integration service.
+type IssueLink struct {
+	ID        int64  `json:"id" toml:"id"`
+	URL       string `json:"url" toml:"url"`
+	Title     string `json:"title,omitempty" toml:"title,omitempty"`
+	Kind      string `json:"kind" toml:"kind"`
+	CreatedAt string `json:"createdAt" toml:"created_at"`
+}
+
+type CreateIssueLinkInput struct {
+	URL   string
+	Title string
+	Kind  string
+}
+
+type IssueRelation struct {
+	ID               int64  `json:"id" toml:"id"`
+	Kind             string `json:"kind" toml:"kind"`
+	TargetIdentifier string `json:"targetIdentifier" toml:"target"`
+}
+
+type CreateIssueRelationInput struct {
+	TargetIdentifier string
+	Kind             string
 }
 
 type Comment struct {
@@ -116,23 +181,63 @@ type Page struct {
 }
 
 type View struct {
-	ID        int64    `json:"id" toml:"id"`
-	Name      string   `json:"name" toml:"name"`
-	Slug      string   `json:"slug" toml:"slug"`
-	Display   string   `json:"display" toml:"display"`
-	GroupBy   string   `json:"groupBy" toml:"group_by"`
-	OrderBy   string   `json:"orderBy" toml:"order_by"`
-	Status    *string  `json:"status" toml:"status,omitempty"`
-	Project   *string  `json:"project" toml:"project,omitempty"`
-	Cycle     *int     `json:"cycle" toml:"cycle,omitempty"`
-	Labels    []string `json:"labels" toml:"labels,omitempty"`
-	Priority  *int     `json:"priority" toml:"priority,omitempty"`
-	CreatedAt string   `json:"createdAt" toml:"createdAt"`
-	UpdatedAt string   `json:"updatedAt" toml:"updatedAt"`
+	ID                int64    `json:"id" toml:"id"`
+	Name              string   `json:"name" toml:"name"`
+	Slug              string   `json:"slug" toml:"slug"`
+	Display           string   `json:"display" toml:"display"`
+	GroupBy           string   `json:"groupBy" toml:"group_by"`
+	SubGroupBy        string   `json:"subGroupBy,omitempty" toml:"sub_group_by,omitempty"`
+	OrderBy           string   `json:"orderBy" toml:"order_by"`
+	Direction         string   `json:"direction,omitempty" toml:"direction,omitempty"`
+	CompletedIssues   string   `json:"completedIssues,omitempty" toml:"completed_issues,omitempty"`
+	ShowSubIssues     *bool    `json:"showSubIssues,omitempty" toml:"show_sub_issues,omitempty"`
+	NestedSubIssues   string   `json:"nestedSubIssues,omitempty" toml:"nested_sub_issues,omitempty"`
+	ShowEmptyGroups   bool     `json:"showEmptyGroups" toml:"show_empty_groups,omitempty"`
+	DisplayProperties []string `json:"displayProperties,omitempty" toml:"display_properties,omitempty"`
+	Status            *string  `json:"status" toml:"status,omitempty"`
+	Project           *string  `json:"project" toml:"project,omitempty"`
+	Cycle             *int     `json:"cycle" toml:"cycle,omitempty"`
+	Labels            []string `json:"labels" toml:"labels,omitempty"`
+	Priority          *int     `json:"priority" toml:"priority,omitempty"`
+	Type              *string  `json:"type" toml:"type,omitempty"`
+	Estimate          *int     `json:"estimate" toml:"estimate,omitempty"`
+	DueDate           string   `json:"dueDate,omitempty" toml:"due_date,omitempty"`
+	Relation          *string  `json:"relation,omitempty" toml:"relation,omitempty"`
+	Content           *string  `json:"content,omitempty" toml:"content,omitempty"`
+	MilestoneName     *string  `json:"milestoneName,omitempty" toml:"milestone_name,omitempty"`
+	DateField         string   `json:"dateField,omitempty" toml:"date_field,omitempty"`
+	DateRange         string   `json:"dateRange,omitempty" toml:"date_range,omitempty"`
+	ProjectStatus     *string  `json:"projectStatus,omitempty" toml:"project_status,omitempty"`
+	ProjectPriority   *int     `json:"projectPriority,omitempty" toml:"project_priority,omitempty"`
+	ProjectLabels     []string `json:"projectLabels,omitempty" toml:"project_labels,omitempty"`
+	AddedToCycle      []string `json:"addedToCycle,omitempty" toml:"added_to_cycle,omitempty"`
+	CreatedAt         string   `json:"createdAt" toml:"createdAt"`
+	UpdatedAt         string   `json:"updatedAt" toml:"updatedAt"`
 }
 
 func (v View) Filter() IssueFilter {
-	f := IssueFilter{Labels: v.Labels, Priority: v.Priority}
+	f := IssueFilter{Labels: v.Labels, Priority: v.Priority, DueDate: v.DueDate}
+	if v.Relation != nil {
+		f.Relation = *v.Relation
+	}
+	if v.Content != nil {
+		f.Content = *v.Content
+	}
+	if v.MilestoneName != nil {
+		f.MilestoneName = *v.MilestoneName
+	}
+	f.DateField = v.DateField
+	f.DateRange = v.DateRange
+	if v.ProjectStatus != nil {
+		f.ProjectStatus = *v.ProjectStatus
+	}
+	f.ProjectPriority = v.ProjectPriority
+	f.ProjectLabels = v.ProjectLabels
+	f.AddedToCycle = v.AddedToCycle
+	f.Estimate = v.Estimate
+	if v.Type != nil {
+		f.Type = *v.Type
+	}
 	if v.Status != nil {
 		f.Status = *v.Status
 	}
@@ -202,49 +307,92 @@ type SearchHit struct {
 }
 
 type IssueFilter struct {
-	Status      string
-	ProjectSlug string
-	CycleNumber int
-	Labels      []string
-	Priority    *int
+	Status          string
+	ProjectSlug     string
+	CycleNumber     int
+	Labels          []string
+	Priority        *int
+	Type            string
+	Estimate        *int
+	DueDate         string
+	DueDateAsOf     string
+	Relation        string
+	Content         string
+	MilestoneName   string
+	ProjectLabels   []string
+	AddedToCycle    []string
+	DateField       string
+	DateRange       string
+	DateAsOf        string
+	ProjectStatus   string
+	ProjectPriority *int
+	IsFavorite      *bool
 }
 
 type CreateIssueInput struct {
-	Title     string
-	Body      string
-	Status    string
-	Priority  int
-	ProjectID *int64
-	CycleID   *int64
-	ParentID  *int64
-	DueDate   *string
-	LabelIDs  []int64
+	Title         string
+	Body          string
+	Status        string
+	Type          string
+	Priority      int
+	Estimate      *int
+	ProjectID     *int64
+	MilestoneID   *int64
+	CycleID       *int64
+	ParentID      *int64
+	DueDate       *string
+	LabelIDs      []int64
+	RecurringSlug *string
 }
 
 type PatchIssueInput struct {
-	Title     *string
-	Body      *string
-	Status    *string
-	Priority  *int
-	ProjectID **int64
-	CycleID   **int64
-	ParentID  **int64
-	DueDate   **string
-	LabelIDs  *[]int64
-	SortOrder *float64
+	Title       *string
+	Body        *string
+	Status      *string
+	Type        *string
+	Priority    *int
+	Estimate    **int
+	ProjectID   **int64
+	MilestoneID **int64
+	CycleID     **int64
+	ParentID    **int64
+	DueDate     **string
+	ReminderAt  **string
+	LabelIDs    *[]int64
+	SortOrder   *float64
+	IsFavorite  *bool
 }
 
 type CreateViewInput struct {
-	Name     string
-	Slug     string
-	Display  string
-	GroupBy  string
-	OrderBy  string
-	Status   *string
-	Project  *string
-	Cycle    *int
-	Labels   []string
-	Priority *int
+	Name              string
+	Slug              string
+	Display           string
+	GroupBy           string
+	OrderBy           string
+	SubGroupBy        string
+	Direction         string
+	CompletedIssues   string
+	ShowSubIssues     *bool
+	NestedSubIssues   string
+	ShowEmptyGroups   *bool
+	DisplayProperties []string
+	Status            *string
+	Project           *string
+	Cycle             *int
+	Labels            []string
+	Priority          *int
+	Type              *string
+	Estimate          *int
+	DueDate           *string
+	Relation          *string
+	Content           *string
+	MilestoneName     *string
+	DateField         *string
+	DateRange         *string
+	ProjectStatus     *string
+	ProjectPriority   *int
+	ProjectLabels     []string
+	AddedToCycle      []string
 }
 
 type mem struct {

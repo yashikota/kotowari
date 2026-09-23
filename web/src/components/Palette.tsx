@@ -1,4 +1,5 @@
 import { Box, Group, Modal, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { Shortcut } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -12,6 +13,7 @@ export function PaletteView({
   model: ReturnType<typeof usePalettePresenter>;
   searchRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const { query, commands, active, handlers } = model;
@@ -19,8 +21,8 @@ export function PaletteView({
         <Modal
           opened
           onClose={handlers.onClick0}
-          title="Command palette"
-          aria-label="Command palette"
+          title={t('ui.commandPalette')}
+          aria-label={t('ui.commandPalette')}
           centered
           size="lg"
           withCloseButton={false}
@@ -29,8 +31,8 @@ export function PaletteView({
           <Box onClick={handlers.Command_palette_onClick1}>
             <TextInput
               ref={searchRef}
-              aria-label="Command search"
-              placeholder="Type a command or search…"
+              aria-label={t('ui.commandSearch')}
+              placeholder={t('ui.typeCommandOrSearch')}
               value={query}
               onChange={handlers.Command_search_onChange2}
               onKeyDown={handlers.Command_search_onKeyDown3}

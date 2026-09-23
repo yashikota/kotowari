@@ -1,4 +1,5 @@
 import { Box, Group, ScrollArea, Text, UnstyledButton } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { isOverdue, localToday } from '../due.ts';
 import type { Issue, IssueStatus } from '../types.ts';
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -30,6 +31,7 @@ function IssueBoardColumnBinding(props: IssueBoardColumnProps) {
 }
 
 function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColumnPresenter> }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const { issues, status, dragId, windowed, handlers } = model;
@@ -38,7 +40,7 @@ function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColu
       return (
         <Box
           component="section"
-          aria-label={`${statusLabel} issues`}
+          aria-label={t('ui.issueColumnLabel', { status: statusLabel })}
           className={styles.column}
           p="xs"
           onDragOver={handlers.onDragOver0}
@@ -53,7 +55,15 @@ function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColu
               {issues.length}
             </Text>
           </Group>
-          <ScrollArea viewportRef={windowed.ref} style={{ flex: 1 }} type="auto">
+          <ScrollArea
+            viewportRef={windowed.ref}
+            viewportProps={{
+              role: 'region',
+              'aria-label': t('ui.issueCards', { status: statusLabel }),
+            }}
+            style={{ flex: '1 1 0', minHeight: 0 }}
+            type="auto"
+          >
             <Box>
               <Box style={{ height: windowed.before }} aria-hidden />
               {issues.slice(windowed.start, windowed.end).map((issue) => {

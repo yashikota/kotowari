@@ -1,21 +1,37 @@
 import { Link } from '@tanstack/react-router';
 import {
+  ActionIcon,
   Box,
   Button,
   Group,
+  Menu,
+  Modal,
   NativeSelect,
   Progress,
   Stack,
+  Switch,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
+import { IconExternalLink, IconFileText, IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 
 import { IssueList } from '../components/IssueList.tsx';
 import { CycleListItem, CycleStatusHeading } from '../components/CycleListItem.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
-import { EmptyState, MetaBadge, PageHeader, Pane, Section, SplitLayout } from '../mantine-ui.tsx';
+import { priorityLabel } from '../i18n/labels.ts';
+import { formatCalendarDate } from '../time.ts';
+import {
+  EmptyState,
+  LabelChip,
+  MetaBadge,
+  PageHeader,
+  Pane,
+  Section,
+  SplitLayout,
+} from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -26,15 +42,6 @@ import {
   useProjectsPagePresenter,
 } from '../presenters/ProjectsCycles.tsx';
 
-function projectStatusLabel(status: string): string {
-  return status.replace(/^./, (letter) => letter.toUpperCase());
-}
-
-function cycleStatusLabel(status: string): string {
-  if (status === 'active') return 'Current';
-  return projectStatusLabel(status);
-}
-
 export function ProjectsPageView({
   model,
   projectNameRef,
@@ -42,44 +49,40 @@ export function ProjectsPageView({
   model: ReturnType<typeof useProjectsPagePresenter>;
   projectNameRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { projects, name, handlers } = model;
+      const {
+        projects,
+        name,
+        description,
+        status,
+        priority,
+        startDate,
+        targetDate,
+        createOpen,
+        handlers,
+      } = model;
       return (
         <SplitLayout single>
           <Pane single>
             <PageHeader
-              title="Projects"
+              title={t('nav.projects')}
               actions={
-                <Box
-                  component="form"
-                  onSubmit={handlers.onSubmit0}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    width: 'min(420px, 55vw)',
-                  }}
-                >
-                  <TextInput
-                    ref={projectNameRef}
-                    aria-label="New project name"
-                    placeholder="Project name"
-                    value={name}
-                    onChange={handlers.New_project_name_onChange1}
-                    styles={{
-                      root: { flex: '1 1 auto', minWidth: 150 },
-                      input: { height: 32, minHeight: 32, fontSize: 'var(--mantine-font-size-sm)' },
-                    }}
-                  />
-                  <Button type="submit" variant="default">
-                    New project
-                  </Button>
-                </Box>
+                <Button type="button" variant="default" onClick={handlers.onOpenCreateProject}>
+                  {t('projectList.newProject')}
+                </Button>
               }
             />
             {projects.length === 0 ? (
-              <EmptyState>No projects yet. Name one above.</EmptyState>
+              <Stack align="center" py="xl" gap="xs">
+                <Text c="dimmed" ta="center">
+                  {t('projectList.empty')}
+                </Text>
+                <Button type="button" variant="default" onClick={handlers.onOpenCreateProject}>
+                  {t('projectList.newProject')}
+                </Button>
+              </Stack>
             ) : (
               <Stack gap={0}>
                 {projects.map((project) => (
@@ -87,6 +90,77 @@ export function ProjectsPageView({
                 ))}
               </Stack>
             )}
+            <Modal
+              opened={createOpen}
+              onClose={handlers.onCloseCreateProject}
+              title={t('projectList.createTitle')}
+              centered
+              size="lg"
+            >
+              <Box component="form" onSubmit={handlers.onSubmit0}>
+                <Stack>
+                  <TextInput
+                    ref={projectNameRef}
+                    autoFocus
+                    required
+                    maxLength={120}
+                    aria-label={t('modal.projectName')}
+                    label={t('modal.projectName')}
+                    value={name}
+                    onChange={handlers.New_project_name_onChange1}
+                  />
+                  <Textarea
+                    label={t('modal.projectDescription')}
+                    value={description}
+                    onChange={handlers.New_project_description_onChange}
+                    minRows={3}
+                    autosize
+                  />
+                  <Group grow>
+                    <NativeSelect
+                      label={t('field.status')}
+                      value={status}
+                      onChange={handlers.New_project_status_onChange}
+                      data={PROJECT_STATUSES.map((value) => ({
+                        value,
+                        label: t(`projectStatus.${value}`),
+                      }))}
+                    />
+                    <NativeSelect
+                      label={t('field.priority')}
+                      value={String(priority)}
+                      onChange={handlers.New_project_priority_onChange}
+                      data={[0, 1, 2, 3, 4].map((value) => ({
+                        value: String(value),
+                        label: priorityLabel(value),
+                      }))}
+                    />
+                  </Group>
+                  <Group grow>
+                    <TextInput
+                      type="date"
+                      label={t('modal.projectStartDate')}
+                      value={startDate}
+                      onChange={handlers.New_project_start_onChange}
+                    />
+                    <TextInput
+                      type="date"
+                      label={t('modal.projectTargetDate')}
+                      value={targetDate}
+                      onChange={handlers.New_project_target_onChange}
+                    />
+                  </Group>
+                  <Group justify="flex-end">
+                    <Button type="button" variant="default" onClick={handlers.onCloseCreateProject}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={!name.trim()}>
+                      {t('projectList.createTitle')}
+                    </Button>
+                  </Group>
+                </Stack>
+              </Box>
+            </Modal>
           </Pane>
         </SplitLayout>
       );
@@ -121,9 +195,10 @@ export function ProjectDetailPageView({
   model: ReturnType<typeof useProjectDetailPagePresenter>;
   descriptionRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { slug, data, selected, project, handlers } = model;
+      const { slug, data, selected, project, milestoneName, milestoneTargetDate, handlers } = model;
       return (
         <Box h="100%" style={{ overflow: 'auto' }}>
           <SplitLayout single>
@@ -133,19 +208,28 @@ export function ProjectDetailPageView({
                 actions={
                   <Group gap="xs" wrap="wrap">
                     <NativeSelect
-                      aria-label="Project status"
+                      aria-label={t('ui.projectStatus')}
                       value={project.status}
                       onChange={handlers.Project_status_onChange0}
                       data={PROJECT_STATUSES.map((s) => ({
                         value: s,
-                        label: projectStatusLabel(s),
+                        label: t(`projectStatus.${s}`),
+                      }))}
+                    />
+                    <NativeSelect
+                      aria-label={t('field.priority')}
+                      value={String(project.priority)}
+                      onChange={handlers.Project_priority_onChange1}
+                      data={[0, 1, 2, 3, 4].map((priority) => ({
+                        value: String(priority),
+                        label: priorityLabel(priority),
                       }))}
                     />
                     <Button type="button" variant="subtle" onClick={handlers.onClick1}>
-                      New issue
+                      {t('ui.newIssue')}
                     </Button>
                     <Button type="button" variant="subtle" color="red" onClick={handlers.onClick2}>
-                      Delete
+                      {t('ui.delete')}
                     </Button>
                   </Group>
                 }
@@ -153,8 +237,8 @@ export function ProjectDetailPageView({
               <Stack gap="md">
                 <Textarea
                   ref={descriptionRef}
-                  aria-label="Project description"
-                  placeholder="Description"
+                  aria-label={t('ui.projectDescription')}
+                  placeholder={t('ui.description')}
                   value={project.description}
                   onChange={handlers.Project_description_onChange3}
                   onBlur={handlers.Project_description_onBlur4}
@@ -169,25 +253,124 @@ export function ProjectDetailPageView({
                 <Group gap="md" wrap="wrap" align="flex-end">
                   <TextInput
                     type="date"
-                    aria-label="Start date"
-                    label="Start"
+                    aria-label={t('ui.startDate')}
+                    label={t('ui.start')}
                     value={project.startDate?.slice(0, 10) ?? ''}
                     onChange={handlers.Start_date_onChange5}
                   />
                   <TextInput
                     type="date"
-                    aria-label="Target date"
-                    label="Target"
+                    aria-label={t('ui.targetDate')}
+                    label={t('ui.target')}
                     value={project.targetDate?.slice(0, 10) ?? ''}
                     onChange={handlers.Target_date_onChange6}
                   />
                 </Group>
-                <Stack gap="md" aria-label="Project documents">
+                <Section title={t('filters.projectLabels')}>
+                  {data.labels.length > 0 ? (
+                    <Group gap={4}>
+                      {data.labels.map((label) => (
+                        <LabelChip
+                          key={label.id}
+                          name={label.name}
+                          color={label.color}
+                          selected={(project.labels ?? []).includes(label.name)}
+                          onClick={() => handlers.onProjectLabelToggle(label.name)}
+                        />
+                      ))}
+                    </Group>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      {t('filters.noProjectLabels')}
+                    </Text>
+                  )}
+                </Section>
+                <Section title={t('projectMilestones.heading')}>
+                  <Box
+                    component="form"
+                    aria-label={t('projectMilestones.heading')}
+                    onSubmit={handlers.New_milestone_onSubmit49}
+                  >
+                    <Group gap="xs" align="flex-end" wrap="wrap">
+                      <TextInput
+                        aria-label={t('projectMilestones.name')}
+                        placeholder={t('projectMilestones.namePlaceholder')}
+                        value={milestoneName}
+                        onChange={handlers.New_milestone_name_onChange47}
+                        size="sm"
+                        style={{ flex: '1 1 220px' }}
+                      />
+                      <TextInput
+                        type="date"
+                        aria-label={t('projectMilestones.targetDate')}
+                        value={milestoneTargetDate}
+                        onChange={handlers.New_milestone_target_onChange48}
+                        size="sm"
+                      />
+                      <Button type="submit" variant="default" size="sm">
+                        {t('projectMilestones.add')}
+                      </Button>
+                    </Group>
+                  </Box>
+                  {project.milestones.length === 0 ? (
+                    <Text size="sm" c="dimmed" mt="sm">
+                      {t('projectMilestones.empty')}
+                    </Text>
+                  ) : (
+                    <Stack
+                      component="ul"
+                      gap="xs"
+                      mt="sm"
+                      style={{
+                        listStyle: 'none',
+                        margin: 'var(--mantine-spacing-sm) 0 0',
+                        padding: 0,
+                      }}
+                    >
+                      {project.milestones.map((milestone) => (
+                        <Group component="li" key={milestone.id} gap="xs" wrap="wrap">
+                          <TextInput
+                            aria-label={`${t('projectMilestones.name')}: ${milestone.name}`}
+                            value={milestone.name}
+                            onChange={(event) =>
+                              handlers.Milestone_name_onChange42(milestone.id, event)
+                            }
+                            onBlur={() => handlers.Milestone_name_onBlur43(milestone.id)}
+                            size="sm"
+                            style={{ flex: '1 1 220px' }}
+                          />
+                          <TextInput
+                            type="date"
+                            aria-label={`${t('projectMilestones.targetDate')}: ${milestone.name}`}
+                            value={milestone.targetDate?.slice(0, 10) ?? ''}
+                            onChange={(event) =>
+                              handlers.Milestone_target_onChange44(milestone.id, event)
+                            }
+                            onBlur={() => handlers.Milestone_target_onBlur45(milestone.id)}
+                            size="sm"
+                          />
+                          <ActionIcon
+                            type="button"
+                            variant="subtle"
+                            color="red"
+                            aria-label={t('projectMilestones.remove', { name: milestone.name })}
+                            onClick={() =>
+                              handlers.Milestone_remove_onClick46(milestone.id, milestone.name)
+                            }
+                          >
+                            <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                          </ActionIcon>
+                        </Group>
+                      ))}
+                    </Stack>
+                  )}
+                </Section>
+                <Stack gap="md" aria-label={t('ui.projectDocuments')}>
                   <Section
-                    title="ADRs"
+                    title={t('nav.adrs')}
                     action={
                       <Button type="button" variant="subtle" size="xs" onClick={handlers.onClick7}>
-                        New ADR
+                        {t('ui.newAdr')}
                       </Button>
                     }
                   >
@@ -212,7 +395,7 @@ export function ProjectDetailPageView({
                         ))}
                     </Stack>
                   </Section>
-                  <Section title="Pages">
+                  <Section title={t('nav.pages')}>
                     <Stack
                       gap="xs"
                       component="ul"
@@ -268,32 +451,46 @@ function ProjectDetailPageBinding() {
 }
 
 export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPagePresenter> }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { cycles, handlers } = model;
+      const {
+        cycles,
+        metadataCycle,
+        datesCycle,
+        nameDraft,
+        descriptionDraft,
+        startDateDraft,
+        endDateDraft,
+        datesValid,
+        handlers,
+      } = model;
       const sections = [
-        { name: 'Upcoming', rows: cycles.filter((cycle) => cycle.status === 'upcoming') },
-        { name: 'Current', rows: cycles.filter((cycle) => cycle.status === 'active') },
-        { name: 'Completed', rows: cycles.filter((cycle) => cycle.status === 'completed') },
+        { status: 'upcoming', rows: cycles.filter((cycle) => cycle.status === 'upcoming') },
+        { status: 'active', rows: cycles.filter((cycle) => cycle.status === 'active') },
+        { status: 'completed', rows: cycles.filter((cycle) => cycle.status === 'completed') },
       ].filter((section) => section.rows.length > 0);
       return (
         <SplitLayout single>
           <Pane single>
             <PageHeader
-              title="Cycles"
+              title={t('nav.cycles')}
               actions={
                 <Button type="button" variant="subtle" onClick={handlers.onClick0}>
-                  New cycle
+                  {t('cycle.newCycle')}
                 </Button>
               }
             />
             {cycles.length === 0 ? (
-              <EmptyState>No cycles yet. Start one to timebox work.</EmptyState>
+              <EmptyState>{t('cycle.emptyState')}</EmptyState>
             ) : (
               <Stack gap="lg" p="md" pb="xl">
                 {sections.map((section) => (
-                  <Stack gap={0} key={section.name}>
-                    <CycleStatusHeading title={section.name} count={section.rows.length} />
+                  <Stack gap={0} key={section.status}>
+                    <CycleStatusHeading
+                      title={t(`cycle.status.${section.status}`)}
+                      count={section.rows.length}
+                    />
                     {section.rows.map((cycle) => (
                       <CycleListItem key={cycle.number} cycle={cycle} />
                     ))}
@@ -301,6 +498,76 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
                 ))}
               </Stack>
             )}
+            <Modal
+              opened={metadataCycle !== null}
+              onClose={handlers.onCloseMetadata}
+              title={t('cycle.editNameAndDescription')}
+              centered
+            >
+              <Box component="form" onSubmit={handlers.onSaveMetadata}>
+                <Stack>
+                  <TextInput
+                    required
+                    maxLength={120}
+                    label={t('cycle.name')}
+                    value={nameDraft}
+                    onChange={handlers.onNameChange}
+                  />
+                  <Textarea
+                    label={t('cycle.description')}
+                    value={descriptionDraft}
+                    onChange={handlers.onDescriptionChange}
+                    minRows={3}
+                    autosize
+                  />
+                  <Group justify="flex-end">
+                    <Button type="button" variant="default" onClick={handlers.onCloseMetadata}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={!nameDraft.trim()}>
+                      {t('common.save')}
+                    </Button>
+                  </Group>
+                </Stack>
+              </Box>
+            </Modal>
+            <Modal
+              opened={datesCycle !== null}
+              onClose={handlers.onCloseDates}
+              title={t('cycle.changeDates')}
+              centered
+            >
+              <Box component="form" onSubmit={handlers.onSaveDates}>
+                <Stack>
+                  <TextInput
+                    type="date"
+                    label={t('cycle.startDate')}
+                    value={startDateDraft}
+                    disabled={datesCycle?.status === 'active'}
+                    onChange={handlers.onStartDateChange}
+                  />
+                  {datesCycle?.status === 'active' ? (
+                    <Text size="xs" c="dimmed">
+                      {t('cycle.activeStartDateHint')}
+                    </Text>
+                  ) : null}
+                  <TextInput
+                    type="date"
+                    label={t('cycle.endDate')}
+                    value={endDateDraft}
+                    onChange={handlers.onEndDateChange}
+                  />
+                  <Group justify="flex-end">
+                    <Button type="button" variant="default" onClick={handlers.onCloseDates}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={!datesValid}>
+                      {t('common.save')}
+                    </Button>
+                  </Group>
+                </Stack>
+              </Box>
+            </Modal>
           </Pane>
         </SplitLayout>
       );
@@ -327,76 +594,333 @@ export function CycleDetailPageView({
 }: {
   model: ReturnType<typeof useCycleDetailPagePresenter>;
 }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || i18n.language;
   switch (model._view) {
     case 0: {
-      const { data, selected, cycle, done, handlers } = model;
+      const {
+        data,
+        selected,
+        cycle,
+        resources,
+        done,
+        metadataOpen,
+        datesOpen,
+        resourceLinkOpen,
+        resourceURL,
+        resourceTitle,
+        resourceError,
+        cycleLinkCopied,
+        nameDraft,
+        descriptionDraft,
+        startDateDraft,
+        endDateDraft,
+        datesValid,
+        handlers,
+      } = model;
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <SplitLayout single>
-            <Pane single>
-              <PageHeader
-                title={`Cycle ${cycle.number}`}
-                actions={
-                  <Group gap="xs" wrap="wrap">
-                    <NativeSelect
-                      aria-label="Cycle status"
-                      value={cycle.status}
-                      onChange={handlers.Cycle_status_onChange0}
-                      data={CYCLE_STATUSES.map((s) => ({ value: s, label: cycleStatusLabel(s) }))}
-                    />
-                    <Button type="button" variant="subtle" onClick={handlers.onClick1}>
-                      New issue
+          <PageHeader
+            title={cycle.name || t('field.cycleN', { number: cycle.number })}
+            actions={
+              <Group gap="xs" wrap="wrap">
+                <Switch
+                  aria-label={t('cycle.favorite')}
+                  checked={!!cycle.isFavorite}
+                  onChange={handlers.onToggleFavorite}
+                />
+                <NativeSelect
+                  aria-label={t('field.status')}
+                  value={cycle.status}
+                  onChange={handlers.Cycle_status_onChange0}
+                  data={CYCLE_STATUSES.map((s) => ({
+                    value: s,
+                    label: t(`cycle.status.${s}`),
+                  }))}
+                />
+                <Menu withinPortal shadow="md" position="bottom-end">
+                  <Menu.Target>
+                    <Button type="button" variant="default" aria-label={t('cycle.options')}>
+                      {t('cycle.options')}
                     </Button>
-                  </Group>
-                }
-              />
-              <Group
-                gap="xl"
-                wrap="wrap"
-                px="md"
-                py="sm"
-                mih={48}
-                style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-              >
-                <Group gap={6}>
-                  <Text size="xs" c="dimmed">
-                    Dates
-                  </Text>
-                  <Text size="sm">
-                    {cycle.startsAt.slice(0, 10)} — {cycle.endsAt.slice(0, 10)}
-                  </Text>
-                </Group>
-                <Group gap={6}>
-                  <Text size="xs" c="dimmed">
-                    Scope
-                  </Text>
-                  <Text size="sm">{data.issues.length} issues</Text>
-                </Group>
-                <Group gap={6}>
-                  <Text size="xs" c="dimmed">
-                    Completed
-                  </Text>
-                  <Text size="sm">
-                    {done} / {data.issues.length}
-                  </Text>
-                </Group>
-                <Progress
-                  aria-label="Cycle completion"
-                  value={data.issues.length ? (done / data.issues.length) * 100 : 0}
-                  w={132}
-                  size="sm"
-                />
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item onClick={handlers.onOpenMetadata}>
+                      {t('cycle.editNameAndDescription')}
+                    </Menu.Item>
+                    {cycle.status !== 'completed' ? (
+                      <Menu.Item onClick={handlers.onOpenDates}>{t('cycle.changeDates')}</Menu.Item>
+                    ) : null}
+                    {cycle.status === 'upcoming' ? (
+                      <Menu.Item onClick={handlers.onStartCycleToday}>
+                        {t('cycle.startToday')}
+                      </Menu.Item>
+                    ) : null}
+                    <Menu.Item onClick={handlers.onCopyLink}>
+                      {cycleLinkCopied ? t('cycle.linkCopied') : t('cycle.copyLink')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.onExportIssues}>
+                      {t('cycle.exportIssues')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.onExportCalendar}>
+                      {t('cycle.exportCalendar')}
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+                <Button type="button" variant="subtle" onClick={handlers.onClick1}>
+                  {t('cycle.newIssue')}
+                </Button>
               </Group>
-              <Box style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                <IssueList
-                  issues={data.issues}
-                  selectedId={selected}
-                  onSelect={handlers.onSelect2}
-                  groupBy="status"
+            }
+          />
+          <Box style={{ flex: 1, minHeight: 0 }}>
+            <SplitLayout>
+              <Pane variant="list">
+                <Group
+                  justify="space-between"
+                  px="md"
+                  py="sm"
+                  mih={44}
+                  style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                >
+                  <Text size="sm" c="dimmed">
+                    {t('cycle.issuesCount', { count: data.issues.length })}
+                  </Text>
+                </Group>
+                <Box style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                  <IssueList
+                    issues={data.issues}
+                    selectedId={selected}
+                    onSelect={handlers.onSelect2}
+                    groupBy="status"
+                  />
+                </Box>
+              </Pane>
+              <Pane variant="detail">
+                <Stack gap="lg">
+                  <Stack gap="xs">
+                    <Text size="xs" c="dimmed">
+                      {t('cycle.dates')}
+                    </Text>
+                    <Group justify="space-between" align="center" wrap="nowrap">
+                      <Text size="sm">
+                        {formatCalendarDate(cycle.startsAt, locale)} —{' '}
+                        {formatCalendarDate(cycle.endsAt, locale)}
+                      </Text>
+                      <Button
+                        type="button"
+                        size="compact-xs"
+                        variant="subtle"
+                        onClick={handlers.onOpenDates}
+                      >
+                        {t('cycle.changeDates')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                  <Group grow align="flex-start">
+                    <Stack gap={4}>
+                      <Text size="xs" c="dimmed">
+                        {t('cycle.scope')}
+                      </Text>
+                      <Text size="sm">{data.issues.length}</Text>
+                    </Stack>
+                    <Stack gap={4}>
+                      <Text size="xs" c="dimmed">
+                        {t('cycle.completed')}
+                      </Text>
+                      <Text size="sm">
+                        {done} / {data.issues.length}
+                      </Text>
+                    </Stack>
+                  </Group>
+                  <Progress
+                    aria-label={t('cycle.progress')}
+                    value={data.issues.length ? (done / data.issues.length) * 100 : 0}
+                    size="sm"
+                  />
+                  {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
+                  <Stack
+                    component="section"
+                    aria-label={t('cycle.resourcesHeading')}
+                    gap="sm"
+                    pt="md"
+                    style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
+                  >
+                    <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+                      <Text size="sm" fw={550}>
+                        {t('cycle.resourcesHeading')}
+                      </Text>
+                      <Menu withinPortal shadow="md" position="bottom-end">
+                        <Menu.Target>
+                          <Button type="button" size="compact-sm" variant="subtle">
+                            {t('cycle.addDocumentOrLink')}
+                          </Button>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item onClick={handlers.onCreateDocument}>
+                            {t('cycle.createDocument')}
+                          </Menu.Item>
+                          <Menu.Item onClick={handlers.onOpenResourceLink}>
+                            {t('cycle.addLink')}
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Group>
+                    {resources.length === 0 ? (
+                      <Text size="sm" c="dimmed">
+                        {t('cycle.noResources')}
+                      </Text>
+                    ) : (
+                      <Stack gap="xs" role="list" aria-label={t('cycle.resourcesHeading')}>
+                        {resources.map((resource) => (
+                          <Group
+                            key={resource.id}
+                            justify="space-between"
+                            wrap="nowrap"
+                            role="listitem"
+                          >
+                            <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                              {resource.pageSlug ? (
+                                <IconFileText size={15} aria-hidden="true" />
+                              ) : (
+                                <IconExternalLink size={15} aria-hidden="true" />
+                              )}
+                              {resource.pageSlug ? (
+                                <Link to="/pages/$slug" params={{ slug: resource.pageSlug }}>
+                                  {resource.displayTitle}
+                                </Link>
+                              ) : (
+                                <a href={resource.url} target="_blank" rel="noreferrer">
+                                  {resource.displayTitle}
+                                </a>
+                              )}
+                              <MetaBadge>{t(`issueLinks.${resource.kind}`)}</MetaBadge>
+                            </Group>
+                            <ActionIcon
+                              type="button"
+                              variant="subtle"
+                              color="gray"
+                              aria-label={t('cycle.removeResource', {
+                                title: resource.displayTitle,
+                              })}
+                              onClick={() => handlers.onRemoveResource(resource.id)}
+                            >
+                              <IconTrash size={15} />
+                            </ActionIcon>
+                          </Group>
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </Stack>
+              </Pane>
+            </SplitLayout>
+          </Box>
+          <Modal
+            opened={metadataOpen}
+            onClose={handlers.onCloseMetadata}
+            title={t('cycle.editNameAndDescription')}
+            centered
+          >
+            <Box component="form" onSubmit={handlers.onSaveMetadata}>
+              <Stack>
+                <TextInput
+                  required
+                  maxLength={120}
+                  label={t('cycle.name')}
+                  value={nameDraft}
+                  onChange={handlers.onNameChange}
                 />
-              </Box>
-            </Pane>
-          </SplitLayout>
+                <Textarea
+                  label={t('cycle.description')}
+                  value={descriptionDraft}
+                  onChange={handlers.onDescriptionChange}
+                  minRows={3}
+                  autosize
+                />
+                <Group justify="flex-end">
+                  <Button type="button" variant="default" onClick={handlers.onCloseMetadata}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={!nameDraft.trim()}>
+                    {t('common.save')}
+                  </Button>
+                </Group>
+              </Stack>
+            </Box>
+          </Modal>
+          <Modal
+            opened={datesOpen}
+            onClose={handlers.onCloseDates}
+            title={t('cycle.changeDates')}
+            centered
+          >
+            <Box component="form" onSubmit={handlers.onSaveDates}>
+              <Stack>
+                <TextInput
+                  type="date"
+                  label={t('cycle.startDate')}
+                  value={startDateDraft}
+                  disabled={cycle.status === 'active'}
+                  onChange={handlers.onStartDateChange}
+                />
+                {cycle.status === 'active' ? (
+                  <Text size="xs" c="dimmed">
+                    {t('cycle.activeStartDateHint')}
+                  </Text>
+                ) : null}
+                <TextInput
+                  type="date"
+                  label={t('cycle.endDate')}
+                  value={endDateDraft}
+                  onChange={handlers.onEndDateChange}
+                />
+                <Group justify="flex-end">
+                  <Button type="button" variant="default" onClick={handlers.onCloseDates}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={!datesValid}>
+                    {t('common.save')}
+                  </Button>
+                </Group>
+              </Stack>
+            </Box>
+          </Modal>
+          <Modal
+            opened={resourceLinkOpen}
+            onClose={handlers.onCloseResourceLink}
+            title={t('cycle.addLinkTitle')}
+            centered
+          >
+            <Box component="form" onSubmit={handlers.onAddResourceLink}>
+              <Stack>
+                <TextInput
+                  type="url"
+                  required
+                  label={t('cycle.url')}
+                  placeholder={t('ui.urlPlaceholder')}
+                  value={resourceURL}
+                  onChange={handlers.onResourceURLChange}
+                />
+                <TextInput
+                  label={t('cycle.linkTitle')}
+                  value={resourceTitle}
+                  onChange={handlers.onResourceTitleChange}
+                />
+                {resourceError ? (
+                  <Text size="sm" c="red" role="alert">
+                    {resourceError}
+                  </Text>
+                ) : null}
+                <Group justify="flex-end">
+                  <Button type="button" variant="default" onClick={handlers.onCloseResourceLink}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit">{t('cycle.saveLink')}</Button>
+                </Group>
+              </Stack>
+            </Box>
+          </Modal>
         </Box>
       );
     }

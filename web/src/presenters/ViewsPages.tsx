@@ -2,7 +2,17 @@ import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/reac
 import type * as React from 'react';
 import { useState } from 'react';
 import { api, type IssueSearch } from '../api.ts';
-import type { IssueGroupBy, IssueLayout, IssueOrderBy } from '../issue-list.ts';
+import i18n from '../i18n/index.ts';
+import {
+  DEFAULT_DISPLAY_PROPERTIES,
+  filterCompletedIssues,
+  includeNestedIssueMatches,
+  type CompletedIssuesFilter,
+  type IssueDisplayProperty,
+  type IssueGroupBy,
+  type IssueLayout,
+  type IssueOrderBy,
+} from '../issue-list.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import type { Cycle, Issue, Label, Project, View } from '../types.ts';
 
@@ -25,7 +35,7 @@ export function useViewPagePresenter() {
     (data.view.orderBy || 'manual') as IssueOrderBy,
   );
   const [view, setView] = useState(data.view);
-  const issues = (data.issues ?? []).filter((issue) => {
+  const matchingIssues = (data.issues ?? []).filter((issue) => {
     const query = find.trim().toLowerCase();
     return (
       !query ||
@@ -33,6 +43,15 @@ export function useViewPagePresenter() {
       issue.identifier.toLowerCase().includes(query)
     );
   });
+  const issues = filterCompletedIssues(
+    includeNestedIssueMatches(
+      matchingIssues,
+      data.issues ?? [],
+      view.nestedSubIssues === 'showAll' ? 'showAll' : 'showMatching',
+    ),
+    (view.completedIssues || 'all') as CompletedIssuesFilter,
+    data.cycles,
+  );
   const [selected, setSelected] = useState<string | null>(issues[0]?.identifier ?? null);
 
   if (view.slug !== data.view.slug || view.updatedAt !== data.view.updatedAt) {
@@ -53,15 +72,43 @@ export function useViewPagePresenter() {
     project: view.project ?? undefined,
     cycle: view.cycle ?? undefined,
     priority: view.priority ?? undefined,
+    type: view.type ?? undefined,
+    estimate: view.estimate ?? undefined,
+    dueDate: view.dueDate === '' ? undefined : (view.dueDate as IssueSearch['dueDate']),
+    relation: view.relation === '' ? undefined : (view.relation as IssueSearch['relation']),
+    content: view.content ?? undefined,
+    milestoneName: view.milestoneName ?? undefined,
+    dateField: view.dateField as IssueSearch['dateField'],
+    dateRange: view.dateRange as IssueSearch['dateRange'],
+    projectStatus: view.projectStatus ?? undefined,
+    projectPriority: view.projectPriority ?? undefined,
+    projectLabels: view.projectLabels ?? undefined,
+    addedToCycle: view.addedToCycle ?? undefined,
     labels: view.labels.length > 0 ? view.labels.join(',') : undefined,
   };
 
   function patchFilters(next: IssueSearch) {
+    if (next.dateRange === 'custom') {
+      setView({ ...view, dateField: next.dateField ?? '', dateRange: 'custom' });
+      return Promise.resolve(view);
+    }
     return save({
       status: next.status ?? '',
       project: next.project ?? '',
       cycle: next.cycle ?? 0,
       priority: next.priority ?? -1,
+      type: next.type ?? '',
+      estimate: next.estimate ?? -1,
+      dueDate: next.dueDate ?? '',
+      relation: next.relation ?? '',
+      content: next.content ?? '',
+      milestoneName: next.milestoneName ?? '',
+      dateField: next.dateField ?? '',
+      dateRange: next.dateRange ?? '',
+      projectStatus: next.projectStatus ?? '',
+      projectPriority: next.projectPriority ?? -1,
+      projectLabels: next.projectLabels ?? [],
+      addedToCycle: next.addedToCycle ?? [],
       labels: next.labels ? next.labels.split(',').filter(Boolean) : [],
     });
   }
@@ -77,9 +124,20 @@ export function useViewPagePresenter() {
     find,
     groupBy,
     orderBy,
+    subGroupBy: (view.subGroupBy || 'none') as IssueGroupBy,
+    direction: view.direction || 'asc',
+    completedIssues: (view.completedIssues || 'all') as CompletedIssuesFilter,
+    showSubIssues: view.showSubIssues ?? true,
+    nestedSubIssues: (view.nestedSubIssues === 'showAll' ? 'showAll' : 'showMatching') as
+      | 'showMatching'
+      | 'showAll',
+    showEmptyGroups: view.showEmptyGroups ?? false,
+    displayProperties: (view.displayProperties as IssueDisplayProperty[] | undefined) ?? [
+      ...DEFAULT_DISPLAY_PROPERTIES,
+    ],
     handlers: {
       onClick0: () => {
-        if (!window.confirm(`Delete view ${view.name}?`)) {
+        if (!window.confirm(i18n.t('ui.deleteViewConfirmation', { name: view.name }))) {
           return;
         }
         return api.deleteView(slug).then(async () => {
@@ -107,6 +165,22 @@ export function useViewPagePresenter() {
       onOrderBy16: (next: IssueOrderBy) => {
         setOrderBy(next);
         return save({ orderBy: next });
+      },
+      onSubGroupBy19: (next: IssueGroupBy) => save({ subGroupBy: next }),
+      onDirection20: (next: 'asc' | 'desc') => save({ direction: next }),
+      onCompletedIssues21: (next: CompletedIssuesFilter) => save({ completedIssues: next }),
+      onShowSubIssues22: (next: boolean) => save({ showSubIssues: next }),
+      onNestedSubIssues23: (next: 'showMatching' | 'showAll') => save({ nestedSubIssues: next }),
+      onShowEmptyGroups24: (next: boolean) => save({ showEmptyGroups: next }),
+      onDisplayPropertyToggle25: (property: IssueDisplayProperty) => {
+        const displayProperties = (view.displayProperties as
+          | IssueDisplayProperty[]
+          | undefined) ?? [...DEFAULT_DISPLAY_PROPERTIES];
+        return save({
+          displayProperties: displayProperties.includes(property)
+            ? displayProperties.filter((item) => item !== property)
+            : [...displayProperties, property],
+        });
       },
       onBoardOpen17: (id: string) =>
         navigate({ to: '/issues/$identifier', params: { identifier: id } }),

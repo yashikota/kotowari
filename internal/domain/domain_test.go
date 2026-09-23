@@ -55,6 +55,28 @@ func TestLegacyIssueStem(t *testing.T) {
 	}
 }
 
+func TestIssueDateFilters(t *testing.T) {
+	for _, test := range []struct {
+		field      string
+		rangeValue string
+		want       bool
+	}{
+		{"createdAt", "weekAgo", true},
+		{"completedAt", "on:2026-05-10", true},
+		{"timeInCurrentStatus", "twoWeeksAgo", true},
+		{"timeInCurrentStatus", "on:2026-05-10", false},
+		{"creator", "weekAgo", false},
+		{"createdAt", "soon", false},
+		{"createdAt", "on:2026-02-30", false},
+		{"", "weekAgo", false},
+		{"", "", true},
+	} {
+		if got := ValidIssueDateFilter(test.field, test.rangeValue); got != test.want {
+			t.Errorf("ValidIssueDateFilter(%q, %q) = %v, want %v", test.field, test.rangeValue, got, test.want)
+		}
+	}
+}
+
 func TestIdentifierRoundTrip(t *testing.T) {
 	t.Parallel()
 	id := Identifier(12)
@@ -143,7 +165,7 @@ func TestValidators(t *testing.T) {
 	if !ValidPriority(0) || !ValidPriority(4) || ValidPriority(-1) || ValidPriority(5) {
 		t.Fatal("priority bounds")
 	}
-	for _, s := range []string{"planned", "started", "completed", "canceled"} {
+	for _, s := range []string{"backlog", "planned", "started", "completed", "canceled"} {
 		if !ValidProjectStatus(s) {
 			t.Fatalf("project status %q", s)
 		}

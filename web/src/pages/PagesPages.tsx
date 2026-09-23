@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { Box, Button, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -31,15 +32,16 @@ function pageDepth(pages: Page[], page: Page): number {
 }
 
 export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPagePresenter> }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const { pages } = model;
       return (
         <SplitLayout single>
           <Pane single>
-            <PageHeader title="Pages" />
+            <PageHeader title={t('nav.pages')} />
             {pages.length === 0 ? (
-              <EmptyState>No pages. Use the command palette to create one.</EmptyState>
+              <EmptyState>{t('ui.noPages')}</EmptyState>
             ) : (
               <Stack gap={0}>
                 {pages.map((p) => (
@@ -103,6 +105,7 @@ export function PageDetailPageView({
   model: ReturnType<typeof usePageDetailPagePresenter>;
   titleRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const { slug, page, pages, projects, tagDraft, handlers } = model;
@@ -114,13 +117,13 @@ export function PageDetailPageView({
               actions={
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect
-                    aria-label="Page status"
+                    aria-label={t('ui.pageStatus')}
                     value={page.status}
                     onChange={handlers.Page_status_onChange0}
                     data={PAGE_STATUSES.map((s) => ({ value: s, label: s }))}
                   />
                   <Button type="button" variant="subtle" color="red" onClick={handlers.onClick1}>
-                    Delete
+                    {t('ui.delete')}
                   </Button>
                 </Group>
               }
@@ -128,7 +131,7 @@ export function PageDetailPageView({
             <Stack gap="md">
               <TextInput
                 ref={titleRef}
-                aria-label="Page title"
+                aria-label={t('ui.pageTitle')}
                 value={page.title}
                 onChange={handlers.Page_title_onChange2}
                 onBlur={handlers.Page_title_onBlur3}
@@ -143,12 +146,12 @@ export function PageDetailPageView({
               />
               <Group gap="md" wrap="wrap" align="flex-end">
                 <NativeSelect
-                  aria-label="Parent page"
-                  label="Parent page"
+                  aria-label={t('ui.parentPage')}
+                  label={t('ui.parentPage')}
                   value={page.parentId ?? ''}
                   onChange={handlers.Parent_page_onChange4}
                   data={[
-                    { value: '', label: 'No parent' },
+                    { value: '', label: t('issueProperties.noParent') },
                     ...pages
                       .filter((p) => p.slug !== slug)
                       .map((p) => ({ value: String(p.id), label: p.title })),
@@ -156,28 +159,28 @@ export function PageDetailPageView({
                   style={{ flex: 1, minWidth: 160 }}
                 />
                 <NativeSelect
-                  aria-label="Page project"
-                  label="Project"
+                  aria-label={t('ui.project')}
+                  label={t('field.project')}
                   value={page.projectId ?? ''}
                   onChange={handlers.Page_project_onChange5}
                   data={[
-                    { value: '', label: 'No project' },
+                    { value: '', label: t('field.noProject') },
                     ...projects.map((p) => ({ value: String(p.id), label: p.name })),
                   ]}
                   style={{ flex: 1, minWidth: 160 }}
                 />
                 <TextInput
                   type="date"
-                  aria-label="Document date"
-                  label="Document date"
+                  aria-label={t('ui.documentDate')}
+                  label={t('ui.documentDate')}
                   value={page.date?.slice(0, 10) ?? ''}
                   onChange={handlers.Document_date_onChange6}
                   style={{ flex: 1, minWidth: 160 }}
                 />
               </Group>
               <TextInput
-                aria-label="Tags"
-                placeholder="tags, comma separated"
+                aria-label={t('ui.tags')}
+                placeholder={t('ui.tagsCommaSeparated')}
                 value={tagDraft}
                 onChange={handlers.Tags_onChange7}
                 onBlur={handlers.Tags_onBlur8}

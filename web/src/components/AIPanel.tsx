@@ -11,6 +11,7 @@ import {
   Text,
   Textarea,
 } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { renderMarkdown } from '../markdown.ts';
 import { MarkdownContent, Shortcut } from '../mantine-ui.tsx';
 
@@ -41,24 +42,42 @@ function AIPanelBinding(props: Parameters<typeof useAIPanelPresenter>[0]) {
 }
 
 export function PanelView({ model }: { model: ReturnType<typeof usePanelPresenter> }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { id, open, state, prompt, error, sending, messages, handlers } = model;
+      const { id, standalone, open, state, prompt, error, sending, messages, handlers } = model;
       return (
-        <Stack gap="md" component="section" aria-label="AI assistant">
-          <Button type="button" variant="default" aria-expanded={open} onClick={handlers.onClick0}>
-            Ask AI about {id}
-          </Button>
-          <Collapse expanded={open}>
+        <Stack
+          gap="md"
+          component="section"
+          aria-label={t('ui.aiAssistant')}
+          p={standalone ? 'md' : undefined}
+          style={standalone ? { minHeight: '100%' } : undefined}
+        >
+          {standalone ? null : (
+            <Button
+              type="button"
+              variant="default"
+              aria-expanded={open}
+              onClick={handlers.onClick0}
+            >
+              {t('ui.askAiAbout')} {id}
+            </Button>
+          )}
+          <Collapse expanded={standalone || open}>
             <Stack gap="md">
-              <Text c="dimmed" size="sm">
-                Conversation for {id}. The saved document is included with each message.
-              </Text>
+              {standalone ? null : (
+                <Text c="dimmed" size="sm">
+                  {t('ui.conversationFor')} {id}. {t('ui.savedDocumentIncluded')}
+                </Text>
+              )}
 
               <Stack gap="md">
                 {messages.map((m, i) => (
                   <Stack key={i} gap="xs">
-                    <Text fw={600}>{m.role}</Text>
+                    <Text fw={600}>
+                      {t(`ui.role${m.role[0]!.toUpperCase()}${m.role.slice(1)}`)}
+                    </Text>
                     <MarkdownContent html={renderMarkdown(m.text)} />
                   </Stack>
                 ))}
@@ -66,10 +85,10 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
 
               <Text component="span" role="status" size="sm" c="dimmed">
                 {state?.busy
-                  ? 'Working…'
+                  ? t('ui.working')
                   : state?.sessionId
-                    ? 'Ready'
-                    : 'Send a message to connect'}
+                    ? t('ui.ready')
+                    : t('ui.sendMessageToConnect')}
               </Text>
 
               {error || state?.error ? (
@@ -92,14 +111,11 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
                 : null}
 
               {state?.permissions.map((p) => (
-                <Fieldset
-                  key={p.id}
-                  legend={p.params.toolCall?.title ?? 'Agent requests permission'}
-                >
+                <Fieldset key={p.id} legend={p.params.toolCall?.title ?? t('ui.agentPermission')}>
                   <Stack gap="sm">
                     <Accordion>
                       <Accordion.Item value="details">
-                        <Accordion.Control>Request details</Accordion.Control>
+                        <Accordion.Control>{t('ui.requestDetails')}</Accordion.Control>
                         <Accordion.Panel>
                           <Code block>{JSON.stringify(p.params, null, 2)}</Code>
                         </Accordion.Panel>
@@ -124,34 +140,36 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
               <Box component="form" onSubmit={handlers.onSubmit3}>
                 <Stack gap="sm">
                   <Textarea
-                    label="Message"
-                    aria-label="Message to AI"
+                    label={t('ui.message')}
+                    aria-label={t('ui.messageToAi')}
                     value={prompt}
                     onChange={handlers.Message_to_AI_onChange4}
                     required
                     disabled={sending}
                   />
                   <Text c="dimmed" size="sm">
-                    Enter to insert a line · <Shortcut>Ctrl/⌘+Enter</Shortcut> to send
+                    {t('ui.enterToInsertLine')} <Shortcut>Ctrl/⌘+Enter</Shortcut> {t('ui.toSend')}
                   </Text>
                   <Group gap="xs">
                     <Button type="submit" disabled={sending || state?.busy || !prompt.trim()}>
-                      Send
+                      {t('ui.send')}
                     </Button>
                     <Button
                       type="button"
                       disabled={!state?.busy || sending}
                       onClick={handlers.onClick5}
                     >
-                      Stop
+                      {t('ui.stop')}
                     </Button>
-                    <Button
-                      type="button"
-                      disabled={state?.busy || sending}
-                      onClick={handlers.onClick6}
-                    >
-                      New conversation
-                    </Button>
+                    {standalone ? null : (
+                      <Button
+                        type="button"
+                        disabled={state?.busy || sending}
+                        onClick={handlers.onClick6}
+                      >
+                        {t('ui.newConversation')}
+                      </Button>
+                    )}
                   </Group>
                 </Stack>
               </Box>

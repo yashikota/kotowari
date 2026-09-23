@@ -1,6 +1,8 @@
 import { Box, Group, Stack, TextInput, Textarea } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { IssueDisplayOptions } from './IssueDisplayOptions.tsx';
 import { IssueFilterMenu } from './IssueFilterMenu.tsx';
+import { DEFAULT_DISPLAY_PROPERTIES } from '../issue-list.ts';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueFiltersPresenter } from '../presenters/IssueFilters.tsx';
@@ -10,6 +12,7 @@ export function IssueFiltersView({
 }: {
   model: ReturnType<typeof useIssueFiltersPresenter>;
 }) {
+  const { t } = useTranslation();
   switch (model._view) {
     case 0: {
       const {
@@ -23,12 +26,21 @@ export function IssueFiltersView({
         viewName,
         findRef,
         selectedLabels,
+        selectedProjectLabels,
+        selectedAddedToCycle,
         filterOpened,
         displayOpened,
         chips,
         groupBy,
         layout,
         orderBy,
+        subGroupBy,
+        direction,
+        completedIssues,
+        showSubIssues,
+        nestedSubIssues,
+        showEmptyGroups,
+        displayProperties,
         handlers,
       } = model;
       return (
@@ -37,13 +49,21 @@ export function IssueFiltersView({
           pb="xs"
           style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
         >
-          <Group role="search" aria-label="Issue filters" gap={6} wrap="wrap" align="flex-start">
+          <Group
+            role="search"
+            aria-label={t('ui.issueFilters')}
+            gap={6}
+            wrap="wrap"
+            align="flex-start"
+          >
             <IssueFilterMenu
               search={search}
               projects={projects}
               cycles={cycles}
               labels={labels}
               selectedLabels={selectedLabels}
+              selectedProjectLabels={selectedProjectLabels}
+              selectedAddedToCycle={selectedAddedToCycle}
               opened={filterOpened}
               chips={chips}
               onToggle={handlers.onFilterToggle}
@@ -52,15 +72,27 @@ export function IssueFiltersView({
               onProjectChange={handlers.onProjectChange}
               onCycleChange={handlers.onCycleChange}
               onPriorityChange={handlers.onPriorityChange}
+              onTypeChange={handlers.onTypeChange}
+              onEstimateChange={handlers.onEstimateChange}
+              onDueDateChange={handlers.onDueDateChange}
+              onRelationChange={handlers.onRelationChange}
+              onContentChange={handlers.onContentChange}
+              onMilestoneNameChange={handlers.onMilestoneNameChange}
+              onDateFieldChange={handlers.onDateFieldChange}
+              onDateRangeChange={handlers.onDateRangeChange}
+              onProjectStatusChange={handlers.onProjectStatusChange}
+              onProjectPriorityChange={handlers.onProjectPriorityChange}
               onToggleLabel={handlers.onToggleLabel}
+              onToggleProjectLabel={handlers.onToggleProjectLabel}
+              onToggleAddedToCycle={handlers.onToggleAddedToCycle}
               onRemoveFilter={handlers.onRemoveFilter}
               onClear={handlers.onClearFilters}
             />
             {onFind ? (
               <TextInput
                 ref={findRef}
-                aria-label="Find issues"
-                placeholder="Find…"
+                aria-label={t('ui.findIssues')}
+                placeholder={t('ui.find')}
                 value={find ?? ''}
                 onChange={handlers.onFindChange}
                 size="xs"
@@ -80,6 +112,20 @@ export function IssueFiltersView({
                   onLayoutChange={handlers.onLayoutChange}
                   onGroupByChange={handlers.onGroupByChange}
                   onOrderByChange={handlers.onOrderByChange}
+                  subGroupBy={subGroupBy ?? 'none'}
+                  direction={direction ?? 'asc'}
+                  completedIssues={completedIssues ?? 'all'}
+                  showSubIssues={showSubIssues ?? true}
+                  nestedSubIssues={nestedSubIssues ?? 'showMatching'}
+                  showEmptyGroups={showEmptyGroups ?? false}
+                  displayProperties={displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES]}
+                  onSubGroupByChange={handlers.onSubGroupByChange}
+                  onDirectionChange={handlers.onDirectionChange}
+                  onCompletedIssuesChange={handlers.onCompletedIssuesChange}
+                  onShowSubIssuesChange={handlers.onShowSubIssuesChange}
+                  onNestedSubIssuesChange={handlers.onNestedSubIssuesChange}
+                  onShowEmptyGroupsChange={handlers.onShowEmptyGroupsChange}
+                  onDisplayPropertyToggle={handlers.onDisplayPropertyToggle}
                 />
               </Stack>
             ) : null}
@@ -88,8 +134,8 @@ export function IssueFiltersView({
             <Box component="form" mt={6} onSubmit={handlers.onSubmitView}>
               <Textarea
                 rows={2}
-                aria-label="New view name"
-                placeholder="Save as view"
+                aria-label={t('ui.newViewName')}
+                placeholder={t('ui.saveAsView')}
                 value={viewName}
                 onChange={handlers.onViewNameChange}
                 size="xs"

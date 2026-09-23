@@ -85,10 +85,7 @@ test('returning to a cached list reflects an ADR unlink immediately', async ({ p
   await row.click();
   await page.getByRole('button', { name: `Unlink ${adr.identifier}`, exact: true }).click();
   await expect(page.getByText('No linked decisions.', { exact: true })).toBeVisible();
-  await page
-    .getByRole('navigation', { name: 'Primary' })
-    .getByRole('link', { name: 'Issues' })
-    .click();
+  await page.getByRole('link', { name: 'Back to issues' }).click();
   await page.getByLabel('Find issues').fill(issue.identifier);
   await expect(row).toBeVisible();
   await expect(row.getByText('1 ADR', { exact: true })).toHaveCount(0);

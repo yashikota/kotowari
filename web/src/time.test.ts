@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { formatStamp, formatTimeZoneLabel, listTimeZones, timeZoneChoices } from './time.ts';
+import {
+  formatCalendarDate,
+  formatStamp,
+  formatTimeZoneLabel,
+  listTimeZones,
+  timeZoneChoices,
+} from './time.ts';
+
+describe('formatCalendarDate', () => {
+  it('formats a date-only value in the requested language regardless of local timezone', () => {
+    expect(formatCalendarDate('2026-09-21T00:00:00Z', 'ja')).toContain('9月21日');
+    expect(formatCalendarDate('2026-09-21T00:00:00Z', 'en-US')).toBe('Sep 21');
+  });
+
+  it('preserves an invalid date value for recovery', () => {
+    expect(formatCalendarDate('not-a-date', 'ja')).toBe('not-a-date');
+  });
+});
 
 describe('formatStamp', () => {
   it('renders UTC instants in the workspace timezone', () => {

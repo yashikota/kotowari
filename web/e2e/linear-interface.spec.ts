@@ -10,7 +10,7 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
     'aria-selected',
     'true',
   );
-  await expect(page.getByRole('button', { name: 'Open command palette' }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Search' }).first()).toBeVisible();
   const allIssuesTab = page.getByRole('tab', { name: 'All issues' });
   const backlogTab = page.getByRole('tab', { name: 'Backlog' });
   await allIssuesTab.focus();
@@ -37,7 +37,9 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
     'true',
   );
   await page.getByLabel('Find issues').fill(createdIssueTitle);
-  const noPriority = page.getByRole('button', { name: /No priority · \d+ issues/ });
+  const noPriority = page
+    .getByRole('button')
+    .filter({ has: page.getByText('No priority', { exact: true }) });
   await expect(noPriority).toBeVisible();
   await expect(noPriority).toHaveAttribute('aria-expanded', 'true');
   await noPriority.click();
@@ -49,10 +51,12 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await expect(createdIssue).toBeVisible();
 
   await page.getByRole('button', { name: 'Display options' }).click();
-  await page.getByLabel('Group by').selectOption('status');
-  await page.getByLabel('Order by').selectOption('priority');
+  await page.getByLabel('Grouping', { exact: true }).selectOption('status');
+  await page.getByLabel('Ordering', { exact: true }).selectOption('priority');
   await page.keyboard.press('Escape');
-  const todoGroup = page.getByRole('button', { name: /Todo · \d+ issues/ });
+  const todoGroup = page
+    .getByRole('button')
+    .filter({ has: page.getByText('Todo', { exact: true }) });
   await expect(todoGroup).toBeVisible();
   await todoGroup.click();
   await expect(createdIssue).toHaveCount(0);
@@ -82,7 +86,7 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
   await page
-    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('navigation', { name: 'Team navigation' })
     .getByRole('link', { name: 'Projects' })
     .click();
   await expect(page).toHaveURL(/\/projects$/);

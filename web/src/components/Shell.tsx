@@ -3,13 +3,14 @@ import {
   Alert,
   ActionIcon,
   AppShell,
-  Badge,
   Box,
   Button,
   Divider,
   Group,
   Modal,
+  MultiSelect,
   NativeSelect,
+  Select,
   ScrollArea,
   Stack,
   ThemeIcon,
@@ -18,6 +19,7 @@ import {
 } from '@mantine/core';
 import {
   IconBook,
+  IconBell,
   IconChevronRight,
   IconCircleDot,
   IconFilter,
@@ -29,7 +31,11 @@ import {
   IconSearch,
   IconScale,
   IconSettings,
+  IconStar,
   IconStack2,
+  IconRepeat,
+  IconSparkles,
+  IconTemplate,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,7 +43,7 @@ import { useFocusWhen } from '../focus.ts';
 import { ISSUE_STATUSES } from '../types.ts';
 import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
 import { RouterNavLink } from '../mantine-ui.tsx';
-import { CONFIG_NAV, PRIMARY_NAV } from '../nav.ts';
+import { CONFIG_NAV, HOME_NAV, MORE_NAV, TEAM_NAV } from '../nav.ts';
 import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
 import styles from './Shell.module.css';
@@ -47,6 +53,8 @@ import { useShellPresenter } from '../presenters/Shell.tsx';
 
 const NAV_ICONS: Record<string, ReactNode> = {
   '/': <IconHome size={14} aria-hidden />,
+  '/reminders': <IconBell size={14} aria-hidden />,
+  '/agent': <IconSparkles size={14} aria-hidden />,
   '/issues': <IconListCheck size={14} aria-hidden />,
   '/board': <IconLayoutKanban size={14} aria-hidden />,
   '/adrs': <IconScale size={14} aria-hidden />,
@@ -54,6 +62,8 @@ const NAV_ICONS: Record<string, ReactNode> = {
   '/cycles': <IconCircleDot size={14} aria-hidden />,
   '/pages': <IconBook size={14} aria-hidden />,
   '/config': <IconSettings size={14} aria-hidden />,
+  '/templates': <IconTemplate size={14} aria-hidden />,
+  '/recurring': <IconRepeat size={14} aria-hidden />,
 };
 
 export function ShellView({
@@ -79,6 +89,7 @@ export function ShellView({
         mobileNavigationOpen,
         cycles,
         views,
+        favoriteIssues,
         paletteOpen,
         query,
         createIssue,
@@ -100,6 +111,7 @@ export function ShellView({
         commands,
         handlers,
       } = model;
+      const favoriteCycles = cycles.filter((cycle) => cycle.isFavorite);
       return (
         <>
           <AppShell
@@ -132,8 +144,13 @@ export function ShellView({
                   <ThemeIcon size={20} radius="sm" color="indigo" aria-hidden>
                     {(workspaceName || 'K').slice(0, 1).toUpperCase()}
                   </ThemeIcon>
-                  <Text size="sm" fw={600} truncate title={workspaceName || 'Kotowari'}>
-                    {workspaceName || 'Kotowari'}
+                  <Text
+                    size="sm"
+                    fw={600}
+                    truncate
+                    title={workspaceName || t('workspace.defaultName')}
+                  >
+                    {workspaceName || t('workspace.defaultName')}
                   </Text>
                 </Group>
                 <Group gap={2} wrap="nowrap">
@@ -143,8 +160,8 @@ export function ShellView({
                     color="gray"
                     w={28}
                     h={28}
-                    aria-label="Open command palette"
-                    title="Search · Ctrl K"
+                    aria-label={t('nav.search')}
+                    title={t('ui.searchShortcut')}
                     onClick={handlers.onOpenPalette}
                   >
                     <IconSearch size={15} stroke={1.7} aria-hidden />
@@ -165,46 +182,104 @@ export function ShellView({
               </Group>
 
               <AppShell.Section grow component={ScrollArea} p="xs" style={{ minHeight: 0 }}>
-                <Stack gap={0} component="nav" aria-label="Primary">
-                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
-                    Workspace
-                  </Text>
-                  {PRIMARY_NAV.map((item) => (
+                <Stack gap={0} component="nav" aria-label={t('nav.primary')}>
+                  {HOME_NAV.map((item) => (
                     <RouterNavLink
-                      key={item.to}
+                      key={item.key}
                       to={item.to}
                       search={item.search}
                       params={item.params}
                       fuzzy={item.fuzzy}
-                      label={item.label}
+                      label={t(item.labelKey)}
                       leftSection={NAV_ICONS[item.to as string]}
                     />
                   ))}
-                  {cycles
-                    .filter((c) => c.status === 'active')
-                    .map((c) => (
-                      <RouterNavLink
-                        key={c.number}
-                        to="/cycles/$number"
-                        params={{ number: String(c.number) }}
-                        label={
-                          <Group justify="space-between" gap="xs" wrap="nowrap" w="100%">
-                            <Text size="sm" truncate>
-                              {t('field.cycleN', { number: c.number })}
-                            </Text>
-                            <Badge size="xs" variant="light" color="indigo">
-                              {t('nav.cycleCurrent')}
-                            </Badge>
-                          </Group>
-                        }
-                        pl="xl"
-                      />
-                    ))}
                 </Stack>
 
                 <Divider my="sm" mx="xs" />
 
-                <Stack gap={0} component="nav" aria-label="Saved views">
+                <Stack gap={0} component="nav" aria-label={t('nav.favorites')}>
+                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
+                    {t('nav.favorites')}
+                  </Text>
+                  {favoriteIssues.length === 0 && favoriteCycles.length === 0 ? (
+                    <Text size="xs" c="dimmed" px="xs" py={4}>
+                      {t('nav.favoriteHint')}
+                    </Text>
+                  ) : null}
+                  {favoriteIssues.slice(0, 8).map((issue) => (
+                    <RouterNavLink
+                      key={`issue-${issue.identifier}`}
+                      to="/issues/$identifier"
+                      params={{ identifier: issue.identifier }}
+                      label={`${issue.identifier} ${issue.title}`}
+                      leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                    />
+                  ))}
+                  {favoriteCycles.slice(0, 8).map((cycle) => (
+                    <RouterNavLink
+                      key={`cycle-${cycle.number}`}
+                      to="/cycles/$number"
+                      params={{ number: String(cycle.number) }}
+                      label={cycle.name || t('field.cycleN', { number: cycle.number })}
+                      leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                    />
+                  ))}
+                </Stack>
+
+                <Divider my="sm" mx="xs" />
+
+                <Stack gap={0} component="nav" aria-label={t('nav.teamNavigation')}>
+                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs" truncate>
+                    {workspaceName || t('workspace.defaultName')}
+                  </Text>
+                  {TEAM_NAV.map((item) =>
+                    item.to === '/cycles' ? (
+                      <Stack key={item.key} gap={0}>
+                        <RouterNavLink
+                          to={item.to}
+                          search={item.search}
+                          params={item.params}
+                          fuzzy={item.fuzzy}
+                          label={t(item.labelKey)}
+                          leftSection={NAV_ICONS[item.to as string]}
+                        />
+                        <Stack
+                          component="div"
+                          role="group"
+                          aria-label={t('nav.cycleNavigation')}
+                          gap={0}
+                          pl="xl"
+                        >
+                          <RouterNavLink
+                            to="/cycles"
+                            search={{ scope: 'current' }}
+                            label={t('nav.cycleCurrent')}
+                          />
+                          <RouterNavLink
+                            to="/cycles"
+                            search={{ scope: 'upcoming' }}
+                            label={t('nav.cycleUpcoming')}
+                          />
+                        </Stack>
+                      </Stack>
+                    ) : (
+                      <RouterNavLink
+                        key={item.key}
+                        to={item.to}
+                        search={item.search}
+                        params={item.params}
+                        fuzzy={item.fuzzy}
+                        label={t(item.labelKey)}
+                        leftSection={NAV_ICONS[item.to as string]}
+                      />
+                    ),
+                  )}
+                </Stack>
+
+                <Divider my="sm" mx="xs" />
+
+                <Stack gap={0} component="nav" aria-label={t('nav.savedViews')}>
                   <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
                     {t('nav.views')}
                   </Text>
@@ -232,16 +307,32 @@ export function ShellView({
                     </Group>
                   </Button>
                 </Stack>
+
+                <Divider my="sm" mx="xs" />
+
+                <Stack gap={0} component="nav" aria-label={t('nav.more')}>
+                  {MORE_NAV.map((item) => (
+                    <RouterNavLink
+                      key={item.key}
+                      to={item.to}
+                      search={item.search}
+                      params={item.params}
+                      fuzzy={item.fuzzy}
+                      label={t(item.labelKey)}
+                      leftSection={NAV_ICONS[item.to as string]}
+                    />
+                  ))}
+                </Stack>
               </AppShell.Section>
 
               <AppShell.Section
                 p="xs"
                 style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
               >
-                <Stack gap={0} component="nav" aria-label="Settings">
+                <Stack gap={0} component="nav" aria-label={t('nav.settings')}>
                   <RouterNavLink
                     to={CONFIG_NAV.to}
-                    label={CONFIG_NAV.label}
+                    label={t(CONFIG_NAV.labelKey)}
                     leftSection={NAV_ICONS[CONFIG_NAV.to as string]}
                   />
                 </Stack>
@@ -252,7 +343,7 @@ export function ShellView({
               <button
                 type="button"
                 className={styles.backdrop}
-                aria-label="Close navigation"
+                aria-label={t('nav.closeNavigation')}
                 onClick={handlers.onCloseMobileNavigation}
               />
             ) : null}
@@ -269,13 +360,13 @@ export function ShellView({
               >
                 <Group
                   component="nav"
-                  aria-label="Breadcrumb"
+                  aria-label={t('nav.breadcrumb')}
                   gap="sm"
                   wrap="nowrap"
                   style={{ minWidth: 0 }}
                 >
                   <Text size="sm" c="dimmed" truncate maw={180}>
-                    {workspaceName || 'Kotowari'}
+                    {workspaceName || t('workspace.defaultName')}
                   </Text>
                   <IconChevronRight
                     size={14}
@@ -295,7 +386,9 @@ export function ShellView({
                     w={28}
                     h={28}
                     className={styles.mobileMenuButton}
-                    aria-label={mobileNavigationOpen ? 'Close navigation' : 'Open navigation'}
+                    aria-label={
+                      mobileNavigationOpen ? t('nav.closeNavigation') : t('nav.openNavigation')
+                    }
                     onClick={handlers.onToggleMobileNavigation}
                   >
                     <IconMenu2 size={16} stroke={1.7} aria-hidden />
@@ -306,8 +399,8 @@ export function ShellView({
                     color="gray"
                     w={28}
                     h={28}
-                    aria-label="Open command palette"
-                    title="Search · Ctrl K"
+                    aria-label={t('nav.search')}
+                    title={t('ui.searchShortcut')}
                     onClick={handlers.onOpenPalette}
                   >
                     <IconSearch size={15} stroke={1.7} aria-hidden />
@@ -354,6 +447,25 @@ export function ShellView({
                 onChange={handlers.Issue_title_onChange12}
                 onKeyDown={handlers.Issue_title_onKeyDown13}
               />
+              <Select
+                aria-label={t('modal.issueTemplate')}
+                label={t('modal.issueTemplate')}
+                placeholder={t('modal.noIssueTemplate')}
+                clearable
+                value={model.issueTemplateSlug || null}
+                data={model.issueTemplates.map((template) => ({
+                  value: template.slug,
+                  label: template.name,
+                }))}
+                onChange={handlers.Issue_template_onChange30}
+              />
+              <Textarea
+                aria-label={t('modal.issueDescription')}
+                label={t('modal.issueDescription')}
+                rows={3}
+                value={model.issueBody}
+                onChange={handlers.Issue_body_onChange31}
+              />
               <Group justify="space-between" align="center">
                 <Text size="sm" c="dimmed">
                   {t('modal.enterHint')}
@@ -378,6 +490,34 @@ export function ShellView({
                   data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
                 />
                 <NativeSelect
+                  aria-label={t('field.type')}
+                  label={t('field.type')}
+                  value={model.issueType || 'none'}
+                  onChange={handlers.Issue_type_onChange32}
+                  data={[
+                    { value: 'none', label: t('issueProperties.noType') },
+                    ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
+                      value: type,
+                      label: t(`issueType.${type}`),
+                    })),
+                  ]}
+                />
+                <NativeSelect
+                  aria-label={t('field.estimate')}
+                  label={t('field.estimate')}
+                  value={model.issueEstimate || 'none'}
+                  onChange={handlers.Issue_estimate_onChange33}
+                  data={[
+                    { value: 'none', label: t('issueProperties.noEstimate') },
+                    ...[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
+                      value: String(estimate),
+                      label: String(estimate),
+                    })),
+                  ]}
+                />
+              </Group>
+              <Group grow align="flex-start">
+                <NativeSelect
                   aria-label={t('field.project')}
                   label={t('field.project')}
                   value={issueProjectId}
@@ -399,6 +539,17 @@ export function ShellView({
                       label: t('field.cycleN', { number: c.number }),
                     })),
                   ]}
+                />
+                <MultiSelect
+                  aria-label={t('field.label')}
+                  label={t('field.label')}
+                  searchable
+                  data={model.availableLabels.map((label) => ({
+                    value: label.name,
+                    label: label.name,
+                  }))}
+                  value={model.issueLabelNames}
+                  onChange={handlers.Issue_labels_onChange34}
                 />
               </Group>
             </Stack>

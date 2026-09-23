@@ -1,21 +1,5 @@
-const ROWS: { keys: string; action: string }[] = [
-  { keys: 'Mod+K', action: 'Command palette' },
-  { keys: 'Ctrl/⌘+Enter', action: 'Send or create from a text field' },
-  { keys: 'Enter (text)', action: 'Insert a line' },
-  { keys: 'c', action: 'Create issue' },
-  { keys: 'p', action: 'Create ADR' },
-  { keys: '/', action: 'Find in the current list' },
-  { keys: 'j / k', action: 'Move selection' },
-  { keys: 'Enter', action: 'Open selected issue' },
-  { keys: 's', action: 'Set status' },
-  { keys: '1–7', action: 'Switch sidebar section' },
-  { keys: '0', action: 'Config' },
-  { keys: 'Shift+1–4', action: 'Set priority' },
-  { keys: 'Esc', action: 'Close dialogs' },
-  { keys: '?', action: 'This help' },
-];
-
 import { Box, Button, Group, Modal, Table, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { Shortcut } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -26,6 +10,23 @@ export function ShortcutHelpView({
 }: {
   model: ReturnType<typeof useShortcutHelpPresenter>;
 }) {
+  const { t } = useTranslation();
+  const rows: { keys: string; action: string }[] = [
+    { keys: 'Mod+K', action: t('ui.commandPalette') },
+    { keys: 'Ctrl/⌘+Enter', action: t('ui.shortcutSendOrCreate') },
+    { keys: 'Enter (text)', action: t('ui.shortcutInsertLine') },
+    { keys: 'c', action: t('modal.createIssue') },
+    { keys: 'p', action: t('modal.createAdr') },
+    { keys: '/', action: t('ui.shortcutFindInList') },
+    { keys: 'j / k', action: t('ui.shortcutMoveSelection') },
+    { keys: 'Enter', action: t('ui.shortcutOpenIssue') },
+    { keys: 's', action: t('ui.shortcutSetStatus') },
+    { keys: '1–7', action: t('ui.shortcutSwitchNavigation') },
+    { keys: '0', action: t('config.title') },
+    { keys: 'Shift+1–4', action: t('ui.shortcutSetPriority') },
+    { keys: 'Esc', action: t('ui.shortcutCloseDialogs') },
+    { keys: '?', action: t('ui.shortcutShowHelp') },
+  ];
   switch (model._view) {
     case 0: {
       const { handlers } = model;
@@ -33,8 +34,8 @@ export function ShortcutHelpView({
         <Modal
           opened
           onClose={handlers.onClick0}
-          title="Keyboard shortcuts"
-          aria-label="Keyboard shortcuts"
+          title={t('ui.keyboardShortcuts')}
+          aria-label={t('ui.keyboardShortcuts')}
           centered
           size="md"
           withCloseButton={false}
@@ -42,12 +43,12 @@ export function ShortcutHelpView({
           <Box onClick={handlers.Keyboard_shortcuts_onClick1}>
             <Group justify="flex-end" mb="sm">
               <Button variant="subtle" size="compact-sm" onClick={handlers.onClick2}>
-                Close
+                {t('ui.close')}
               </Button>
             </Group>
             <Table>
               <Table.Tbody>
-                {ROWS.map((row) => (
+                {rows.map((row) => (
                   <Table.Tr key={row.keys}>
                     <Table.Td style={{ width: '40%', verticalAlign: 'top' }}>
                       <Shortcut>{row.keys}</Shortcut>

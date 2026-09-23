@@ -13,9 +13,18 @@ import (
 
 func (s *Server) aiSession(r *http.Request) (*acp.Session, string, error) {
 	kind, id := r.PathValue("kind"), r.PathValue("id")
-	doc, err := s.store.Document(kind, id, "body")
-	if err != nil {
-		return nil, "", err
+	contextText := ""
+	if kind == "agent" {
+		if id == "" || len(id) > 80 {
+			return nil, "", fmt.Errorf("invalid agent conversation ID")
+		}
+		contextText = fmt.Sprintf("You are Kotowari's local workspace agent. Workspace root: %s. Help the user inspect and organize their single-user issue, project, cycle, page, and ADR workspace. Read its README and relevant files when useful. Keep changes within the workspace, explain consequential edits, and ask before destructive actions.", s.store.Path())
+	} else {
+		doc, err := s.store.Document(kind, id, "body")
+		if err != nil {
+			return nil, "", err
+		}
+		contextText = fmt.Sprintf("You are helping with a local kotowari document workspace. Current document: %s/%s. Workspace: %s. Read the corresponding README.md (pages use <slug>.md) and related Issue/ADR links as needed. Keep document assets under adr/NNNNN/assets/ and experiments under adr/NNNNN/experiments/. Preserve TOML frontmatter and reciprocal links. Do not accept an ADR or change its decision status unless requested. Current document body:\n%s", kind, id, s.store.Path(), doc.Body)
 	}
 	key := fmt.Sprintf("%x", sha256.Sum256([]byte(kind+"/"+id)))
 	s.aiMu.Lock()
@@ -35,7 +44,6 @@ func (s *Server) aiSession(r *http.Request) (*acp.Session, string, error) {
 		session = acp.NewSession(cwd, filepath.Join(cwd, ".local", "ai", key+".json"), command)
 		s.sessions[key] = session
 	}
-	contextText := fmt.Sprintf("You are helping with a local kotowari document workspace. Current document: %s/%s. Workspace: %s. Read the corresponding README.md (pages use <slug>.md) and related Issue/ADR links as needed. Keep document assets under adr/NNNNN/assets/ and experiments under adr/NNNNN/experiments/. Preserve TOML frontmatter and reciprocal links. Do not accept an ADR or change its decision status unless requested. Current document body:\n%s", kind, id, s.store.Path(), doc.Body)
 	return session, contextText, nil
 }
 func (s *Server) getAI(w http.ResponseWriter, r *http.Request) {

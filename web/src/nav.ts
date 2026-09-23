@@ -1,29 +1,39 @@
 import type { LinkProps } from '@tanstack/react-router';
 
-type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7';
+type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'a' | 'r' | 't';
 
-type NavTarget = {
+export type NavTarget = {
   key: NavKey;
-  label: string;
+  labelKey: string;
   to: LinkProps['to'];
   search?: LinkProps['search'];
   params?: LinkProps['params'];
   fuzzy?: boolean;
 };
 
-export const PRIMARY_NAV: NavTarget[] = [
-  { key: '1', label: 'Home', to: '/', fuzzy: false },
-  { key: '2', label: 'Issues', to: '/issues', search: {} },
-  { key: '3', label: 'Board', to: '/board', search: {} },
-  { key: '4', label: 'ADRs', to: '/adrs' },
-  { key: '5', label: 'Projects', to: '/projects' },
-  { key: '6', label: 'Cycles', to: '/cycles' },
-  { key: '7', label: 'Pages', to: '/pages' },
+export const HOME_NAV: NavTarget[] = [
+  { key: '1', labelKey: 'nav.home', to: '/', fuzzy: false },
+  { key: '8', labelKey: 'nav.reminders', to: '/reminders', fuzzy: false },
+  { key: 'a', labelKey: 'nav.agent', to: '/agent', fuzzy: false },
 ];
 
-export const CONFIG_NAV: NavTarget = { key: '0', label: 'Config', to: '/config' };
+export const TEAM_NAV: NavTarget[] = [
+  { key: '2', labelKey: 'nav.issues', to: '/issues', search: {} },
+  { key: '3', labelKey: 'nav.board', to: '/board', search: {} },
+  { key: '6', labelKey: 'nav.cycles', to: '/cycles', fuzzy: true },
+  { key: '5', labelKey: 'nav.projects', to: '/projects' },
+];
 
-export const SIDEBAR_NAV: NavTarget[] = [...PRIMARY_NAV, CONFIG_NAV];
+export const MORE_NAV: NavTarget[] = [
+  { key: '4', labelKey: 'nav.adrs', to: '/adrs' },
+  { key: '7', labelKey: 'nav.pages', to: '/pages' },
+  { key: 't', labelKey: 'nav.templates', to: '/templates' },
+  { key: 'r', labelKey: 'nav.recurringIssues', to: '/recurring' },
+];
+
+export const CONFIG_NAV: NavTarget = { key: '0', labelKey: 'nav.config', to: '/config' };
+
+export const SIDEBAR_NAV: NavTarget[] = [...HOME_NAV, ...TEAM_NAV, ...MORE_NAV, CONFIG_NAV];
 
 export type NavShortcutAction = `nav-${NavKey}`;
 

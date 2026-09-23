@@ -8,7 +8,16 @@ import {
 import type * as React from 'react';
 import { useState } from 'react';
 import { api, parseIssueSearch, searchToFilter, type IssueSearch } from '../api.ts';
-import type { IssueGroupBy, IssueLayout, IssueOrderBy } from '../issue-list.ts';
+import {
+  DEFAULT_DISPLAY_PROPERTIES,
+  filterCompletedIssues,
+  includeNestedIssueMatches,
+  type CompletedIssuesFilter,
+  type IssueDisplayProperty,
+  type IssueGroupBy,
+  type IssueLayout,
+  type IssueOrderBy,
+} from '../issue-list.ts';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { isTypingTarget } from '../keymap.ts';
@@ -28,6 +37,18 @@ function compactSearch(next: IssueSearch): IssueSearch {
     project: next.project ?? '',
     cycle: next.cycle ?? '',
     priority: next.priority ?? '',
+    type: next.type ?? '',
+    estimate: next.estimate ?? '',
+    dueDate: next.dueDate ?? '',
+    relation: next.relation ?? '',
+    content: next.content ?? '',
+    milestoneName: next.milestoneName ?? '',
+    dateField: next.dateField ?? '',
+    dateRange: next.dateRange ?? '',
+    projectStatus: next.projectStatus ?? '',
+    projectPriority: next.projectPriority ?? '',
+    projectLabels: next.projectLabels?.join(',') ?? '',
+    addedToCycle: next.addedToCycle?.join(',') ?? '',
     labels: next.labels ?? '',
   });
 }
@@ -58,19 +79,51 @@ export function useIssuesPagePresenter() {
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
   const [layout, setLayout] = useState<IssueLayout>('list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
+  const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
+  const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
+  const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');
+  const [showSubIssues, setShowSubIssues] = useState(true);
+  const [nestedSubIssues, setNestedSubIssues] = useState<'showMatching' | 'showAll'>(
+    'showMatching',
+  );
+  const [showEmptyGroups, setShowEmptyGroups] = useState(false);
+  const [displayProperties, setDisplayProperties] = useState<IssueDisplayProperty[]>([
+    ...DEFAULT_DISPLAY_PROPERTIES,
+  ]);
   const [selected, setSelected] = useState<string | null>(null);
 
-  async function saveView(name: string) {
-    const filter = searchToFilter(search);
+  async function saveView(name: string, activeSearch: IssueSearch = search) {
+    const filter = searchToFilter(activeSearch);
     const saved = await api.createView({
       name,
       slug: slugify(name) || `view-${Date.now()}`,
-      display: 'list',
+      display: layout,
+      groupBy,
+      subGroupBy,
+      orderBy,
+      direction,
+      completedIssues,
+      showSubIssues,
+      nestedSubIssues,
+      showEmptyGroups,
+      displayProperties,
       status: filter.status ?? null,
       project: filter.project ?? null,
       cycle: filter.cycle ?? null,
       labels: filter.labels ?? [],
       priority: filter.priority ?? null,
+      type: filter.type ?? null,
+      estimate: filter.estimate ?? null,
+      dueDate: filter.dueDate ?? '',
+      relation: filter.relation ?? '',
+      content: filter.content ?? '',
+      milestoneName: filter.milestoneName ?? '',
+      dateField: filter.dateField ?? '',
+      dateRange: filter.dateRange ?? '',
+      projectStatus: filter.projectStatus ?? '',
+      projectPriority: filter.projectPriority ?? null,
+      projectLabels: filter.projectLabels ?? [],
+      addedToCycle: filter.addedToCycle ?? [],
     });
     await router.invalidate();
     await navigate({ to: '/views/$slug', params: { slug: saved.slug } });
@@ -90,7 +143,7 @@ export function useIssuesPagePresenter() {
     setLayout((current) => (current === 'list' ? 'board' : 'list'));
     return true;
   });
-  const issues = (data.issues ?? [])
+  const matchingIssues = (data.issues ?? [])
     .filter((i) => matchesFind(i, find))
     .filter((i) =>
       view === 'active'
@@ -99,6 +152,11 @@ export function useIssuesPagePresenter() {
           ? i.status === 'backlog'
           : true,
     );
+  const issues = filterCompletedIssues(
+    includeNestedIssueMatches(matchingIssues, data.issues ?? [], nestedSubIssues),
+    completedIssues,
+    data.cycles,
+  );
   const selectedId = selected && issues.some((i) => i.identifier === selected) ? selected : null;
 
   return {
@@ -112,6 +170,13 @@ export function useIssuesPagePresenter() {
     groupBy,
     layout,
     orderBy,
+    subGroupBy,
+    direction,
+    completedIssues,
+    showSubIssues,
+    nestedSubIssues,
+    showEmptyGroups,
+    displayProperties,
     handlers: {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
@@ -141,6 +206,18 @@ export function useIssuesPagePresenter() {
       onGroupBy5: (next: IssueGroupBy) => setGroupBy(next),
       onLayout6: (next: IssueLayout) => setLayout(next),
       onOrderBy7: (next: IssueOrderBy) => setOrderBy(next),
+      onSubGroupBy17: (next: IssueGroupBy) => setSubGroupBy(next),
+      onDirection18: (next: 'asc' | 'desc') => setDirection(next),
+      onCompletedIssues19: (next: CompletedIssuesFilter) => setCompletedIssues(next),
+      onShowSubIssues20: (next: boolean) => setShowSubIssues(next),
+      onNestedSubIssues21: (next: 'showMatching' | 'showAll') => setNestedSubIssues(next),
+      onShowEmptyGroups22: (next: boolean) => setShowEmptyGroups(next),
+      onDisplayPropertyToggle23: (property: IssueDisplayProperty) =>
+        setDisplayProperties((current) =>
+          current.includes(property)
+            ? current.filter((item) => item !== property)
+            : [...current, property],
+        ),
       onBoardOpen8: (id: string) =>
         navigate({ to: '/issues/$identifier', params: { identifier: id } }),
       onBoardMove9: (id: string, status: Issue['status'], sortOrder: number) =>

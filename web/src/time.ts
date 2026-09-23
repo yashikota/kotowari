@@ -65,3 +65,13 @@ export function formatStamp(iso: string, timeZone: string): string {
     return new Intl.DateTimeFormat('en-CA', { ...stampOpts, timeZone: 'UTC' }).format(d);
   }
 }
+
+export function formatCalendarDate(value: string, locale = 'en'): string {
+  const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}

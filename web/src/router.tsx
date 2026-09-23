@@ -107,6 +107,35 @@ const issuesRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/IssuesPages.tsx'), 'IssuesPage'),
 });
 
+const remindersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reminders',
+  component: lazyRouteComponent(() => import('./pages/RemindersPages.tsx'), 'RemindersPage'),
+});
+
+const agentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/agent',
+  component: lazyRouteComponent(() => import('./pages/AgentPages.tsx'), 'AgentPage'),
+});
+
+const templatesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/templates',
+  loader: () => api.issueTemplates(),
+  component: lazyRouteComponent(() => import('./pages/TemplatesRecurring.tsx'), 'TemplatesPage'),
+});
+
+const recurringIssuesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/recurring',
+  loader: () => api.recurringIssues(),
+  component: lazyRouteComponent(
+    () => import('./pages/TemplatesRecurring.tsx'),
+    'RecurringIssuesPage',
+  ),
+});
+
 const issueRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/issues/$identifier',
@@ -148,13 +177,14 @@ const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects/$slug',
   loader: async ({ params }) => {
-    const [project, adrs, pages, issues] = await Promise.all([
+    const [project, adrs, pages, issues, labels] = await Promise.all([
       api.project(params.slug),
       api.adrs(),
       api.pages(),
       api.issues(`?project=${encodeURIComponent(params.slug)}`),
+      api.labels(),
     ]);
-    return { project, adrs, pages, issues };
+    return { project, adrs, pages, issues, labels };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectDetailPage'),
 });
@@ -162,6 +192,12 @@ const projectRoute = createRoute({
 const cyclesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/cycles',
+  validateSearch: (raw: Record<string, unknown>) => ({
+    scope:
+      raw.scope === 'current' || raw.scope === 'upcoming' || raw.scope === 'all'
+        ? raw.scope
+        : undefined,
+  }),
   loader: async () => {
     const [cycles, issues] = await Promise.all([api.cycles(), api.issues()]);
     return { cycles, issues };
@@ -174,8 +210,12 @@ const cycleRoute = createRoute({
   path: '/cycles/$number',
   loader: async ({ params }) => {
     const number = Number(params.number);
-    const [cycle, issues] = await Promise.all([api.cycle(number), api.issues(`?cycle=${number}`)]);
-    return { cycle, issues };
+    const [cycle, issues, pages] = await Promise.all([
+      api.cycle(number),
+      api.issues(`?cycle=${number}`),
+      api.pages(),
+    ]);
+    return { cycle, issues, pages };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CycleDetailPage'),
 });
@@ -223,6 +263,10 @@ const configRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   issuesRoute,
+  remindersRoute,
+  agentRoute,
+  templatesRoute,
+  recurringIssuesRoute,
   issueRoute,
   boardRoute,
   adrsRoute,

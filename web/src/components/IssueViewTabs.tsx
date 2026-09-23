@@ -1,12 +1,7 @@
 import { Group, Tabs, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 export type IssueView = 'active' | 'backlog' | 'all';
-
-const TABS: { value: IssueView; label: string }[] = [
-  { value: 'active', label: 'Active' },
-  { value: 'backlog', label: 'Backlog' },
-  { value: 'all', label: 'All issues' },
-];
 
 export function IssueViewTabs({
   value,
@@ -17,10 +12,16 @@ export function IssueViewTabs({
   count: number;
   onChange: (value: string | null) => void;
 }) {
+  const { t } = useTranslation();
+  const tabs: { value: IssueView; label: string }[] = [
+    { value: 'active', label: t('issueViews.active') },
+    { value: 'backlog', label: t('issueViews.backlog') },
+    { value: 'all', label: t('issueViews.all') },
+  ];
   return (
     <Group
       component="nav"
-      aria-label="Issue views"
+      aria-label={t('ui.issueViews')}
       gap="sm"
       wrap="nowrap"
       px="md"
@@ -37,8 +38,8 @@ export function IssueViewTabs({
           tab: { height: 28, paddingInline: 10, fontSize: 'var(--mantine-font-size-xs)' },
         }}
       >
-        <Tabs.List aria-label="Issue views">
-          {TABS.map((tab) => (
+        <Tabs.List aria-label={t('ui.issueViews')}>
+          {tabs.map((tab) => (
             <Tabs.Tab key={tab.value} value={tab.value}>
               {tab.label}
             </Tabs.Tab>

@@ -2,6 +2,7 @@ import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/reac
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
+import i18n from '../i18n/index.ts';
 import type { ADR, Issue, Project } from '../types.ts';
 import { entityDir } from '../types.ts';
 
@@ -85,7 +86,7 @@ export function useADRDetailPagePresenter() {
     sandbox,
     handlers: {
       onClick0: () => {
-        const title = window.prompt('New decision title', adr.title);
+        const title = window.prompt(i18n.t('modal.adrTitle'), adr.title);
         if (title?.trim())
           return api
             .createADR({

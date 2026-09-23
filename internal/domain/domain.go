@@ -77,6 +77,67 @@ func ValidADRStatus(s string) bool {
 	}
 }
 
+func ValidDate(value string) bool {
+	_, err := time.Parse("2006-01-02", value)
+	return err == nil
+}
+
+func ValidDueDateFilter(value string) bool {
+	switch value {
+	case "", "overdue", "today", "tomorrow", "threeDays", "week", "month", "quarter", "custom", "none":
+		return true
+	default:
+		return strings.HasPrefix(value, "on:") && ValidDate(strings.TrimPrefix(value, "on:"))
+	}
+}
+
+func ValidIssueDateFilter(field, dateRange string) bool {
+	if field == "" && dateRange == "" {
+		return true
+	}
+	if !ValidIssueDateField(field) || !ValidIssueDateRange(dateRange) || dateRange == "" {
+		return false
+	}
+	if field == "timeInCurrentStatus" && strings.HasPrefix(dateRange, "on:") {
+		return false
+	}
+	if field == "timeInCurrentStatus" {
+		switch dateRange {
+		case "dayAgo", "weekAgo", "twoWeeksAgo", "monthAgo", "quarterAgo", "halfYearAgo":
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func ValidIssueDateField(value string) bool {
+	switch value {
+	case "createdAt", "updatedAt", "startedAt", "completedAt", "timeInCurrentStatus":
+		return true
+	default:
+		return false
+	}
+}
+
+func ValidIssueDateRange(value string) bool {
+	switch value {
+	case "", "dayAgo", "threeDaysAgo", "weekAgo", "twoWeeksAgo", "monthAgo", "quarterAgo", "halfYearAgo", "yearAgo":
+		return true
+	default:
+		return strings.HasPrefix(value, "on:") && ValidDate(strings.TrimPrefix(value, "on:"))
+	}
+}
+
+func ValidIssueRelationFilter(value string) bool {
+	switch value {
+	case "", "parent", "subissue", "blocked", "blocking", "recurring", "related", "duplicate":
+		return true
+	default:
+		return false
+	}
+}
+
 // ValidPrefix keeps identifiers safe as single URL path segments.
 func ValidPrefix(p string) bool {
 	if p == "" {
@@ -119,13 +180,26 @@ func ValidIssueStatus(s string) bool {
 	}
 }
 
+func ValidIssueType(s string) bool {
+	switch s {
+	case "", "bug", "feature", "improvement", "task":
+		return true
+	default:
+		return false
+	}
+}
+
+func ValidEstimate(p *int) bool {
+	return p == nil || (*p >= 0 && *p <= 999)
+}
+
 func ValidPriority(p int) bool {
 	return p >= 0 && p <= 4
 }
 
 func ValidProjectStatus(s string) bool {
 	switch s {
-	case "planned", "started", "completed", "canceled":
+	case "backlog", "planned", "started", "completed", "canceled":
 		return true
 	default:
 		return false
@@ -156,7 +230,7 @@ func ValidViewDisplay(s string) bool {
 
 func ValidViewGroupBy(s string) bool {
 	switch s {
-	case "none", "priority", "status", "project", "cycle", "parent":
+	case "none", "priority", "status", "project", "cycle", "label", "parent", "type", "estimate":
 		return true
 	default:
 		return false
@@ -165,7 +239,38 @@ func ValidViewGroupBy(s string) bool {
 
 func ValidViewOrderBy(s string) bool {
 	switch s {
-	case "manual", "priority", "updated", "dueDate", "title":
+	case "manual", "title", "status", "priority", "updated", "created", "dueDate", "estimate", "linkCount", "timeInStatus":
+		return true
+	default:
+		return false
+	}
+}
+
+func ValidViewDirection(s string) bool {
+	return s == "asc" || s == "desc"
+}
+
+func ValidCompletedIssues(s string) bool {
+	switch s {
+	case "all", "pastDay", "pastWeek", "pastMonth", "currentCycle", "none":
+		return true
+	default:
+		return false
+	}
+}
+
+func ValidNestedSubIssues(s string) bool {
+	switch s {
+	case "showMatching", "showAll":
+		return true
+	default:
+		return false
+	}
+}
+
+func ValidDisplayProperty(s string) bool {
+	switch s {
+	case "id", "status", "priority", "project", "dueDate", "milestone", "cycle", "estimate", "labels", "links", "pullRequests", "timeInStatus", "created", "updated":
 		return true
 	default:
 		return false

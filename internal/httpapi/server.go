@@ -13,6 +13,7 @@ import (
 
 	"github.com/yashikota/kotowari/internal/acp"
 
+	"github.com/yashikota/kotowari/internal/domain"
 	"github.com/yashikota/kotowari/internal/store"
 )
 
@@ -60,6 +61,10 @@ func originAllowed(r *http.Request, origin string) bool {
 
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/revision", func(w http.ResponseWriter, r *http.Request) {
+		if err := s.store.ProcessDueRecurringIssues(); err != nil {
+			writeError(w, err)
+			return
+		}
 		hash, err := s.store.ContentHash()
 		if err != nil {
 			writeError(w, err)
@@ -83,10 +88,15 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/projects/{slug}", s.getProject)
 	s.mux.HandleFunc("PATCH /api/projects/{slug}", s.patchProject)
 	s.mux.HandleFunc("DELETE /api/projects/{slug}", s.deleteProject)
+	s.mux.HandleFunc("POST /api/projects/{slug}/milestones", s.createMilestone)
+	s.mux.HandleFunc("PATCH /api/projects/{slug}/milestones/{milestoneId}", s.patchMilestone)
+	s.mux.HandleFunc("DELETE /api/projects/{slug}/milestones/{milestoneId}", s.deleteMilestone)
 	s.mux.HandleFunc("GET /api/cycles", s.listCycles)
 	s.mux.HandleFunc("POST /api/cycles", s.createCycle)
 	s.mux.HandleFunc("GET /api/cycles/{number}", s.getCycle)
 	s.mux.HandleFunc("PATCH /api/cycles/{number}", s.patchCycle)
+	s.mux.HandleFunc("POST /api/cycles/{number}/links", s.addCycleLink)
+	s.mux.HandleFunc("DELETE /api/cycles/{number}/links/{resourceId}", s.removeCycleLink)
 	s.mux.HandleFunc("GET /api/views", s.listViews)
 	s.mux.HandleFunc("POST /api/views", s.createView)
 	s.mux.HandleFunc("GET /api/views/{slug}", s.getView)
@@ -94,9 +104,21 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/views/{slug}", s.deleteView)
 	s.mux.HandleFunc("GET /api/issues", s.listIssues)
 	s.mux.HandleFunc("POST /api/issues", s.createIssue)
+	s.mux.HandleFunc("GET /api/issue-templates", s.listIssueTemplates)
+	s.mux.HandleFunc("POST /api/issues/{id}/templates", s.createIssueTemplate)
+	s.mux.HandleFunc("POST /api/issues/{id}/projects", s.createProjectFromIssue)
+	s.mux.HandleFunc("DELETE /api/issue-templates/{slug}", s.deleteIssueTemplate)
+	s.mux.HandleFunc("GET /api/recurring-issues", s.listRecurringIssues)
+	s.mux.HandleFunc("POST /api/issues/{id}/recurrences", s.createRecurringIssue)
+	s.mux.HandleFunc("PATCH /api/recurring-issues/{slug}", s.patchRecurringIssue)
+	s.mux.HandleFunc("DELETE /api/recurring-issues/{slug}", s.deleteRecurringIssue)
 	s.mux.HandleFunc("GET /api/issues/{id}", s.getIssue)
 	s.mux.HandleFunc("PATCH /api/issues/{id}", s.patchIssue)
 	s.mux.HandleFunc("DELETE /api/issues/{id}", s.deleteIssue)
+	s.mux.HandleFunc("POST /api/issues/{id}/links", s.addIssueLink)
+	s.mux.HandleFunc("DELETE /api/issues/{id}/links/{linkId}", s.removeIssueLink)
+	s.mux.HandleFunc("POST /api/issues/{id}/relations", s.addIssueRelation)
+	s.mux.HandleFunc("DELETE /api/issues/{id}/relations/{relationId}", s.removeIssueRelation)
 	s.mux.HandleFunc("GET /api/issues/{id}/comments", s.listComments)
 	s.mux.HandleFunc("POST /api/issues/{id}/comments", s.addComment)
 	s.mux.HandleFunc("GET /api/issues/{id}/activities", s.listActivities)
@@ -245,6 +267,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		Slug        string  `json:"slug"`
 		Description string  `json:"description"`
 		Status      string  `json:"status"`
+		Priority    int     `json:"priority"`
 		StartDate   *string `json:"startDate"`
 		TargetDate  *string `json:"targetDate"`
 	}
@@ -252,7 +275,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProject(in.Name, in.Slug, in.Description, in.Status, in.StartDate, in.TargetDate)
+	out, err := s.store.CreateProjectWithPriority(in.Name, in.Slug, in.Description, in.Status, in.Priority, in.StartDate, in.TargetDate)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -271,13 +294,15 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name        *string `json:"name"`
-		Description *string `json:"description"`
-		Status      *string `json:"status"`
-		StartDate   *string `json:"startDate"`
-		TargetDate  *string `json:"targetDate"`
-		ClearStart  bool    `json:"clearStartDate"`
-		ClearTarget bool    `json:"clearTargetDate"`
+		Name        *string   `json:"name"`
+		Description *string   `json:"description"`
+		Status      *string   `json:"status"`
+		Priority    *int      `json:"priority"`
+		StartDate   *string   `json:"startDate"`
+		TargetDate  *string   `json:"targetDate"`
+		Labels      *[]string `json:"labels"`
+		ClearStart  bool      `json:"clearStartDate"`
+		ClearTarget bool      `json:"clearTargetDate"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
@@ -296,7 +321,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateProject(r.PathValue("slug"), in.Name, in.Description, in.Status, start, target)
+	out, err := s.store.UpdateProject(r.PathValue("slug"), in.Name, in.Description, in.Status, in.Priority, start, target, in.Labels)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -360,15 +385,21 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		StartsAt *string `json:"startsAt"`
-		EndsAt   *string `json:"endsAt"`
-		Status   *string `json:"status"`
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+		StartsAt    *string `json:"startsAt"`
+		EndsAt      *string `json:"endsAt"`
+		Status      *string `json:"status"`
+		IsFavorite  *bool   `json:"isFavorite"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.UpdateCycle(n, in.StartsAt, in.EndsAt, in.Status)
+	out, err := s.store.UpdateCycle(n, store.UpdateCycleInput{
+		Name: in.Name, Description: in.Description, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
+		Status: in.Status, IsFavorite: in.IsFavorite,
+	})
 	if err != nil {
 		writeError(w, err)
 		return
@@ -378,23 +409,45 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 
 func viewInput(r *http.Request) (store.CreateViewInput, error) {
 	var in struct {
-		Name     string   `json:"name"`
-		Slug     string   `json:"slug"`
-		Display  string   `json:"display"`
-		GroupBy  string   `json:"groupBy"`
-		OrderBy  string   `json:"orderBy"`
-		Status   *string  `json:"status"`
-		Project  *string  `json:"project"`
-		Cycle    *int     `json:"cycle"`
-		Labels   []string `json:"labels"`
-		Priority *int     `json:"priority"`
+		Name              string   `json:"name"`
+		Slug              string   `json:"slug"`
+		Display           string   `json:"display"`
+		GroupBy           string   `json:"groupBy"`
+		SubGroupBy        string   `json:"subGroupBy"`
+		OrderBy           string   `json:"orderBy"`
+		Direction         string   `json:"direction"`
+		CompletedIssues   string   `json:"completedIssues"`
+		ShowSubIssues     *bool    `json:"showSubIssues"`
+		NestedSubIssues   string   `json:"nestedSubIssues"`
+		ShowEmptyGroups   *bool    `json:"showEmptyGroups"`
+		DisplayProperties []string `json:"displayProperties"`
+		Status            *string  `json:"status"`
+		Project           *string  `json:"project"`
+		Cycle             *int     `json:"cycle"`
+		Labels            []string `json:"labels"`
+		Priority          *int     `json:"priority"`
+		Type              *string  `json:"type"`
+		Estimate          *int     `json:"estimate"`
+		DueDate           *string  `json:"dueDate"`
+		Relation          *string  `json:"relation"`
+		Content           *string  `json:"content"`
+		MilestoneName     *string  `json:"milestoneName"`
+		ProjectLabels     []string `json:"projectLabels"`
+		DateField         *string  `json:"dateField"`
+		DateRange         *string  `json:"dateRange"`
+		ProjectStatus     *string  `json:"projectStatus"`
+		ProjectPriority   *int     `json:"projectPriority"`
+		AddedToCycle      []string `json:"addedToCycle"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		return store.CreateViewInput{}, err
 	}
 	return store.CreateViewInput{
-		Name: in.Name, Slug: in.Slug, Display: in.Display, GroupBy: in.GroupBy, OrderBy: in.OrderBy, Status: in.Status,
-		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority,
+		Name: in.Name, Slug: in.Slug, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
+		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
+		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
+		Status:  in.Status,
+		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, DueDate: in.DueDate, Relation: in.Relation, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
 	}, nil
 }
 
@@ -453,8 +506,42 @@ func (s *Server) deleteView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
+	if err := s.store.ProcessDueRecurringIssues(); err != nil {
+		writeError(w, err)
+		return
+	}
 	q := r.URL.Query()
-	f := store.IssueFilter{Status: q.Get("status"), ProjectSlug: q.Get("project")}
+	f := store.IssueFilter{Status: q.Get("status"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
+	if raw := q.Get("projectLabels"); raw != "" {
+		for _, label := range strings.Split(raw, ",") {
+			if label = strings.TrimSpace(label); label != "" {
+				f.ProjectLabels = append(f.ProjectLabels, label)
+			}
+		}
+	}
+	if raw := q.Get("addedToCycle"); raw != "" {
+		for _, phase := range strings.Split(raw, ",") {
+			if phase = strings.TrimSpace(phase); phase != "" {
+				f.AddedToCycle = append(f.AddedToCycle, phase)
+			}
+		}
+	}
+	if !domain.ValidDueDateFilter(f.DueDate) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid due date filter"})
+		return
+	}
+	if !domain.ValidIssueRelationFilter(f.Relation) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid issue relation filter"})
+		return
+	}
+	if f.DueDateAsOf != "" && !domain.ValidDate(f.DueDateAsOf) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid date filter anchor"})
+		return
+	}
+	if f.Type != "" && !domain.ValidIssueType(f.Type) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid type"})
+		return
+	}
 	if c := q.Get("cycle"); c != "" {
 		n, err := strconv.Atoi(c)
 		if err != nil {
@@ -463,6 +550,14 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 		}
 		f.CycleNumber = n
 	}
+	if priority := q.Get("projectPriority"); priority != "" {
+		n, err := strconv.Atoi(priority)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid project priority"})
+			return
+		}
+		f.ProjectPriority = &n
+	}
 	if p := q.Get("priority"); p != "" {
 		n, err := strconv.Atoi(p)
 		if err != nil {
@@ -470,6 +565,22 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		f.Priority = &n
+	}
+	if estimate := q.Get("estimate"); estimate != "" {
+		n, err := strconv.Atoi(estimate)
+		if err != nil || !domain.ValidEstimate(&n) {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid estimate"})
+			return
+		}
+		f.Estimate = &n
+	}
+	if favorite := q.Get("favorite"); favorite != "" {
+		value, err := strconv.ParseBool(favorite)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid favorite"})
+			return
+		}
+		f.IsFavorite = &value
 	}
 	if labels := q.Get("labels"); labels != "" {
 		for _, name := range strings.Split(labels, ",") {
@@ -489,23 +600,26 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Title     string  `json:"title"`
-		Body      string  `json:"body"`
-		Status    string  `json:"status"`
-		Priority  int     `json:"priority"`
-		ProjectID *int64  `json:"projectId"`
-		CycleID   *int64  `json:"cycleId"`
-		ParentID  *int64  `json:"parentId"`
-		DueDate   *string `json:"dueDate"`
-		LabelIDs  []int64 `json:"labelIds"`
+		Title       string  `json:"title"`
+		Body        string  `json:"body"`
+		Status      string  `json:"status"`
+		Type        string  `json:"type"`
+		Priority    int     `json:"priority"`
+		Estimate    *int    `json:"estimate"`
+		ProjectID   *int64  `json:"projectId"`
+		MilestoneID *int64  `json:"milestoneId"`
+		CycleID     *int64  `json:"cycleId"`
+		ParentID    *int64  `json:"parentId"`
+		DueDate     *string `json:"dueDate"`
+		LabelIDs    []int64 `json:"labelIds"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
 	out, err := s.store.CreateIssue(store.CreateIssueInput{
-		Title: in.Title, Body: in.Body, Status: in.Status, Priority: in.Priority,
-		ProjectID: in.ProjectID, CycleID: in.CycleID, ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs,
+		Title: in.Title, Body: in.Body, Status: in.Status, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
+		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID, ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs,
 	})
 	if err != nil {
 		writeError(w, err)
@@ -554,6 +668,16 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 		}
 		in.Status = &s
 	}
+	if v, ok := raw["type"]; ok {
+		var issueType string
+		if string(v) != "null" {
+			if err := json.Unmarshal(v, &issueType); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid type"})
+				return
+			}
+		}
+		in.Type = &issueType
+	}
 	if v, ok := raw["priority"]; ok {
 		var n int
 		if err := json.Unmarshal(v, &n); err != nil {
@@ -562,6 +686,14 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 		}
 		in.Priority = &n
 	}
+	if v, ok := raw["estimate"]; ok {
+		estimate, err := unmarshalOptInt(v)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid estimate"})
+			return
+		}
+		in.Estimate = &estimate
+	}
 	if v, ok := raw["projectId"]; ok {
 		id, err := unmarshalOptInt64(v)
 		if err != nil {
@@ -569,6 +701,14 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		in.ProjectID = &id
+	}
+	if v, ok := raw["milestoneId"]; ok {
+		id, err := unmarshalOptInt64(v)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid milestoneId"})
+			return
+		}
+		in.MilestoneID = &id
 	}
 	if v, ok := raw["cycleId"]; ok {
 		id, err := unmarshalOptInt64(v)
@@ -594,6 +734,14 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 		}
 		in.DueDate = &d
 	}
+	if v, ok := raw["reminderAt"]; ok {
+		reminder, err := unmarshalOptString(v)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid reminderAt"})
+			return
+		}
+		in.ReminderAt = &reminder
+	}
 	if v, ok := raw["labelIds"]; ok {
 		var ids []int64
 		if err := json.Unmarshal(v, &ids); err != nil {
@@ -609,6 +757,14 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		in.SortOrder = &n
+	}
+	if v, ok := raw["isFavorite"]; ok {
+		var favorite bool
+		if err := json.Unmarshal(v, &favorite); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid favorite"})
+			return
+		}
+		in.IsFavorite = &favorite
 	}
 	out, err := s.store.UpdateIssue(r.PathValue("id"), in)
 	if err != nil {
