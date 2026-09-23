@@ -45,11 +45,12 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(page).toHaveURL(/\/issues\/ISS-/);
   await expect(page.getByLabel('Issue title')).toHaveValue(keepTitle);
   const label = `Harbor ${stamp}`;
-  await page.getByLabel('New label').fill(label);
-  await page.getByLabel('New label').press('ControlOrMeta+Enter');
-  await expect(
-    page.getByRole('group', { name: 'Labels' }).getByRole('checkbox', { name: label }),
-  ).toBeChecked();
+  const labels = page.getByRole('group', { name: 'Labels' });
+  await labels.getByRole('button', { name: 'Add labels' }).click();
+  const labelPicker = page.getByRole('dialog', { name: 'Add labels' });
+  await labelPicker.getByLabel('New label').fill(label);
+  await labelPicker.getByRole('button', { name: `Create “${label}”` }).click();
+  await expect(labels.getByRole('button', { name: `Remove label ${label}` })).toBeVisible();
 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Delete', exact: true }).click();

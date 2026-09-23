@@ -181,30 +181,15 @@ export function useIssueDetailPresenter({ identifier }: Props) {
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssue({ ...issue, title: e.target.value }),
       Issue_title_onBlur4: () => patch({ title: issue.title }),
-      Status_onChange5: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => patch({ status: e.target.value }),
-      Priority_onChange6: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => patch({ priority: Number(e.target.value) }),
-      Project_onChange7: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) =>
-        patch({
-          projectId: e.target.value ? Number(e.target.value) : null,
-        }),
-      Cycle_onChange8: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) =>
-        patch({
-          cycleId: e.target.value ? Number(e.target.value) : null,
-        }),
-      Parent_onChange9: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) =>
-        patch({
-          parentId: e.target.value ? Number(e.target.value) : null,
-        }),
+      Status_onChange5: (value: string | null) => (value ? patch({ status: value }) : undefined),
+      Priority_onChange6: (value: string | null) =>
+        value ? patch({ priority: Number(value) }) : undefined,
+      Project_onChange7: (value: string | null) =>
+        patch({ projectId: value && value !== 'none' ? Number(value) : null }),
+      Cycle_onChange8: (value: string | null) =>
+        patch({ cycleId: value && value !== 'none' ? Number(value) : null }),
+      Parent_onChange9: (value: string | null) =>
+        patch({ parentId: value && value !== 'none' ? Number(value) : null }),
       Due_date_onChange10: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => patch({ dueDate: e.target.value ? e.target.value : null }),
@@ -215,10 +200,10 @@ export function useIssueDetailPresenter({ identifier }: Props) {
         return patch({ labelIds: next });
       },
       New_label_onChange12: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setLabelName(e.target.value),
       New_label_onKeyDown13: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onKeyDown']>>[0],
       ) => {
         if (e.nativeEvent.isComposing || e.keyCode === 229) return;
 
@@ -227,6 +212,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
           return addLabel();
         }
       },
+      New_label_onClick23: () => addLabel(),
       onClick14: (a: ADR) => {
         return api.unlinkIssueADR(identifier, a.number).then(() => reload());
       },

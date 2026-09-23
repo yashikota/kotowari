@@ -104,7 +104,7 @@ export function IssueDetailView({
           </Group>
 
           <Grid gap="xl" mt="md">
-            <Grid.Col span={{ base: 12, md: 8 }}>
+            <Grid.Col span={{ base: 12, md: 9 }}>
               <Stack gap="lg">
                 <TextInput
                   ref={titleRef}
@@ -265,7 +265,7 @@ export function IssueDetailView({
                 </Section>
               </Stack>
             </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 4 }}>
+            <Grid.Col span={{ base: 12, md: 3 }}>
               <IssuePropertiesPanel model={model} />
             </Grid.Col>
           </Grid>

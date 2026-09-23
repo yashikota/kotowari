@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { chooseIssueProperty } from './issue-properties.ts';
 
 test('create issue, comment, and page', async ({ page }) => {
   const projectName = `Atlas ${Date.now()}`;
@@ -24,9 +25,12 @@ test('create issue, comment, and page', async ({ page }) => {
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
 
   const labels = page.getByRole('group', { name: 'Labels' });
-  const bug = labels.getByRole('checkbox', { name: 'Bug' });
-  await labels.getByText('Bug', { exact: true }).click();
-  await expect(bug).toBeChecked();
+  await labels.getByRole('button', { name: 'Add labels' }).click();
+  await page
+    .getByRole('dialog', { name: 'Add labels' })
+    .getByRole('button', { name: 'Bug' })
+    .click();
+  await expect(labels.getByRole('button', { name: 'Remove label Bug' })).toBeVisible();
 
   await page.getByLabel('Due date').fill('2026-09-01');
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
@@ -78,9 +82,9 @@ test('create issue, comment, and page', async ({ page }) => {
   await page.getByRole('main').getByRole('button', { name: 'Open command palette' }).click();
   await page.getByLabel('Command search').fill(`Assign to ${cycleName}`);
   await page.getByRole('option', { name: `Assign to ${cycleName}` }).click();
-  await expect(page.getByLabel('Cycle')).toHaveValue(/[1-9]/);
+  await expect(page.getByRole('combobox', { name: 'Cycle' })).toHaveValue(/Cycle [1-9]/);
 
-  await page.getByLabel('Status').selectOption('done');
+  await chooseIssueProperty(page, 'Status', 'Done');
   await page.getByRole('link', { name: 'Board' }).click();
   const doneCol = page.getByRole('region', { name: 'done issues' });
   await expect(doneCol.getByRole('button', { name: new RegExp(identifier) })).toBeVisible();

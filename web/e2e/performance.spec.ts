@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { chooseIssueProperty } from './issue-properties.ts';
 
 test('large lists stay bounded, reuse data, and isolate modal keyboard input', async ({ page }) => {
   const issues = Array.from({ length: 5000 }, (_, i) => ({
@@ -107,12 +108,14 @@ test('optimistic status is visible before the response and rolls back on rejecti
     await route.fulfill({ status: 409, json: { error: 'Changed externally' } });
   });
   await page.goto(`/issues/${issue.identifier}`);
-  const status = page.getByLabel('Status', { exact: true });
-  await expect(status).toHaveValue('todo');
-  await status.selectOption('done');
-  await expect(status).toHaveValue('done');
+  const status = page
+    .getByRole('complementary', { name: 'Issue properties' })
+    .getByRole('combobox', { name: 'Status' });
+  await expect(status).toHaveValue('Todo');
+  await chooseIssueProperty(page, 'Status', 'Done');
+  await expect(status).toHaveValue('Done');
   release();
-  await expect(status).toHaveValue('todo');
+  await expect(status).toHaveValue('Todo');
   await expect(page.getByRole('alert')).toContainText('Changed externally');
 });
 

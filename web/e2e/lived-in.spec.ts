@@ -78,6 +78,6 @@ test.describe('lived-in workspace', () => {
     await palette.getByRole('option', { name: new RegExp(childTitle) }).click();
     await expect(page).toHaveURL(/\/issues\/ISS-/);
     await expect(page.getByLabel('Issue title')).toHaveValue(childTitle);
-    await expect(page.getByLabel('Parent')).not.toHaveValue('');
+    await expect(page.getByRole('combobox', { name: 'Parent' })).not.toHaveValue('');
   });
 });
