@@ -110,6 +110,7 @@ export function EditorView({
               <SegmentedControl
                 aria-label="Document view"
                 value={mode}
+                transitionDuration={0}
                 onChange={handlers.onModeChange}
                 data={[
                   { label: 'Preview', value: 'preview' },

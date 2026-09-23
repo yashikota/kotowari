@@ -31,6 +31,7 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               cycles={data.cycles}
               labels={data.labels}
               onChange={handlers.onChange0}
+              onSaveView={handlers.onSaveView10}
               find={find}
               onFind={handlers.onFind2}
               groupBy={groupBy}

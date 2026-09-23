@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useState } from 'react';
-import { api, parseIssueSearch, type IssueSearch } from '../api.ts';
+import { api, parseIssueSearch, searchToFilter, type IssueSearch } from '../api.ts';
 import type { IssueGroupBy, IssueLayout, IssueOrderBy } from '../issue-list.ts';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
@@ -40,6 +40,14 @@ function matchesFind(issue: Issue, q: string): boolean {
   return issue.title.toLowerCase().includes(n) || issue.identifier.toLowerCase().includes(n);
 }
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48);
+}
+
 export function useIssuesPagePresenter() {
   const data = useLoaderData({ from: '/issues' }) as IssueListData;
   const search = useSearch({ from: '/issues' }) as IssueSearch;
@@ -51,6 +59,23 @@ export function useIssuesPagePresenter() {
   const [layout, setLayout] = useState<IssueLayout>('list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
   const [selected, setSelected] = useState<string | null>(null);
+
+  async function saveView(name: string) {
+    const filter = searchToFilter(search);
+    const saved = await api.createView({
+      name,
+      slug: slugify(name) || `view-${Date.now()}`,
+      display: 'list',
+      status: filter.status ?? null,
+      project: filter.project ?? null,
+      cycle: filter.cycle ?? null,
+      labels: filter.labels ?? [],
+      priority: filter.priority ?? null,
+    });
+    await router.invalidate();
+    await navigate({ to: '/views/$slug', params: { slug: saved.slug } });
+  }
+
   useKeyboard((event) => {
     if (
       !(event.ctrlKey || event.metaKey) ||
@@ -91,6 +116,13 @@ export function useIssuesPagePresenter() {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
       ) => navigate({ to: '/issues', search: compactSearch(next) }),
+      onSaveView10: (
+        ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onSaveView']>>
+      ) => {
+        const handle: NonNullable<React.ComponentProps<typeof IssueFilters>['onSaveView']> =
+          saveView;
+        return handle(...args);
+      },
       onFind2: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onFind']>>
       ) => {

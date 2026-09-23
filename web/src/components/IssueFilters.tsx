@@ -1,4 +1,4 @@
-import { Box, Group, Stack, TextInput } from '@mantine/core';
+import { Box, Group, Stack, TextInput, Textarea } from '@mantine/core';
 import { IssueDisplayOptions } from './IssueDisplayOptions.tsx';
 import { IssueFilterMenu } from './IssueFilterMenu.tsx';
 
@@ -17,8 +17,10 @@ export function IssueFiltersView({
         projects,
         cycles,
         labels,
+        onSaveView,
         find,
         onFind,
+        viewName,
         findRef,
         selectedLabels,
         filterOpened,
@@ -82,6 +84,20 @@ export function IssueFiltersView({
               </Stack>
             ) : null}
           </Group>
+          {onSaveView ? (
+            <Box component="form" mt={6} onSubmit={handlers.onSubmitView}>
+              <Textarea
+                rows={2}
+                aria-label="New view name"
+                placeholder="Save as view"
+                value={viewName}
+                onChange={handlers.onViewNameChange}
+                size="xs"
+                autosize
+                minRows={1}
+              />
+            </Box>
+          ) : null}
         </Box>
       );
     }

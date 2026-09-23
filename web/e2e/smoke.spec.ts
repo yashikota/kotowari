@@ -14,7 +14,7 @@ test('create issue, comment, and page', async ({ page }) => {
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('Smoke issue');
-  await issueTitle.press('Control+Enter');
+  await issueTitle.press('ControlOrMeta+Enter');
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
   await expect(page).toHaveURL(/\/issues\/ISS-\d+/);
   const identifier = page.url().match(/ISS-\d+/)?.[0];
@@ -40,7 +40,7 @@ test('create issue, comment, and page', async ({ page }) => {
 
   const comment = page.getByLabel('New note');
   await comment.fill('looks good');
-  await comment.press('Control+Enter');
+  await comment.press('ControlOrMeta+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
 
   await page.getByRole('button', { name: 'Copy identifier' }).click();
@@ -48,7 +48,7 @@ test('create issue, comment, and page', async ({ page }) => {
   const adrTitle = page.getByPlaceholder('ADR title');
   await expect(adrTitle).toBeFocused();
   await adrTitle.fill('local cache');
-  await adrTitle.press('Control+Enter');
+  await adrTitle.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/adrs\/ADR-\d+/);
   await expect(page.getByRole('textbox', { name: 'ADR title' }).first()).toHaveValue('local cache');
   await page.getByRole('link', { name: identifier }).click();
@@ -57,7 +57,7 @@ test('create issue, comment, and page', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Projects' }).click();
   await page.getByLabel('New project name').fill(projectName);
-  await page.getByLabel('New project name').press('Control+Enter');
+  await page.getByLabel('New project name').press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(new RegExp(`/projects/${projectSlug}`));
   await expect(page.getByRole('heading', { name: projectName })).toBeVisible();
 
@@ -92,7 +92,7 @@ test('create issue, comment, and page', async ({ page }) => {
   const pageTitle = page.getByPlaceholder('Page title');
   await expect(pageTitle).toBeFocused();
   await pageTitle.fill('ADR 1');
-  await pageTitle.press('Control+Enter');
+  await pageTitle.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/pages\//);
   await expect(page.getByRole('textbox', { name: 'Page title' }).first()).toHaveValue('ADR 1');
   await page.getByLabel('Page project').selectOption({ label: projectName });
@@ -110,12 +110,12 @@ test('sub-issue and saved view', async ({ page, request }) => {
   const issueTitle = page.getByPlaceholder('Issue title');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill(parentTitle);
-  await issueTitle.press('Control+Enter');
+  await issueTitle.press('ControlOrMeta+Enter');
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
   await expect(page.getByLabel('Issue title')).toHaveValue(parentTitle);
 
   await page.getByLabel('New sub-issue').fill(childTitle);
-  await page.getByLabel('New sub-issue').press('Control+Enter');
+  await page.getByLabel('New sub-issue').press('ControlOrMeta+Enter');
   await expect(page.getByRole('button', { name: new RegExp(childTitle) })).toBeVisible();
 
   await page.getByRole('link', { name: 'Back to issues' }).click();
@@ -130,7 +130,7 @@ test('sub-issue and saved view', async ({ page, request }) => {
   const viewName = page.getByPlaceholder('View name');
   await expect(viewName).toBeFocused();
   await viewName.fill('Todos');
-  await viewName.press('Control+Enter');
+  await viewName.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/views\/todos/);
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');

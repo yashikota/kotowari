@@ -28,8 +28,9 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await page.getByLabel('Filter status').selectOption('todo');
 
   await page.getByRole('button', { name: 'New view', exact: true }).click();
-  await page.getByLabel('View name').fill(`Todo ${stamp}`);
-  await page.getByLabel('View name').press('Control+Enter');
+  const viewName = page.getByRole('textbox', { name: 'View name', exact: true });
+  await viewName.fill(`Todo ${stamp}`);
+  await viewName.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(new RegExp(`/views/todo-${stamp}`));
   await expect(page.getByRole('heading', { name: `Todo ${stamp}` })).toBeVisible();
   const savedViewIssues = page.getByRole('listbox', { name: 'Issues' });
@@ -45,7 +46,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(page.getByLabel('Issue title')).toHaveValue(keepTitle);
   const label = `Harbor ${stamp}`;
   await page.getByLabel('New label').fill(label);
-  await page.getByLabel('New label').press('Control+Enter');
+  await page.getByLabel('New label').press('ControlOrMeta+Enter');
   await expect(
     page.getByRole('group', { name: 'Labels' }).getByRole('checkbox', { name: label }),
   ).toBeChecked();
@@ -54,4 +55,13 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page).toHaveURL(/\/issues/);
   await expect(page.getByRole('option', { name: new RegExp(keepTitle) })).toHaveCount(0);
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByLabel('Filter status').selectOption('todo');
+  const filteredViewName = `Todo filtered ${stamp}`;
+  await page.getByLabel('New view name').fill(filteredViewName);
+  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await expect(page).toHaveURL(new RegExp(`/views/todo-filtered-${stamp}`));
+  await expect(page.getByRole('heading', { name: filteredViewName })).toBeVisible();
 });

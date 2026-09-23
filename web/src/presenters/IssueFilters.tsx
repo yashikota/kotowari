@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useMachineFlag } from '../application/Root.tsx';
 import type { IssueSearch } from '../api.ts';
 import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
@@ -23,6 +23,7 @@ type Props = {
   cycles: Cycle[];
   labels: Label[];
   onChange: (next: IssueSearch) => void;
+  onSaveView?: (name: string) => Promise<void>;
   find?: string;
   onFind?: (q: string) => void;
   groupBy?: IssueGroupBy;
@@ -39,6 +40,7 @@ export function useIssueFiltersPresenter({
   cycles,
   labels,
   onChange,
+  onSaveView,
   find,
   onFind,
   groupBy,
@@ -48,6 +50,7 @@ export function useIssueFiltersPresenter({
   orderBy,
   onOrderBy,
 }: Props) {
+  const [viewName, setViewName] = useState('');
   const findRef = useRef<HTMLInputElement>(null);
   const [filterOpened, setFilterOpened] = useMachineFlag('filter');
   const [displayOpened, setDisplayOpened] = useMachineFlag('display');
@@ -92,6 +95,8 @@ export function useIssueFiltersPresenter({
     cycles,
     labels,
     onChange,
+    onSaveView,
+    viewName,
     find,
     onFind,
     groupBy,
@@ -151,6 +156,15 @@ export function useIssueFiltersPresenter({
           : [...selectedLabels, name];
         set({ labels: next.length ? next.join(',') : undefined });
       },
+      onSubmitView: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
+        e.preventDefault();
+        const name = viewName.trim();
+        if (!name) return;
+        return onSaveView?.(name).then(() => setViewName(''));
+      },
+      onViewNameChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+      ) => setViewName(e.target.value),
     },
   };
 }

@@ -25,7 +25,7 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   const title = page.getByPlaceholder('Issue title');
   await title.fill(createdIssueTitle);
   await page.getByRole('dialog').getByLabel('Priority').selectOption('0');
-  await title.press('Control+Enter');
+  await title.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
   await expect(page.locator('input[aria-label="Issue title"]')).toHaveValue(createdIssueTitle);
   await expect(page.getByRole('main').getByRole('link', { name: 'Back to issues' })).toBeVisible();
@@ -68,7 +68,7 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await expect(createdIssue).toBeVisible();
 
   await page.locator('body').click({ position: { x: 700, y: 120 } });
-  await page.keyboard.press('Control+b');
+  await page.keyboard.press('ControlOrMeta+b');
   const todoColumn = page.getByRole('region', { name: 'todo issues' });
   await expect(
     todoColumn.getByRole('button', { name: new RegExp(createdIssueTitle) }),

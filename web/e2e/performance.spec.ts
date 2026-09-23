@@ -155,7 +155,7 @@ test('AI composer uses Enter for newline and Ctrl+Enter for one submission', asy
   expect(submissions).toBe(0);
   await message.dispatchEvent('keydown', { key: 'Enter', ctrlKey: true, isComposing: true });
   expect(submissions).toBe(0);
-  await message.press('Control+Enter');
+  await message.press('ControlOrMeta+Enter');
   await expect(message).toHaveValue('');
   expect(submissions).toBe(1);
   expect(sent).toBe('first line\na');
@@ -178,7 +178,7 @@ test('creation shortcut and button share one pending operation', async ({ page }
   await page.keyboard.press('c');
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.getByPlaceholder('Issue title').fill('Create once');
-  await page.keyboard.press('Control+Enter');
+  await page.keyboard.press('ControlOrMeta+Enter');
   await expect.poll(() => submissions).toBe(1);
   await dialog.getByRole('button', { name: 'Create', exact: true }).click();
   release();
