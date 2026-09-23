@@ -10,7 +10,7 @@
     "config": "Config",
     "views": "Views",
     "newView": "New view",
-    "cycleActive": "Cycle {{number}} active"
+    "cycleCurrent": "Current"
   },
   "workspace": {
     "defaultName": "workspace"

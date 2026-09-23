@@ -3,6 +3,7 @@ import {
   Alert,
   ActionIcon,
   AppShell,
+  Badge,
   Box,
   Button,
   Divider,
@@ -186,7 +187,16 @@ export function ShellView({
                         key={c.number}
                         to="/cycles/$number"
                         params={{ number: String(c.number) }}
-                        label={`Cycle ${c.number} active`}
+                        label={
+                          <Group justify="space-between" gap="xs" wrap="nowrap" w="100%">
+                            <Text size="sm" truncate>
+                              {t('field.cycleN', { number: c.number })}
+                            </Text>
+                            <Badge size="xs" variant="light" color="indigo">
+                              {t('nav.cycleCurrent')}
+                            </Badge>
+                          </Group>
+                        }
                         pl="xl"
                       />
                     ))}

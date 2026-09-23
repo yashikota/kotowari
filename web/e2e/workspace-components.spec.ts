@@ -127,3 +127,25 @@ test('board columns group cards by status and reflect a detail edit', async ({ p
   await expect(doneColumn.getByRole('button', { name: cardName })).toBeVisible();
   await expect(todoColumn.getByRole('button', { name: cardName })).toHaveCount(0);
 });
+
+test('sidebar labels the active cycle as current', async ({ page, request }) => {
+  const start = new Date();
+  const response = await request.post('/api/cycles', {
+    data: {
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'active',
+    },
+  });
+  expect(response.ok()).toBeTruthy();
+  const cycle = (await response.json()) as { number: number };
+
+  await page.goto('/issues');
+  const activeCycleLink = page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('link', { name: `Cycle ${cycle.number} Current` });
+  await expect(activeCycleLink).toBeVisible();
+  await activeCycleLink.click();
+  await expect(page).toHaveURL(new RegExp(`/cycles/${cycle.number}$`));
+  await expect(page.getByLabel('Cycle status')).toHaveValue('active');
+});

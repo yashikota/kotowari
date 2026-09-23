@@ -10,7 +10,7 @@
     "config": "設定",
     "views": "ビュー",
     "newView": "新規ビュー",
-    "cycleActive": "サイクル {{number}} 進行中"
+    "cycleCurrent": "進行中"
   },
   "workspace": {
     "defaultName": "ワークスペース"
