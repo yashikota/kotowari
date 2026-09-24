@@ -1730,6 +1730,73 @@ func (s *Store) AddCommentWithAttachments(identifier, body string, attachments [
 	return out, err
 }
 
+func (s *Store) UpdateComment(identifier string, commentID int64, body string) (Comment, error) {
+	body = strings.TrimSpace(body)
+	if commentID < 1 {
+		return Comment{}, validationf("invalid comment id")
+	}
+	var out Comment
+	err := s.mutate(func(m *mem) error {
+		iss, ok := issueByIdent(m, identifier)
+		if !ok {
+			return ErrNotFound
+		}
+		comments := m.Comments[iss.Identifier]
+		for i := range comments {
+			if comments[i].ID != commentID {
+				continue
+			}
+			if body == "" && len(comments[i].Attachments) == 0 {
+				return validationf("body required")
+			}
+			comments[i].Body = body
+			comments[i].UpdatedAt = domain.Now()
+			m.Comments[iss.Identifier] = comments
+			addActivity(m, "issue", iss.ID, "comment_edited", map[string]any{"commentId": commentID}, comments[i].UpdatedAt)
+			m.bump(comments[i].UpdatedAt)
+			out = comments[i]
+			return nil
+		}
+		return ErrNotFound
+	})
+	return out, err
+}
+
+func (s *Store) DeleteComment(identifier string, commentID int64) error {
+	if commentID < 1 {
+		return validationf("invalid comment id")
+	}
+	var attachmentIDs []string
+	err := s.mutate(func(m *mem) error {
+		iss, ok := issueByIdent(m, identifier)
+		if !ok {
+			return ErrNotFound
+		}
+		comments := m.Comments[iss.Identifier]
+		for i, comment := range comments {
+			if comment.ID != commentID {
+				continue
+			}
+			for _, attachment := range comment.Attachments {
+				attachmentIDs = append(attachmentIDs, attachment.ID)
+			}
+			m.Comments[iss.Identifier] = append(comments[:i], comments[i+1:]...)
+			now := domain.Now()
+			addActivity(m, "issue", iss.ID, "comment_deleted", map[string]any{"commentId": commentID}, now)
+			m.bump(now)
+			return nil
+		}
+		return ErrNotFound
+	})
+	if err != nil {
+		return err
+	}
+	for _, attachmentID := range attachmentIDs {
+		_ = s.DeleteCommentAttachment(attachmentID)
+	}
+	return nil
+}
+
 func (s *Store) GetCommentAttachment(identifier, attachmentID string) (CommentAttachment, error) {
 	var out CommentAttachment
 	err := s.snapshot(func(m *mem) error {

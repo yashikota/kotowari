@@ -1307,6 +1307,26 @@ func TestCommentsEmptyAndAdd(t *testing.T) {
 	if c.Body != "remember this" || c.IssueID != iss.ID {
 		t.Fatalf("%#v", c)
 	}
+	edited, err := s.UpdateComment(iss.Identifier, c.ID, "edited note")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if edited.Body != "edited note" || edited.UpdatedAt == "" {
+		t.Fatalf("edited comment %#v", edited)
+	}
+
+	reopened, err := Open(s.Path())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	persisted, err := reopened.ListComments(iss.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(persisted) != 1 || persisted[0].Body != edited.Body || persisted[0].UpdatedAt != edited.UpdatedAt {
+		t.Fatalf("persisted edited comment %#v", persisted)
+	}
 }
 
 func TestCompletedAtSetOnDone(t *testing.T) {

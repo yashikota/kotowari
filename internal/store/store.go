@@ -164,6 +164,7 @@ type Comment struct {
 	IssueID     int64               `json:"issueId"`
 	Body        string              `json:"body"`
 	CreatedAt   string              `json:"createdAt"`
+	UpdatedAt   string              `json:"updatedAt,omitempty"`
 	Attachments []CommentAttachment `json:"attachments,omitempty"`
 }
 

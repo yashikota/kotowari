@@ -536,6 +536,17 @@
     "fileSize": "{{size}}",
     "limits": "Up to 10 files, 20 MB each."
   },
+  "issueComments": {
+    "edit": "Edit comment",
+    "delete": "Delete comment",
+    "moreOptions": "Comment options",
+    "edited": "edited",
+    "cancel": "Cancel",
+    "save": "Save",
+    "confirmDelete": "Delete this comment and its attachments? This cannot be undone.",
+    "updateFailed": "Could not update this comment. Try again.",
+    "deleteFailed": "Could not delete this comment. Try again."
+  },
   "issueActions": {
     "button": "Issue options",
     "addLink": "Add link…",
@@ -841,7 +852,9 @@
     "reminderCleared": "Canceled reminder",
     "relationAdded": "Added {{relation}} relation to {{identifier}}",
     "relationRemoved": "Removed {{relation}} relation to {{identifier}}",
-    "commented": "Added a note"
+    "commented": "Added a note",
+    "commentEdited": "Edited a comment",
+    "commentDeleted": "Deleted a comment"
   },
   "commands": {
     "createIssue": "Create issue",

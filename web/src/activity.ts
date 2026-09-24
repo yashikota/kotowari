@@ -47,6 +47,12 @@ export function formatActivity(action: string, payload: Record<string, unknown>)
   if (action === 'commented') {
     return i18n.t('activity.commented');
   }
+  if (action === 'comment_edited') {
+    return i18n.t('activity.commentEdited');
+  }
+  if (action === 'comment_deleted') {
+    return i18n.t('activity.commentDeleted');
+  }
   if (action === 'link_added' || action === 'link_removed') {
     const title = typeof payload.title === 'string' && payload.title ? payload.title : payload.url;
     return i18n.t(action === 'link_added' ? 'activity.linkAdded' : 'activity.linkRemoved', {

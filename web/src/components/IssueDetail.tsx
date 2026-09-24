@@ -28,7 +28,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { formatActivity } from '../activity.ts';
-import { MetaBadge, Section } from '../mantine-ui.tsx';
+import { MarkdownContent, MetaBadge, Section } from '../mantine-ui.tsx';
+import { renderMarkdown } from '../markdown.ts';
 import { formatStamp } from '../time.ts';
 import { issueStatusLabel } from '../i18n/labels.ts';
 import { priorityLabel } from '../i18n/labels.ts';
@@ -83,6 +84,8 @@ export function IssueDetailView({
         cycles,
         pages,
         comments,
+        editingCommentId,
+        editingCommentDraft,
         commentFiles,
         commentError,
         commentFilesInputRef,
@@ -690,10 +693,73 @@ export function IssueDetailView({
                   <Stack gap="sm">
                     {comments.map((c) => (
                       <Stack key={c.id} gap={4}>
-                        <Text c="dimmed" size="sm">
-                          {formatStamp(c.createdAt, timeZone)}
-                        </Text>
-                        {c.body ? <Text>{c.body}</Text> : null}
+                        <Group justify="space-between" wrap="nowrap" align="flex-start">
+                          <Text c="dimmed" size="sm">
+                            {formatStamp(c.createdAt, timeZone)}
+                            {c.updatedAt ? (
+                              <Text span ml={6}>
+                                · {t('issueComments.edited')}
+                              </Text>
+                            ) : null}
+                          </Text>
+                          <Menu withinPortal position="bottom-end">
+                            <Menu.Target>
+                              <ActionIcon
+                                type="button"
+                                variant="subtle"
+                                color="gray"
+                                size="sm"
+                                aria-label={t('issueComments.moreOptions')}
+                              >
+                                <IconDotsVertical size={15} aria-hidden="true" />
+                              </ActionIcon>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                              <Menu.Item onClick={() => handlers.onEditComment(c.id, c.body)}>
+                                {t('issueComments.edit')}
+                              </Menu.Item>
+                              <Menu.Item
+                                color="red"
+                                leftSection={<IconTrash size={14} aria-hidden="true" />}
+                                onClick={() => handlers.onDeleteComment(c.id)}
+                              >
+                                {t('issueComments.delete')}
+                              </Menu.Item>
+                            </Menu.Dropdown>
+                          </Menu>
+                        </Group>
+                        {editingCommentId === c.id ? (
+                          <Stack gap="xs">
+                            <Textarea
+                              aria-label={t('issueComments.edit')}
+                              value={editingCommentDraft}
+                              onChange={handlers.onChangeCommentEdit}
+                              autosize
+                              minRows={2}
+                              maxRows={12}
+                            />
+                            <Group justify="flex-end" gap="xs">
+                              <Button
+                                type="button"
+                                variant="default"
+                                size="xs"
+                                onClick={handlers.onCancelCommentEdit}
+                              >
+                                {t('issueComments.cancel')}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="xs"
+                                disabled={!editingCommentDraft.trim() && !c.attachments?.length}
+                                onClick={() => handlers.onSaveCommentEdit(c.id)}
+                              >
+                                {t('issueComments.save')}
+                              </Button>
+                            </Group>
+                          </Stack>
+                        ) : c.body ? (
+                          <MarkdownContent html={renderMarkdown(c.body, '', `comment-${c.id}-`)} />
+                        ) : null}
                         {(c.attachments ?? []).map((attachment) => {
                           const src = `/api/issues/${encodeURIComponent(identifier)}/attachments/${encodeURIComponent(attachment.id)}`;
                           const mediaType = attachment.mediaType.split(';')[0];

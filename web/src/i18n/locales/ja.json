@@ -534,6 +534,17 @@
     "fileSize": "{{size}}",
     "limits": "最大10個、1ファイル20 MBまで。"
   },
+  "issueComments": {
+    "edit": "コメントを編集",
+    "delete": "コメントを削除",
+    "moreOptions": "コメントの操作",
+    "edited": "編集済み",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "confirmDelete": "このコメントと添付ファイルを削除しますか？この操作は取り消せません。",
+    "updateFailed": "コメントを更新できませんでした。もう一度お試しください。",
+    "deleteFailed": "コメントを削除できませんでした。もう一度お試しください。"
+  },
   "issueActions": {
     "button": "イシューの操作",
     "addLink": "リンクを追加…",
@@ -839,7 +850,9 @@
     "reminderCleared": "リマインダーを解除",
     "relationAdded": "{{identifier}} と「{{relation}}」の関連を追加",
     "relationRemoved": "{{identifier}} と「{{relation}}」の関連を削除",
-    "commented": "メモを追加"
+    "commented": "メモを追加",
+    "commentEdited": "コメントを編集",
+    "commentDeleted": "コメントを削除"
   },
   "commands": {
     "createIssue": "イシューを作成",

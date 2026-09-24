@@ -149,6 +149,13 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
+  updateComment: (id: string, commentId: number, body: string) =>
+    req<Comment>(`/api/issues/${id}/comments/${commentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ body }),
+    }),
+  deleteComment: (id: string, commentId: number) =>
+    req<void>(`/api/issues/${id}/comments/${commentId}`, { method: 'DELETE' }),
   addCommentWithAttachments: (id: string, body: string, files: File[]) => {
     const form = new FormData();
     form.set('body', body);

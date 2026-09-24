@@ -880,11 +880,35 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     patch(target, {});
     return json(relation, 201);
   }
-  match = path.match(/^\/api\/issues\/([^/]+)\/(comments|activities)$/);
+  match = path.match(/^\/api\/issues\/([^/]+)\/(comments|activities)(?:\/(\d+))?$/);
   if (match) {
     const item = findIssue(decodeURIComponent(match[1]!));
     if (!item) return notFound();
     if (match[2] === 'activities') return json([] satisfies Activity[]);
+    if (match[3]) {
+      const commentId = Number(match[3]);
+      const commentIndex = comments.findIndex(
+        (comment) => comment.issueId === item.id && comment.id === commentId,
+      );
+      if (commentIndex < 0) return notFound();
+      if (method === 'PATCH') {
+        const nextBody = text(body(init).body).trim();
+        if (!nextBody) return json({ error: 'body required' }, 400);
+        const updated = {
+          ...comments[commentIndex]!,
+          body: nextBody,
+          updatedAt: new Date().toISOString(),
+        };
+        comments[commentIndex] = updated;
+        revision += 1;
+        return json(updated);
+      }
+      if (method === 'DELETE') {
+        comments = comments.filter((comment) => comment.id !== commentId);
+        revision += 1;
+        return json(null, 204);
+      }
+    }
     if (method === 'POST') {
       const value = body(init);
       const comment = {

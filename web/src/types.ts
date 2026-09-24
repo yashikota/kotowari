@@ -223,6 +223,7 @@ export type Comment = {
   issueId: number;
   body: string;
   createdAt: string;
+  updatedAt?: string;
   attachments?: CommentAttachment[];
 };
 

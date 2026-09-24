@@ -66,6 +66,22 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await expect(downloaded).toBeOK();
   await expect(await downloaded.text()).toBe('local attachment contents');
 
+  await page.getByRole('button', { name: 'Comment options' }).nth(1).click();
+  await page.getByRole('menuitem', { name: 'Edit comment' }).click();
+  await page.getByLabel('Edit comment').fill('updated **note**');
+  await page.getByRole('button', { name: 'Save', exact: true }).last().click();
+  await expect(page.locator('strong', { hasText: 'note' })).toBeVisible();
+  await expect(page.getByText(/edited/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Comment options' }).nth(1).click();
+  await page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('menuitem', { name: 'Delete comment' }).click();
+  await expect(page.getByRole('link', { name: 'release-note.txt' })).toHaveCount(0);
+  const deletedAttachment = await request.get(
+    `/api/issues/${identifier}/attachments/${attachment.id}`,
+  );
+  expect(deletedAttachment.status()).toBe(404);
+
   await page.getByRole('button', { name: 'Copy identifier' }).click();
   await page.keyboard.press('p');
   const adrTitle = page.getByPlaceholder('ADR title');

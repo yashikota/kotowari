@@ -48,6 +48,8 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const generation = useRef(0);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentDraft, setEditingCommentDraft] = useState('');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -141,6 +143,8 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     setDraft('');
     setCommentFiles([]);
     setCommentError('');
+    setEditingCommentId(null);
+    setEditingCommentDraft('');
   }, [identifier]);
 
   async function patch(body: Record<string, unknown>) {
@@ -535,12 +539,44 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     }
   }
 
+  async function saveCommentEdit(commentId: number) {
+    const body = (
+      preferences.convertEmoticons ? convertTextEmoticons(editingCommentDraft) : editingCommentDraft
+    ).trim();
+    setCommentError('');
+    try {
+      const updated = await api.updateComment(identifier, commentId, body);
+      setComments((current) =>
+        current.map((comment) => (comment.id === commentId ? updated : comment)),
+      );
+      setEditingCommentId(null);
+      setEditingCommentDraft('');
+      setActivities(await api.activities(identifier));
+    } catch {
+      setCommentError(i18n.t('issueComments.updateFailed'));
+    }
+  }
+
+  async function deleteComment(commentId: number) {
+    if (!window.confirm(i18n.t('issueComments.confirmDelete'))) return;
+    setCommentError('');
+    try {
+      await api.deleteComment(identifier, commentId);
+      setComments((current) => current.filter((comment) => comment.id !== commentId));
+      setActivities(await api.activities(identifier));
+    } catch {
+      setCommentError(i18n.t('issueComments.deleteFailed'));
+    }
+  }
+
   return {
     _view: 2 as const,
     identifier,
     issue,
     issues,
     comments,
+    editingCommentId,
+    editingCommentDraft,
     commentFiles,
     commentError,
     commentFilesInputRef,
@@ -914,6 +950,19 @@ export function useIssueDetailPresenter({ identifier }: Props) {
         setCommentFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
       },
       onSubmitComment: () => submitComment(),
+      onEditComment: (commentId: number, body: string) => {
+        setEditingCommentId(commentId);
+        setEditingCommentDraft(body);
+        setCommentError('');
+      },
+      onChangeCommentEdit: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+        setEditingCommentDraft(e.currentTarget.value),
+      onCancelCommentEdit: () => {
+        setEditingCommentId(null);
+        setEditingCommentDraft('');
+      },
+      onSaveCommentEdit: (commentId: number) => saveCommentEdit(commentId),
+      onDeleteComment: (commentId: number) => deleteComment(commentId),
     },
   };
 }

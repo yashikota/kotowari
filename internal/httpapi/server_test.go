@@ -255,6 +255,65 @@ func TestCommentAttachmentsAreStoredScopedAndServedAsDownloads(t *testing.T) {
 	}
 }
 
+func TestIssueCommentCanBeEditedAndDeleted(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Comment issue"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	var issue store.Issue
+	if err := json.Unmarshal(created.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	added := doJSON(t, s, http.MethodPost, "/api/issues/"+issue.Identifier+"/comments", `{"body":"original note"}`)
+	if added.Code != http.StatusCreated {
+		t.Fatalf("add comment %d %s", added.Code, added.Body.String())
+	}
+	var comment store.Comment
+	if err := json.Unmarshal(added.Body.Bytes(), &comment); err != nil {
+		t.Fatal(err)
+	}
+
+	updated := doJSON(t, s, http.MethodPatch, "/api/issues/"+issue.Identifier+"/comments/"+strconv.FormatInt(comment.ID, 10), `{"body":"edited **note**"}`)
+	if updated.Code != http.StatusOK {
+		t.Fatalf("edit comment %d %s", updated.Code, updated.Body.String())
+	}
+	var edited store.Comment
+	if err := json.Unmarshal(updated.Body.Bytes(), &edited); err != nil {
+		t.Fatal(err)
+	}
+	if edited.Body != "edited **note**" || edited.UpdatedAt == "" || edited.ID != comment.ID {
+		t.Fatalf("edited comment %#v", edited)
+	}
+
+	deleted := doJSON(t, s, http.MethodDelete, "/api/issues/"+issue.Identifier+"/comments/"+strconv.FormatInt(comment.ID, 10), "")
+	if deleted.Code != http.StatusNoContent {
+		t.Fatalf("delete comment %d %s", deleted.Code, deleted.Body.String())
+	}
+	commentsResponse := doJSON(t, s, http.MethodGet, "/api/issues/"+issue.Identifier+"/comments", "")
+	var comments []store.Comment
+	if err := json.Unmarshal(commentsResponse.Body.Bytes(), &comments); err != nil {
+		t.Fatal(err)
+	}
+	if len(comments) != 0 {
+		t.Fatalf("deleted comment remains: %#v", comments)
+	}
+
+	activitiesResponse := doJSON(t, s, http.MethodGet, "/api/issues/"+issue.Identifier+"/activities", "")
+	var activities []store.Activity
+	if err := json.Unmarshal(activitiesResponse.Body.Bytes(), &activities); err != nil {
+		t.Fatal(err)
+	}
+	seenEdited, seenDeleted := false, false
+	for _, activity := range activities {
+		seenEdited = seenEdited || activity.Action == "comment_edited"
+		seenDeleted = seenDeleted || activity.Action == "comment_deleted"
+	}
+	if !seenEdited || !seenDeleted {
+		t.Fatalf("comment activity missing: %#v", activities)
+	}
+}
+
 func TestPatchProjectHealth(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch"}`)
