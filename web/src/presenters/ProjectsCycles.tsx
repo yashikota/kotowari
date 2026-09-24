@@ -113,6 +113,7 @@ export function useProjectDetailPagePresenter() {
   const { slug } = useParams({ from: '/projects/$slug' });
   const data = useLoaderData({ from: '/projects/$slug' }) as {
     project: Project;
+    projects: Project[];
     issues: Issue[];
     adrs: ADR[];
     pages: Page[];
@@ -124,10 +125,16 @@ export function useProjectDetailPagePresenter() {
   const [project, setProject] = useState(data.project);
   const [milestoneName, setMilestoneName] = useState('');
   const [milestoneTargetDate, setMilestoneTargetDate] = useState('');
+  const [dependencyProjectSlug, setDependencyProjectSlug] = useState('');
+  const [dependencyKind, setDependencyKind] = useState<'blocks' | 'blocked_by' | 'related'>(
+    'blocks',
+  );
 
   if (project.slug !== data.project.slug) {
     setProject(data.project);
     setSelected(null);
+    setDependencyProjectSlug('');
+    setDependencyKind('blocks');
   }
 
   async function save(body: Record<string, unknown>) {
@@ -160,6 +167,15 @@ export function useProjectDetailPagePresenter() {
     data,
     selected,
     project,
+    availableDependencyProjects: data.projects.filter(
+      (candidate) =>
+        candidate.slug !== slug &&
+        !(project.dependencies ?? []).some(
+          (dependency) => dependency.projectSlug === candidate.slug,
+        ),
+    ),
+    dependencyProjectSlug,
+    dependencyKind,
     milestoneName,
     milestoneTargetDate,
     handlers: {
@@ -175,6 +191,24 @@ export function useProjectDetailPagePresenter() {
           ? current.filter((label) => label !== name)
           : [...current, name];
         return save({ labels: next });
+      },
+      onDependencyProjectChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+        setDependencyProjectSlug(e.target.value),
+      onDependencyKindChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+        setDependencyKind(e.target.value as typeof dependencyKind),
+      onAddProjectDependency: async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!dependencyProjectSlug) return;
+        await api.createProjectDependency(slug, {
+          projectSlug: dependencyProjectSlug,
+          kind: dependencyKind,
+        });
+        setDependencyProjectSlug('');
+        await refreshProject();
+      },
+      onRemoveProjectDependency: async (dependencySlug: string) => {
+        await api.deleteProjectDependency(slug, dependencySlug);
+        await refreshProject();
       },
       onClick1: () => sendIntent('issue.create', { projectId: project.id }),
       onClick2: () => {

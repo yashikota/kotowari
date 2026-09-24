@@ -809,6 +809,69 @@ func TestCreateProjectWithLabelsCanonicalizesAndValidatesLabels(t *testing.T) {
 	}
 }
 
+func TestProjectDependenciesAreReciprocalPersistedAndAcyclic(t *testing.T) {
+	s := openTest(t)
+	first, err := s.CreateProject("First", "first", "", "planned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := s.CreateProject("Second", "second", "", "planned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	third, err := s.CreateProject("Third", "third", "", "planned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddProjectDependency(first.Slug, second.Slug, "blocks"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddProjectDependency(second.Slug, third.Slug, "blocks"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddProjectDependency(third.Slug, first.Slug, "blocks"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("blocking cycle: %v", err)
+	}
+	if _, err := s.AddProjectDependency(first.Slug, second.Slug, "related"); !errors.Is(err, ErrConflict) {
+		t.Fatalf("duplicate dependency: %v", err)
+	}
+	if _, err := s.AddProjectDependency(first.Slug, first.Slug, "related"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("self dependency: %v", err)
+	}
+
+	reopened, err := Open(s.Path())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	first, err = reopened.GetProject(first.Slug)
+	if err != nil || len(first.Dependencies) != 1 || first.Dependencies[0] != (ProjectDependency{ProjectSlug: second.Slug, Kind: "blocks"}) {
+		t.Fatalf("persisted first dependency %#v, err %v", first.Dependencies, err)
+	}
+	second, err = reopened.GetProject(second.Slug)
+	if err != nil || len(second.Dependencies) != 2 || second.Dependencies[0] != (ProjectDependency{ProjectSlug: first.Slug, Kind: "blocked_by"}) {
+		t.Fatalf("reciprocal second dependencies %#v, err %v", second.Dependencies, err)
+	}
+	if _, err := reopened.DeleteProjectDependency(first.Slug, second.Slug); err != nil {
+		t.Fatal(err)
+	}
+	first, err = reopened.GetProject(first.Slug)
+	if err != nil || len(first.Dependencies) != 0 {
+		t.Fatalf("removed first dependencies %#v, err %v", first.Dependencies, err)
+	}
+	second, err = reopened.GetProject(second.Slug)
+	if err != nil || len(second.Dependencies) != 1 || second.Dependencies[0].ProjectSlug != third.Slug {
+		t.Fatalf("removed reciprocal dependency %#v, err %v", second.Dependencies, err)
+	}
+	if err := reopened.DeleteProject(third.Slug); err != nil {
+		t.Fatal(err)
+	}
+	second, err = reopened.GetProject(second.Slug)
+	if err != nil || len(second.Dependencies) != 0 {
+		t.Fatalf("deleted project dependency cleanup %#v, err %v", second.Dependencies, err)
+	}
+}
+
 func TestCreateProjectFromIssuePreservesAndAssociatesSourceIssue(t *testing.T) {
 	s := openTest(t)
 	issue, err := s.CreateIssue(CreateIssueInput{

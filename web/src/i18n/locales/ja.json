@@ -274,6 +274,23 @@
     "remove": "マイルストーン {{name}} を削除",
     "removeConfirmation": "マイルストーン {{name}} を削除しますか？割り当て済みのイシューからも解除されます。"
   },
+  "projectDependencies": {
+    "heading": "依存関係",
+    "form": "プロジェクト依存関係を追加",
+    "project": "プロジェクト",
+    "chooseProject": "プロジェクトを選択…",
+    "noProjects": "他のプロジェクトはありません",
+    "kind": "関係",
+    "kindOptions": {
+      "blocks": "ブロックする",
+      "blocked_by": "ブロックされる",
+      "related": "関連する"
+    },
+    "add": "依存関係を追加",
+    "list": "プロジェクト依存関係",
+    "empty": "プロジェクト依存関係はありません。",
+    "remove": "{{project}}への依存関係を削除"
+  },
   "projectList": {
     "newProject": "新しいプロジェクト",
     "createTitle": "プロジェクトを作成",

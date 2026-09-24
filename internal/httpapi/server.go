@@ -88,6 +88,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/projects/{slug}", s.getProject)
 	s.mux.HandleFunc("PATCH /api/projects/{slug}", s.patchProject)
 	s.mux.HandleFunc("DELETE /api/projects/{slug}", s.deleteProject)
+	s.mux.HandleFunc("POST /api/projects/{slug}/dependencies", s.createProjectDependency)
+	s.mux.HandleFunc("DELETE /api/projects/{slug}/dependencies/{dependencySlug}", s.deleteProjectDependency)
 	s.mux.HandleFunc("POST /api/projects/{slug}/milestones", s.createMilestone)
 	s.mux.HandleFunc("PATCH /api/projects/{slug}/milestones/{milestoneId}", s.patchMilestone)
 	s.mux.HandleFunc("DELETE /api/projects/{slug}/milestones/{milestoneId}", s.deleteMilestone)
@@ -336,6 +338,32 @@ func (s *Server) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) createProjectDependency(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		ProjectSlug string `json:"projectSlug"`
+		Kind        string `json:"kind"`
+	}
+	if err := decodeJSON(r, &in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	out, err := s.store.AddProjectDependency(r.PathValue("slug"), in.ProjectSlug, in.Kind)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
+}
+
+func (s *Server) deleteProjectDependency(w http.ResponseWriter, r *http.Request) {
+	out, err := s.store.DeleteProjectDependency(r.PathValue("slug"), r.PathValue("dependencySlug"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) listCycles(w http.ResponseWriter, _ *http.Request) {

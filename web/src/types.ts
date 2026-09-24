@@ -98,10 +98,16 @@ export type Project = {
   startDate: string | null;
   targetDate: string | null;
   labels?: string[];
+  dependencies?: ProjectDependency[];
   progress: number;
   milestones: ProjectMilestone[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type ProjectDependency = {
+  projectSlug: string;
+  kind: 'blocks' | 'blocked_by' | 'related';
 };
 
 export type ProjectMilestone = {

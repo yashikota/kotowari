@@ -167,6 +167,13 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(body),
     }),
+  createProjectDependency: (slug: string, body: { projectSlug: string; kind: string }) =>
+    req<Project>(`/api/projects/${slug}/dependencies`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  deleteProjectDependency: (slug: string, dependencySlug: string) =>
+    req<Project>(`/api/projects/${slug}/dependencies/${dependencySlug}`, { method: 'DELETE' }),
   createMilestone: (slug: string, body: { name: string; targetDate?: string }) =>
     req<ProjectMilestone>(`/api/projects/${slug}/milestones`, {
       method: 'POST',

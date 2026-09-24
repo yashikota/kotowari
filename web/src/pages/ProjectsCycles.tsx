@@ -214,7 +214,18 @@ export function ProjectDetailPageView({
   const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { slug, data, selected, project, milestoneName, milestoneTargetDate, handlers } = model;
+      const {
+        slug,
+        data,
+        selected,
+        project,
+        milestoneName,
+        milestoneTargetDate,
+        availableDependencyProjects,
+        dependencyProjectSlug,
+        dependencyKind,
+        handlers,
+      } = model;
       return (
         <Box h="100%" style={{ overflow: 'auto' }}>
           <SplitLayout single>
@@ -299,6 +310,104 @@ export function ProjectDetailPageView({
                     <Text size="sm" c="dimmed">
                       {t('filters.noProjectLabels')}
                     </Text>
+                  )}
+                </Section>
+                <Section title={t('projectDependencies.heading')}>
+                  <Box
+                    component="form"
+                    aria-label={t('projectDependencies.form')}
+                    onSubmit={handlers.onAddProjectDependency}
+                  >
+                    <Group gap="xs" align="flex-end" wrap="wrap">
+                      <NativeSelect
+                        aria-label={t('projectDependencies.project')}
+                        value={dependencyProjectSlug}
+                        onChange={handlers.onDependencyProjectChange}
+                        disabled={availableDependencyProjects.length === 0}
+                        data={[
+                          {
+                            value: '',
+                            label: availableDependencyProjects.length
+                              ? t('projectDependencies.chooseProject')
+                              : t('projectDependencies.noProjects'),
+                          },
+                          ...availableDependencyProjects.map((candidate) => ({
+                            value: candidate.slug,
+                            label: candidate.name,
+                          })),
+                        ]}
+                      />
+                      <NativeSelect
+                        aria-label={t('projectDependencies.kind')}
+                        value={dependencyKind}
+                        onChange={handlers.onDependencyKindChange}
+                        data={(['blocks', 'blocked_by', 'related'] as const).map((kind) => ({
+                          value: kind,
+                          label: t(`projectDependencies.kindOptions.${kind}`),
+                        }))}
+                      />
+                      <Button
+                        type="submit"
+                        variant="default"
+                        size="sm"
+                        disabled={!dependencyProjectSlug}
+                      >
+                        {t('projectDependencies.add')}
+                      </Button>
+                    </Group>
+                  </Box>
+                  {(project.dependencies ?? []).length === 0 ? (
+                    <Text size="sm" c="dimmed">
+                      {t('projectDependencies.empty')}
+                    </Text>
+                  ) : (
+                    <Stack
+                      component="ul"
+                      aria-label={t('projectDependencies.list')}
+                      gap="xs"
+                      style={{ listStyle: 'none', margin: 0, padding: 0 }}
+                    >
+                      {(project.dependencies ?? []).map((dependency) => {
+                        const relatedProject = data.projects.find(
+                          (candidate) => candidate.slug === dependency.projectSlug,
+                        );
+                        const relatedName = relatedProject?.name ?? dependency.projectSlug;
+                        return (
+                          <Group
+                            component="li"
+                            key={dependency.projectSlug}
+                            justify="space-between"
+                          >
+                            <Group gap="xs">
+                              <Text size="sm">
+                                {t(`projectDependencies.kindOptions.${dependency.kind}`)}
+                              </Text>
+                              {relatedProject ? (
+                                <Link
+                                  to="/projects/$slug"
+                                  params={{ slug: dependency.projectSlug }}
+                                >
+                                  {relatedName}
+                                </Link>
+                              ) : (
+                                <Text size="sm">{relatedName}</Text>
+                              )}
+                            </Group>
+                            <ActionIcon
+                              type="button"
+                              variant="subtle"
+                              color="gray"
+                              aria-label={t('projectDependencies.remove', { project: relatedName })}
+                              onClick={() =>
+                                handlers.onRemoveProjectDependency(dependency.projectSlug)
+                              }
+                            >
+                              <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                            </ActionIcon>
+                          </Group>
+                        );
+                      })}
+                    </Stack>
                   )}
                 </Section>
                 <Section title={t('projectMilestones.heading')}>

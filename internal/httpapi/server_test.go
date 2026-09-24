@@ -109,6 +109,38 @@ func TestCreateProjectAcceptsKnownLabelsAndRejectsUnknownLabels(t *testing.T) {
 	}
 }
 
+func TestProjectDependencyAPIIsReciprocalAndRemovable(t *testing.T) {
+	s := testAPI(t)
+	for _, project := range []struct{ name, slug string }{
+		{"Blocker", "blocker"}, {"Blocked", "blocked"},
+	} {
+		created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"`+project.name+`","slug":"`+project.slug+`"}`)
+		if created.Code != http.StatusCreated {
+			t.Fatalf("create project %s: %d %s", project.slug, created.Code, created.Body.String())
+		}
+	}
+	added := doJSON(t, s, http.MethodPost, "/api/projects/blocker/dependencies", `{"projectSlug":"blocked","kind":"blocks"}`)
+	if added.Code != http.StatusCreated {
+		t.Fatalf("add dependency %d %s", added.Code, added.Body.String())
+	}
+	blocked := doJSON(t, s, http.MethodGet, "/api/projects/blocked", "")
+	if blocked.Code != http.StatusOK || !strings.Contains(blocked.Body.String(), `"projectSlug":"blocker","kind":"blocked_by"`) {
+		t.Fatalf("reciprocal dependency %d %s", blocked.Code, blocked.Body.String())
+	}
+	duplicate := doJSON(t, s, http.MethodPost, "/api/projects/blocked/dependencies", `{"projectSlug":"blocker","kind":"blocked_by"}`)
+	if duplicate.Code != http.StatusConflict {
+		t.Fatalf("duplicate dependency status %d body %s", duplicate.Code, duplicate.Body.String())
+	}
+	removed := doJSON(t, s, http.MethodDelete, "/api/projects/blocker/dependencies/blocked", "")
+	if removed.Code != http.StatusOK {
+		t.Fatalf("remove dependency %d %s", removed.Code, removed.Body.String())
+	}
+	blocker := doJSON(t, s, http.MethodGet, "/api/projects/blocker", "")
+	if blocker.Code != http.StatusOK || !strings.Contains(blocker.Body.String(), `"dependencies":[]`) {
+		t.Fatalf("removed dependency %d %s", blocker.Code, blocker.Body.String())
+	}
+}
+
 func TestConvertIssueToProjectPreservesIssue(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Release plan","body":"Context","status":"in_progress","priority":2}`)

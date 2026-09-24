@@ -276,6 +276,23 @@
     "remove": "Delete milestone {{name}}",
     "removeConfirmation": "Delete milestone {{name}}? Issues assigned to it will be unassigned."
   },
+  "projectDependencies": {
+    "heading": "Dependencies",
+    "form": "Add project dependency",
+    "project": "Project",
+    "chooseProject": "Choose a project…",
+    "noProjects": "No other projects",
+    "kind": "Relationship",
+    "kindOptions": {
+      "blocks": "Blocks",
+      "blocked_by": "Blocked by",
+      "related": "Related to"
+    },
+    "add": "Add dependency",
+    "list": "Project dependencies",
+    "empty": "No project dependencies yet.",
+    "remove": "Remove dependency on {{project}}"
+  },
   "projectList": {
     "newProject": "New project",
     "createTitle": "Create project",

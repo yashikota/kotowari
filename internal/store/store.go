@@ -38,19 +38,20 @@ type Label struct {
 }
 
 type Project struct {
-	ID          int64       `json:"id" toml:"id"`
-	Name        string      `json:"name" toml:"name"`
-	Slug        string      `json:"slug" toml:"slug"`
-	Description string      `json:"description" toml:"description"`
-	Status      string      `json:"status" toml:"status"`
-	Priority    int         `json:"priority" toml:"priority"`
-	StartDate   *string     `json:"startDate" toml:"startDate,omitempty"`
-	TargetDate  *string     `json:"targetDate" toml:"targetDate,omitempty"`
-	Labels      []string    `json:"labels" toml:"labels,omitempty"`
-	Progress    float64     `json:"progress" toml:"-"`
-	Milestones  []Milestone `json:"milestones" toml:"milestones,omitempty"`
-	CreatedAt   string      `json:"createdAt" toml:"createdAt"`
-	UpdatedAt   string      `json:"updatedAt" toml:"updatedAt"`
+	ID           int64               `json:"id" toml:"id"`
+	Name         string              `json:"name" toml:"name"`
+	Slug         string              `json:"slug" toml:"slug"`
+	Description  string              `json:"description" toml:"description"`
+	Status       string              `json:"status" toml:"status"`
+	Priority     int                 `json:"priority" toml:"priority"`
+	StartDate    *string             `json:"startDate" toml:"startDate,omitempty"`
+	TargetDate   *string             `json:"targetDate" toml:"targetDate,omitempty"`
+	Labels       []string            `json:"labels" toml:"labels,omitempty"`
+	Dependencies []ProjectDependency `json:"dependencies" toml:"dependencies,omitempty"`
+	Progress     float64             `json:"progress" toml:"-"`
+	Milestones   []Milestone         `json:"milestones" toml:"milestones,omitempty"`
+	CreatedAt    string              `json:"createdAt" toml:"createdAt"`
+	UpdatedAt    string              `json:"updatedAt" toml:"updatedAt"`
 }
 
 type Milestone struct {
@@ -59,6 +60,11 @@ type Milestone struct {
 	TargetDate *string `json:"targetDate" toml:"targetDate,omitempty"`
 	CreatedAt  string  `json:"createdAt" toml:"createdAt"`
 	UpdatedAt  string  `json:"updatedAt" toml:"updatedAt"`
+}
+
+type ProjectDependency struct {
+	ProjectSlug string `json:"projectSlug" toml:"project_slug"`
+	Kind        string `json:"kind" toml:"kind"`
 }
 
 type Cycle struct {
