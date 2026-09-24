@@ -139,6 +139,19 @@ test('sub-issue and saved view', async ({ page, request }) => {
 
   await page.getByLabel('New sub-issue').fill(childTitle);
   await page.getByLabel('New sub-issue').press('ControlOrMeta+Enter');
+  await expect
+    .poll(async () => {
+      const response = await request.get('/api/issues');
+      const issues = (await response.json()) as {
+        id: number;
+        title: string;
+        parentId: number | null;
+      }[];
+      const parent = issues.find((issue) => issue.title === parentTitle);
+      const child = issues.find((issue) => issue.title === childTitle);
+      return Boolean(parent && child && child.parentId === parent.id);
+    })
+    .toBe(true);
   await expect(page.getByRole('button', { name: new RegExp(childTitle) })).toBeVisible();
 
   await page.getByRole('link', { name: 'Back to issues' }).click();

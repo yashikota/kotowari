@@ -1,6 +1,8 @@
 import { createTheme } from '@mantine/core';
+import type { MantineThemeOverride } from '@mantine/core';
+import type { FontSize } from './preferences.ts';
 
-export const theme = createTheme({
+const baseTheme = {
   primaryColor: 'indigo',
   colors: {
     indigo: [
@@ -49,4 +51,16 @@ export const theme = createTheme({
       },
     },
   },
-});
+} satisfies MantineThemeOverride;
+
+const fontSizes: Record<FontSize, { xs: string; sm: string; md: string }> = {
+  small: { xs: '0.625rem', sm: '0.6875rem', md: '0.75rem' },
+  default: { xs: '0.6875rem', sm: '0.75rem', md: '0.8125rem' },
+  large: { xs: '0.75rem', sm: '0.8125rem', md: '0.875rem' },
+};
+
+export function themeForFontSize(fontSize: FontSize) {
+  return createTheme({ ...baseTheme, fontSizes: fontSizes[fontSize] });
+}
+
+export const theme = themeForFontSize('default');

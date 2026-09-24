@@ -14,3 +14,13 @@ body,
 body {
   -webkit-font-smoothing: antialiased;
 }
+
+html[data-pointer-cursors='true']
+  :is(a[href], button:not(:disabled), [role='button']:not([aria-disabled='true'])) {
+  cursor: pointer;
+}
+
+html[data-underline-links='true'] :is(p, li, blockquote, .mantine-Text-root, .ProseMirror) a[href] {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}

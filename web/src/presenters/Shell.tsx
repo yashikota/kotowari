@@ -12,6 +12,8 @@ import { cycleCommands, filterCommands, projectCommands, staticCommands } from '
 import { Palette } from '../components/Palette.tsx';
 import { actionFromKeyboard } from '../keymap.ts';
 import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
+import { sidebarNavigation } from '../sidebar.ts';
+import { usePersonalPreferences } from '../preferences.ts';
 import type {
   Cycle,
   Issue,
@@ -48,6 +50,7 @@ export function useShellPresenter() {
   const send = useIntent();
   const navigate = useNavigate();
   const router = useRouter();
+  const { preferences } = usePersonalPreferences();
   useEffect(() => {
     let revision = '';
     let active = true;
@@ -572,6 +575,7 @@ export function useShellPresenter() {
     workspaceName,
     routeTitle,
     mobileNavigationOpen,
+    sidebarNavigation: sidebarNavigation(preferences),
     cycles,
     views,
     favoriteIssues,

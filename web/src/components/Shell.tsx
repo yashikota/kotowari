@@ -43,7 +43,7 @@ import { useFocusWhen } from '../focus.ts';
 import { ISSUE_STATUSES } from '../types.ts';
 import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
 import { RouterNavLink } from '../mantine-ui.tsx';
-import { CONFIG_NAV, HOME_NAV, MORE_NAV, TEAM_NAV } from '../nav.ts';
+import { CONFIG_NAV } from '../nav.ts';
 import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
 import styles from './Shell.module.css';
@@ -87,6 +87,7 @@ export function ShellView({
         workspaceName,
         routeTitle,
         mobileNavigationOpen,
+        sidebarNavigation,
         cycles,
         views,
         favoriteIssues,
@@ -183,7 +184,7 @@ export function ShellView({
 
               <AppShell.Section grow component={ScrollArea} p="xs" style={{ minHeight: 0 }}>
                 <Stack gap={0} component="nav" aria-label={t('nav.primary')}>
-                  {HOME_NAV.map((item) => (
+                  {sidebarNavigation.personal.map((item) => (
                     <RouterNavLink
                       key={item.key}
                       to={item.to}
@@ -233,7 +234,7 @@ export function ShellView({
                   <Text size="xs" c="dimmed" fw={500} px="xs" py="xs" truncate>
                     {workspaceName || t('workspace.defaultName')}
                   </Text>
-                  {TEAM_NAV.map((item) =>
+                  {sidebarNavigation.workspace.map((item) =>
                     item.to === '/cycles' ? (
                       <Stack key={item.key} gap={0}>
                         <RouterNavLink
@@ -311,7 +312,7 @@ export function ShellView({
                 <Divider my="sm" mx="xs" />
 
                 <Stack gap={0} component="nav" aria-label={t('nav.more')}>
-                  {MORE_NAV.map((item) => (
+                  {sidebarNavigation.more.map((item) => (
                     <RouterNavLink
                       key={item.key}
                       to={item.to}

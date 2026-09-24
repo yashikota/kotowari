@@ -3,6 +3,7 @@ import {
   createRoute,
   createRouter,
   lazyRouteComponent,
+  redirect,
 } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Alert, Stack, Text } from '@mantine/core';
@@ -10,6 +11,7 @@ import { Shell } from './components/Shell.tsx';
 import { api, issuesQuery, parseIssueSearch, searchToFilter, type IssueSearch } from './api.ts';
 import { EmptyState } from './mantine-ui.tsx';
 import { PresenterScope } from './application/Root.tsx';
+import { defaultHomeHref, getPersonalPreferences } from './preferences.ts';
 
 function NotFoundPage() {
   return (
@@ -74,6 +76,10 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  beforeLoad: () => {
+    const href = defaultHomeHref(getPersonalPreferences().defaultHome);
+    if (href !== '/') throw redirect({ href });
+  },
   loader: async () => {
     const [workspace, issues, projects, adrs] = await Promise.all([
       api.workspace(),

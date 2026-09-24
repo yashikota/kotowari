@@ -1,4 +1,4 @@
-import { isSubmitShortcut } from '../keymap.ts';
+import { isCommentSubmitShortcut, isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +21,7 @@ import type {
   Project,
 } from '../types.ts';
 import { PROJECT_STATUSES } from '../types.ts';
+import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts';
 
 const LABEL_COLORS = ['#d4725a', '#6b9bd1', '#c4a574', '#7a9e7e', '#d4a05a'];
 
@@ -39,6 +40,7 @@ type Props = {
 
 export function useIssueDetailPresenter({ identifier }: Props) {
   const sendIntent = useIntent();
+  const { preferences } = usePersonalPreferences();
   const navigate = useNavigate();
   const router = useRouter();
   const [storedIssue, setIssue] = useState<Issue | null>(() => cachedIssue(identifier));
@@ -507,6 +509,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     issue,
     issues,
     comments,
+    commentSubmitShortcut: preferences.commentSubmitShortcut,
     activities,
     projects,
     milestones,
@@ -851,9 +854,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       ) => {
         if (e.nativeEvent.isComposing || e.keyCode === 229) return;
 
-        if (isSubmitShortcut(e)) {
+        if (isCommentSubmitShortcut(e, preferences.commentSubmitShortcut)) {
           e.preventDefault();
-          const body = draft.trim();
+          const body = (preferences.convertEmoticons ? convertTextEmoticons(draft) : draft).trim();
           if (!body) {
             return;
           }

@@ -1,15 +1,19 @@
 import {
   Alert,
+  ActionIcon,
   Box,
   Button,
+  Checkbox,
   Group,
   Kbd,
+  Modal,
   Select,
   Stack,
   Text,
   TextInput,
   Title,
 } from '@mantine/core';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -25,7 +29,19 @@ export function ConfigPageView({
 }) {
   switch (model._view) {
     case 0: {
-      const { workspace, timeZones, languages, diagnostics, error, saved, handlers } = model;
+      const {
+        workspace,
+        timeZones,
+        languages,
+        preferences,
+        sidebarGroups,
+        sidebarCustomizationOpen,
+        colorScheme,
+        diagnostics,
+        error,
+        saved,
+        handlers,
+      } = model;
       return (
         <SplitLayout single>
           <Pane single>
@@ -78,6 +94,78 @@ export function ConfigPageView({
                 </Box>
               </Stack>
 
+              <Stack gap="md" component="section" aria-label={t('config.personalPreferences')}>
+                <Title order={4}>{t('config.personalPreferences')}</Title>
+                <Stack gap="md" maw={480}>
+                  <Select
+                    label={t('config.defaultHome')}
+                    aria-label={t('config.defaultHome')}
+                    value={preferences.defaultHome}
+                    onChange={handlers.onDefaultHomeChange}
+                    data={[
+                      { value: 'home', label: t('config.home.home') },
+                      { value: 'issues', label: t('config.home.issues') },
+                      { value: 'projects', label: t('config.home.projects') },
+                      { value: 'cycles', label: t('config.home.cycles') },
+                      { value: 'agent', label: t('config.home.agent') },
+                    ]}
+                  />
+                  <Select
+                    label={t('config.colorScheme')}
+                    aria-label={t('config.colorScheme')}
+                    value={colorScheme}
+                    onChange={handlers.onColorSchemeChange}
+                    data={[
+                      { value: 'auto', label: t('config.theme.auto') },
+                      { value: 'light', label: t('config.theme.light') },
+                      { value: 'dark', label: t('config.theme.dark') },
+                    ]}
+                  />
+                  <Select
+                    label={t('config.fontSize')}
+                    aria-label={t('config.fontSize')}
+                    value={preferences.fontSize}
+                    onChange={handlers.onFontSizeChange}
+                    data={[
+                      { value: 'small', label: t('config.fontSizeOption.small') },
+                      { value: 'default', label: t('config.fontSizeOption.default') },
+                      { value: 'large', label: t('config.fontSizeOption.large') },
+                    ]}
+                  />
+                  <Select
+                    label={t('config.commentSubmit')}
+                    aria-label={t('config.commentSubmit')}
+                    value={preferences.commentSubmitShortcut}
+                    onChange={handlers.onCommentShortcutChange}
+                    data={[
+                      { value: 'modEnter', label: t('config.commentShortcut.modEnter') },
+                      { value: 'enter', label: t('config.commentShortcut.enter') },
+                    ]}
+                  />
+                  <Checkbox
+                    label={t('config.convertEmoticons')}
+                    checked={preferences.convertEmoticons}
+                    onChange={handlers.onConvertEmoticonsChange}
+                  />
+                  <Checkbox
+                    label={t('config.pointerCursors')}
+                    checked={preferences.pointerCursors}
+                    onChange={handlers.onPointerCursorsChange}
+                  />
+                  <Checkbox
+                    label={t('config.underlineLinks')}
+                    checked={preferences.underlineLinks}
+                    onChange={handlers.onUnderlineLinksChange}
+                  />
+                  <Button variant="light" onClick={handlers.onOpenSidebarCustomization}>
+                    {t('config.customizeSidebar')}
+                  </Button>
+                  <Text size="xs" c="dimmed">
+                    {t('config.preferencesSavedLocally')}
+                  </Text>
+                </Stack>
+              </Stack>
+
               <Stack gap="md" component="section" aria-label={t('config.application')}>
                 <Title order={4}>{t('config.application')}</Title>
                 <Stack gap="xs" maw={480}>
@@ -119,6 +207,74 @@ export function ConfigPageView({
                 )}
               </Stack>
             </Stack>
+            <Modal
+              opened={sidebarCustomizationOpen}
+              onClose={handlers.onCloseSidebarCustomization}
+              title={t('config.customizeSidebar')}
+              centered
+              size="lg"
+            >
+              <Stack gap="lg">
+                <Text size="sm" c="dimmed">
+                  {t('config.sidebarDescription')}
+                </Text>
+                {sidebarGroups.map((section) => (
+                  <Stack
+                    key={section.group}
+                    component="section"
+                    aria-label={section.label}
+                    gap="xs"
+                  >
+                    <Text size="sm" fw={600}>
+                      {section.label}
+                    </Text>
+                    {section.items.length === 0 ? (
+                      <Text size="sm" c="dimmed">
+                        {t('config.sidebarEmpty')}
+                      </Text>
+                    ) : (
+                      section.items.map((item, index) => (
+                        <Group key={item.id} gap="xs" wrap="nowrap">
+                          <Text size="sm" style={{ flex: 1 }} truncate>
+                            {item.label}
+                          </Text>
+                          <ActionIcon
+                            type="button"
+                            variant="subtle"
+                            aria-label={t('config.moveSidebarUp', { item: item.label })}
+                            disabled={index === 0}
+                            onClick={() => handlers.onMoveSidebarItem(item.id, -1)}
+                          >
+                            <IconChevronUp size={16} aria-hidden />
+                          </ActionIcon>
+                          <ActionIcon
+                            type="button"
+                            variant="subtle"
+                            aria-label={t('config.moveSidebarDown', { item: item.label })}
+                            disabled={index === section.items.length - 1}
+                            onClick={() => handlers.onMoveSidebarItem(item.id, 1)}
+                          >
+                            <IconChevronDown size={16} aria-hidden />
+                          </ActionIcon>
+                          <Select
+                            aria-label={t('config.sidebarLocationFor', { item: item.label })}
+                            value={item.location}
+                            onChange={(value) => handlers.onSidebarLocationChange(item.id, value)}
+                            data={[
+                              { value: 'primary', label: t('config.sidebarLocation.primary') },
+                              { value: 'more', label: t('config.sidebarLocation.more') },
+                              { value: 'hidden', label: t('config.sidebarLocation.hidden') },
+                            ]}
+                            w={160}
+                            allowDeselect={false}
+                          />
+                        </Group>
+                      ))
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
+            </Modal>
           </Pane>
         </SplitLayout>
       );

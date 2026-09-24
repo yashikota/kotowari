@@ -104,6 +104,53 @@
     "noTimezone": "タイムゾーンがありません",
     "saveWorkspace": "ワークスペースを保存",
     "saved": "ワークスペースを保存しました",
+    "personalPreferences": "個人設定",
+    "preferencesSavedLocally": "設定はこのデバイスに保存されます。",
+    "defaultHome": "既定のホーム画面",
+    "home": {
+      "home": "ホーム",
+      "issues": "イシュー",
+      "projects": "プロジェクト",
+      "cycles": "サイクル",
+      "agent": "エージェント"
+    },
+    "colorScheme": "カラーテーマ",
+    "theme": {
+      "auto": "システム設定に合わせる",
+      "light": "ライト",
+      "dark": "ダーク"
+    },
+    "fontSize": "文字サイズ",
+    "fontSizeOption": {
+      "small": "小",
+      "default": "標準",
+      "large": "大"
+    },
+    "commentSubmit": "コメントの送信キー",
+    "convertEmoticons": "テキスト顔文字を絵文字に変換",
+    "pointerCursors": "クリック可能な項目にポインターを表示",
+    "underlineLinks": "本文中のリンクに下線を付ける",
+    "commentShortcut": {
+      "modEnter": "Ctrl+Enter",
+      "enter": "Enter"
+    },
+    "customizeSidebar": "サイドバーをカスタマイズ",
+    "sidebarDescription": "サイドバーに表示する個人向けの項目を選び、Moreへ移動したり非表示にできます。矢印で順序を変更できます。",
+    "sidebarEmpty": "項目はありません",
+    "sidebarGroup": {
+      "personal": "個人",
+      "workspace": "ワークスペース",
+      "more": "More",
+      "hidden": "非表示"
+    },
+    "sidebarLocationFor": "{{item}}の表示先",
+    "sidebarLocation": {
+      "primary": "サイドバー",
+      "more": "More",
+      "hidden": "表示しない"
+    },
+    "moveSidebarUp": "{{item}}を上へ移動",
+    "moveSidebarDown": "{{item}}を下へ移動",
     "application": "アプリケーション",
     "commandPalette": "コマンドパレット",
     "keyboardShortcuts": "キーボードショートカット",
@@ -655,6 +702,7 @@
     "newNote": "新しいメモ",
     "note": "メモ",
     "modEnterToSave": "Mod+Enter で保存",
+    "enterToSave": "Enter で保存 · Shift+Enter で改行",
     "activity": "アクティビティ",
     "issueFilters": "イシューのフィルター",
     "findIssues": "イシューを検索",

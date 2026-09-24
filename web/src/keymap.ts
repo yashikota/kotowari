@@ -41,6 +41,32 @@ export function isSubmitShortcut(event: {
   );
 }
 
+export function isCommentSubmitShortcut(
+  event: {
+    key: string;
+    ctrlKey: boolean;
+    metaKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    keyCode?: number;
+    nativeEvent?: { isComposing?: boolean };
+  },
+  shortcut: 'modEnter' | 'enter',
+): boolean {
+  if (shortcut === 'modEnter') return isSubmitShortcut(event);
+  return (
+    event.key === 'Enter' &&
+    !event.shiftKey &&
+    !event.altKey &&
+    !event.repeat &&
+    !event.isComposing &&
+    !event.nativeEvent?.isComposing &&
+    event.keyCode !== 229
+  );
+}
+
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (target === null || typeof target !== 'object') {
     return false;

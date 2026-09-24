@@ -106,6 +106,53 @@
     "noTimezone": "No timezone",
     "saveWorkspace": "Save workspace",
     "saved": "Workspace saved",
+    "personalPreferences": "Personal preferences",
+    "preferencesSavedLocally": "These preferences are saved on this device.",
+    "defaultHome": "Default home view",
+    "home": {
+      "home": "Home",
+      "issues": "Issues",
+      "projects": "Projects",
+      "cycles": "Cycles",
+      "agent": "Agent"
+    },
+    "colorScheme": "Color scheme",
+    "theme": {
+      "auto": "System appearance",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "fontSize": "Font size",
+    "fontSizeOption": {
+      "small": "Small",
+      "default": "Default",
+      "large": "Large"
+    },
+    "commentSubmit": "Send comments on",
+    "convertEmoticons": "Convert text emoticons into emojis",
+    "pointerCursors": "Use pointer cursors",
+    "underlineLinks": "Underline links in text",
+    "commentShortcut": {
+      "modEnter": "Ctrl+Enter",
+      "enter": "Enter"
+    },
+    "customizeSidebar": "Customize sidebar",
+    "sidebarDescription": "Choose which single-user sections stay in the sidebar, move other sections into More, or hide them. Use the arrows to reorder items.",
+    "sidebarEmpty": "No items",
+    "sidebarGroup": {
+      "personal": "Personal",
+      "workspace": "Workspace",
+      "more": "More",
+      "hidden": "Hidden"
+    },
+    "sidebarLocationFor": "Where to show {{item}}",
+    "sidebarLocation": {
+      "primary": "Sidebar",
+      "more": "More",
+      "hidden": "Don't show"
+    },
+    "moveSidebarUp": "Move {{item}} up",
+    "moveSidebarDown": "Move {{item}} down",
     "application": "Application",
     "commandPalette": "Command palette",
     "keyboardShortcuts": "Keyboard shortcuts",
@@ -657,6 +704,7 @@
     "newNote": "New note",
     "note": "Note",
     "modEnterToSave": "Mod+Enter to save",
+    "enterToSave": "Enter to save · Shift+Enter for a line break",
     "activity": "Activity",
     "issueFilters": "Issue filters",
     "findIssues": "Find issues",

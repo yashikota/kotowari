@@ -1,4 +1,4 @@
-import { isSubmitShortcut } from './keymap.ts';
+import { isCommentSubmitShortcut, isSubmitShortcut } from './keymap.ts';
 import { describe, expect, it } from 'vite-plus/test';
 import { actionFromKeyboard, isTypingTarget } from './keymap.ts';
 
@@ -275,5 +275,14 @@ describe('submit shortcut', () => {
       false,
     );
     expect(isSubmitShortcut({ ...key, ctrlKey: true, repeat: true })).toBe(false);
+  });
+
+  it('uses the configured comment key and preserves Shift+Enter for line breaks', () => {
+    const enter = { key: 'Enter', ctrlKey: false, metaKey: false };
+    expect(isCommentSubmitShortcut(enter, 'modEnter')).toBe(false);
+    expect(isCommentSubmitShortcut(enter, 'enter')).toBe(true);
+    expect(isCommentSubmitShortcut({ ...enter, shiftKey: true }, 'enter')).toBe(false);
+    expect(isCommentSubmitShortcut({ ...enter, isComposing: true }, 'enter')).toBe(false);
+    expect(isCommentSubmitShortcut({ ...enter, ctrlKey: true }, 'enter')).toBe(true);
   });
 });

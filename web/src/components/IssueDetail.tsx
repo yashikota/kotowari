@@ -68,6 +68,7 @@ export function IssueDetailView({
         cycles,
         pages,
         comments,
+        commentSubmitShortcut,
         activities,
         draft,
         subTitle,
@@ -687,7 +688,9 @@ export function IssueDetailView({
                       onKeyDown={handlers.New_note_onKeyDown22}
                     />
                     <Text c="dimmed" size="sm">
-                      {t('ui.modEnterToSave')}
+                      {t(
+                        commentSubmitShortcut === 'enter' ? 'ui.enterToSave' : 'ui.modEnterToSave',
+                      )}
                     </Text>
                   </Stack>
                 </Section>
