@@ -40,10 +40,11 @@ import {
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFocusWhen } from '../focus.ts';
-import { ISSUE_STATUSES } from '../types.ts';
-import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
+import { priorityLabel } from '../i18n/labels.ts';
 import { RouterNavLink } from '../mantine-ui.tsx';
 import { CONFIG_NAV } from '../nav.ts';
+import { workflowStatusLabel } from '../workflow.tsx';
+import { IssueWorkflowProvider } from '../workflow.tsx';
 import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
 import styles from './Shell.module.css';
@@ -99,6 +100,7 @@ export function ShellView({
         createView,
         issueTitle,
         issueStatus,
+        issueWorkflowStatuses,
         issuePriority,
         issueProjectId,
         issueCycleId,
@@ -481,7 +483,10 @@ export function ShellView({
                   label={t('field.status')}
                   value={issueStatus}
                   onChange={handlers.Issue_status_onChange14}
-                  data={ISSUE_STATUSES.map((s) => ({ value: s, label: issueStatusLabel(s) }))}
+                  data={issueWorkflowStatuses.map((status) => ({
+                    value: status.id,
+                    label: workflowStatusLabel(status.id, issueWorkflowStatuses),
+                  }))}
                 />
                 <NativeSelect
                   aria-label={t('field.priority')}
@@ -670,13 +675,15 @@ function ShellBinding() {
   const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createPage);
   const viewNameRef = useFocusWhen<HTMLTextAreaElement>(model.createView);
   return (
-    <ShellView
-      model={{ ...model, handlers } as typeof model}
-      t={t}
-      issueTitleRef={issueTitleRef}
-      adrTitleRef={adrTitleRef}
-      pageTitleRef={pageTitleRef}
-      viewNameRef={viewNameRef}
-    />
+    <IssueWorkflowProvider>
+      <ShellView
+        model={{ ...model, handlers } as typeof model}
+        t={t}
+        issueTitleRef={issueTitleRef}
+        adrTitleRef={adrTitleRef}
+        pageTitleRef={pageTitleRef}
+        viewNameRef={viewNameRef}
+      />
+    </IssueWorkflowProvider>
   );
 }

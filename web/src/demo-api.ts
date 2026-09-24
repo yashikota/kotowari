@@ -6,6 +6,7 @@ import type {
   Issue,
   IssueLink,
   IssueRelation,
+  IssueWorkflowStatus,
   IssueTemplate,
   Label,
   Page,
@@ -16,6 +17,15 @@ import type {
 } from './types.ts';
 
 const now = '2026-09-23T09:00:00Z';
+const defaultIssueWorkflowStatuses: IssueWorkflowStatus[] = [
+  { id: 'backlog', name: 'Backlog', category: 'backlog' },
+  { id: 'todo', name: 'Todo', category: 'todo' },
+  { id: 'in_progress', name: 'In Progress', category: 'in_progress' },
+  { id: 'done', name: 'Done', category: 'done' },
+  { id: 'canceled', name: 'Canceled', category: 'canceled' },
+  { id: 'duplicate', name: 'Duplicate', category: 'canceled' },
+];
+let issueWorkflowStatuses = defaultIssueWorkflowStatuses.map((status) => ({ ...status }));
 function localDateValue(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -32,6 +42,7 @@ let workspace: Workspace = {
   url: 'https://yashikota.github.io/kotowari/',
   description: 'Markdownで管理する、軽量なプロジェクトワークスペース',
   githubUrl: 'https://github.com/yashikota/kotowari',
+  issueStatuses: issueWorkflowStatuses,
   updatedAt: now,
 };
 let projects: Project[] = [
@@ -225,6 +236,7 @@ function issue(
     title,
     body: number === 1 ? 'Actionsからデモを公開し、誰でもすぐ試せるようにする。' : '',
     status,
+    workflowStatus: status,
     priority,
     projectId,
     projectSlug: projects.find((p) => p.id === projectId)?.slug,
@@ -455,6 +467,55 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     if (method === 'PATCH') workspace = patch(workspace, body(init));
     return json(workspace);
   }
+  if (path === '/api/issue-workflow-statuses') {
+    if (method === 'GET') return json(issueWorkflowStatuses);
+    if (method !== 'PUT') return notFound();
+    const value = body(init);
+    const statuses = Array.isArray(value.statuses)
+      ? (value.statuses as IssueWorkflowStatus[])
+      : null;
+    if (!statuses || statuses.length < defaultIssueWorkflowStatuses.length || statuses.length > 50)
+      return json({ error: 'invalid workflow statuses' }, 400);
+    const seen = new Set<string>();
+    for (const status of statuses) {
+      if (
+        !status ||
+        typeof status.id !== 'string' ||
+        typeof status.name !== 'string' ||
+        typeof status.category !== 'string' ||
+        status.name.trim().length < 1 ||
+        status.name.trim().length > 48 ||
+        (typeof status.description !== 'undefined' &&
+          (typeof status.description !== 'string' || status.description.length > 200)) ||
+        seen.has(status.id)
+      )
+        return json({ error: 'invalid workflow status' }, 400);
+      seen.add(status.id);
+      const defaultStatus = defaultIssueWorkflowStatuses.find((item) => item.id === status.id);
+      if (defaultStatus) {
+        if (status.category !== defaultStatus.category)
+          return json({ error: 'default workflow status category cannot change' }, 400);
+      } else if (!/^[a-z][a-z0-9-]{0,47}$/.test(status.id)) {
+        return json({ error: 'invalid workflow status id' }, 400);
+      }
+      if (!['backlog', 'todo', 'in_progress', 'done', 'canceled'].includes(status.category))
+        return json({ error: 'invalid workflow status category' }, 400);
+    }
+    for (const status of defaultIssueWorkflowStatuses)
+      if (!seen.has(status.id))
+        return json({ error: 'default workflow statuses are required' }, 400);
+    const nextIds = new Set(statuses.map((status) => status.id));
+    if (issues.some((item) => !nextIds.has(item.workflowStatus ?? item.status)))
+      return json({ error: 'workflow status is in use' }, 409);
+    issueWorkflowStatuses = statuses.map((status) => ({
+      ...status,
+      name: status.name.trim(),
+      description: status.description?.trim() || undefined,
+    }));
+    workspace.issueStatuses = issueWorkflowStatuses;
+    revision += 1;
+    return json(issueWorkflowStatuses);
+  }
   if (path === '/api/diagnostics') return json([]);
   if (path === '/api/labels') {
     if (method === 'POST') {
@@ -490,7 +551,10 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const asOf = url.searchParams.get('asOf') ?? localDateValue(new Date());
     const favorite = url.searchParams.get('favorite');
     const wantedLabels = url.searchParams.get('labels')?.split(',');
-    if (status) result = result.filter((i) => i.status === status);
+    if (status)
+      result = result.filter(
+        (i) => i.status === status || (i.workflowStatus ?? i.status) === status,
+      );
     if (project) result = result.filter((i) => i.projectSlug === project);
     if (projectStatus || projectPriority != null) {
       result = result.filter((item) => {
@@ -662,6 +726,20 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       value.cycleId == null ? null : Number(value.cycleId),
       [],
     );
+    const requestedWorkflowStatus = text(value.workflowStatus).trim();
+    const workflowStatus = issueWorkflowStatuses.find(
+      (candidate) => candidate.id === requestedWorkflowStatus,
+    );
+    if (requestedWorkflowStatus && !workflowStatus)
+      return json({ error: 'invalid workflow status' }, 400);
+    if (workflowStatus) {
+      item.workflowStatus = workflowStatus.id;
+      item.status = workflowStatus.category as Issue['status'];
+    } else {
+      item.workflowStatus =
+        issueWorkflowStatuses.find((candidate) => candidate.category === item.status)?.id ??
+        item.status;
+    }
     item.type = ['bug', 'feature', 'improvement', 'task'].includes(String(value.type))
       ? (String(value.type) as Issue['type'])
       : undefined;
@@ -741,6 +819,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     }
     if (method === 'PATCH') {
       const previousStatus = item.status;
+      const previousWorkflowStatus = item.workflowStatus ?? item.status;
       const changes = body(init);
       const wasArchived = Boolean(item.archivedAt);
       if (wasArchived && changes.archived !== false)
@@ -753,7 +832,17 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         if (!cycles.some((cycle) => cycle.id === cycleId))
           return json({ error: 'cycle not found' }, 400);
       }
+      if ('workflowStatus' in changes) {
+        const requestedWorkflowStatus = text(changes.workflowStatus).trim();
+        const workflowStatus = issueWorkflowStatuses.find(
+          (candidate) => candidate.id === requestedWorkflowStatus,
+        );
+        if (!workflowStatus) return json({ error: 'invalid workflow status' }, 400);
+        changes.status = workflowStatus.category;
+      }
       patch(item, changes);
+      if ('workflowStatus' in changes)
+        item.workflowStatus = text(changes.workflowStatus) || item.status;
       if ('archived' in changes)
         item.archivedAt = changes.archived ? new Date().toISOString() : null;
       if ('cycleId' in changes && Number(changes.cycleId ?? 0) !== previousCycleId) {
@@ -762,11 +851,17 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         item.cycleNumber = cycles.find((cycle) => cycle.id === cycleId)?.number ?? null;
         item.cycleAddedAt = cycleId == null ? null : new Date().toISOString();
       }
-      if (item.status !== previousStatus) {
+      if (
+        item.status !== previousStatus ||
+        (item.workflowStatus ?? item.status) !== previousWorkflowStatus
+      ) {
         const changedAt = new Date().toISOString();
         item.statusChangedAt = changedAt;
-        if (item.status === 'in_progress' && !item.startedAt) item.startedAt = changedAt;
-        item.completedAt = item.status === 'done' || item.status === 'canceled' ? changedAt : null;
+        if (item.status === 'in_progress' && previousStatus !== 'in_progress' && !item.startedAt)
+          item.startedAt = changedAt;
+        if (item.status !== previousStatus)
+          item.completedAt =
+            item.status === 'done' || item.status === 'canceled' ? changedAt : null;
       }
     }
     if (method === 'PATCH') {

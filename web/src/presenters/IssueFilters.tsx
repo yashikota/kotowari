@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMachineFlag } from '../application/Root.tsx';
 import type { IssueSearch } from '../api.ts';
-import { issueStatusLabel, issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
+import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import type {
   CompletedIssuesFilter,
   IssueDisplayProperty,
@@ -11,13 +11,8 @@ import type {
   IssueLayout,
   IssueOrderBy,
 } from '../issue-list.ts';
-import {
-  ISSUE_STATUSES,
-  type Cycle,
-  type IssueStatus,
-  type Label,
-  type Project,
-} from '../types.ts';
+import type { Cycle, Label, Project } from '../types.ts';
+import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 
 export type FilterChip = { key: string; label: string };
 
@@ -120,6 +115,7 @@ export function useIssueFiltersPresenter({
   displayProperties,
   onDisplayPropertyToggle,
 }: Props) {
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   const { t } = useTranslation();
   const [viewName, setViewName] = useState('');
   const findRef = useRef<HTMLInputElement>(null);
@@ -158,7 +154,7 @@ export function useIssueFiltersPresenter({
       ? [
           {
             key: 'status',
-            label: `${t('field.status')} · ${ISSUE_STATUSES.includes(search.status as IssueStatus) ? issueStatusLabel(search.status as IssueStatus) : search.status}`,
+            label: `${t('field.status')} · ${workflowStatusLabel(search.status, workflowStatuses)}`,
           },
         ]
       : []),

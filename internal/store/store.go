@@ -22,13 +22,34 @@ type Store struct {
 }
 
 type Workspace struct {
-	Name        string `json:"name"`
-	Timezone    string `json:"timezone"`
-	Locale      string `json:"locale"`
-	URL         string `json:"url"`
-	Description string `json:"description"`
-	GitHubURL   string `json:"githubUrl"`
-	UpdatedAt   string `json:"updatedAt"`
+	Name          string                `json:"name"`
+	Timezone      string                `json:"timezone"`
+	Locale        string                `json:"locale"`
+	URL           string                `json:"url"`
+	Description   string                `json:"description"`
+	GitHubURL     string                `json:"githubUrl"`
+	IssueStatuses []IssueWorkflowStatus `json:"issueStatuses"`
+	UpdatedAt     string                `json:"updatedAt"`
+}
+
+// IssueWorkflowStatus is a user-configurable workflow state grouped under one
+// of the five status categories used for issue lifecycle calculations.
+type IssueWorkflowStatus struct {
+	ID          string `json:"id" toml:"id"`
+	Name        string `json:"name" toml:"name"`
+	Category    string `json:"category" toml:"category"`
+	Description string `json:"description,omitempty" toml:"description,omitempty"`
+}
+
+func DefaultIssueWorkflowStatuses() []IssueWorkflowStatus {
+	return []IssueWorkflowStatus{
+		{ID: "backlog", Name: "Backlog", Category: "backlog"},
+		{ID: "todo", Name: "Todo", Category: "todo"},
+		{ID: "in_progress", Name: "In Progress", Category: "in_progress"},
+		{ID: "done", Name: "Done", Category: "done"},
+		{ID: "canceled", Name: "Canceled", Category: "canceled"},
+		{ID: "duplicate", Name: "Duplicate", Category: "canceled"},
+	}
 }
 
 type Label struct {
@@ -102,6 +123,7 @@ type Issue struct {
 	Title            string              `json:"title"`
 	Body             string              `json:"body"`
 	Status           string              `json:"status"`
+	WorkflowStatus   string              `json:"workflowStatus"`
 	Type             string              `json:"type,omitempty"`
 	Priority         int                 `json:"priority"`
 	Estimate         *int                `json:"estimate,omitempty"`
@@ -355,38 +377,40 @@ type IssueFilter struct {
 }
 
 type CreateIssueInput struct {
-	Title         string
-	Body          string
-	Status        string
-	Type          string
-	Priority      int
-	Estimate      *int
-	ProjectID     *int64
-	MilestoneID   *int64
-	CycleID       *int64
-	ParentID      *int64
-	DueDate       *string
-	LabelIDs      []int64
-	RecurringSlug *string
+	Title          string
+	Body           string
+	Status         string
+	WorkflowStatus string
+	Type           string
+	Priority       int
+	Estimate       *int
+	ProjectID      *int64
+	MilestoneID    *int64
+	CycleID        *int64
+	ParentID       *int64
+	DueDate        *string
+	LabelIDs       []int64
+	RecurringSlug  *string
 }
 
 type PatchIssueInput struct {
-	Title       *string
-	Body        *string
-	Status      *string
-	Type        *string
-	Priority    *int
-	Estimate    **int
-	ProjectID   **int64
-	MilestoneID **int64
-	CycleID     **int64
-	ParentID    **int64
-	DueDate     **string
-	ReminderAt  **string
-	LabelIDs    *[]int64
-	SortOrder   *float64
-	IsFavorite  *bool
-	Archived    *bool
+	Title          *string
+	Body           *string
+	Status         *string
+	WorkflowStatus *string
+	Type           *string
+	Priority       *int
+	Estimate       **int
+	ProjectID      **int64
+	MilestoneID    **int64
+	CycleID        **int64
+	ParentID       **int64
+	DueDate        **string
+	ReminderAt     **string
+	LabelIDs       *[]int64
+	SortOrder      *float64
+	IsFavorite     *bool
+	Archived       *bool
 }
 
 type CreateViewInput struct {
@@ -438,18 +462,19 @@ type mem struct {
 }
 
 type workspaceFile struct {
-	Name         string `toml:"name"`
-	Timezone     string `toml:"timezone"`
-	Locale       string `toml:"locale,omitempty"`
-	URL          string `toml:"url,omitempty"`
-	Description  string `toml:"description,omitempty"`
-	GitHubURL    string `toml:"githubUrl,omitempty"`
-	IssuePrefix  string `toml:"issuePrefix,omitempty"`
-	ADRPrefix    string `toml:"adrPrefix,omitempty"`
-	IssueCounter int    `toml:"issueCounter"`
-	ADRCounter   int    `toml:"adrCounter"`
-	NextID       int64  `toml:"nextID"`
-	UpdatedAt    string `toml:"updatedAt"`
+	Name          string                `toml:"name"`
+	Timezone      string                `toml:"timezone"`
+	Locale        string                `toml:"locale,omitempty"`
+	URL           string                `toml:"url,omitempty"`
+	Description   string                `toml:"description,omitempty"`
+	GitHubURL     string                `toml:"githubUrl,omitempty"`
+	IssueStatuses []IssueWorkflowStatus `toml:"issueStatuses,omitempty"`
+	IssuePrefix   string                `toml:"issuePrefix,omitempty"`
+	ADRPrefix     string                `toml:"adrPrefix,omitempty"`
+	IssueCounter  int                   `toml:"issueCounter"`
+	ADRCounter    int                   `toml:"adrCounter"`
+	NextID        int64                 `toml:"nextID"`
+	UpdatedAt     string                `toml:"updatedAt"`
 }
 
 type labelsFile struct {

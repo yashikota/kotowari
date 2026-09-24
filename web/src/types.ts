@@ -1,4 +1,10 @@
 export type IssueStatus = 'backlog' | 'todo' | 'in_progress' | 'done' | 'canceled';
+export type IssueWorkflowStatus = {
+  id: string;
+  name: string;
+  category: IssueStatus;
+  description?: string;
+};
 export type IssueType = 'bug' | 'feature' | 'improvement' | 'task';
 
 export type Label = {
@@ -28,6 +34,7 @@ export type Issue = {
   title: string;
   body: string;
   status: IssueStatus;
+  workflowStatus?: string;
   type?: IssueType;
   priority: number;
   estimate?: number | null;
@@ -254,6 +261,7 @@ export type Workspace = {
   url: string;
   description: string;
   githubUrl: string;
+  issueStatuses?: IssueWorkflowStatus[];
   updatedAt: string;
 };
 

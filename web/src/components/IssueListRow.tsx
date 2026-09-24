@@ -9,11 +9,12 @@ import {
   IconStar,
 } from '@tabler/icons-react';
 import { isOverdue } from '../due.ts';
-import { issueStatusLabel, issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
+import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import i18n from '../i18n/index.ts';
 import type { IssueListRow as IssueListRowModel } from '../issue-list.ts';
 import type { IssueDisplayProperty } from '../issue-list.ts';
 import type { Issue, IssueType } from '../types.ts';
+import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssueListRow.module.css';
 
@@ -24,6 +25,7 @@ export function IssueGroupRow({
   row: Extract<IssueListRowModel, { kind: 'group' }>;
   onToggle: (key: string) => void;
 }) {
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   const label =
     row.groupBy === 'type'
       ? row.label
@@ -34,7 +36,7 @@ export function IssueGroupRow({
         : row.groupBy === 'priority'
           ? priorityLabel(row.priority ?? 0)
           : row.groupBy === 'status' && row.status
-            ? issueStatusLabel(row.status)
+            ? workflowStatusLabel(row.status, workflowStatuses)
             : row.groupBy === 'project' && row.label === 'No project'
               ? i18n.t('issueProperties.noProject')
               : row.groupBy === 'cycle' && row.label === 'No cycle'
@@ -54,7 +56,9 @@ export function IssueGroupRow({
     ) : row.groupBy === 'priority' ? (
       <IconChartBar size={14} stroke={1.8} aria-hidden />
     ) : row.groupBy === 'status' && row.status ? (
-      <IssueStatusIcon status={row.status} />
+      <IssueStatusIcon
+        status={workflowStatuses.find((status) => status.id === row.status)?.category ?? 'todo'}
+      />
     ) : (
       <IconFolder size={14} stroke={1.8} aria-hidden />
     );
@@ -121,6 +125,7 @@ export function IssueListRow({
   hideProjectSlug?: boolean;
   onSelect: (issue: Issue) => void;
 }) {
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   const overdue = isOverdue(issue.dueDate, today);
   const pullRequestCount =
     issue.externalLinks?.filter((link) => link.kind === 'pullRequest').length ?? 0;
@@ -168,9 +173,14 @@ export function IssueListRow({
           ) : null}
           {shows('status') ? (
             <>
-              <IssueStatusIcon status={issue.status} />
+              <IssueStatusIcon
+                status={
+                  workflowStatuses.find((status) => status.id === issue.workflowStatus)?.category ??
+                  issue.status
+                }
+              />
               <Text size="xs" c="dimmed" w={86} truncate visibleFrom="sm">
-                {issueStatusLabel(issue.status)}
+                {workflowStatusLabel(issue.workflowStatus ?? issue.status, workflowStatuses)}
               </Text>
             </>
           ) : null}

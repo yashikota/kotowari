@@ -233,8 +233,8 @@ export function useIssuesPagePresenter() {
         ),
       onBoardOpen8: (id: string) =>
         navigate({ to: '/issues/$identifier', params: { identifier: id } }),
-      onBoardMove9: (id: string, status: Issue['status'], sortOrder: number) =>
-        api.patchIssue(id, { status, sortOrder }).then(() => router.invalidate()),
+      onBoardMove9: (id: string, status: string, sortOrder: number) =>
+        api.patchIssue(id, { workflowStatus: status, sortOrder }).then(() => router.invalidate()),
     },
   };
 }
@@ -287,7 +287,9 @@ export function useBoardPagePresenter() {
         status: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[1],
         sortOrder: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[2],
       ) => {
-        return api.patchIssue(id, { status, sortOrder }).then(() => router.invalidate());
+        return api
+          .patchIssue(id, { workflowStatus: status, sortOrder })
+          .then(() => router.invalidate());
       },
     },
   };

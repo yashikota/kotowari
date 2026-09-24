@@ -27,8 +27,8 @@ import {
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ISSUE_STATUSES } from '../types.ts';
-import { issueStatusLabel, priorityLabel } from '../i18n/labels.ts';
+import { priorityLabel } from '../i18n/labels.ts';
+import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssuePropertiesPanel.module.css';
 import type { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
@@ -53,6 +53,7 @@ export function IssuePropertiesPanel({
   >;
 }) {
   const { t } = useTranslation();
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   const {
     issue,
     projects,
@@ -72,20 +73,30 @@ export function IssuePropertiesPanel({
       <Stack component="section" aria-label={t('issueProperties.heading')} gap={5}>
         <Text className={styles.heading}>{t('issueProperties.heading')}</Text>
 
-        <PropertyRow label={t('field.status')} icon={<IssueStatusIcon status={issue.status} />}>
+        <PropertyRow
+          label={t('field.status')}
+          icon={
+            <IssueStatusIcon
+              status={
+                workflowStatuses.find((status) => status.id === issue.workflowStatus)?.category ??
+                issue.status
+              }
+            />
+          }
+        >
           <PropertySelect
             aria-label={t('field.status')}
-            value={issue.status}
+            value={issue.workflowStatus ?? issue.status}
             onChange={handlers.Status_onChange5}
-            data={ISSUE_STATUSES.map((status) => ({
-              value: status,
-              label: issueStatusLabel(status),
+            data={workflowStatuses.map((status) => ({
+              value: status.id,
+              label: workflowStatusLabel(status.id, workflowStatuses),
             }))}
             renderOption={({ option }) => {
-              const status = ISSUE_STATUSES.find((item) => item === option.value);
+              const status = workflowStatuses.find((item) => item.id === option.value);
               return (
                 <Group gap="xs" wrap="nowrap">
-                  {status ? <IssueStatusIcon status={status} /> : null}
+                  {status ? <IssueStatusIcon status={status.category} /> : null}
                   <span>{option.label}</span>
                 </Group>
               );

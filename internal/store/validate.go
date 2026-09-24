@@ -108,6 +108,9 @@ func diagnose(m *mem) {
 		if !domain.ValidIssueStatus(iss.Status) {
 			m.diag(path, "invalid_status", fmt.Sprintf("invalid status %q", iss.Status))
 		}
+		if _, ok := workflowStatusByID(m.Workspace, iss.WorkflowStatus); !ok {
+			m.diag(path, "invalid_workflow_status", fmt.Sprintf("unknown workflow status %q", iss.WorkflowStatus))
+		}
 		if strings.TrimSpace(iss.Title) == "" {
 			m.diag(path, "missing_title", "title is required")
 		}

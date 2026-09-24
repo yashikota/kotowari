@@ -24,7 +24,7 @@ func isRestoreOnlyIssuePatch(in PatchIssueInput) bool {
 	if in.Archived == nil || *in.Archived {
 		return false
 	}
-	return in.Title == nil && in.Body == nil && in.Status == nil && in.Type == nil &&
+	return in.Title == nil && in.Body == nil && in.Status == nil && in.WorkflowStatus == nil && in.Type == nil &&
 		in.Priority == nil && in.Estimate == nil && in.ProjectID == nil && in.MilestoneID == nil &&
 		in.CycleID == nil && in.ParentID == nil && in.DueDate == nil && in.ReminderAt == nil &&
 		in.LabelIDs == nil && in.SortOrder == nil && in.IsFavorite == nil
@@ -45,13 +45,14 @@ func workspaceFrom(m *mem) Workspace {
 		locale = "en"
 	}
 	return Workspace{
-		Name:        m.Workspace.Name,
-		Timezone:    m.Workspace.Timezone,
-		Locale:      locale,
-		URL:         strings.TrimSpace(m.Workspace.URL),
-		Description: m.Workspace.Description,
-		GitHubURL:   strings.TrimSpace(m.Workspace.GitHubURL),
-		UpdatedAt:   m.Workspace.UpdatedAt,
+		Name:          m.Workspace.Name,
+		Timezone:      m.Workspace.Timezone,
+		Locale:        locale,
+		URL:           strings.TrimSpace(m.Workspace.URL),
+		Description:   m.Workspace.Description,
+		GitHubURL:     strings.TrimSpace(m.Workspace.GitHubURL),
+		IssueStatuses: issueWorkflowStatuses(m.Workspace),
+		UpdatedAt:     m.Workspace.UpdatedAt,
 	}
 }
 
@@ -1098,7 +1099,7 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 					continue
 				}
 			}
-			if f.Status != "" && iss.Status != f.Status {
+			if f.Status != "" && iss.Status != f.Status && iss.WorkflowStatus != f.Status {
 				continue
 			}
 			if f.ProjectSlug != "" && (iss.ProjectSlug == nil || *iss.ProjectSlug != f.ProjectSlug) {
@@ -1342,6 +1343,10 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 	}
 	var out Issue
 	err := s.mutate(func(m *mem) error {
+		workflowState, ok := resolveIssueWorkflowStatus(m.Workspace, in.Status, in.WorkflowStatus)
+		if !ok {
+			return validationf("invalid workflow status")
+		}
 		m.Workspace.IssueCounter++
 		n := m.Workspace.IssueCounter
 		ident := domain.Ident(m.issuePrefix(), n)
@@ -1352,7 +1357,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 			}
 		}
 		var startedAt *string
-		if in.Status == "in_progress" {
+		if workflowState.Category == "in_progress" {
 			startedAt = &now
 		}
 		var cycleAddedAt *string
@@ -1364,9 +1369,9 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		}
 		out = Issue{
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
-			Status: in.Status, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
+			Status: workflowState.Category, WorkflowStatus: workflowState.ID, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
 			DueDate: in.DueDate, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
-			StartedAt: startedAt, CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{}, Reactions: []string{}, Attachments: []CommentAttachment{},
+			StartedAt: startedAt, CompletedAt: completedAt(workflowState.Category, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{}, Reactions: []string{}, Attachments: []CommentAttachment{},
 		}
 		if in.MilestoneID != nil {
 			p, milestone, ok := milestoneByID(m, *in.MilestoneID)
@@ -1431,6 +1436,7 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			return errf(ErrConflict, "issue is archived")
 		}
 		oldStatus := iss.Status
+		oldWorkflowStatus := iss.WorkflowStatus
 		oldType := iss.Type
 		oldEstimate := iss.Estimate
 		oldFavorite := iss.IsFavorite
@@ -1452,7 +1458,20 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			if !domain.ValidIssueStatus(*in.Status) {
 				return validationf("invalid status")
 			}
-			iss.Status = *in.Status
+			workflowState, ok := resolveIssueWorkflowStatus(m.Workspace, *in.Status, "")
+			if !ok {
+				return validationf("invalid workflow status")
+			}
+			iss.Status = workflowState.Category
+			iss.WorkflowStatus = workflowState.ID
+		}
+		if in.WorkflowStatus != nil {
+			workflowState, ok := workflowStatusByID(m.Workspace, *in.WorkflowStatus)
+			if !ok {
+				return validationf("invalid workflow status")
+			}
+			iss.Status = workflowState.Category
+			iss.WorkflowStatus = workflowState.ID
 		}
 		if in.Type != nil {
 			if !domain.ValidIssueType(*in.Type) {
@@ -1563,7 +1582,7 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 				iss.CycleAddedAt = &now
 			}
 		}
-		if iss.Status != oldStatus {
+		if iss.Status != oldStatus || iss.WorkflowStatus != oldWorkflowStatus {
 			iss.StatusChangedAt = now
 			if iss.Status == "in_progress" && iss.StartedAt == nil {
 				iss.StartedAt = &now
@@ -1580,8 +1599,8 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			}
 		}
 		m.Issues[i] = iss
-		if in.Status != nil && *in.Status != oldStatus {
-			addActivity(m, "issue", iss.ID, "status_changed", map[string]any{"from": oldStatus, "to": iss.Status}, now)
+		if iss.WorkflowStatus != oldWorkflowStatus {
+			addActivity(m, "issue", iss.ID, "status_changed", map[string]any{"from": oldWorkflowStatus, "to": iss.WorkflowStatus}, now)
 		}
 		if in.Type != nil && *in.Type != oldType {
 			addActivity(m, "issue", iss.ID, "type_changed", map[string]any{"from": oldType, "to": iss.Type}, now)

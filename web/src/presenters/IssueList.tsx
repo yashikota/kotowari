@@ -16,8 +16,8 @@ import {
 import type { IssueBoardColumnProps } from '../components/IssueBoardColumn.tsx';
 import { localToday } from '../due.ts';
 import { actionFromKeyboard } from '../keymap.ts';
-import type { Issue, IssueStatus } from '../types.ts';
-import { ISSUE_STATUSES } from '../types.ts';
+import type { Issue } from '../types.ts';
+import { useIssueWorkflow } from '../workflow.tsx';
 
 type Props = {
   issues: Issue[];
@@ -47,6 +47,7 @@ export function useIssueListPresenter({
   displayProperties,
 }: Props) {
   const sendIntent = useIntent();
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   const projectedIssues = useIssueProjection(initialIssues);
   const visibleIssues = showSubIssues
     ? projectedIssues
@@ -57,6 +58,7 @@ export function useIssueListPresenter({
   const rows = buildIssueListRows(issues, new Set(collapsedGroups), groupBy, {
     subGroupBy,
     showEmptyGroups,
+    issueStatuses: workflowStatuses,
   });
   const issueRows = rows.filter(
     (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',
@@ -158,7 +160,7 @@ export function useIssueListPresenter({
 type BoardProps = {
   issues: Issue[];
   onOpen: (id: string) => void;
-  onMove: (id: string, status: IssueStatus, sortOrder: number) => void;
+  onMove: (id: string, status: string, sortOrder: number) => void;
   orderBy?: IssueOrderBy;
   direction?: 'asc' | 'desc';
   showSubIssues?: boolean;
@@ -166,11 +168,11 @@ type BoardProps = {
 
 function columnIssues(
   issues: Issue[],
-  status: IssueStatus,
+  status: string,
   orderBy: IssueOrderBy,
   direction?: 'asc' | 'desc',
 ): Issue[] {
-  const matching = issues.filter((issue) => issue.status === status);
+  const matching = issues.filter((issue) => (issue.workflowStatus ?? issue.status) === status);
   if (orderBy !== 'manual') return sortIssues(matching, orderBy, direction);
   return matching.sort((a, b) => a.sortOrder - b.sortOrder || a.number - b.number);
 }
@@ -183,6 +185,7 @@ export function useIssueBoardPresenter({
   direction,
   showSubIssues = true,
 }: BoardProps) {
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   const projectedIssues = useIssueProjection(initialIssues);
   const issues = showSubIssues
     ? projectedIssues
@@ -190,11 +193,13 @@ export function useIssueBoardPresenter({
   const [dragId, setDragId] = useState<string | null>(null);
   const columns = useMemo(
     () =>
-      ISSUE_STATUSES.map((status) => ({
-        status,
-        issues: columnIssues(issues, status, orderBy, direction),
+      workflowStatuses.map((status) => ({
+        status: status.id,
+        category: status.category,
+        name: status.name,
+        issues: columnIssues(issues, status.id, orderBy, direction),
       })),
-    [issues, orderBy, direction],
+    [issues, orderBy, direction, workflowStatuses],
   );
   return {
     _view: 0 as const,
@@ -222,6 +227,8 @@ export function useIssueBoardPresenter({
 export function useBoardColumnPresenter({
   issues,
   status,
+  category,
+  name,
   dragId,
   onDrag,
   onOpen,
@@ -236,6 +243,8 @@ export function useBoardColumnPresenter({
     _view: 0 as const,
     issues,
     status,
+    category,
+    name,
     dragId,
     windowed,
     handlers: {

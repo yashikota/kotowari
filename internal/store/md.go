@@ -9,34 +9,35 @@ import (
 )
 
 type issueFM struct {
-	Title         string              `toml:"title"`
-	Status        string              `toml:"status"`
-	Type          string              `toml:"type,omitempty"`
-	Priority      int                 `toml:"priority"`
-	Estimate      *int                `toml:"estimate,omitempty"`
-	Project       *string             `toml:"project,omitempty"`
-	Milestone     *int64              `toml:"milestone,omitempty"`
-	Cycle         *int                `toml:"cycle,omitempty"`
-	CycleAddedAt  *string             `toml:"cycle_added_at,omitempty"`
-	Parent        *string             `toml:"parent,omitempty"`
-	Labels        []string            `toml:"labels"`
-	Due           *string             `toml:"due,omitempty"`
-	Reminder      *string             `toml:"reminder_at,omitempty"`
-	Sort          float64             `toml:"sort"`
-	Created       string              `toml:"created"`
-	Updated       string              `toml:"updated"`
-	StatusChanged string              `toml:"status_changed,omitempty"`
-	Started       *string             `toml:"started_at,omitempty"`
-	Favorite      bool                `toml:"favorite,omitempty"`
-	Completed     *string             `toml:"completed,omitempty"`
-	Archived      *string             `toml:"archived_at,omitempty"`
-	ADRs          []int               `toml:"adrs,omitempty"`
-	Links         []IssueLink         `toml:"links,omitempty"`
-	Relations     []IssueRelation     `toml:"relations,omitempty"`
-	Reactions     []string            `toml:"reactions,omitempty"`
-	Attachments   []CommentAttachment `toml:"attachments,omitempty"`
-	RecurringSlug *string             `toml:"recurring_slug,omitempty"`
-	Comments      []commentFM         `toml:"comments,omitempty"`
+	Title          string              `toml:"title"`
+	Status         string              `toml:"status"`
+	WorkflowStatus string              `toml:"workflow_status,omitempty"`
+	Type           string              `toml:"type,omitempty"`
+	Priority       int                 `toml:"priority"`
+	Estimate       *int                `toml:"estimate,omitempty"`
+	Project        *string             `toml:"project,omitempty"`
+	Milestone      *int64              `toml:"milestone,omitempty"`
+	Cycle          *int                `toml:"cycle,omitempty"`
+	CycleAddedAt   *string             `toml:"cycle_added_at,omitempty"`
+	Parent         *string             `toml:"parent,omitempty"`
+	Labels         []string            `toml:"labels"`
+	Due            *string             `toml:"due,omitempty"`
+	Reminder       *string             `toml:"reminder_at,omitempty"`
+	Sort           float64             `toml:"sort"`
+	Created        string              `toml:"created"`
+	Updated        string              `toml:"updated"`
+	StatusChanged  string              `toml:"status_changed,omitempty"`
+	Started        *string             `toml:"started_at,omitempty"`
+	Favorite       bool                `toml:"favorite,omitempty"`
+	Completed      *string             `toml:"completed,omitempty"`
+	Archived       *string             `toml:"archived_at,omitempty"`
+	ADRs           []int               `toml:"adrs,omitempty"`
+	Links          []IssueLink         `toml:"links,omitempty"`
+	Relations      []IssueRelation     `toml:"relations,omitempty"`
+	Reactions      []string            `toml:"reactions,omitempty"`
+	Attachments    []CommentAttachment `toml:"attachments,omitempty"`
+	RecurringSlug  *string             `toml:"recurring_slug,omitempty"`
+	Comments       []commentFM         `toml:"comments,omitempty"`
 }
 
 type adrFM struct {
@@ -110,6 +111,9 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 	if fm.Status == "" {
 		fm.Status = "backlog"
 	}
+	if fm.WorkflowStatus == "" {
+		fm.WorkflowStatus = fm.Status
+	}
 	if fm.StatusChanged == "" {
 		fm.StatusChanged = fm.Updated
 		if fm.StatusChanged == "" {
@@ -123,6 +127,7 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		Title:            fm.Title,
 		Body:             body,
 		Status:           fm.Status,
+		WorkflowStatus:   fm.WorkflowStatus,
 		Type:             fm.Type,
 		Priority:         fm.Priority,
 		Estimate:         fm.Estimate,
@@ -274,30 +279,31 @@ func renderADRMarkdown(a ADR) string {
 
 func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 	fm := issueFM{
-		Title:         iss.Title,
-		Status:        iss.Status,
-		Type:          iss.Type,
-		Priority:      iss.Priority,
-		Estimate:      iss.Estimate,
-		Milestone:     iss.MilestoneID,
-		CycleAddedAt:  iss.CycleAddedAt,
-		Due:           iss.DueDate,
-		Reminder:      iss.ReminderAt,
-		Sort:          iss.SortOrder,
-		Created:       iss.CreatedAt,
-		Updated:       iss.UpdatedAt,
-		StatusChanged: iss.StatusChangedAt,
-		Started:       iss.StartedAt,
-		Favorite:      iss.IsFavorite,
-		Completed:     iss.CompletedAt,
-		Archived:      iss.ArchivedAt,
-		ADRs:          iss.ADRNumbers,
-		Links:         iss.ExternalLinks,
-		Relations:     iss.Relations,
-		Reactions:     iss.Reactions,
-		Attachments:   iss.Attachments,
-		RecurringSlug: iss.RecurringSlug,
-		Labels:        make([]string, 0, len(iss.Labels)),
+		Title:          iss.Title,
+		Status:         iss.Status,
+		WorkflowStatus: iss.WorkflowStatus,
+		Type:           iss.Type,
+		Priority:       iss.Priority,
+		Estimate:       iss.Estimate,
+		Milestone:      iss.MilestoneID,
+		CycleAddedAt:   iss.CycleAddedAt,
+		Due:            iss.DueDate,
+		Reminder:       iss.ReminderAt,
+		Sort:           iss.SortOrder,
+		Created:        iss.CreatedAt,
+		Updated:        iss.UpdatedAt,
+		StatusChanged:  iss.StatusChangedAt,
+		Started:        iss.StartedAt,
+		Favorite:       iss.IsFavorite,
+		Completed:      iss.CompletedAt,
+		Archived:       iss.ArchivedAt,
+		ADRs:           iss.ADRNumbers,
+		Links:          iss.ExternalLinks,
+		Relations:      iss.Relations,
+		Reactions:      iss.Reactions,
+		Attachments:    iss.Attachments,
+		RecurringSlug:  iss.RecurringSlug,
+		Labels:         make([]string, 0, len(iss.Labels)),
 	}
 	if iss.ProjectID != nil {
 		if p, ok := projectByID(m, *iss.ProjectID); ok {

@@ -1,4 +1,4 @@
-import type { Cycle, Issue, IssueStatus } from './types.ts';
+import type { Cycle, Issue, IssueStatus, IssueWorkflowStatus } from './types.ts';
 
 export type IssueListRow =
   | {
@@ -7,7 +7,7 @@ export type IssueListRow =
       key: string;
       label: string;
       priority: number | null;
-      status: IssueStatus | null;
+      status: string | null;
       level?: number;
       count: number;
       collapsed: boolean;
@@ -80,14 +80,23 @@ export function buildIssueListRows(
   issues: Issue[],
   collapsedGroups: ReadonlySet<string> = new Set(),
   groupBy: IssueGroupBy = 'priority',
-  options: { subGroupBy?: IssueGroupBy; showEmptyGroups?: boolean } = {},
+  options: {
+    subGroupBy?: IssueGroupBy;
+    showEmptyGroups?: boolean;
+    issueStatuses?: IssueWorkflowStatus[];
+  } = {},
 ): IssueListRow[] {
   if (groupBy === 'none') return issues.map((issue) => ({ kind: 'issue', issue }));
   const rows: IssueListRow[] = [];
   const subGroupBy = options.subGroupBy ?? 'none';
 
   function appendGroups(subset: Issue[], grouping: IssueGroupBy, parentKey = '', level = 0) {
-    for (const groupInfo of issueGroups(subset, grouping, options.showEmptyGroups ?? false)) {
+    for (const groupInfo of issueGroups(
+      subset,
+      grouping,
+      options.showEmptyGroups ?? false,
+      options.issueStatuses,
+    )) {
       const group = subset.filter((issue) => matchesGroup(issue, grouping, groupInfo));
       if (group.length === 0 && !options.showEmptyGroups) continue;
       const key = parentKey ? `${parentKey}/${groupInfo.key}` : groupInfo.key;
@@ -118,13 +127,14 @@ type GroupInfo = {
   key: string;
   label: string;
   priority: number | null;
-  status: IssueStatus | null;
+  status: string | null;
 };
 
 function issueGroups(
   issues: Issue[],
   groupBy: IssueGroupBy,
   showEmptyGroups: boolean,
+  issueStatuses?: IssueWorkflowStatus[],
 ): GroupInfo[] {
   if (groupBy === 'priority')
     return PRIORITY_ORDER.map((priority) => ({
@@ -134,12 +144,14 @@ function issueGroups(
       status: null,
     }));
   if (groupBy === 'status')
-    return STATUS_ORDER.map((status) => ({
-      key: `status:${status}`,
-      label: status,
-      priority: null,
-      status,
-    }));
+    return (issueStatuses ?? STATUS_ORDER.map((id) => ({ id, name: id, category: id }))).map(
+      ({ id: status }) => ({
+        key: `status:${status}`,
+        label: status,
+        priority: null,
+        status,
+      }),
+    );
   if (groupBy === 'project')
     return [
       ...new Set([
@@ -227,7 +239,7 @@ function issueGroups(
 
 function matchesGroup(issue: Issue, groupBy: IssueGroupBy, groupInfo: GroupInfo): boolean {
   if (groupBy === 'priority') return issue.priority === groupInfo.priority;
-  if (groupBy === 'status') return issue.status === groupInfo.status;
+  if (groupBy === 'status') return (issue.workflowStatus ?? issue.status) === groupInfo.status;
   if (groupBy === 'project') return (issue.projectSlug || 'No project') === groupInfo.label;
   if (groupBy === 'label')
     return groupInfo.label === 'No label'

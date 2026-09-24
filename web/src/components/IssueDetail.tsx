@@ -30,7 +30,7 @@ import { formatActivity } from '../activity.ts';
 import { MarkdownContent, MetaBadge, Section } from '../mantine-ui.tsx';
 import { renderMarkdown } from '../markdown.ts';
 import { formatStamp } from '../time.ts';
-import { issueStatusLabel } from '../i18n/labels.ts';
+import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
 import { PROJECT_STATUSES } from '../types.ts';
 import { AIPanel } from './AIPanel.tsx';
@@ -54,6 +54,7 @@ export function IssueDetailView({
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   switch (model._view) {
     case 0: {
       const { error } = model;
@@ -737,7 +738,9 @@ export function IssueDetailView({
                               <Text fw={500}>{c.identifier}</Text>
                               <Text>{c.title}</Text>
                             </Group>
-                            <MetaBadge>{issueStatusLabel(c.status)}</MetaBadge>
+                            <MetaBadge>
+                              {workflowStatusLabel(c.workflowStatus ?? c.status, workflowStatuses)}
+                            </MetaBadge>
                           </Group>
                         </Button>
                       ))}
@@ -997,7 +1000,7 @@ export function IssueDetailView({
                   <Stack gap="sm">
                     {activities.map((a) => (
                       <Text key={a.id}>
-                        {formatActivity(a.action, a.payload)}{' '}
+                        {formatActivity(a.action, a.payload, workflowStatuses)}{' '}
                         <Text span c="dimmed" size="sm">
                           {formatStamp(a.createdAt, timeZone)}
                         </Text>

@@ -81,6 +81,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/adrs/{id}/export", s.exportADR)
 	s.mux.HandleFunc("GET /api/workspace", s.getWorkspace)
 	s.mux.HandleFunc("PATCH /api/workspace", s.patchWorkspace)
+	s.mux.HandleFunc("GET /api/issue-workflow-statuses", s.listIssueWorkflowStatuses)
+	s.mux.HandleFunc("PUT /api/issue-workflow-statuses", s.updateIssueWorkflowStatuses)
 	s.mux.HandleFunc("GET /api/labels", s.listLabels)
 	s.mux.HandleFunc("POST /api/labels", s.createLabel)
 	s.mux.HandleFunc("GET /api/projects", s.listProjects)
@@ -206,6 +208,31 @@ func (s *Server) getWorkspace(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, ws)
+}
+
+func (s *Server) listIssueWorkflowStatuses(w http.ResponseWriter, _ *http.Request) {
+	statuses, err := s.store.IssueWorkflowStatuses()
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, statuses)
+}
+
+func (s *Server) updateIssueWorkflowStatuses(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Statuses []store.IssueWorkflowStatus `json:"statuses"`
+	}
+	if err := decodeJSON(r, &in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	statuses, err := s.store.UpdateIssueWorkflowStatuses(in.Statuses)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, statuses)
 }
 
 func (s *Server) listDiagnostics(w http.ResponseWriter, _ *http.Request) {
@@ -668,25 +695,26 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Title       string  `json:"title"`
-		Body        string  `json:"body"`
-		Status      string  `json:"status"`
-		Type        string  `json:"type"`
-		Priority    int     `json:"priority"`
-		Estimate    *int    `json:"estimate"`
-		ProjectID   *int64  `json:"projectId"`
-		MilestoneID *int64  `json:"milestoneId"`
-		CycleID     *int64  `json:"cycleId"`
-		ParentID    *int64  `json:"parentId"`
-		DueDate     *string `json:"dueDate"`
-		LabelIDs    []int64 `json:"labelIds"`
+		Title          string  `json:"title"`
+		Body           string  `json:"body"`
+		Status         string  `json:"status"`
+		WorkflowStatus string  `json:"workflowStatus"`
+		Type           string  `json:"type"`
+		Priority       int     `json:"priority"`
+		Estimate       *int    `json:"estimate"`
+		ProjectID      *int64  `json:"projectId"`
+		MilestoneID    *int64  `json:"milestoneId"`
+		CycleID        *int64  `json:"cycleId"`
+		ParentID       *int64  `json:"parentId"`
+		DueDate        *string `json:"dueDate"`
+		LabelIDs       []int64 `json:"labelIds"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
 	out, err := s.store.CreateIssue(store.CreateIssueInput{
-		Title: in.Title, Body: in.Body, Status: in.Status, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
+		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
 		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID, ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs,
 	})
 	if err != nil {
@@ -735,6 +763,14 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		in.Status = &s
+	}
+	if v, ok := raw["workflowStatus"]; ok {
+		var s string
+		if err := json.Unmarshal(v, &s); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid workflow status"})
+			return
+		}
+		in.WorkflowStatus = &s
 	}
 	if v, ok := raw["type"]; ok {
 		var issueType string

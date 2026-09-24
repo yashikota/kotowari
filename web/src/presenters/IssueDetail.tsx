@@ -733,7 +733,8 @@ export function useIssueDetailPresenter({ identifier }: Props) {
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssue({ ...issue, title: e.target.value }),
       Issue_title_onBlur4: () => patch({ title: issue.title }),
-      Status_onChange5: (value: string | null) => (value ? patch({ status: value }) : undefined),
+      Status_onChange5: (value: string | null) =>
+        value ? patch({ workflowStatus: value }) : undefined,
       Type_onChange14: (value: string | null) =>
         patch({ type: value && value !== 'none' ? value : '' }),
       Priority_onChange6: (value: string | null) =>

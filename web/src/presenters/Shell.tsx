@@ -14,16 +14,8 @@ import { actionFromKeyboard } from '../keymap.ts';
 import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
 import { sidebarNavigation } from '../sidebar.ts';
 import { usePersonalPreferences } from '../preferences.ts';
-import type {
-  Cycle,
-  Issue,
-  IssueStatus,
-  IssueTemplate,
-  Label,
-  Project,
-  SearchHit,
-  View,
-} from '../types.ts';
+import type { Cycle, Issue, IssueTemplate, Label, Project, SearchHit, View } from '../types.ts';
+import { useIssueWorkflow, workflowStatusCategory } from '../workflow.tsx';
 
 function slugify(s: string): string {
   return s
@@ -51,6 +43,7 @@ export function useShellPresenter() {
   const navigate = useNavigate();
   const router = useRouter();
   const { preferences } = usePersonalPreferences();
+  const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   useEffect(() => {
     let revision = '';
     let active = true;
@@ -108,7 +101,7 @@ export function useShellPresenter() {
   const createView = overlay === 'view';
   const setCreateView = setOverlay('view');
   const [issueTitle, setIssueTitle] = useState('');
-  const [issueStatus, setIssueStatus] = useState<IssueStatus>('todo');
+  const [issueStatus, setIssueStatus] = useState('todo');
   const [issuePriority, setIssuePriority] = useState(0);
   const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
   const [issueEstimate, setIssueEstimate] = useState('');
@@ -308,8 +301,8 @@ export function useShellPresenter() {
           break;
       }
       if (id.startsWith('set-status-') && currentIdentifier) {
-        const status = id.replace('set-status-', '') as IssueStatus;
-        await api.patchIssue(currentIdentifier, { status });
+        const status = id.replace('set-status-', '');
+        await api.patchIssue(currentIdentifier, { workflowStatus: status });
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
         await navigate({
@@ -474,7 +467,8 @@ export function useShellPresenter() {
     const issue: Issue = await api.createIssue({
       title,
       body: issueBody,
-      status: issueStatus,
+      status: workflowStatusCategory(issueStatus, issueWorkflowStatuses),
+      workflowStatus: issueStatus,
       priority: issuePriority,
       type: issueType || undefined,
       estimate: issueEstimate ? Number(issueEstimate) : null,
@@ -588,6 +582,7 @@ export function useShellPresenter() {
     createView,
     issueTitle,
     issueStatus,
+    issueWorkflowStatuses,
     issuePriority,
     issueType,
     issueEstimate,
@@ -652,7 +647,7 @@ export function useShellPresenter() {
       },
       Issue_status_onChange14: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueStatus(e.target.value as IssueStatus),
+      ) => setIssueStatus(e.target.value),
       Issue_priority_onChange15: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssuePriority(Number(e.target.value)),

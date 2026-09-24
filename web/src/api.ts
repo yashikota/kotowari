@@ -9,6 +9,7 @@ import type {
   IssueLink,
   IssueRelation,
   IssueTemplate,
+  IssueWorkflowStatus,
   Label,
   Page,
   ADR,
@@ -66,6 +67,12 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(body),
     }),
+  issueWorkflowStatuses: () => req<IssueWorkflowStatus[]>('/api/issue-workflow-statuses'),
+  updateIssueWorkflowStatuses: (statuses: IssueWorkflowStatus[]) =>
+    req<IssueWorkflowStatus[]>('/api/issue-workflow-statuses', {
+      method: 'PUT',
+      body: JSON.stringify({ statuses }),
+    }),
   labels: () => req<Label[]>('/api/labels'),
   createLabel: (body: { name: string; color: string }) =>
     req<Label>('/api/labels', { method: 'POST', body: JSON.stringify(body) }),
@@ -115,6 +122,7 @@ export const api = {
     title: string;
     body?: string;
     status?: string;
+    workflowStatus?: string;
     type?: string;
     priority?: number;
     estimate?: number | null;

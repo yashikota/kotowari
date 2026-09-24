@@ -1,11 +1,12 @@
 import { Button, Group, NativeSelect, Popover, Stack, Text, TextInput } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import type { IssueSearch } from '../api.ts';
-import { issueStatusLabel, issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
-import { ISSUE_STATUSES, PROJECT_STATUSES } from '../types.ts';
+import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
+import { PROJECT_STATUSES } from '../types.ts';
 import type { Cycle, Label, Project } from '../types.ts';
 import { LabelChip } from '../mantine-ui.tsx';
 import type { FilterChip } from '../presenters/IssueFilters.tsx';
+import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 
 export function IssueFilterMenu({
   search,
@@ -71,6 +72,7 @@ export function IssueFilterMenu({
   onClear: () => void;
 }) {
   const { t } = useTranslation();
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   const exactDueDate = search.dueDate?.startsWith('on:') ? search.dueDate.slice(3) : '';
   const dueDateValue =
     exactDueDate || search.dueDate === 'custom' ? 'custom' : (search.dueDate ?? '');
@@ -121,9 +123,9 @@ export function IssueFilterMenu({
               onChange={(event) => onStatusChange(event.currentTarget.value)}
               data={[
                 { value: '', label: t('filters.anyStatus') },
-                ...ISSUE_STATUSES.map((status) => ({
-                  value: status,
-                  label: issueStatusLabel(status),
+                ...workflowStatuses.map((status) => ({
+                  value: status.id,
+                  label: workflowStatusLabel(status.id, workflowStatuses),
                 })),
               ]}
             />

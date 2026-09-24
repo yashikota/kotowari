@@ -2,6 +2,7 @@ import { Box, Group, ScrollArea, Text, UnstyledButton } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { isOverdue, localToday } from '../due.ts';
 import type { Issue, IssueStatus } from '../types.ts';
+import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useBoardColumnPresenter } from '../presenters/IssueList.tsx';
 import { IssueLabelPill, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
@@ -9,11 +10,13 @@ import styles from './IssueBoardColumn.module.css';
 
 export type IssueBoardColumnProps = {
   issues: Issue[];
-  status: IssueStatus;
+  status: string;
+  category: IssueStatus;
+  name: string;
   dragId: string | null;
   onDrag: (id: string | null) => void;
   onOpen: (id: string) => void;
-  onMove: (id: string, status: IssueStatus, sortOrder: number) => void;
+  onMove: (id: string, status: string, sortOrder: number) => void;
 };
 
 export function IssueBoardColumn(props: IssueBoardColumnProps) {
@@ -32,11 +35,12 @@ function IssueBoardColumnBinding(props: IssueBoardColumnProps) {
 
 function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColumnPresenter> }) {
   const { t } = useTranslation();
+  const { statuses: workflowStatuses } = useIssueWorkflow();
   switch (model._view) {
     case 0: {
-      const { issues, status, dragId, windowed, handlers } = model;
+      const { issues, status, category, dragId, windowed, handlers } = model;
       const today = localToday();
-      const statusLabel = status.replace('_', ' ');
+      const statusLabel = workflowStatusLabel(status, workflowStatuses);
       return (
         <Box
           component="section"
@@ -47,7 +51,7 @@ function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColu
           onDrop={handlers.onDrop1}
         >
           <Group gap={6} mb="xs" px={4}>
-            <IssueStatusIcon status={status} />
+            <IssueStatusIcon status={category} />
             <Text size="xs" tt="uppercase" c="dimmed" fw={600} lts={0.4}>
               {statusLabel}
             </Text>

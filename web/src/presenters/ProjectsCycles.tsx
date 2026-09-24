@@ -1405,8 +1405,8 @@ export function useCycleDetailPagePresenter() {
         ),
       onBoardOpen: (identifier: string) =>
         navigate({ to: '/issues/$identifier', params: { identifier } }),
-      onBoardMove: async (identifier: string, status: Issue['status'], sortOrder: number) => {
-        await api.patchIssue(identifier, { status, sortOrder });
+      onBoardMove: async (identifier: string, status: string, sortOrder: number) => {
+        await api.patchIssue(identifier, { workflowStatus: status, sortOrder });
         await router.invalidate();
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },
