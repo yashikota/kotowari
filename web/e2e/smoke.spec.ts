@@ -1,6 +1,59 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
 
+test('archive and restore an issue', async ({ page, request }) => {
+  const title = `Archive candidate ${Date.now()}`;
+  await page.goto('/issues');
+  await page.getByRole('tab', { name: 'All issues' }).click();
+  await page.keyboard.press('c');
+  const issueTitle = page.getByPlaceholder('Issue title');
+  await issueTitle.fill(title);
+  await issueTitle.press('ControlOrMeta+Enter');
+  await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
+  await expect(page.getByLabel('Issue title')).toHaveValue(title);
+  const identifier = (
+    await page.getByRole('button', { name: 'Copy identifier' }).textContent()
+  )?.trim();
+  if (!identifier) throw new Error('expected issue identifier in the URL');
+
+  await page.getByRole('button', { name: 'Issue options' }).click();
+  await page.getByRole('menuitem', { name: 'Archive', exact: true }).click();
+  await expect(page.getByText('Archived', { exact: true })).toBeVisible();
+  await expect(page.locator('[inert][aria-disabled="true"]')).toHaveCount(1);
+
+  const activeResponse = await request.get('/api/issues');
+  const activeIssues = (await activeResponse.json()) as { identifier: string }[];
+  expect(activeIssues.some((item) => item.identifier === identifier)).toBe(false);
+  const archivedResponse = await request.get('/api/issues?archived=true');
+  const archivedIssues = (await archivedResponse.json()) as {
+    identifier: string;
+    archivedAt: string | null;
+  }[];
+  expect(archivedIssues).toContainEqual(
+    expect.objectContaining({ identifier, archivedAt: expect.any(String) }),
+  );
+
+  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await page.getByRole('tab', { name: 'Archived' }).click();
+  const archivedIssue = page.getByRole('option', { name: new RegExp(identifier) });
+  await expect(archivedIssue).toBeVisible();
+  await page.goto(`/issues/${identifier}`);
+  await expect(page.getByLabel('Issue title')).toHaveValue(title);
+  await page.getByRole('button', { name: 'Issue options' }).click();
+  await page.getByRole('menuitem', { name: 'Restore', exact: true }).click();
+  await expect(page.getByText('Archived', { exact: true })).toHaveCount(0);
+  await expect(page.locator('[aria-disabled="true"]')).toHaveCount(0);
+  const restoredTitle = page.getByLabel('Issue title');
+  await restoredTitle.fill(`${title} restored`);
+  await restoredTitle.press('Tab');
+  const restoredResponse = await request.get(`/api/issues/${identifier}`);
+  await expect(restoredResponse).toBeOK();
+  await expect(await restoredResponse.json()).toMatchObject({
+    title: `${title} restored`,
+    archivedAt: null,
+  });
+});
+
 test('create issue, comment, and page', async ({ page, request }) => {
   const projectName = `Atlas ${Date.now()}`;
   const projectSlug = projectName

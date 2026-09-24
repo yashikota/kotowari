@@ -64,6 +64,10 @@ describe('issuesQuery', () => {
     );
   });
 
+  it('selects archived issues', () => {
+    expect(issuesQuery({ archived: true })).toBe('?archived=true');
+  });
+
   it('encodes issue date fields and relative or exact timeframes', () => {
     expect(
       issuesQuery({ dateField: 'createdAt', dateRange: 'weekAgo', dateAsOf: '2026-05-15' }),
@@ -77,6 +81,11 @@ describe('issuesQuery', () => {
 describe('parseIssueSearch', () => {
   it('drops empty and invalid values', () => {
     expect(parseIssueSearch({ status: '', cycle: 'nope', priority: '' })).toEqual({});
+  });
+
+  it('accepts only an explicit archived view flag', () => {
+    expect(parseIssueSearch({ archived: 'true' })).toEqual({ archived: true });
+    expect(parseIssueSearch({ archived: 'yes' })).toEqual({});
   });
 
   it('accepts numeric cycle and priority zero', () => {
@@ -209,6 +218,7 @@ describe('searchToFilter', () => {
   it('omits labels when the search has none', () => {
     expect(searchToFilter({})).toEqual({
       status: undefined,
+      archived: undefined,
       project: undefined,
       cycle: undefined,
       labels: undefined,

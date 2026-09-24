@@ -660,6 +660,9 @@
       "clear": "Cancel reminder"
     },
     "descriptionHistory": "Show description history",
+    "archive": "Archive",
+    "restore": "Restore",
+    "archivedBadge": "Archived",
     "delete": "Delete",
     "copySuffix": "copy",
     "deleteConfirmation": "Delete {{identifier}}?"
@@ -894,6 +897,8 @@
     "linkRemoved": "Removed link {{title}}",
     "favoriteAdded": "Added to favorites",
     "favoriteRemoved": "Removed from favorites",
+    "archived": "Archived the issue",
+    "unarchived": "Restored the issue",
     "reminderSet": "Set reminder for {{date}}",
     "reminderCleared": "Canceled reminder",
     "relationAdded": "Added {{relation}} relation to {{identifier}}",
@@ -935,7 +940,8 @@
   "issueViews": {
     "active": "Active",
     "backlog": "Backlog",
-    "all": "All issues"
+    "all": "All issues",
+    "archived": "Archived"
   },
   "documentEditor": {
     "writeMarkdown": "Write markdown…"

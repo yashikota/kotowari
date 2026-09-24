@@ -225,6 +225,9 @@ func (s *Store) LinkIssueADR(issueIdent string, adrNumber int) error {
 		if ii < 0 {
 			return ErrNotFound
 		}
+		if err := ensureIssueActive(m.Issues[ii]); err != nil {
+			return err
+		}
 		ai := indexADR(m, domain.Ident(m.adrPrefix(), adrNumber))
 		if ai < 0 {
 			return ErrNotFound
@@ -245,6 +248,9 @@ func (s *Store) UnlinkIssueADR(issueIdent string, adrNumber int) error {
 		ii := indexIssue(m, issueIdent)
 		if ii < 0 {
 			return ErrNotFound
+		}
+		if err := ensureIssueActive(m.Issues[ii]); err != nil {
+			return err
 		}
 		ai := indexADR(m, domain.Ident(m.adrPrefix(), adrNumber))
 		if ai < 0 {

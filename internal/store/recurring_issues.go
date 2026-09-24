@@ -105,6 +105,10 @@ func (s *Store) CreateRecurringIssue(identifier string, in CreateRecurringIssueI
 		s.mu.Unlock()
 		return RecurringIssue{}, ErrNotFound
 	}
+	if err := ensureIssueActive(issue); err != nil {
+		s.mu.Unlock()
+		return RecurringIssue{}, err
+	}
 	path := filepath.Join(s.root, "TEMPLATE", "RECURRING-"+slug+".md")
 	if _, err := os.Stat(path); err == nil {
 		s.mu.Unlock()

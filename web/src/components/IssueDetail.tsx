@@ -155,22 +155,24 @@ export function IssueDetailView({
               >
                 {copied ? t('ui.copied') : issue.identifier}
               </Button>
-              <ActionIcon
-                type="button"
-                variant="subtle"
-                color={issue.isFavorite ? 'yellow' : 'gray'}
-                aria-label={t(issue.isFavorite ? 'issueFavorite.remove' : 'issueFavorite.add')}
-                aria-pressed={issue.isFavorite}
-                title={t(issue.isFavorite ? 'issueFavorite.remove' : 'issueFavorite.add')}
-                onClick={handlers.Favorite_onClick29}
-              >
-                <IconStar
-                  size={15}
-                  stroke={1.7}
-                  fill={issue.isFavorite ? 'currentColor' : 'none'}
-                  aria-hidden="true"
-                />
-              </ActionIcon>
+              {!issue.archivedAt ? (
+                <ActionIcon
+                  type="button"
+                  variant="subtle"
+                  color={issue.isFavorite ? 'yellow' : 'gray'}
+                  aria-label={t(issue.isFavorite ? 'issueFavorite.remove' : 'issueFavorite.add')}
+                  aria-pressed={issue.isFavorite}
+                  title={t(issue.isFavorite ? 'issueFavorite.remove' : 'issueFavorite.add')}
+                  onClick={handlers.Favorite_onClick29}
+                >
+                  <IconStar
+                    size={15}
+                    stroke={1.7}
+                    fill={issue.isFavorite ? 'currentColor' : 'none'}
+                    aria-hidden="true"
+                  />
+                </ActionIcon>
+              ) : null}
               {issue.parentIdentifier ? (
                 <Button type="button" variant="subtle" onClick={handlers.onClick1}>
                   {issue.parentIdentifier}
@@ -190,6 +192,7 @@ export function IssueDetailView({
                   })}
                 </MetaBadge>
               ) : null}
+              {issue.archivedAt ? <MetaBadge>{t('issueActions.archivedBadge')}</MetaBadge> : null}
             </Group>
             <Menu
               position="bottom-end"
@@ -210,185 +213,233 @@ export function IssueDetailView({
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown aria-label={t('issueActions.button')}>
-                <Menu.Sub>
-                  <Menu.Sub.Target>
-                    <Menu.Sub.Item>{t('issueActions.dueDate.label')}</Menu.Sub.Item>
-                  </Menu.Sub.Target>
-                  <Menu.Sub.Dropdown>
-                    <Menu.Sub.Item onClick={() => handlers.onSetDueDatePreset('tomorrow')}>
-                      {t('issueActions.dueDate.tomorrow')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onSetDueDatePreset('week')}>
-                      {t('issueActions.dueDate.week')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item
-                      disabled={!hasUpcomingCycle}
-                      onClick={() => handlers.onSetDueDatePreset('cycle')}
-                    >
-                      {t('issueActions.dueDate.cycle')}
-                    </Menu.Sub.Item>
+                {!issue.archivedAt ? (
+                  <>
+                    <Menu.Sub>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{t('issueActions.dueDate.label')}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Sub.Item onClick={() => handlers.onSetDueDatePreset('tomorrow')}>
+                          {t('issueActions.dueDate.tomorrow')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onSetDueDatePreset('week')}>
+                          {t('issueActions.dueDate.week')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item
+                          disabled={!hasUpcomingCycle}
+                          onClick={() => handlers.onSetDueDatePreset('cycle')}
+                        >
+                          {t('issueActions.dueDate.cycle')}
+                        </Menu.Sub.Item>
+                        <Menu.Divider />
+                        <Menu.Sub.Item onClick={handlers.onOpenDueDate}>
+                          {t('issueActions.dueDate.custom')}
+                        </Menu.Sub.Item>
+                        {issue.dueDate ? (
+                          <Menu.Sub.Item onClick={handlers.onClearDueDate}>
+                            {t('issueActions.dueDate.clear')}
+                          </Menu.Sub.Item>
+                        ) : null}
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
+                    <Menu.Item onClick={() => handlers.onOpenExternalLink('link')}>
+                      {t('issueActions.addLink')}
+                    </Menu.Item>
+                    <Menu.Item onClick={() => handlers.onOpenExternalLink('pullRequest')}>
+                      {t('issueActions.addPullRequest')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Create_document_onClick44}>
+                      {t('issueActions.addDocument')}
+                    </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Sub.Item onClick={handlers.onOpenDueDate}>
-                      {t('issueActions.dueDate.custom')}
-                    </Menu.Sub.Item>
-                    {issue.dueDate ? (
-                      <Menu.Sub.Item onClick={handlers.onClearDueDate}>
-                        {t('issueActions.dueDate.clear')}
-                      </Menu.Sub.Item>
-                    ) : null}
-                  </Menu.Sub.Dropdown>
-                </Menu.Sub>
-                <Menu.Item onClick={() => handlers.onOpenExternalLink('link')}>
-                  {t('issueActions.addLink')}
-                </Menu.Item>
-                <Menu.Item onClick={() => handlers.onOpenExternalLink('pullRequest')}>
-                  {t('issueActions.addPullRequest')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Create_document_onClick44}>
-                  {t('issueActions.addDocument')}
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Label>{t('issueActions.copy')}</Menu.Label>
-                <Menu.Item onClick={handlers.Copy_id_onClick34}>
-                  {t('issueActions.copyId')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Copy_url_onClick35}>
-                  {t('issueActions.copyUrl')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Copy_title_onClick36}>
-                  {t('issueActions.copyTitle')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Copy_title_link_onClick37}>
-                  {t('issueActions.copyTitleLink')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Copy_issue_markdown_onClick38}>
-                  {t('issueActions.copyIssueMarkdown')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Copy_everything_onClick39}>
-                  {t('issueActions.copyEverything')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Copy_branch_onClick40}>
-                  {t('issueActions.copyBranch')}
-                </Menu.Item>
-                <Menu.Item onClick={handlers.Copy_prompt_onClick41}>
-                  {t('issueActions.copyPrompt')}
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Sub>
-                  <Menu.Sub.Target>
-                    <Menu.Sub.Item>{t('issueActions.createRelated')}</Menu.Sub.Item>
-                  </Menu.Sub.Target>
-                  <Menu.Sub.Dropdown>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('issue')}>
-                      {t('issueActions.related.issue')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('subIssue')}>
-                      {t('issueActions.related.subIssue')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('parent')}>
-                      {t('issueActions.related.parent')}
-                    </Menu.Sub.Item>
+                    <Menu.Label>{t('issueActions.copy')}</Menu.Label>
+                    <Menu.Item onClick={handlers.Copy_id_onClick34}>
+                      {t('issueActions.copyId')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Copy_url_onClick35}>
+                      {t('issueActions.copyUrl')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Copy_title_onClick36}>
+                      {t('issueActions.copyTitle')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Copy_title_link_onClick37}>
+                      {t('issueActions.copyTitleLink')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Copy_issue_markdown_onClick38}>
+                      {t('issueActions.copyIssueMarkdown')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Copy_everything_onClick39}>
+                      {t('issueActions.copyEverything')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Copy_branch_onClick40}>
+                      {t('issueActions.copyBranch')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.Copy_prompt_onClick41}>
+                      {t('issueActions.copyPrompt')}
+                    </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('blocked')}>
-                      {t('issueActions.related.blocked')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('blocking')}>
-                      {t('issueActions.related.blocking')}
-                    </Menu.Sub.Item>
-                  </Menu.Sub.Dropdown>
-                </Menu.Sub>
-                <Menu.Sub>
-                  <Menu.Sub.Target>
-                    <Menu.Sub.Item>{t('issueActions.markAs.label')}</Menu.Sub.Item>
-                  </Menu.Sub.Target>
-                  <Menu.Sub.Dropdown>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('parentOf')}>
-                      {t('issueActions.markAs.parentOf')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('subIssueOf')}>
-                      {t('issueActions.markAs.subIssueOf')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('relatedTo')}>
-                      {t('issueActions.markAs.relatedTo')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('blockedBy')}>
-                      {t('issueActions.markAs.blockedBy')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('blocking')}>
-                      {t('issueActions.markAs.blocking')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('duplicateOf')}>
-                      {t('issueActions.markAs.duplicateOf')}
-                    </Menu.Sub.Item>
-                  </Menu.Sub.Dropdown>
-                </Menu.Sub>
-                <Menu.Divider />
-                <Menu.Sub>
-                  <Menu.Sub.Target>
-                    <Menu.Sub.Item>{t('issueActions.convertTo')}</Menu.Sub.Item>
-                  </Menu.Sub.Target>
-                  <Menu.Sub.Dropdown>
-                    <Menu.Sub.Item onClick={handlers.onOpenConvertToProject}>
-                      {t('issueActions.project')}
-                    </Menu.Sub.Item>
+                    <Menu.Sub>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{t('issueActions.createRelated')}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('issue')}>
+                          {t('issueActions.related.issue')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('subIssue')}>
+                          {t('issueActions.related.subIssue')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('parent')}>
+                          {t('issueActions.related.parent')}
+                        </Menu.Sub.Item>
+                        <Menu.Divider />
+                        <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('blocked')}>
+                          {t('issueActions.related.blocked')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenCreateRelated('blocking')}>
+                          {t('issueActions.related.blocking')}
+                        </Menu.Sub.Item>
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
+                    <Menu.Sub>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{t('issueActions.markAs.label')}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('parentOf')}>
+                          {t('issueActions.markAs.parentOf')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('subIssueOf')}>
+                          {t('issueActions.markAs.subIssueOf')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('relatedTo')}>
+                          {t('issueActions.markAs.relatedTo')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('blockedBy')}>
+                          {t('issueActions.markAs.blockedBy')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('blocking')}>
+                          {t('issueActions.markAs.blocking')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onOpenMarkAs('duplicateOf')}>
+                          {t('issueActions.markAs.duplicateOf')}
+                        </Menu.Sub.Item>
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
                     <Menu.Divider />
-                    <Menu.Sub.Item onClick={handlers.onOpenConvertToTemplate}>
-                      {t('issueActions.template')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={handlers.onOpenRecurringIssue}>
-                      {t('issueActions.recurringIssue')}
-                    </Menu.Sub.Item>
-                  </Menu.Sub.Dropdown>
-                </Menu.Sub>
-                <Menu.Item onClick={handlers.Make_copy_onClick42}>
-                  {t('issueActions.makeCopy')}
-                </Menu.Item>
-                <Menu.Sub>
-                  <Menu.Sub.Target>
-                    <Menu.Sub.Item>{t('issueActions.remindMe')}</Menu.Sub.Item>
-                  </Menu.Sub.Target>
-                  <Menu.Sub.Dropdown>
-                    <Menu.Sub.Item onClick={() => handlers.onSetReminder('hour')}>
-                      {t('issueActions.reminder.hour')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onSetReminder('tomorrow')}>
-                      {t('issueActions.reminder.tomorrow')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onSetReminder('week')}>
-                      {t('issueActions.reminder.week')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item onClick={() => handlers.onSetReminder('month')}>
-                      {t('issueActions.reminder.month')}
-                    </Menu.Sub.Item>
-                    <Menu.Sub.Item
-                      disabled={!cycles.some((cycle) => new Date(cycle.startsAt) > new Date())}
-                      onClick={() => handlers.onSetReminder('cycle')}
-                    >
-                      {t('issueActions.reminder.cycle')}
-                    </Menu.Sub.Item>
+                    <Menu.Sub>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{t('issueActions.convertTo')}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Sub.Item onClick={handlers.onOpenConvertToProject}>
+                          {t('issueActions.project')}
+                        </Menu.Sub.Item>
+                        <Menu.Divider />
+                        <Menu.Sub.Item onClick={handlers.onOpenConvertToTemplate}>
+                          {t('issueActions.template')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={handlers.onOpenRecurringIssue}>
+                          {t('issueActions.recurringIssue')}
+                        </Menu.Sub.Item>
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
+                    <Menu.Item onClick={handlers.Make_copy_onClick42}>
+                      {t('issueActions.makeCopy')}
+                    </Menu.Item>
+                    <Menu.Sub>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{t('issueActions.remindMe')}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Sub.Item onClick={() => handlers.onSetReminder('hour')}>
+                          {t('issueActions.reminder.hour')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onSetReminder('tomorrow')}>
+                          {t('issueActions.reminder.tomorrow')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onSetReminder('week')}>
+                          {t('issueActions.reminder.week')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={() => handlers.onSetReminder('month')}>
+                          {t('issueActions.reminder.month')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item
+                          disabled={!cycles.some((cycle) => new Date(cycle.startsAt) > new Date())}
+                          onClick={() => handlers.onSetReminder('cycle')}
+                        >
+                          {t('issueActions.reminder.cycle')}
+                        </Menu.Sub.Item>
+                        <Menu.Divider />
+                        <Menu.Sub.Item onClick={handlers.onOpenCustomReminder}>
+                          {t('issueActions.reminder.custom')}
+                        </Menu.Sub.Item>
+                        {issue.reminderAt ? (
+                          <Menu.Sub.Item onClick={handlers.onClearReminder}>
+                            {t('issueActions.reminder.clear')}
+                          </Menu.Sub.Item>
+                        ) : null}
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
+                    <Menu.Item onClick={handlers.Show_description_history_onClick50}>
+                      {t('issueActions.descriptionHistory')}
+                    </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Sub.Item onClick={handlers.onOpenCustomReminder}>
-                      {t('issueActions.reminder.custom')}
-                    </Menu.Sub.Item>
-                    {issue.reminderAt ? (
-                      <Menu.Sub.Item onClick={handlers.onClearReminder}>
-                        {t('issueActions.reminder.clear')}
-                      </Menu.Sub.Item>
-                    ) : null}
-                  </Menu.Sub.Dropdown>
-                </Menu.Sub>
-                <Menu.Item onClick={handlers.Show_description_history_onClick50}>
-                  {t('issueActions.descriptionHistory')}
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item color="red" onClick={handlers.onClick2}>
-                  {t('issueActions.delete')}
-                </Menu.Item>
+                    <Menu.Item onClick={handlers.onArchiveIssue}>
+                      {t('issueActions.archive')}
+                    </Menu.Item>
+                    <Menu.Item color="red" onClick={handlers.onClick2}>
+                      {t('issueActions.delete')}
+                    </Menu.Item>
+                  </>
+                ) : (
+                  <>
+                    <Menu.Sub>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{t('issueActions.copy')}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Sub.Item onClick={handlers.Copy_id_onClick34}>
+                          {t('issueActions.copyId')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={handlers.Copy_url_onClick35}>
+                          {t('issueActions.copyUrl')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={handlers.Copy_title_onClick36}>
+                          {t('issueActions.copyTitle')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={handlers.Copy_title_link_onClick37}>
+                          {t('issueActions.copyTitleLink')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={handlers.Copy_issue_markdown_onClick38}>
+                          {t('issueActions.copyIssueMarkdown')}
+                        </Menu.Sub.Item>
+                        <Menu.Sub.Item onClick={handlers.Copy_everything_onClick39}>
+                          {t('issueActions.copyEverything')}
+                        </Menu.Sub.Item>
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
+                    <Menu.Divider />
+                    <Menu.Item onClick={handlers.onArchiveIssue}>
+                      {t('issueActions.restore')}
+                    </Menu.Item>
+                    <Menu.Item color="red" onClick={handlers.onClick2}>
+                      {t('issueActions.delete')}
+                    </Menu.Item>
+                  </>
+                )}
               </Menu.Dropdown>
             </Menu>
           </Group>
 
-          <Grid gap="xl" mt="md">
+          <Grid
+            gap="xl"
+            mt="md"
+            inert={issue.archivedAt ? true : undefined}
+            aria-disabled={issue.archivedAt ? true : undefined}
+            style={issue.archivedAt ? { opacity: 0.72 } : undefined}
+          >
             <Grid.Col span={{ base: 12, md: 9 }}>
               <Stack gap="lg">
                 <TextInput

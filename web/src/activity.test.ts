@@ -50,6 +50,11 @@ describe('formatActivity', () => {
     expect(formatActivity('favorite_changed', { favorite: false })).toBe('Removed from favorites');
   });
 
+  it('describes archive and restore actions', () => {
+    expect(formatActivity('archived', {})).toBe('Archived the issue');
+    expect(formatActivity('unarchived', {})).toBe('Restored the issue');
+  });
+
   it('describes reminder changes', () => {
     expect(formatActivity('reminder_changed', { from: '', to: '2026-09-25T00:30:00Z' })).toMatch(
       /^Set reminder for /,

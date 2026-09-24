@@ -377,6 +377,11 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     await navigate({ to: '/issues', search: {} });
   }
 
+  async function toggleArchive() {
+    await patch({ archived: !issue.archivedAt });
+    await router.invalidate();
+  }
+
   async function copyText(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -718,6 +723,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
           params: { identifier: issue.parentIdentifier ?? '' },
         }),
       onClick2: () => remove(),
+      onArchiveIssue: () => toggleArchive(),
       Issue_title_onChange3: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssue({ ...issue, title: e.target.value }),

@@ -45,6 +45,9 @@ func (s *Store) CreateProjectFromIssue(identifier string, in CreateProjectFromIs
 			return ErrNotFound
 		}
 		issue = m.Issues[issueIndex]
+		if err := ensureIssueActive(issue); err != nil {
+			return err
+		}
 		base := projectSlug(in.Name)
 		if base == "" {
 			base = "project-" + strconv.Itoa(issue.Number)

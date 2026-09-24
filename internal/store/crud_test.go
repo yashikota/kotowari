@@ -90,6 +90,65 @@ func TestIssueTypeAndEstimateRoundTrip(t *testing.T) {
 	}
 }
 
+func TestIssueArchiveLifecycle(t *testing.T) {
+	s := openTest(t)
+	created, err := s.CreateIssue(CreateIssueInput{Title: "archive me"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	archived := true
+	got, err := s.UpdateIssue(created.Identifier, PatchIssueInput{Archived: &archived})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ArchivedAt == nil || *got.ArchivedAt == "" {
+		t.Fatalf("expected archive timestamp, got %#v", got.ArchivedAt)
+	}
+	active, err := s.ListIssues(IssueFilter{})
+	if err != nil || len(active) != 0 {
+		t.Fatalf("active issues = %#v, err = %v", active, err)
+	}
+	archivedIssues, err := s.ListIssues(IssueFilter{Archived: &archived})
+	if err != nil || len(archivedIssues) != 1 || archivedIssues[0].Identifier != created.Identifier {
+		t.Fatalf("archived issues = %#v, err = %v", archivedIssues, err)
+	}
+	title := "should not edit while archived"
+	if _, err := s.UpdateIssue(created.Identifier, PatchIssueInput{Title: &title}); !errors.Is(err, ErrConflict) {
+		t.Fatalf("editing archived issue: %v", err)
+	}
+	if _, err := s.AddComment(created.Identifier, "not allowed"); !errors.Is(err, ErrConflict) {
+		t.Fatalf("commenting on archived issue: %v", err)
+	}
+	if _, err := s.AddIssueLink(created.Identifier, CreateIssueLinkInput{URL: "https://example.test"}); !errors.Is(err, ErrConflict) {
+		t.Fatalf("linking archived issue: %v", err)
+	}
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	persisted, err := reopened.GetIssue(created.Identifier)
+	if err != nil || persisted.ArchivedAt == nil {
+		t.Fatalf("persisted archive = %#v, err = %v", persisted.ArchivedAt, err)
+	}
+	unarchive := false
+	got, err = reopened.UpdateIssue(created.Identifier, PatchIssueInput{Archived: &unarchive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ArchivedAt != nil {
+		t.Fatalf("archive timestamp wasn't cleared: %#v", got.ArchivedAt)
+	}
+	active, err = reopened.ListIssues(IssueFilter{})
+	if err != nil || len(active) != 1 {
+		t.Fatalf("restored active issues = %#v, err = %v", active, err)
+	}
+	activities, err := reopened.ListActivities(created.Identifier)
+	if err != nil || len(activities) != 3 || activities[0].Action != "unarchived" || activities[1].Action != "archived" || activities[2].Action != "created" {
+		t.Fatalf("archive history = %#v, err = %v", activities, err)
+	}
+}
+
 func TestIssueReminderRoundTripAndValidation(t *testing.T) {
 	s := openTest(t)
 	created, err := s.CreateIssue(CreateIssueInput{Title: "remind me"})

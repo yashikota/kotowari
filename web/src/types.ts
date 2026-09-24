@@ -57,6 +57,7 @@ export type Issue = {
   statusChangedAt?: string;
   startedAt?: string | null;
   completedAt: string | null;
+  archivedAt?: string | null;
 };
 
 export type IssueTemplate = {

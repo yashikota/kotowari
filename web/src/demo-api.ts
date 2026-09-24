@@ -468,6 +468,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   if (path === '/api/issues' && method === 'GET') {
     processDemoRecurringIssues();
     let result = [...issues];
+    const archived = url.searchParams.get('archived');
+    result = result.filter((item) => Boolean(item.archivedAt) === (archived === 'true'));
     const status = url.searchParams.get('status');
     const project = url.searchParams.get('project');
     const projectStatus = url.searchParams.get('projectStatus');
@@ -740,6 +742,11 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     if (method === 'PATCH') {
       const previousStatus = item.status;
       const changes = body(init);
+      const wasArchived = Boolean(item.archivedAt);
+      if (wasArchived && changes.archived !== false)
+        return json({ error: 'issue is archived' }, 409);
+      if (wasArchived && Object.keys(changes).some((key) => key !== 'archived'))
+        return json({ error: 'issue is archived' }, 409);
       const previousCycleId = item.cycleId;
       if ('cycleId' in changes && changes.cycleId != null) {
         const cycleId = Number(changes.cycleId);
@@ -747,6 +754,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
           return json({ error: 'cycle not found' }, 400);
       }
       patch(item, changes);
+      if ('archived' in changes)
+        item.archivedAt = changes.archived ? new Date().toISOString() : null;
       if ('cycleId' in changes && Number(changes.cycleId ?? 0) !== previousCycleId) {
         const cycleId = changes.cycleId == null ? null : Number(changes.cycleId);
         item.cycleId = cycleId;

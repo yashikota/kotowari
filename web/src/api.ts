@@ -349,6 +349,7 @@ export function issuesQuery(filter: {
   projectPriority?: number | null;
   projectLabels?: string[] | null;
   addedToCycle?: string[] | null;
+  archived?: boolean;
 }): string {
   const q = new URLSearchParams();
   if (filter.status) {
@@ -388,11 +389,13 @@ export function issuesQuery(filter: {
   if (filter.projectPriority != null) q.set('projectPriority', String(filter.projectPriority));
   if (filter.projectLabels?.length) q.set('projectLabels', filter.projectLabels.join(','));
   if (filter.addedToCycle?.length) q.set('addedToCycle', filter.addedToCycle.join(','));
+  if (filter.archived) q.set('archived', 'true');
   const s = q.toString();
   return s ? `?${s}` : '';
 }
 
 export type IssueSearch = {
+  archived?: boolean;
   status?: string;
   project?: string;
   cycle?: number;
@@ -438,6 +441,7 @@ function localDateValue(date: Date): string {
 
 export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   const out: IssueSearch = {};
+  if (raw.archived === true || raw.archived === 'true') out.archived = true;
   if (typeof raw.status === 'string' && raw.status) {
     out.status = raw.status;
   }
@@ -581,6 +585,7 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
 }
 
 export function searchToFilter(search: IssueSearch): {
+  archived?: boolean;
   status?: string;
   project?: string;
   cycle?: number;
@@ -600,6 +605,7 @@ export function searchToFilter(search: IssueSearch): {
   addedToCycle?: ('planned' | 'during' | 'after')[];
 } {
   return {
+    archived: search.archived,
     status: search.status,
     project: search.project,
     cycle: search.cycle,

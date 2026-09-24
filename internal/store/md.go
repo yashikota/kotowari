@@ -29,6 +29,7 @@ type issueFM struct {
 	Started       *string             `toml:"started_at,omitempty"`
 	Favorite      bool                `toml:"favorite,omitempty"`
 	Completed     *string             `toml:"completed,omitempty"`
+	Archived      *string             `toml:"archived_at,omitempty"`
 	ADRs          []int               `toml:"adrs,omitempty"`
 	Links         []IssueLink         `toml:"links,omitempty"`
 	Relations     []IssueRelation     `toml:"relations,omitempty"`
@@ -138,6 +139,7 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		StatusChangedAt:  fm.StatusChanged,
 		StartedAt:        fm.Started,
 		CompletedAt:      fm.Completed,
+		ArchivedAt:       fm.Archived,
 		ADRNumbers:       fm.ADRs,
 		ExternalLinks:    fm.Links,
 		Relations:        fm.Relations,
@@ -288,6 +290,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		Started:       iss.StartedAt,
 		Favorite:      iss.IsFavorite,
 		Completed:     iss.CompletedAt,
+		Archived:      iss.ArchivedAt,
 		ADRs:          iss.ADRNumbers,
 		Links:         iss.ExternalLinks,
 		Relations:     iss.Relations,

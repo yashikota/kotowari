@@ -7,6 +7,8 @@ export function formatActivity(action: string, payload: Record<string, unknown>)
     const id = typeof payload.identifier === 'string' ? payload.identifier : '';
     return id ? i18n.t('activity.createdWithId', { id }) : i18n.t('activity.created');
   }
+  if (action === 'archived') return i18n.t('activity.archived');
+  if (action === 'unarchived') return i18n.t('activity.unarchived');
   if (action === 'status_changed') {
     const from = typeof payload.from === 'string' ? payload.from : '';
     const to = typeof payload.to === 'string' ? payload.to : '';

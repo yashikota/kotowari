@@ -556,6 +556,14 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 	f := store.IssueFilter{Status: q.Get("status"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
+	if archived := q.Get("archived"); archived != "" {
+		value, err := strconv.ParseBool(archived)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid archived filter"})
+			return
+		}
+		f.Archived = &value
+	}
 	if raw := q.Get("projectLabels"); raw != "" {
 		for _, label := range strings.Split(raw, ",") {
 			if label = strings.TrimSpace(label); label != "" {
@@ -809,6 +817,14 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		in.IsFavorite = &favorite
+	}
+	if v, ok := raw["archived"]; ok {
+		var archived bool
+		if err := json.Unmarshal(v, &archived); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid archived"})
+			return
+		}
+		in.Archived = &archived
 	}
 	out, err := s.store.UpdateIssue(r.PathValue("id"), in)
 	if err != nil {

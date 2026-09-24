@@ -69,6 +69,12 @@ func (s *Store) AddIssueRelation(identifier string, in CreateIssueRelationInput)
 		}
 		from := m.Issues[fromIndex]
 		to := m.Issues[toIndex]
+		if err := ensureIssueActive(from); err != nil {
+			return err
+		}
+		if err := ensureIssueActive(to); err != nil {
+			return err
+		}
 		for _, relation := range from.Relations {
 			if relation.TargetIdentifier == to.Identifier &&
 				(relation.Kind == in.Kind || reverseIssueRelation(relation.Kind) == in.Kind) {
@@ -104,6 +110,9 @@ func (s *Store) RemoveIssueRelation(identifier string, relationID int64) error {
 			return ErrNotFound
 		}
 		from := m.Issues[fromIndex]
+		if err := ensureIssueActive(from); err != nil {
+			return err
+		}
 		relation, ok := removeIssueRelation(&from, relationID)
 		if !ok {
 			return ErrNotFound

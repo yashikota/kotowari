@@ -13,6 +13,23 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
+func ensureIssueActive(issue Issue) error {
+	if issue.ArchivedAt != nil {
+		return errf(ErrConflict, "issue is archived")
+	}
+	return nil
+}
+
+func isRestoreOnlyIssuePatch(in PatchIssueInput) bool {
+	if in.Archived == nil || *in.Archived {
+		return false
+	}
+	return in.Title == nil && in.Body == nil && in.Status == nil && in.Type == nil &&
+		in.Priority == nil && in.Estimate == nil && in.ProjectID == nil && in.MilestoneID == nil &&
+		in.CycleID == nil && in.ParentID == nil && in.DueDate == nil && in.ReminderAt == nil &&
+		in.LabelIDs == nil && in.SortOrder == nil && in.IsFavorite == nil
+}
+
 func (s *Store) Workspace() (Workspace, error) {
 	var ws Workspace
 	err := s.snapshot(func(m *mem) error {
@@ -975,6 +992,12 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	customDueDate := strings.TrimPrefix(f.DueDate, "on:")
 	err := s.snapshot(func(m *mem) error {
 		for _, iss := range m.Issues {
+			if f.Archived == nil && iss.ArchivedAt != nil {
+				continue
+			}
+			if f.Archived != nil && (*f.Archived != (iss.ArchivedAt != nil)) {
+				continue
+			}
 			if f.DateRange != "" {
 				date := ""
 				switch f.DateField {
@@ -1373,10 +1396,14 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			return ErrNotFound
 		}
 		iss := m.Issues[i]
+		if iss.ArchivedAt != nil && !isRestoreOnlyIssuePatch(in) {
+			return errf(ErrConflict, "issue is archived")
+		}
 		oldStatus := iss.Status
 		oldType := iss.Type
 		oldEstimate := iss.Estimate
 		oldFavorite := iss.IsFavorite
+		oldArchived := iss.ArchivedAt != nil
 		oldReminderAt := iss.ReminderAt
 		oldMilestoneID := iss.MilestoneID
 		oldMilestoneName := iss.MilestoneName
@@ -1491,6 +1518,13 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			iss.IsFavorite = *in.IsFavorite
 		}
 		now := domain.Now()
+		if in.Archived != nil && *in.Archived != oldArchived {
+			if *in.Archived {
+				iss.ArchivedAt = &now
+			} else {
+				iss.ArchivedAt = nil
+			}
+		}
 		if !sameInt64(oldCycleID, iss.CycleID) {
 			if iss.CycleID == nil {
 				iss.CycleAddedAt = nil
@@ -1526,6 +1560,13 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		}
 		if in.IsFavorite != nil && oldFavorite != iss.IsFavorite {
 			addActivity(m, "issue", iss.ID, "favorite_changed", map[string]any{"favorite": iss.IsFavorite}, now)
+		}
+		if in.Archived != nil && oldArchived != *in.Archived {
+			action := "archived"
+			if !*in.Archived {
+				action = "unarchived"
+			}
+			addActivity(m, "issue", iss.ID, action, map[string]any{}, now)
 		}
 		if !sameString(oldReminderAt, iss.ReminderAt) {
 			from, to := "", ""
@@ -1623,6 +1664,9 @@ func (s *Store) AddIssueLink(identifier string, in CreateIssueLinkInput) (IssueL
 			return ErrNotFound
 		}
 		iss := m.Issues[i]
+		if err := ensureIssueActive(iss); err != nil {
+			return err
+		}
 		for _, existing := range iss.ExternalLinks {
 			if existing.URL == in.URL {
 				return errf(ErrConflict, "link already exists")
@@ -1656,6 +1700,9 @@ func (s *Store) RemoveIssueLink(identifier string, linkID int64) error {
 			return ErrNotFound
 		}
 		iss := m.Issues[i]
+		if err := ensureIssueActive(iss); err != nil {
+			return err
+		}
 		for index, link := range iss.ExternalLinks {
 			if link.ID != linkID {
 				continue
@@ -1718,6 +1765,9 @@ func (s *Store) AddCommentWithAttachments(identifier, body string, attachments [
 		if !ok {
 			return ErrNotFound
 		}
+		if err := ensureIssueActive(iss); err != nil {
+			return err
+		}
 		now := domain.Now()
 		identifier = iss.Identifier
 		m.commentSeq[identifier]++
@@ -1743,6 +1793,9 @@ func (s *Store) UpdateComment(identifier string, commentID int64, body string) (
 		iss, ok := issueByIdent(m, identifier)
 		if !ok {
 			return ErrNotFound
+		}
+		if err := ensureIssueActive(iss); err != nil {
+			return err
 		}
 		comments := m.Comments[iss.Identifier]
 		for i := range comments {
@@ -1791,6 +1844,9 @@ func (s *Store) ToggleIssueReaction(identifier, emoji string) (Issue, error) {
 			return ErrNotFound
 		}
 		iss := m.Issues[i]
+		if err := ensureIssueActive(iss); err != nil {
+			return err
+		}
 		reactions, added := toggleReaction(iss.Reactions, emoji)
 		iss.Reactions = reactions
 		now := domain.Now()
@@ -1830,6 +1886,9 @@ func (s *Store) AddIssueAttachments(identifier string, attachments []CommentAtta
 			return ErrNotFound
 		}
 		iss := m.Issues[i]
+		if err := ensureIssueActive(iss); err != nil {
+			return err
+		}
 		for _, comment := range m.Comments[iss.Identifier] {
 			for _, attachment := range comment.Attachments {
 				if _, ok := seen[attachment.ID]; ok {
@@ -1861,6 +1920,9 @@ func (s *Store) DeleteIssueAttachment(identifier, attachmentID string) error {
 			return ErrNotFound
 		}
 		iss := m.Issues[i]
+		if err := ensureIssueActive(iss); err != nil {
+			return err
+		}
 		for index, attachment := range iss.Attachments {
 			if attachment.ID != attachmentID {
 				continue
@@ -1894,6 +1956,9 @@ func (s *Store) ToggleCommentReaction(identifier string, commentID int64, emoji 
 		if !ok {
 			return ErrNotFound
 		}
+		if err := ensureIssueActive(iss); err != nil {
+			return err
+		}
 		comments := m.Comments[iss.Identifier]
 		for i := range comments {
 			if comments[i].ID != commentID {
@@ -1926,6 +1991,9 @@ func (s *Store) DeleteComment(identifier string, commentID int64) error {
 		iss, ok := issueByIdent(m, identifier)
 		if !ok {
 			return ErrNotFound
+		}
+		if err := ensureIssueActive(iss); err != nil {
+			return err
 		}
 		comments := m.Comments[iss.Identifier]
 		for i, comment := range comments {
@@ -2213,6 +2281,9 @@ func checkIssueParent(m *mem, issueID int64, parentID *int64) error {
 		iss, ok := issueByID(m, cur)
 		if !ok {
 			return validationf("parent not found")
+		}
+		if err := ensureIssueActive(iss); err != nil {
+			return err
 		}
 		if iss.ParentID == nil {
 			return nil

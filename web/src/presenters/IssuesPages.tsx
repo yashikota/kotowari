@@ -33,6 +33,7 @@ type IssueListData = {
 
 function compactSearch(next: IssueSearch): IssueSearch {
   return parseIssueSearch({
+    archived: next.archived,
     status: next.status ?? '',
     project: next.project ?? '',
     cycle: next.cycle ?? '',
@@ -91,6 +92,7 @@ export function useIssuesPagePresenter() {
     ...DEFAULT_DISPLAY_PROPERTIES,
   ]);
   const [selected, setSelected] = useState<string | null>(null);
+  const activeView: 'active' | 'backlog' | 'all' | 'archived' = search.archived ? 'archived' : view;
 
   async function saveView(name: string, activeSearch: IssueSearch = search) {
     const filter = searchToFilter(activeSearch);
@@ -146,9 +148,9 @@ export function useIssuesPagePresenter() {
   const matchingIssues = (data.issues ?? [])
     .filter((i) => matchesFind(i, find))
     .filter((i) =>
-      view === 'active'
+      activeView === 'active'
         ? i.status === 'todo' || i.status === 'in_progress'
-        : view === 'backlog'
+        : activeView === 'backlog'
           ? i.status === 'backlog'
           : true,
     );
@@ -166,7 +168,7 @@ export function useIssuesPagePresenter() {
     find,
     issues,
     selected: selectedId,
-    view,
+    view: activeView,
     groupBy,
     layout,
     orderBy,
@@ -201,7 +203,18 @@ export function useIssuesPagePresenter() {
         return handle(...args);
       },
       onView4: (next: string | null) => {
-        if (next === 'active' || next === 'backlog' || next === 'all') setView(next);
+        if (next === 'archived') {
+          return navigate({ to: '/issues', search: compactSearch({ ...search, archived: true }) });
+        }
+        if (next === 'active' || next === 'backlog' || next === 'all') {
+          setView(next);
+          if (search.archived) {
+            return navigate({
+              to: '/issues',
+              search: compactSearch({ ...search, archived: false }),
+            });
+          }
+        }
       },
       onGroupBy5: (next: IssueGroupBy) => setGroupBy(next),
       onLayout6: (next: IssueLayout) => setLayout(next),

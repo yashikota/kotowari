@@ -48,6 +48,46 @@ func TestListIssuesEmptyJSONArray(t *testing.T) {
 	}
 }
 
+func TestIssueArchiveAPI(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"archive me"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	var issue struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	archived := doJSON(t, s, http.MethodPatch, "/api/issues/"+issue.Identifier, `{"archived":true}`)
+	if archived.Code != http.StatusOK || !strings.Contains(archived.Body.String(), `"archivedAt":"`) {
+		t.Fatalf("archive issue %d %s", archived.Code, archived.Body.String())
+	}
+	active := doJSON(t, s, http.MethodGet, "/api/issues", "")
+	var activeIssues []map[string]any
+	if err := json.Unmarshal(active.Body.Bytes(), &activeIssues); err != nil || len(activeIssues) != 0 {
+		t.Fatalf("active issues: %s (%v)", active.Body.String(), err)
+	}
+	archiveList := doJSON(t, s, http.MethodGet, "/api/issues?archived=true", "")
+	var archivedIssues []map[string]any
+	if err := json.Unmarshal(archiveList.Body.Bytes(), &archivedIssues); err != nil || len(archivedIssues) != 1 {
+		t.Fatalf("archived issues: %s (%v)", archiveList.Body.String(), err)
+	}
+	edit := doJSON(t, s, http.MethodPatch, "/api/issues/"+issue.Identifier, `{"title":"not allowed"}`)
+	if edit.Code != http.StatusConflict {
+		t.Fatalf("editing archived issue %d %s", edit.Code, edit.Body.String())
+	}
+	unarchive := doJSON(t, s, http.MethodPatch, "/api/issues/"+issue.Identifier, `{"archived":false}`)
+	if unarchive.Code != http.StatusOK || !strings.Contains(unarchive.Body.String(), `"archivedAt":null`) {
+		t.Fatalf("restore issue %d %s", unarchive.Code, unarchive.Body.String())
+	}
+	invalid := doJSON(t, s, http.MethodGet, "/api/issues?archived=sometimes", "")
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid archive filter %d %s", invalid.Code, invalid.Body.String())
+	}
+}
+
 func TestListIssuesByDueDateFilterValidatesAnchor(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"overdue","status":"todo","dueDate":"2026-05-14"}`)

@@ -131,6 +131,7 @@ type Issue struct {
 	StatusChangedAt  string              `json:"statusChangedAt"`
 	StartedAt        *string             `json:"startedAt,omitempty" toml:"started_at,omitempty"`
 	CompletedAt      *string             `json:"completedAt"`
+	ArchivedAt       *string             `json:"archivedAt"`
 }
 
 // IssueLink is a user-managed external resource attached to an issue.
@@ -350,6 +351,7 @@ type IssueFilter struct {
 	ProjectStatus   string
 	ProjectPriority *int
 	IsFavorite      *bool
+	Archived        *bool
 }
 
 type CreateIssueInput struct {
@@ -384,6 +386,7 @@ type PatchIssueInput struct {
 	LabelIDs    *[]int64
 	SortOrder   *float64
 	IsFavorite  *bool
+	Archived    *bool
 }
 
 type CreateViewInput struct {

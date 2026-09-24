@@ -1,7 +1,7 @@
 import { Group, Tabs, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
-export type IssueView = 'active' | 'backlog' | 'all';
+export type IssueView = 'active' | 'backlog' | 'all' | 'archived';
 
 export function IssueViewTabs({
   value,
@@ -17,6 +17,7 @@ export function IssueViewTabs({
     { value: 'active', label: t('issueViews.active') },
     { value: 'backlog', label: t('issueViews.backlog') },
     { value: 'all', label: t('issueViews.all') },
+    { value: 'archived', label: t('issueViews.archived') },
   ];
   return (
     <Group

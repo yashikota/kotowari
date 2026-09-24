@@ -79,6 +79,9 @@ func (s *Store) CreateIssueTemplate(identifier, name string) (IssueTemplate, err
 	if !ok {
 		return IssueTemplate{}, ErrNotFound
 	}
+	if err := ensureIssueActive(issue); err != nil {
+		return IssueTemplate{}, err
+	}
 	path := filepath.Join(s.root, "TEMPLATE", "ISSUE-"+slug+".md")
 	if _, err := os.Stat(path); err == nil {
 		return IssueTemplate{}, errf(ErrConflict, "template name already exists")

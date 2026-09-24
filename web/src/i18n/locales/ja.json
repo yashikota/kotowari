@@ -658,6 +658,9 @@
       "clear": "リマインダーを解除"
     },
     "descriptionHistory": "説明の履歴を表示",
+    "archive": "アーカイブ",
+    "restore": "復元",
+    "archivedBadge": "アーカイブ済み",
     "delete": "削除",
     "copySuffix": "コピー",
     "deleteConfirmation": "{{identifier}} を削除しますか？"
@@ -892,6 +895,8 @@
     "linkRemoved": "リンク {{title}} を削除",
     "favoriteAdded": "お気に入りに追加",
     "favoriteRemoved": "お気に入りから削除",
+    "archived": "イシューをアーカイブ",
+    "unarchived": "イシューを復元",
     "reminderSet": "リマインダーを {{date}} に設定",
     "reminderCleared": "リマインダーを解除",
     "relationAdded": "{{identifier}} と「{{relation}}」の関連を追加",
@@ -932,7 +937,8 @@
   "issueViews": {
     "active": "アクティブ",
     "backlog": "バックログ",
-    "all": "すべてのイシュー"
+    "all": "すべてのイシュー",
+    "archived": "アーカイブ済み"
   },
   "documentEditor": {
     "writeMarkdown": "Markdown を入力…"
