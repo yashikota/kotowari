@@ -35,5 +35,9 @@ declare module '@tanstack/history' {
   interface HistoryState {
     autofocus?: AutofocusTarget;
     issueIds?: string[];
+    issueReturnTo?: string;
+    issueListFind?: string;
+    issueListSelectedId?: string;
+    issueListScrollTop?: number;
   }
 }

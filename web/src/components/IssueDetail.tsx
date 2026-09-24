@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import {
+  Anchor,
   ActionIcon,
   Alert,
   Box,
@@ -76,6 +77,7 @@ export function IssueDetailView({
     case 2: {
       const {
         identifier,
+        issueReturnTo,
         navigationPosition,
         navigationTotal,
         issue,
@@ -149,16 +151,17 @@ export function IssueDetailView({
             style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
           >
             <Group gap="sm">
-              <Link
-                to="/issues"
+              <Anchor
+                href={issueReturnTo}
                 aria-label={t('ui.backToIssues')}
+                data-presenter-action="onReturnToList"
                 style={{
                   color: 'var(--mantine-color-dimmed)',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
                 {t('nav.issues')}
-              </Link>
+              </Anchor>
               <Button
                 type="button"
                 variant="subtle"

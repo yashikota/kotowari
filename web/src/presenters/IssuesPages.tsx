@@ -74,9 +74,10 @@ function slugify(value: string): string {
 export function useIssuesPagePresenter() {
   const data = useLoaderData({ from: '/issues' }) as IssueListData;
   const search = useSearch({ from: '/issues' }) as IssueSearch;
+  const locationState = useRouterState({ select: (state) => state.location.state });
   const navigate = useNavigate();
   const router = useRouter();
-  const [find, setFind] = useState('');
+  const [find, setFind] = useState(locationState.issueListFind ?? '');
   const [view, setView] = useState<'active' | 'backlog' | 'all'>('all');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
   const [layout, setLayout] = useState<IssueLayout>('list');
@@ -96,7 +97,10 @@ export function useIssuesPagePresenter() {
   const [displayProperties, setDisplayProperties] = useState<IssueDisplayProperty[]>([
     ...DEFAULT_DISPLAY_PROPERTIES,
   ]);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(
+    locationState.issueListSelectedId ?? null,
+  );
+  const restoreScrollTop = locationState.issueListScrollTop ?? 0;
   const activeView: 'active' | 'backlog' | 'all' | 'archived' = search.archived ? 'archived' : view;
 
   async function saveView(name: string, activeSearch: IssueSearch = search) {
@@ -189,6 +193,7 @@ export function useIssuesPagePresenter() {
     find,
     issues,
     selected: selectedId,
+    restoreScrollTop,
     view: activeView,
     groupBy,
     layout,
@@ -292,6 +297,15 @@ export function useIssueRoutePagePresenter() {
     identifier,
     issues,
     navigationIds,
+    issueReturnTo:
+      typeof locationState.issueReturnTo === 'string' &&
+      locationState.issueReturnTo.startsWith('/') &&
+      !locationState.issueReturnTo.startsWith('//')
+        ? locationState.issueReturnTo
+        : '/issues',
+    issueListFind: locationState.issueListFind ?? '',
+    issueListSelectedId: locationState.issueListSelectedId ?? null,
+    issueListScrollTop: locationState.issueListScrollTop ?? 0,
     handlers: {
       onSelect0: (
         id: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>[0],
@@ -299,7 +313,13 @@ export function useIssueRoutePagePresenter() {
         navigate({
           to: '/issues/$identifier',
           params: { identifier: id },
-          state: { issueIds: navigationIds },
+          state: {
+            issueIds: navigationIds,
+            issueReturnTo: locationState.issueReturnTo ?? '/issues',
+            issueListFind: locationState.issueListFind ?? '',
+            issueListSelectedId: locationState.issueListSelectedId ?? undefined,
+            issueListScrollTop: locationState.issueListScrollTop ?? 0,
+          },
         }),
     },
   };

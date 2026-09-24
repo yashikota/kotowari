@@ -187,6 +187,17 @@ test('issue detail navigates through the originating list order', async ({ page,
   await rows.nth(1).click();
   await expect(page).toHaveURL(new RegExp(`/issues/${orderedIds[1]}$`));
 
+  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await expect(page).toHaveURL(/\/issues$/);
+  const findInput = page.getByRole('textbox', { name: 'Find issues', exact: true });
+  if ((await findInput.count()) === 0) {
+    await page.getByRole('button', { name: 'Find issues', exact: true }).click();
+  }
+  await expect(findInput).toHaveValue(String(stamp));
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(1)).toHaveAttribute('aria-selected', 'true');
+  await rows.nth(1).click();
+
   const position = page.getByLabel('2 / 3');
   await expect(position).toBeVisible();
   const previous = page.getByRole('button', { name: 'Navigate to previous issue' });

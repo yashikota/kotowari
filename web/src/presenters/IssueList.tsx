@@ -1,6 +1,6 @@
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
@@ -25,6 +25,8 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   openOnSelect?: boolean;
+  find?: string;
+  restoreScrollTop?: number;
   groupBy?: IssueGroupBy;
   orderBy?: IssueOrderBy;
   subGroupBy?: IssueGroupBy;
@@ -39,6 +41,8 @@ export function useIssueListPresenter({
   selectedId,
   onSelect,
   openOnSelect = true,
+  find = '',
+  restoreScrollTop = 0,
   groupBy = 'priority',
   orderBy = 'manual',
   subGroupBy = 'none',
@@ -55,6 +59,7 @@ export function useIssueListPresenter({
     : projectedIssues.filter((issue) => issue.parentId == null);
   const issues = sortIssues(visibleIssues, orderBy, direction);
   const navigate = useNavigate();
+  const issueReturnTo = useRouterState({ select: (state) => state.location.href });
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
   const rows = buildIssueListRows(issues, new Set(collapsedGroups), groupBy, {
     subGroupBy,
@@ -76,6 +81,19 @@ export function useIssueListPresenter({
     (row) => row.kind === 'issue' && row.issue.identifier === selectedId,
   );
   const windowed = useWindowedRows(rows.length, 36, selectedRow);
+
+  useLayoutEffect(() => {
+    const viewport = windowed.ref.current;
+    if (viewport && restoreScrollTop > 0) viewport.scrollTop = restoreScrollTop;
+  }, []);
+
+  const stateForIssue = (activeId: string) => ({
+    issueIds: ids,
+    issueReturnTo,
+    issueListFind: find,
+    issueListSelectedId: activeId,
+    issueListScrollTop: windowed.ref.current?.scrollTop ?? restoreScrollTop,
+  });
 
   useKeyboard((e) => {
     const action = actionFromKeyboard(e);
@@ -106,7 +124,7 @@ export function useIssueListPresenter({
           void navigate({
             to: '/issues/$identifier',
             params: { identifier: id },
-            state: { issueIds: ids },
+            state: stateForIssue(id),
           });
         } else {
           onSelect(id);
@@ -150,7 +168,7 @@ export function useIssueListPresenter({
           return navigate({
             to: '/issues/$identifier',
             params: { identifier: issue.identifier },
-            state: { issueIds: ids },
+            state: stateForIssue(issue.identifier),
           });
         }
       },

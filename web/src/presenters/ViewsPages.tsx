@@ -1,4 +1,10 @@
-import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
+import {
+  useLoaderData,
+  useNavigate,
+  useParams,
+  useRouter,
+  useRouterState,
+} from '@tanstack/react-router';
 import type * as React from 'react';
 import { useState } from 'react';
 import { api, type IssueSearch } from '../api.ts';
@@ -25,9 +31,10 @@ export function useViewPagePresenter() {
     cycles: Cycle[];
     labels: Label[];
   };
+  const locationState = useRouterState({ select: (state) => state.location.state });
   const router = useRouter();
   const navigate = useNavigate();
-  const [find, setFind] = useState('');
+  const [find, setFind] = useState(locationState.issueListFind ?? '');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>(
     (data.view.groupBy || 'priority') as IssueGroupBy,
   );
@@ -52,7 +59,10 @@ export function useViewPagePresenter() {
     (view.completedIssues || 'all') as CompletedIssuesFilter,
     data.cycles,
   );
-  const [selected, setSelected] = useState<string | null>(issues[0]?.identifier ?? null);
+  const [selected, setSelected] = useState<string | null>(
+    locationState.issueListSelectedId ?? issues[0]?.identifier ?? null,
+  );
+  const restoreScrollTop = locationState.issueListScrollTop ?? 0;
 
   if (view.slug !== data.view.slug || view.updatedAt !== data.view.updatedAt) {
     setView(data.view);
@@ -120,6 +130,7 @@ export function useViewPagePresenter() {
     issues,
     view,
     selected,
+    restoreScrollTop,
     search,
     find,
     groupBy,

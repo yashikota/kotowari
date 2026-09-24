@@ -27,6 +27,7 @@ export function ViewPageView({
         selected,
         search,
         find,
+        restoreScrollTop,
         groupBy,
         orderBy,
         subGroupBy,
@@ -117,6 +118,8 @@ export function ViewPageView({
                     issues={issues}
                     selectedId={selected}
                     onSelect={handlers.onSelect11}
+                    find={find}
+                    restoreScrollTop={restoreScrollTop}
                     groupBy={groupBy}
                     orderBy={orderBy}
                     subGroupBy={subGroupBy}

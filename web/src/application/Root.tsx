@@ -291,6 +291,16 @@ export function Root({
               ? event.target.closest<HTMLAnchorElement>('a[href]')
               : null;
           if (!link || link.target || link.hasAttribute('download')) return;
+          const action = link.dataset.presenterAction;
+          const scope =
+            mediator.scopes.get(
+              link.closest('[data-presenter]')?.getAttribute('data-presenter') ?? '',
+            ) ?? mediator.root;
+          if (action) {
+            event.preventDefault();
+            mediator.dispatch(scope, action, []);
+            return;
+          }
           const url = new URL(link.href);
           if (
             url.origin !== location.origin ||
@@ -299,10 +309,6 @@ export function Root({
           )
             return;
           event.preventDefault();
-          const scope =
-            mediator.scopes.get(
-              link.closest('[data-presenter]')?.getAttribute('data-presenter') ?? '',
-            ) ?? mediator.root;
           mediator.dispatch(scope, 'navigate', url.pathname + url.search + url.hash);
         }}
       >

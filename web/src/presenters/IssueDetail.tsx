@@ -38,9 +38,20 @@ type MarkAsKind =
 type Props = {
   identifier: string;
   navigationIds?: string[];
+  issueReturnTo?: string;
+  issueListFind?: string;
+  issueListSelectedId?: string | null;
+  issueListScrollTop?: number;
 };
 
-export function useIssueDetailPresenter({ identifier, navigationIds = [] }: Props) {
+export function useIssueDetailPresenter({
+  identifier,
+  navigationIds = [],
+  issueReturnTo = '/issues',
+  issueListFind = '',
+  issueListSelectedId = null,
+  issueListScrollTop = 0,
+}: Props) {
   const sendIntent = useIntent();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { preferences } = usePersonalPreferences();
@@ -652,6 +663,7 @@ export function useIssueDetailPresenter({ identifier, navigationIds = [] }: Prop
     identifier,
     navigationPosition: navigationIndex >= 0 ? navigationIndex + 1 : 1,
     navigationTotal: navigationIds.length,
+    issueReturnTo,
     issue,
     issues,
     comments,
@@ -727,13 +739,26 @@ export function useIssueDetailPresenter({ identifier, navigationIds = [] }: Prop
     linkedAdrs,
     unlinkedAdrs,
     handlers: {
+      onReturnToList: () => {
+        return router.history.push(issueReturnTo, {
+          issueListFind,
+          issueListSelectedId: issueListSelectedId ?? undefined,
+          issueListScrollTop,
+        });
+      },
       onNavigatePrevious: () => {
         const previousId = navigationIds[navigationIndex - 1];
         if (previousId) {
           return navigate({
             to: '/issues/$identifier',
             params: { identifier: previousId },
-            state: { issueIds: navigationIds },
+            state: {
+              issueIds: navigationIds,
+              issueReturnTo,
+              issueListFind,
+              issueListSelectedId: issueListSelectedId ?? undefined,
+              issueListScrollTop,
+            },
           });
         }
       },
@@ -743,7 +768,13 @@ export function useIssueDetailPresenter({ identifier, navigationIds = [] }: Prop
           return navigate({
             to: '/issues/$identifier',
             params: { identifier: nextId },
-            state: { issueIds: navigationIds },
+            state: {
+              issueIds: navigationIds,
+              issueReturnTo,
+              issueListFind,
+              issueListSelectedId: issueListSelectedId ?? undefined,
+              issueListScrollTop,
+            },
           });
         }
       },

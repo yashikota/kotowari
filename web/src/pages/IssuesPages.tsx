@@ -23,6 +23,7 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         search,
         find,
         issues,
+        restoreScrollTop,
         selected,
         view,
         groupBy,
@@ -115,6 +116,8 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
                 issues={issues}
                 selectedId={selected}
                 onSelect={handlers.onSelect3}
+                find={find}
+                restoreScrollTop={restoreScrollTop}
                 groupBy={groupBy}
                 orderBy={orderBy}
                 subGroupBy={subGroupBy}
@@ -167,10 +170,24 @@ export function IssueRoutePageView({
 }) {
   switch (model._view) {
     case 0: {
-      const { identifier, navigationIds } = model;
+      const {
+        identifier,
+        navigationIds,
+        issueReturnTo,
+        issueListFind,
+        issueListSelectedId,
+        issueListScrollTop,
+      } = model;
       return (
         <Box h="100%" style={{ overflow: 'auto' }}>
-          <IssueDetail identifier={identifier} navigationIds={navigationIds} />
+          <IssueDetail
+            identifier={identifier}
+            navigationIds={navigationIds}
+            issueReturnTo={issueReturnTo}
+            issueListFind={issueListFind}
+            issueListSelectedId={issueListSelectedId}
+            issueListScrollTop={issueListScrollTop}
+          />
         </Box>
       );
     }
