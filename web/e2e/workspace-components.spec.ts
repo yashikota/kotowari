@@ -1598,6 +1598,56 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   );
 });
 
+test('cycle issues can be filtered in the URL and displayed as a board', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/cycles', {
+    data: {
+      startsAt: '2034-02-01T00:00:00Z',
+      endsAt: '2034-02-14T00:00:00Z',
+      status: 'active',
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const cycle = (await created.json()) as { id: number; number: number };
+  const inProgressTitle = `Cycle in progress ${cycle.number}`;
+  const todoTitle = `Cycle todo ${cycle.number}`;
+  for (const [title, status] of [
+    [inProgressTitle, 'in_progress'],
+    [todoTitle, 'todo'],
+  ]) {
+    const issue = await request.post('/api/issues', {
+      data: { title, status, cycleId: cycle.id },
+    });
+    expect(issue.ok()).toBeTruthy();
+  }
+
+  await page.goto(`/cycles/${cycle.number}`);
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(inProgressTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(todoTitle) })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Filter', exact: true }).click();
+  await page.getByLabel('Filter status').selectOption('in_progress');
+  await expect(page).toHaveURL(new RegExp(`/cycles/${cycle.number}\\?status=in_progress$`));
+  await expect(issueList.getByRole('option', { name: new RegExp(inProgressTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(todoTitle) })).toHaveCount(0);
+  await expect(
+    page.getByRole('region', { name: 'Progress' }).getByText('2', { exact: true }),
+  ).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Ordering', { exact: true }).selectOption('title');
+  await page
+    .getByRole('radiogroup', { name: 'Layout' })
+    .getByText('Board', { exact: true })
+    .click();
+  await expect(page.getByRole('radio', { name: 'Board' })).toBeChecked();
+  await expect(page.getByRole('button', { name: new RegExp(inProgressTitle) })).toBeVisible();
+});
+
 test('cycle details add, open, and remove documents and links', async ({ page, request }) => {
   const stamp = Date.now();
   const created = await request.post('/api/cycles', {

@@ -7,12 +7,22 @@ import {
 } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useMemo, useState } from 'react';
-import { api } from '../api.ts';
+import { api, type IssueSearch } from '../api.ts';
 import { useIntent } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleIssuesCSV } from '../cycle-export.ts';
 import { IssueList } from '../components/IssueList.tsx';
+import {
+  DEFAULT_DISPLAY_PROPERTIES,
+  filterCompletedIssues,
+  includeNestedIssueMatches,
+  type CompletedIssuesFilter,
+  type IssueDisplayProperty,
+  type IssueGroupBy,
+  type IssueLayout,
+  type IssueOrderBy,
+} from '../issue-list.ts';
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
 import type { ProjectBoardModel } from '../components/ProjectBoardView.tsx';
 import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
@@ -1100,19 +1110,44 @@ export function useCyclesPagePresenter() {
 
 export function useCycleDetailPagePresenter() {
   const sendIntent = useIntent();
+  const search = useSearch({ from: '/cycles/$number' }) as IssueSearch;
   const data = useLoaderData({ from: '/cycles/$number' }) as {
     cycle: Cycle;
     issues: Issue[];
+    cycleIssues: Issue[];
     pages: Page[];
+    projects: Project[];
+    cycles: Cycle[];
+    labels: Label[];
   };
   const router = useRouter();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [cycle, setCycle] = useState(data.cycle);
-  const started = data.issues.filter((i) => i.status === 'in_progress').length;
-  const done = data.issues.filter((i) => i.status === 'done' || i.status === 'canceled').length;
-  const startedPercent = data.issues.length ? Math.round((started / data.issues.length) * 100) : 0;
-  const completionPercent = data.issues.length ? Math.round((done / data.issues.length) * 100) : 0;
+  const started = data.cycleIssues.filter((i) => i.status === 'in_progress').length;
+  const done = data.cycleIssues.filter(
+    (i) => i.status === 'done' || i.status === 'canceled',
+  ).length;
+  const startedPercent = data.cycleIssues.length
+    ? Math.round((started / data.cycleIssues.length) * 100)
+    : 0;
+  const completionPercent = data.cycleIssues.length
+    ? Math.round((done / data.cycleIssues.length) * 100)
+    : 0;
+  const [groupBy, setGroupBy] = useState<IssueGroupBy>('status');
+  const [layout, setLayout] = useState<IssueLayout>('list');
+  const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
+  const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
+  const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
+  const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');
+  const [showSubIssues, setShowSubIssues] = useState(true);
+  const [nestedSubIssues, setNestedSubIssues] = useState<'showMatching' | 'showAll'>(
+    'showMatching',
+  );
+  const [showEmptyGroups, setShowEmptyGroups] = useState(false);
+  const [displayProperties, setDisplayProperties] = useState<IssueDisplayProperty[]>([
+    ...DEFAULT_DISPLAY_PROPERTIES,
+  ]);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
   const [resourceLinkOpen, setResourceLinkOpen] = useState(false);
@@ -1129,6 +1164,15 @@ export function useCycleDetailPagePresenter() {
     setCycle(data.cycle);
     setSelected(null);
   }
+
+  const matchingIssues = search.cycle != null && search.cycle !== cycle.number ? [] : data.issues;
+  const issues = filterCompletedIssues(
+    includeNestedIssueMatches(matchingIssues, data.issues, nestedSubIssues),
+    completedIssues,
+    data.cycles,
+  );
+  const selectedId =
+    selected && issues.some((issue) => issue.identifier === selected) ? selected : null;
 
   async function save(body: Record<string, unknown>) {
     const next = await api.patchCycle(cycle.number, body);
@@ -1249,13 +1293,25 @@ export function useCycleDetailPagePresenter() {
   return {
     _view: 0 as const,
     data,
-    selected,
+    issues,
+    search,
+    selected: selectedId,
     cycle,
     resources,
     started,
     startedPercent,
     done,
     completionPercent,
+    groupBy,
+    layout,
+    orderBy,
+    subGroupBy,
+    direction,
+    completedIssues,
+    showSubIssues,
+    nestedSubIssues,
+    showEmptyGroups,
+    displayProperties,
     metadataOpen,
     datesOpen,
     resourceLinkOpen,
@@ -1273,6 +1329,34 @@ export function useCycleDetailPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ status: e.target.value }),
       onClick1: () => sendIntent('issue.create', { cycleId: cycle.id }),
+      onFilterChange: (next: IssueSearch) =>
+        navigate({
+          to: '/cycles/$number',
+          params: { number: String(cycle.number) },
+          search: next,
+        }),
+      onGroupBy: (next: IssueGroupBy) => setGroupBy(next),
+      onLayout: (next: IssueLayout) => setLayout(next),
+      onOrderBy: (next: IssueOrderBy) => setOrderBy(next),
+      onSubGroupBy: (next: IssueGroupBy) => setSubGroupBy(next),
+      onDirection: (next: 'asc' | 'desc') => setDirection(next),
+      onCompletedIssues: (next: CompletedIssuesFilter) => setCompletedIssues(next),
+      onShowSubIssues: (next: boolean) => setShowSubIssues(next),
+      onNestedSubIssues: (next: 'showMatching' | 'showAll') => setNestedSubIssues(next),
+      onShowEmptyGroups: (next: boolean) => setShowEmptyGroups(next),
+      onDisplayPropertyToggle: (property: IssueDisplayProperty) =>
+        setDisplayProperties((current) =>
+          current.includes(property)
+            ? current.filter((item) => item !== property)
+            : [...current, property],
+        ),
+      onBoardOpen: (identifier: string) =>
+        navigate({ to: '/issues/$identifier', params: { identifier } }),
+      onBoardMove: async (identifier: string, status: Issue['status'], sortOrder: number) => {
+        await api.patchIssue(identifier, { status, sortOrder });
+        await router.invalidate();
+        signals.dispatchEvent(new Event('kotowari:refresh'));
+      },
       onOpenMetadata: () => {
         setNameDraft(cycle.name ?? `Cycle ${cycle.number}`);
         setDescriptionDraft(cycle.description ?? '');

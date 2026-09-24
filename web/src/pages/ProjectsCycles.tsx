@@ -17,7 +17,8 @@ import {
 import { IconExternalLink, IconFileText, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
-import { IssueList } from '../components/IssueList.tsx';
+import { IssueBoard, IssueList } from '../components/IssueList.tsx';
+import { IssueFilters } from '../components/IssueFilters.tsx';
 import { CycleListItem, CycleStatusHeading } from '../components/CycleListItem.tsx';
 import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
@@ -957,6 +958,8 @@ export function CycleDetailPageView({
     case 0: {
       const {
         data,
+        issues,
+        search,
         selected,
         cycle,
         resources,
@@ -976,6 +979,16 @@ export function CycleDetailPageView({
         startDateDraft,
         endDateDraft,
         datesValid,
+        groupBy,
+        layout,
+        orderBy,
+        subGroupBy,
+        direction,
+        completedIssues,
+        showSubIssues,
+        nestedSubIssues,
+        showEmptyGroups,
+        displayProperties,
         handlers,
       } = model;
       return (
@@ -1044,16 +1057,62 @@ export function CycleDetailPageView({
                   style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
                 >
                   <Text size="sm" c="dimmed">
-                    {t('cycle.issuesCount', { count: data.issues.length })}
+                    {t('cycle.issuesCount', { count: issues.length })}
                   </Text>
                 </Group>
+                <IssueFilters
+                  search={search}
+                  projects={data.projects}
+                  cycles={data.cycles}
+                  labels={data.labels}
+                  onChange={handlers.onFilterChange}
+                  groupBy={groupBy}
+                  onGroupBy={handlers.onGroupBy}
+                  layout={layout}
+                  onLayout={handlers.onLayout}
+                  orderBy={orderBy}
+                  onOrderBy={handlers.onOrderBy}
+                  subGroupBy={subGroupBy}
+                  onSubGroupBy={handlers.onSubGroupBy}
+                  direction={direction}
+                  onDirection={handlers.onDirection}
+                  completedIssues={completedIssues}
+                  onCompletedIssues={handlers.onCompletedIssues}
+                  showSubIssues={showSubIssues}
+                  onShowSubIssues={handlers.onShowSubIssues}
+                  nestedSubIssues={nestedSubIssues}
+                  onNestedSubIssues={handlers.onNestedSubIssues}
+                  showEmptyGroups={showEmptyGroups}
+                  onShowEmptyGroups={handlers.onShowEmptyGroups}
+                  displayProperties={displayProperties}
+                  onDisplayPropertyToggle={handlers.onDisplayPropertyToggle}
+                />
                 <Box style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-                  <IssueList
-                    issues={data.issues}
-                    selectedId={selected}
-                    onSelect={handlers.onSelect2}
-                    groupBy="status"
-                  />
+                  {layout === 'list' ? (
+                    <IssueList
+                      issues={issues}
+                      selectedId={selected}
+                      onSelect={handlers.onSelect2}
+                      groupBy={groupBy}
+                      orderBy={orderBy}
+                      subGroupBy={subGroupBy}
+                      direction={direction}
+                      showEmptyGroups={showEmptyGroups}
+                      showSubIssues={showSubIssues}
+                      displayProperties={displayProperties}
+                    />
+                  ) : (
+                    <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                      <IssueBoard
+                        issues={issues}
+                        orderBy={orderBy}
+                        direction={direction}
+                        showSubIssues={showSubIssues}
+                        onOpen={handlers.onBoardOpen}
+                        onMove={handlers.onBoardMove}
+                      />
+                    </Box>
+                  )}
                 </Box>
               </Pane>
               <Pane variant="detail">
@@ -1078,7 +1137,7 @@ export function CycleDetailPageView({
                     </Group>
                   </Stack>
                   <CycleProgressSummary
-                    scope={data.issues.length}
+                    scope={data.cycleIssues.length}
                     started={started}
                     startedPercent={startedPercent}
                     completed={done}
