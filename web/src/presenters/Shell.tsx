@@ -14,7 +14,16 @@ import { actionFromKeyboard } from '../keymap.ts';
 import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
 import { sidebarNavigation } from '../sidebar.ts';
 import { usePersonalPreferences } from '../preferences.ts';
-import type { Cycle, Issue, IssueTemplate, Label, Project, SearchHit, View } from '../types.ts';
+import type {
+  Cycle,
+  Issue,
+  IssueLink,
+  IssueTemplate,
+  Label,
+  Project,
+  SearchHit,
+  View,
+} from '../types.ts';
 import { useIssueWorkflow, workflowStatusCategory } from '../workflow.tsx';
 
 function slugify(s: string): string {
@@ -107,6 +116,12 @@ export function useShellPresenter() {
   const [issueEstimate, setIssueEstimate] = useState('');
   const [issueBody, setIssueBody] = useState('');
   const [issueDueDate, setIssueDueDate] = useState('');
+  const [issueExternalLinks, setIssueExternalLinks] = useState<
+    Pick<IssueLink, 'url' | 'title' | 'kind'>[]
+  >([]);
+  const [issueLinkOpen, setIssueLinkOpen] = useState(false);
+  const [issueLinkURL, setIssueLinkURL] = useState('');
+  const [issueLinkTitle, setIssueLinkTitle] = useState('');
   const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
   const [issueParentId, setIssueParentId] = useState<number | undefined>();
   const [issueParentIdentifier, setIssueParentIdentifier] = useState('');
@@ -493,7 +508,7 @@ export function useShellPresenter() {
 
   async function submitIssue() {
     const title = issueTitle.trim();
-    if (!title || issueParentLoading) {
+    if (!title || issueParentLoading || issueLinkOpen) {
       return;
     }
     const issue: Issue = await api.createIssue({
@@ -511,10 +526,15 @@ export function useShellPresenter() {
         .map((label) => label.id),
       dueDate: issueDueDate || undefined,
       parentId: issueParentId,
+      links: issueExternalLinks,
     });
     setIssueTitle('');
     setIssueBody('');
     setIssueDueDate('');
+    setIssueExternalLinks([]);
+    setIssueLinkOpen(false);
+    setIssueLinkURL('');
+    setIssueLinkTitle('');
     setIssueParentId(undefined);
     setIssueParentIdentifier('');
     setIssueParentQuery('');
@@ -628,6 +648,10 @@ export function useShellPresenter() {
     issueEstimate,
     issueBody,
     issueDueDate,
+    issueExternalLinks,
+    issueLinkOpen,
+    issueLinkURL,
+    issueLinkTitle,
     issueParentIdentifier,
     issueParentQuery,
     issueParentLoading,
@@ -727,6 +751,36 @@ export function useShellPresenter() {
       Issue_dueDate_onChange35: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssueDueDate(e.target.value),
+      onOpenIssueLink: () => {
+        setIssueLinkURL('');
+        setIssueLinkTitle('');
+        setIssueLinkOpen(true);
+      },
+      onCloseIssueLink: () => setIssueLinkOpen(false),
+      onIssueLinkURLChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setIssueLinkURL(e.target.value),
+      onIssueLinkTitleChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setIssueLinkTitle(e.target.value),
+      onAddIssueLink: (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const url = issueLinkURL.trim();
+        if (!url || issueExternalLinks.some((link) => link.url === url)) return;
+        setIssueExternalLinks((current) => [
+          ...current,
+          {
+            url,
+            ...(issueLinkTitle.trim() ? { title: issueLinkTitle.trim() } : {}),
+            kind: 'link' as const,
+          },
+        ]);
+        setIssueLinkOpen(false);
+        setIssueLinkURL('');
+        setIssueLinkTitle('');
+      },
+      onRemoveIssueLink: (url: string) =>
+        setIssueExternalLinks((current) => current.filter((link) => link.url !== url)),
       Issue_parentSearch_onChange36: (value: string) => setIssueParentQuery(value),
       Issue_parent_onChange37: (identifier: string | null) => {
         const lookupVersion = ++parentLookupVersion.current;

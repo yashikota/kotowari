@@ -478,7 +478,7 @@ export function ShellView({
                 <Button
                   type="button"
                   onClick={handlers.submitIssue}
-                  disabled={model.issueParentLoading}
+                  disabled={model.issueParentLoading || model.issueLinkOpen}
                 >
                   {t('modal.create')}
                 </Button>
@@ -584,7 +584,80 @@ export function ShellView({
                 onSearchChange={handlers.Issue_parentSearch_onChange36}
                 onChange={handlers.Issue_parent_onChange37}
               />
+              <Stack gap="xs">
+                <Group justify="space-between">
+                  <Text size="sm" fw={500}>
+                    {t('issueLinks.heading')}
+                  </Text>
+                  <Button type="button" variant="subtle" onClick={handlers.onOpenIssueLink}>
+                    {t('issueActions.addLink')}
+                  </Button>
+                </Group>
+                <Box role="list">
+                  {model.issueExternalLinks.map((link) => {
+                    const title = link.title || link.url;
+                    return (
+                      <Group key={link.url} justify="space-between" wrap="nowrap" role="listitem">
+                        <Stack gap={0} style={{ minWidth: 0 }}>
+                          <Text size="sm" truncate>
+                            {title}
+                          </Text>
+                          <Text size="xs" c="dimmed" truncate>
+                            {link.url}
+                          </Text>
+                        </Stack>
+                        <Button
+                          type="button"
+                          variant="subtle"
+                          size="compact-sm"
+                          aria-label={t('issueLinks.remove', { title })}
+                          onClick={() => handlers.onRemoveIssueLink(link.url)}
+                        >
+                          {t('issueLinks.remove', { title })}
+                        </Button>
+                      </Group>
+                    );
+                  })}
+                </Box>
+              </Stack>
             </Stack>
+          </Modal>
+
+          <Modal
+            opened={createIssue && model.issueLinkOpen}
+            onClose={handlers.onCloseIssueLink}
+            title={t('issueActions.addResourceTitle', { kind: t('issueLinks.link') })}
+            centered
+            autoFocus={false}
+          >
+            <Box component="form" onSubmit={handlers.onAddIssueLink}>
+              <Stack>
+                <TextInput
+                  type="url"
+                  required
+                  aria-label={t('issueLinks.url')}
+                  label={t('issueLinks.url')}
+                  placeholder={t('issueLinks.urlPlaceholder')}
+                  value={model.issueLinkURL}
+                  onChange={handlers.onIssueLinkURLChange}
+                />
+                <TextInput
+                  aria-label={t('issueLinks.title')}
+                  label={t('issueLinks.title')}
+                  placeholder={t('issueLinks.titlePlaceholder')}
+                  value={model.issueLinkTitle}
+                  onChange={handlers.onIssueLinkTitleChange}
+                />
+                <Group justify="flex-end">
+                  <Button type="button" variant="default" onClick={handlers.onCloseIssueLink}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={!model.issueLinkURL.trim()}>
+                    {t('issueLinks.add')}
+                  </Button>
+                </Group>
+              </Stack>
+            </Box>
           </Modal>
 
           <Modal

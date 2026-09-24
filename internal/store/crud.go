@@ -1473,6 +1473,21 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		return Issue{}, validationf("invalid estimate")
 	}
 	now := domain.Now()
+	externalLinks := make([]IssueLink, 0, len(in.ExternalLinks))
+	seenLinks := make(map[string]struct{}, len(in.ExternalLinks))
+	for index, input := range in.ExternalLinks {
+		link, err := normalizeIssueLink(input)
+		if err != nil {
+			return Issue{}, err
+		}
+		if _, exists := seenLinks[link.URL]; exists {
+			return Issue{}, errf(ErrConflict, "link already exists")
+		}
+		seenLinks[link.URL] = struct{}{}
+		externalLinks = append(externalLinks, IssueLink{
+			ID: int64(index + 1), URL: link.URL, Title: link.Title, Kind: link.Kind, CreatedAt: now,
+		})
+	}
 	if strings.TrimSpace(in.Body) == "" {
 		in.Body = templateBody(s.root, "ISSUE.md", "")
 	}
@@ -1506,7 +1521,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
 			Status: workflowState.Category, WorkflowStatus: workflowState.ID, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
 			DueDate: in.DueDate, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
-			StartedAt: startedAt, CompletedAt: completedAt(workflowState.Category, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{}, Reactions: []string{}, Attachments: []CommentAttachment{},
+			StartedAt: startedAt, CompletedAt: completedAt(workflowState.Category, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: externalLinks, Relations: []IssueRelation{}, Reactions: []string{}, Attachments: []CommentAttachment{},
 		}
 		if in.MilestoneID != nil {
 			p, milestone, ok := milestoneByID(m, *in.MilestoneID)
@@ -1829,18 +1844,10 @@ func (s *Store) DeleteIssue(identifier string) error {
 }
 
 func (s *Store) AddIssueLink(identifier string, in CreateIssueLinkInput) (IssueLink, error) {
-	in.URL = strings.TrimSpace(in.URL)
-	in.Title = strings.TrimSpace(in.Title)
-	in.Kind = strings.TrimSpace(in.Kind)
-	parsed, err := url.Parse(in.URL)
-	if err != nil || !parsed.IsAbs() || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
-		return IssueLink{}, validationf("link URL must be an absolute http or https URL")
-	}
-	if in.Kind == "" {
-		in.Kind = "link"
-	}
-	if in.Kind != "link" && in.Kind != "pullRequest" && in.Kind != "document" {
-		return IssueLink{}, validationf("invalid link kind")
+	var err error
+	in, err = normalizeIssueLink(in)
+	if err != nil {
+		return IssueLink{}, err
 	}
 	var out IssueLink
 	err = s.mutate(func(m *mem) error {
@@ -1873,6 +1880,23 @@ func (s *Store) AddIssueLink(identifier string, in CreateIssueLinkInput) (IssueL
 		return nil
 	})
 	return out, err
+}
+
+func normalizeIssueLink(in CreateIssueLinkInput) (CreateIssueLinkInput, error) {
+	in.URL = strings.TrimSpace(in.URL)
+	in.Title = strings.TrimSpace(in.Title)
+	in.Kind = strings.TrimSpace(in.Kind)
+	parsed, err := url.Parse(in.URL)
+	if err != nil || !parsed.IsAbs() || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return CreateIssueLinkInput{}, validationf("link URL must be an absolute http or https URL")
+	}
+	if in.Kind == "" {
+		in.Kind = "link"
+	}
+	if in.Kind != "link" && in.Kind != "pullRequest" && in.Kind != "document" {
+		return CreateIssueLinkInput{}, validationf("invalid link kind")
+	}
+	return in, nil
 }
 
 func (s *Store) RemoveIssueLink(identifier string, linkID int64) error {

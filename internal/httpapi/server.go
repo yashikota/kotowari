@@ -726,19 +726,20 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Title          string  `json:"title"`
-		Body           string  `json:"body"`
-		Status         string  `json:"status"`
-		WorkflowStatus string  `json:"workflowStatus"`
-		Type           string  `json:"type"`
-		Priority       int     `json:"priority"`
-		Estimate       *int    `json:"estimate"`
-		ProjectID      *int64  `json:"projectId"`
-		MilestoneID    *int64  `json:"milestoneId"`
-		CycleID        *int64  `json:"cycleId"`
-		ParentID       *int64  `json:"parentId"`
-		DueDate        *string `json:"dueDate"`
-		LabelIDs       []int64 `json:"labelIds"`
+		Title          string                       `json:"title"`
+		Body           string                       `json:"body"`
+		Status         string                       `json:"status"`
+		WorkflowStatus string                       `json:"workflowStatus"`
+		Type           string                       `json:"type"`
+		Priority       int                          `json:"priority"`
+		Estimate       *int                         `json:"estimate"`
+		ProjectID      *int64                       `json:"projectId"`
+		MilestoneID    *int64                       `json:"milestoneId"`
+		CycleID        *int64                       `json:"cycleId"`
+		ParentID       *int64                       `json:"parentId"`
+		DueDate        *string                      `json:"dueDate"`
+		LabelIDs       []int64                      `json:"labelIds"`
+		Links          []store.CreateIssueLinkInput `json:"links"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
@@ -746,7 +747,7 @@ func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := s.store.CreateIssue(store.CreateIssueInput{
 		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
-		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID, ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs,
+		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID, ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs, ExternalLinks: in.Links,
 	})
 	if err != nil {
 		writeError(w, err)

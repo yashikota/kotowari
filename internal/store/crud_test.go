@@ -36,6 +36,52 @@ func TestCreateIssueDefaultsAndValidation(t *testing.T) {
 	}
 }
 
+func TestCreateIssueExternalLinksRoundTripAndValidation(t *testing.T) {
+	s := openTest(t)
+	created, err := s.CreateIssue(CreateIssueInput{
+		Title: "linked issue",
+		ExternalLinks: []CreateIssueLinkInput{
+			{URL: " https://example.test/spec ", Title: " Spec ", Kind: ""},
+			{URL: "https://example.test/pr/42", Kind: "pullRequest"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(created.ExternalLinks) != 2 {
+		t.Fatalf("created links: %#v", created.ExternalLinks)
+	}
+	if got := created.ExternalLinks[0]; got.URL != "https://example.test/spec" || got.Title != "Spec" || got.Kind != "link" {
+		t.Fatalf("normalized link: %#v", got)
+	}
+	if created.ExternalLinks[1].Kind != "pullRequest" {
+		t.Fatalf("pull request link: %#v", created.ExternalLinks[1])
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	got, err := reopened.GetIssue(created.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.ExternalLinks) != 2 || got.ExternalLinks[0].URL != "https://example.test/spec" {
+		t.Fatalf("reopened links: %#v", got.ExternalLinks)
+	}
+
+	for _, links := range [][]CreateIssueLinkInput{
+		{{URL: "javascript:alert(1)"}},
+		{{URL: "https://example.test/duplicate"}, {URL: "https://example.test/duplicate"}},
+		{{URL: "https://example.test/unknown-kind", Kind: "other"}},
+	} {
+		if _, err := reopened.CreateIssue(CreateIssueInput{Title: "invalid links", ExternalLinks: links}); !errors.Is(err, ErrValidation) && !errors.Is(err, ErrConflict) {
+			t.Fatalf("invalid links %v: %v", links, err)
+		}
+	}
+}
+
 func TestIssueTypeAndEstimateRoundTrip(t *testing.T) {
 	s := openTest(t)
 	estimate := 8

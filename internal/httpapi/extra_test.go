@@ -53,6 +53,49 @@ func TestCommandsAndSearch(t *testing.T) {
 	}
 }
 
+func TestCreateIssueWithExternalLinks(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"Linked issue","links":[{"url":"https://example.test/spec","title":"Spec"}]}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", rec.Code, rec.Body.String())
+	}
+	var created struct {
+		Identifier    string `json:"identifier"`
+		ExternalLinks []struct {
+			URL   string `json:"url"`
+			Title string `json:"title"`
+			Kind  string `json:"kind"`
+		} `json:"externalLinks"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if len(created.ExternalLinks) != 1 || created.ExternalLinks[0].URL != "https://example.test/spec" || created.ExternalLinks[0].Title != "Spec" || created.ExternalLinks[0].Kind != "link" {
+		t.Fatalf("created issue links %#v", created.ExternalLinks)
+	}
+
+	got := doJSON(t, s, "GET", "/api/issues/"+created.Identifier, "")
+	if got.Code != http.StatusOK || !json.Valid(got.Body.Bytes()) {
+		t.Fatalf("get %d %s", got.Code, got.Body.String())
+	}
+	var persisted struct {
+		ExternalLinks []struct {
+			URL string `json:"url"`
+		} `json:"externalLinks"`
+	}
+	if err := json.Unmarshal(got.Body.Bytes(), &persisted); err != nil {
+		t.Fatal(err)
+	}
+	if len(persisted.ExternalLinks) != 1 || persisted.ExternalLinks[0].URL != "https://example.test/spec" {
+		t.Fatalf("persisted links %#v", persisted.ExternalLinks)
+	}
+
+	bad := doJSON(t, s, "POST", "/api/issues", `{"title":"Bad linked issue","links":[{"url":"javascript:alert(1)"}]}`)
+	if bad.Code != http.StatusBadRequest {
+		t.Fatalf("invalid link status %d %s", bad.Code, bad.Body.String())
+	}
+}
+
 func TestMissingResourcesAndEmptyLists(t *testing.T) {
 	s := testAPI(t)
 	if rec := doJSON(t, s, "GET", "/api/pages/missing", ""); rec.Code != http.StatusNotFound {

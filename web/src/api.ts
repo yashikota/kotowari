@@ -140,6 +140,7 @@ export const api = {
     cycleId?: number;
     labelIds?: number[];
     dueDate?: string;
+    links?: { url: string; title?: string; kind?: IssueLink['kind'] }[];
   }) => req<Issue>('/api/issues', { method: 'POST', body: JSON.stringify(body) }),
   patchIssue: (id: string, body: Record<string, unknown>) =>
     updateIssue(id, body, () =>

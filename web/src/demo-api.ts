@@ -792,6 +792,36 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       value.cycleId == null ? null : Number(value.cycleId),
       [],
     );
+    const requestedLinks = Array.isArray(value.links)
+      ? (value.links as { url?: unknown; title?: unknown; kind?: unknown }[])
+      : [];
+    const linkUrls = new Set<string>();
+    const externalLinks: IssueLink[] = [];
+    for (const [index, requested] of requestedLinks.entries()) {
+      const linkURL = text(requested.url).trim();
+      let parsedURL: URL;
+      try {
+        parsedURL = new URL(linkURL);
+      } catch {
+        return json({ error: 'link URL must be an absolute http or https URL' }, 400);
+      }
+      const kind = text(requested.kind) || 'link';
+      if (
+        !['http:', 'https:'].includes(parsedURL.protocol) ||
+        !['link', 'pullRequest', 'document'].includes(kind) ||
+        linkUrls.has(linkURL)
+      )
+        return json({ error: 'invalid issue link' }, 400);
+      linkUrls.add(linkURL);
+      externalLinks.push({
+        id: index + 1,
+        url: linkURL,
+        ...(text(requested.title).trim() ? { title: text(requested.title).trim() } : {}),
+        kind: kind as IssueLink['kind'],
+        createdAt: item.createdAt,
+      });
+    }
+    item.externalLinks = externalLinks;
     const requestedWorkflowStatus = text(value.workflowStatus).trim();
     const workflowStatus = issueWorkflowStatuses.find(
       (candidate) => candidate.id === requestedWorkflowStatus,

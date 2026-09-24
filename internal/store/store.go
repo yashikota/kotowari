@@ -189,9 +189,9 @@ type IssueLink struct {
 }
 
 type CreateIssueLinkInput struct {
-	URL   string
-	Title string
-	Kind  string
+	URL   string `json:"url"`
+	Title string `json:"title"`
+	Kind  string `json:"kind"`
 }
 
 type IssueRelation struct {
@@ -411,6 +411,7 @@ type CreateIssueInput struct {
 	ParentID       *int64
 	DueDate        *string
 	LabelIDs       []int64
+	ExternalLinks  []CreateIssueLinkInput
 	RecurringSlug  *string
 }
 

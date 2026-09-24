@@ -1150,6 +1150,44 @@ test('new issues can be created as sub-issues of an existing issue', async ({ pa
   });
 });
 
+test('new issues can include external links before they are created', async ({ page, request }) => {
+  const stamp = Date.now();
+  const title = `Linked issue ${stamp}`;
+  const linkURL = `https://example.test/spec/${stamp}`;
+  const linkTitle = `Spec ${stamp}`;
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const createDialog = page.getByRole('dialog', { name: 'Create issue' });
+  await createDialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
+  await createDialog.getByRole('button', { name: 'Add link…' }).click();
+  const linkDialog = page.getByRole('dialog').last();
+  await linkDialog.getByRole('textbox', { name: 'URL' }).fill(linkURL);
+  await linkDialog.getByRole('textbox', { name: 'Title (optional)' }).fill(linkTitle);
+  await linkDialog.getByRole('button', { name: 'Add link', exact: true }).click();
+  await expect(createDialog.getByText(linkTitle, { exact: true })).toBeVisible();
+  await expect(createDialog.getByText(linkURL, { exact: true })).toBeVisible();
+
+  const createRequest = page.waitForRequest(
+    (candidate) => candidate.url().endsWith('/api/issues') && candidate.method() === 'POST',
+  );
+  const createResponse = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
+  );
+  await createDialog.getByRole('button', { name: 'Create', exact: true }).click();
+  expect((await createRequest).postDataJSON()).toMatchObject({
+    title,
+    links: [{ url: linkURL, title: linkTitle, kind: 'link' }],
+  });
+  const created = (await (await createResponse).json()) as { identifier: string };
+  const saved = await request.get(`/api/issues/${created.identifier}`);
+  expect(await saved.json()).toMatchObject({
+    title,
+    externalLinks: [{ url: linkURL, title: linkTitle, kind: 'link' }],
+  });
+});
+
 test('converting an issue creates a project and keeps the issue linked', async ({
   page,
   request,
