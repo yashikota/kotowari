@@ -14,9 +14,32 @@ import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleIssuesCSV } from '../cycle-export.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
+import type { ProjectBoardModel } from '../components/ProjectBoardView.tsx';
+import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
 import { PROJECT_STATUSES } from '../types.ts';
 import type { ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
+
+const DAY_MS = 86_400_000;
+
+function monthKey(year: number, month: number) {
+  const value = new Date(Date.UTC(year, month, 1));
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function shiftMonthKey(key: string, offset: number) {
+  const [year, month] = key.split('-').map(Number);
+  return monthKey(year, month - 1 + offset);
+}
+
+function monthOrdinal(key: string) {
+  const [year, month] = key.split('-').map(Number);
+  return Date.UTC(year, month - 1, 1) / DAY_MS;
+}
+
+function dateOrdinal(value: Date) {
+  return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) / DAY_MS;
+}
 
 export function useProjectsPagePresenter() {
   const data = useLoaderData({ from: '/projects' }) as { projects: Project[]; labels: Label[] };
@@ -129,6 +152,113 @@ export function useProjectsPagePresenter() {
     }));
   }, [filteredProjects, groupBy]);
 
+  const view = search.view ?? 'list';
+  const columnsBy = search.columnsBy ?? 'status';
+  const rowsBy = search.rowsBy ?? 'none';
+  const showEmptyColumns = search.showEmptyColumns ?? true;
+  const projectBoard = useMemo<ProjectBoardModel>(() => {
+    const columnKeys = columnsBy === 'status' ? [...PROJECT_STATUSES] : ['1', '2', '3', '4', '0'];
+    const rowKeys =
+      rowsBy === 'none'
+        ? ['all']
+        : rowsBy === 'status'
+          ? PROJECT_STATUSES.filter((key) =>
+              filteredProjects.some((project) => project.status === key),
+            )
+          : ['1', '2', '3', '4', '0'].filter((key) =>
+              filteredProjects.some((project) => String(project.priority) === key),
+            );
+    const keyFor = (project: Project, by: 'status' | 'priority') =>
+      by === 'status' ? project.status : String(project.priority);
+    const columns = columnKeys
+      .map((key) => ({
+        key,
+        label: columnsBy === 'status' ? i18n.t(`projectStatus.${key}`) : priorityLabel(Number(key)),
+      }))
+      .filter(
+        (column) =>
+          showEmptyColumns ||
+          filteredProjects.some((project) => keyFor(project, columnsBy) === column.key),
+      );
+    return {
+      columns,
+      rows: rowKeys.map((rowKey) => ({
+        key: rowKey,
+        label:
+          rowKey === 'all'
+            ? ''
+            : rowsBy === 'status'
+              ? i18n.t(`projectStatus.${rowKey}`)
+              : priorityLabel(Number(rowKey)),
+        cells: Object.fromEntries(
+          columns.map((column) => [
+            column.key,
+            filteredProjects.filter(
+              (project) =>
+                (rowKey === 'all' || keyFor(project, rowsBy as 'status' | 'priority') === rowKey) &&
+                keyFor(project, columnsBy) === column.key,
+            ),
+          ]),
+        ),
+      })),
+    };
+  }, [columnsBy, filteredProjects, rowsBy, showEmptyColumns]);
+
+  const timelineStart =
+    search.timelineStart ??
+    shiftMonthKey(monthKey(new Date().getFullYear(), new Date().getMonth()), -8);
+  const projectTimeline = useMemo<ProjectTimelineModel>(() => {
+    const startOrdinal = monthOrdinal(timelineStart);
+    const endOrdinal = monthOrdinal(shiftMonthKey(timelineStart, 16));
+    const totalDays = endOrdinal - startOrdinal;
+    const months = Array.from({ length: 16 }, (_, index) => {
+      const key = shiftMonthKey(timelineStart, index);
+      const monthStart = monthOrdinal(key);
+      const nextMonth = monthOrdinal(shiftMonthKey(key, 1));
+      const [year, month] = key.split('-').map(Number);
+      return {
+        key,
+        label: new Intl.DateTimeFormat(i18n.language, { month: 'short', timeZone: 'UTC' }).format(
+          new Date(Date.UTC(year, month - 1, 1)),
+        ),
+        year: String(year),
+        left: ((monthStart - startOrdinal) / totalDays) * 100,
+        width: ((nextMonth - monthStart) / totalDays) * 100,
+      };
+    });
+    const firstDayOfWeek = new Date(startOrdinal * DAY_MS).getUTCDay();
+    const firstWeekStart = startOrdinal - ((firstDayOfWeek + 6) % 7);
+    const weeks: ProjectTimelineModel['weeks'] = [];
+    for (let weekStart = firstWeekStart; weekStart < endOrdinal; weekStart += 7) {
+      const visibleStart = Math.max(weekStart, startOrdinal);
+      const visibleEnd = Math.min(weekStart + 7, endOrdinal);
+      const thursday = new Date(weekStart * DAY_MS);
+      thursday.setUTCDate(thursday.getUTCDate() + 3);
+      const januaryFourth = Date.UTC(thursday.getUTCFullYear(), 0, 4) / DAY_MS;
+      const weekOneMonday =
+        januaryFourth - ((new Date(januaryFourth * DAY_MS).getUTCDay() + 6) % 7);
+      const weekNumber = Math.floor((weekStart - weekOneMonday) / 7) + 1;
+      weeks.push({
+        key: String(weekStart),
+        label: `W${String(weekNumber).padStart(2, '0')}`,
+        left: ((visibleStart - startOrdinal) / totalDays) * 100,
+        width: ((visibleEnd - visibleStart) / totalDays) * 100,
+      });
+    }
+    const todayOrdinal = dateOrdinal(new Date());
+    return {
+      startMonth: timelineStart,
+      totalDays,
+      months,
+      weeks,
+      todayPosition:
+        todayOrdinal >= startOrdinal && todayOrdinal < endOrdinal
+          ? ((todayOrdinal - startOrdinal) / totalDays) * 100
+          : null,
+      groups: projectGroups,
+    };
+  }, [projectGroups, timelineStart]);
+
   const filterCount =
     statusFilters.length + priorityFilters.length + labelFilters.length + (search.closed ? 1 : 0);
   const controls: ProjectListControlsModel = {
@@ -140,6 +270,12 @@ export function useProjectsPagePresenter() {
     orderBy: search.orderBy ?? 'manual',
     direction: search.direction ?? 'asc',
     closed: search.closed ?? 'all',
+    view,
+    columnsBy,
+    rowsBy,
+    showEmptyColumns,
+    showProjectList: search.showProjectList ?? true,
+    showWeekNumbers: search.showWeekNumbers ?? false,
     availableLabels: data.labels,
     filterCount,
     handlers: {
@@ -158,6 +294,18 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ direction: value as typeof search.direction }),
       onClosedChange: (value) =>
         void updateProjectSearch({ closed: value as typeof search.closed }),
+      onViewChange: (value) =>
+        void updateProjectSearch({ view: value === 'list' ? undefined : value }),
+      onColumnsByChange: (value) =>
+        void updateProjectSearch({ columnsBy: value as typeof search.columnsBy }),
+      onRowsByChange: (value) =>
+        void updateProjectSearch({ rowsBy: value as typeof search.rowsBy }),
+      onShowEmptyColumnsChange: (value) =>
+        void updateProjectSearch({ showEmptyColumns: value ? undefined : false }),
+      onShowProjectListChange: (value) =>
+        void updateProjectSearch({ showProjectList: value ? undefined : false }),
+      onShowWeekNumbersChange: (value) =>
+        void updateProjectSearch({ showWeekNumbers: value ? true : undefined }),
       onReset: () =>
         void updateProjectSearch({
           q: undefined,
@@ -168,6 +316,13 @@ export function useProjectsPagePresenter() {
           orderBy: undefined,
           direction: undefined,
           closed: undefined,
+          view: undefined,
+          columnsBy: undefined,
+          rowsBy: undefined,
+          showEmptyColumns: undefined,
+          showProjectList: undefined,
+          showWeekNumbers: undefined,
+          timelineStart: undefined,
         }),
     },
   };
@@ -204,6 +359,9 @@ export function useProjectsPagePresenter() {
   return {
     _view: 0 as const,
     projectGroups,
+    projectBoard,
+    projectTimeline,
+    timelineFocusToday: !search.timelineStart,
     visibleProjectCount: filteredProjects.length,
     isGrouped: groupBy !== 'none',
     hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,
@@ -218,6 +376,11 @@ export function useProjectsPagePresenter() {
     selectedLabels,
     createOpen,
     handlers: {
+      onTimelinePrevious: () =>
+        void updateProjectSearch({ timelineStart: shiftMonthKey(timelineStart, -4) }),
+      onTimelineNext: () =>
+        void updateProjectSearch({ timelineStart: shiftMonthKey(timelineStart, 4) }),
+      onTimelineToday: () => void updateProjectSearch({ timelineStart: undefined }),
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
         return createProject(e);
       },

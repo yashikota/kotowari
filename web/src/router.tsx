@@ -200,6 +200,13 @@ type ProjectListSearch = {
     | 'updated';
   direction?: 'asc' | 'desc';
   closed?: 'all' | 'open' | 'closed';
+  view?: 'list' | 'board' | 'timeline';
+  columnsBy?: 'status' | 'priority';
+  rowsBy?: 'none' | 'status' | 'priority';
+  showEmptyColumns?: boolean;
+  showProjectList?: boolean;
+  showWeekNumbers?: boolean;
+  timelineStart?: string;
 };
 
 function searchStringList(value: unknown): string[] {
@@ -246,6 +253,24 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   }
   if (raw.direction === 'asc' || raw.direction === 'desc') result.direction = raw.direction;
   if (raw.closed === 'open' || raw.closed === 'closed') result.closed = raw.closed;
+  if (raw.view === 'board') result.view = 'board';
+  if (raw.view === 'timeline') result.view = 'timeline';
+  if (raw.columnsBy === 'status' || raw.columnsBy === 'priority') result.columnsBy = raw.columnsBy;
+  if (raw.rowsBy === 'status' || raw.rowsBy === 'priority') result.rowsBy = raw.rowsBy;
+  if (raw.showEmptyColumns === false || raw.showEmptyColumns === 'false') {
+    result.showEmptyColumns = false;
+  } else if (raw.showEmptyColumns === true || raw.showEmptyColumns === 'true') {
+    result.showEmptyColumns = true;
+  }
+  if (raw.showProjectList === false || raw.showProjectList === 'false') {
+    result.showProjectList = false;
+  }
+  if (raw.showWeekNumbers === true || raw.showWeekNumbers === 'true') {
+    result.showWeekNumbers = true;
+  }
+  if (typeof raw.timelineStart === 'string' && /^\d{4}-\d{2}$/.test(raw.timelineStart)) {
+    result.timelineStart = raw.timelineStart;
+  }
   return result;
 }
 

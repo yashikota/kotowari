@@ -22,6 +22,8 @@ import { IssueList } from '../components/IssueList.tsx';
 import { CycleListItem, CycleStatusHeading } from '../components/CycleListItem.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
+import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
+import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { formatCalendarDate } from '../time.ts';
@@ -56,6 +58,9 @@ export function ProjectsPageView({
     case 0: {
       const {
         projectGroups,
+        projectBoard,
+        projectTimeline,
+        timelineFocusToday,
         visibleProjectCount,
         isGrouped,
         hasActiveSearch,
@@ -101,6 +106,21 @@ export function ProjectsPageView({
                   {t('projectList.newProject')}
                 </Button>
               </Stack>
+            ) : controls.view === 'board' ? (
+              <ProjectBoardView model={projectBoard} showRows={controls.rowsBy !== 'none'} />
+            ) : controls.view === 'timeline' ? (
+              <ProjectTimelineView
+                model={projectTimeline}
+                showProjectList={controls.showProjectList}
+                showWeekNumbers={controls.showWeekNumbers}
+                focusToday={timelineFocusToday}
+                grouped={isGrouped}
+                handlers={{
+                  onPrevious: handlers.onTimelinePrevious,
+                  onNext: handlers.onTimelineNext,
+                  onToday: handlers.onTimelineToday,
+                }}
+              />
             ) : (
               <Stack gap="md">
                 {projectGroups.map((group) =>

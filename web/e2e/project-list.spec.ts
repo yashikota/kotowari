@@ -11,11 +11,26 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   const plannedSlug = `alpha-plan-${stamp}`;
   const startedSlug = `beta-build-${stamp}`;
   const completedSlug = `gamma-shipped-${stamp}`;
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() + 1, 1);
+  const targetDate = new Date(startDate);
+  targetDate.setMonth(targetDate.getMonth() + 2, 1);
+  const localDateKey = (value: Date) =>
+    `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  const timelineStart = localDateKey(startDate);
+  const timelineTarget = localDateKey(targetDate);
   const planned = await request.post('/api/projects', {
     data: { name: plannedName, slug: plannedSlug, status: 'planned', priority: 4, labels: ['Bug'] },
   });
   const started = await request.post('/api/projects', {
-    data: { name: startedName, slug: startedSlug, status: 'started', priority: 1 },
+    data: {
+      name: startedName,
+      slug: startedSlug,
+      status: 'started',
+      priority: 1,
+      startDate: timelineStart,
+      targetDate: timelineTarget,
+    },
   });
   const completed = await request.post('/api/projects', {
     data: {
@@ -89,4 +104,44 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
     `a[href="/projects/${startedSlug}"], a[href="/projects/${plannedSlug}"], a[href="/projects/${completedSlug}"]`,
   );
   await expect(orderedRows.first()).toHaveAttribute('href', `/projects/${startedSlug}`);
+
+  await page.getByRole('button', { name: 'Board', exact: true }).click();
+  await expect(page).toHaveURL(/view=board/);
+  await expect(page.getByRole('grid', { name: 'Project board' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Planned' })).toBeVisible();
+  await expect(page.getByRole('gridcell', { name: 'Planned' })).toContainText(plannedName);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('combobox', { name: 'Columns' }).click();
+  await page.getByRole('option', { name: 'Priority', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'Urgent' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Rows' }).click();
+  await page.getByRole('option', { name: 'Status', exact: true }).click();
+  await expect(page.getByRole('rowheader', { name: 'In progress' })).toBeVisible();
+  await expect(page.getByRole('gridcell', { name: 'Urgent · In progress' })).toContainText(
+    startedName,
+  );
+  await page.getByRole('switch', { name: 'Show empty columns' }).uncheck();
+  await expect(page).toHaveURL(/columnsBy=priority/);
+  await expect(page).toHaveURL(/rowsBy=status/);
+  await expect(page).toHaveURL(/showEmptyColumns=false/);
+  await page.reload();
+  await expect(page.getByRole('gridcell', { name: 'Urgent · In progress' })).toContainText(
+    startedName,
+  );
+
+  await page.getByRole('button', { name: 'Timeline', exact: true }).click();
+  await expect(page).toHaveURL(/view=timeline/);
+  await expect(page.getByRole('region', { name: 'Project timeline' })).toBeVisible();
+  await expect(page.getByRole('link', { name: `Open ${startedName}` })).toBeVisible();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('switch', { name: 'Show week numbers' }).check();
+  await page.getByRole('switch', { name: 'Show project list' }).uncheck();
+  await expect(page).toHaveURL(/showProjectList=false/);
+  await expect(page).toHaveURL(/showWeekNumbers=true/);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('button', { name: 'Next period' }).click();
+  await expect(page).toHaveURL(/timelineStart=/);
+  await page.getByRole('button', { name: 'Today' }).click();
+  await expect(page).not.toHaveURL(/timelineStart=/);
 });

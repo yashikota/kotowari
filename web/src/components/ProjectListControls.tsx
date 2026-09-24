@@ -1,4 +1,13 @@
-import { Button, Group, MultiSelect, Popover, Select, Stack, TextInput } from '@mantine/core';
+import {
+  Button,
+  Group,
+  MultiSelect,
+  Popover,
+  Select,
+  Stack,
+  Switch,
+  TextInput,
+} from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import type { Label } from '../types.ts';
 
@@ -11,6 +20,12 @@ export type ProjectListControlsModel = {
   orderBy: string;
   direction: string;
   closed: string;
+  view: string;
+  columnsBy: string;
+  rowsBy: string;
+  showEmptyColumns: boolean;
+  showProjectList: boolean;
+  showWeekNumbers: boolean;
   availableLabels: Label[];
   filterCount: number;
   handlers: {
@@ -22,6 +37,12 @@ export type ProjectListControlsModel = {
     onOrderByChange: (value: string | null) => void;
     onDirectionChange: (value: string | null) => void;
     onClosedChange: (value: string | null) => void;
+    onViewChange: (value: 'list' | 'board' | 'timeline') => void;
+    onColumnsByChange: (value: string | null) => void;
+    onRowsByChange: (value: string | null) => void;
+    onShowEmptyColumnsChange: (value: boolean) => void;
+    onShowProjectListChange: (value: boolean) => void;
+    onShowWeekNumbersChange: (value: boolean) => void;
     onReset: () => void;
   };
 };
@@ -38,6 +59,35 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
         onChange={(event) => handlers.onSearchChange(event.currentTarget.value)}
         w={240}
       />
+      <Group gap={4} role="group" aria-label={t('projectList.view')}>
+        <Button
+          type="button"
+          size="sm"
+          variant={model.view === 'list' ? 'filled' : 'default'}
+          aria-pressed={model.view === 'list'}
+          onClick={() => handlers.onViewChange('list')}
+        >
+          {t('projectList.viewList')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={model.view === 'board' ? 'filled' : 'default'}
+          aria-pressed={model.view === 'board'}
+          onClick={() => handlers.onViewChange('board')}
+        >
+          {t('projectList.viewBoard')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={model.view === 'timeline' ? 'filled' : 'default'}
+          aria-pressed={model.view === 'timeline'}
+          onClick={() => handlers.onViewChange('timeline')}
+        >
+          {t('projectList.viewTimeline')}
+        </Button>
+      </Group>
       <Popover position="bottom-start" shadow="md" withinPortal>
         <Popover.Target>
           <Button type="button" variant="default" size="sm">
@@ -102,19 +152,74 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
         </Popover.Target>
         <Popover.Dropdown w={280}>
           <Stack gap="sm">
-            <Select
-              aria-label={t('projectList.groupBy')}
-              label={t('projectList.groupBy')}
-              value={model.groupBy}
-              onChange={handlers.onGroupByChange}
-              data={[
-                { value: 'none', label: t('projectList.groupNone') },
-                { value: 'status', label: t('projectList.groupStatus') },
-                { value: 'priority', label: t('projectList.groupPriority') },
-              ]}
-              allowDeselect={false}
-              comboboxProps={{ withinPortal: false }}
-            />
+            {model.view === 'list' || model.view === 'timeline' ? (
+              <Select
+                aria-label={t('projectList.groupBy')}
+                label={t('projectList.groupBy')}
+                value={model.groupBy}
+                onChange={handlers.onGroupByChange}
+                data={[
+                  { value: 'none', label: t('projectList.groupNone') },
+                  { value: 'status', label: t('projectList.groupStatus') },
+                  { value: 'priority', label: t('projectList.groupPriority') },
+                ]}
+                allowDeselect={false}
+                comboboxProps={{ withinPortal: false }}
+              />
+            ) : (
+              <>
+                <Select
+                  aria-label={t('projectList.columnsBy')}
+                  label={t('projectList.columnsBy')}
+                  value={model.columnsBy}
+                  onChange={handlers.onColumnsByChange}
+                  data={[
+                    { value: 'status', label: t('projectList.groupStatus') },
+                    { value: 'priority', label: t('projectList.groupPriority') },
+                  ]}
+                  allowDeselect={false}
+                  comboboxProps={{ withinPortal: false }}
+                />
+                <Select
+                  aria-label={t('projectList.rowsBy')}
+                  label={t('projectList.rowsBy')}
+                  value={model.rowsBy}
+                  onChange={handlers.onRowsByChange}
+                  data={[
+                    { value: 'none', label: t('projectList.rowsNone') },
+                    { value: 'status', label: t('projectList.groupStatus') },
+                    { value: 'priority', label: t('projectList.groupPriority') },
+                  ]}
+                  allowDeselect={false}
+                  comboboxProps={{ withinPortal: false }}
+                />
+                <Switch
+                  label={t('projectList.showEmptyColumns')}
+                  checked={model.showEmptyColumns}
+                  onChange={(event) =>
+                    handlers.onShowEmptyColumnsChange(event.currentTarget.checked)
+                  }
+                />
+              </>
+            )}
+            {model.view === 'timeline' ? (
+              <>
+                <Switch
+                  label={t('projectList.showProjectList')}
+                  checked={model.showProjectList}
+                  onChange={(event) =>
+                    handlers.onShowProjectListChange(event.currentTarget.checked)
+                  }
+                />
+                <Switch
+                  label={t('projectList.showWeekNumbers')}
+                  checked={model.showWeekNumbers}
+                  onChange={(event) =>
+                    handlers.onShowWeekNumbersChange(event.currentTarget.checked)
+                  }
+                />
+              </>
+            ) : null}
             <Select
               aria-label={t('projectList.orderBy')}
               label={t('projectList.orderBy')}
