@@ -37,15 +37,17 @@ type MarkAsKind =
 
 type Props = {
   identifier: string;
+  navigationIds?: string[];
 };
 
-export function useIssueDetailPresenter({ identifier }: Props) {
+export function useIssueDetailPresenter({ identifier, navigationIds = [] }: Props) {
   const sendIntent = useIntent();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { preferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const navigate = useNavigate();
   const router = useRouter();
+  const navigationIndex = navigationIds.indexOf(identifier);
   const [storedIssue, setIssue] = useState<Issue | null>(() => cachedIssue(identifier));
   const issue = useIssueProjection(storedIssue ? [storedIssue] : [])[0] ?? null;
   const generation = useRef(0);
@@ -648,6 +650,8 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   return {
     _view: 2 as const,
     identifier,
+    navigationPosition: navigationIndex >= 0 ? navigationIndex + 1 : 1,
+    navigationTotal: navigationIds.length,
     issue,
     issues,
     comments,
@@ -723,6 +727,26 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     linkedAdrs,
     unlinkedAdrs,
     handlers: {
+      onNavigatePrevious: () => {
+        const previousId = navigationIds[navigationIndex - 1];
+        if (previousId) {
+          return navigate({
+            to: '/issues/$identifier',
+            params: { identifier: previousId },
+            state: { issueIds: navigationIds },
+          });
+        }
+      },
+      onNavigateNext: () => {
+        const nextId = navigationIds[navigationIndex + 1];
+        if (nextId) {
+          return navigate({
+            to: '/issues/$identifier',
+            params: { identifier: nextId },
+            state: { issueIds: navigationIds },
+          });
+        }
+      },
       Copy_identifier_onClick0: () => {
         return copyText(issue.identifier);
       },

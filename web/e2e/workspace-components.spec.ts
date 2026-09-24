@@ -65,6 +65,9 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   await expect(row).toHaveAttribute('aria-setsize', '1');
   await row.click();
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}$`));
+  await expect(page.getByLabel('1 / 1')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Navigate to previous issue' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Navigate to next issue' })).toBeDisabled();
 
   const properties = page.getByRole('complementary', { name: 'Issue properties' });
   await expect(properties).toBeVisible();
@@ -163,6 +166,46 @@ test('issue list row opens a Linear-style full-width detail view with editable p
       );
     })
     .toBe(false);
+});
+
+test('issue detail navigates through the originating list order', async ({ page, request }) => {
+  const stamp = Date.now();
+  for (let index = 0; index < 3; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Navigation ${stamp} ${index}`, status: 'todo', priority: 2 },
+    });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await fillIssueSearch(page, String(stamp));
+  const rows = issueList.getByRole('option');
+  await expect(rows).toHaveCount(3);
+  const orderedIds = (await rows.allTextContents()).map((text) => text.match(/[A-Z]+-\d+/)?.[0]);
+  expect(orderedIds.every(Boolean)).toBeTruthy();
+  await rows.nth(1).click();
+  await expect(page).toHaveURL(new RegExp(`/issues/${orderedIds[1]}$`));
+
+  const position = page.getByLabel('2 / 3');
+  await expect(position).toBeVisible();
+  const previous = page.getByRole('button', { name: 'Navigate to previous issue' });
+  const next = page.getByRole('button', { name: 'Navigate to next issue' });
+  await expect(previous).toBeEnabled();
+  await expect(next).toBeEnabled();
+
+  await next.click();
+  await expect(page.getByLabel('3 / 3')).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/issues/${orderedIds[2]}$`));
+  await expect(next).toBeDisabled();
+  await previous.click();
+  await expect(page.getByLabel('2 / 3')).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/issues/${orderedIds[1]}$`));
+  await previous.click();
+  await expect(page.getByLabel('1 / 3')).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/issues/${orderedIds[0]}$`));
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeEnabled();
 });
 
 test('type and estimate filters survive saving a reusable view', async ({ page, request }) => {

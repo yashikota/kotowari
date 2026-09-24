@@ -311,6 +311,11 @@
     "pullRequestCount_one": "{{count}} 件のプルリクエスト",
     "pullRequestCount_other": "{{count}} 件のプルリクエスト"
   },
+  "issueNavigation": {
+    "position": "{{current}} / {{total}}",
+    "previous": "前のイシューへ移動",
+    "next": "次のイシューへ移動"
+  },
   "issueFavorite": {
     "add": "お気に入りに追加",
     "remove": "お気に入りから削除"

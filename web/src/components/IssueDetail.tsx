@@ -18,6 +18,7 @@ import {
 import {
   IconCopy,
   IconChevronDown,
+  IconChevronUp,
   IconChevronRight,
   IconDotsVertical,
   IconExternalLink,
@@ -75,6 +76,8 @@ export function IssueDetailView({
     case 2: {
       const {
         identifier,
+        navigationPosition,
+        navigationTotal,
         issue,
         cycles,
         pages,
@@ -223,6 +226,43 @@ export function IssueDetailView({
               ) : null}
               {issue.archivedAt ? <MetaBadge>{t('issueActions.archivedBadge')}</MetaBadge> : null}
             </Group>
+            <Group gap="xs" wrap="nowrap">
+              <Text
+                size="sm"
+                c="dimmed"
+                aria-label={t('issueNavigation.position', {
+                  current: navigationPosition,
+                  total: navigationTotal,
+                })}
+              >
+                {t('issueNavigation.position', {
+                  current: navigationPosition,
+                  total: navigationTotal,
+                })}
+              </Text>
+              <ActionIcon
+                type="button"
+                variant="default"
+                aria-label={t('issueNavigation.previous')}
+                title={t('issueNavigation.previous')}
+                disabled={navigationPosition <= 1}
+                onClick={handlers.onNavigatePrevious}
+              >
+                <IconChevronUp size={15} aria-hidden="true" />
+              </ActionIcon>
+              <ActionIcon
+                type="button"
+                variant="default"
+                aria-label={t('issueNavigation.next')}
+                title={t('issueNavigation.next')}
+                disabled={navigationPosition >= navigationTotal}
+                onClick={handlers.onNavigateNext}
+              >
+                <IconChevronDown size={15} aria-hidden="true" />
+              </ActionIcon>
+            </Group>
+          </Group>
+          <Group justify="flex-end" gap="xs" py="xs">
             <Button
               type="button"
               variant="default"

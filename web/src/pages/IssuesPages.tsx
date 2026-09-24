@@ -167,10 +167,10 @@ export function IssueRoutePageView({
 }) {
   switch (model._view) {
     case 0: {
-      const { identifier } = model;
+      const { identifier, navigationIds } = model;
       return (
         <Box h="100%" style={{ overflow: 'auto' }}>
-          <IssueDetail identifier={identifier} />
+          <IssueDetail identifier={identifier} navigationIds={navigationIds} />
         </Box>
       );
     }

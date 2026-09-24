@@ -34,5 +34,6 @@ export function useFocusWhen<T extends HTMLElement>(
 declare module '@tanstack/history' {
   interface HistoryState {
     autofocus?: AutofocusTarget;
+    issueIds?: string[];
   }
 }

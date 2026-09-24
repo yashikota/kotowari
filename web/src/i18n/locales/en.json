@@ -313,6 +313,11 @@
     "pullRequestCount_one": "{{count}} pull request",
     "pullRequestCount_other": "{{count}} pull requests"
   },
+  "issueNavigation": {
+    "position": "{{current}} / {{total}}",
+    "previous": "Navigate to previous issue",
+    "next": "Navigate to next issue"
+  },
   "issueFavorite": {
     "add": "Add to favorites",
     "remove": "Remove from favorites"

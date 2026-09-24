@@ -103,7 +103,11 @@ export function useIssueListPresenter({
       const id = selectedId ?? ids[0];
       if (id) {
         if (openOnSelect) {
-          void navigate({ to: '/issues/$identifier', params: { identifier: id } });
+          void navigate({
+            to: '/issues/$identifier',
+            params: { identifier: id },
+            state: { issueIds: ids },
+          });
         } else {
           onSelect(id);
         }
@@ -146,6 +150,7 @@ export function useIssueListPresenter({
           return navigate({
             to: '/issues/$identifier',
             params: { identifier: issue.identifier },
+            state: { issueIds: ids },
           });
         }
       },

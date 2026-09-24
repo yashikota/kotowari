@@ -3,6 +3,7 @@ import {
   useNavigate,
   useParams,
   useRouter,
+  useRouterState,
   useSearch,
 } from '@tanstack/react-router';
 import type * as React from 'react';
@@ -273,16 +274,33 @@ export function useIssuesPagePresenter() {
 
 export function useIssueRoutePagePresenter() {
   const { identifier } = useParams({ from: '/issues/$identifier' });
+  const locationState = useRouterState({ select: (state) => state.location.state });
   const issues = (useLoaderData({ from: '/issues/$identifier' }) as Issue[] | null) ?? [];
   const navigate = useNavigate();
+  const requestedIds: unknown = locationState.issueIds;
+  const requestedIssueIds = Array.isArray(requestedIds)
+    ? requestedIds.filter((id): id is string => typeof id === 'string')
+    : typeof requestedIds === 'string'
+      ? requestedIds.split(',')
+      : [];
+  const knownIds = new Set(issues.map((issue) => issue.identifier));
+  const navigationIds = [...new Set(requestedIssueIds.filter((id) => knownIds.has(id)))];
+  if (navigationIds.length === 0) navigationIds.push(...issues.map((issue) => issue.identifier));
+  if (!navigationIds.includes(identifier)) navigationIds.push(identifier);
   return {
     _view: 0 as const,
     identifier,
     issues,
+    navigationIds,
     handlers: {
       onSelect0: (
         id: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>[0],
-      ) => navigate({ to: '/issues/$identifier', params: { identifier: id } }),
+      ) =>
+        navigate({
+          to: '/issues/$identifier',
+          params: { identifier: id },
+          state: { issueIds: navigationIds },
+        }),
     },
   };
 }
