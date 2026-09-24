@@ -1200,11 +1200,27 @@ test('issue detail exposes Linear quick-copy actions and makes a property-preser
 
   await page.getByRole('button', { name: 'Issue options' }).click();
   const menu = page.getByRole('menu');
-  await expect(menu.getByRole('menuitem', { name: 'Copy URL' })).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Copy issue as Markdown' })).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Copy everything as Markdown' })).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Copy as prompt' })).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Copy git branch name' })).toBeVisible();
+  const copySubmenu = menu.getByRole('menuitem', { name: 'Copy', exact: true });
+  await expect(copySubmenu).toBeVisible();
+  await expect(copySubmenu).toHaveAttribute('aria-haspopup', 'menu');
+  await copySubmenu.hover();
+  const copyURLMenuItem = page.getByRole('menuitem', { name: 'Copy URL', exact: true });
+  await expect(copyURLMenuItem).toBeVisible();
+  await expect(copyURLMenuItem).not.toHaveAttribute('aria-haspopup', 'menu');
+  await expect(
+    page.getByRole('menuitem', { name: 'Copy issue as Markdown', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('menuitem', { name: 'Copy everything as Markdown', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Copy as prompt', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('menuitem', { name: 'Copy git branch name', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Copy title', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(title);
+
+  await page.getByRole('button', { name: 'Issue options' }).click();
   await menu.getByRole('menuitem', { name: 'Make a copy' }).click();
 
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+$/);
