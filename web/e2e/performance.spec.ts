@@ -111,7 +111,7 @@ test('optimistic status is visible before the response and rolls back on rejecti
   });
   await page.goto(`/issues/${issue.identifier}`);
   const status = page
-    .getByRole('complementary', { name: 'Issue properties' })
+    .getByRole('region', { name: 'Issue properties' })
     .getByRole('combobox', { name: 'Status' });
   await expect(status).toHaveValue('Todo');
   await chooseIssueProperty(page, 'Status', 'Done');

@@ -69,12 +69,8 @@ export function IssuePropertiesPanel({
   const selectedLabels = labels.filter((label) => selectedLabelIds.has(label.id));
 
   return (
-    <Box component="aside" aria-label={t('issueProperties.ariaLabel')} className={styles.aside}>
-      <Box
-        component="section"
-        aria-label={t('issueProperties.heading')}
-        className={styles.properties}
-      >
+    <Box component="section" aria-label={t('issueProperties.ariaLabel')} className={styles.aside}>
+      <Box className={styles.properties}>
         <Text className={styles.heading}>{t('issueProperties.heading')}</Text>
 
         <PropertyRow
@@ -89,6 +85,7 @@ export function IssuePropertiesPanel({
           }
         >
           <PropertySelect
+            compactChars={8}
             aria-label={t('field.status')}
             value={issue.workflowStatus ?? issue.status}
             onChange={handlers.Status_onChange5}
@@ -113,6 +110,7 @@ export function IssuePropertiesPanel({
           icon={<IssuePriorityIcon priority={issue.priority} />}
         >
           <PropertySelect
+            compactChars={7}
             aria-label={t('field.priority')}
             value={String(issue.priority)}
             onChange={handlers.Priority_onChange6}
@@ -131,6 +129,7 @@ export function IssuePropertiesPanel({
 
         <PropertyRow label={t('field.project')} icon={<IconFolder size={14} stroke={1.7} />}>
           <PropertySelect
+            compactChars={12}
             aria-label={t('field.project')}
             value={issue.projectId != null ? String(issue.projectId) : 'none'}
             onChange={handlers.Project_onChange7}
@@ -143,8 +142,27 @@ export function IssuePropertiesPanel({
           />
         </PropertyRow>
 
+        <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
+          <PropertySelect
+            compactChars={9}
+            aria-label={t('field.cycle')}
+            value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
+            onChange={handlers.Cycle_onChange8}
+            data={[
+              { value: 'none', label: t('field.noCycle') },
+              ...cycles.map((cycle) => ({
+                value: String(cycle.id),
+                label: t('field.cycleN', { number: cycle.number }),
+              })),
+            ]}
+            searchable
+            nothingFoundMessage={t('issueProperties.noCyclesFound')}
+          />
+        </PropertyRow>
+
         <PropertyRow label={t('field.milestone')} icon={<IconFlag size={14} stroke={1.7} />}>
           <PropertySelect
+            compactChars={14}
             aria-label={t('field.milestone')}
             value={issue.milestoneId != null ? String(issue.milestoneId) : 'none'}
             onChange={handlers.Milestone_onChange43}
@@ -163,6 +181,7 @@ export function IssuePropertiesPanel({
 
         <PropertyRow label={t('field.type')} icon={<IconTag size={14} stroke={1.7} />}>
           <PropertySelect
+            compactChars={9}
             aria-label={t('field.type')}
             value={issue.type ?? 'none'}
             onChange={handlers.Type_onChange14}
@@ -178,6 +197,7 @@ export function IssuePropertiesPanel({
 
         <PropertyRow label={t('field.estimate')} icon={<IconChartBar size={14} stroke={1.7} />}>
           <PropertySelect
+            compactChars={10}
             aria-label={t('field.estimate')}
             value={issue.estimate == null ? 'none' : String(issue.estimate)}
             onChange={handlers.Estimate_onChange15}
@@ -190,28 +210,12 @@ export function IssuePropertiesPanel({
           />
         </PropertyRow>
 
-        <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
-          <PropertySelect
-            aria-label={t('field.cycle')}
-            value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
-            onChange={handlers.Cycle_onChange8}
-            data={[
-              { value: 'none', label: t('field.noCycle') },
-              ...cycles.map((cycle) => ({
-                value: String(cycle.id),
-                label: t('field.cycleN', { number: cycle.number }),
-              })),
-            ]}
-            searchable
-            nothingFoundMessage={t('issueProperties.noCyclesFound')}
-          />
-        </PropertyRow>
-
         <PropertyRow
           label={t('issueProperties.parent')}
           icon={<IconGitBranch size={14} stroke={1.7} />}
         >
           <PropertySelect
+            compactChars={14}
             aria-label={t('issueProperties.parent')}
             value={issue.parentId != null ? String(issue.parentId) : 'none'}
             onChange={handlers.Parent_onChange9}
@@ -230,6 +234,7 @@ export function IssuePropertiesPanel({
         <PropertyRow
           label={t('issueProperties.dueDate')}
           icon={<IconCalendarEvent size={14} stroke={1.7} />}
+          className={styles.dueDateRow}
         >
           <TextInput
             size="sm"
@@ -343,18 +348,20 @@ function PropertyRow({
   label,
   icon,
   children,
+  className,
 }: {
   label: string;
   icon: ReactNode;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className={styles.row}>
+    <div className={[styles.row, className].filter(Boolean).join(' ')}>
       <div className={styles.label}>
         <span className={styles.icon} aria-hidden="true">
           {icon}
         </span>
-        <Text component="span" size="sm" c="dimmed" truncate>
+        <Text component="span" size="sm" c="dimmed" truncate className={styles.labelText}>
           {label}
         </Text>
       </div>
@@ -363,13 +370,17 @@ function PropertyRow({
   );
 }
 
-function PropertySelect(props: SelectProps<string>) {
+function PropertySelect({
+  compactChars = 10,
+  ...props
+}: SelectProps<string> & { compactChars?: number }) {
   return (
     <Select
       {...props}
       size="sm"
       className={styles.select}
       classNames={{ input: styles.input, option: styles.option, dropdown: styles.dropdown }}
+      styles={{ input: { width: `${compactChars}ch` } }}
       rightSection={<IconChevronDown size={13} stroke={1.7} />}
       rightSectionPointerEvents="none"
       withCheckIcon={false}

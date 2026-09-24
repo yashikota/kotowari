@@ -560,7 +560,7 @@ export function IssueDetailView({
                       minHeight: 0,
                       padding: 0,
                       color: 'var(--mantine-color-text)',
-                      fontSize: 'var(--mantine-h1-font-size)',
+                      fontSize: '24px',
                       fontWeight: 600,
                       lineHeight: 1.3,
                     },

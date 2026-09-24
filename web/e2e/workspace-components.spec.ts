@@ -69,24 +69,29 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   await expect(page.getByRole('button', { name: 'Navigate to previous issue' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Navigate to next issue' })).toBeDisabled();
 
-  const properties = page.getByRole('complementary', { name: 'Issue properties' });
+  const properties = page.getByRole('region', { name: 'Issue properties' });
   await expect(properties).toBeVisible();
-  await expect(properties.getByRole('region', { name: 'Properties' })).toBeVisible();
   await expect(properties.getByRole('group', { name: 'Labels' })).toBeVisible();
   const issueTitle = page.getByRole('textbox', { name: 'Issue title' });
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
   await expect(documentEditor).toBeVisible();
-  const [titleBounds, propertiesBounds, editorBounds] = await Promise.all([
-    issueTitle.boundingBox(),
-    properties.boundingBox(),
-    documentEditor.boundingBox(),
-  ]);
+  const [titleBounds, propertiesBounds, editorBounds, statusBounds, priorityBounds, cycleBounds] =
+    await Promise.all([
+      issueTitle.boundingBox(),
+      properties.boundingBox(),
+      documentEditor.boundingBox(),
+      properties.getByRole('combobox', { name: 'Status' }).boundingBox(),
+      properties.getByRole('combobox', { name: 'Priority' }).boundingBox(),
+      properties.getByRole('combobox', { name: 'Cycle' }).boundingBox(),
+    ]);
   expect(titleBounds).not.toBeNull();
   expect(propertiesBounds).not.toBeNull();
   expect(editorBounds).not.toBeNull();
-  expect(propertiesBounds!.width).toBeGreaterThan(900);
+  expect(propertiesBounds!.width).toBeGreaterThan(600);
   expect(titleBounds!.y).toBeLessThan(propertiesBounds!.y);
   expect(propertiesBounds!.y).toBeLessThan(editorBounds!.y);
+  expect(Math.abs(statusBounds!.y - priorityBounds!.y)).toBeLessThan(2);
+  expect(Math.abs(statusBounds!.y - cycleBounds!.y)).toBeLessThan(2);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const narrowPanel = await properties.evaluate((element: HTMLElement) => ({
