@@ -141,6 +141,12 @@ export const api = {
     labelIds?: number[];
     dueDate?: string;
     links?: { url: string; title?: string; kind?: IssueLink['kind'] }[];
+    recurring?: {
+      name: string;
+      firstDueDate: string;
+      interval: number;
+      unit: RecurringIssue['unit'];
+    };
   }) => req<Issue>('/api/issues', { method: 'POST', body: JSON.stringify(body) }),
   patchIssue: (id: string, body: Record<string, unknown>) =>
     updateIssue(id, body, () =>

@@ -1473,17 +1473,12 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		return Issue{}, validationf("invalid estimate")
 	}
 	now := domain.Now()
-	externalLinks := make([]IssueLink, 0, len(in.ExternalLinks))
-	seenLinks := make(map[string]struct{}, len(in.ExternalLinks))
-	for index, input := range in.ExternalLinks {
-		link, err := normalizeIssueLink(input)
-		if err != nil {
-			return Issue{}, err
-		}
-		if _, exists := seenLinks[link.URL]; exists {
-			return Issue{}, errf(ErrConflict, "link already exists")
-		}
-		seenLinks[link.URL] = struct{}{}
+	normalizedLinks, err := normalizeIssueLinks(in.ExternalLinks)
+	if err != nil {
+		return Issue{}, err
+	}
+	externalLinks := make([]IssueLink, 0, len(normalizedLinks))
+	for index, link := range normalizedLinks {
 		externalLinks = append(externalLinks, IssueLink{
 			ID: int64(index + 1), URL: link.URL, Title: link.Title, Kind: link.Kind, CreatedAt: now,
 		})
@@ -1492,7 +1487,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		in.Body = templateBody(s.root, "ISSUE.md", "")
 	}
 	var out Issue
-	err := s.mutate(func(m *mem) error {
+	err = s.mutate(func(m *mem) error {
 		workflowState, ok := resolveIssueWorkflowStatus(m.Workspace, in.Status, in.WorkflowStatus)
 		if !ok {
 			return validationf("invalid workflow status")
@@ -1897,6 +1892,23 @@ func normalizeIssueLink(in CreateIssueLinkInput) (CreateIssueLinkInput, error) {
 		return CreateIssueLinkInput{}, validationf("invalid link kind")
 	}
 	return in, nil
+}
+
+func normalizeIssueLinks(inputs []CreateIssueLinkInput) ([]CreateIssueLinkInput, error) {
+	links := make([]CreateIssueLinkInput, 0, len(inputs))
+	seen := make(map[string]struct{}, len(inputs))
+	for _, input := range inputs {
+		link, err := normalizeIssueLink(input)
+		if err != nil {
+			return nil, err
+		}
+		if _, exists := seen[link.URL]; exists {
+			return nil, errf(ErrConflict, "link already exists")
+		}
+		seen[link.URL] = struct{}{}
+		links = append(links, link)
+	}
+	return links, nil
 }
 
 func (s *Store) RemoveIssueLink(identifier string, linkID int64) error {

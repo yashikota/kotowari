@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestInvalidIssueQueryParams(t *testing.T) {
@@ -93,6 +94,48 @@ func TestCreateIssueWithExternalLinks(t *testing.T) {
 	bad := doJSON(t, s, "POST", "/api/issues", `{"title":"Bad linked issue","links":[{"url":"javascript:alert(1)"}]}`)
 	if bad.Code != http.StatusBadRequest {
 		t.Fatalf("invalid link status %d %s", bad.Code, bad.Body.String())
+	}
+}
+
+func TestCreateRecurringIssueFromNewIssueRequest(t *testing.T) {
+	s := testAPI(t)
+	firstDueDate := time.Now().AddDate(0, 0, 14).Format("2006-01-02")
+	body := `{"title":"Monthly review","body":"Review changes.","status":"todo","links":[{"url":"https://example.test/spec","title":"Spec"}],"recurring":{"firstDueDate":"` + firstDueDate + `","interval":2,"unit":"month"}}`
+	created := doJSON(t, s, "POST", "/api/issues", body)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create recurring issue %d %s", created.Code, created.Body.String())
+	}
+	var issue struct {
+		Identifier    string `json:"identifier"`
+		Title         string `json:"title"`
+		DueDate       string `json:"dueDate"`
+		ExternalLinks []struct {
+			URL string `json:"url"`
+		} `json:"externalLinks"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	if issue.Title != "Monthly review" || issue.DueDate != firstDueDate || len(issue.ExternalLinks) != 1 {
+		t.Fatalf("created recurring instance %#v", issue)
+	}
+
+	issuesResponse := doJSON(t, s, "GET", "/api/issues", "")
+	var issues []map[string]any
+	if err := json.Unmarshal(issuesResponse.Body.Bytes(), &issues); err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 1 {
+		t.Fatalf("expected no unlinked seed issue, got %d issues", len(issues))
+	}
+
+	schedulesResponse := doJSON(t, s, "GET", "/api/recurring-issues", "")
+	var schedules []map[string]any
+	if err := json.Unmarshal(schedulesResponse.Body.Bytes(), &schedules); err != nil {
+		t.Fatal(err)
+	}
+	if len(schedules) != 1 || schedules[0]["firstDueDate"] != firstDueDate || schedules[0]["interval"] != float64(2) || schedules[0]["unit"] != "month" {
+		t.Fatalf("recurring schedules %#v", schedules)
 	}
 }
 

@@ -189,9 +189,9 @@ type IssueLink struct {
 }
 
 type CreateIssueLinkInput struct {
-	URL   string `json:"url"`
-	Title string `json:"title"`
-	Kind  string `json:"kind"`
+	URL   string `json:"url" toml:"url"`
+	Title string `json:"title" toml:"title"`
+	Kind  string `json:"kind" toml:"kind"`
 }
 
 type IssueRelation struct {

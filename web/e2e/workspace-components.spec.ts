@@ -1083,6 +1083,8 @@ test('issues can be converted into reusable workspace templates', async ({ page,
   const titleInput = createDialog.getByRole('textbox', { name: 'Issue title' });
   await titleInput.fill(createdTitle);
   await expect(titleInput).toHaveValue(createdTitle);
+  await createDialog.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Set due date' }).click();
   await createDialog.getByLabel('Due date').fill(dueDate);
   const createRequest = page.waitForRequest(
     (candidate) => candidate.url().endsWith('/api/issues') && candidate.method() === 'POST',
@@ -1125,6 +1127,8 @@ test('new issues can be created as sub-issues of an existing issue', async ({ pa
   await page.getByRole('button', { name: 'Create issue', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await dialog.getByRole('textbox', { name: 'Issue title' }).fill(childTitle);
+  await dialog.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Add sub-issue' }).click();
   const parentPicker = dialog.getByRole('combobox', { name: 'Parent' });
   await parentPicker.fill(parentTitle);
   await page.getByRole('option', { name: `${parent.identifier} ${parentTitle}` }).click();
@@ -1160,7 +1164,8 @@ test('new issues can include external links before they are created', async ({ p
   await page.getByRole('button', { name: 'Create issue', exact: true }).click();
   const createDialog = page.getByRole('dialog', { name: 'Create issue' });
   await createDialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
-  await createDialog.getByRole('button', { name: 'Add link…' }).click();
+  await createDialog.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Add link…' }).click();
   const linkDialog = page.getByRole('dialog').last();
   await linkDialog.getByRole('textbox', { name: 'URL' }).fill(linkURL);
   await linkDialog.getByRole('textbox', { name: 'Title (optional)' }).fill(linkTitle);
@@ -1186,6 +1191,77 @@ test('new issues can include external links before they are created', async ({ p
     title,
     externalLinks: [{ url: linkURL, title: linkTitle, kind: 'link' }],
   });
+});
+
+test('new recurring issues start with their first due instance and retain resource links', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const title = `Recurring review ${stamp}`;
+  const firstDueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const linkURL = `https://example.test/recurring/${stamp}`;
+  const linkTitle = `Recurring spec ${stamp}`;
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await dialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
+  await dialog.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Make recurring…' }).click();
+  await dialog.getByLabel('First due').fill(firstDueDate);
+  await dialog.getByRole('spinbutton', { name: 'Repeats every' }).fill('2');
+  await dialog.getByRole('combobox', { name: 'Repeat unit' }).selectOption('month');
+  await dialog.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Add link…' }).click();
+  const linkDialog = page.getByRole('dialog').last();
+  await linkDialog.getByRole('textbox', { name: 'URL' }).fill(linkURL);
+  await linkDialog.getByRole('textbox', { name: 'Title (optional)' }).fill(linkTitle);
+  await linkDialog.getByRole('button', { name: 'Add link', exact: true }).click();
+
+  const createRequest = page.waitForRequest(
+    (candidate) => candidate.url().endsWith('/api/issues') && candidate.method() === 'POST',
+  );
+  const createResponse = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Create recurring issue', exact: true }).click();
+  expect((await createRequest).postDataJSON()).toMatchObject({
+    title,
+    recurring: { name: title, firstDueDate, interval: 2, unit: 'month' },
+    links: [{ url: linkURL, title: linkTitle, kind: 'link' }],
+  });
+
+  const first = (await (await createResponse).json()) as { identifier: string };
+  await expect(page).toHaveURL(new RegExp(`/issues/${first.identifier}$`));
+  const savedFirst = await request.get(`/api/issues/${first.identifier}`);
+  expect(await savedFirst.json()).toMatchObject({
+    title,
+    dueDate: firstDueDate,
+    externalLinks: [{ url: linkURL, title: linkTitle, kind: 'link' }],
+  });
+  const scheduleResponse = await request.get('/api/recurring-issues');
+  const schedules = (await scheduleResponse.json()) as {
+    slug: string;
+    name: string;
+    firstDueDate: string;
+    interval: number;
+    unit: string;
+    links: { url: string; title: string }[];
+  }[];
+  const createdSchedule = schedules.find((schedule) => schedule.name === title);
+  expect(createdSchedule).toMatchObject({
+    name: title,
+    firstDueDate,
+    interval: 2,
+    unit: 'month',
+    links: [{ url: linkURL, title: linkTitle, kind: 'link' }],
+  });
+  const allIssues = (await (await request.get('/api/issues')).json()) as { title: string }[];
+  expect(allIssues.filter((issue) => issue.title === title)).toHaveLength(1);
+  const deleteSchedule = await request.delete(`/api/recurring-issues/${createdSchedule!.slug}`);
+  expect(deleteSchedule.ok()).toBeTruthy();
 });
 
 test('converting an issue creates a project and keeps the issue linked', async ({

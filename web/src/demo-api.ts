@@ -319,7 +319,7 @@ function createRecurringDemoInstance(schedule: RecurringIssue, dueDate: string):
   const item = issue(
     number,
     schedule.title,
-    'backlog',
+    schedule.status,
     schedule.priority,
     project?.id ?? null,
     null,
@@ -328,6 +328,13 @@ function createRecurringDemoInstance(schedule: RecurringIssue, dueDate: string):
   item.body = schedule.body;
   item.type = schedule.type;
   item.estimate = schedule.estimate ?? null;
+  item.externalLinks = (schedule.links ?? []).map((link, index) => ({
+    id: index + 1,
+    url: link.url,
+    ...(link.title ? { title: link.title } : {}),
+    kind: link.kind ?? 'link',
+    createdAt: item.createdAt,
+  }));
   item.recurringSlug = schedule.slug;
   item.dueDate = dueDate;
   issues.push(item);
@@ -462,6 +469,11 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       estimate: source.estimate,
       projectSlug: source.projectSlug,
       labels: source.labels.map((label) => label.name),
+      links: source.externalLinks.map(({ url, title, kind }) => ({
+        url,
+        ...(title ? { title } : {}),
+        kind,
+      })),
       firstDueDate,
       interval,
       unit,
@@ -854,6 +866,73 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       item.milestoneName = milestone.name;
     }
     item.body = text(value.body);
+    const recurringValue = value.recurring;
+    if (recurringValue != null && typeof recurringValue === 'object') {
+      const recurring = recurringValue as Record<string, unknown>;
+      let name = text(recurring.name).trim() || item.title;
+      const baseName = Array.from(name).slice(0, 100).join('');
+      name = baseName;
+      let slug = name
+        .toLocaleLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 48);
+      let duplicateIndex = 2;
+      while (recurringIssues.some((candidate) => candidate.slug === slug)) {
+        const suffix = ` (${duplicateIndex})`;
+        const suffixSlug = `-${duplicateIndex}`;
+        name = `${Array.from(baseName)
+          .slice(0, 100 - Array.from(suffix).length)
+          .join('')}${suffix}`;
+        slug = `${baseName
+          .toLocaleLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 48 - suffixSlug.length)}${suffixSlug}`;
+        duplicateIndex += 1;
+      }
+      const firstDueDate = text(recurring.firstDueDate);
+      const interval = Number(recurring.interval);
+      const unit = text(recurring.unit) as RecurringIssue['unit'];
+      if (
+        !slug ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(firstDueDate) ||
+        !Number.isInteger(interval) ||
+        interval < 1 ||
+        interval > 365 ||
+        !['day', 'week', 'month', 'year'].includes(unit)
+      )
+        return json({ error: 'invalid recurring issue' }, 400);
+      if (recurringIssues.some((candidate) => candidate.slug === slug))
+        return json({ error: 'recurring issue already exists' }, 409);
+      const schedule: RecurringIssue = {
+        slug,
+        name,
+        title: item.title,
+        body: item.body,
+        status: item.status,
+        type: item.type,
+        priority: item.priority,
+        estimate: item.estimate,
+        projectSlug: item.projectSlug,
+        labels: item.labels.map((label) => label.name),
+        links: item.externalLinks.map(({ url, title: linkTitle, kind }) => ({
+          url,
+          ...(linkTitle ? { title: linkTitle } : {}),
+          kind,
+        })),
+        firstDueDate,
+        interval,
+        unit,
+        nextDueDate: firstDueDate,
+        enabled: true,
+      };
+      const first = createRecurringDemoInstance(schedule, firstDueDate);
+      schedule.lastIssueIdentifier = first.identifier;
+      recurringIssues.push(schedule);
+      revision += 1;
+      return json(first, 201);
+    }
     issues.push(item);
     revision += 1;
     return json(item, 201);

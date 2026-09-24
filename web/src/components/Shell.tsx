@@ -8,6 +8,7 @@ import {
   Divider,
   Group,
   Modal,
+  Menu,
   MultiSelect,
   NativeSelect,
   Select,
@@ -471,18 +472,6 @@ export function ShellView({
                 value={model.issueBody}
                 onChange={handlers.Issue_body_onChange31}
               />
-              <Group justify="space-between" align="center">
-                <Text size="sm" c="dimmed">
-                  {t('modal.enterHint')}
-                </Text>
-                <Button
-                  type="button"
-                  onClick={handlers.submitIssue}
-                  disabled={model.issueParentLoading || model.issueLinkOpen}
-                >
-                  {t('modal.create')}
-                </Button>
-              </Group>
               <Group grow align="flex-start">
                 <NativeSelect
                   aria-label={t('field.status')}
@@ -563,6 +552,32 @@ export function ShellView({
                   value={model.issueLabelNames}
                   onChange={handlers.Issue_labels_onChange34}
                 />
+                <Menu position="bottom-end" withinPortal>
+                  <Menu.Target>
+                    <Button type="button" variant="default">
+                      {t('issueActions.moreActions')}
+                    </Button>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item onClick={handlers.onOpenIssueDueDate}>
+                      {t('issueActions.dueDate.title')}
+                    </Menu.Item>
+                    <Menu.Item
+                      leftSection={<IconRepeat size={14} aria-hidden />}
+                      onClick={handlers.onEnableIssueRecurring}
+                    >
+                      {t('issueActions.makeRecurring')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.onOpenIssueLink}>
+                      {t('issueActions.addLink')}
+                    </Menu.Item>
+                    <Menu.Item onClick={handlers.onOpenIssueParent}>
+                      {t('issueActions.addSubIssue')}
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              </Group>
+              {model.issueDueDateOpen && !model.issueRecurringOpen ? (
                 <TextInput
                   type="date"
                   aria-label={t('issueProperties.dueDate')}
@@ -570,56 +585,108 @@ export function ShellView({
                   value={model.issueDueDate}
                   onChange={handlers.Issue_dueDate_onChange35}
                 />
-              </Group>
-              <Select
-                aria-label={t('issueProperties.parent')}
-                label={t('issueProperties.parent')}
-                placeholder={t('issueProperties.noParent')}
-                searchable
-                clearable
-                searchValue={model.issueParentQuery}
-                value={model.issueParentIdentifier || null}
-                data={model.issueParentOptions}
-                nothingFoundMessage={t('issueProperties.noIssuesFound')}
-                onSearchChange={handlers.Issue_parentSearch_onChange36}
-                onChange={handlers.Issue_parent_onChange37}
-              />
-              <Stack gap="xs">
-                <Group justify="space-between">
+              ) : null}
+              {model.issueRecurringOpen ? (
+                <Stack gap="xs">
+                  <TextInput
+                    required
+                    type="date"
+                    label={t('modal.firstDueDate')}
+                    value={model.issueRecurringFirstDueDate}
+                    onChange={handlers.onIssueRecurringFirstDueDateChange}
+                  />
+                  <Group grow align="flex-end">
+                    <TextInput
+                      required
+                      type="number"
+                      min={1}
+                      max={365}
+                      label={t('modal.repeatEvery')}
+                      value={model.issueRecurringInterval}
+                      onChange={handlers.onIssueRecurringIntervalChange}
+                    />
+                    <NativeSelect
+                      aria-label={t('modal.repeatUnit')}
+                      value={model.issueRecurringUnit}
+                      onChange={handlers.onIssueRecurringUnitChange}
+                      data={(['day', 'week', 'month', 'year'] as const).map((unit) => ({
+                        value: unit,
+                        label: t(`modal.${unit}`),
+                      }))}
+                    />
+                  </Group>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    onClick={handlers.onClearIssueRecurring}
+                    style={{ alignSelf: 'flex-start' }}
+                  >
+                    {t('issueActions.clearSchedule')}
+                  </Button>
+                </Stack>
+              ) : null}
+              {model.issueParentOpen ? (
+                <Select
+                  aria-label={t('issueProperties.parent')}
+                  label={t('issueProperties.parent')}
+                  placeholder={t('issueProperties.noParent')}
+                  searchable
+                  clearable
+                  searchValue={model.issueParentQuery}
+                  value={model.issueParentIdentifier || null}
+                  data={model.issueParentOptions}
+                  nothingFoundMessage={t('issueProperties.noIssuesFound')}
+                  onSearchChange={handlers.Issue_parentSearch_onChange36}
+                  onChange={handlers.Issue_parent_onChange37}
+                />
+              ) : null}
+              {model.issueExternalLinks.length > 0 ? (
+                <Stack gap="xs">
                   <Text size="sm" fw={500}>
                     {t('issueLinks.heading')}
                   </Text>
-                  <Button type="button" variant="subtle" onClick={handlers.onOpenIssueLink}>
-                    {t('issueActions.addLink')}
-                  </Button>
-                </Group>
-                <Box role="list">
-                  {model.issueExternalLinks.map((link) => {
-                    const title = link.title || link.url;
-                    return (
-                      <Group key={link.url} justify="space-between" wrap="nowrap" role="listitem">
-                        <Stack gap={0} style={{ minWidth: 0 }}>
-                          <Text size="sm" truncate>
-                            {title}
-                          </Text>
-                          <Text size="xs" c="dimmed" truncate>
-                            {link.url}
-                          </Text>
-                        </Stack>
-                        <Button
-                          type="button"
-                          variant="subtle"
-                          size="compact-sm"
-                          aria-label={t('issueLinks.remove', { title })}
-                          onClick={() => handlers.onRemoveIssueLink(link.url)}
-                        >
-                          {t('issueLinks.remove', { title })}
-                        </Button>
-                      </Group>
-                    );
-                  })}
-                </Box>
-              </Stack>
+                  <Box role="list">
+                    {model.issueExternalLinks.map((link) => {
+                      const title = link.title || link.url;
+                      return (
+                        <Group key={link.url} justify="space-between" wrap="nowrap" role="listitem">
+                          <Stack gap={0} style={{ minWidth: 0 }}>
+                            <Text size="sm" truncate>
+                              {title}
+                            </Text>
+                            <Text size="xs" c="dimmed" truncate>
+                              {link.url}
+                            </Text>
+                          </Stack>
+                          <Button
+                            type="button"
+                            variant="subtle"
+                            size="compact-sm"
+                            aria-label={t('issueLinks.remove', { title })}
+                            onClick={() => handlers.onRemoveIssueLink(link.url)}
+                          >
+                            {t('issueLinks.remove', { title })}
+                          </Button>
+                        </Group>
+                      );
+                    })}
+                  </Box>
+                </Stack>
+              ) : null}
+              <Group justify="space-between" align="center">
+                <Text size="sm" c="dimmed">
+                  {t('modal.enterHint')}
+                </Text>
+                <Button
+                  type="button"
+                  onClick={handlers.submitIssue}
+                  disabled={model.issueSubmitDisabled}
+                >
+                  {model.issueRecurringOpen
+                    ? t('issueActions.createRecurringIssue')
+                    : t('modal.create')}
+                </Button>
+              </Group>
             </Stack>
           </Modal>
 

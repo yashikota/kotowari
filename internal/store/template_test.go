@@ -139,6 +139,7 @@ func TestRecurringIssueCreatesAndRecoversScheduledInstances(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	source, err := s.CreateIssue(CreateIssueInput{
 		Title: "Weekly report", Body: "Summarize the week.", Type: "task", Priority: 1,
+		ExternalLinks: []CreateIssueLinkInput{{URL: "https://example.test/report", Title: "Report"}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -174,6 +175,9 @@ func TestRecurringIssueCreatesAndRecoversScheduledInstances(t *testing.T) {
 	if len(generated) != 2 {
 		t.Fatalf("expected first and next recurring instances, got %#v", generated)
 	}
+	if len(generated[0].ExternalLinks) != 1 || generated[0].ExternalLinks[0].URL != "https://example.test/report" || len(generated[1].ExternalLinks) != 1 {
+		t.Fatalf("recurring instances did not retain source links: %#v", generated)
+	}
 	if generated[0].DueDate == nil || *generated[0].DueDate != firstDue || generated[0].Status != "backlog" {
 		t.Fatalf("initial recurring issue %#v", generated[0])
 	}
@@ -207,6 +211,97 @@ func TestRecurringIssueCreatesAndRecoversScheduledInstances(t *testing.T) {
 	issues, err = s.ListIssues(IssueFilter{})
 	if err != nil || len(issues) != 3 {
 		t.Fatalf("deleting a schedule should preserve its issue history (%d, %v)", len(issues), err)
+	}
+}
+
+func TestRecurringIssueFromNewInputCreatesOnlyTheFirstScheduledIssue(t *testing.T) {
+	s := openTest(t)
+	firstDueDate := time.Now().AddDate(0, 0, 14).Format("2006-01-02")
+	links := []CreateIssueLinkInput{{URL: "https://example.test/spec", Title: "Spec"}}
+	schedule, err := s.CreateRecurringIssueFromInput(CreateIssueInput{
+		Title: "Monthly review", Body: "Review the latest changes.", Status: "todo",
+		Type: "task", Priority: 2, ExternalLinks: links,
+	}, CreateRecurringIssueInput{
+		FirstDueDate: firstDueDate, Interval: 2, Unit: "month",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if schedule.Name != "Monthly review" || schedule.NextDueDate != firstDueDate || schedule.LastIssueIdentifier == "" {
+		t.Fatalf("schedule %#v", schedule)
+	}
+	if len(schedule.Links) != 1 || schedule.Links[0].URL != links[0].URL {
+		t.Fatalf("schedule links %#v", schedule.Links)
+	}
+	issues, err := s.ListIssues(IssueFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issues) != 1 || issues[0].Identifier != schedule.LastIssueIdentifier {
+		t.Fatalf("expected only the first scheduled issue, got %#v", issues)
+	}
+	instance := issues[0]
+	if instance.DueDate == nil || *instance.DueDate != firstDueDate || instance.Status != "todo" || len(instance.ExternalLinks) != 1 {
+		t.Fatalf("first scheduled issue %#v", instance)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	restoredSchedules, err := reopened.ListRecurringIssues()
+	if err != nil || len(restoredSchedules) != 1 || len(restoredSchedules[0].Links) != 1 {
+		t.Fatalf("restored recurring templates %#v, %v", restoredSchedules, err)
+	}
+
+	secondDueDate := time.Now().AddDate(0, 0, 21).Format("2006-01-02")
+	secondSchedule, err := reopened.CreateRecurringIssueFromInput(CreateIssueInput{
+		Title: "Monthly review", Body: "Review the latest changes.", Status: "todo",
+	}, CreateRecurringIssueInput{FirstDueDate: secondDueDate, Interval: 1, Unit: "month"})
+	if err != nil || secondSchedule.Name != "Monthly review (2)" {
+		t.Fatalf("duplicate title should create a distinct recurring schedule: %#v, %v", secondSchedule, err)
+	}
+}
+
+func TestRecurringIssueFromNewInputPreservesInitialRelations(t *testing.T) {
+	s := openTest(t)
+	parent, err := s.CreateIssue(CreateIssueInput{Title: "Parent task"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, err := s.CreateProject("Release", "release", "", "started", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	milestone, err := s.CreateMilestone(project.Slug, "Beta", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now().AddDate(0, 0, -1).UTC()
+	end := start.AddDate(0, 0, 7)
+	cycle, err := s.CreateCycle(start.Format(time.RFC3339), end.Format(time.RFC3339), "active")
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstDueDate := time.Now().AddDate(0, 0, 14).Format("2006-01-02")
+	projectID, milestoneID, cycleID, parentID := project.ID, milestone.ID, cycle.ID, parent.ID
+	schedule, err := s.CreateRecurringIssueFromInput(CreateIssueInput{
+		Title: "Recurring child", Status: "todo", Type: "task", Priority: 2,
+		ProjectID: &projectID, MilestoneID: &milestoneID, CycleID: &cycleID, ParentID: &parentID,
+	}, CreateRecurringIssueInput{FirstDueDate: firstDueDate, Interval: 1, Unit: "month"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	instance, err := s.GetIssue(schedule.LastIssueIdentifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if instance.ProjectID == nil || *instance.ProjectID != projectID ||
+		instance.MilestoneID == nil || *instance.MilestoneID != milestoneID ||
+		instance.CycleID == nil || *instance.CycleID != cycleID ||
+		instance.ParentID == nil || *instance.ParentID != parentID {
+		t.Fatalf("initial recurring issue lost selected relations: %#v", instance)
 	}
 }
 

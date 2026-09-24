@@ -21,6 +21,7 @@ import type {
   IssueTemplate,
   Label,
   Project,
+  RecurringIssue,
   SearchHit,
   View,
 } from '../types.ts';
@@ -44,6 +45,10 @@ function issueNumberFromIdent(id: string | null): number | undefined {
   }
   const n = Number(m[1]);
   return Number.isFinite(n) && n > 0 ? n : undefined;
+}
+
+function localDateValue(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function useShellPresenter() {
@@ -116,6 +121,11 @@ export function useShellPresenter() {
   const [issueEstimate, setIssueEstimate] = useState('');
   const [issueBody, setIssueBody] = useState('');
   const [issueDueDate, setIssueDueDate] = useState('');
+  const [issueDueDateOpen, setIssueDueDateOpen] = useState(false);
+  const [issueRecurringOpen, setIssueRecurringOpen] = useState(false);
+  const [issueRecurringFirstDueDate, setIssueRecurringFirstDueDate] = useState('');
+  const [issueRecurringInterval, setIssueRecurringInterval] = useState('1');
+  const [issueRecurringUnit, setIssueRecurringUnit] = useState<RecurringIssue['unit']>('week');
   const [issueExternalLinks, setIssueExternalLinks] = useState<
     Pick<IssueLink, 'url' | 'title' | 'kind'>[]
   >([]);
@@ -124,6 +134,7 @@ export function useShellPresenter() {
   const [issueLinkTitle, setIssueLinkTitle] = useState('');
   const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
   const [issueParentId, setIssueParentId] = useState<number | undefined>();
+  const [issueParentOpen, setIssueParentOpen] = useState(false);
   const [issueParentIdentifier, setIssueParentIdentifier] = useState('');
   const [issueParentQuery, setIssueParentQuery] = useState('');
   const [issueParentResults, setIssueParentResults] = useState<SearchHit[]>([]);
@@ -511,6 +522,16 @@ export function useShellPresenter() {
     if (!title || issueParentLoading || issueLinkOpen) {
       return;
     }
+    const recurrenceInterval = Number(issueRecurringInterval);
+    if (
+      issueRecurringOpen &&
+      (!issueRecurringFirstDueDate ||
+        !Number.isInteger(recurrenceInterval) ||
+        recurrenceInterval < 1 ||
+        recurrenceInterval > 365)
+    ) {
+      return;
+    }
     const issue: Issue = await api.createIssue({
       title,
       body: issueBody,
@@ -524,18 +545,32 @@ export function useShellPresenter() {
       labelIds: availableLabels
         .filter((label) => issueLabelNames.includes(label.name))
         .map((label) => label.id),
-      dueDate: issueDueDate || undefined,
+      dueDate: issueRecurringOpen ? undefined : issueDueDate || undefined,
       parentId: issueParentId,
       links: issueExternalLinks,
+      recurring: issueRecurringOpen
+        ? {
+            name: title,
+            firstDueDate: issueRecurringFirstDueDate,
+            interval: recurrenceInterval,
+            unit: issueRecurringUnit,
+          }
+        : undefined,
     });
     setIssueTitle('');
     setIssueBody('');
     setIssueDueDate('');
+    setIssueDueDateOpen(false);
+    setIssueRecurringOpen(false);
+    setIssueRecurringFirstDueDate('');
+    setIssueRecurringInterval('1');
+    setIssueRecurringUnit('week');
     setIssueExternalLinks([]);
     setIssueLinkOpen(false);
     setIssueLinkURL('');
     setIssueLinkTitle('');
     setIssueParentId(undefined);
+    setIssueParentOpen(false);
     setIssueParentIdentifier('');
     setIssueParentQuery('');
     setSelectedParentIssue(null);
@@ -648,11 +683,25 @@ export function useShellPresenter() {
     issueEstimate,
     issueBody,
     issueDueDate,
+    issueDueDateOpen,
+    issueRecurringOpen,
+    issueRecurringFirstDueDate,
+    issueRecurringInterval,
+    issueRecurringUnit,
+    issueSubmitDisabled:
+      issueParentLoading ||
+      issueLinkOpen ||
+      (issueRecurringOpen &&
+        (!issueRecurringFirstDueDate ||
+          !Number.isInteger(Number(issueRecurringInterval)) ||
+          Number(issueRecurringInterval) < 1 ||
+          Number(issueRecurringInterval) > 365)),
     issueExternalLinks,
     issueLinkOpen,
     issueLinkURL,
     issueLinkTitle,
     issueParentIdentifier,
+    issueParentOpen,
     issueParentQuery,
     issueParentLoading,
     issueParentOptions: [
@@ -751,6 +800,26 @@ export function useShellPresenter() {
       Issue_dueDate_onChange35: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssueDueDate(e.target.value),
+      onOpenIssueDueDate: () => setIssueDueDateOpen(true),
+      onOpenIssueParent: () => setIssueParentOpen(true),
+      onEnableIssueRecurring: () => {
+        const firstDueDate = new Date();
+        firstDueDate.setDate(firstDueDate.getDate() + 6);
+        setIssueRecurringFirstDueDate(localDateValue(firstDueDate));
+        setIssueRecurringInterval('1');
+        setIssueRecurringUnit('week');
+        setIssueRecurringOpen(true);
+      },
+      onClearIssueRecurring: () => setIssueRecurringOpen(false),
+      onIssueRecurringFirstDueDateChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setIssueRecurringFirstDueDate(e.target.value),
+      onIssueRecurringIntervalChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setIssueRecurringInterval(e.target.value),
+      onIssueRecurringUnitChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
+      ) => setIssueRecurringUnit(e.target.value as RecurringIssue['unit']),
       onOpenIssueLink: () => {
         setIssueLinkURL('');
         setIssueLinkTitle('');
@@ -788,6 +857,7 @@ export function useShellPresenter() {
         setIssueParentQuery('');
         if (!identifier) {
           setIssueParentId(undefined);
+          setIssueParentOpen(false);
           setSelectedParentIssue(null);
           setIssueParentLoading(false);
           return;

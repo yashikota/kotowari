@@ -97,6 +97,7 @@ export type RecurringIssue = {
   estimate?: number | null;
   projectSlug?: string | null;
   labels: string[];
+  links?: { url: string; title?: string; kind?: IssueLink['kind'] }[];
   firstDueDate: string;
   interval: number;
   unit: 'day' | 'week' | 'month' | 'year';
