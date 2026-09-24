@@ -223,6 +223,7 @@ export const api = {
     startDate?: string;
     targetDate?: string;
     labels?: string[];
+    milestones?: { name: string; description?: string; targetDate?: string }[];
   }) => req<Project>('/api/projects', { method: 'POST', body: JSON.stringify(body) }),
   patchProject: (slug: string, body: Record<string, unknown>) =>
     req<Project>(`/api/projects/${slug}`, {
@@ -236,7 +237,10 @@ export const api = {
     }),
   deleteProjectDependency: (slug: string, dependencySlug: string) =>
     req<Project>(`/api/projects/${slug}/dependencies/${dependencySlug}`, { method: 'DELETE' }),
-  createMilestone: (slug: string, body: { name: string; targetDate?: string }) =>
+  createMilestone: (
+    slug: string,
+    body: { name: string; description?: string; targetDate?: string },
+  ) =>
     req<ProjectMilestone>(`/api/projects/${slug}/milestones`, {
       method: 'POST',
       body: JSON.stringify(body),

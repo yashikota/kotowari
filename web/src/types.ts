@@ -140,6 +140,7 @@ export type ProjectDependency = {
 export type ProjectMilestone = {
   id: number;
   name: string;
+  description?: string;
   targetDate: string | null;
   createdAt: string;
   updatedAt: string;

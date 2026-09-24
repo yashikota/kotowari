@@ -90,11 +90,22 @@ type Project struct {
 }
 
 type Milestone struct {
-	ID         int64   `json:"id" toml:"id"`
-	Name       string  `json:"name" toml:"name"`
-	TargetDate *string `json:"targetDate" toml:"targetDate,omitempty"`
-	CreatedAt  string  `json:"createdAt" toml:"createdAt"`
-	UpdatedAt  string  `json:"updatedAt" toml:"updatedAt"`
+	ID          int64   `json:"id" toml:"id"`
+	Name        string  `json:"name" toml:"name"`
+	Description string  `json:"description,omitempty" toml:"description,omitempty"`
+	TargetDate  *string `json:"targetDate" toml:"targetDate,omitempty"`
+	CreatedAt   string  `json:"createdAt" toml:"createdAt"`
+	UpdatedAt   string  `json:"updatedAt" toml:"updatedAt"`
+}
+
+type MilestoneInput struct {
+	Name        string  `json:"name"`
+	Description string  `json:"description,omitempty"`
+	TargetDate  *string `json:"targetDate,omitempty"`
+}
+
+type ProjectCreationOptions struct {
+	Milestones []MilestoneInput `json:"milestones,omitempty"`
 }
 
 type ProjectDependency struct {

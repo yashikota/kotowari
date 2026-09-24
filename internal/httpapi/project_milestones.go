@@ -8,14 +8,15 @@ import (
 
 func (s *Server) createMilestone(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name       string  `json:"name"`
-		TargetDate *string `json:"targetDate"`
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		TargetDate  *string `json:"targetDate"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateMilestone(r.PathValue("slug"), in.Name, in.TargetDate)
+	out, err := s.store.CreateMilestoneWithDescription(r.PathValue("slug"), in.Name, in.Description, in.TargetDate)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -35,6 +36,7 @@ func (s *Server) patchMilestone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var name *string
+	var description *string
 	if value, ok := raw["name"]; ok {
 		var decoded string
 		if err := json.Unmarshal(value, &decoded); err != nil {
@@ -42,6 +44,17 @@ func (s *Server) patchMilestone(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		name = &decoded
+	}
+	if value, ok := raw["description"]; ok {
+		decoded, err := unmarshalOptString(value)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid description"})
+			return
+		}
+		if decoded == nil {
+			decoded = new(string)
+		}
+		description = decoded
 	}
 	var targetDate **string
 	if value, ok := raw["targetDate"]; ok {
@@ -52,7 +65,7 @@ func (s *Server) patchMilestone(w http.ResponseWriter, r *http.Request) {
 		}
 		targetDate = &decoded
 	}
-	out, err := s.store.UpdateMilestone(r.PathValue("slug"), id, name, targetDate)
+	out, err := s.store.UpdateMilestoneDetails(r.PathValue("slug"), id, name, description, targetDate)
 	if err != nil {
 		writeError(w, err)
 		return

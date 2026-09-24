@@ -199,6 +199,10 @@ func (s *Store) CreateProjectWithAppearance(name, slug, summary, icon, iconColor
 }
 
 func (s *Store) CreateProjectWithWorkflow(name, slug, summary, icon, iconColor, description, status, workflowStatus string, priority int, start, target *string, labels []string) (Project, error) {
+	return s.CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, iconColor, description, status, workflowStatus, priority, start, target, labels, ProjectCreationOptions{})
+}
+
+func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, iconColor, description, status, workflowStatus string, priority int, start, target *string, labels []string, options ProjectCreationOptions) (Project, error) {
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
@@ -222,6 +226,21 @@ func (s *Store) CreateProjectWithWorkflow(name, slug, summary, icon, iconColor, 
 	if !validMilestoneDate(start) || !validMilestoneDate(target) {
 		return Project{}, validationf("project dates must use YYYY-MM-DD")
 	}
+	seenMilestones := make(map[string]struct{}, len(options.Milestones))
+	for _, milestone := range options.Milestones {
+		milestoneName := strings.TrimSpace(milestone.Name)
+		if milestoneName == "" {
+			return Project{}, validationf("milestone name required")
+		}
+		if !validMilestoneDate(milestone.TargetDate) {
+			return Project{}, validationf("invalid milestone target date")
+		}
+		key := strings.ToLower(milestoneName)
+		if _, exists := seenMilestones[key]; exists {
+			return Project{}, errf(ErrConflict, "milestone name")
+		}
+		seenMilestones[key] = struct{}{}
+	}
 	now := domain.Now()
 	var completedAt *string
 	var out Project
@@ -240,13 +259,31 @@ func (s *Store) CreateProjectWithWorkflow(name, slug, summary, icon, iconColor, 
 		if err != nil {
 			return err
 		}
+		projectID := m.nextID()
+		milestones := make([]Milestone, 0, len(options.Milestones))
+		for _, milestoneInput := range options.Milestones {
+			var targetDate *string
+			if milestoneInput.TargetDate != nil && strings.TrimSpace(*milestoneInput.TargetDate) != "" {
+				date := strings.TrimSpace(*milestoneInput.TargetDate)
+				targetDate = &date
+			}
+			milestone := Milestone{
+				ID: m.nextID(), Name: strings.TrimSpace(milestoneInput.Name),
+				Description: strings.TrimSpace(milestoneInput.Description), TargetDate: targetDate,
+				CreatedAt: now, UpdatedAt: now,
+			}
+			milestones = append(milestones, milestone)
+		}
 		out = Project{
-			ID: m.nextID(), Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: resolvedStatus.Category, WorkflowStatus: resolvedStatus.ID,
+			ID: projectID, Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: resolvedStatus.Category, WorkflowStatus: resolvedStatus.ID,
 			Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
-			Labels: projectLabels, Dependencies: []ProjectDependency{}, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
+			Labels: projectLabels, Dependencies: []ProjectDependency{}, Milestones: milestones, CreatedAt: now, UpdatedAt: now,
 		}
 		m.Projects = append(m.Projects, out)
 		addActivity(m, "project", out.ID, "created", map[string]any{"slug": slug}, now)
+		for _, milestone := range milestones {
+			addActivity(m, "project", out.ID, "milestone_created", map[string]any{"milestoneId": milestone.ID, "name": milestone.Name}, now)
+		}
 		m.bump(now)
 		return nil
 	})
@@ -454,6 +491,10 @@ func validMilestoneDate(value *string) bool {
 }
 
 func (s *Store) CreateMilestone(projectSlug, name string, targetDate *string) (Milestone, error) {
+	return s.CreateMilestoneWithDescription(projectSlug, name, "", targetDate)
+}
+
+func (s *Store) CreateMilestoneWithDescription(projectSlug, name, description string, targetDate *string) (Milestone, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return Milestone{}, validationf("milestone name required")
@@ -474,7 +515,15 @@ func (s *Store) CreateMilestone(projectSlug, name string, targetDate *string) (M
 			}
 		}
 		now := domain.Now()
-		out = Milestone{ID: m.nextID(), Name: name, TargetDate: targetDate, CreatedAt: now, UpdatedAt: now}
+		var normalizedTargetDate *string
+		if targetDate != nil && strings.TrimSpace(*targetDate) != "" {
+			date := strings.TrimSpace(*targetDate)
+			normalizedTargetDate = &date
+		}
+		out = Milestone{
+			ID: m.nextID(), Name: name, Description: strings.TrimSpace(description),
+			TargetDate: normalizedTargetDate, CreatedAt: now, UpdatedAt: now,
+		}
 		project.Milestones = append(project.Milestones, out)
 		project.UpdatedAt = now
 		m.Projects[projectIndex] = project
@@ -486,6 +535,10 @@ func (s *Store) CreateMilestone(projectSlug, name string, targetDate *string) (M
 }
 
 func (s *Store) UpdateMilestone(projectSlug string, milestoneID int64, name *string, targetDate **string) (Milestone, error) {
+	return s.UpdateMilestoneDetails(projectSlug, milestoneID, name, nil, targetDate)
+}
+
+func (s *Store) UpdateMilestoneDetails(projectSlug string, milestoneID int64, name, description *string, targetDate **string) (Milestone, error) {
 	if name != nil && strings.TrimSpace(*name) == "" {
 		return Milestone{}, validationf("milestone name required")
 	}
@@ -518,6 +571,9 @@ func (s *Store) UpdateMilestone(projectSlug string, milestoneID int64, name *str
 				}
 			}
 			milestone.Name = nextName
+		}
+		if description != nil {
+			milestone.Description = strings.TrimSpace(*description)
 		}
 		if targetDate != nil {
 			milestone.TargetDate = *targetDate

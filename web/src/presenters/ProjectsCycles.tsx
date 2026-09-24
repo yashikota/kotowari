@@ -41,6 +41,8 @@ import {
 
 const DAY_MS = 86_400_000;
 
+type ProjectMilestoneDraft = { name: string; description: string; targetDate: string };
+
 function monthKey(year: number, month: number) {
   const value = new Date(Date.UTC(year, month, 1));
   return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -136,6 +138,11 @@ export function useProjectsPagePresenter() {
   const [startDate, setStartDate] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [initialMilestones, setInitialMilestones] = useState<ProjectMilestoneDraft[]>([]);
+  const [milestoneDraftOpen, setMilestoneDraftOpen] = useState(false);
+  const [milestoneDraftName, setMilestoneDraftName] = useState('');
+  const [milestoneDraftDescription, setMilestoneDraftDescription] = useState('');
+  const [milestoneDraftTargetDate, setMilestoneDraftTargetDate] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [projectViewDialogOpen, setProjectViewDialogOpen] = useState(false);
   const [projectViewName, setProjectViewName] = useState('');
@@ -671,6 +678,11 @@ export function useProjectsPagePresenter() {
       ...(startDate ? { startDate } : {}),
       ...(targetDate ? { targetDate } : {}),
       labels: selectedLabels,
+      milestones: initialMilestones.map((milestone) => ({
+        name: milestone.name,
+        ...(milestone.description ? { description: milestone.description } : {}),
+        ...(milestone.targetDate ? { targetDate: milestone.targetDate } : {}),
+      })),
     });
     setCreateOpen(false);
     await navigate({
@@ -679,6 +691,24 @@ export function useProjectsPagePresenter() {
       state: { autofocus: 'description' },
     });
   }
+
+  function addInitialMilestone() {
+    const milestoneName = milestoneDraftName.trim();
+    if (!milestoneName) return;
+    setInitialMilestones((current) => [
+      ...current,
+      {
+        name: milestoneName,
+        description: milestoneDraftDescription.trim(),
+        targetDate: milestoneDraftTargetDate,
+      },
+    ]);
+    setMilestoneDraftOpen(false);
+    setMilestoneDraftName('');
+    setMilestoneDraftDescription('');
+    setMilestoneDraftTargetDate('');
+  }
+
   return {
     _view: 0 as const,
     projectGroups,
@@ -708,6 +738,11 @@ export function useProjectsPagePresenter() {
     startDate,
     targetDate,
     selectedLabels,
+    initialMilestones,
+    milestoneDraftOpen,
+    milestoneDraftName,
+    milestoneDraftDescription,
+    milestoneDraftTargetDate,
     createOpen,
     handlers: {
       onOpenCreateProjectView: openProjectView,
@@ -740,9 +775,36 @@ export function useProjectsPagePresenter() {
         setStartDate('');
         setTargetDate('');
         setSelectedLabels([]);
+        setInitialMilestones([]);
+        setMilestoneDraftOpen(false);
+        setMilestoneDraftName('');
+        setMilestoneDraftDescription('');
+        setMilestoneDraftTargetDate('');
         setCreateOpen(true);
       },
       onCloseCreateProject: () => setCreateOpen(false),
+      onOpenMilestoneDraft: () => setMilestoneDraftOpen(true),
+      onCancelMilestoneDraft: () => {
+        setMilestoneDraftOpen(false);
+        setMilestoneDraftName('');
+        setMilestoneDraftDescription('');
+        setMilestoneDraftTargetDate('');
+      },
+      onMilestoneDraftNameChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setMilestoneDraftName(e.target.value),
+      onMilestoneDraftNameKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addInitialMilestone();
+        }
+      },
+      onMilestoneDraftDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+        setMilestoneDraftDescription(e.target.value),
+      onMilestoneDraftTargetDateChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setMilestoneDraftTargetDate(e.target.value),
+      onAddInitialMilestone: addInitialMilestone,
+      onRemoveInitialMilestone: (index: number) =>
+        setInitialMilestones((current) => current.filter((_, itemIndex) => itemIndex !== index)),
       New_project_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setName(e.target.value),
@@ -789,6 +851,7 @@ export function useProjectDetailPagePresenter() {
   const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState(data.project);
   const [milestoneName, setMilestoneName] = useState('');
+  const [milestoneDescription, setMilestoneDescription] = useState('');
   const [milestoneTargetDate, setMilestoneTargetDate] = useState('');
   const [dependencyProjectSlug, setDependencyProjectSlug] = useState('');
   const [dependencyKind, setDependencyKind] = useState<'blocks' | 'blocked_by' | 'related'>(
@@ -849,9 +912,11 @@ export function useProjectDetailPagePresenter() {
     if (!name) return;
     await api.createMilestone(slug, {
       name,
+      ...(milestoneDescription.trim() ? { description: milestoneDescription.trim() } : {}),
       ...(milestoneTargetDate ? { targetDate: milestoneTargetDate } : {}),
     });
     setMilestoneName('');
+    setMilestoneDescription('');
     setMilestoneTargetDate('');
     await refreshProject();
   }
@@ -897,6 +962,7 @@ export function useProjectDetailPagePresenter() {
     dependencyProjectSlug,
     dependencyKind,
     milestoneName,
+    milestoneDescription,
     milestoneTargetDate,
     handlers: {
       Project_status_onChange0: (
@@ -1022,6 +1088,17 @@ export function useProjectDetailPagePresenter() {
         await api.patchMilestone(slug, id, { targetDate: milestone.targetDate });
         await refreshProject();
       },
+      Milestone_description_onChange: (id: number, e: React.ChangeEvent<HTMLTextAreaElement>) =>
+        setProject({
+          ...project,
+          milestones: project.milestones.map((item) =>
+            item.id === id ? { ...item, description: e.target.value } : item,
+          ),
+        }),
+      Milestone_description_onBlur: async (id: number, description: string) => {
+        await api.patchMilestone(slug, id, { description });
+        await refreshProject();
+      },
       Milestone_remove_onClick46: async (id: number, name: string) => {
         if (!window.confirm(i18n.t('projectMilestones.removeConfirmation', { name }))) return;
         await api.deleteMilestone(slug, id);
@@ -1033,6 +1110,9 @@ export function useProjectDetailPagePresenter() {
       New_milestone_target_onChange48: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setMilestoneTargetDate(e.target.value),
+      New_milestone_description_onChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+      ) => setMilestoneDescription(e.target.value),
       New_milestone_onSubmit49: (e: React.FormEvent<HTMLFormElement>) => createMilestone(e),
       onSelect8: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>

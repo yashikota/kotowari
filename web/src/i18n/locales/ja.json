@@ -309,8 +309,12 @@
   "projectMilestones": {
     "heading": "マイルストーン",
     "empty": "マイルストーンはまだありません。",
+    "createMilestone": "マイルストーンを作成",
+    "addToProject": "追加",
     "name": "マイルストーン名",
     "namePlaceholder": "例: ベータ版リリース",
+    "description": "マイルストーンの説明",
+    "descriptionPlaceholder": "説明を追加…",
     "targetDate": "目標日",
     "add": "マイルストーンを追加",
     "remove": "マイルストーン {{name}} を削除",

@@ -311,8 +311,12 @@
   "projectMilestones": {
     "heading": "Milestones",
     "empty": "No milestones yet.",
+    "createMilestone": "Create milestone",
+    "addToProject": "Add",
     "name": "Milestone name",
     "namePlaceholder": "e.g. Beta release",
+    "description": "Milestone description",
+    "descriptionPlaceholder": "Add a description…",
     "targetDate": "Target date",
     "add": "Add milestone",
     "remove": "Delete milestone {{name}}",

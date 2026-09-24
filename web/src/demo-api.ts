@@ -1212,7 +1212,22 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         workflowStatus: value.workflowStatus ?? value.status ?? 'planned',
         priority: value.priority ?? 0,
         labels: value.labels ?? [],
-        milestones: [],
+        milestones: (Array.isArray(value.milestones) ? value.milestones : []).map(
+          (milestone, index) => ({
+            id:
+              Math.max(
+                0,
+                ...projects.flatMap((item) => item.milestones.map((existing) => existing.id)),
+              ) +
+              index +
+              1,
+            name: text(milestone.name).trim(),
+            description: text(milestone.description).trim(),
+            targetDate: text(milestone.targetDate) || null,
+            createdAt: now,
+            updatedAt: now,
+          }),
+        ),
       });
     if (path === '/api/adrs')
       Object.assign(created, {
@@ -1340,6 +1355,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
             ...projects.flatMap((item) => item.milestones.map((milestone) => milestone.id)),
           ) + 1,
         name,
+        description: text(value.description).trim(),
         targetDate: text(value.targetDate) || null,
         createdAt: now,
         updatedAt: now,
@@ -1373,6 +1389,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         }
       }
       if ('targetDate' in value) milestone.targetDate = text(value.targetDate) || null;
+      if ('description' in value) milestone.description = text(value.description).trim();
       milestone.updatedAt = new Date().toISOString();
       patch(project, {});
       return json(milestone);

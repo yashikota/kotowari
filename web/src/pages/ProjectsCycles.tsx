@@ -90,6 +90,11 @@ export function ProjectsPageView({
         startDate,
         targetDate,
         selectedLabels,
+        initialMilestones,
+        milestoneDraftOpen,
+        milestoneDraftName,
+        milestoneDraftDescription,
+        milestoneDraftTargetDate,
         createOpen,
         handlers,
       } = model;
@@ -272,6 +277,106 @@ export function ProjectsPageView({
                       onChange={handlers.New_project_target_onChange}
                     />
                   </Group>
+                  <Stack gap="xs" aria-label={t('projectMilestones.heading')}>
+                    <Group justify="space-between">
+                      <Text size="sm" fw={600}>
+                        {t('projectMilestones.heading')}
+                      </Text>
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        size="sm"
+                        onClick={handlers.onOpenMilestoneDraft}
+                      >
+                        {t('projectMilestones.addToProject')}
+                      </Button>
+                    </Group>
+                    {initialMilestones.map((milestone, index) => (
+                      <Group key={`${milestone.name}-${index}`} justify="space-between" gap="xs">
+                        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                          <Text size="sm" fw={500}>
+                            {milestone.name}
+                          </Text>
+                          {milestone.description && (
+                            <Text size="xs" c="dimmed">
+                              {milestone.description}
+                            </Text>
+                          )}
+                          {milestone.targetDate && (
+                            <Text size="xs" c="dimmed">
+                              {formatCalendarDate(milestone.targetDate)}
+                            </Text>
+                          )}
+                        </Stack>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          aria-label={t('projectMilestones.remove', { name: milestone.name })}
+                          onClick={() => handlers.onRemoveInitialMilestone(index)}
+                        >
+                          <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                        </ActionIcon>
+                      </Group>
+                    ))}
+                    {milestoneDraftOpen && (
+                      <Box
+                        p="sm"
+                        style={{
+                          border: '1px solid var(--mantine-color-default-border)',
+                          borderRadius: 'var(--mantine-radius-sm)',
+                        }}
+                      >
+                        <Stack gap="xs">
+                          <Text size="sm" fw={500}>
+                            {t('projectMilestones.createMilestone')}
+                          </Text>
+                          <TextInput
+                            autoFocus
+                            required
+                            maxLength={120}
+                            label={t('projectMilestones.name')}
+                            placeholder={t('projectMilestones.namePlaceholder')}
+                            value={milestoneDraftName}
+                            onChange={handlers.onMilestoneDraftNameChange}
+                            onKeyDown={handlers.onMilestoneDraftNameKeyDown}
+                          />
+                          <Group grow align="flex-start">
+                            <Textarea
+                              label={t('projectMilestones.description')}
+                              placeholder={t('projectMilestones.descriptionPlaceholder')}
+                              value={milestoneDraftDescription}
+                              onChange={handlers.onMilestoneDraftDescriptionChange}
+                              minRows={2}
+                              autosize
+                            />
+                            <TextInput
+                              type="date"
+                              label={t('projectMilestones.targetDate')}
+                              value={milestoneDraftTargetDate}
+                              onChange={handlers.onMilestoneDraftTargetDateChange}
+                            />
+                          </Group>
+                          <Group justify="flex-end">
+                            <Button
+                              type="button"
+                              variant="default"
+                              onClick={handlers.onCancelMilestoneDraft}
+                            >
+                              {t('common.cancel')}
+                            </Button>
+                            <Button
+                              type="button"
+                              disabled={!milestoneDraftName.trim()}
+                              onClick={handlers.onAddInitialMilestone}
+                            >
+                              {t('projectMilestones.add')}
+                            </Button>
+                          </Group>
+                        </Stack>
+                      </Box>
+                    )}
+                  </Stack>
                   <Group justify="flex-end">
                     <Button type="button" variant="default" onClick={handlers.onCloseCreateProject}>
                       {t('common.cancel')}
@@ -430,6 +535,7 @@ export function ProjectDetailPageView({
         projectUpdateHealth,
         projectUpdateBody,
         milestoneName,
+        milestoneDescription,
         milestoneTargetDate,
         availableDependencyProjects,
         dependencyProjectSlug,
@@ -679,6 +785,16 @@ export function ProjectDetailPageView({
                         size="sm"
                         style={{ flex: '1 1 220px' }}
                       />
+                      <Textarea
+                        aria-label={t('projectMilestones.description')}
+                        placeholder={t('projectMilestones.descriptionPlaceholder')}
+                        value={milestoneDescription}
+                        onChange={handlers.New_milestone_description_onChange}
+                        minRows={1}
+                        autosize
+                        size="sm"
+                        style={{ flex: '1 1 220px' }}
+                      />
                       <TextInput
                         type="date"
                         aria-label={t('projectMilestones.targetDate')}
@@ -707,39 +823,58 @@ export function ProjectDetailPageView({
                       }}
                     >
                       {project.milestones.map((milestone) => (
-                        <Group component="li" key={milestone.id} gap="xs" wrap="wrap">
-                          <TextInput
-                            aria-label={`${t('projectMilestones.name')}: ${milestone.name}`}
-                            value={milestone.name}
+                        <Stack component="li" key={milestone.id} gap="xs">
+                          <Group gap="xs" wrap="wrap">
+                            <TextInput
+                              aria-label={`${t('projectMilestones.name')}: ${milestone.name}`}
+                              value={milestone.name}
+                              onChange={(event) =>
+                                handlers.Milestone_name_onChange42(milestone.id, event)
+                              }
+                              onBlur={() => handlers.Milestone_name_onBlur43(milestone.id)}
+                              size="sm"
+                              style={{ flex: '1 1 220px' }}
+                            />
+                            <TextInput
+                              type="date"
+                              aria-label={`${t('projectMilestones.targetDate')}: ${milestone.name}`}
+                              value={milestone.targetDate?.slice(0, 10) ?? ''}
+                              onChange={(event) =>
+                                handlers.Milestone_target_onChange44(milestone.id, event)
+                              }
+                              onBlur={() => handlers.Milestone_target_onBlur45(milestone.id)}
+                              size="sm"
+                            />
+                            <ActionIcon
+                              type="button"
+                              variant="subtle"
+                              color="red"
+                              aria-label={t('projectMilestones.remove', { name: milestone.name })}
+                              onClick={() =>
+                                handlers.Milestone_remove_onClick46(milestone.id, milestone.name)
+                              }
+                            >
+                              <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                            </ActionIcon>
+                          </Group>
+                          <Textarea
+                            aria-label={`${t('projectMilestones.description')}: ${milestone.name}`}
+                            placeholder={t('projectMilestones.descriptionPlaceholder')}
+                            value={milestone.description ?? ''}
                             onChange={(event) =>
-                              handlers.Milestone_name_onChange42(milestone.id, event)
+                              handlers.Milestone_description_onChange(milestone.id, event)
                             }
-                            onBlur={() => handlers.Milestone_name_onBlur43(milestone.id)}
-                            size="sm"
-                            style={{ flex: '1 1 220px' }}
-                          />
-                          <TextInput
-                            type="date"
-                            aria-label={`${t('projectMilestones.targetDate')}: ${milestone.name}`}
-                            value={milestone.targetDate?.slice(0, 10) ?? ''}
-                            onChange={(event) =>
-                              handlers.Milestone_target_onChange44(milestone.id, event)
+                            onBlur={(event) =>
+                              handlers.Milestone_description_onBlur(
+                                milestone.id,
+                                event.currentTarget.value,
+                              )
                             }
-                            onBlur={() => handlers.Milestone_target_onBlur45(milestone.id)}
+                            minRows={1}
+                            autosize
                             size="sm"
                           />
-                          <ActionIcon
-                            type="button"
-                            variant="subtle"
-                            color="red"
-                            aria-label={t('projectMilestones.remove', { name: milestone.name })}
-                            onClick={() =>
-                              handlers.Milestone_remove_onClick46(milestone.id, milestone.name)
-                            }
-                          >
-                            <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                          </ActionIcon>
-                        </Group>
+                        </Stack>
                       ))}
                     </Stack>
                   )}

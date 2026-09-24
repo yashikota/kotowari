@@ -329,24 +329,25 @@ func (s *Server) listProjects(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name           string   `json:"name"`
-		Slug           string   `json:"slug"`
-		Summary        string   `json:"summary"`
-		Icon           string   `json:"icon"`
-		IconColor      string   `json:"iconColor"`
-		Description    string   `json:"description"`
-		Status         string   `json:"status"`
-		WorkflowStatus string   `json:"workflowStatus"`
-		Priority       int      `json:"priority"`
-		StartDate      *string  `json:"startDate"`
-		TargetDate     *string  `json:"targetDate"`
-		Labels         []string `json:"labels"`
+		Name           string                 `json:"name"`
+		Slug           string                 `json:"slug"`
+		Summary        string                 `json:"summary"`
+		Icon           string                 `json:"icon"`
+		IconColor      string                 `json:"iconColor"`
+		Description    string                 `json:"description"`
+		Status         string                 `json:"status"`
+		WorkflowStatus string                 `json:"workflowStatus"`
+		Priority       int                    `json:"priority"`
+		StartDate      *string                `json:"startDate"`
+		TargetDate     *string                `json:"targetDate"`
+		Labels         []string               `json:"labels"`
+		Milestones     []store.MilestoneInput `json:"milestones"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectWithWorkflow(in.Name, in.Slug, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Priority, in.StartDate, in.TargetDate, in.Labels)
+	out, err := s.store.CreateProjectWithWorkflowAndOptions(in.Name, in.Slug, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Priority, in.StartDate, in.TargetDate, in.Labels, store.ProjectCreationOptions{Milestones: in.Milestones})
 	if err != nil {
 		writeError(w, err)
 		return
