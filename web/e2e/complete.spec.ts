@@ -1,5 +1,10 @@
 import { expect, test, type APIResponse } from '@playwright/test';
-import { createIssueView, fillIssueSearch } from './issue-list-controls.ts';
+import {
+  chooseIssueFilterOption,
+  createIssueView,
+  fillIssueSearch,
+  openIssueFilterCategory,
+} from './issue-list-controls.ts';
 
 async function json<T>(res: APIResponse): Promise<T> {
   if (!res.ok()) {
@@ -16,8 +21,8 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await json(await request.post('/api/issues', { data: { title: hideTitle, status: 'done' } }));
 
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'Filter', exact: true }).click();
-  await page.getByLabel('Filter status').selectOption('todo');
+  await openIssueFilterCategory(page, 'Status');
+  await chooseIssueFilterOption(page, 'Filter status', 'Todo');
   await expect(page).toHaveURL(/status=todo/);
   const list = page.getByRole('listbox', { name: 'Issues' });
   await expect(list.getByRole('option', { name: new RegExp(keepTitle) })).toBeVisible();
@@ -25,8 +30,8 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Remove Status · Todo filter' }).click();
   await expect(page).not.toHaveURL(/status=todo/);
   await expect(list.getByRole('option', { name: new RegExp(hideTitle) })).toBeVisible();
-  await page.getByRole('button', { name: 'Filter', exact: true }).click();
-  await page.getByLabel('Filter status').selectOption('todo');
+  await openIssueFilterCategory(page, 'Status');
+  await chooseIssueFilterOption(page, 'Filter status', 'Todo');
 
   await page.getByRole('button', { name: 'New view', exact: true }).click();
   const viewName = page.getByRole('textbox', { name: 'View name', exact: true });
@@ -60,8 +65,8 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(page.getByRole('option', { name: new RegExp(keepTitle) })).toHaveCount(0);
 
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'Filter', exact: true }).click();
-  await page.getByLabel('Filter status').selectOption('todo');
+  await openIssueFilterCategory(page, 'Status');
+  await chooseIssueFilterOption(page, 'Filter status', 'Todo');
   const filteredViewName = `Todo filtered ${stamp}`;
   await createIssueView(page, filteredViewName);
   await expect(page).toHaveURL(new RegExp(`/views/todo-filtered-${stamp}`));

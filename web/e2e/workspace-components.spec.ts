@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
-import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
+import {
+  chooseIssueFilterOption,
+  createIssueView,
+  expandMoreNavigation,
+  fillIssueSearch,
+  openIssueFilterCategory,
+} from './issue-list-controls.ts';
 
 test('issue list row opens a detail view with an editable properties panel', async ({
   page,
@@ -156,10 +162,12 @@ test('type and estimate filters survive saving a reusable view', async ({ page, 
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
-  await page.getByLabel('Filter type').selectOption('feature');
-  await page.getByLabel('Filter estimate').selectOption('8');
-  await page.getByLabel('Filter due date').selectOption('overdue');
+  await openIssueFilterCategory(page, 'Type');
+  await chooseIssueFilterOption(page, 'Filter type', 'Feature');
+  await openIssueFilterCategory(page, 'Estimate');
+  await chooseIssueFilterOption(page, 'Filter estimate', '8');
+  await openIssueFilterCategory(page, 'Due date');
+  await chooseIssueFilterOption(page, 'Filter due date', 'Overdue');
   await expect(page).toHaveURL(/\?dueDate=overdue&type=feature&estimate=8$/);
 
   const filteredRow = page.getByRole('option', { name: new RegExp(matchingTitle) });
@@ -199,13 +207,13 @@ test('due-date filters match relative windows and a custom date', async ({ page,
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
-  await page.getByLabel('Filter due date').selectOption('threeDays');
+  await openIssueFilterCategory(page, 'Due date');
+  await chooseIssueFilterOption(page, 'Filter due date', 'Due in 3 days');
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(nearTitle) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(farTitle) })).toHaveCount(0);
 
-  await page.getByLabel('Filter due date').selectOption('custom');
+  await chooseIssueFilterOption(page, 'Filter due date', 'Custom date');
   const customDate = localDate(45);
   await page.getByLabel('Due on date').fill(customDate);
   await expect.poll(() => new URL(page.url()).searchParams.get('dueDate')).toBe(`on:${customDate}`);
@@ -234,13 +242,13 @@ test('relation filters distinguish blocked issues and survive saving a view', as
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
-  await page.getByLabel('Filter relation').selectOption('subissue');
+  await openIssueFilterCategory(page, 'Relations');
+  await chooseIssueFilterOption(page, 'Filter relation', 'Sub-issues');
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(child.title) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(parent.title) })).toHaveCount(0);
 
-  await page.getByLabel('Filter relation').selectOption('blocked');
+  await chooseIssueFilterOption(page, 'Filter relation', 'Blocked issues');
   await expect(issues.getByRole('option', { name: new RegExp(blocked.title) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(blocker.title) })).toHaveCount(0);
 
@@ -275,7 +283,7 @@ test('content filter searches descriptions and persists on a saved view', async 
   }
 
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'Filter' }).click();
+  await openIssueFilterCategory(page, 'Content');
   await page.getByLabel('Filter issue content').fill(phrase);
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(matchingTitle) })).toBeVisible();
@@ -305,13 +313,24 @@ test('created-date filters support relative and exact dates on saved views', asy
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
-  await page.getByLabel('Filter issue date').selectOption('createdAt');
-  await page.getByLabel('Filter date timeframe').selectOption('weekAgo');
+  await openIssueFilterCategory(page, 'Dates');
+  await chooseIssueFilterOption(page, 'Filter issue date', 'Created date');
+  await expect(
+    page
+      .getByRole('group', { name: 'Filter issue date' })
+      .getByRole('button', { name: 'Created date', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(/dateField=createdAt/);
+  await chooseIssueFilterOption(page, 'Filter date timeframe', '1 week ago');
+  await expect(
+    page
+      .getByRole('group', { name: 'Filter date timeframe' })
+      .getByRole('button', { name: '1 week ago', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(title) })).toBeVisible();
 
-  await page.getByLabel('Filter date timeframe').selectOption('custom');
+  await chooseIssueFilterOption(page, 'Filter date timeframe', 'Custom date');
   const createdDate = issue.createdAt.slice(0, 10);
   await page.getByLabel('On date').fill(createdDate);
   await expect
@@ -354,9 +373,9 @@ test('time-in-current-status filters by elapsed status time and persist on a sav
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
-  await page.getByLabel('Filter issue date').selectOption('timeInCurrentStatus');
-  await page.getByLabel('Filter date timeframe').selectOption('dayAgo');
+  await openIssueFilterCategory(page, 'Dates');
+  await chooseIssueFilterOption(page, 'Filter issue date', 'Time in current status');
+  await chooseIssueFilterOption(page, 'Filter date timeframe', 'At least 1 day');
   const issueList = page.getByRole('listbox', { name: 'Issues' });
   await expect(issueList.getByRole('option', { name: new RegExp(title) })).toHaveCount(0);
 
@@ -413,9 +432,9 @@ test('project status and priority filter linked issues and persist on a saved vi
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
-  await page.getByLabel('Filter project status').selectOption('started');
-  await page.getByLabel('Filter project priority').selectOption('2');
+  await openIssueFilterCategory(page, 'Project properties');
+  await chooseIssueFilterOption(page, 'Filter project status', 'In progress');
+  await chooseIssueFilterOption(page, 'Filter project priority', 'High');
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(matchingTitle) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
@@ -468,7 +487,7 @@ test('milestone-name contains filter matches linked issues and persists on a sav
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
+  await openIssueFilterCategory(page, 'Milestone');
   await page.getByLabel('Filter milestone name').fill('beta rollout');
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(matchingTitle) })).toBeVisible();
@@ -533,7 +552,7 @@ test('project labels are editable, filter linked issues, and persist on a saved 
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
+  await openIssueFilterCategory(page, 'Project properties');
   const projectLabels = page.getByRole('group', { name: 'Filter project labels' });
   await projectLabels.getByText(labelName, { exact: true }).click();
   const issues = page.getByRole('listbox', { name: 'Issues' });
@@ -592,7 +611,7 @@ test('added-to-cycle phases filter issues and persist on a saved view', async ({
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Filter' }).click();
+  await openIssueFilterCategory(page, 'Added to cycle');
   const addedToCycle = page.getByRole('group', { name: 'Filter added to cycle' });
   await addedToCycle.getByText('Planned', { exact: true }).click();
   const issueList = page.getByRole('listbox', { name: 'Issues' });
@@ -1827,8 +1846,8 @@ test('cycle issues can be filtered in the URL and displayed as a board', async (
   await expect(issueList.getByRole('option', { name: new RegExp(inProgressTitle) })).toBeVisible();
   await expect(issueList.getByRole('option', { name: new RegExp(todoTitle) })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Filter', exact: true }).click();
-  await page.getByLabel('Filter status').selectOption('in_progress');
+  await openIssueFilterCategory(page, 'Status');
+  await chooseIssueFilterOption(page, 'Filter status', 'In Progress');
   await expect(page).toHaveURL(new RegExp(`/cycles/${cycle.number}\\?status=in_progress$`));
   await expect(issueList.getByRole('option', { name: new RegExp(inProgressTitle) })).toBeVisible();
   await expect(issueList.getByRole('option', { name: new RegExp(todoTitle) })).toHaveCount(0);

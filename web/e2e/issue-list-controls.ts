@@ -8,6 +8,36 @@ export async function fillIssueSearch(page: Page, query: string) {
   await input.fill(query);
 }
 
+export async function openIssueFilterCategory(page: Page, category: string) {
+  const backButton = page.getByRole('button', { name: 'Back to filters', exact: true });
+  if (await backButton.isVisible().catch(() => false)) {
+    await backButton.click();
+  } else {
+    const addFilterButton = page.getByRole('button', { name: 'Add filter', exact: true });
+    if (!(await page.getByRole('textbox', { name: 'Search filters', exact: true }).count())) {
+      await addFilterButton.click();
+    }
+  }
+
+  const search = page.getByRole('textbox', { name: 'Search filters', exact: true });
+  await search.fill(category);
+  await page.getByRole('button', { name: category, exact: true }).click();
+}
+
+export async function chooseIssueFilterOption(page: Page, label: string, option: string) {
+  const combobox = page.getByRole('combobox', { name: label, exact: true });
+  if (await combobox.count()) {
+    await combobox.click();
+    await page.getByRole('option', { name: option, exact: true }).click();
+    return;
+  }
+
+  await page
+    .getByRole('group', { name: label, exact: true })
+    .getByRole('button', { name: option, exact: true })
+    .click();
+}
+
 export async function createIssueView(page: Page, name: string) {
   const addButton = page.getByRole('button', { name: 'Add new view', exact: true });
   if ((await addButton.count()) > 0) await addButton.click();

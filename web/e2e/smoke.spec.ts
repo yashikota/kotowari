@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
-import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
+import {
+  chooseIssueFilterOption,
+  createIssueView,
+  expandMoreNavigation,
+  fillIssueSearch,
+  openIssueFilterCategory,
+} from './issue-list-controls.ts';
 
 test('archive and restore an issue', async ({ page, request }) => {
   const title = `Archive candidate ${Date.now()}`;
@@ -359,8 +365,8 @@ test('sub-issue and saved view', async ({ page, request }) => {
 
   await createIssueView(page, 'Todos');
   await expect(page).toHaveURL(/\/views\/todos/);
-  await page.getByRole('button', { name: 'Filter', exact: true }).click();
-  await page.getByLabel('Filter status').selectOption('todo');
+  await openIssueFilterCategory(page, 'Status');
+  await chooseIssueFilterOption(page, 'Filter status', 'Todo');
   await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();

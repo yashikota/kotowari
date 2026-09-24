@@ -68,4 +68,10 @@ test('app controls and the emoji picker follow the configured Japanese locale', 
   await expect(search).toBeVisible();
   await search.fill('溶けている顔');
   await expect(picker.getByRole('option', { name: /溶けている顔/ })).toBeVisible();
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'フィルターを追加', exact: true }).click();
+  await page.getByRole('textbox', { name: 'フィルターを検索' }).fill('ステータス');
+  await page.getByRole('button', { name: 'ステータス', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'ステータスで絞り込む' })).toBeVisible();
 });

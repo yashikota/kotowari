@@ -1,14 +1,23 @@
+import { useMemo, useState } from 'react';
 import {
   ActionIcon,
   Button,
+  Divider,
   Group,
-  NativeSelect,
   Popover,
+  Select,
   Stack,
   Text,
   TextInput,
 } from '@mantine/core';
-import { IconFilter } from '@tabler/icons-react';
+import { useMediaQuery } from '@mantine/hooks';
+import {
+  IconCheck,
+  IconChevronLeft,
+  IconChevronRight,
+  IconFilter,
+  IconSearch,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { IssueSearch } from '../api.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
@@ -17,6 +26,192 @@ import { LabelChip } from '../mantine-ui.tsx';
 import type { FilterChip } from '../presenters/IssueFilters.tsx';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
+
+const FILTER_CATEGORIES = [
+  { id: 'status', group: 'issue', chips: ['status'] },
+  { id: 'priority', group: 'issue', chips: ['priority'] },
+  { id: 'estimate', group: 'issue', chips: ['estimate'] },
+  { id: 'labels', group: 'issue', chips: ['label:'] },
+  { id: 'relations', group: 'issue', chips: ['relation'] },
+  { id: 'dates', group: 'issue', chips: ['date'] },
+  { id: 'project', group: 'planning', chips: ['project'] },
+  {
+    id: 'projectProperties',
+    group: 'planning',
+    chips: ['projectStatus', 'projectPriority', 'projectLabel:'],
+  },
+  { id: 'cycle', group: 'planning', chips: ['cycle'] },
+  { id: 'addedToCycle', group: 'planning', chips: ['addedToCycle:'] },
+  { id: 'content', group: 'other', chips: ['content'] },
+  { id: 'type', group: 'other', chips: ['type'] },
+  { id: 'dueDate', group: 'other', chips: ['dueDate'] },
+  { id: 'milestone', group: 'other', chips: ['milestoneName'] },
+] as const;
+
+type FilterCategory = (typeof FILTER_CATEGORIES)[number]['id'];
+type SelectOption = { value: string; label: string };
+
+function FilterSelect({
+  label,
+  value,
+  data,
+  onChange,
+  searchable = false,
+}: {
+  label: string;
+  value: string | null;
+  data: SelectOption[];
+  onChange: (value: string) => void;
+  searchable?: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Select
+      aria-label={label}
+      label={label}
+      value={value}
+      placeholder={t('filters.chooseValue')}
+      data={data}
+      searchable={searchable}
+      allowDeselect={false}
+      clearable
+      nothingFoundMessage={t('filters.noOptions')}
+      comboboxProps={{ withinPortal: false, shadow: 'md' }}
+      onChange={(next) => onChange(next ?? '')}
+    />
+  );
+}
+
+function FilterOptionList({
+  label,
+  options,
+  value,
+  selectedValues,
+  onChange,
+  searchable = false,
+}: {
+  label: string;
+  options: SelectOption[];
+  value?: string | null;
+  selectedValues?: string[];
+  onChange: (value: string) => void;
+  searchable?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [query, setQuery] = useState('');
+  const visibleOptions = options.filter((option) =>
+    option.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+  );
+
+  return (
+    <Stack gap="xs">
+      {searchable ? (
+        <TextInput
+          aria-label={t('filters.searchOptions')}
+          placeholder={t('filters.filterOptions')}
+          leftSection={<IconSearch size={15} aria-hidden="true" />}
+          value={query}
+          autoFocus
+          onChange={(event) => setQuery(event.currentTarget.value)}
+        />
+      ) : null}
+      {visibleOptions.length > 0 ? (
+        <Stack gap={2} role="group" aria-label={label}>
+          {visibleOptions.map((option) => (
+            <FilterOptionButton
+              key={option.value}
+              label={option.label}
+              selected={selectedValues?.includes(option.value) ?? value === option.value}
+              onClick={() => onChange(option.value)}
+            />
+          ))}
+        </Stack>
+      ) : (
+        <Text size="sm" c="dimmed" py="xs">
+          {t('filters.noOptions')}
+        </Text>
+      )}
+    </Stack>
+  );
+}
+
+function FilterOptionButton({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={selected ? 'light' : 'subtle'}
+      color="gray"
+      size="compact-sm"
+      fullWidth
+      justify="space-between"
+      aria-pressed={selected}
+      onClick={onClick}
+      rightSection={selected ? <IconCheck size={14} aria-hidden="true" /> : null}
+    >
+      {label}
+    </Button>
+  );
+}
+
+function FilterLabelList({
+  labels,
+  selectedLabels,
+  label,
+  onToggle,
+}: {
+  labels: Label[];
+  selectedLabels: string[];
+  label: string;
+  onToggle: (name: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [query, setQuery] = useState('');
+  const filteredLabels = labels.filter((item) =>
+    item.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+  );
+
+  return labels.length > 0 ? (
+    <Stack gap="xs" role="group" aria-label={label}>
+      <TextInput
+        aria-label={t('filters.searchOptions')}
+        placeholder={t('filters.filterOptions')}
+        leftSection={<IconSearch size={15} aria-hidden="true" />}
+        value={query}
+        autoFocus
+        onChange={(event) => setQuery(event.currentTarget.value)}
+      />
+      {filteredLabels.length > 0 ? (
+        <Group gap={4}>
+          {filteredLabels.map((item) => (
+            <LabelChip
+              key={item.id}
+              name={item.name}
+              color={item.color}
+              selected={selectedLabels.includes(item.name)}
+              onClick={() => onToggle(item.name)}
+            />
+          ))}
+        </Group>
+      ) : (
+        <Text size="sm" c="dimmed">
+          {t('filters.noOptions')}
+        </Text>
+      )}
+    </Stack>
+  ) : (
+    <Text size="sm" c="dimmed">
+      {t('filters.noLabels')}
+    </Text>
+  );
+}
 
 export function IssueFilterMenu({
   search,
@@ -84,11 +279,18 @@ export function IssueFilterMenu({
   const { t } = useTranslation();
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
+  const [category, setCategory] = useState<FilterCategory | null>(null);
+  const [filterQuery, setFilterQuery] = useState('');
+  const compact = useMediaQuery('(max-width: 640px)');
   const exactDueDate = search.dueDate?.startsWith('on:') ? search.dueDate.slice(3) : '';
   const dueDateValue =
-    exactDueDate || search.dueDate === 'custom' ? 'custom' : (search.dueDate ?? '');
+    exactDueDate || search.dueDate === 'custom' ? 'custom' : (search.dueDate ?? null);
   const exactDateRange = search.dateRange?.startsWith('on:') ? search.dateRange.slice(3) : '';
-  const dateRangeValue = exactDateRange ? 'custom' : (search.dateRange ?? '');
+  const dateRangeValue = exactDateRange
+    ? 'custom'
+    : search.dateRange === 'custom'
+      ? 'custom'
+      : (search.dateRange ?? null);
   const dateRanges =
     search.dateField === 'timeInCurrentStatus'
       ? (['dayAgo', 'weekAgo', 'twoWeeksAgo', 'monthAgo', 'quarterAgo', 'halfYearAgo'] as const)
@@ -103,181 +305,147 @@ export function IssueFilterMenu({
           'yearAgo',
           'custom',
         ] as const);
-  return (
-    <>
-      <Popover
-        opened={opened}
-        onChange={onOpenChange}
-        position="bottom-start"
-        shadow="md"
-        width={300}
-      >
-        <Popover.Target>
-          <ActionIcon
-            type="button"
-            variant={chips.length > 0 ? 'light' : 'subtle'}
-            color="gray"
-            aria-label={t('filters.button')}
-            title={t('filters.button')}
-            aria-expanded={opened}
-            onClick={onToggle}
-          >
-            <IconFilter size={16} stroke={1.7} aria-hidden="true" />
-          </ActionIcon>
-        </Popover.Target>
-        <Popover.Dropdown mah="70vh" style={{ overflowY: 'auto' }}>
-          <Stack gap="xs">
-            <NativeSelect
-              aria-label={t('filters.filterStatus')}
-              label={t('field.status')}
-              value={search.status ?? ''}
-              onChange={(event) => onStatusChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyStatus') },
-                ...workflowStatuses.map((status) => ({
-                  value: status.id,
-                  label: workflowStatusLabel(status.id, workflowStatuses),
-                })),
-              ]}
-            />
-            <TextInput
-              aria-label={t('filters.filterContent')}
-              label={t('filters.content')}
-              placeholder={t('filters.contentPlaceholder')}
-              value={search.content ?? ''}
-              maxLength={512}
-              onChange={(event) => onContentChange(event.currentTarget.value)}
-            />
-            <NativeSelect
-              aria-label={t('filters.filterType')}
-              label={t('field.type')}
-              value={search.type ?? ''}
-              onChange={(event) => onTypeChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyType') },
-                ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
-                  value: type,
-                  label: issueTypeLabel(type),
-                })),
-              ]}
-            />
-            <NativeSelect
-              aria-label={t('filters.filterEstimate')}
-              label={t('field.estimate')}
-              value={search.estimate == null ? '' : String(search.estimate)}
-              onChange={(event) => onEstimateChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyEstimate') },
-                ...[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
-                  value: String(estimate),
-                  label: String(estimate),
-                })),
-              ]}
-            />
-            <NativeSelect
-              aria-label={t('filters.filterDueDate')}
-              label={t('filters.dueDate')}
-              value={dueDateValue}
-              onChange={(event) =>
-                onDueDateChange(
-                  event.currentTarget.value === 'custom' ? 'custom' : event.currentTarget.value,
-                )
-              }
-              data={[
-                { value: '', label: t('filters.anyDueDate') },
-                ...(
-                  [
-                    'overdue',
-                    'today',
-                    'tomorrow',
-                    'threeDays',
-                    'week',
-                    'month',
-                    'quarter',
-                    'custom',
-                    'none',
-                  ] as const
-                ).map((value) => ({
-                  value,
-                  label: t(`filters.dueDateValue.${value}`),
-                })),
-              ]}
-            />
-            {dueDateValue === 'custom' ? (
-              <TextInput
-                type="date"
-                aria-label={t('filters.customDueDate')}
-                label={t('filters.customDueDate')}
-                value={exactDueDate}
-                onChange={(event) =>
-                  onDueDateChange(
-                    event.currentTarget.value ? `on:${event.currentTarget.value}` : 'custom',
-                  )
-                }
-              />
-            ) : null}
-            <NativeSelect
-              aria-label={t('filters.filterRelation')}
-              label={t('filters.relation')}
-              value={search.relation ?? ''}
-              onChange={(event) => onRelationChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyRelation') },
-                ...(
-                  [
-                    'parent',
-                    'subissue',
-                    'blocked',
-                    'blocking',
-                    'recurring',
-                    'related',
-                    'duplicate',
-                  ] as const
-                ).map((value) => ({
-                  value,
-                  label: t(`filters.relationValue.${value}`),
-                })),
-              ]}
-            />
-            <NativeSelect
-              aria-label={t('filters.filterDateField')}
-              label={t('filters.dateField.label')}
-              value={search.dateField ?? ''}
-              onChange={(event) => onDateFieldChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.dateField.any') },
-                ...(
-                  [
-                    'createdAt',
-                    'updatedAt',
-                    'startedAt',
-                    'completedAt',
-                    'timeInCurrentStatus',
-                  ] as const
-                ).map((field) => ({
-                  value: field,
-                  label: t(`filters.dateField.${field}`),
-                })),
-              ]}
+
+  const categoryLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        FILTER_CATEGORIES.map(({ id }) => [id, t(`filters.categories.${id}`)]),
+      ) as Record<FilterCategory, string>,
+    [t],
+  );
+  const filteredCategories = FILTER_CATEGORIES.filter(({ id }) =>
+    categoryLabels[id].toLocaleLowerCase().includes(filterQuery.trim().toLocaleLowerCase()),
+  );
+  const activeFilterKeys = new Set(chips.map((chip) => chip.key));
+
+  function isCategoryActive(filterCategory: FilterCategory): boolean {
+    const definition = FILTER_CATEGORIES.find(({ id }) => id === filterCategory);
+    return (
+      definition?.chips.some((key) =>
+        key.endsWith(':')
+          ? [...activeFilterKeys].some((activeKey) => activeKey.startsWith(key))
+          : activeFilterKeys.has(key),
+      ) ?? false
+    );
+  }
+
+  function clearCategory() {
+    const definition = FILTER_CATEGORIES.find(({ id }) => id === category);
+    if (!definition) return;
+    for (const chip of chips) {
+      if (
+        definition.chips.some((key) =>
+          key.endsWith(':') ? chip.key.startsWith(key) : chip.key === key,
+        )
+      ) {
+        onRemoveFilter(chip.key);
+      }
+    }
+  }
+
+  function selectCategory(next: FilterCategory) {
+    setCategory(next);
+    setFilterQuery('');
+  }
+
+  function renderCategoryEditor() {
+    switch (category) {
+      case 'status':
+        return (
+          <FilterOptionList
+            label={t('filters.filterStatus')}
+            value={search.status ?? null}
+            searchable
+            options={workflowStatuses.map((status) => ({
+              value: status.id,
+              label: workflowStatusLabel(status.id, workflowStatuses),
+            }))}
+            onChange={onStatusChange}
+          />
+        );
+      case 'priority':
+        return (
+          <FilterOptionList
+            label={t('filters.filterPriority')}
+            value={search.priority === undefined ? null : String(search.priority)}
+            options={[0, 1, 2, 3, 4].map((priority) => ({
+              value: String(priority),
+              label: priorityLabel(priority),
+            }))}
+            onChange={onPriorityChange}
+          />
+        );
+      case 'estimate':
+        return (
+          <FilterOptionList
+            label={t('filters.filterEstimate')}
+            value={search.estimate === undefined ? null : String(search.estimate)}
+            options={[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
+              value: String(estimate),
+              label: String(estimate),
+            }))}
+            onChange={onEstimateChange}
+          />
+        );
+      case 'labels':
+        return (
+          <FilterLabelList
+            labels={labels}
+            selectedLabels={selectedLabels}
+            label={t('filters.filterLabels')}
+            onToggle={onToggleLabel}
+          />
+        );
+      case 'relations':
+        return (
+          <FilterOptionList
+            label={t('filters.filterRelation')}
+            value={search.relation ?? null}
+            options={(
+              [
+                'parent',
+                'subissue',
+                'blocked',
+                'blocking',
+                'recurring',
+                'related',
+                'duplicate',
+              ] as const
+            ).map((value) => ({ value, label: t(`filters.relationValue.${value}`) }))}
+            onChange={onRelationChange}
+          />
+        );
+      case 'dates':
+        return (
+          <Stack gap="sm">
+            <FilterOptionList
+              label={t('filters.filterDateField')}
+              value={search.dateField ?? null}
+              options={(
+                [
+                  'createdAt',
+                  'updatedAt',
+                  'startedAt',
+                  'completedAt',
+                  'timeInCurrentStatus',
+                ] as const
+              ).map((field) => ({ value: field, label: t(`filters.dateField.${field}`) }))}
+              onChange={onDateFieldChange}
             />
             {search.dateField ? (
               <>
-                <NativeSelect
-                  aria-label={t('filters.filterDateRange')}
-                  label={t('filters.dateRange.label')}
+                <FilterOptionList
+                  label={t('filters.filterDateRange')}
                   value={dateRangeValue}
-                  onChange={(event) => onDateRangeChange(event.currentTarget.value)}
-                  data={[
-                    { value: '', label: t('filters.dateRange.any') },
-                    ...dateRanges.map((range) => ({
-                      value: range,
-                      label: t(
-                        search.dateField === 'timeInCurrentStatus'
-                          ? `filters.statusAgeRange.${range}`
-                          : `filters.dateRange.${range}`,
-                      ),
-                    })),
-                  ]}
+                  options={dateRanges.map((range) => ({
+                    value: range,
+                    label: t(
+                      search.dateField === 'timeInCurrentStatus'
+                        ? `filters.statusAgeRange.${range}`
+                        : `filters.dateRange.${range}`,
+                    ),
+                  }))}
+                  onChange={onDateRangeChange}
                 />
                 {dateRangeValue === 'custom' ? (
                   <TextInput
@@ -294,49 +462,38 @@ export function IssueFilterMenu({
                 ) : null}
               </>
             ) : null}
-            <NativeSelect
-              aria-label={t('filters.filterProject')}
-              label={t('field.project')}
-              value={search.project ?? ''}
-              onChange={(event) => onProjectChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyProject') },
-                ...projects.map((project) => ({ value: project.slug, label: project.name })),
-              ]}
+          </Stack>
+        );
+      case 'project':
+        return (
+          <FilterSelect
+            label={t('filters.filterProject')}
+            value={search.project ?? null}
+            searchable
+            data={projects.map((project) => ({ value: project.slug, label: project.name }))}
+            onChange={onProjectChange}
+          />
+        );
+      case 'projectProperties':
+        return (
+          <Stack gap="sm">
+            <FilterOptionList
+              label={t('filters.filterProjectStatus')}
+              value={search.projectStatus ?? null}
+              options={projectWorkflowStatuses.map((status) => ({
+                value: status.id,
+                label: projectWorkflowStatusLabel(status.id, projectWorkflowStatuses, t),
+              }))}
+              onChange={onProjectStatusChange}
             />
-            <NativeSelect
-              aria-label={t('filters.filterProjectStatus')}
-              label={t('filters.projectStatus')}
-              value={search.projectStatus ?? ''}
-              onChange={(event) => onProjectStatusChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyProjectStatus') },
-                ...projectWorkflowStatuses.map((status) => ({
-                  value: status.id,
-                  label: projectWorkflowStatusLabel(status.id, projectWorkflowStatuses, t),
-                })),
-              ]}
-            />
-            <TextInput
-              aria-label={t('filters.filterMilestoneName')}
-              label={t('filters.milestoneName')}
-              placeholder={t('filters.milestoneNamePlaceholder')}
-              value={search.milestoneName ?? ''}
-              maxLength={512}
-              onChange={(event) => onMilestoneNameChange(event.currentTarget.value)}
-            />
-            <NativeSelect
-              aria-label={t('filters.filterProjectPriority')}
-              label={t('filters.projectPriority')}
-              value={search.projectPriority == null ? '' : String(search.projectPriority)}
-              onChange={(event) => onProjectPriorityChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyProjectPriority') },
-                ...[0, 1, 2, 3, 4].map((priority) => ({
-                  value: String(priority),
-                  label: priorityLabel(priority),
-                })),
-              ]}
+            <FilterOptionList
+              label={t('filters.filterProjectPriority')}
+              value={search.projectPriority == null ? null : String(search.projectPriority)}
+              options={[0, 1, 2, 3, 4].map((priority) => ({
+                value: String(priority),
+                label: priorityLabel(priority),
+              }))}
+              onChange={onProjectPriorityChange}
             />
             <Stack gap={4} role="group" aria-label={t('filters.filterProjectLabels')}>
               <Text size="xs" c="dimmed" fw={500}>
@@ -360,78 +517,250 @@ export function IssueFilterMenu({
                 ))}
               </Group>
             </Stack>
-            <NativeSelect
-              aria-label={t('filters.filterCycle')}
-              label={t('field.cycle')}
-              value={search.cycle ? String(search.cycle) : ''}
-              onChange={(event) => onCycleChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyCycle') },
-                ...cycles.map((cycle) => ({
-                  value: String(cycle.number),
-                  label: t('field.cycleN', { number: cycle.number }),
-                })),
-              ]}
-            />
-            <Stack gap={4} role="group" aria-label={t('filters.filterAddedToCycle')}>
-              <Text size="xs" c="dimmed" fw={500}>
-                {t('filters.addedToCycle')}
-              </Text>
-              <Group gap={4}>
-                {(['planned', 'during', 'after'] as const).map((phase) => (
-                  <LabelChip
-                    key={phase}
-                    name={t(`filters.addedToCycle${phase[0]!.toUpperCase()}${phase.slice(1)}`)}
-                    color="var(--mantine-color-gray-6)"
-                    selected={selectedAddedToCycle.includes(phase)}
-                    onClick={() => onToggleAddedToCycle(phase)}
-                  />
-                ))}
-              </Group>
-            </Stack>
-            <NativeSelect
-              aria-label={t('filters.filterPriority')}
-              label={t('field.priority')}
-              value={search.priority !== undefined ? String(search.priority) : ''}
-              onChange={(event) => onPriorityChange(event.currentTarget.value)}
-              data={[
-                { value: '', label: t('filters.anyPriority') },
-                ...[0, 1, 2, 3, 4].map((priority) => ({
-                  value: String(priority),
-                  label: priorityLabel(priority),
-                })),
-              ]}
-            />
-            {labels.length > 0 ? (
-              <Stack gap={4} role="group" aria-label={t('filters.filterLabels')}>
-                <Text size="xs" c="dimmed" fw={500}>
-                  {t('issueProperties.labels')}
-                </Text>
-                <Group gap={4}>
-                  {labels.map((label) => {
-                    return (
-                      <LabelChip
-                        key={label.id}
-                        name={label.name}
-                        color={label.color}
-                        selected={selectedLabels.includes(label.name)}
-                        onClick={() => onToggleLabel(label.name)}
-                      />
-                    );
-                  })}
-                </Group>
-              </Stack>
-            ) : null}
-            <Button
-              type="button"
-              variant="subtle"
-              size="xs"
-              disabled={chips.length === 0}
-              onClick={onClear}
-            >
-              {t('filters.clear')}
-            </Button>
           </Stack>
+        );
+      case 'cycle':
+        return (
+          <FilterOptionList
+            label={t('filters.filterCycle')}
+            value={search.cycle == null ? null : String(search.cycle)}
+            searchable
+            options={cycles.map((cycle) => ({
+              value: String(cycle.number),
+              label: t('field.cycleN', { number: cycle.number }),
+            }))}
+            onChange={onCycleChange}
+          />
+        );
+      case 'addedToCycle':
+        return (
+          <Stack gap="xs" role="group" aria-label={t('filters.filterAddedToCycle')}>
+            {(['planned', 'during', 'after'] as const).map((phase) => (
+              <LabelChip
+                key={phase}
+                name={t(`filters.addedToCycle${phase[0]!.toUpperCase()}${phase.slice(1)}`)}
+                color="var(--mantine-color-gray-6)"
+                selected={selectedAddedToCycle.includes(phase)}
+                onClick={() => onToggleAddedToCycle(phase)}
+              />
+            ))}
+          </Stack>
+        );
+      case 'content':
+        return (
+          <TextInput
+            aria-label={t('filters.filterContent')}
+            label={t('filters.content')}
+            placeholder={t('filters.contentPlaceholder')}
+            value={search.content ?? ''}
+            maxLength={512}
+            onChange={(event) => onContentChange(event.currentTarget.value)}
+          />
+        );
+      case 'type':
+        return (
+          <FilterOptionList
+            label={t('filters.filterType')}
+            value={search.type ?? null}
+            options={(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
+              value: type,
+              label: issueTypeLabel(type),
+            }))}
+            onChange={onTypeChange}
+          />
+        );
+      case 'dueDate':
+        return (
+          <Stack gap="sm">
+            <FilterOptionList
+              label={t('filters.filterDueDate')}
+              value={dueDateValue}
+              options={(
+                [
+                  'overdue',
+                  'today',
+                  'tomorrow',
+                  'threeDays',
+                  'week',
+                  'month',
+                  'quarter',
+                  'custom',
+                  'none',
+                ] as const
+              ).map((value) => ({ value, label: t(`filters.dueDateValue.${value}`) }))}
+              onChange={onDueDateChange}
+            />
+            {dueDateValue === 'custom' ? (
+              <TextInput
+                type="date"
+                aria-label={t('filters.customDueDate')}
+                label={t('filters.customDueDate')}
+                value={exactDueDate}
+                onChange={(event) =>
+                  onDueDateChange(
+                    event.currentTarget.value ? `on:${event.currentTarget.value}` : 'custom',
+                  )
+                }
+              />
+            ) : null}
+          </Stack>
+        );
+      case 'milestone':
+        return (
+          <TextInput
+            aria-label={t('filters.filterMilestoneName')}
+            label={t('filters.milestoneName')}
+            placeholder={t('filters.milestoneNamePlaceholder')}
+            value={search.milestoneName ?? ''}
+            maxLength={512}
+            onChange={(event) => onMilestoneNameChange(event.currentTarget.value)}
+          />
+        );
+      default:
+        return null;
+    }
+  }
+
+  return (
+    <>
+      <Popover
+        opened={opened}
+        onChange={(next) => {
+          onOpenChange(next);
+          if (!next) {
+            setCategory(null);
+            setFilterQuery('');
+          }
+        }}
+        position="bottom-start"
+        shadow="md"
+        width={compact ? 320 : category ? 600 : 320}
+        withinPortal
+      >
+        <Popover.Target>
+          <ActionIcon
+            type="button"
+            variant={chips.length > 0 ? 'light' : 'subtle'}
+            color="gray"
+            aria-label={t('filters.button')}
+            title={t('filters.button')}
+            aria-expanded={opened}
+            onClick={onToggle}
+          >
+            <IconFilter size={16} stroke={1.7} aria-hidden="true" />
+          </ActionIcon>
+        </Popover.Target>
+        <Popover.Dropdown
+          p={0}
+          mah="70vh"
+          style={{ maxWidth: 'calc(100vw - 16px)', overflow: 'hidden' }}
+        >
+          <Group gap={0} align="stretch" wrap="nowrap">
+            <Stack w={320} gap={0} style={{ display: compact && category ? 'none' : undefined }}>
+              <TextInput
+                aria-label={t('filters.searchFilters')}
+                placeholder={t('filters.searchPlaceholder')}
+                leftSection={<IconSearch size={15} aria-hidden="true" />}
+                value={filterQuery}
+                autoFocus
+                onChange={(event) => setFilterQuery(event.currentTarget.value)}
+                styles={{ input: { border: 0, borderRadius: 0 } }}
+              />
+              <Divider />
+              <Stack gap="xs" p="xs" mah="calc(70vh - 42px)" style={{ overflowY: 'auto' }}>
+                {(['issue', 'planning', 'other'] as const).map((group) => {
+                  const groupCategories = filteredCategories.filter((item) => item.group === group);
+                  if (groupCategories.length === 0) return null;
+                  return (
+                    <Stack key={group} gap={2}>
+                      <Text px="xs" pt={4} size="xs" c="dimmed" fw={600}>
+                        {t(`filters.groups.${group}`)}
+                      </Text>
+                      {groupCategories.map(({ id }) => (
+                        <Button
+                          key={id}
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          size="compact-sm"
+                          fullWidth
+                          justify="space-between"
+                          aria-pressed={isCategoryActive(id)}
+                          data-active={category === id || undefined}
+                          onClick={() => selectCategory(id)}
+                          rightSection={
+                            isCategoryActive(id) ? (
+                              <IconCheck size={14} aria-hidden="true" />
+                            ) : (
+                              <IconChevronRight size={14} aria-hidden="true" />
+                            )
+                          }
+                        >
+                          {categoryLabels[id]}
+                        </Button>
+                      ))}
+                    </Stack>
+                  );
+                })}
+                {filteredCategories.length === 0 ? (
+                  <Text size="sm" c="dimmed" px="xs" py="sm">
+                    {t('filters.noMatchingFilters')}
+                  </Text>
+                ) : null}
+                {chips.length > 0 ? (
+                  <>
+                    <Divider my={4} />
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      color="gray"
+                      size="compact-sm"
+                      disabled={chips.length === 0}
+                      onClick={onClear}
+                    >
+                      {t('filters.clear')}
+                    </Button>
+                  </>
+                ) : null}
+              </Stack>
+            </Stack>
+            {category ? (
+              <>
+                {!compact ? <Divider orientation="vertical" /> : null}
+                <Stack w={compact ? 320 : 279} gap={0}>
+                  <Group gap="xs" px="sm" py="xs" wrap="nowrap">
+                    <ActionIcon
+                      type="button"
+                      size="sm"
+                      variant="subtle"
+                      color="gray"
+                      aria-label={t('filters.backToFilters')}
+                      onClick={() => setCategory(null)}
+                    >
+                      <IconChevronLeft size={16} aria-hidden="true" />
+                    </ActionIcon>
+                    <Text size="sm" fw={600} style={{ flex: 1 }}>
+                      {categoryLabels[category]}
+                    </Text>
+                    {isCategoryActive(category) ? (
+                      <Button
+                        type="button"
+                        size="compact-xs"
+                        variant="subtle"
+                        onClick={clearCategory}
+                      >
+                        {t('filters.clearFilter')}
+                      </Button>
+                    ) : null}
+                  </Group>
+                  <Divider />
+                  <Stack gap="sm" p="sm" mah="calc(70vh - 42px)" style={{ overflowY: 'auto' }}>
+                    {renderCategoryEditor()}
+                  </Stack>
+                </Stack>
+              </>
+            ) : null}
+          </Group>
         </Popover.Dropdown>
       </Popover>
       {chips.length > 0 ? (

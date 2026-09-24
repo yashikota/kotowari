@@ -1,6 +1,52 @@
 import { expect, test } from '@playwright/test';
 import { expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
+test('issue filters use a searchable category menu with a scoped editor', async ({ page }) => {
+  await page.goto('/issues');
+
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  const searchFilters = page.getByRole('textbox', { name: 'Search filters' });
+  await expect(searchFilters).toBeFocused();
+  await searchFilters.fill('prior');
+  await expect(page.getByRole('button', { name: 'Priority', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Status', exact: true })).toHaveCount(0);
+
+  await searchFilters.fill('no matching category');
+  await expect(page.getByText('No matching filters')).toBeVisible();
+
+  await searchFilters.fill('status');
+  await page.getByRole('button', { name: 'Status', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Filter status' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Search filters' })).toBeVisible();
+  const searchOptions = page.getByRole('textbox', { name: 'Search filter options' });
+  await searchOptions.fill('in progress');
+  await expect(
+    page.getByRole('group', { name: 'Filter status' }).getByRole('button', { name: 'In Progress' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'Filter status' }).getByRole('button', { name: 'Backlog' }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Back to filters' }).click();
+  await expect(page.getByRole('textbox', { name: 'Search filters' })).toBeVisible();
+});
+
+test('filter picker keeps its scoped editor inside a narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await page.getByRole('button', { name: 'Status', exact: true }).click();
+
+  const picker = page.getByRole('dialog', { name: 'Add filter' });
+  await expect(page.getByRole('group', { name: 'Filter status' })).toBeVisible();
+  const bounds = await picker.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+
+  await page.getByRole('button', { name: 'Back to filters' }).click();
+  await expect(page.getByRole('textbox', { name: 'Search filters' })).toBeVisible();
+});
+
 test('Linear-style workspace shell and collapsible priority groups', async ({ page }) => {
   await page.goto('/issues');
 
