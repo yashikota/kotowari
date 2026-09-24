@@ -107,6 +107,7 @@ export function ViewPageView({
                         issues={issues}
                         onOpen={handlers.onBoardOpen17}
                         onMove={handlers.onBoardMove18}
+                        find={find}
                         orderBy={orderBy}
                         direction={direction}
                         showSubIssues={showSubIssues}

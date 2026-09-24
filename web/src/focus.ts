@@ -3,6 +3,15 @@ import { useRouterState } from '@tanstack/react-router';
 
 export type AutofocusTarget = 'title' | 'name' | 'body' | 'description';
 
+export type IssueNavigationState = {
+  issueIds: string[];
+  issueReturnTo: string;
+  issueListFind: string;
+  issueListSelectedId: string;
+  issueListScrollTop: number;
+  issueListLayout: 'list' | 'board';
+};
+
 export function readAutofocus(state: unknown): AutofocusTarget | undefined {
   return (state as { autofocus?: AutofocusTarget } | undefined)?.autofocus;
 }
@@ -39,5 +48,6 @@ declare module '@tanstack/history' {
     issueListFind?: string;
     issueListSelectedId?: string;
     issueListScrollTop?: number;
+    issueListLayout?: 'list' | 'board';
   }
 }

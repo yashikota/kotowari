@@ -18,6 +18,7 @@ import type { IssueBoardColumnProps } from '../components/IssueBoardColumn.tsx';
 import { localToday } from '../due.ts';
 import { actionFromKeyboard } from '../keymap.ts';
 import type { Issue } from '../types.ts';
+import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 
 type Props = {
@@ -93,6 +94,7 @@ export function useIssueListPresenter({
     issueListFind: find,
     issueListSelectedId: activeId,
     issueListScrollTop: windowed.ref.current?.scrollTop ?? restoreScrollTop,
+    issueListLayout: 'list' as const,
   });
 
   useKeyboard((e) => {
@@ -186,8 +188,9 @@ export function useIssueListPresenter({
 
 type BoardProps = {
   issues: Issue[];
-  onOpen: (id: string) => void;
+  onOpen: (id: string, state: IssueNavigationState) => void;
   onMove: (id: string, status: string, sortOrder: number) => void;
+  find?: string;
   orderBy?: IssueOrderBy;
   direction?: 'asc' | 'desc';
   showSubIssues?: boolean;
@@ -208,6 +211,7 @@ export function useIssueBoardPresenter({
   issues: initialIssues,
   onOpen,
   onMove,
+  find = '',
   orderBy = 'manual',
   direction,
   showSubIssues = true,
@@ -228,6 +232,11 @@ export function useIssueBoardPresenter({
       })),
     [issues, orderBy, direction, workflowStatuses],
   );
+  const issueIds = useMemo(
+    () => columns.flatMap((column) => column.issues.map((issue) => issue.identifier)),
+    [columns],
+  );
+  const issueReturnTo = useRouterState({ select: (state) => state.location.href });
   return {
     _view: 0 as const,
     onOpen,
@@ -239,10 +248,15 @@ export function useIssueBoardPresenter({
         const handle: IssueBoardColumnProps['onDrag'] = setDragId;
         return handle(...args);
       },
-      onOpen1: (...args: Parameters<IssueBoardColumnProps['onOpen']>) => {
-        const handle: IssueBoardColumnProps['onOpen'] = onOpen;
-        return handle(...args);
-      },
+      onOpen1: (id: string) =>
+        onOpen(id, {
+          issueIds,
+          issueReturnTo,
+          issueListFind: find,
+          issueListSelectedId: id,
+          issueListScrollTop: 0,
+          issueListLayout: 'board',
+        }),
       onMove2: (...args: Parameters<IssueBoardColumnProps['onMove']>) => {
         const handle: IssueBoardColumnProps['onMove'] = onMove;
         return handle(...args);

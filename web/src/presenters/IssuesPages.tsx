@@ -22,6 +22,7 @@ import {
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { isTypingTarget } from '../keymap.ts';
+import type { IssueNavigationState } from '../focus.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 
@@ -80,7 +81,7 @@ export function useIssuesPagePresenter() {
   const [find, setFind] = useState(locationState.issueListFind ?? '');
   const [view, setView] = useState<'active' | 'backlog' | 'all'>('all');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
-  const [layout, setLayout] = useState<IssueLayout>('list');
+  const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
@@ -269,8 +270,8 @@ export function useIssuesPagePresenter() {
             ? current.filter((item) => item !== property)
             : [...current, property],
         ),
-      onBoardOpen8: (id: string) =>
-        navigate({ to: '/issues/$identifier', params: { identifier: id } }),
+      onBoardOpen8: (id: string, state: IssueNavigationState) =>
+        navigate({ to: '/issues/$identifier', params: { identifier: id }, state }),
       onBoardMove9: (id: string, status: string, sortOrder: number) =>
         api.patchIssue(id, { workflowStatus: status, sortOrder }).then(() => router.invalidate()),
     },
@@ -306,6 +307,7 @@ export function useIssueRoutePagePresenter() {
     issueListFind: locationState.issueListFind ?? '',
     issueListSelectedId: locationState.issueListSelectedId ?? null,
     issueListScrollTop: locationState.issueListScrollTop ?? 0,
+    issueListLayout: locationState.issueListLayout ?? 'list',
     handlers: {
       onSelect0: (
         id: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>[0],
@@ -319,6 +321,7 @@ export function useIssueRoutePagePresenter() {
             issueListFind: locationState.issueListFind ?? '',
             issueListSelectedId: locationState.issueListSelectedId ?? undefined,
             issueListScrollTop: locationState.issueListScrollTop ?? 0,
+            issueListLayout: locationState.issueListLayout ?? 'list',
           },
         }),
     },
@@ -328,9 +331,10 @@ export function useIssueRoutePagePresenter() {
 export function useBoardPagePresenter() {
   const data = useLoaderData({ from: '/board' }) as IssueListData;
   const search = useSearch({ from: '/board' }) as IssueSearch;
+  const locationState = useRouterState({ select: (state) => state.location.state });
   const navigate = useNavigate();
   const router = useRouter();
-  const [find, setFind] = useState('');
+  const [find, setFind] = useState(locationState.issueListFind ?? '');
   const issues = (data.issues ?? []).filter((i) => matchesFind(i, find));
 
   return {
@@ -351,7 +355,8 @@ export function useBoardPagePresenter() {
       },
       onOpen3: (
         id: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onOpen']>>[0],
-      ) => navigate({ to: '/issues/$identifier', params: { identifier: id } }),
+        state: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onOpen']>>[1],
+      ) => navigate({ to: '/issues/$identifier', params: { identifier: id }, state }),
       onMove4: (
         id: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[0],
         status: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[1],

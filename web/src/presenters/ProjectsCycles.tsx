@@ -3,6 +3,7 @@ import {
   useNavigate,
   useParams,
   useRouter,
+  useRouterState,
   useSearch,
 } from '@tanstack/react-router';
 import type * as React from 'react';
@@ -14,6 +15,7 @@ import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleIssuesCSV } from '../cycle-export.ts';
 import { cycleProgressTimeline } from '../cycle-progress.ts';
 import { IssueList } from '../components/IssueList.tsx';
+import type { IssueNavigationState } from '../focus.ts';
 import {
   DEFAULT_DISPLAY_PROPERTIES,
   filterCompletedIssues,
@@ -1324,6 +1326,7 @@ export function useCyclesPagePresenter() {
 export function useCycleDetailPagePresenter() {
   const sendIntent = useIntent();
   const search = useSearch({ from: '/cycles/$number' }) as IssueSearch;
+  const locationState = useRouterState({ select: (state) => state.location.state });
   const data = useLoaderData({ from: '/cycles/$number' }) as {
     cycle: Cycle;
     issues: Issue[];
@@ -1336,7 +1339,9 @@ export function useCycleDetailPagePresenter() {
   };
   const router = useRouter();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(
+    locationState.issueListSelectedId ?? null,
+  );
   const [cycle, setCycle] = useState(data.cycle);
   const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
   const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
@@ -1353,7 +1358,7 @@ export function useCycleDetailPagePresenter() {
     ? Math.round((done / data.cycleIssues.length) * 100)
     : 0;
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('status');
-  const [layout, setLayout] = useState<IssueLayout>('list');
+  const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
@@ -1569,8 +1574,8 @@ export function useCycleDetailPagePresenter() {
             ? current.filter((item) => item !== property)
             : [...current, property],
         ),
-      onBoardOpen: (identifier: string) =>
-        navigate({ to: '/issues/$identifier', params: { identifier } }),
+      onBoardOpen: (identifier: string, state: IssueNavigationState) =>
+        navigate({ to: '/issues/$identifier', params: { identifier }, state }),
       onBoardMove: async (identifier: string, status: string, sortOrder: number) => {
         await api.patchIssue(identifier, { workflowStatus: status, sortOrder });
         await router.invalidate();

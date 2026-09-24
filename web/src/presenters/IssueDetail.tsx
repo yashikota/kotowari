@@ -42,6 +42,7 @@ type Props = {
   issueListFind?: string;
   issueListSelectedId?: string | null;
   issueListScrollTop?: number;
+  issueListLayout?: 'list' | 'board';
 };
 
 export function useIssueDetailPresenter({
@@ -51,6 +52,7 @@ export function useIssueDetailPresenter({
   issueListFind = '',
   issueListSelectedId = null,
   issueListScrollTop = 0,
+  issueListLayout = 'list',
 }: Props) {
   const sendIntent = useIntent();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
@@ -744,6 +746,7 @@ export function useIssueDetailPresenter({
           issueListFind,
           issueListSelectedId: issueListSelectedId ?? undefined,
           issueListScrollTop,
+          issueListLayout,
         });
       },
       onNavigatePrevious: () => {
@@ -758,6 +761,7 @@ export function useIssueDetailPresenter({
               issueListFind,
               issueListSelectedId: issueListSelectedId ?? undefined,
               issueListScrollTop,
+              issueListLayout,
             },
           });
         }
@@ -774,6 +778,7 @@ export function useIssueDetailPresenter({
               issueListFind,
               issueListSelectedId: issueListSelectedId ?? undefined,
               issueListScrollTop,
+              issueListLayout,
             },
           });
         }

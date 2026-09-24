@@ -20,6 +20,7 @@ import {
   type IssueOrderBy,
 } from '../issue-list.ts';
 import { IssueList } from '../components/IssueList.tsx';
+import type { IssueNavigationState } from '../focus.ts';
 import type { Cycle, Issue, Label, Project, View } from '../types.ts';
 
 export function useViewPagePresenter() {
@@ -193,8 +194,8 @@ export function useViewPagePresenter() {
             : [...displayProperties, property],
         });
       },
-      onBoardOpen17: (id: string) =>
-        navigate({ to: '/issues/$identifier', params: { identifier: id } }),
+      onBoardOpen17: (id: string, state: IssueNavigationState) =>
+        navigate({ to: '/issues/$identifier', params: { identifier: id }, state }),
       onBoardMove18: (id: string, status: string, sortOrder: number) =>
         api.patchIssue(id, { status, sortOrder }).then(() => router.invalidate()),
     },

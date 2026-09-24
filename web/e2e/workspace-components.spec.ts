@@ -1687,12 +1687,42 @@ test('board columns group cards by status and reflect a detail edit', async ({ p
   await card.click();
 
   await chooseIssueProperty(page, 'Status', 'Done');
-  await expandMoreNavigation(page);
-  await page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Board' }).click();
+  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await expect(page).toHaveURL(/\/board$/);
 
   const doneColumn = page.getByRole('region', { name: 'done issues' });
   await expect(doneColumn.getByRole('button', { name: cardName })).toBeVisible();
   await expect(todoColumn.getByRole('button', { name: cardName })).toHaveCount(0);
+});
+
+test('issue detail returns to the filtered issues board layout', async ({ page, request }) => {
+  const stamp = Date.now();
+  const created = await request.post('/api/issues', {
+    data: { title: `Issues board return ${stamp}`, status: 'todo', priority: 2 },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page
+    .getByRole('radiogroup', { name: 'Layout' })
+    .getByText('Board', { exact: true })
+    .click();
+  const todoColumn = page.getByRole('region', { name: 'todo issues' });
+  const card = todoColumn.getByRole('button', { name: new RegExp(issue.identifier) });
+  await expect(card).toBeVisible();
+  await card.click();
+  await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}$`));
+
+  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await expect(page).toHaveURL(/\/issues$/);
+  await expect(page.getByRole('textbox', { name: 'Find issues', exact: true })).toHaveValue(
+    String(stamp),
+  );
+  await expect(page.getByRole('region', { name: 'todo issues' })).toBeVisible();
+  await expect(page.getByRole('listbox', { name: 'Issues' })).toHaveCount(0);
 });
 
 test('cycle navigation stays under the team and the list follows Linear chronology', async ({

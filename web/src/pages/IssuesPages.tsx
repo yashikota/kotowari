@@ -135,6 +135,7 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
                     issues={issues}
                     onOpen={handlers.onBoardOpen8}
                     onMove={handlers.onBoardMove9}
+                    find={find}
                     orderBy={orderBy}
                     direction={direction}
                     showSubIssues={showSubIssues}
@@ -177,6 +178,7 @@ export function IssueRoutePageView({
         issueListFind,
         issueListSelectedId,
         issueListScrollTop,
+        issueListLayout,
       } = model;
       return (
         <Box h="100%" style={{ overflow: 'auto' }}>
@@ -187,6 +189,7 @@ export function IssueRoutePageView({
             issueListFind={issueListFind}
             issueListSelectedId={issueListSelectedId}
             issueListScrollTop={issueListScrollTop}
+            issueListLayout={issueListLayout}
           />
         </Box>
       );
@@ -232,7 +235,12 @@ export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPage
                   {t('ui.noIssuesStart')} <Shortcut>c</Shortcut> {t('ui.toCreate')}
                 </EmptyState>
               ) : (
-                <IssueBoard issues={issues} onOpen={handlers.onOpen3} onMove={handlers.onMove4} />
+                <IssueBoard
+                  issues={issues}
+                  onOpen={handlers.onOpen3}
+                  onMove={handlers.onMove4}
+                  find={find}
+                />
               )}
             </Pane>
           </SplitLayout>
