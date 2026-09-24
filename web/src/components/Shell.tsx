@@ -136,6 +136,7 @@ export function ShellView({
       const {
         workspaceName,
         routeTitle,
+        isIssueDetail,
         mobileNavigationOpen,
         moreLinksOpen,
         sidebarNavigation,
@@ -458,6 +459,7 @@ export function ShellView({
                 h={44}
                 px="md"
                 wrap="nowrap"
+                className={isIssueDetail ? styles.issueDetailHeader : undefined}
                 style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
               >
                 <Group
@@ -465,6 +467,7 @@ export function ShellView({
                   aria-label={t('nav.breadcrumb')}
                   gap="sm"
                   wrap="nowrap"
+                  className={isIssueDetail ? styles.issueDetailBreadcrumb : undefined}
                   style={{ minWidth: 0 }}
                 >
                   <Text size="sm" c="dimmed" truncate maw={180}>

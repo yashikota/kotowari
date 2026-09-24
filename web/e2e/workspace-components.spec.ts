@@ -69,6 +69,7 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   await expect(page.getByRole('button', { name: 'Navigate to previous issue' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Navigate to next issue' })).toBeDisabled();
 
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeHidden();
   const properties = page.getByRole('region', { name: 'Issue properties' });
   await expect(properties).toBeVisible();
   await expect(properties.getByRole('group', { name: 'Labels' })).toBeVisible();
@@ -104,6 +105,8 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   expect(cycleBounds!.x).toBeGreaterThan(labelsBounds!.x);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeHidden();
   const narrowPanel = await properties.evaluate((element: HTMLElement) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth,

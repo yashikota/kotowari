@@ -13,12 +13,28 @@
   background: var(--mantine-color-body);
 }
 
+.issueDetailHeader {
+  display: none;
+}
+
+.issueDetailBreadcrumb {
+  min-width: 0;
+}
+
 .backdrop,
 .mobileMenuButton {
   display: none;
 }
 
 @media (max-width: 680px) {
+  .issueDetailHeader {
+    display: flex;
+  }
+
+  .issueDetailBreadcrumb {
+    display: none;
+  }
+
   .sidebar {
     display: none;
   }

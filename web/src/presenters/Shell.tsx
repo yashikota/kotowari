@@ -97,6 +97,7 @@ export function useShellPresenter() {
   }, [router]);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const routeSearch = useRouterState({ select: (s) => s.location.search });
+  const isIssueDetail = pathname.startsWith('/issues/');
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [views, setViews] = useState<View[]>([]);
   const [favoriteIssues, setFavoriteIssues] = useState<Issue[]>([]);
@@ -671,6 +672,7 @@ export function useShellPresenter() {
     _view: 0 as const,
     workspaceName,
     routeTitle,
+    isIssueDetail,
     mobileNavigationOpen,
     workspaceNavigationOpen,
     moreLinksOpen,
