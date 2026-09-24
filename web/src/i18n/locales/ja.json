@@ -322,6 +322,7 @@
   },
   "projectDependencies": {
     "heading": "依存関係",
+    "addFromCreate": "依存関係を追加",
     "form": "プロジェクト依存関係を追加",
     "project": "プロジェクト",
     "chooseProject": "プロジェクトを選択…",

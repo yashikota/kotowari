@@ -32,7 +32,17 @@ import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
-import type { Activity, ADR, Cycle, Issue, Label, Page, Project, ProjectHealth } from '../types.ts';
+import type {
+  Activity,
+  ADR,
+  Cycle,
+  Issue,
+  Label,
+  Page,
+  Project,
+  ProjectDependency,
+  ProjectHealth,
+} from '../types.ts';
 import {
   useProjectWorkflow,
   projectWorkflowStatusCategory,
@@ -143,6 +153,11 @@ export function useProjectsPagePresenter() {
   const [milestoneDraftName, setMilestoneDraftName] = useState('');
   const [milestoneDraftDescription, setMilestoneDraftDescription] = useState('');
   const [milestoneDraftTargetDate, setMilestoneDraftTargetDate] = useState('');
+  const [initialDependencies, setInitialDependencies] = useState<ProjectDependency[]>([]);
+  const [dependencyDraftOpen, setDependencyDraftOpen] = useState(false);
+  const [dependencyDraftProjectSlug, setDependencyDraftProjectSlug] = useState('');
+  const [dependencyDraftKind, setDependencyDraftKind] =
+    useState<ProjectDependency['kind']>('blocks');
   const [createOpen, setCreateOpen] = useState(false);
   const [projectViewDialogOpen, setProjectViewDialogOpen] = useState(false);
   const [projectViewName, setProjectViewName] = useState('');
@@ -678,6 +693,7 @@ export function useProjectsPagePresenter() {
       ...(startDate ? { startDate } : {}),
       ...(targetDate ? { targetDate } : {}),
       labels: selectedLabels,
+      dependencies: initialDependencies,
       milestones: initialMilestones.map((milestone) => ({
         name: milestone.name,
         ...(milestone.description ? { description: milestone.description } : {}),
@@ -708,6 +724,21 @@ export function useProjectsPagePresenter() {
     setMilestoneDraftDescription('');
     setMilestoneDraftTargetDate('');
   }
+
+  function addInitialDependency() {
+    if (!dependencyDraftProjectSlug) return;
+    setInitialDependencies((current) => [
+      ...current,
+      { projectSlug: dependencyDraftProjectSlug, kind: dependencyDraftKind },
+    ]);
+    setDependencyDraftOpen(false);
+    setDependencyDraftProjectSlug('');
+  }
+
+  const availableDependencyProjects = projects.filter(
+    (candidate) =>
+      !initialDependencies.some((dependency) => dependency.projectSlug === candidate.slug),
+  );
 
   return {
     _view: 0 as const,
@@ -743,6 +774,12 @@ export function useProjectsPagePresenter() {
     milestoneDraftName,
     milestoneDraftDescription,
     milestoneDraftTargetDate,
+    initialDependencies,
+    dependencyDraftOpen,
+    dependencyDraftProjectSlug,
+    dependencyDraftKind,
+    availableDependencyProjects,
+    projectNameBySlug: Object.fromEntries(projects.map((project) => [project.slug, project.name])),
     createOpen,
     handlers: {
       onOpenCreateProjectView: openProjectView,
@@ -780,6 +817,10 @@ export function useProjectsPagePresenter() {
         setMilestoneDraftName('');
         setMilestoneDraftDescription('');
         setMilestoneDraftTargetDate('');
+        setInitialDependencies([]);
+        setDependencyDraftOpen(false);
+        setDependencyDraftProjectSlug('');
+        setDependencyDraftKind('blocks');
         setCreateOpen(true);
       },
       onCloseCreateProject: () => setCreateOpen(false),
@@ -805,6 +846,20 @@ export function useProjectsPagePresenter() {
       onAddInitialMilestone: addInitialMilestone,
       onRemoveInitialMilestone: (index: number) =>
         setInitialMilestones((current) => current.filter((_, itemIndex) => itemIndex !== index)),
+      onOpenDependencyDraft: () => setDependencyDraftOpen(true),
+      onCancelDependencyDraft: () => {
+        setDependencyDraftOpen(false);
+        setDependencyDraftProjectSlug('');
+      },
+      onDependencyDraftProjectChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+        setDependencyDraftProjectSlug(e.target.value),
+      onDependencyDraftKindChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+        setDependencyDraftKind(e.target.value as ProjectDependency['kind']),
+      onAddInitialDependency: addInitialDependency,
+      onRemoveInitialDependency: (projectSlug: string) =>
+        setInitialDependencies((current) =>
+          current.filter((dependency) => dependency.projectSlug !== projectSlug),
+        ),
       New_project_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setName(e.target.value),
@@ -1088,13 +1143,6 @@ export function useProjectDetailPagePresenter() {
         await api.patchMilestone(slug, id, { targetDate: milestone.targetDate });
         await refreshProject();
       },
-      Milestone_description_onChange: (id: number, e: React.ChangeEvent<HTMLTextAreaElement>) =>
-        setProject({
-          ...project,
-          milestones: project.milestones.map((item) =>
-            item.id === id ? { ...item, description: e.target.value } : item,
-          ),
-        }),
       Milestone_description_onBlur: async (id: number, description: string) => {
         await api.patchMilestone(slug, id, { description });
         await refreshProject();

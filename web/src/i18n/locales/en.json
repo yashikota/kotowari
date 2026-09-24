@@ -324,6 +324,7 @@
   },
   "projectDependencies": {
     "heading": "Dependencies",
+    "addFromCreate": "Add dependencies",
     "form": "Add project dependency",
     "project": "Project",
     "chooseProject": "Choose a project…",

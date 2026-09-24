@@ -241,6 +241,22 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 		}
 		seenMilestones[key] = struct{}{}
 	}
+	dependencies := make([]ProjectDependency, 0, len(options.Dependencies))
+	seenDependencies := make(map[string]struct{}, len(options.Dependencies))
+	for _, dependency := range options.Dependencies {
+		dependencySlug := strings.TrimSpace(dependency.ProjectSlug)
+		if dependencySlug == "" || dependencySlug == slug {
+			return Project{}, validationf("invalid project dependency")
+		}
+		if dependency.Kind != "blocks" && dependency.Kind != "blocked_by" && dependency.Kind != "related" {
+			return Project{}, validationf("invalid project dependency kind")
+		}
+		if _, exists := seenDependencies[dependencySlug]; exists {
+			return Project{}, errf(ErrConflict, "project dependency already exists")
+		}
+		seenDependencies[dependencySlug] = struct{}{}
+		dependencies = append(dependencies, ProjectDependency{ProjectSlug: dependencySlug, Kind: dependency.Kind})
+	}
 	now := domain.Now()
 	var completedAt *string
 	var out Project
@@ -258,6 +274,14 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 		projectLabels, err := canonicalProjectLabels(m, labels)
 		if err != nil {
 			return err
+		}
+		dependencyIndices := make([]int, 0, len(dependencies))
+		for _, dependency := range dependencies {
+			index := indexProject(m, dependency.ProjectSlug)
+			if index < 0 {
+				return ErrNotFound
+			}
+			dependencyIndices = append(dependencyIndices, index)
 		}
 		projectID := m.nextID()
 		milestones := make([]Milestone, 0, len(options.Milestones))
@@ -277,7 +301,16 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 		out = Project{
 			ID: projectID, Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: resolvedStatus.Category, WorkflowStatus: resolvedStatus.ID,
 			Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
-			Labels: projectLabels, Dependencies: []ProjectDependency{}, Milestones: milestones, CreatedAt: now, UpdatedAt: now,
+			Labels: projectLabels, Dependencies: dependencies, Milestones: milestones, CreatedAt: now, UpdatedAt: now,
+		}
+		for i, dependency := range dependencies {
+			dependencyProject := m.Projects[dependencyIndices[i]]
+			dependencyProject.Dependencies = append(dependencyProject.Dependencies, ProjectDependency{
+				ProjectSlug: slug, Kind: inverseProjectDependencyKind(dependency.Kind),
+			})
+			dependencyProject.UpdatedAt = now
+			m.Projects[dependencyIndices[i]] = dependencyProject
+			addActivity(m, "project", dependencyProject.ID, "dependency_added", map[string]any{"projectSlug": slug, "kind": inverseProjectDependencyKind(dependency.Kind)}, now)
 		}
 		m.Projects = append(m.Projects, out)
 		addActivity(m, "project", out.ID, "created", map[string]any{"slug": slug}, now)
@@ -389,12 +422,7 @@ func (s *Store) AddProjectDependency(projectSlug, dependencySlug, kind string) (
 		if kind != "related" && projectBlocksReachable(m, blocked, blocker) {
 			return validationf("project dependency would create a blocking cycle")
 		}
-		inverseKind := kind
-		if kind == "blocks" {
-			inverseKind = "blocked_by"
-		} else if kind == "blocked_by" {
-			inverseKind = "blocks"
-		}
+		inverseKind := inverseProjectDependencyKind(kind)
 		now := domain.Now()
 		project.Dependencies = append(project.Dependencies, ProjectDependency{ProjectSlug: dependencySlug, Kind: kind})
 		dependency.Dependencies = append(dependency.Dependencies, ProjectDependency{ProjectSlug: projectSlug, Kind: inverseKind})
@@ -409,6 +437,17 @@ func (s *Store) AddProjectDependency(projectSlug, dependencySlug, kind string) (
 		return nil
 	})
 	return out, err
+}
+
+func inverseProjectDependencyKind(kind string) string {
+	switch kind {
+	case "blocks":
+		return "blocked_by"
+	case "blocked_by":
+		return "blocks"
+	default:
+		return kind
+	}
 }
 
 func projectBlocksReachable(m *mem, fromSlug, targetSlug string) bool {

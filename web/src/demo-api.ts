@@ -12,6 +12,7 @@ import type {
   Label,
   Page,
   Project,
+  ProjectDependency,
   RecurringIssue,
   View,
   Workspace,
@@ -1206,12 +1207,16 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         isFavorite: false,
         resources: [],
       });
-    if (path === '/api/projects')
+    if (path === '/api/projects') {
+      const dependencies = Array.isArray(value.dependencies)
+        ? (value.dependencies as ProjectDependency[])
+        : [];
       Object.assign(created, {
         status: value.status ?? 'planned',
         workflowStatus: value.workflowStatus ?? value.status ?? 'planned',
         priority: value.priority ?? 0,
         labels: value.labels ?? [],
+        dependencies,
         milestones: (Array.isArray(value.milestones) ? value.milestones : []).map(
           (milestone, index) => ({
             id:
@@ -1229,6 +1234,22 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
           }),
         ),
       });
+      for (const dependency of dependencies) {
+        const target = projects.find((project) => project.slug === dependency.projectSlug);
+        if (!target) continue;
+        const inverseKind =
+          dependency.kind === 'blocks'
+            ? 'blocked_by'
+            : dependency.kind === 'blocked_by'
+              ? 'blocks'
+              : 'related';
+        target.dependencies = [
+          ...(target.dependencies ?? []),
+          { projectSlug: String(value.slug), kind: inverseKind },
+        ];
+        patch(target, {});
+      }
+    }
     if (path === '/api/adrs')
       Object.assign(created, {
         number: id,

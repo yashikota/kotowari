@@ -105,7 +105,8 @@ type MilestoneInput struct {
 }
 
 type ProjectCreationOptions struct {
-	Milestones []MilestoneInput `json:"milestones,omitempty"`
+	Milestones   []MilestoneInput    `json:"milestones,omitempty"`
+	Dependencies []ProjectDependency `json:"dependencies,omitempty"`
 }
 
 type ProjectDependency struct {

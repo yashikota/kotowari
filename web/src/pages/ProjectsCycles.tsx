@@ -95,6 +95,12 @@ export function ProjectsPageView({
         milestoneDraftName,
         milestoneDraftDescription,
         milestoneDraftTargetDate,
+        initialDependencies,
+        dependencyDraftOpen,
+        dependencyDraftProjectSlug,
+        dependencyDraftKind,
+        availableDependencyProjects,
+        projectNameBySlug,
         createOpen,
         handlers,
       } = model;
@@ -277,6 +283,96 @@ export function ProjectsPageView({
                       onChange={handlers.New_project_target_onChange}
                     />
                   </Group>
+                  <Stack gap="xs" aria-label={t('projectDependencies.heading')}>
+                    <Group justify="space-between">
+                      <Text size="sm" fw={600}>
+                        {t('projectDependencies.heading')}
+                      </Text>
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        size="sm"
+                        disabled={availableDependencyProjects.length === 0}
+                        onClick={handlers.onOpenDependencyDraft}
+                      >
+                        {t('projectDependencies.addFromCreate')}
+                      </Button>
+                    </Group>
+                    {initialDependencies.map((dependency) => (
+                      <Group key={dependency.projectSlug} justify="space-between" gap="xs">
+                        <Text size="sm">
+                          {t(`projectDependencies.kindOptions.${dependency.kind}`)}{' '}
+                          {projectNameBySlug[dependency.projectSlug] ?? dependency.projectSlug}
+                        </Text>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          aria-label={t('projectDependencies.remove', {
+                            project:
+                              projectNameBySlug[dependency.projectSlug] ?? dependency.projectSlug,
+                          })}
+                          onClick={() => handlers.onRemoveInitialDependency(dependency.projectSlug)}
+                        >
+                          <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                        </ActionIcon>
+                      </Group>
+                    ))}
+                    {dependencyDraftOpen && (
+                      <Box
+                        p="sm"
+                        style={{
+                          border: '1px solid var(--mantine-color-default-border)',
+                          borderRadius: 'var(--mantine-radius-sm)',
+                        }}
+                      >
+                        <Stack gap="xs">
+                          <Group grow>
+                            <NativeSelect
+                              aria-label={t('projectDependencies.project')}
+                              value={dependencyDraftProjectSlug}
+                              onChange={handlers.onDependencyDraftProjectChange}
+                              data={[
+                                {
+                                  value: '',
+                                  label: t('projectDependencies.chooseProject'),
+                                },
+                                ...availableDependencyProjects.map((candidate) => ({
+                                  value: candidate.slug,
+                                  label: candidate.name,
+                                })),
+                              ]}
+                            />
+                            <NativeSelect
+                              aria-label={t('projectDependencies.kind')}
+                              value={dependencyDraftKind}
+                              onChange={handlers.onDependencyDraftKindChange}
+                              data={(['blocks', 'blocked_by', 'related'] as const).map((kind) => ({
+                                value: kind,
+                                label: t(`projectDependencies.kindOptions.${kind}`),
+                              }))}
+                            />
+                          </Group>
+                          <Group justify="flex-end">
+                            <Button
+                              type="button"
+                              variant="default"
+                              onClick={handlers.onCancelDependencyDraft}
+                            >
+                              {t('common.cancel')}
+                            </Button>
+                            <Button
+                              type="button"
+                              disabled={!dependencyDraftProjectSlug}
+                              onClick={handlers.onAddInitialDependency}
+                            >
+                              {t('projectDependencies.add')}
+                            </Button>
+                          </Group>
+                        </Stack>
+                      </Box>
+                    )}
+                  </Stack>
                   <Stack gap="xs" aria-label={t('projectMilestones.heading')}>
                     <Group justify="space-between">
                       <Text size="sm" fw={600}>
@@ -860,10 +956,7 @@ export function ProjectDetailPageView({
                           <Textarea
                             aria-label={`${t('projectMilestones.description')}: ${milestone.name}`}
                             placeholder={t('projectMilestones.descriptionPlaceholder')}
-                            value={milestone.description ?? ''}
-                            onChange={(event) =>
-                              handlers.Milestone_description_onChange(milestone.id, event)
-                            }
+                            defaultValue={milestone.description ?? ''}
                             onBlur={(event) =>
                               handlers.Milestone_description_onBlur(
                                 milestone.id,

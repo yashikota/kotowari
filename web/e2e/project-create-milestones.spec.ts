@@ -27,6 +27,7 @@ test('new projects can be created with described, dated milestones', async ({ pa
   const milestoneDescription = page.getByLabel(`Milestone description: ${milestoneName}`);
   await expect(milestoneDescription).toHaveValue(description);
   await milestoneDescription.fill('Checklist validated with launch partners.');
+  await expect(milestoneDescription).toHaveValue('Checklist validated with launch partners.');
   await milestoneDescription.blur();
   await expect
     .poll(async () => {
