@@ -1079,9 +1079,11 @@ test('issues can be converted into reusable workspace templates', async ({ page,
   await expect(createDialog.getByLabel('Estimate')).toHaveValue('3');
 
   const createdTitle = `Follow-up incident ${stamp}`;
+  const dueDate = '2035-04-12';
   const titleInput = createDialog.getByRole('textbox', { name: 'Issue title' });
   await titleInput.fill(createdTitle);
   await expect(titleInput).toHaveValue(createdTitle);
+  await createDialog.getByLabel('Due date').fill(dueDate);
   const createRequest = page.waitForRequest(
     (candidate) => candidate.url().endsWith('/api/issues') && candidate.method() === 'POST',
   );
@@ -1090,7 +1092,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
       candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
   );
   await createDialog.getByRole('button', { name: 'Create', exact: true }).click();
-  expect((await createRequest).postDataJSON()).toMatchObject({ title: createdTitle });
+  expect((await createRequest).postDataJSON()).toMatchObject({ title: createdTitle, dueDate });
   const createdFromResponse = (await (await createResponse).json()) as {
     identifier: string;
     title: string;
@@ -1105,6 +1107,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     type: 'bug',
     priority: 2,
     estimate: 3,
+    dueDate,
   });
 });
 

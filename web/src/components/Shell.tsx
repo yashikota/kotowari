@@ -16,6 +16,7 @@ import {
   ThemeIcon,
   Text,
   Textarea,
+  TextInput,
 } from '@mantine/core';
 import {
   IconBook,
@@ -557,6 +558,13 @@ export function ShellView({
                   }))}
                   value={model.issueLabelNames}
                   onChange={handlers.Issue_labels_onChange34}
+                />
+                <TextInput
+                  type="date"
+                  aria-label={t('issueProperties.dueDate')}
+                  label={t('issueProperties.dueDate')}
+                  value={model.issueDueDate}
+                  onChange={handlers.Issue_dueDate_onChange35}
                 />
               </Group>
             </Stack>

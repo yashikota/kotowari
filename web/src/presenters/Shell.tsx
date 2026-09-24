@@ -106,6 +106,7 @@ export function useShellPresenter() {
   const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
   const [issueEstimate, setIssueEstimate] = useState('');
   const [issueBody, setIssueBody] = useState('');
+  const [issueDueDate, setIssueDueDate] = useState('');
   const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
   const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
   const [issueTemplateSlug, setIssueTemplateSlug] = useState('');
@@ -477,9 +478,11 @@ export function useShellPresenter() {
       labelIds: availableLabels
         .filter((label) => issueLabelNames.includes(label.name))
         .map((label) => label.id),
+      dueDate: issueDueDate || undefined,
     });
     setIssueTitle('');
     setIssueBody('');
+    setIssueDueDate('');
     setIssueStatus('todo');
     setIssuePriority(0);
     setIssueType('');
@@ -587,6 +590,7 @@ export function useShellPresenter() {
     issueType,
     issueEstimate,
     issueBody,
+    issueDueDate,
     issueLabelNames,
     issueTemplates,
     issueTemplateSlug,
@@ -676,6 +680,9 @@ export function useShellPresenter() {
       Issue_body_onChange31: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setIssueBody(e.target.value),
+      Issue_dueDate_onChange35: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setIssueDueDate(e.target.value),
       Issue_type_onChange32: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueType(e.target.value as Issue['type'] | ''),
