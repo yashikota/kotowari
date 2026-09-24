@@ -165,6 +165,10 @@ func (s *Store) CreateProjectWithPriority(name, slug, description, status string
 }
 
 func (s *Store) CreateProjectWithPriorityAndLabels(name, slug, description, status string, priority int, start, target *string, labels []string) (Project, error) {
+	return s.CreateProjectWithSummaryAndLabels(name, slug, "", description, status, priority, start, target, labels)
+}
+
+func (s *Store) CreateProjectWithSummaryAndLabels(name, slug, summary, description, status string, priority int, start, target *string, labels []string) (Project, error) {
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
@@ -200,7 +204,7 @@ func (s *Store) CreateProjectWithPriorityAndLabels(name, slug, description, stat
 			return err
 		}
 		out = Project{
-			ID: m.nextID(), Name: name, Slug: slug, Description: description, Status: status,
+			ID: m.nextID(), Name: name, Slug: slug, Summary: summary, Description: description, Status: status,
 			Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
 			Labels: projectLabels, Dependencies: []ProjectDependency{}, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
 		}
@@ -496,6 +500,10 @@ func (s *Store) DeleteMilestone(projectSlug string, milestoneID int64) error {
 }
 
 func (s *Store) UpdateProject(slug string, name, description, status, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
+	return s.UpdateProjectWithSummary(slug, name, nil, description, status, health, priority, start, target, labels)
+}
+
+func (s *Store) UpdateProjectWithSummary(slug string, name, summary, description, status, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)
@@ -512,6 +520,9 @@ func (s *Store) UpdateProject(slug string, name, description, status, health *st
 		}
 		if description != nil {
 			p.Description = *description
+		}
+		if summary != nil {
+			p.Summary = *summary
 		}
 		if status != nil {
 			if !domain.ValidProjectStatus(*status) {

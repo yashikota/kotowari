@@ -109,6 +109,35 @@ func TestCreateProjectAcceptsKnownLabelsAndRejectsUnknownLabels(t *testing.T) {
 	}
 }
 
+func TestProjectSummaryCanBeCreatedAndUpdatedIndependently(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch","summary":"Ship the first release","description":"Detailed release plan"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", created.Code, created.Body.String())
+	}
+	var project struct {
+		Summary     string `json:"summary"`
+		Description string `json:"description"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &project); err != nil {
+		t.Fatal(err)
+	}
+	if project.Summary != "Ship the first release" || project.Description != "Detailed release plan" {
+		t.Fatalf("project details = %#v", project)
+	}
+
+	updated := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"summary":"Release is ready"}`)
+	if updated.Code != http.StatusOK {
+		t.Fatalf("update project %d %s", updated.Code, updated.Body.String())
+	}
+	if err := json.Unmarshal(updated.Body.Bytes(), &project); err != nil {
+		t.Fatal(err)
+	}
+	if project.Summary != "Release is ready" || project.Description != "Detailed release plan" {
+		t.Fatalf("updated project details = %#v", project)
+	}
+}
+
 func TestPatchProjectHealth(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch"}`)

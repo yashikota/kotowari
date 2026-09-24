@@ -42,9 +42,9 @@ export function ProjectListItem({
           <Text size="sm" fw={500} truncate>
             {project.name}
           </Text>
-          {shows('summary') && project.description ? (
+          {shows('summary') && (project.summary || project.description) ? (
             <Text size="xs" c="dimmed" lineClamp={1}>
-              {project.description}
+              {project.summary || project.description}
             </Text>
           ) : null}
         </Stack>

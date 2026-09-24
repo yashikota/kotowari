@@ -155,6 +155,7 @@ export const api = {
   createProject: (body: {
     name: string;
     slug: string;
+    summary?: string;
     description?: string;
     status?: string;
     priority?: number;

@@ -47,7 +47,8 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
       status: 'planned',
       priority: 4,
       labels: ['Bug'],
-      description: `Summary for ${plannedName}`,
+      summary: `Summary for ${plannedName}`,
+      description: `Detailed plan for ${plannedName}`,
     },
   });
   const started = await request.post('/api/projects', {
@@ -124,7 +125,7 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await expect(page.getByRole('link', { name: new RegExp(completedName) })).toHaveCount(0);
   await clearProjectFilters(page);
 
-  await page.getByRole('button', { name: 'Add filter' }).click();
+  await openProjectFilterPopover(page);
   await page.getByRole('combobox', { name: 'Project date field' }).click();
   await page.getByRole('option', { name: 'Target date', exact: true }).click();
   await openProjectFilterPopover(page);
@@ -133,7 +134,7 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await page.getByLabel('Date to').fill(timelineTarget);
   await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Add filter' }).click();
+  await openProjectFilterPopover(page);
   await page.getByRole('button', { name: 'Clear all filters' }).click();
 
   await page.getByRole('button', { name: 'Display options' }).click();
@@ -375,7 +376,9 @@ test('completion dates are recorded, displayed, and filterable', async ({ page, 
   await openProjectFilterPopover(page);
   await page.getByRole('combobox', { name: 'Project date field' }).click();
   await page.getByRole('option', { name: 'Completed', exact: true }).click();
+  await openProjectFilterPopover(page);
   await page.getByLabel('Date from').fill(completedDate);
+  await openProjectFilterPopover(page);
   await page.getByLabel('Date to').fill(completedDate);
   await expect(page.getByRole('link', { name: new RegExp(completedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(openName) })).toHaveCount(0);
@@ -383,4 +386,42 @@ test('completion dates are recorded, displayed, and filterable', async ({ page, 
   await page.reload();
   await expect(page.getByRole('link', { name: new RegExp(completedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(openName) })).toHaveCount(0);
+});
+
+test('project summary is distinct from description through creation and editing', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const name = `Launch plan ${stamp}`;
+  const summary = 'Ship the desktop experience';
+  const revisedSummary = 'Desktop release is ready';
+  const description = 'Detailed rollout notes, validation steps, and follow-up work.';
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+  await page.getByLabel('Project name').fill(name);
+  await page.getByLabel('Summary').fill(summary);
+  await page.getByLabel('Description').fill(description);
+  await page.getByRole('button', { name: 'Create project' }).click();
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/);
+  const projectSlug = new URL(page.url()).pathname.split('/').pop();
+  if (!projectSlug) throw new Error('expected created project route');
+
+  const summaryField = page.getByLabel('Project summary');
+  const descriptionField = page.getByLabel('Project description');
+  await expect(summaryField).toHaveValue(summary);
+  await expect(descriptionField).toHaveValue(description);
+  await summaryField.fill(revisedSummary);
+  await expect(summaryField).toHaveValue(revisedSummary);
+  await descriptionField.click();
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/projects/${projectSlug}`);
+      return (await response.json()).summary;
+    })
+    .toBe(revisedSummary);
+  await page.reload();
+  await expect(summaryField).toHaveValue(revisedSummary);
+  await expect(descriptionField).toHaveValue(description);
 });

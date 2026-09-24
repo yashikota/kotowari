@@ -75,6 +75,7 @@ export function ProjectsPageView({
         controls,
         availableLabels,
         name,
+        summary,
         description,
         status,
         priority,
@@ -190,6 +191,11 @@ export function ProjectsPageView({
                     label={t('modal.projectName')}
                     value={name}
                     onChange={handlers.New_project_name_onChange1}
+                  />
+                  <TextInput
+                    label={t('modal.projectSummary')}
+                    value={summary}
+                    onChange={handlers.New_project_summary_onChange}
                   />
                   <Textarea
                     label={t('modal.projectDescription')}
@@ -449,6 +455,13 @@ export function ProjectDetailPageView({
                 }
               />
               <Stack gap="md">
+                <TextInput
+                  aria-label={t('ui.projectSummary')}
+                  label={t('ui.projectSummary')}
+                  value={project.summary ?? ''}
+                  onChange={handlers.Project_summary_onChange}
+                  onBlur={handlers.Project_summary_onBlur}
+                />
                 <Textarea
                   ref={descriptionRef}
                   aria-label={t('ui.projectDescription')}

@@ -92,6 +92,7 @@ export type Project = {
   id: number;
   name: string;
   slug: string;
+  summary?: string;
   description: string;
   status: string;
   health?: ProjectHealth | null;

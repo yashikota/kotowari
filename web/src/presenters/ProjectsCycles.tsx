@@ -54,6 +54,7 @@ export function useProjectsPagePresenter() {
   const { projects } = data;
   const search = useSearch({ from: '/projects' });
   const [name, setName] = useState('');
+  const [summary, setSummary] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] =
     useState<(typeof import('../types.ts').PROJECT_STATUSES)[number]>('planned');
@@ -243,7 +244,12 @@ export function useProjectsPagePresenter() {
       const closed = project.status === 'completed' || project.status === 'canceled';
       if (search.closed === 'open' && closed) return false;
       if (search.closed === 'closed' && !closed) return false;
-      if (query && !`${project.name} ${project.description}`.toLocaleLowerCase().includes(query)) {
+      if (
+        query &&
+        !`${project.name} ${project.summary || project.description} ${project.description}`
+          .toLocaleLowerCase()
+          .includes(query)
+      ) {
         return false;
       }
       return true;
@@ -556,6 +562,7 @@ export function useProjectsPagePresenter() {
     const project = await api.createProject({
       name: projectName,
       slug,
+      summary,
       description,
       status,
       priority,
@@ -589,6 +596,7 @@ export function useProjectsPagePresenter() {
     controls,
     availableLabels: data.labels,
     name,
+    summary,
     description,
     status,
     priority,
@@ -618,6 +626,7 @@ export function useProjectsPagePresenter() {
       },
       onOpenCreateProject: () => {
         setName('');
+        setSummary('');
         setDescription('');
         setStatus('planned');
         setPriority(0);
@@ -630,6 +639,9 @@ export function useProjectsPagePresenter() {
       New_project_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setName(e.target.value),
+      New_project_summary_onChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setSummary(e.target.value),
       New_project_description_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setDescription(e.target.value),
@@ -680,8 +692,27 @@ export function useProjectDetailPagePresenter() {
   }
 
   async function save(body: Record<string, unknown>) {
+    const before = project;
     const next = await api.patchProject(slug, body);
-    setProject(next);
+    setProject((current) => {
+      const locallyEditable = [
+        'name',
+        'summary',
+        'description',
+        'status',
+        'health',
+        'priority',
+        'startDate',
+        'targetDate',
+        'labels',
+      ] as const;
+      const newerEdits = Object.fromEntries(
+        locallyEditable
+          .filter((field) => current[field] !== before[field])
+          .map((field) => [field, current[field]]),
+      );
+      return current.slug === before.slug ? { ...next, ...newerEdits } : current;
+    });
     await router.invalidate();
   }
 
@@ -768,6 +799,14 @@ export function useProjectDetailPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setProject({ ...project, description: e.target.value }),
       Project_description_onBlur4: () => save({ description: project.description }),
+      Project_summary_onChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        const summaryDraft = e.currentTarget.value;
+        setProject((current) => ({ ...current, summary: summaryDraft }));
+      },
+      Project_summary_onBlur: (e: React.FocusEvent<HTMLInputElement>) =>
+        save({ summary: e.currentTarget.value }),
       Start_date_onChange5: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => save(e.target.value ? { startDate: e.target.value } : { clearStartDate: true }),

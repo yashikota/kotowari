@@ -202,9 +202,9 @@ function ProjectBoardCard({
               ) : null}
             </Group>
           ) : null}
-          {shows('summary') && project.description ? (
+          {shows('summary') && (project.summary || project.description) ? (
             <Text size="xs" c="dimmed" lineClamp={2}>
-              {project.description}
+              {project.summary || project.description}
             </Text>
           ) : null}
           {shows('milestones') || shows('dependencies') || shows('issues') ? (

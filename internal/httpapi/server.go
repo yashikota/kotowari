@@ -267,6 +267,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Name        string   `json:"name"`
 		Slug        string   `json:"slug"`
+		Summary     string   `json:"summary"`
 		Description string   `json:"description"`
 		Status      string   `json:"status"`
 		Priority    int      `json:"priority"`
@@ -278,7 +279,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectWithPriorityAndLabels(in.Name, in.Slug, in.Description, in.Status, in.Priority, in.StartDate, in.TargetDate, in.Labels)
+	out, err := s.store.CreateProjectWithSummaryAndLabels(in.Name, in.Slug, in.Summary, in.Description, in.Status, in.Priority, in.StartDate, in.TargetDate, in.Labels)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -298,6 +299,7 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Name        *string   `json:"name"`
+		Summary     *string   `json:"summary"`
 		Description *string   `json:"description"`
 		Status      *string   `json:"status"`
 		Health      *string   `json:"health"`
@@ -325,7 +327,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateProject(r.PathValue("slug"), in.Name, in.Description, in.Status, in.Health, in.Priority, start, target, in.Labels)
+	out, err := s.store.UpdateProjectWithSummary(r.PathValue("slug"), in.Name, in.Summary, in.Description, in.Status, in.Health, in.Priority, start, target, in.Labels)
 	if err != nil {
 		writeError(w, err)
 		return

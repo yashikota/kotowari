@@ -312,9 +312,9 @@ function ProjectTimelineProjectLabel({
           </Text>
         ) : null}
       </Group>
-      {shows('summary') && project.description ? (
+      {shows('summary') && (project.summary || project.description) ? (
         <Text size="xs" c="dimmed" lineClamp={1}>
-          {project.description}
+          {project.summary || project.description}
         </Text>
       ) : null}
       {shows('status') || shows('priority') || shows('health') || shows('labels') ? (
