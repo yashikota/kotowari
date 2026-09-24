@@ -55,6 +55,11 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   });
   expect(response.ok()).toBeTruthy();
   const issue = (await response.json()) as { identifier: string };
+  const commentBody = `Activity note ${stamp}`;
+  const commentResponse = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body: commentBody },
+  });
+  expect(commentResponse.ok()).toBeTruthy();
 
   await page.goto('/issues');
   const issueList = page.getByRole('listbox', { name: 'Issues' });
@@ -71,11 +76,22 @@ test('issue list row opens a Linear-style full-width detail view with editable p
 
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeHidden();
   const properties = page.getByRole('region', { name: 'Issue properties' });
+  const activity = page.getByRole('region', { name: 'Activity' });
   await expect(properties).toBeVisible();
+  await expect(activity.getByText(commentBody, { exact: true })).toBeVisible();
+  await expect(activity.getByText(/Added a note/)).toHaveCount(0);
+  const [createdActivityBounds, commentBounds] = await Promise.all([
+    activity.getByText(new RegExp(`You Created ${issue.identifier}`)).boundingBox(),
+    activity.getByText(commentBody, { exact: true }).boundingBox(),
+  ]);
+  expect(createdActivityBounds).not.toBeNull();
+  expect(commentBounds).not.toBeNull();
+  expect(createdActivityBounds!.y).toBeLessThan(commentBounds!.y);
   await expect(properties.getByRole('group', { name: 'Labels' })).toBeVisible();
   const issueTitle = page.getByRole('textbox', { name: 'Issue title' });
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
   await expect(documentEditor).toBeVisible();
+  await expect(documentEditor.getByRole('button', { name: 'History' })).toHaveCount(0);
   const [
     titleBounds,
     propertiesBounds,
@@ -116,19 +132,24 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   expect(narrowPanel.scrollWidth).toBeLessThanOrEqual(narrowPanel.clientWidth);
   await page.setViewportSize({ width: 1280, height: 720 });
 
-  const [subIssuesBounds, resourcesBounds, activityBounds, commentsBounds] = await Promise.all([
+  const [subIssuesBounds, resourcesBounds, activityBounds, composerBounds] = await Promise.all([
     page.getByRole('region', { name: 'Sub-issues' }).boundingBox(),
     page.getByRole('region', { name: 'Resources' }).boundingBox(),
-    page.getByText('Activity', { exact: true }).boundingBox(),
-    page.getByText('Comments', { exact: true }).boundingBox(),
+    page.getByRole('region', { name: 'Activity' }).boundingBox(),
+    page.getByRole('textbox', { name: 'New note' }).boundingBox(),
   ]);
   expect(subIssuesBounds).not.toBeNull();
   expect(resourcesBounds).not.toBeNull();
   expect(activityBounds).not.toBeNull();
-  expect(commentsBounds).not.toBeNull();
+  expect(composerBounds).not.toBeNull();
   expect(subIssuesBounds!.y).toBeLessThan(resourcesBounds!.y);
   expect(resourcesBounds!.y).toBeLessThan(activityBounds!.y);
-  expect(activityBounds!.y).toBeLessThan(commentsBounds!.y);
+  expect(activityBounds!.y).toBeLessThan(composerBounds!.y);
+  await expect(page.getByText('Comments', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'New note' })).toHaveAttribute(
+    'placeholder',
+    'Leave a comment…',
+  );
   await expect(page.getByRole('button', { name: 'Add sub-issues' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'New sub-issue' })).toHaveCount(0);
 

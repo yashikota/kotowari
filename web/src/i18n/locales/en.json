@@ -619,6 +619,8 @@
   },
   "issueComments": {
     "heading": "Comments",
+    "you": "You",
+    "composerPlaceholder": "Leave a comment…",
     "edit": "Edit comment",
     "delete": "Delete comment",
     "moreOptions": "Comment options",

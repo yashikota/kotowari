@@ -28,7 +28,7 @@ export function DocumentEditorView({
 }) {
   switch (model._view) {
     case 0: {
-      const { documentKey, assetBase, inline, historyRequest } = model;
+      const { documentKey, assetBase, inline, historyRequest, showHistoryButton } = model;
       return (
         <Editor
           key={documentKey}
@@ -36,6 +36,7 @@ export function DocumentEditorView({
           assetBase={assetBase}
           inline={inline}
           historyRequest={historyRequest}
+          showHistoryButton={showHistoryButton}
         />
       );
     }
@@ -68,6 +69,7 @@ export function EditorView({
     case 0: {
       const {
         inline,
+        showHistoryButton,
         server,
         draft,
         mode,
@@ -143,9 +145,11 @@ export function EditorView({
                   </Text>
                 </>
               )}
-              <Button type="button" variant="default" onClick={handlers.onClick4}>
-                {t('documentHistory.button')}
-              </Button>
+              {showHistoryButton ? (
+                <Button type="button" variant="default" onClick={handlers.onClick4}>
+                  {t('documentHistory.button')}
+                </Button>
+              ) : null}
             </Group>
           </Group>
 

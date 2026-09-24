@@ -18,13 +18,23 @@ export function useDocumentEditorPresenter({
   assetBase = '',
   inline = false,
   historyRequest = 0,
+  showHistoryButton = true,
 }: {
   documentKey: string;
   assetBase?: string;
   inline?: boolean;
   historyRequest?: number;
+  showHistoryButton?: boolean;
 }) {
-  return { _view: 0 as const, documentKey, assetBase, inline, historyRequest, handlers: {} };
+  return {
+    _view: 0 as const,
+    documentKey,
+    assetBase,
+    inline,
+    historyRequest,
+    showHistoryButton,
+    handlers: {},
+  };
 }
 
 export function useEditorPresenter({
@@ -32,11 +42,13 @@ export function useEditorPresenter({
   assetBase,
   inline = false,
   historyRequest = 0,
+  showHistoryButton = true,
 }: {
   documentKey: string;
   assetBase: string;
   inline?: boolean;
   historyRequest?: number;
+  showHistoryButton?: boolean;
 }) {
   const path = `/api/documents/${documentKey}`;
   const draftKey = `kotowari:draft:${location.origin}:${documentKey}`;
@@ -188,6 +200,7 @@ export function useEditorPresenter({
   return {
     _view: 0 as const,
     inline,
+    showHistoryButton,
     server,
     draft,
     base,

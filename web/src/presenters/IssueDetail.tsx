@@ -667,6 +667,28 @@ export function useIssueDetailPresenter({
     }
   }
 
+  const timeline = [
+    ...activities
+      .filter((activity) => activity.action !== 'commented')
+      .map((activity) => ({
+        kind: 'activity' as const,
+        id: activity.id,
+        createdAt: activity.createdAt,
+        activity,
+      })),
+    ...comments.map((comment) => ({
+      kind: 'comment' as const,
+      id: comment.id,
+      createdAt: comment.createdAt,
+      comment,
+    })),
+  ].sort(
+    (left, right) =>
+      left.createdAt.localeCompare(right.createdAt) ||
+      Number(left.kind === 'comment') - Number(right.kind === 'comment') ||
+      left.id - right.id,
+  );
+
   return {
     _view: 2 as const,
     identifier,
@@ -675,7 +697,7 @@ export function useIssueDetailPresenter({
     issueReturnTo,
     issue,
     issues,
-    comments,
+    timeline,
     editingCommentId,
     editingCommentDraft,
     reactionPickerTarget,
@@ -687,7 +709,6 @@ export function useIssueDetailPresenter({
     issueAttachmentBusy,
     issueFilesInputRef,
     commentSubmitShortcut: preferences.commentSubmitShortcut,
-    activities,
     projects,
     milestones,
     cycles,

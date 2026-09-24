@@ -617,6 +617,8 @@
   },
   "issueComments": {
     "heading": "コメント",
+    "you": "自分",
+    "composerPlaceholder": "コメントする…",
     "edit": "コメントを編集",
     "delete": "コメントを削除",
     "moreOptions": "コメントの操作",

@@ -10,11 +10,13 @@ import {
   Menu,
   Modal,
   NativeSelect,
+  Paper,
   Select,
   Stack,
   Text,
   Textarea,
   TextInput,
+  VisuallyHidden,
 } from '@mantine/core';
 import {
   IconCopy,
@@ -22,6 +24,7 @@ import {
   IconChevronUp,
   IconChevronRight,
   IconDotsVertical,
+  IconArrowUp,
   IconExternalLink,
   IconFileText,
   IconGitBranch,
@@ -83,7 +86,7 @@ export function IssueDetailView({
         issue,
         cycles,
         pages,
-        comments,
+        timeline,
         editingCommentId,
         editingCommentDraft,
         reactionPickerTarget,
@@ -95,7 +98,6 @@ export function IssueDetailView({
         commentError,
         commentFilesInputRef,
         commentSubmitShortcut,
-        activities,
         draft,
         subTitle,
         adrPick,
@@ -575,6 +577,7 @@ export function IssueDetailView({
                   documentKey={`issues/${identifier}/body`}
                   inline
                   historyRequest={historyRequest}
+                  showHistoryButton={false}
                 />
                 <input
                   ref={issueFilesInputRef}
@@ -911,110 +914,121 @@ export function IssueDetailView({
                   )}
                 </Section>
 
-                <Section title={t('ui.activity')}>
+                <Section title={t('ui.activity')} ariaLabel={t('ui.activity')}>
                   <Stack gap="sm">
-                    {activities.map((a) => (
-                      <Text key={a.id}>
-                        {formatActivity(a.action, a.payload, workflowStatuses)}{' '}
-                        <Text span c="dimmed" size="sm">
-                          {formatStamp(a.createdAt, timeZone)}
-                        </Text>
-                      </Text>
-                    ))}
-                  </Stack>
-                </Section>
-
-                <Section title={t('issueComments.heading')}>
-                  <Stack gap="sm">
-                    {comments.map((c) => (
-                      <Stack key={c.id} gap={4}>
-                        <Group justify="space-between" wrap="nowrap" align="flex-start">
-                          <Text c="dimmed" size="sm">
-                            {formatStamp(c.createdAt, timeZone)}
-                            {c.updatedAt ? (
-                              <Text span ml={6}>
-                                · {t('issueComments.edited')}
-                              </Text>
-                            ) : null}
+                    {timeline.map((entry) => {
+                      if (entry.kind === 'activity') {
+                        const { activity } = entry;
+                        return (
+                          <Text key={`activity-${entry.id}`}>
+                            <Text span fw={550}>
+                              {t('issueComments.you')}
+                            </Text>{' '}
+                            {formatActivity(activity.action, activity.payload, workflowStatuses)}{' '}
+                            <Text span c="dimmed" size="sm">
+                              {formatStamp(activity.createdAt, timeZone)}
+                            </Text>
                           </Text>
-                          <Menu withinPortal position="bottom-end">
-                            <Menu.Target>
-                              <ActionIcon
-                                type="button"
-                                variant="subtle"
-                                color="gray"
-                                size="sm"
-                                aria-label={t('issueComments.moreOptions')}
-                              >
-                                <IconDotsVertical size={15} aria-hidden="true" />
-                              </ActionIcon>
-                            </Menu.Target>
-                            <Menu.Dropdown>
-                              <Menu.Item onClick={() => handlers.onEditComment(c.id, c.body)}>
-                                {t('issueComments.edit')}
-                              </Menu.Item>
-                              <Menu.Item
-                                color="red"
-                                leftSection={<IconTrash size={14} aria-hidden="true" />}
-                                onClick={() => handlers.onDeleteComment(c.id)}
-                              >
-                                {t('issueComments.delete')}
-                              </Menu.Item>
-                            </Menu.Dropdown>
-                          </Menu>
-                        </Group>
-                        {editingCommentId === c.id ? (
-                          <Stack gap="xs">
-                            <Textarea
-                              aria-label={t('issueComments.edit')}
-                              value={editingCommentDraft}
-                              onChange={handlers.onChangeCommentEdit}
-                              autosize
-                              minRows={2}
-                              maxRows={12}
+                        );
+                      }
+
+                      const c = entry.comment;
+                      return (
+                        <Stack key={`comment-${entry.id}`} gap={4}>
+                          <Group justify="space-between" wrap="nowrap" align="flex-start">
+                            <Text c="dimmed" size="sm">
+                              <Text span fw={550} c="var(--mantine-color-text)">
+                                {t('issueComments.you')}
+                              </Text>
+                              {' · '}
+                              {formatStamp(c.createdAt, timeZone)}
+                              {c.updatedAt ? (
+                                <Text span ml={6}>
+                                  · {t('issueComments.edited')}
+                                </Text>
+                              ) : null}
+                            </Text>
+                            <Menu withinPortal position="bottom-end">
+                              <Menu.Target>
+                                <ActionIcon
+                                  type="button"
+                                  variant="subtle"
+                                  color="gray"
+                                  size="sm"
+                                  aria-label={t('issueComments.moreOptions')}
+                                >
+                                  <IconDotsVertical size={15} aria-hidden="true" />
+                                </ActionIcon>
+                              </Menu.Target>
+                              <Menu.Dropdown>
+                                <Menu.Item onClick={() => handlers.onEditComment(c.id, c.body)}>
+                                  {t('issueComments.edit')}
+                                </Menu.Item>
+                                <Menu.Item
+                                  color="red"
+                                  leftSection={<IconTrash size={14} aria-hidden="true" />}
+                                  onClick={() => handlers.onDeleteComment(c.id)}
+                                >
+                                  {t('issueComments.delete')}
+                                </Menu.Item>
+                              </Menu.Dropdown>
+                            </Menu>
+                          </Group>
+                          {editingCommentId === c.id ? (
+                            <Stack gap="xs">
+                              <Textarea
+                                aria-label={t('issueComments.edit')}
+                                value={editingCommentDraft}
+                                onChange={handlers.onChangeCommentEdit}
+                                autosize
+                                minRows={2}
+                                maxRows={12}
+                              />
+                              <Group justify="flex-end" gap="xs">
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="xs"
+                                  onClick={handlers.onCancelCommentEdit}
+                                >
+                                  {t('issueComments.cancel')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="xs"
+                                  disabled={!editingCommentDraft.trim() && !c.attachments?.length}
+                                  onClick={() => handlers.onSaveCommentEdit(c.id)}
+                                >
+                                  {t('issueComments.save')}
+                                </Button>
+                              </Group>
+                            </Stack>
+                          ) : c.body ? (
+                            <MarkdownContent
+                              html={renderMarkdown(c.body, '', `comment-${c.id}-`)}
                             />
-                            <Group justify="flex-end" gap="xs">
-                              <Button
-                                type="button"
-                                variant="default"
-                                size="xs"
-                                onClick={handlers.onCancelCommentEdit}
-                              >
-                                {t('issueComments.cancel')}
-                              </Button>
-                              <Button
-                                type="button"
-                                size="xs"
-                                disabled={!editingCommentDraft.trim() && !c.attachments?.length}
-                                onClick={() => handlers.onSaveCommentEdit(c.id)}
-                              >
-                                {t('issueComments.save')}
-                              </Button>
-                            </Group>
-                          </Stack>
-                        ) : c.body ? (
-                          <MarkdownContent html={renderMarkdown(c.body, '', `comment-${c.id}-`)} />
-                        ) : null}
-                        <IssueAttachmentList
-                          identifier={identifier}
-                          attachments={c.attachments ?? []}
-                        />
-                        <Group gap="xs">
-                          <ReactionPicker
-                            target={`comment:${c.id}`}
-                            openedTarget={reactionPickerTarget}
-                            onOpenChange={handlers.onReactionPickerChange}
-                            onSelect={handlers.onSelectReaction}
+                          ) : null}
+                          <IssueAttachmentList
+                            identifier={identifier}
+                            attachments={c.attachments ?? []}
                           />
-                          <ReactionSummary
-                            reactions={c.reactions ?? []}
-                            onToggle={(emoji) =>
-                              handlers.onToggleReaction(`comment:${c.id}`, emoji)
-                            }
-                          />
-                        </Group>
-                      </Stack>
-                    ))}
+                          <Group gap="xs">
+                            <ReactionPicker
+                              target={`comment:${c.id}`}
+                              openedTarget={reactionPickerTarget}
+                              onOpenChange={handlers.onReactionPickerChange}
+                              onSelect={handlers.onSelectReaction}
+                            />
+                            <ReactionSummary
+                              reactions={c.reactions ?? []}
+                              onToggle={(emoji) =>
+                                handlers.onToggleReaction(`comment:${c.id}`, emoji)
+                              }
+                            />
+                          </Group>
+                        </Stack>
+                      );
+                    })}
                     <input
                       ref={commentFilesInputRef}
                       type="file"
@@ -1023,74 +1037,79 @@ export function IssueDetailView({
                       onChange={handlers.onCommentFilesChange}
                       style={{ display: 'none' }}
                     />
-                    {commentFiles.length ? (
-                      <Stack gap={4} aria-label={t('issueAttachments.pending')}>
-                        {commentFiles.map((file, index) => (
-                          <Group key={`${file.name}-${file.lastModified}-${index}`} gap="xs">
-                            <IconPaperclip size={15} aria-hidden="true" />
-                            <Text size="sm" truncate>
-                              {file.name}
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                              {t('issueAttachments.fileSize', {
-                                size: formatAttachmentSize(file.size),
-                              })}
-                            </Text>
-                            <ActionIcon
-                              type="button"
-                              variant="subtle"
-                              color="gray"
-                              size="sm"
-                              aria-label={t('issueAttachments.removeFile', { name: file.name })}
-                              onClick={() => handlers.onRemoveCommentFile(index)}
-                            >
-                              <IconTrash size={14} aria-hidden="true" />
-                            </ActionIcon>
-                          </Group>
-                        ))}
-                      </Stack>
-                    ) : null}
-                    <Textarea
-                      ref={noteRef}
-                      rows={3}
-                      aria-label={t('ui.newNote')}
-                      placeholder={t('ui.note')}
-                      value={draft}
-                      onChange={handlers.New_note_onChange21}
-                      onKeyDown={handlers.New_note_onKeyDown22}
-                    />
-                    <Group justify="space-between" wrap="wrap">
-                      <Button
-                        type="button"
-                        variant="subtle"
-                        size="sm"
-                        leftSection={<IconPaperclip size={16} aria-hidden="true" />}
-                        onClick={handlers.onChooseCommentFiles}
-                      >
-                        {t('issueAttachments.add')}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handlers.onSubmitComment}
-                        disabled={!draft.trim() && commentFiles.length === 0}
-                      >
-                        {t('issueAttachments.submit')}
-                      </Button>
-                    </Group>
-                    <Text c="dimmed" size="xs">
-                      {t('issueAttachments.limits')}
-                    </Text>
+                    <Paper withBorder p="xs" radius="md">
+                      {commentFiles.length ? (
+                        <Stack gap={4} aria-label={t('issueAttachments.pending')} mb="xs">
+                          {commentFiles.map((file, index) => (
+                            <Group key={`${file.name}-${file.lastModified}-${index}`} gap="xs">
+                              <IconPaperclip size={15} aria-hidden="true" />
+                              <Text size="sm" truncate>
+                                {file.name}
+                              </Text>
+                              <Text size="xs" c="dimmed">
+                                {t('issueAttachments.fileSize', {
+                                  size: formatAttachmentSize(file.size),
+                                })}
+                              </Text>
+                              <ActionIcon
+                                type="button"
+                                variant="subtle"
+                                color="gray"
+                                size="sm"
+                                aria-label={t('issueAttachments.removeFile', { name: file.name })}
+                                onClick={() => handlers.onRemoveCommentFile(index)}
+                              >
+                                <IconTrash size={14} aria-hidden="true" />
+                              </ActionIcon>
+                            </Group>
+                          ))}
+                        </Stack>
+                      ) : null}
+                      <Textarea
+                        ref={noteRef}
+                        minRows={1}
+                        maxRows={8}
+                        autosize
+                        variant="unstyled"
+                        aria-label={t('ui.newNote')}
+                        aria-describedby="issue-comment-instructions"
+                        placeholder={t('issueComments.composerPlaceholder')}
+                        value={draft}
+                        onChange={handlers.New_note_onChange21}
+                        onKeyDown={handlers.New_note_onKeyDown22}
+                      />
+                      <Group justify="space-between" mt="xs">
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          aria-label={t('issueAttachments.add')}
+                          onClick={handlers.onChooseCommentFiles}
+                        >
+                          <IconPaperclip size={16} aria-hidden="true" />
+                        </ActionIcon>
+                        <ActionIcon
+                          type="button"
+                          variant="filled"
+                          aria-label={t('issueAttachments.submit')}
+                          onClick={handlers.onSubmitComment}
+                          disabled={!draft.trim() && commentFiles.length === 0}
+                        >
+                          <IconArrowUp size={16} aria-hidden="true" />
+                        </ActionIcon>
+                      </Group>
+                    </Paper>
+                    <VisuallyHidden id="issue-comment-instructions">
+                      {t('issueAttachments.limits')}{' '}
+                      {t(
+                        commentSubmitShortcut === 'enter' ? 'ui.enterToSave' : 'ui.modEnterToSave',
+                      )}
+                    </VisuallyHidden>
                     {commentError ? (
                       <Alert color="red" role="alert">
                         {commentError}
                       </Alert>
                     ) : null}
-                    <Text c="dimmed" size="sm">
-                      {t(
-                        commentSubmitShortcut === 'enter' ? 'ui.enterToSave' : 'ui.modEnterToSave',
-                      )}
-                    </Text>
                   </Stack>
                 </Section>
                 <Section title={t('nav.adrs')}>
