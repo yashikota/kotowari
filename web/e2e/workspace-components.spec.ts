@@ -75,15 +75,23 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   const issueTitle = page.getByRole('textbox', { name: 'Issue title' });
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
   await expect(documentEditor).toBeVisible();
-  const [titleBounds, propertiesBounds, editorBounds, statusBounds, priorityBounds, cycleBounds] =
-    await Promise.all([
-      issueTitle.boundingBox(),
-      properties.boundingBox(),
-      documentEditor.boundingBox(),
-      properties.getByRole('combobox', { name: 'Status' }).boundingBox(),
-      properties.getByRole('combobox', { name: 'Priority' }).boundingBox(),
-      properties.getByRole('combobox', { name: 'Cycle' }).boundingBox(),
-    ]);
+  const [
+    titleBounds,
+    propertiesBounds,
+    editorBounds,
+    statusBounds,
+    priorityBounds,
+    cycleBounds,
+    labelsBounds,
+  ] = await Promise.all([
+    issueTitle.boundingBox(),
+    properties.boundingBox(),
+    documentEditor.boundingBox(),
+    properties.getByRole('combobox', { name: 'Status' }).boundingBox(),
+    properties.getByRole('combobox', { name: 'Priority' }).boundingBox(),
+    properties.getByRole('combobox', { name: 'Cycle' }).boundingBox(),
+    properties.getByRole('group', { name: 'Labels' }).boundingBox(),
+  ]);
   expect(titleBounds).not.toBeNull();
   expect(propertiesBounds).not.toBeNull();
   expect(editorBounds).not.toBeNull();
@@ -92,6 +100,8 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   expect(propertiesBounds!.y).toBeLessThan(editorBounds!.y);
   expect(Math.abs(statusBounds!.y - priorityBounds!.y)).toBeLessThan(2);
   expect(Math.abs(statusBounds!.y - cycleBounds!.y)).toBeLessThan(2);
+  expect(labelsBounds).not.toBeNull();
+  expect(cycleBounds!.x).toBeGreaterThan(labelsBounds!.x);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const narrowPanel = await properties.evaluate((element: HTMLElement) => ({
@@ -102,6 +112,22 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   expect(narrowPanel.clientWidth).toBeLessThanOrEqual(narrowPanel.viewportWidth);
   expect(narrowPanel.scrollWidth).toBeLessThanOrEqual(narrowPanel.clientWidth);
   await page.setViewportSize({ width: 1280, height: 720 });
+
+  const [subIssuesBounds, resourcesBounds, activityBounds, commentsBounds] = await Promise.all([
+    page.getByRole('region', { name: 'Sub-issues' }).boundingBox(),
+    page.getByRole('region', { name: 'Resources' }).boundingBox(),
+    page.getByText('Activity', { exact: true }).boundingBox(),
+    page.getByText('Comments', { exact: true }).boundingBox(),
+  ]);
+  expect(subIssuesBounds).not.toBeNull();
+  expect(resourcesBounds).not.toBeNull();
+  expect(activityBounds).not.toBeNull();
+  expect(commentsBounds).not.toBeNull();
+  expect(subIssuesBounds!.y).toBeLessThan(resourcesBounds!.y);
+  expect(resourcesBounds!.y).toBeLessThan(activityBounds!.y);
+  expect(activityBounds!.y).toBeLessThan(commentsBounds!.y);
+  await expect(page.getByRole('button', { name: 'Add sub-issues' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'New sub-issue' })).toHaveCount(0);
 
   await chooseIssueProperty(page, 'Status', 'In Progress');
   await chooseIssueProperty(page, 'Priority', 'Low');
@@ -881,6 +907,7 @@ test('issue relations stay reciprocal when added and removed', async ({ page, re
   const second = (await secondResponse.json()) as { identifier: string };
 
   await page.goto(`/issues/${first.identifier}`);
+  await page.getByRole('button', { name: 'Add relation' }).click();
   await page.getByRole('combobox', { name: 'Relation type' }).selectOption('blocks');
   await page.getByRole('combobox', { name: 'Related issue' }).selectOption(second.identifier);
   await page.getByRole('button', { name: 'Add relation' }).click();
@@ -897,7 +924,8 @@ test('issue relations stay reciprocal when added and removed', async ({ page, re
 
   await page.goto(`/issues/${first.identifier}`);
   await page.getByRole('button', { name: `Remove relation to ${second.identifier}` }).click();
-  await expect(page.getByText('No related issues yet.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add relation' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Relations' })).toHaveCount(0);
   const unlinked = await request.get(`/api/issues/${second.identifier}`);
   expect((await unlinked.json()).relations).toEqual([]);
 });

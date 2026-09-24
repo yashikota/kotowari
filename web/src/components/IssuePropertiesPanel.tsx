@@ -142,59 +142,6 @@ export function IssuePropertiesPanel({
           />
         </PropertyRow>
 
-        <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
-          <PropertySelect
-            compactChars={9}
-            aria-label={t('field.cycle')}
-            value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
-            onChange={handlers.Cycle_onChange8}
-            data={[
-              { value: 'none', label: t('field.noCycle') },
-              ...cycles.map((cycle) => ({
-                value: String(cycle.id),
-                label: t('field.cycleN', { number: cycle.number }),
-              })),
-            ]}
-            searchable
-            nothingFoundMessage={t('issueProperties.noCyclesFound')}
-          />
-        </PropertyRow>
-
-        <PropertyRow label={t('field.milestone')} icon={<IconFlag size={14} stroke={1.7} />}>
-          <PropertySelect
-            compactChars={14}
-            aria-label={t('field.milestone')}
-            value={issue.milestoneId != null ? String(issue.milestoneId) : 'none'}
-            onChange={handlers.Milestone_onChange43}
-            data={[
-              { value: 'none', label: t('issueProperties.noMilestone') },
-              ...milestones.map((milestone) => ({
-                value: String(milestone.id),
-                label: milestone.name,
-              })),
-            ]}
-            searchable
-            disabled={issue.projectId == null || milestones.length === 0}
-            nothingFoundMessage={t('issueProperties.noMilestonesFound')}
-          />
-        </PropertyRow>
-
-        <PropertyRow label={t('field.type')} icon={<IconTag size={14} stroke={1.7} />}>
-          <PropertySelect
-            compactChars={9}
-            aria-label={t('field.type')}
-            value={issue.type ?? 'none'}
-            onChange={handlers.Type_onChange14}
-            data={[
-              { value: 'none', label: t('issueProperties.noType') },
-              ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
-                value: type,
-                label: t(`issueType.${type}`),
-              })),
-            ]}
-          />
-        </PropertyRow>
-
         <PropertyRow label={t('field.estimate')} icon={<IconChartBar size={14} stroke={1.7} />}>
           <PropertySelect
             compactChars={10}
@@ -207,42 +154,6 @@ export function IssuePropertiesPanel({
                 .filter((estimate): estimate is number => estimate != null)
                 .map((estimate) => ({ value: String(estimate), label: String(estimate) })),
             ]}
-          />
-        </PropertyRow>
-
-        <PropertyRow
-          label={t('issueProperties.parent')}
-          icon={<IconGitBranch size={14} stroke={1.7} />}
-        >
-          <PropertySelect
-            compactChars={14}
-            aria-label={t('issueProperties.parent')}
-            value={issue.parentId != null ? String(issue.parentId) : 'none'}
-            onChange={handlers.Parent_onChange9}
-            data={[
-              { value: 'none', label: t('issueProperties.noParent') },
-              ...parentOptions.map((parent) => ({
-                value: String(parent.id),
-                label: `${parent.identifier} ${parent.title}`,
-              })),
-            ]}
-            searchable
-            nothingFoundMessage={t('issueProperties.noIssuesFound')}
-          />
-        </PropertyRow>
-
-        <PropertyRow
-          label={t('issueProperties.dueDate')}
-          icon={<IconCalendarEvent size={14} stroke={1.7} />}
-          className={styles.dueDateRow}
-        >
-          <TextInput
-            size="sm"
-            type="date"
-            aria-label={t('issueProperties.dueDate')}
-            value={due}
-            onChange={handlers.Due_date_onChange10}
-            classNames={{ input: styles.input, root: styles.dateInput }}
           />
         </PropertyRow>
 
@@ -339,6 +250,95 @@ export function IssuePropertiesPanel({
             </Group>
           </PropertyRow>
         </Box>
+
+        <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
+          <PropertySelect
+            compactChars={9}
+            aria-label={t('field.cycle')}
+            value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
+            onChange={handlers.Cycle_onChange8}
+            data={[
+              { value: 'none', label: t('field.noCycle') },
+              ...cycles.map((cycle) => ({
+                value: String(cycle.id),
+                label: t('field.cycleN', { number: cycle.number }),
+              })),
+            ]}
+            searchable
+            nothingFoundMessage={t('issueProperties.noCyclesFound')}
+          />
+        </PropertyRow>
+
+        <PropertyRow label={t('field.milestone')} icon={<IconFlag size={14} stroke={1.7} />}>
+          <PropertySelect
+            compactChars={14}
+            aria-label={t('field.milestone')}
+            value={issue.milestoneId != null ? String(issue.milestoneId) : 'none'}
+            onChange={handlers.Milestone_onChange43}
+            data={[
+              { value: 'none', label: t('issueProperties.noMilestone') },
+              ...milestones.map((milestone) => ({
+                value: String(milestone.id),
+                label: milestone.name,
+              })),
+            ]}
+            searchable
+            disabled={issue.projectId == null || milestones.length === 0}
+            nothingFoundMessage={t('issueProperties.noMilestonesFound')}
+          />
+        </PropertyRow>
+
+        <PropertyRow label={t('field.type')} icon={<IconTag size={14} stroke={1.7} />}>
+          <PropertySelect
+            compactChars={9}
+            aria-label={t('field.type')}
+            value={issue.type ?? 'none'}
+            onChange={handlers.Type_onChange14}
+            data={[
+              { value: 'none', label: t('issueProperties.noType') },
+              ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
+                value: type,
+                label: t(`issueType.${type}`),
+              })),
+            ]}
+          />
+        </PropertyRow>
+
+        <PropertyRow
+          label={t('issueProperties.parent')}
+          icon={<IconGitBranch size={14} stroke={1.7} />}
+        >
+          <PropertySelect
+            compactChars={14}
+            aria-label={t('issueProperties.parent')}
+            value={issue.parentId != null ? String(issue.parentId) : 'none'}
+            onChange={handlers.Parent_onChange9}
+            data={[
+              { value: 'none', label: t('issueProperties.noParent') },
+              ...parentOptions.map((parent) => ({
+                value: String(parent.id),
+                label: `${parent.identifier} ${parent.title}`,
+              })),
+            ]}
+            searchable
+            nothingFoundMessage={t('issueProperties.noIssuesFound')}
+          />
+        </PropertyRow>
+
+        <PropertyRow
+          label={t('issueProperties.dueDate')}
+          icon={<IconCalendarEvent size={14} stroke={1.7} />}
+          className={styles.dueDateRow}
+        >
+          <TextInput
+            size="sm"
+            type="date"
+            aria-label={t('issueProperties.dueDate')}
+            value={due}
+            onChange={handlers.Due_date_onChange10}
+            classNames={{ input: styles.input, root: styles.dateInput }}
+          />
+        </PropertyRow>
       </Box>
     </Box>
   );

@@ -618,6 +618,7 @@
     "deleteFailed": "Could not remove this attachment. Try again."
   },
   "issueComments": {
+    "heading": "Comments",
     "edit": "Edit comment",
     "delete": "Delete comment",
     "moreOptions": "Comment options",
@@ -627,6 +628,11 @@
     "confirmDelete": "Delete this comment and its attachments? This cannot be undone.",
     "updateFailed": "Could not update this comment. Try again.",
     "deleteFailed": "Could not delete this comment. Try again."
+  },
+  "issueSubIssues": {
+    "add": "Add sub-issues",
+    "create": "Create sub-issue",
+    "cancel": "Cancel"
   },
   "reactions": {
     "add": "Add reaction",

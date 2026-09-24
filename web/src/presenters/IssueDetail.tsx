@@ -84,6 +84,7 @@ export function useIssueDetailPresenter({
   const [issueAttachmentBusy, setIssueAttachmentBusy] = useState(false);
   const issueFilesInputRef = useRef<HTMLInputElement>(null);
   const [subTitle, setSubTitle] = useState('');
+  const [subIssueEditorOpen, setSubIssueEditorOpen] = useState(false);
   const [labelName, setLabelName] = useState('');
   const [focusSub, setFocusSub] = useState(0);
   const [focusLabel, setFocusLabel] = useState(0);
@@ -98,6 +99,7 @@ export function useIssueDetailPresenter({
   const [dueDateValue, setDueDateValue] = useState('');
   const [relationTarget, setRelationTarget] = useState('');
   const [relationKind, setRelationKind] = useState<IssueRelation['kind']>('related');
+  const [relationsEditorOpen, setRelationsEditorOpen] = useState(false);
   const [timeZone, setTimeZone] = useState('UTC');
   const [copied, setCopied] = useState(false);
   const [historyRequest, setHistoryRequest] = useState(0);
@@ -172,6 +174,10 @@ export function useIssueDetailPresenter({
     setReactionError('');
     setIssueAttachmentError('');
     setIssueAttachmentBusy(false);
+    setSubTitle('');
+    setSubIssueEditorOpen(false);
+    setRelationTarget('');
+    setRelationsEditorOpen(false);
   }, [identifier]);
 
   async function patch(body: Record<string, unknown>) {
@@ -280,7 +286,7 @@ export function useIssueDetailPresenter({
     }
     await api.createIssue({ title, parentId });
     setSubTitle('');
-    setFocusSub((n) => n + 1);
+    setSubIssueEditorOpen(false);
     await router.invalidate();
     signals.dispatchEvent(new Event('kotowari:refresh'));
     await reload();
@@ -379,6 +385,7 @@ export function useIssueDetailPresenter({
       kind: relationKind,
     });
     setRelationTarget('');
+    setRelationsEditorOpen(false);
     await reload();
     signals.dispatchEvent(new Event('kotowari:refresh'));
   }
@@ -689,6 +696,7 @@ export function useIssueDetailPresenter({
     adrs,
     draft,
     subTitle,
+    subIssueEditorOpen,
     labelName,
     focusSub,
     focusLabel,
@@ -703,6 +711,7 @@ export function useIssueDetailPresenter({
     dueDateValue,
     relationTarget,
     relationKind,
+    relationsEditorOpen,
     relationIssues,
     relationTargetOptions,
     codingToolName: codingToolPreferences.customLinkName,
@@ -894,6 +903,8 @@ export function useIssueDetailPresenter({
       Relation_kind_onChange31: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setRelationKind(e.target.value as IssueRelation['kind']),
+      onOpenRelationsEditor: () => setRelationsEditorOpen(true),
+      onCloseRelationsEditor: () => setRelationsEditorOpen(false),
       Relation_onSubmit32: (
         e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
       ) => {
@@ -1057,6 +1068,15 @@ export function useIssueDetailPresenter({
           to: '/issues/$identifier',
           params: { identifier: c.identifier },
         }),
+      onOpenSubIssueEditor: () => {
+        setSubIssueEditorOpen(true);
+        setFocusSub((n) => n + 1);
+      },
+      onCloseSubIssueEditor: () => {
+        setSubIssueEditorOpen(false);
+        setSubTitle('');
+      },
+      onCreateSubIssue: () => addSubIssue(),
       New_sub_issue_onChange19: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setSubTitle(e.target.value),

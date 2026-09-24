@@ -616,6 +616,7 @@
     "deleteFailed": "添付ファイルを削除できませんでした。もう一度お試しください。"
   },
   "issueComments": {
+    "heading": "コメント",
     "edit": "コメントを編集",
     "delete": "コメントを削除",
     "moreOptions": "コメントの操作",
@@ -625,6 +626,11 @@
     "confirmDelete": "このコメントと添付ファイルを削除しますか？この操作は取り消せません。",
     "updateFailed": "コメントを更新できませんでした。もう一度お試しください。",
     "deleteFailed": "コメントを削除できませんでした。もう一度お試しください。"
+  },
+  "issueSubIssues": {
+    "add": "サブ課題を追加",
+    "create": "サブ課題を作成",
+    "cancel": "キャンセル"
   },
   "reactions": {
     "add": "リアクションを追加",

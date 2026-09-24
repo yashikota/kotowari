@@ -338,6 +338,7 @@ test('sub-issue and saved view', async ({ page, request }) => {
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
   await expect(page.getByLabel('Issue title')).toHaveValue(parentTitle);
 
+  await page.getByRole('button', { name: 'Add sub-issues' }).click();
   await page.getByLabel('New sub-issue').fill(childTitle);
   await page.getByLabel('New sub-issue').press('ControlOrMeta+Enter');
   await expect
