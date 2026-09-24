@@ -1111,6 +1111,45 @@ test('issues can be converted into reusable workspace templates', async ({ page,
   });
 });
 
+test('new issues can be created as sub-issues of an existing issue', async ({ page, request }) => {
+  const stamp = Date.now();
+  const parentTitle = `Create parent ${stamp}`;
+  const childTitle = `Create child ${stamp}`;
+  const parentResponse = await request.post('/api/issues', {
+    data: { title: parentTitle },
+  });
+  expect(parentResponse.ok()).toBeTruthy();
+  const parent = (await parentResponse.json()) as { id: number; identifier: string };
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await dialog.getByRole('textbox', { name: 'Issue title' }).fill(childTitle);
+  const parentPicker = dialog.getByRole('combobox', { name: 'Parent' });
+  await parentPicker.fill(parentTitle);
+  await page.getByRole('option', { name: `${parent.identifier} ${parentTitle}` }).click();
+
+  const createRequest = page.waitForRequest(
+    (candidate) => candidate.url().endsWith('/api/issues') && candidate.method() === 'POST',
+  );
+  const createResponse = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  expect((await createRequest).postDataJSON()).toMatchObject({
+    title: childTitle,
+    parentId: parent.id,
+  });
+  const child = (await (await createResponse).json()) as { identifier: string };
+  const saved = await request.get(`/api/issues/${child.identifier}`);
+  expect(await saved.json()).toMatchObject({
+    title: childTitle,
+    parentId: parent.id,
+    parentIdentifier: parent.identifier,
+  });
+});
+
 test('converting an issue creates a project and keeps the issue linked', async ({
   page,
   request,

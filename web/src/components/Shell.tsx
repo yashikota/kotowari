@@ -475,7 +475,11 @@ export function ShellView({
                 <Text size="sm" c="dimmed">
                   {t('modal.enterHint')}
                 </Text>
-                <Button type="button" onClick={handlers.submitIssue}>
+                <Button
+                  type="button"
+                  onClick={handlers.submitIssue}
+                  disabled={model.issueParentLoading}
+                >
                   {t('modal.create')}
                 </Button>
               </Group>
@@ -567,6 +571,19 @@ export function ShellView({
                   onChange={handlers.Issue_dueDate_onChange35}
                 />
               </Group>
+              <Select
+                aria-label={t('issueProperties.parent')}
+                label={t('issueProperties.parent')}
+                placeholder={t('issueProperties.noParent')}
+                searchable
+                clearable
+                searchValue={model.issueParentQuery}
+                value={model.issueParentIdentifier || null}
+                data={model.issueParentOptions}
+                nothingFoundMessage={t('issueProperties.noIssuesFound')}
+                onSearchChange={handlers.Issue_parentSearch_onChange36}
+                onChange={handlers.Issue_parent_onChange37}
+              />
             </Stack>
           </Modal>
 

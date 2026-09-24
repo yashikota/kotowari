@@ -2,7 +2,7 @@ import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, parseIssueSearch } from '../api.ts';
 import { queryCache } from '../application/cache.ts';
 import { resetIssueProjection } from '../application/issues.ts';
@@ -108,6 +108,13 @@ export function useShellPresenter() {
   const [issueBody, setIssueBody] = useState('');
   const [issueDueDate, setIssueDueDate] = useState('');
   const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
+  const [issueParentId, setIssueParentId] = useState<number | undefined>();
+  const [issueParentIdentifier, setIssueParentIdentifier] = useState('');
+  const [issueParentQuery, setIssueParentQuery] = useState('');
+  const [issueParentResults, setIssueParentResults] = useState<SearchHit[]>([]);
+  const [selectedParentIssue, setSelectedParentIssue] = useState<SearchHit | null>(null);
+  const [issueParentLoading, setIssueParentLoading] = useState(false);
+  const parentLookupVersion = useRef(0);
   const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
   const [issueTemplateSlug, setIssueTemplateSlug] = useState('');
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
@@ -165,6 +172,30 @@ export function useShellPresenter() {
         setAvailableLabels([]);
       });
   }, [createIssue]);
+
+  useEffect(() => {
+    const query = issueParentQuery.trim();
+    if (!createIssue || !query) {
+      setIssueParentResults([]);
+      return;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void api
+        .search(query)
+        .then((hits) => {
+          if (active)
+            setIssueParentResults(hits.filter((hit) => hit.kind === 'issue').slice(0, 20));
+        })
+        .catch(() => {
+          if (active) setIssueParentResults([]);
+        });
+    }, 100);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [createIssue, issueParentQuery]);
 
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
   useIntentHandler('issue.create', (value) => {
@@ -462,7 +493,7 @@ export function useShellPresenter() {
 
   async function submitIssue() {
     const title = issueTitle.trim();
-    if (!title) {
+    if (!title || issueParentLoading) {
       return;
     }
     const issue: Issue = await api.createIssue({
@@ -479,10 +510,16 @@ export function useShellPresenter() {
         .filter((label) => issueLabelNames.includes(label.name))
         .map((label) => label.id),
       dueDate: issueDueDate || undefined,
+      parentId: issueParentId,
     });
     setIssueTitle('');
     setIssueBody('');
     setIssueDueDate('');
+    setIssueParentId(undefined);
+    setIssueParentIdentifier('');
+    setIssueParentQuery('');
+    setSelectedParentIssue(null);
+    setIssueParentLoading(false);
     setIssueStatus('todo');
     setIssuePriority(0);
     setIssueType('');
@@ -591,6 +628,13 @@ export function useShellPresenter() {
     issueEstimate,
     issueBody,
     issueDueDate,
+    issueParentIdentifier,
+    issueParentQuery,
+    issueParentLoading,
+    issueParentOptions: [
+      ...(selectedParentIssue ? [selectedParentIssue] : []),
+      ...issueParentResults.filter((hit) => hit.id !== selectedParentIssue?.id),
+    ].map((hit) => ({ value: hit.id, label: `${hit.id} ${hit.title}` })),
     issueLabelNames,
     issueTemplates,
     issueTemplateSlug,
@@ -683,6 +727,35 @@ export function useShellPresenter() {
       Issue_dueDate_onChange35: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssueDueDate(e.target.value),
+      Issue_parentSearch_onChange36: (value: string) => setIssueParentQuery(value),
+      Issue_parent_onChange37: (identifier: string | null) => {
+        const lookupVersion = ++parentLookupVersion.current;
+        setIssueParentIdentifier(identifier ?? '');
+        setIssueParentQuery('');
+        if (!identifier) {
+          setIssueParentId(undefined);
+          setSelectedParentIssue(null);
+          setIssueParentLoading(false);
+          return;
+        }
+        const parent = issueParentResults.find((hit) => hit.id === identifier) ?? null;
+        setSelectedParentIssue(parent);
+        setIssueParentLoading(true);
+        void api
+          .issue(identifier)
+          .then((issue) => {
+            if (lookupVersion !== parentLookupVersion.current) return;
+            setIssueParentId(issue.id);
+            setIssueParentLoading(false);
+          })
+          .catch(() => {
+            if (lookupVersion !== parentLookupVersion.current) return;
+            setIssueParentId(undefined);
+            setIssueParentIdentifier('');
+            setSelectedParentIssue(null);
+            setIssueParentLoading(false);
+          });
+      },
       Issue_type_onChange32: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueType(e.target.value as Issue['type'] | ''),
