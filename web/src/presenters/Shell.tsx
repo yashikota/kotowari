@@ -156,6 +156,11 @@ export function useShellPresenter() {
   const [error, setError] = useState('');
   const [focusedIssue, setFocusedIssue] = useState<string | null>(null);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const [workspaceNavigationOpen, setWorkspaceNavigationOpen] = useState(true);
+  const [moreLinksOpen, setMoreLinksOpen] = useState(false);
+  const [favoritesOpen, setFavoritesOpen] = useState(true);
+  const [teamsOpen, setTeamsOpen] = useState(true);
+  const [teamNavigationOpen, setTeamNavigationOpen] = useState(true);
 
   const loadWorkspace = useCallback(async () => {
     try {
@@ -283,6 +288,7 @@ export function useShellPresenter() {
       );
     if (pathname === '/cycles') return 'Cycles';
     if (pathname.startsWith('/cycles/')) return `Cycle ${pathname.slice('/cycles/'.length)}`;
+    if (pathname === '/views') return t('nav.views');
     if (pathname === '/pages') return 'Pages';
     if (pathname.startsWith('/pages/'))
       return pathname.slice('/pages/'.length).replaceAll('-', ' ');
@@ -665,6 +671,11 @@ export function useShellPresenter() {
     workspaceName,
     routeTitle,
     mobileNavigationOpen,
+    workspaceNavigationOpen,
+    moreLinksOpen,
+    favoritesOpen,
+    teamsOpen,
+    teamNavigationOpen,
     sidebarNavigation: sidebarNavigation(preferences),
     cycles,
     views,
@@ -735,6 +746,11 @@ export function useShellPresenter() {
       },
       onCreateIssue: () => setCreateIssue(true),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
+      onToggleWorkspaceNavigation: () => setWorkspaceNavigationOpen((open) => !open),
+      onToggleMoreLinks: () => setMoreLinksOpen((open) => !open),
+      onToggleFavorites: () => setFavoritesOpen((open) => !open),
+      onToggleTeams: () => setTeamsOpen((open) => !open),
+      onToggleTeamNavigation: () => setTeamNavigationOpen((open) => !open),
       onCloseMobileNavigation: () => setMobileNavigationOpen(false),
       onNavbarClick: (event: React.MouseEvent<HTMLElement>) => {
         if (event.target instanceof Element && event.target.closest('a'))

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expandMoreNavigation } from './issue-list-controls.ts';
 
 async function choose(page: import('@playwright/test').Page, label: string, option: string) {
   await page.getByRole('combobox', { name: label }).click();
@@ -73,9 +74,11 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
   await page.getByRole('button', { name: 'Move Issues down' }).click();
   await page.getByRole('dialog').getByRole('button').first().click();
 
+  await expandMoreNavigation(page);
   const moreLinks = page.getByRole('navigation', { name: 'More' }).getByRole('link');
-  await expect(moreLinks.nth(0)).toHaveText('ADRs');
+  await expect(moreLinks.nth(0)).toHaveText('Board');
   await expect(moreLinks.nth(1)).toHaveText('Issues');
+  await expect(moreLinks.nth(2)).toHaveText('ADRs');
   await expect(
     page
       .getByRole('navigation', { name: 'Team navigation' })
@@ -83,9 +86,11 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
   ).toHaveCount(0);
 
   await page.reload();
+  await expandMoreNavigation(page);
   const reloadedMoreLinks = page.getByRole('navigation', { name: 'More' }).getByRole('link');
-  await expect(reloadedMoreLinks.nth(0)).toHaveText('ADRs');
+  await expect(reloadedMoreLinks.nth(0)).toHaveText('Board');
   await expect(reloadedMoreLinks.nth(1)).toHaveText('Issues');
+  await expect(reloadedMoreLinks.nth(2)).toHaveText('ADRs');
 
   await page.getByRole('button', { name: 'Customize sidebar' }).click();
   await choose(page, 'Where to show Issues', "Don't show");
@@ -94,6 +99,7 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
   );
   await page.getByRole('dialog').getByRole('button').first().click();
   await page.reload();
+  await expandMoreNavigation(page);
   await expect(page.getByRole('heading', { name: 'Config' })).toBeVisible();
   await expect(
     page

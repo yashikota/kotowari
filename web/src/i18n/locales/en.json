@@ -17,9 +17,13 @@
     "cycleCurrent": "Current",
     "cycleUpcoming": "Upcoming",
     "primary": "Primary navigation",
+    "workspaceNavigation": "Workspace navigation",
+    "workspace": "Workspace",
     "teamNavigation": "Team navigation",
+    "yourTeams": "Your teams",
     "cycleNavigation": "Cycle navigation",
     "more": "More",
+    "showMoreLinks": "Show more links",
     "savedViews": "Saved views",
     "settings": "Settings",
     "breadcrumb": "Breadcrumb",
@@ -31,6 +35,11 @@
   },
   "workspace": {
     "defaultName": "workspace"
+  },
+  "views": {
+    "description": "Saved issue views for your workspace.",
+    "emptyTitle": "No saved views yet",
+    "emptyDescription": "Create a view to save filters and layout."
   },
   "cycle": {
     "options": "Cycle options",

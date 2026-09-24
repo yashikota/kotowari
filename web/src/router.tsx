@@ -381,6 +381,13 @@ const viewRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/ViewsPages.tsx'), 'ViewPage'),
 });
 
+const viewsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/views',
+  loader: () => api.views(),
+  component: lazyRouteComponent(() => import('./pages/ViewsIndexPages.tsx'), 'ViewsIndexPage'),
+});
+
 const pagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/pages',
@@ -420,6 +427,7 @@ const routeTree = rootRoute.addChildren([
   projectRoute,
   cyclesRoute,
   cycleRoute,
+  viewsRoute,
   viewRoute,
   pagesRoute,
   pageRoute,

@@ -1,5 +1,5 @@
 import { expect, test, type APIResponse } from '@playwright/test';
-import { fillIssueSearch } from './issue-list-controls.ts';
+import { expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
 async function json<T>(res: APIResponse): Promise<T> {
   if (!res.ok()) {
@@ -61,6 +61,7 @@ test('new ADR only inherits an issue on its detail route', async ({ page, reques
   await page.keyboard.press('p');
   await expect(page.getByText(`Will link issue ${issue.number}`, { exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
+  await expandMoreNavigation(page);
   await page.getByRole('link', { name: 'ADRs', exact: true }).click();
   await page.keyboard.press('p');
   await expect(page.getByRole('dialog')).toBeVisible();

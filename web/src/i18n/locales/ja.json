@@ -17,9 +17,13 @@
     "cycleCurrent": "進行中",
     "cycleUpcoming": "今後",
     "primary": "メインナビゲーション",
+    "workspaceNavigation": "ワークスペースナビゲーション",
+    "workspace": "ワークスペース",
     "teamNavigation": "チームナビゲーション",
+    "yourTeams": "チーム",
     "cycleNavigation": "サイクルナビゲーション",
     "more": "その他",
+    "showMoreLinks": "リンクをさらに表示",
     "savedViews": "保存済みビュー",
     "settings": "設定",
     "breadcrumb": "パンくずリスト",
@@ -31,6 +35,11 @@
   },
   "workspace": {
     "defaultName": "ワークスペース"
+  },
+  "views": {
+    "description": "ワークスペースの保存済みイシュービューです。",
+    "emptyTitle": "保存済みビューはありません",
+    "emptyDescription": "ビューを作成して、フィルターやレイアウトを保存できます。"
   },
   "cycle": {
     "options": "サイクルのオプション",

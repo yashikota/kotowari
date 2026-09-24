@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
+import { expandMoreNavigation } from './issue-list-controls.ts';
 
 test('large lists stay bounded, reuse data, and isolate modal keyboard input', async ({ page }) => {
   const issues = Array.from({ length: 5000 }, (_, i) => ({
@@ -58,7 +59,8 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
   });
   await expect(list.getByRole('option', { name: /ISS-5000\b/ })).toBeVisible();
   expect(await list.getByRole('option').count()).toBeLessThan(60);
-  await page.getByRole('link', { name: 'Board', exact: true }).click();
+  await expandMoreNavigation(page);
+  await page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Board' }).click();
   await expect(page.getByRole('heading', { name: 'Board', exact: true })).toBeVisible();
   expect(await page.locator('.card').count()).toBeLessThan(80);
   for (const path of [

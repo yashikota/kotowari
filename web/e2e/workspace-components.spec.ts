@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
-import { createIssueView, fillIssueSearch } from './issue-list-controls.ts';
+import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
 test('issue list row opens a detail view with an editable properties panel', async ({
   page,
@@ -1582,7 +1582,8 @@ test('board columns group cards by status and reflect a detail edit', async ({ p
   await card.click();
 
   await chooseIssueProperty(page, 'Status', 'Done');
-  await page.getByRole('link', { name: 'Board' }).click();
+  await expandMoreNavigation(page);
+  await page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Board' }).click();
 
   const doneColumn = page.getByRole('region', { name: 'done issues' });
   await expect(doneColumn.getByRole('button', { name: cardName })).toBeVisible();

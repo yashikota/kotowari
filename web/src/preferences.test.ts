@@ -13,7 +13,7 @@ describe('personal preferences', () => {
         '/reminders': 'primary',
         '/agent': 'primary',
         '/issues': 'primary',
-        '/board': 'primary',
+        '/board': 'more',
         '/cycles': 'primary',
         '/projects': 'primary',
         '/adrs': 'more',
@@ -71,6 +71,9 @@ describe('personal preferences', () => {
     ];
 
     const navigation = sidebarNavigation(preferences);
+    expect(navigation.workspace.map((item) => item.to)).toContain('/cycles');
+    expect(navigation.workspace.map((item) => item.to)).not.toContain('/board');
+    expect(navigation.more.map((item) => item.to)).toContain('/board');
     expect(navigation.workspace.map((item) => item.to)).toContain('/adrs');
     expect(navigation.workspace.map((item) => item.to)).not.toContain('/projects');
     expect(navigation.more.map((item) => item.to)).toContain('/projects');

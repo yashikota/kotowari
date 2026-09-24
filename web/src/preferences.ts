@@ -51,7 +51,7 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
     '/reminders': 'primary',
     '/agent': 'primary',
     '/issues': 'primary',
-    '/board': 'primary',
+    '/board': 'more',
     '/cycles': 'primary',
     '/projects': 'primary',
     '/adrs': 'more',

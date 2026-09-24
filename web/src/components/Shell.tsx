@@ -24,6 +24,7 @@ import {
   IconBell,
   IconChevronRight,
   IconCircleDot,
+  IconDots,
   IconFilter,
   IconHome,
   IconLayoutKanban,
@@ -70,6 +71,50 @@ const NAV_ICONS: Record<string, ReactNode> = {
   '/recurring': <IconRepeat size={14} aria-hidden />,
 };
 
+function SidebarGroupToggle({
+  label,
+  expanded,
+  onClick,
+  ariaLabel,
+  leftSection,
+}: {
+  label: string;
+  expanded: boolean;
+  onClick: () => void;
+  ariaLabel?: string;
+  leftSection?: ReactNode;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="subtle"
+      color="gray"
+      size="compact-sm"
+      justify="flex-start"
+      px="xs"
+      fullWidth
+      aria-label={ariaLabel}
+      aria-expanded={expanded}
+      onClick={onClick}
+    >
+      <Group gap={7} wrap="nowrap" w="100%">
+        {leftSection}
+        <Text size="sm" fw={550} c="dimmed">
+          {label}
+        </Text>
+        <IconChevronRight
+          size={13}
+          aria-hidden
+          style={{
+            marginInlineStart: 'auto',
+            transform: expanded ? 'rotate(90deg)' : undefined,
+          }}
+        />
+      </Group>
+    </Button>
+  );
+}
+
 export function ShellView({
   model,
   t,
@@ -91,6 +136,7 @@ export function ShellView({
         workspaceName,
         routeTitle,
         mobileNavigationOpen,
+        moreLinksOpen,
         sidebarNavigation,
         cycles,
         views,
@@ -204,130 +250,173 @@ export function ShellView({
 
                 <Divider my="sm" mx="xs" />
 
-                <Stack gap={0} component="nav" aria-label={t('nav.favorites')}>
-                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
-                    {t('nav.favorites')}
-                  </Text>
-                  {favoriteIssues.length === 0 && favoriteCycles.length === 0 ? (
-                    <Text size="xs" c="dimmed" px="xs" py={4}>
-                      {t('nav.favoriteHint')}
-                    </Text>
+                <Stack gap={0} component="nav" aria-label={t('nav.workspaceNavigation')}>
+                  <SidebarGroupToggle
+                    label={t('nav.workspace')}
+                    expanded={model.workspaceNavigationOpen}
+                    onClick={handlers.onToggleWorkspaceNavigation}
+                  />
+                  {model.workspaceNavigationOpen ? (
+                    <Stack gap={0}>
+                      <RouterNavLink
+                        to="/projects"
+                        label={t('nav.projects')}
+                        leftSection={<IconStack2 size={14} aria-hidden />}
+                      />
+                      <RouterNavLink
+                        to="/views"
+                        label={t('nav.views')}
+                        leftSection={<IconFilter size={14} aria-hidden />}
+                      />
+                      <SidebarGroupToggle
+                        label={t('nav.more')}
+                        ariaLabel={t('nav.showMoreLinks')}
+                        expanded={moreLinksOpen}
+                        onClick={handlers.onToggleMoreLinks}
+                        leftSection={<IconDots size={14} aria-hidden />}
+                      />
+                      {moreLinksOpen ? (
+                        <Stack component="nav" aria-label={t('nav.more')} gap={0} pl="sm">
+                          {sidebarNavigation.more.map((item) => (
+                            <RouterNavLink
+                              key={item.key}
+                              to={item.to}
+                              search={item.search}
+                              params={item.params}
+                              fuzzy={item.fuzzy}
+                              label={t(item.labelKey)}
+                              leftSection={NAV_ICONS[item.to as string]}
+                            />
+                          ))}
+                        </Stack>
+                      ) : null}
+                    </Stack>
                   ) : null}
-                  {favoriteIssues.slice(0, 8).map((issue) => (
-                    <RouterNavLink
-                      key={`issue-${issue.identifier}`}
-                      to="/issues/$identifier"
-                      params={{ identifier: issue.identifier }}
-                      label={`${issue.identifier} ${issue.title}`}
-                      leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
-                    />
-                  ))}
-                  {favoriteCycles.slice(0, 8).map((cycle) => (
-                    <RouterNavLink
-                      key={`cycle-${cycle.number}`}
-                      to="/cycles/$number"
-                      params={{ number: String(cycle.number) }}
-                      label={cycle.name || t('field.cycleN', { number: cycle.number })}
-                      leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
-                    />
-                  ))}
+                </Stack>
+
+                <Divider my="sm" mx="xs" />
+
+                <Stack gap={0} component="nav" aria-label={t('nav.favorites')}>
+                  <SidebarGroupToggle
+                    label={t('nav.favorites')}
+                    expanded={model.favoritesOpen}
+                    onClick={handlers.onToggleFavorites}
+                  />
+                  {model.favoritesOpen ? (
+                    <Stack gap={0}>
+                      {favoriteIssues.slice(0, 8).map((issue) => (
+                        <RouterNavLink
+                          key={`issue-${issue.identifier}`}
+                          to="/issues/$identifier"
+                          params={{ identifier: issue.identifier }}
+                          label={`${issue.identifier} ${issue.title}`}
+                          leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                        />
+                      ))}
+                      {favoriteCycles.slice(0, 8).map((cycle) => (
+                        <RouterNavLink
+                          key={`cycle-${cycle.number}`}
+                          to="/cycles/$number"
+                          params={{ number: String(cycle.number) }}
+                          label={cycle.name || t('field.cycleN', { number: cycle.number })}
+                          leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                        />
+                      ))}
+                    </Stack>
+                  ) : null}
                 </Stack>
 
                 <Divider my="sm" mx="xs" />
 
                 <Stack gap={0} component="nav" aria-label={t('nav.teamNavigation')}>
-                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs" truncate>
-                    {workspaceName || t('workspace.defaultName')}
-                  </Text>
-                  {sidebarNavigation.workspace.map((item) =>
-                    item.to === '/cycles' ? (
-                      <Stack key={item.key} gap={0}>
-                        <RouterNavLink
-                          to={item.to}
-                          search={item.search}
-                          params={item.params}
-                          fuzzy={item.fuzzy}
-                          label={t(item.labelKey)}
-                          leftSection={NAV_ICONS[item.to as string]}
-                        />
-                        <Stack
-                          component="div"
-                          role="group"
-                          aria-label={t('nav.cycleNavigation')}
-                          gap={0}
-                          pl="xl"
-                        >
-                          <RouterNavLink
-                            to="/cycles"
-                            search={{ scope: 'current' }}
-                            label={t('nav.cycleCurrent')}
-                          />
-                          <RouterNavLink
-                            to="/cycles"
-                            search={{ scope: 'upcoming' }}
-                            label={t('nav.cycleUpcoming')}
-                          />
-                        </Stack>
-                      </Stack>
-                    ) : (
-                      <RouterNavLink
-                        key={item.key}
-                        to={item.to}
-                        search={item.search}
-                        params={item.params}
-                        fuzzy={item.fuzzy}
-                        label={t(item.labelKey)}
-                        leftSection={NAV_ICONS[item.to as string]}
+                  <SidebarGroupToggle
+                    label={t('nav.yourTeams')}
+                    expanded={model.teamsOpen}
+                    onClick={handlers.onToggleTeams}
+                  />
+                  {model.teamsOpen ? (
+                    <Stack gap={0}>
+                      <SidebarGroupToggle
+                        label={workspaceName || t('workspace.defaultName')}
+                        expanded={model.teamNavigationOpen}
+                        onClick={handlers.onToggleTeamNavigation}
                       />
-                    ),
-                  )}
-                </Stack>
-
-                <Divider my="sm" mx="xs" />
-
-                <Stack gap={0} component="nav" aria-label={t('nav.savedViews')}>
-                  <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
-                    {t('nav.views')}
-                  </Text>
-                  {views.map((v) => (
-                    <RouterNavLink
-                      key={v.slug}
-                      to="/views/$slug"
-                      params={{ slug: v.slug }}
-                      label={v.name}
-                      leftSection={<IconFilter size={14} aria-hidden />}
-                    />
-                  ))}
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    size="compact-sm"
-                    justify="flex-start"
-                    px="xs"
-                    onClick={handlers.onClick0}
-                  >
-                    <Group gap={7} wrap="nowrap">
-                      <IconPlus size={14} stroke={1.6} aria-hidden />
-                      {t('nav.newView')}
-                    </Group>
-                  </Button>
-                </Stack>
-
-                <Divider my="sm" mx="xs" />
-
-                <Stack gap={0} component="nav" aria-label={t('nav.more')}>
-                  {sidebarNavigation.more.map((item) => (
-                    <RouterNavLink
-                      key={item.key}
-                      to={item.to}
-                      search={item.search}
-                      params={item.params}
-                      fuzzy={item.fuzzy}
-                      label={t(item.labelKey)}
-                      leftSection={NAV_ICONS[item.to as string]}
-                    />
-                  ))}
+                      {model.teamNavigationOpen ? (
+                        <>
+                          {sidebarNavigation.workspace.map((item) =>
+                            item.to === '/cycles' ? (
+                              <Stack key={item.key} gap={0}>
+                                <RouterNavLink
+                                  to={item.to}
+                                  search={item.search}
+                                  params={item.params}
+                                  fuzzy={item.fuzzy}
+                                  label={t(item.labelKey)}
+                                  leftSection={NAV_ICONS[item.to as string]}
+                                />
+                                <Stack
+                                  component="div"
+                                  role="group"
+                                  aria-label={t('nav.cycleNavigation')}
+                                  gap={0}
+                                  pl="xl"
+                                >
+                                  <RouterNavLink
+                                    to="/cycles"
+                                    search={{ scope: 'current' }}
+                                    label={t('nav.cycleCurrent')}
+                                  />
+                                  <RouterNavLink
+                                    to="/cycles"
+                                    search={{ scope: 'upcoming' }}
+                                    label={t('nav.cycleUpcoming')}
+                                  />
+                                </Stack>
+                              </Stack>
+                            ) : (
+                              <RouterNavLink
+                                key={item.key}
+                                to={item.to}
+                                search={item.search}
+                                params={item.params}
+                                fuzzy={item.fuzzy}
+                                label={t(item.labelKey)}
+                                leftSection={NAV_ICONS[item.to as string]}
+                              />
+                            ),
+                          )}
+                          <Stack gap={0} component="nav" aria-label={t('nav.savedViews')}>
+                            <Text size="xs" c="dimmed" fw={500} px="xs" py="xs">
+                              {t('nav.views')}
+                            </Text>
+                            {views.map((view) => (
+                              <RouterNavLink
+                                key={view.slug}
+                                to="/views/$slug"
+                                params={{ slug: view.slug }}
+                                label={view.name}
+                                leftSection={<IconFilter size={14} aria-hidden />}
+                              />
+                            ))}
+                            <Button
+                              type="button"
+                              variant="subtle"
+                              color="gray"
+                              size="compact-sm"
+                              justify="flex-start"
+                              px="xs"
+                              onClick={handlers.onClick0}
+                            >
+                              <Group gap={7} wrap="nowrap">
+                                <IconPlus size={14} stroke={1.6} aria-hidden />
+                                {t('nav.newView')}
+                              </Group>
+                            </Button>
+                          </Stack>
+                        </>
+                      ) : null}
+                    </Stack>
+                  ) : null}
                 </Stack>
               </AppShell.Section>
 

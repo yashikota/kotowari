@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
-import { createIssueView, fillIssueSearch } from './issue-list-controls.ts';
+import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
 test('archive and restore an issue', async ({ page, request }) => {
   const title = `Archive candidate ${Date.now()}`;
@@ -229,7 +229,10 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await expect(page).toHaveURL(new RegExp(`/issues/${identifier}`));
   await expect(page.getByRole('link', { name: /ADR-/ })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Projects' }).click();
+  await page
+    .getByRole('navigation', { name: 'Workspace navigation' })
+    .getByRole('link', { name: 'Projects', exact: true })
+    .click();
   await page.getByRole('button', { name: 'New project' }).first().click();
   const projectDialog = page.getByRole('dialog', { name: 'Create project' });
   await projectDialog.getByLabel('Project name').fill(projectName);
@@ -290,11 +293,13 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await expect(page.getByRole('combobox', { name: 'Cycle' })).toHaveValue(/Cycle [1-9]/);
 
   await chooseIssueProperty(page, 'Status', 'Done');
-  await page.getByRole('link', { name: 'Board' }).click();
+  await expandMoreNavigation(page);
+  await page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Board' }).click();
   const doneCol = page.getByRole('region', { name: 'done issues' });
   await expect(doneCol.getByRole('button', { name: new RegExp(identifier) })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Pages' }).click();
+  await expandMoreNavigation(page);
+  await page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Pages' }).click();
   await page.getByRole('button', { name: 'Search' }).first().click();
   await page.getByLabel('Command search').fill('Create page');
   await page.getByRole('option', { name: 'Create page' }).click();

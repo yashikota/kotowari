@@ -12,19 +12,19 @@ export type NavTarget = {
 };
 
 export const HOME_NAV: NavTarget[] = [
-  { key: '1', labelKey: 'nav.home', to: '/', fuzzy: false },
   { key: '8', labelKey: 'nav.reminders', to: '/reminders', fuzzy: false },
   { key: 'a', labelKey: 'nav.agent', to: '/agent', fuzzy: false },
 ];
 
 export const TEAM_NAV: NavTarget[] = [
+  { key: '1', labelKey: 'nav.home', to: '/', fuzzy: false },
   { key: '2', labelKey: 'nav.issues', to: '/issues', search: {} },
-  { key: '3', labelKey: 'nav.board', to: '/board', search: {} },
   { key: '6', labelKey: 'nav.cycles', to: '/cycles', fuzzy: true },
   { key: '5', labelKey: 'nav.projects', to: '/projects' },
 ];
 
 export const MORE_NAV: NavTarget[] = [
+  { key: '3', labelKey: 'nav.board', to: '/board', search: {} },
   { key: '4', labelKey: 'nav.adrs', to: '/adrs' },
   { key: '7', labelKey: 'nav.pages', to: '/pages' },
   { key: 't', labelKey: 'nav.templates', to: '/templates' },

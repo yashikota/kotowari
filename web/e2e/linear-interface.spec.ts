@@ -1,10 +1,37 @@
 import { expect, test } from '@playwright/test';
-import { fillIssueSearch } from './issue-list-controls.ts';
+import { expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
 test('Linear-style workspace shell and collapsible priority groups', async ({ page }) => {
   await page.goto('/issues');
 
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
+  const workspaceNavigation = page.getByRole('navigation', { name: 'Workspace navigation' });
+  await expect(workspaceNavigation).toBeVisible();
+  await expect(
+    workspaceNavigation.getByRole('link', { name: 'Projects', exact: true }),
+  ).toBeVisible();
+  await expect(workspaceNavigation.getByRole('link', { name: 'Views', exact: true })).toBeVisible();
+  await expect(
+    workspaceNavigation.getByRole('button', { name: 'Show more links' }),
+  ).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('navigation', { name: 'More' })).toHaveCount(0);
+  const teamNavigation = page.getByRole('navigation', { name: 'Team navigation' });
+  await expect(teamNavigation.getByText('Your teams', { exact: true })).toBeVisible();
+  await expect(teamNavigation.getByRole('link', { name: 'Home', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Home' }),
+  ).toHaveCount(0);
+  await expect(teamNavigation.getByRole('link', { name: 'Cycles', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Saved views' })).toBeVisible();
+  await expandMoreNavigation(page);
+  await expect(
+    page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Board' }),
+  ).toBeVisible();
+  await teamNavigation.getByRole('button', { name: 'Your teams' }).click();
+  await expect(teamNavigation.getByRole('link', { name: 'Cycles' })).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Saved views' })).toHaveCount(0);
+  await teamNavigation.getByRole('button', { name: 'Your teams' }).click();
+  await expect(teamNavigation.getByRole('link', { name: 'Cycles' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Issues', level: 2 })).toBeAttached();
   await expect(page.getByRole('tablist', { name: 'Issue views' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'All issues' })).toHaveAttribute(
