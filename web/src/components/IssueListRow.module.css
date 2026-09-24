@@ -30,6 +30,24 @@
   text-align: left;
 }
 
+.issueRow {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  min-height: 40px;
+}
+
+.issueSelection {
+  justify-self: center;
+  opacity: 0;
+}
+
+.issueRow:hover .issueSelection,
+.issueRow:focus-within .issueSelection,
+.issueRow[data-bulk-selected='true'] .issueSelection {
+  opacity: 1;
+}
+
 .issueButtonSelected {
   background: var(--mantine-color-gray-1);
 }

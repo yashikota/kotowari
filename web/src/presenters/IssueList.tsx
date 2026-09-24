@@ -1,6 +1,7 @@
-import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { api } from '../api.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
@@ -60,8 +61,10 @@ export function useIssueListPresenter({
     : projectedIssues.filter((issue) => issue.parentId == null);
   const issues = sortIssues(visibleIssues, orderBy, direction);
   const navigate = useNavigate();
+  const router = useRouter();
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
   const rows = buildIssueListRows(issues, new Set(collapsedGroups), groupBy, {
     subGroupBy,
     showEmptyGroups,
@@ -71,6 +74,7 @@ export function useIssueListPresenter({
     (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',
   );
   const ids = useMemo(() => issueRows.map((row) => row.issue.identifier), [issueRows]);
+  const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
   const issuePositions = new Map(issueRows.map((row, index) => [row.issue.identifier, index + 1]));
   const childCounts = useMemo(() => {
     const counts = new Map<number, number>();
@@ -96,6 +100,12 @@ export function useIssueListPresenter({
     issueListScrollTop: windowed.ref.current?.scrollTop ?? restoreScrollTop,
     issueListLayout: 'list' as const,
   });
+
+  async function updateSelectedIssues(patch: Record<string, unknown>) {
+    await Promise.all(bulkSelectedIds.map((id) => api.patchIssue(id, patch)));
+    await router.invalidate();
+    setBulkSelectedIds([]);
+  }
 
   useKeyboard((e) => {
     const action = actionFromKeyboard(e);
@@ -155,6 +165,8 @@ export function useIssueListPresenter({
   return {
     _view: 1 as const,
     selectedId,
+    bulkSelectedIds,
+    bulkSelectedIdSet,
     issues,
     displayProperties: displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES],
     rows,
@@ -174,6 +186,17 @@ export function useIssueListPresenter({
           });
         }
       },
+      onToggleBulkSelection: (id: string, checked: boolean) =>
+        setBulkSelectedIds((current) =>
+          checked
+            ? current.includes(id)
+              ? current
+              : [...current, id]
+            : current.filter((selected) => selected !== id),
+        ),
+      onSetBulkStatus: (status: string) => updateSelectedIssues({ workflowStatus: status }),
+      onSetBulkPriority: (priority: number) => updateSelectedIssues({ priority }),
+      onClearBulkSelection: () => setBulkSelectedIds([]),
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>
           current.includes(key) ? current.filter((value) => value !== key) : [...current, key],

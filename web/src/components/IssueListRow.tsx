@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Group, Text } from '@mantine/core';
+import { ActionIcon, Button, Checkbox, Group, Text } from '@mantine/core';
 import {
   IconChartBar,
   IconChevronDown,
@@ -123,6 +123,7 @@ function statusDuration(statusChangedAt: string | undefined, updatedAt: string):
 export function IssueListRow({
   issue,
   selected,
+  bulkSelected,
   position,
   setSize,
   childCount,
@@ -130,9 +131,11 @@ export function IssueListRow({
   displayProperties,
   hideProjectSlug = false,
   onSelect,
+  onToggleBulkSelection,
 }: {
   issue: Issue;
   selected: boolean;
+  bulkSelected: boolean;
   position: number | undefined;
   setSize: number;
   childCount: number;
@@ -140,6 +143,7 @@ export function IssueListRow({
   displayProperties: IssueDisplayProperty[];
   hideProjectSlug?: boolean;
   onSelect: (issue: Issue) => void;
+  onToggleBulkSelection: (id: string, checked: boolean) => void;
 }) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const overdue = isOverdue(issue.dueDate, today);
@@ -149,125 +153,140 @@ export function IssueListRow({
   const shows = (property: IssueDisplayProperty) => displayProperties.includes(property);
 
   return (
-    <Button
-      type="button"
-      variant="subtle"
-      color="gray"
-      fullWidth
-      role="option"
-      aria-posinset={position}
-      aria-setsize={setSize}
-      aria-selected={selected}
-      tabIndex={selected ? 0 : -1}
-      onClick={() => onSelect(issue)}
-      classNames={{
-        root: [styles.issueButton, selected ? styles.issueButtonSelected : '']
-          .filter(Boolean)
-          .join(' '),
-        inner: styles.issueButtonInner,
-      }}
-    >
-      <Group gap={8} wrap="nowrap" justify="space-between" h="100%">
-        <Group
-          gap={8}
-          wrap="nowrap"
-          style={{ minWidth: 0, flex: 1, paddingLeft: 8 + issue.depth * 14 }}
-        >
-          {issue.isFavorite ? (
-            <IconStar
-              size={13}
-              stroke={1.8}
-              color="var(--mantine-color-yellow-6)"
-              aria-hidden="true"
-            />
-          ) : null}
-          {shows('priority') ? <IssuePriorityIcon priority={issue.priority} /> : null}
-          {shows('id') ? (
-            <Text size="xs" c="dimmed" ff="var(--mantine-font-family-monospace)" w={58} truncate>
-              {issue.identifier}
-            </Text>
-          ) : null}
-          {shows('status') ? (
-            <>
-              <IssueStatusIcon
-                status={
-                  workflowStatuses.find((status) => status.id === issue.workflowStatus)?.category ??
-                  issue.status
-                }
-              />
-              <Text size="xs" c="dimmed" w={86} truncate visibleFrom="sm">
-                {workflowStatusLabel(issue.workflowStatus ?? issue.status, workflowStatuses)}
-              </Text>
-            </>
-          ) : null}
-          <Text
-            size="sm"
-            truncate
-            c={canceled ? 'dimmed' : overdue ? 'red.4' : undefined}
-            td={canceled ? 'line-through' : undefined}
-            style={{ flex: 1, minWidth: 0, lineHeight: 1.2 }}
+    <div className={styles.issueRow} role="presentation" data-bulk-selected={bulkSelected}>
+      <Checkbox
+        className={styles.issueSelection}
+        size="xs"
+        aria-label={i18n.t('ui.selectIssueRow', { identifier: issue.identifier })}
+        checked={bulkSelected}
+        onChange={(event) => onToggleBulkSelection(issue.identifier, event.currentTarget.checked)}
+      />
+      <Button
+        type="button"
+        variant="subtle"
+        color="gray"
+        fullWidth
+        role="option"
+        aria-posinset={position}
+        aria-setsize={setSize}
+        aria-selected={selected}
+        tabIndex={selected ? 0 : -1}
+        onClick={() => onSelect(issue)}
+        classNames={{
+          root: [styles.issueButton, selected ? styles.issueButtonSelected : '']
+            .filter(Boolean)
+            .join(' '),
+          inner: styles.issueButtonInner,
+        }}
+      >
+        <Group gap={8} wrap="nowrap" justify="space-between" h="100%">
+          <Group
+            gap={8}
+            wrap="nowrap"
+            style={{ minWidth: 0, flex: 1, paddingLeft: 8 + issue.depth * 14 }}
           >
-            {issue.title}
-          </Text>
-        </Group>
-        <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
-          {shows('labels')
-            ? issue.labels
-                .slice(0, 2)
-                .map((label) => (
-                  <IssueLabelPill key={label.id} name={label.name} color={label.color} />
-                ))
-            : null}
-          {issue.type ? <IssueMetaText>{issueTypeLabel(issue.type)}</IssueMetaText> : null}
-          {shows('estimate') && issue.estimate != null ? (
-            <IssueMetaText>{issue.estimate}</IssueMetaText>
-          ) : null}
-          {childCount > 0 ? <IssueMetaText>{childCount}</IssueMetaText> : null}
-          {shows('links') && (issue.externalLinks?.length ?? 0) > 0 ? (
-            <IssueMetaText
-              aria-label={i18n.t('issueLinks.count', { count: issue.externalLinks.length })}
+            {issue.isFavorite ? (
+              <IconStar
+                size={13}
+                stroke={1.8}
+                color="var(--mantine-color-yellow-6)"
+                aria-hidden="true"
+              />
+            ) : null}
+            {shows('priority') ? <IssuePriorityIcon priority={issue.priority} /> : null}
+            {shows('id') ? (
+              <Text size="xs" c="dimmed" ff="var(--mantine-font-family-monospace)" w={58} truncate>
+                {issue.identifier}
+              </Text>
+            ) : null}
+            {shows('status') ? (
+              <>
+                <IssueStatusIcon
+                  status={
+                    workflowStatuses.find((status) => status.id === issue.workflowStatus)
+                      ?.category ?? issue.status
+                  }
+                />
+                <Text size="xs" c="dimmed" w={86} truncate visibleFrom="sm">
+                  {workflowStatusLabel(issue.workflowStatus ?? issue.status, workflowStatuses)}
+                </Text>
+              </>
+            ) : null}
+            <Text
+              size="sm"
+              truncate
+              c={canceled ? 'dimmed' : overdue ? 'red.4' : undefined}
+              td={canceled ? 'line-through' : undefined}
+              style={{ flex: 1, minWidth: 0, lineHeight: 1.2 }}
             >
-              <IconLink size={12} stroke={1.7} aria-hidden="true" />{' '}
-              {i18n.t('issueLinks.count', { count: issue.externalLinks.length })}
-            </IssueMetaText>
-          ) : null}
-          {shows('pullRequests') && pullRequestCount > 0 ? (
-            <IssueMetaText
-              aria-label={i18n.t('issueLinks.pullRequestCount', {
-                count: pullRequestCount,
-              })}
-            >
-              <IconGitPullRequest size={12} stroke={1.7} aria-hidden="true" /> {pullRequestCount}
-            </IssueMetaText>
-          ) : null}
-          {(issue.adrNumbers?.length ?? 0) > 0 ? (
-            <IssueMetaText
-              aria-label={i18n.t('issueADRs.count', { count: issue.adrNumbers.length })}
-            >
-              {i18n.t('issueADRs.count', { count: issue.adrNumbers.length })}
-            </IssueMetaText>
-          ) : null}
-          {shows('cycle') && issue.cycleNumber != null ? (
-            <IssueMetaText>{i18n.t('field.cycleN', { number: issue.cycleNumber })}</IssueMetaText>
-          ) : null}
-          {shows('milestone') && issue.milestoneName ? (
-            <IssueMetaText>{issue.milestoneName}</IssueMetaText>
-          ) : null}
-          {shows('project') && !hideProjectSlug && issue.projectSlug ? (
-            <IssueMetaText>{issue.projectSlug}</IssueMetaText>
-          ) : null}
-          {shows('dueDate') && issue.dueDate ? (
-            <Text component="span" size="xs" c={overdue ? 'red.4' : 'dimmed'}>
-              {issue.dueDate.slice(5, 10)}
+              {issue.title}
             </Text>
-          ) : null}
-          {shows('created') ? <IssueMetaText>{issue.createdAt.slice(0, 10)}</IssueMetaText> : null}
-          {shows('updated') ? <IssueMetaText>{issue.updatedAt.slice(0, 10)}</IssueMetaText> : null}
-          {shows('timeInStatus') ? (
-            <IssueMetaText>{statusDuration(issue.statusChangedAt, issue.updatedAt)}</IssueMetaText>
-          ) : null}
+          </Group>
+          <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
+            {shows('labels')
+              ? issue.labels
+                  .slice(0, 2)
+                  .map((label) => (
+                    <IssueLabelPill key={label.id} name={label.name} color={label.color} />
+                  ))
+              : null}
+            {issue.type ? <IssueMetaText>{issueTypeLabel(issue.type)}</IssueMetaText> : null}
+            {shows('estimate') && issue.estimate != null ? (
+              <IssueMetaText>{issue.estimate}</IssueMetaText>
+            ) : null}
+            {childCount > 0 ? <IssueMetaText>{childCount}</IssueMetaText> : null}
+            {shows('links') && (issue.externalLinks?.length ?? 0) > 0 ? (
+              <IssueMetaText
+                aria-label={i18n.t('issueLinks.count', { count: issue.externalLinks.length })}
+              >
+                <IconLink size={12} stroke={1.7} aria-hidden="true" />{' '}
+                {i18n.t('issueLinks.count', { count: issue.externalLinks.length })}
+              </IssueMetaText>
+            ) : null}
+            {shows('pullRequests') && pullRequestCount > 0 ? (
+              <IssueMetaText
+                aria-label={i18n.t('issueLinks.pullRequestCount', {
+                  count: pullRequestCount,
+                })}
+              >
+                <IconGitPullRequest size={12} stroke={1.7} aria-hidden="true" /> {pullRequestCount}
+              </IssueMetaText>
+            ) : null}
+            {(issue.adrNumbers?.length ?? 0) > 0 ? (
+              <IssueMetaText
+                aria-label={i18n.t('issueADRs.count', { count: issue.adrNumbers.length })}
+              >
+                {i18n.t('issueADRs.count', { count: issue.adrNumbers.length })}
+              </IssueMetaText>
+            ) : null}
+            {shows('cycle') && issue.cycleNumber != null ? (
+              <IssueMetaText>{i18n.t('field.cycleN', { number: issue.cycleNumber })}</IssueMetaText>
+            ) : null}
+            {shows('milestone') && issue.milestoneName ? (
+              <IssueMetaText>{issue.milestoneName}</IssueMetaText>
+            ) : null}
+            {shows('project') && !hideProjectSlug && issue.projectSlug ? (
+              <IssueMetaText>{issue.projectSlug}</IssueMetaText>
+            ) : null}
+            {shows('dueDate') && issue.dueDate ? (
+              <Text component="span" size="xs" c={overdue ? 'red.4' : 'dimmed'}>
+                {issue.dueDate.slice(5, 10)}
+              </Text>
+            ) : null}
+            {shows('created') ? (
+              <IssueMetaText>{issue.createdAt.slice(0, 10)}</IssueMetaText>
+            ) : null}
+            {shows('updated') ? (
+              <IssueMetaText>{issue.updatedAt.slice(0, 10)}</IssueMetaText>
+            ) : null}
+            {shows('timeInStatus') ? (
+              <IssueMetaText>
+                {statusDuration(issue.statusChangedAt, issue.updatedAt)}
+              </IssueMetaText>
+            ) : null}
+          </Group>
         </Group>
-      </Group>
-    </Button>
+      </Button>
+    </div>
   );
 }

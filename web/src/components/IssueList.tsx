@@ -5,6 +5,7 @@ import { IssueGroupRow, IssueListRow } from './IssueListRow.tsx';
 import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 import { IssueBoardColumn } from './IssueBoardColumn.tsx';
 import styles from './IssueBoardColumn.module.css';
+import { IssueSelectionToolbar } from './IssueSelectionToolbar.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueBoardPresenter, useIssueListPresenter } from '../presenters/IssueList.tsx';
@@ -31,6 +32,8 @@ export function IssueListView({
         rows,
         issuePositions,
         issueCount,
+        bulkSelectedIds,
+        bulkSelectedIdSet,
         childCounts,
         windowed,
         today,
@@ -46,6 +49,7 @@ export function IssueListView({
             tabIndex: 0,
             role: 'listbox',
             'aria-label': t('nav.issues'),
+            'aria-multiselectable': true,
           }}
         >
           <Box>
@@ -68,6 +72,7 @@ export function IssueListView({
                   key={issue.identifier}
                   issue={issue}
                   selected={issue.identifier === selectedId}
+                  bulkSelected={bulkSelectedIdSet.has(issue.identifier)}
                   position={issuePositions.get(issue.identifier)}
                   setSize={issueCount}
                   childCount={childCounts.get(issue.id) ?? 0}
@@ -75,10 +80,19 @@ export function IssueListView({
                   displayProperties={displayProperties}
                   hideProjectSlug={hideProjectSlug}
                   onSelect={handlers.onClick0}
+                  onToggleBulkSelection={handlers.onToggleBulkSelection}
                 />
               );
             })}
             <Box role="presentation" style={{ height: windowed.after, flexShrink: 0 }} />
+            {bulkSelectedIds.length > 0 ? (
+              <IssueSelectionToolbar
+                selectedCount={bulkSelectedIds.length}
+                onSetStatus={handlers.onSetBulkStatus}
+                onSetPriority={handlers.onSetBulkPriority}
+                onClear={handlers.onClearBulkSelection}
+              />
+            ) : null}
           </Box>
         </ScrollArea>
       );

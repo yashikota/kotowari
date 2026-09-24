@@ -219,6 +219,46 @@ test('issue detail navigates through the originating list order', async ({ page,
   await expect(next).toBeEnabled();
 });
 
+test('issue list selects multiple issues and applies bulk status changes', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Bulk status ${stamp} ${index}`, status: 'todo', priority: 2 },
+    });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  const rows = page.getByRole('listbox', { name: 'Issues' }).getByRole('option');
+  await expect(rows).toHaveCount(2);
+  const identifiers = (await rows.allTextContents()).map((text) => text.match(/[A-Z]+-\d+/)?.[0]);
+  expect(identifiers.every(Boolean)).toBeTruthy();
+
+  for (const identifier of identifiers) {
+    await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+  }
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+  await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Set status to In Progress' }).click();
+
+  await expect
+    .poll(async () =>
+      Promise.all(
+        identifiers.map(async (identifier) => {
+          const issue = await request.get(`/api/issues/${identifier}`);
+          return ((await issue.json()) as { workflowStatus: string }).workflowStatus;
+        }),
+      ),
+    )
+    .toEqual(['in_progress', 'in_progress']);
+  await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
+  await expect(rows).toHaveCount(2);
+});
+
 test('type and estimate filters survive saving a reusable view', async ({ page, request }) => {
   const stamp = Date.now();
   const matchingTitle = `Feature estimate ${stamp}`;
