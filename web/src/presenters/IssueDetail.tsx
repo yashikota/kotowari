@@ -21,7 +21,7 @@ import type {
   Page,
   Project,
 } from '../types.ts';
-import { PROJECT_STATUSES } from '../types.ts';
+import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-workflow.tsx';
 import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts';
 
 const LABEL_COLORS = ['#d4725a', '#6b9bd1', '#c4a574', '#7a9e7e', '#d4a05a'];
@@ -41,6 +41,7 @@ type Props = {
 
 export function useIssueDetailPresenter({ identifier }: Props) {
   const sendIntent = useIntent();
+  const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { preferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const navigate = useNavigate();
@@ -95,8 +96,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const [projectConversionOpen, setProjectConversionOpen] = useState(false);
   const [projectConversionName, setProjectConversionName] = useState('');
   const [projectConversionDescription, setProjectConversionDescription] = useState('');
-  const [projectConversionStatus, setProjectConversionStatus] =
-    useState<(typeof PROJECT_STATUSES)[number]>('planned');
+  const [projectConversionStatus, setProjectConversionStatus] = useState('planned');
   const [projectConversionPriority, setProjectConversionPriority] = useState(0);
   const [projectConversionStartDate, setProjectConversionStartDate] = useState('');
   const [projectConversionTargetDate, setProjectConversionTargetDate] = useState('');
@@ -497,7 +497,8 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       const result = await api.convertIssueToProject(identifier, {
         name,
         description: projectConversionDescription,
-        status: projectConversionStatus,
+        status: projectWorkflowStatusCategory(projectConversionStatus, projectWorkflowStatuses),
+        workflowStatus: projectConversionStatus,
         priority: projectConversionPriority,
         ...(projectConversionStartDate ? { startDate: projectConversionStartDate } : {}),
         ...(projectConversionTargetDate ? { targetDate: projectConversionTargetDate } : {}),
@@ -702,6 +703,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     projectConversionName,
     projectConversionDescription,
     projectConversionStatus,
+    projectWorkflowStatuses,
     projectConversionPriority,
     projectConversionStartDate,
     projectConversionTargetDate,
@@ -910,7 +912,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       ) => setProjectConversionDescription(e.target.value),
       Project_conversion_status_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setProjectConversionStatus(e.target.value as (typeof PROJECT_STATUSES)[number]),
+      ) => setProjectConversionStatus(e.target.value),
       Project_conversion_priority_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setProjectConversionPriority(Number(e.target.value)),

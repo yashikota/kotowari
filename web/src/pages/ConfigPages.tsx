@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { IconChevronDown, IconChevronUp, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import type { IssueStatus } from '../types.ts';
+import type { IssueStatus, ProjectStatus } from '../types.ts';
 import { IssueStatusIcon } from '../components/issue-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -41,6 +41,14 @@ export function ConfigPageView({
         codingToolError,
         codingToolSaved,
         issueWorkflowStatuses,
+        projectWorkflowStatuses,
+        projectWorkflowName,
+        projectWorkflowDescription,
+        projectWorkflowCategory,
+        projectWorkflowFormOpen,
+        projectWorkflowError,
+        projectWorkflowSaved,
+        projectWorkflowDirty,
         workflowError,
         workflowSaved,
         workflowDirty,
@@ -365,6 +373,119 @@ export function ConfigPageView({
                 </Box>
                 <Box component="form" onSubmit={handlers.onSaveWorkflow}>
                   <Button type="submit" disabled={!workflowDirty}>
+                    {t('config.saveWorkflow')}
+                  </Button>
+                </Box>
+              </Stack>
+
+              <Stack gap="md" component="section" aria-label={t('config.projectStatuses')}>
+                <Title order={4}>{t('config.projectStatuses')}</Title>
+                <Text size="sm" c="dimmed">
+                  {t('config.projectStatusesDescription')}
+                </Text>
+                {projectWorkflowError ? (
+                  <Alert color="red" variant="light" role="alert">
+                    {projectWorkflowError}
+                  </Alert>
+                ) : null}
+                {projectWorkflowSaved ? (
+                  <Alert color="green" variant="light" role="status">
+                    {t('config.projectWorkflowSaved')}
+                  </Alert>
+                ) : null}
+                {(
+                  ['backlog', 'planned', 'started', 'completed', 'canceled'] as ProjectStatus[]
+                ).map((category) => (
+                  <Stack
+                    key={category}
+                    component="section"
+                    aria-label={t(`projectStatus.${category}`)}
+                    gap="xs"
+                  >
+                    <Text size="sm" fw={600}>
+                      {t(`projectStatus.${category}`)}
+                    </Text>
+                    {projectWorkflowStatuses
+                      .filter((status) => status.category === category)
+                      .map((status) => (
+                        <Group key={status.id} align="flex-end" wrap="wrap" w="100%">
+                          <TextInput
+                            label={t('config.workflowStatusName', { status: status.name })}
+                            value={status.name}
+                            maxLength={48}
+                            onChange={(event) =>
+                              handlers.onProjectWorkflowStatusNameChange(
+                                status.id,
+                                event.target.value,
+                              )
+                            }
+                            style={{ flex: 1, minWidth: 150 }}
+                          />
+                          <TextInput
+                            label={t('config.workflowStatusDescription', { status: status.name })}
+                            value={status.description ?? ''}
+                            maxLength={200}
+                            onChange={(event) =>
+                              handlers.onProjectWorkflowStatusDescriptionChange(
+                                status.id,
+                                event.target.value,
+                              )
+                            }
+                            style={{ flex: 1, minWidth: 150 }}
+                          />
+                          {['backlog', 'planned', 'started', 'completed', 'canceled'].includes(
+                            status.id,
+                          ) ? null : (
+                            <ActionIcon
+                              type="button"
+                              variant="subtle"
+                              color="red"
+                              aria-label={t('config.removeWorkflowStatus', { status: status.name })}
+                              onClick={() => handlers.onDeleteProjectWorkflowStatus(status.id)}
+                            >
+                              <IconTrash size={16} aria-hidden />
+                            </ActionIcon>
+                          )}
+                        </Group>
+                      ))}
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      size="compact-sm"
+                      onClick={() => handlers.onOpenProjectWorkflowStatus(category)}
+                    >
+                      {t('config.createProjectStatus')}
+                    </Button>
+                    {projectWorkflowFormOpen && projectWorkflowCategory === category ? (
+                      <Box component="form" onSubmit={handlers.onAddProjectWorkflowStatus}>
+                        <Group align="flex-end" wrap="wrap">
+                          <TextInput
+                            label={t('config.newWorkflowStatus')}
+                            value={projectWorkflowName}
+                            maxLength={48}
+                            onChange={handlers.onProjectWorkflowNameChange}
+                          />
+                          <TextInput
+                            label={t('config.newWorkflowStatusDescription')}
+                            value={projectWorkflowDescription}
+                            maxLength={200}
+                            onChange={handlers.onProjectWorkflowDescriptionChange}
+                          />
+                          <Button type="submit">{t('config.addWorkflowStatus')}</Button>
+                          <Button
+                            type="button"
+                            variant="default"
+                            onClick={handlers.onCloseProjectWorkflowStatus}
+                          >
+                            {t('config.cancelProjectStatus')}
+                          </Button>
+                        </Group>
+                      </Box>
+                    ) : null}
+                  </Stack>
+                ))}
+                <Box component="form" onSubmit={handlers.onSaveProjectWorkflow}>
+                  <Button type="submit" disabled={!projectWorkflowDirty}>
                     {t('config.saveWorkflow')}
                   </Button>
                 </Box>

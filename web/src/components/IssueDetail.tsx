@@ -32,7 +32,7 @@ import { renderMarkdown } from '../markdown.ts';
 import { formatStamp } from '../time.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
-import { PROJECT_STATUSES } from '../types.ts';
+import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
 import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
@@ -1119,9 +1119,13 @@ export function IssueDetailView({
                     label={t('field.status')}
                     value={projectConversionStatus}
                     onChange={handlers.Project_conversion_status_onChange}
-                    data={PROJECT_STATUSES.map((status) => ({
-                      value: status,
-                      label: t(`projectStatus.${status}`),
+                    data={model.projectWorkflowStatuses.map((status) => ({
+                      value: status.id,
+                      label: projectWorkflowStatusLabel(
+                        status.id,
+                        model.projectWorkflowStatuses,
+                        t,
+                      ),
                     }))}
                   />
                   <NativeSelect

@@ -6,6 +6,7 @@ import { formatCalendarDate } from '../time.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import type { Project } from '../types.ts';
 import { ProjectIconMark } from './ProjectIcon.tsx';
+import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 export type ProjectBoardModel = {
   columns: { key: string; label: string }[];
@@ -135,6 +136,7 @@ function ProjectBoardCard({
   issueCount: number;
 }) {
   const { t, i18n } = useTranslation();
+  const { statuses } = useProjectWorkflow();
   const shows = (property: ProjectDisplayProperty) => displayProperties.includes(property);
   const progress = Math.round(project.progress * 100);
   return (
@@ -172,7 +174,11 @@ function ProjectBoardCard({
               ) : null}
               {shows('status') ? (
                 <Badge size="xs" variant="light" color="gray">
-                  {t(`projectStatus.${project.status}`)}
+                  {projectWorkflowStatusLabel(
+                    project.workflowStatus ?? project.status,
+                    statuses,
+                    t,
+                  )}
                 </Badge>
               ) : null}
               {shows('health') ? (

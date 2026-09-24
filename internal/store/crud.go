@@ -45,14 +45,15 @@ func workspaceFrom(m *mem) Workspace {
 		locale = "en"
 	}
 	return Workspace{
-		Name:          m.Workspace.Name,
-		Timezone:      m.Workspace.Timezone,
-		Locale:        locale,
-		URL:           strings.TrimSpace(m.Workspace.URL),
-		Description:   m.Workspace.Description,
-		GitHubURL:     strings.TrimSpace(m.Workspace.GitHubURL),
-		IssueStatuses: issueWorkflowStatuses(m.Workspace),
-		UpdatedAt:     m.Workspace.UpdatedAt,
+		Name:            m.Workspace.Name,
+		Timezone:        m.Workspace.Timezone,
+		Locale:          locale,
+		URL:             strings.TrimSpace(m.Workspace.URL),
+		Description:     m.Workspace.Description,
+		GitHubURL:       strings.TrimSpace(m.Workspace.GitHubURL),
+		IssueStatuses:   issueWorkflowStatuses(m.Workspace),
+		ProjectStatuses: projectWorkflowStatuses(m.Workspace),
+		UpdatedAt:       m.Workspace.UpdatedAt,
 	}
 }
 
@@ -142,6 +143,7 @@ func (s *Store) ListProjects() ([]Project, error) {
 		out = make([]Project, len(m.Projects))
 		copy(out, m.Projects)
 		for i := range out {
+			out[i] = normalizeProjectWorkflowStatus(out[i], m.Workspace)
 			out[i].Progress = projectProgress(m, out[i].ID)
 			if out[i].Labels == nil {
 				out[i].Labels = []string{}
@@ -162,6 +164,7 @@ func (s *Store) GetProject(slug string) (Project, error) {
 		if !ok {
 			return ErrNotFound
 		}
+		got = normalizeProjectWorkflowStatus(got, m.Workspace)
 		got.Progress = projectProgress(m, got.ID)
 		if got.Labels == nil {
 			got.Labels = []string{}
@@ -192,6 +195,10 @@ func (s *Store) CreateProjectWithSummaryAndLabels(name, slug, summary, descripti
 }
 
 func (s *Store) CreateProjectWithAppearance(name, slug, summary, icon, iconColor, description, status string, priority int, start, target *string, labels []string) (Project, error) {
+	return s.CreateProjectWithWorkflow(name, slug, summary, icon, iconColor, description, status, "", priority, start, target, labels)
+}
+
+func (s *Store) CreateProjectWithWorkflow(name, slug, summary, icon, iconColor, description, status, workflowStatus string, priority int, start, target *string, labels []string) (Project, error) {
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
@@ -217,11 +224,15 @@ func (s *Store) CreateProjectWithAppearance(name, slug, summary, icon, iconColor
 	}
 	now := domain.Now()
 	var completedAt *string
-	if status == "completed" {
-		completedAt = &now
-	}
 	var out Project
 	err := s.mutate(func(m *mem) error {
+		resolvedStatus, ok := resolveProjectWorkflowStatus(m.Workspace, status, workflowStatus)
+		if !ok {
+			return validationf("invalid project workflow status")
+		}
+		if resolvedStatus.Category == "completed" {
+			completedAt = &now
+		}
 		if _, ok := projectBySlug(m, slug); ok {
 			return errf(ErrConflict, "slug")
 		}
@@ -230,7 +241,7 @@ func (s *Store) CreateProjectWithAppearance(name, slug, summary, icon, iconColor
 			return err
 		}
 		out = Project{
-			ID: m.nextID(), Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: status,
+			ID: m.nextID(), Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: resolvedStatus.Category, WorkflowStatus: resolvedStatus.ID,
 			Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
 			Labels: projectLabels, Dependencies: []ProjectDependency{}, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
 		}
@@ -577,6 +588,10 @@ func (s *Store) UpdateProjectWithSummary(slug string, name, summary, description
 }
 
 func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, iconColor, description, status, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
+	return s.UpdateProjectWithWorkflow(slug, name, summary, icon, iconColor, description, status, nil, health, priority, start, target, labels)
+}
+
+func (s *Store) UpdateProjectWithWorkflow(slug string, name, summary, icon, iconColor, description, status, workflowStatus, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)
@@ -585,6 +600,10 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 		}
 		p := m.Projects[i]
 		previousStatus := p.Status
+		previousWorkflowStatus := p.WorkflowStatus
+		if previousWorkflowStatus == "" {
+			previousWorkflowStatus = p.Status
+		}
 		previousHealth := p.Health
 		previousPriority := p.Priority
 		if name != nil {
@@ -615,8 +634,8 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 			if !domain.ValidProjectStatus(*status) {
 				return validationf("invalid status")
 			}
-			p.Status = *status
 		}
+		statusChanged := status != nil || workflowStatus != nil
 		if health != nil {
 			if !domain.ValidProjectHealth(*health) {
 				return validationf("invalid project health")
@@ -649,7 +668,21 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 			p.Labels = nextLabels
 		}
 		now := domain.Now()
-		if status != nil {
+		if statusChanged {
+			category := p.Status
+			workflowID := ""
+			if status != nil {
+				category = *status
+			}
+			if workflowStatus != nil {
+				workflowID = *workflowStatus
+			}
+			resolvedStatus, ok := resolveProjectWorkflowStatus(m.Workspace, category, workflowID)
+			if !ok || (status != nil && workflowStatus != nil && resolvedStatus.Category != *status) {
+				return validationf("invalid project workflow status")
+			}
+			p.Status = resolvedStatus.Category
+			p.WorkflowStatus = resolvedStatus.ID
 			if p.Status == "completed" && previousStatus != "completed" {
 				p.CompletedAt = &now
 			} else if p.Status != "completed" && previousStatus == "completed" {
@@ -658,8 +691,8 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 		}
 		p.UpdatedAt = now
 		m.Projects[i] = p
-		if previousStatus != p.Status {
-			addActivity(m, "project", p.ID, "status_changed", map[string]any{"from": previousStatus, "to": p.Status}, now)
+		if previousWorkflowStatus != p.WorkflowStatus {
+			addActivity(m, "project", p.ID, "status_changed", map[string]any{"from": previousWorkflowStatus, "to": p.WorkflowStatus}, now)
 		}
 		if previousHealth != p.Health {
 			addActivity(m, "project", p.ID, "health_changed", map[string]any{"from": previousHealth, "to": p.Health}, now)
@@ -668,6 +701,7 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 			addActivity(m, "project", p.ID, "priority_changed", map[string]any{"from": previousPriority, "to": p.Priority}, now)
 		}
 		m.bump(now)
+		p = normalizeProjectWorkflowStatus(p, m.Workspace)
 		p.Progress = projectProgress(m, p.ID)
 		out = p
 		return nil
@@ -955,8 +989,14 @@ func ensureSingleActive(m *mem, id int64, status string) {
 
 func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	var out []Issue
-	if f.ProjectStatus != "" && !domain.ValidProjectStatus(f.ProjectStatus) {
-		return nil, validationf("invalid project status")
+	if f.ProjectStatus != "" {
+		statuses, err := s.ProjectWorkflowStatuses()
+		if err != nil {
+			return nil, err
+		}
+		if !containsProjectWorkflowStatus(statuses, f.ProjectStatus) {
+			return nil, validationf("invalid project status")
+		}
 	}
 	if f.ProjectPriority != nil && !domain.ValidPriority(*f.ProjectPriority) {
 		return nil, validationf("invalid project priority")
@@ -1124,7 +1164,7 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 						}
 					}
 				}
-				if !found || (f.ProjectStatus != "" && project.Status != f.ProjectStatus) ||
+				if !found || (f.ProjectStatus != "" && normalizeProjectWorkflowStatus(project, m.Workspace).WorkflowStatus != f.ProjectStatus && project.Status != f.ProjectStatus) ||
 					(f.ProjectPriority != nil && project.Priority != *f.ProjectPriority) {
 					continue
 				}
@@ -2500,8 +2540,14 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.Relation != nil && !domain.ValidIssueRelationFilter(*in.Relation) {
 		return View{}, validationf("invalid issue relation filter")
 	}
-	if in.ProjectStatus != nil && *in.ProjectStatus != "" && !domain.ValidProjectStatus(*in.ProjectStatus) {
-		return View{}, validationf("invalid project status")
+	if in.ProjectStatus != nil && *in.ProjectStatus != "" {
+		statuses, err := s.ProjectWorkflowStatuses()
+		if err != nil {
+			return View{}, err
+		}
+		if !containsProjectWorkflowStatus(statuses, *in.ProjectStatus) {
+			return View{}, validationf("invalid project status")
+		}
 	}
 	if in.ProjectPriority != nil && !domain.ValidPriority(*in.ProjectPriority) {
 		return View{}, validationf("invalid project priority")
@@ -2787,7 +2833,7 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 			if *in.ProjectStatus == "" {
 				v.ProjectStatus = nil
 			} else {
-				if !domain.ValidProjectStatus(*in.ProjectStatus) {
+				if _, exists := projectWorkflowStatusByID(m.Workspace, *in.ProjectStatus); !exists {
 					return validationf("invalid project status")
 				}
 				v.ProjectStatus = in.ProjectStatus

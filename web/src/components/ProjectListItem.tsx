@@ -6,6 +6,7 @@ import type { ProjectDisplayProperty } from '../project-display.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type { Project } from '../types.ts';
 import { ProjectIconMark } from './ProjectIcon.tsx';
+import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 const STATUS_COLORS: Record<string, string> = {
   started: 'indigo',
@@ -23,6 +24,7 @@ export function ProjectListItem({
   issueCount?: number;
 }) {
   const { t, i18n } = useTranslation();
+  const { statuses } = useProjectWorkflow();
   const shows = (property: ProjectDisplayProperty) => displayProperties.includes(property);
   const progress = Math.round(project.progress * 100);
   const indicatorColor =
@@ -77,7 +79,7 @@ export function ProjectListItem({
           ) : null}
           {shows('status') ? (
             <Badge variant="light" color={STATUS_COLORS[project.status] ?? 'gray'} size="sm">
-              {t(`projectStatus.${project.status}`)}
+              {projectWorkflowStatusLabel(project.workflowStatus ?? project.status, statuses, t)}
             </Badge>
           ) : null}
           {shows('health') ? (

@@ -7,6 +7,7 @@ import type {
   IssueLink,
   IssueRelation,
   IssueWorkflowStatus,
+  ProjectWorkflowStatus,
   IssueTemplate,
   Label,
   Page,
@@ -26,6 +27,14 @@ const defaultIssueWorkflowStatuses: IssueWorkflowStatus[] = [
   { id: 'duplicate', name: 'Duplicate', category: 'canceled' },
 ];
 let issueWorkflowStatuses = defaultIssueWorkflowStatuses.map((status) => ({ ...status }));
+const defaultProjectWorkflowStatuses: ProjectWorkflowStatus[] = [
+  { id: 'backlog', name: 'Backlog', category: 'backlog' },
+  { id: 'planned', name: 'Planned', category: 'planned' },
+  { id: 'started', name: 'In Progress', category: 'started' },
+  { id: 'completed', name: 'Completed', category: 'completed' },
+  { id: 'canceled', name: 'Canceled', category: 'canceled' },
+];
+let projectWorkflowStatuses = defaultProjectWorkflowStatuses.map((status) => ({ ...status }));
 function localDateValue(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -43,6 +52,7 @@ let workspace: Workspace = {
   description: 'Markdownで管理する、軽量なプロジェクトワークスペース',
   githubUrl: 'https://github.com/yashikota/kotowari',
   issueStatuses: issueWorkflowStatuses,
+  projectStatuses: projectWorkflowStatuses,
   updatedAt: now,
 };
 let projects: Project[] = [
@@ -516,6 +526,59 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     revision += 1;
     return json(issueWorkflowStatuses);
   }
+  if (path === '/api/project-workflow-statuses') {
+    if (method === 'GET') return json(projectWorkflowStatuses);
+    if (method !== 'PUT') return notFound();
+    const value = body(init);
+    const statuses = Array.isArray(value.statuses)
+      ? (value.statuses as ProjectWorkflowStatus[])
+      : null;
+    if (
+      !statuses ||
+      statuses.length < defaultProjectWorkflowStatuses.length ||
+      statuses.length > 50
+    )
+      return json({ error: 'invalid project workflow statuses' }, 400);
+    const seen = new Set<string>();
+    for (const status of statuses) {
+      if (
+        !status ||
+        typeof status.id !== 'string' ||
+        typeof status.name !== 'string' ||
+        typeof status.category !== 'string' ||
+        !status.name.trim() ||
+        status.name.trim().length > 48 ||
+        (typeof status.description !== 'undefined' &&
+          (typeof status.description !== 'string' || status.description.length > 200)) ||
+        seen.has(status.id)
+      )
+        return json({ error: 'invalid project workflow status' }, 400);
+      seen.add(status.id);
+      const defaultStatus = defaultProjectWorkflowStatuses.find((item) => item.id === status.id);
+      if (defaultStatus && status.category !== defaultStatus.category)
+        return json({ error: 'default project status category cannot change' }, 400);
+      if (!defaultStatus && !/^[a-z][a-z0-9-]{0,47}$/.test(status.id))
+        return json({ error: 'invalid project workflow status id' }, 400);
+      if (!['backlog', 'planned', 'started', 'completed', 'canceled'].includes(status.category))
+        return json({ error: 'invalid project workflow status category' }, 400);
+    }
+    if (defaultProjectWorkflowStatuses.some((status) => !seen.has(status.id)))
+      return json({ error: 'default project statuses are required' }, 400);
+    const nextIds = new Set(statuses.map((status) => status.id));
+    if (
+      projects.some((project) => !nextIds.has(project.workflowStatus ?? project.status)) ||
+      views.some((view) => Boolean(view.projectStatus) && !nextIds.has(view.projectStatus!))
+    )
+      return json({ error: 'project workflow status is in use' }, 409);
+    projectWorkflowStatuses = statuses.map((status) => ({
+      ...status,
+      name: status.name.trim(),
+      description: status.description?.trim() || undefined,
+    }));
+    workspace.projectStatuses = projectWorkflowStatuses;
+    revision += 1;
+    return json(projectWorkflowStatuses);
+  }
   if (path === '/api/diagnostics') return json([]);
   if (path === '/api/labels') {
     if (method === 'POST') {
@@ -563,7 +626,9 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         );
         return (
           linkedProject != null &&
-          (!projectStatus || linkedProject.status === projectStatus) &&
+          (!projectStatus ||
+            (linkedProject.workflowStatus ?? linkedProject.status) === projectStatus ||
+            linkedProject.status === projectStatus) &&
           (projectPriority == null || linkedProject.priority === Number(projectPriority))
         );
       });
@@ -769,11 +834,18 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const value = body(init);
     const name = text(value.name).trim();
     const priority = Number(value.priority ?? 0);
-    const status = text(value.status) || 'planned';
+    const workflowStatus = text(value.workflowStatus) || text(value.status) || 'planned';
+    const resolvedStatus = projectWorkflowStatuses.find(
+      (candidate) => candidate.id === workflowStatus,
+    );
+    const status = resolvedStatus?.category ?? (text(value.status) || 'planned');
     if (!name) return json({ error: 'project name required' }, 400);
     if (!Number.isInteger(priority) || priority < 0 || priority > 4)
       return json({ error: 'invalid project priority' }, 400);
-    if (!['backlog', 'planned', 'started', 'completed', 'canceled'].includes(status))
+    if (
+      !resolvedStatus ||
+      !['backlog', 'planned', 'started', 'completed', 'canceled'].includes(status)
+    )
       return json({ error: 'invalid project status' }, 400);
     const base =
       name
@@ -790,6 +862,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       slug,
       description: text(value.description),
       status,
+      workflowStatus,
       priority,
       startDate: text(value.startDate) || null,
       targetDate: text(value.targetDate) || null,
@@ -1135,6 +1208,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       });
     if (path === '/api/projects')
       Object.assign(created, {
+        status: value.status ?? 'planned',
+        workflowStatus: value.workflowStatus ?? value.status ?? 'planned',
         priority: value.priority ?? 0,
         labels: value.labels ?? [],
         milestones: [],
@@ -1330,7 +1405,14 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       revision += 1;
       return json(null, 204);
     }
-    if (method === 'PATCH') patch(item, body(init));
+    if (method === 'PATCH') {
+      const value = body(init);
+      if (kind === 'projects' && typeof value.workflowStatus === 'string') {
+        const state = projectWorkflowStatuses.find((status) => status.id === value.workflowStatus);
+        if (!state) return json({ error: 'invalid project workflow status' }, 400);
+        patch(item, { ...value, status: state.category });
+      } else patch(item, value);
+    }
     if (action === 'publish') patch(item, { status: 'accepted' });
     return json(item);
   }

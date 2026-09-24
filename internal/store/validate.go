@@ -56,6 +56,11 @@ func diagnose(m *mem) {
 		if !domain.ValidProjectStatus(p.Status) {
 			m.diag(path, "invalid_status", fmt.Sprintf("invalid status %q", p.Status))
 		}
+		if p.WorkflowStatus != "" {
+			if status, ok := projectWorkflowStatusByID(m.Workspace, p.WorkflowStatus); !ok || status.Category != p.Status {
+				m.diag(path, "invalid_workflow_status", fmt.Sprintf("invalid workflow status %q for category %q", p.WorkflowStatus, p.Status))
+			}
+		}
 	}
 
 	active := 0

@@ -45,6 +45,7 @@ import { RouterNavLink } from '../mantine-ui.tsx';
 import { CONFIG_NAV } from '../nav.ts';
 import { workflowStatusLabel } from '../workflow.tsx';
 import { IssueWorkflowProvider } from '../workflow.tsx';
+import { ProjectWorkflowProvider } from '../project-workflow.tsx';
 import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
 import styles from './Shell.module.css';
@@ -676,14 +677,16 @@ function ShellBinding() {
   const viewNameRef = useFocusWhen<HTMLTextAreaElement>(model.createView);
   return (
     <IssueWorkflowProvider>
-      <ShellView
-        model={{ ...model, handlers } as typeof model}
-        t={t}
-        issueTitleRef={issueTitleRef}
-        adrTitleRef={adrTitleRef}
-        pageTitleRef={pageTitleRef}
-        viewNameRef={viewNameRef}
-      />
+      <ProjectWorkflowProvider>
+        <ShellView
+          model={{ ...model, handlers } as typeof model}
+          t={t}
+          issueTitleRef={issueTitleRef}
+          adrTitleRef={adrTitleRef}
+          pageTitleRef={pageTitleRef}
+          viewNameRef={viewNameRef}
+        />
+      </ProjectWorkflowProvider>
     </IssueWorkflowProvider>
   );
 }

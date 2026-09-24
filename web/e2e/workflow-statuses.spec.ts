@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
-async function choose(page: import('@playwright/test').Page, label: string, option: string) {
-  await page.getByRole('combobox', { name: label }).click();
+async function choose(page: Page, label: string, option: string, scope: Page | Locator = page) {
+  await scope.getByRole('combobox', { name: label }).click();
   await page.getByRole('option', { name: option, exact: true }).click();
 }
 
@@ -18,7 +19,7 @@ test('custom issue workflow states can be configured, used, filtered, and remove
   await expect(settings.getByLabel('Status name: Duplicate')).toHaveValue('Duplicate');
   await settings.getByLabel('New status name').fill(statusName);
   await settings.getByLabel('Description', { exact: true }).fill('Pull request is being reviewed');
-  await choose(page, 'Workflow category', 'In Progress');
+  await choose(page, 'Workflow category', 'In Progress', settings);
   await settings.getByRole('button', { name: 'Add status' }).click();
   await expect(settings.getByRole('status')).toHaveText('Issue workflow saved.');
   await expect(settings.getByLabel(`Status name: ${statusName}`)).toHaveValue(statusName);

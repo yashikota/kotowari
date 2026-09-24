@@ -7,6 +7,7 @@ import type { ProjectDisplayProperty } from '../project-display.ts';
 import { formatCalendarDate } from '../time.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { ProjectIconMark } from './ProjectIcon.tsx';
+import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 export type ProjectTimelineModel = {
   startMonth: string;
@@ -54,6 +55,7 @@ export function ProjectTimelineView({
   };
 }) {
   const { t } = useTranslation();
+  const { statuses } = useProjectWorkflow();
   const listWidth = showProjectList ? 264 : 0;
   const weekWidth = showWeekNumbers ? 34 : 18;
   const timelineWidth = model.weeks.length * weekWidth;
@@ -253,7 +255,11 @@ export function ProjectTimelineView({
                             >
                               <Text size="xs" truncate>
                                 {showProjectList && displayProperties.includes('status')
-                                  ? t(`projectStatus.${project.status}`)
+                                  ? projectWorkflowStatusLabel(
+                                      project.workflowStatus ?? project.status,
+                                      statuses,
+                                      t,
+                                    )
                                   : project.name}
                               </Text>
                             </Badge>
@@ -282,6 +288,7 @@ function ProjectTimelineProjectLabel({
   issueCount: number;
 }) {
   const { t, i18n } = useTranslation();
+  const { statuses } = useProjectWorkflow();
   const shows = (property: ProjectDisplayProperty) => displayProperties.includes(property);
   return (
     <Stack
@@ -330,7 +337,7 @@ function ProjectTimelineProjectLabel({
         <Group gap={4} wrap="wrap">
           {shows('status') ? (
             <Badge size="xs" variant="light" color={STATUS_COLORS[project.status] ?? 'gray'}>
-              {t(`projectStatus.${project.status}`)}
+              {projectWorkflowStatusLabel(project.workflowStatus ?? project.status, statuses, t)}
             </Badge>
           ) : null}
           {shows('priority') ? (

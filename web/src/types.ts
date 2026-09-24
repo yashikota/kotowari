@@ -5,6 +5,13 @@ export type IssueWorkflowStatus = {
   category: IssueStatus;
   description?: string;
 };
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+export type ProjectWorkflowStatus = {
+  id: string;
+  name: string;
+  category: ProjectStatus;
+  description?: string;
+};
 export type IssueType = 'bug' | 'feature' | 'improvement' | 'task';
 
 export type Label = {
@@ -107,6 +114,7 @@ export type Project = {
   iconColor?: string;
   description: string;
   status: string;
+  workflowStatus?: string;
   health?: ProjectHealth | null;
   completedAt?: string | null;
   priority: number;
@@ -262,6 +270,7 @@ export type Workspace = {
   description: string;
   githubUrl: string;
   issueStatuses?: IssueWorkflowStatus[];
+  projectStatuses?: ProjectWorkflowStatus[];
   updatedAt: string;
 };
 

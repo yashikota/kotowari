@@ -9,7 +9,14 @@ import { useMachineFlag, useOverlay } from '../application/Root.tsx';
 import { applyLocale } from '../i18n/index.ts';
 import { languageOptions, normalizeWorkspace, resolveLocale } from '../i18n/locale.ts';
 import { timeZoneOptions, systemTimeZone } from '../time.ts';
-import type { Diagnostic, IssueStatus, IssueWorkflowStatus, Workspace } from '../types.ts';
+import type {
+  Diagnostic,
+  IssueStatus,
+  IssueWorkflowStatus,
+  ProjectStatus,
+  ProjectWorkflowStatus,
+  Workspace,
+} from '../types.ts';
 import { isWebCodingToolURLTemplate, useCodingToolPreferences } from '../coding-tools.ts';
 import type { CodingToolPreferences } from '../coding-tools.ts';
 import {
@@ -23,6 +30,7 @@ import {
 } from '../preferences.ts';
 import { sidebarSettingsGroups } from '../sidebar.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
+import { useProjectWorkflow } from '../project-workflow.tsx';
 
 type ConfigData = {
   workspace: Workspace;
@@ -42,6 +50,8 @@ export function useConfigPagePresenter() {
     useCodingToolPreferences();
   const { statuses: issueWorkflowStatuses, updateStatuses: saveIssueWorkflowStatuses } =
     useIssueWorkflow();
+  const { statuses: projectWorkflowStatuses, updateStatuses: saveProjectWorkflowStatuses } =
+    useProjectWorkflow();
   const [codingToolDraft, setCodingToolDraft] = useState(codingToolPreferences);
   const [codingToolError, setCodingToolError] = useState('');
   const [codingToolSaved, setCodingToolSaved] = useState(false);
@@ -51,6 +61,13 @@ export function useConfigPagePresenter() {
   const [workflowCategory, setWorkflowCategory] = useState<IssueStatus>('in_progress');
   const [workflowError, setWorkflowError] = useState('');
   const [workflowSaved, setWorkflowSaved] = useState(false);
+  const [projectWorkflowDraft, setProjectWorkflowDraft] = useState(projectWorkflowStatuses);
+  const [projectWorkflowName, setProjectWorkflowName] = useState('');
+  const [projectWorkflowDescription, setProjectWorkflowDescription] = useState('');
+  const [projectWorkflowCategory, setProjectWorkflowCategory] = useState<ProjectStatus>('started');
+  const [projectWorkflowFormOpen, setProjectWorkflowFormOpen] = useState(false);
+  const [projectWorkflowError, setProjectWorkflowError] = useState('');
+  const [projectWorkflowSaved, setProjectWorkflowSaved] = useState(false);
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -66,6 +83,10 @@ export function useConfigPagePresenter() {
   useEffect(() => {
     setWorkflowDraft(issueWorkflowStatuses);
   }, [issueWorkflowStatuses]);
+
+  useEffect(() => {
+    setProjectWorkflowDraft(projectWorkflowStatuses);
+  }, [projectWorkflowStatuses]);
 
   const timeZones = useMemo(() => timeZoneOptions(workspace.timezone), [workspace.timezone]);
   const languages = useMemo(
@@ -89,6 +110,15 @@ export function useConfigPagePresenter() {
     workflowName,
     workflowDescription,
     workflowCategory,
+    projectWorkflowStatuses: projectWorkflowDraft,
+    projectWorkflowName,
+    projectWorkflowDescription,
+    projectWorkflowCategory,
+    projectWorkflowFormOpen,
+    projectWorkflowError,
+    projectWorkflowSaved,
+    projectWorkflowDirty:
+      JSON.stringify(projectWorkflowDraft) !== JSON.stringify(projectWorkflowStatuses),
     sidebarGroups: sidebarSettingsGroups(preferences).map(({ group, items }) => ({
       group,
       label: t(`config.sidebarGroup.${group}`),
@@ -291,6 +321,98 @@ export function useConfigPagePresenter() {
           })
           .catch((err: unknown) =>
             setWorkflowError(err instanceof Error ? err.message : t('config.workflowSaveFailed')),
+          );
+      },
+      onProjectWorkflowStatusNameChange: (id: string, name: string) => {
+        setProjectWorkflowSaved(false);
+        setProjectWorkflowDraft((current) =>
+          current.map((status) => (status.id === id ? { ...status, name } : status)),
+        );
+      },
+      onProjectWorkflowStatusDescriptionChange: (id: string, description: string) => {
+        setProjectWorkflowSaved(false);
+        setProjectWorkflowDraft((current) =>
+          current.map((status) => (status.id === id ? { ...status, description } : status)),
+        );
+      },
+      onProjectWorkflowNameChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setProjectWorkflowName(e.target.value),
+      onProjectWorkflowDescriptionChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setProjectWorkflowDescription(e.target.value),
+      onOpenProjectWorkflowStatus: (category: ProjectStatus) => {
+        setProjectWorkflowCategory(category);
+        setProjectWorkflowName('');
+        setProjectWorkflowDescription('');
+        setProjectWorkflowError('');
+        setProjectWorkflowFormOpen(true);
+      },
+      onCloseProjectWorkflowStatus: () => setProjectWorkflowFormOpen(false),
+      onAddProjectWorkflowStatus: (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const name = projectWorkflowName.trim();
+        if (!name) {
+          setProjectWorkflowError(t('config.workflowNameRequired'));
+          return;
+        }
+        const base = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 48);
+        const idBase = base || `project-status-${Date.now().toString(36)}`;
+        const used = new Set(projectWorkflowDraft.map((status) => status.id));
+        let id = idBase;
+        for (let suffix = 2; used.has(id); suffix++) id = `${idBase.slice(0, 43)}-${suffix}`;
+        const status: ProjectWorkflowStatus = {
+          id,
+          name,
+          category: projectWorkflowCategory,
+          ...(projectWorkflowDescription.trim()
+            ? { description: projectWorkflowDescription.trim() }
+            : {}),
+        };
+        const next = [...projectWorkflowDraft, status];
+        setProjectWorkflowError('');
+        setProjectWorkflowSaved(false);
+        void saveProjectWorkflowStatuses(next)
+          .then(() => {
+            setProjectWorkflowDraft(next);
+            setProjectWorkflowName('');
+            setProjectWorkflowDescription('');
+            setProjectWorkflowFormOpen(false);
+            setProjectWorkflowSaved(true);
+          })
+          .catch((err: unknown) =>
+            setProjectWorkflowError(
+              err instanceof Error ? err.message : t('config.projectWorkflowSaveFailed'),
+            ),
+          );
+      },
+      onDeleteProjectWorkflowStatus: (id: string) => {
+        const next = projectWorkflowDraft.filter((status) => status.id !== id);
+        setProjectWorkflowError('');
+        setProjectWorkflowSaved(false);
+        void saveProjectWorkflowStatuses(next)
+          .then(() => {
+            setProjectWorkflowDraft(next);
+            setProjectWorkflowSaved(true);
+          })
+          .catch((err: unknown) =>
+            setProjectWorkflowError(
+              err instanceof Error ? err.message : t('config.projectWorkflowSaveFailed'),
+            ),
+          );
+      },
+      onSaveProjectWorkflow: (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setProjectWorkflowError('');
+        setProjectWorkflowSaved(false);
+        void saveProjectWorkflowStatuses(projectWorkflowDraft)
+          .then(() => setProjectWorkflowSaved(true))
+          .catch((err: unknown) =>
+            setProjectWorkflowError(
+              err instanceof Error ? err.message : t('config.projectWorkflowSaveFailed'),
+            ),
           );
       },
       onOpenSidebarCustomization: () => setSidebarCustomizationOpen(true),

@@ -149,12 +149,15 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ milestoneName: '  ' })).toEqual({});
   });
 
-  it('accepts known linked project statuses and priorities', () => {
+  it('accepts project workflow state ids and priorities', () => {
     expect(parseIssueSearch({ projectStatus: 'backlog', projectPriority: '0' })).toEqual({
       projectStatus: 'backlog',
       projectPriority: 0,
     });
-    expect(parseIssueSearch({ projectStatus: 'active', projectPriority: '8' })).toEqual({});
+    expect(parseIssueSearch({ projectStatus: 'ready-for-review', projectPriority: '8' })).toEqual({
+      projectStatus: 'ready-for-review',
+    });
+    expect(parseIssueSearch({ projectStatus: '../unsafe' })).toEqual({});
   });
 
   it('parses distinct project label filters and ignores empty entries', () => {

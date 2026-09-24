@@ -214,9 +214,7 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (typeof raw.projectView === 'string' && raw.projectView.length <= 120) {
     result.projectView = raw.projectView;
   }
-  const status = searchStringList(raw.status).filter((value) =>
-    ['backlog', 'planned', 'started', 'completed', 'canceled'].includes(value),
-  );
+  const status = searchStringList(raw.status).filter((value) => /^[a-z0-9_-]{1,48}$/.test(value));
   if (status.length) result.status = status;
   const priority = searchStringList(raw.priority).filter((value) => /^[0-4]$/.test(value));
   if (priority.length) result.priority = priority;

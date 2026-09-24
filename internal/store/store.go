@@ -22,19 +22,27 @@ type Store struct {
 }
 
 type Workspace struct {
-	Name          string                `json:"name"`
-	Timezone      string                `json:"timezone"`
-	Locale        string                `json:"locale"`
-	URL           string                `json:"url"`
-	Description   string                `json:"description"`
-	GitHubURL     string                `json:"githubUrl"`
-	IssueStatuses []IssueWorkflowStatus `json:"issueStatuses"`
-	UpdatedAt     string                `json:"updatedAt"`
+	Name            string                  `json:"name"`
+	Timezone        string                  `json:"timezone"`
+	Locale          string                  `json:"locale"`
+	URL             string                  `json:"url"`
+	Description     string                  `json:"description"`
+	GitHubURL       string                  `json:"githubUrl"`
+	IssueStatuses   []IssueWorkflowStatus   `json:"issueStatuses"`
+	ProjectStatuses []ProjectWorkflowStatus `json:"projectStatuses"`
+	UpdatedAt       string                  `json:"updatedAt"`
 }
 
 // IssueWorkflowStatus is a user-configurable workflow state grouped under one
 // of the five status categories used for issue lifecycle calculations.
 type IssueWorkflowStatus struct {
+	ID          string `json:"id" toml:"id"`
+	Name        string `json:"name" toml:"name"`
+	Category    string `json:"category" toml:"category"`
+	Description string `json:"description,omitempty" toml:"description,omitempty"`
+}
+
+type ProjectWorkflowStatus struct {
 	ID          string `json:"id" toml:"id"`
 	Name        string `json:"name" toml:"name"`
 	Category    string `json:"category" toml:"category"`
@@ -59,25 +67,26 @@ type Label struct {
 }
 
 type Project struct {
-	ID           int64               `json:"id" toml:"id"`
-	Name         string              `json:"name" toml:"name"`
-	Slug         string              `json:"slug" toml:"slug"`
-	Summary      string              `json:"summary" toml:"summary,omitempty"`
-	Icon         string              `json:"icon,omitempty" toml:"icon,omitempty"`
-	IconColor    string              `json:"iconColor,omitempty" toml:"icon_color,omitempty"`
-	Description  string              `json:"description" toml:"description"`
-	Status       string              `json:"status" toml:"status"`
-	Health       string              `json:"health,omitempty" toml:"health,omitempty"`
-	CompletedAt  *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
-	Priority     int                 `json:"priority" toml:"priority"`
-	StartDate    *string             `json:"startDate" toml:"startDate,omitempty"`
-	TargetDate   *string             `json:"targetDate" toml:"targetDate,omitempty"`
-	Labels       []string            `json:"labels" toml:"labels,omitempty"`
-	Dependencies []ProjectDependency `json:"dependencies" toml:"dependencies,omitempty"`
-	Progress     float64             `json:"progress" toml:"-"`
-	Milestones   []Milestone         `json:"milestones" toml:"milestones,omitempty"`
-	CreatedAt    string              `json:"createdAt" toml:"createdAt"`
-	UpdatedAt    string              `json:"updatedAt" toml:"updatedAt"`
+	ID             int64               `json:"id" toml:"id"`
+	Name           string              `json:"name" toml:"name"`
+	Slug           string              `json:"slug" toml:"slug"`
+	Summary        string              `json:"summary" toml:"summary,omitempty"`
+	Icon           string              `json:"icon,omitempty" toml:"icon,omitempty"`
+	IconColor      string              `json:"iconColor,omitempty" toml:"icon_color,omitempty"`
+	Description    string              `json:"description" toml:"description"`
+	Status         string              `json:"status" toml:"status"`
+	WorkflowStatus string              `json:"workflowStatus,omitempty" toml:"workflow_status,omitempty"`
+	Health         string              `json:"health,omitempty" toml:"health,omitempty"`
+	CompletedAt    *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
+	Priority       int                 `json:"priority" toml:"priority"`
+	StartDate      *string             `json:"startDate" toml:"startDate,omitempty"`
+	TargetDate     *string             `json:"targetDate" toml:"targetDate,omitempty"`
+	Labels         []string            `json:"labels" toml:"labels,omitempty"`
+	Dependencies   []ProjectDependency `json:"dependencies" toml:"dependencies,omitempty"`
+	Progress       float64             `json:"progress" toml:"-"`
+	Milestones     []Milestone         `json:"milestones" toml:"milestones,omitempty"`
+	CreatedAt      string              `json:"createdAt" toml:"createdAt"`
+	UpdatedAt      string              `json:"updatedAt" toml:"updatedAt"`
 }
 
 type Milestone struct {
@@ -462,19 +471,20 @@ type mem struct {
 }
 
 type workspaceFile struct {
-	Name          string                `toml:"name"`
-	Timezone      string                `toml:"timezone"`
-	Locale        string                `toml:"locale,omitempty"`
-	URL           string                `toml:"url,omitempty"`
-	Description   string                `toml:"description,omitempty"`
-	GitHubURL     string                `toml:"githubUrl,omitempty"`
-	IssueStatuses []IssueWorkflowStatus `toml:"issueStatuses,omitempty"`
-	IssuePrefix   string                `toml:"issuePrefix,omitempty"`
-	ADRPrefix     string                `toml:"adrPrefix,omitempty"`
-	IssueCounter  int                   `toml:"issueCounter"`
-	ADRCounter    int                   `toml:"adrCounter"`
-	NextID        int64                 `toml:"nextID"`
-	UpdatedAt     string                `toml:"updatedAt"`
+	Name            string                  `toml:"name"`
+	Timezone        string                  `toml:"timezone"`
+	Locale          string                  `toml:"locale,omitempty"`
+	URL             string                  `toml:"url,omitempty"`
+	Description     string                  `toml:"description,omitempty"`
+	GitHubURL       string                  `toml:"githubUrl,omitempty"`
+	IssueStatuses   []IssueWorkflowStatus   `toml:"issueStatuses,omitempty"`
+	ProjectStatuses []ProjectWorkflowStatus `toml:"projectStatuses,omitempty"`
+	IssuePrefix     string                  `toml:"issuePrefix,omitempty"`
+	ADRPrefix       string                  `toml:"adrPrefix,omitempty"`
+	IssueCounter    int                     `toml:"issueCounter"`
+	ADRCounter      int                     `toml:"adrCounter"`
+	NextID          int64                   `toml:"nextID"`
+	UpdatedAt       string                  `toml:"updatedAt"`
 }
 
 type labelsFile struct {

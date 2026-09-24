@@ -32,8 +32,12 @@ import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
-import { PROJECT_STATUSES } from '../types.ts';
 import type { Activity, ADR, Cycle, Issue, Label, Page, Project, ProjectHealth } from '../types.ts';
+import {
+  useProjectWorkflow,
+  projectWorkflowStatusCategory,
+  projectWorkflowStatusLabel,
+} from '../project-workflow.tsx';
 
 const DAY_MS = 86_400_000;
 
@@ -56,7 +60,11 @@ function dateOrdinal(value: Date) {
   return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) / DAY_MS;
 }
 
-function describeProjectActivity(activity: Activity, projects: Project[]) {
+function describeProjectActivity(
+  activity: Activity,
+  projects: Project[],
+  workflowStatuses: import('../types.ts').ProjectWorkflowStatus[],
+) {
   const payload = activity.payload;
   const payloadString = (value: unknown) =>
     typeof value === 'string' || typeof value === 'number' ? String(value) : '';
@@ -67,8 +75,8 @@ function describeProjectActivity(activity: Activity, projects: Project[]) {
       return i18n.t('projectActivity.events.created');
     case 'status_changed':
       return i18n.t('projectActivity.events.statusChanged', {
-        from: i18n.t(`projectStatus.${from}`),
-        to: i18n.t(`projectStatus.${to}`),
+        from: projectWorkflowStatusLabel(from, workflowStatuses, i18n.t),
+        to: projectWorkflowStatusLabel(to, workflowStatuses, i18n.t),
       });
     case 'health_changed':
       return i18n.t('projectActivity.events.healthChanged', {
@@ -116,14 +124,14 @@ export function useProjectsPagePresenter() {
     issues: Issue[];
   };
   const { projects } = data;
+  const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const search = useSearch({ from: '/projects' });
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
   const [icon, setIcon] = useState('');
   const [iconColor, setIconColor] = useState('grey');
   const [description, setDescription] = useState('');
-  const [status, setStatus] =
-    useState<(typeof import('../types.ts').PROJECT_STATUSES)[number]>('planned');
+  const [status, setStatus] = useState('planned');
   const [priority, setPriority] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [targetDate, setTargetDate] = useState('');
@@ -260,7 +268,12 @@ export function useProjectsPagePresenter() {
   const filteredProjects = useMemo(() => {
     const query = (search.q ?? '').trim().toLocaleLowerCase();
     const projectsToSort = projects.filter((project) => {
-      if (statusFilters.length && !statusFilters.includes(project.status)) return false;
+      if (
+        statusFilters.length &&
+        !statusFilters.includes(project.workflowStatus ?? project.status) &&
+        !statusFilters.includes(project.status)
+      )
+        return false;
       if (priorityFilters.length && !priorityFilters.includes(String(project.priority)))
         return false;
       if (healthFilters.length && !healthFilters.includes(project.health || 'none')) return false;
@@ -323,6 +336,7 @@ export function useProjectsPagePresenter() {
     const orderBy = search.orderBy ?? 'manual';
     const direction = search.direction === 'desc' ? -1 : 1;
     const originalOrder = new Map(projects.map((project, index) => [project.slug, index]));
+    const statusOrder = new Map(projectWorkflowStatuses.map((item, index) => [item.id, index]));
     projectsToSort.sort((left, right) => {
       let result = 0;
       if (orderBy === 'manual') {
@@ -332,8 +346,8 @@ export function useProjectsPagePresenter() {
         result = rank(left.priority) - rank(right.priority);
       } else if (orderBy === 'status') {
         result =
-          PROJECT_STATUSES.indexOf(left.status as (typeof PROJECT_STATUSES)[number]) -
-          PROJECT_STATUSES.indexOf(right.status as (typeof PROJECT_STATUSES)[number]);
+          (statusOrder.get(left.workflowStatus ?? left.status) ?? 0) -
+          (statusOrder.get(right.workflowStatus ?? right.status) ?? 0);
       } else {
         const field =
           orderBy === 'name'
@@ -368,6 +382,7 @@ export function useProjectsPagePresenter() {
     labelFilters,
     milestoneFilters,
     relationFilters,
+    projectWorkflowStatuses,
   ]);
 
   const groupBy = search.groupBy ?? 'none';
@@ -377,44 +392,62 @@ export function useProjectsPagePresenter() {
     }
     const groups = new Map<string, Project[]>();
     for (const project of filteredProjects) {
-      const key = groupBy === 'status' ? project.status : String(project.priority);
+      const key =
+        groupBy === 'status'
+          ? (project.workflowStatus ?? project.status)
+          : String(project.priority);
       const group = groups.get(key) ?? [];
       group.push(project);
       groups.set(key, group);
     }
     const keys =
       groupBy === 'status'
-        ? PROJECT_STATUSES.filter((statusValue) => groups.has(statusValue))
+        ? projectWorkflowStatuses
+            .map((status) => status.id)
+            .filter((statusId) => groups.has(statusId))
         : ['1', '2', '3', '4', '0'].filter((priorityValue) => groups.has(priorityValue));
     return keys.map((key) => ({
       key,
-      label: groupBy === 'status' ? i18n.t(`projectStatus.${key}`) : priorityLabel(Number(key)),
+      label:
+        groupBy === 'status'
+          ? projectWorkflowStatusLabel(key, projectWorkflowStatuses, i18n.t)
+          : priorityLabel(Number(key)),
       projects: groups.get(key) ?? [],
     }));
-  }, [filteredProjects, groupBy]);
+  }, [filteredProjects, groupBy, projectWorkflowStatuses]);
 
   const view = search.view ?? 'list';
   const columnsBy = search.columnsBy ?? 'status';
   const rowsBy = search.rowsBy ?? 'none';
   const showEmptyColumns = search.showEmptyColumns ?? true;
   const projectBoard = useMemo<ProjectBoardModel>(() => {
-    const columnKeys = columnsBy === 'status' ? [...PROJECT_STATUSES] : ['1', '2', '3', '4', '0'];
+    const columnKeys =
+      columnsBy === 'status'
+        ? projectWorkflowStatuses.map((status) => status.id)
+        : ['1', '2', '3', '4', '0'];
     const rowKeys =
       rowsBy === 'none'
         ? ['all']
         : rowsBy === 'status'
-          ? PROJECT_STATUSES.filter((key) =>
-              filteredProjects.some((project) => project.status === key),
-            )
+          ? projectWorkflowStatuses
+              .map((status) => status.id)
+              .filter((key) =>
+                filteredProjects.some(
+                  (project) => (project.workflowStatus ?? project.status) === key,
+                ),
+              )
           : ['1', '2', '3', '4', '0'].filter((key) =>
               filteredProjects.some((project) => String(project.priority) === key),
             );
     const keyFor = (project: Project, by: 'status' | 'priority') =>
-      by === 'status' ? project.status : String(project.priority);
+      by === 'status' ? (project.workflowStatus ?? project.status) : String(project.priority);
     const columns = columnKeys
       .map((key) => ({
         key,
-        label: columnsBy === 'status' ? i18n.t(`projectStatus.${key}`) : priorityLabel(Number(key)),
+        label:
+          columnsBy === 'status'
+            ? projectWorkflowStatusLabel(key, projectWorkflowStatuses, i18n.t)
+            : priorityLabel(Number(key)),
       }))
       .filter(
         (column) =>
@@ -429,7 +462,7 @@ export function useProjectsPagePresenter() {
           rowKey === 'all'
             ? ''
             : rowsBy === 'status'
-              ? i18n.t(`projectStatus.${rowKey}`)
+              ? projectWorkflowStatusLabel(rowKey, projectWorkflowStatuses, i18n.t)
               : priorityLabel(Number(rowKey)),
         cells: Object.fromEntries(
           columns.map((column) => [
@@ -443,7 +476,7 @@ export function useProjectsPagePresenter() {
         ),
       })),
     };
-  }, [columnsBy, filteredProjects, rowsBy, showEmptyColumns]);
+  }, [columnsBy, filteredProjects, projectWorkflowStatuses, rowsBy, showEmptyColumns]);
 
   const timelineStart =
     search.timelineStart ??
@@ -632,7 +665,8 @@ export function useProjectsPagePresenter() {
       icon,
       iconColor,
       description,
-      status,
+      status: projectWorkflowStatusCategory(status, projectWorkflowStatuses),
+      workflowStatus: status,
       priority,
       ...(startDate ? { startDate } : {}),
       ...(targetDate ? { targetDate } : {}),
@@ -663,6 +697,7 @@ export function useProjectsPagePresenter() {
     hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,
     controls,
     availableLabels: data.labels,
+    projectWorkflowStatuses,
     name,
     summary,
     icon,
@@ -721,7 +756,7 @@ export function useProjectsPagePresenter() {
       ) => setDescription(e.target.value),
       New_project_status_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setStatus(e.target.value as (typeof import('../types.ts').PROJECT_STATUSES)[number]),
+      ) => setStatus(e.target.value),
       New_project_priority_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setPriority(Number(e.target.value)),
@@ -749,6 +784,7 @@ export function useProjectDetailPagePresenter() {
     activities: Activity[];
   };
   const router = useRouter();
+  const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState(data.project);
@@ -785,6 +821,7 @@ export function useProjectDetailPagePresenter() {
         'iconColor',
         'description',
         'status',
+        'workflowStatus',
         'health',
         'priority',
         'startDate',
@@ -823,6 +860,7 @@ export function useProjectDetailPagePresenter() {
     _view: 0 as const,
     slug,
     data,
+    projectWorkflowStatuses,
     selected,
     project,
     projectUpdates: data.activities.flatMap((activity) => {
@@ -843,7 +881,7 @@ export function useProjectDetailPagePresenter() {
       .filter((activity) => activity.action !== 'status_update_posted')
       .map((activity) => ({
         id: activity.id,
-        message: describeProjectActivity(activity, data.projects),
+        message: describeProjectActivity(activity, data.projects, projectWorkflowStatuses),
         createdAt: activity.createdAt,
       })),
     projectUpdateOpen,
@@ -863,7 +901,7 @@ export function useProjectDetailPagePresenter() {
     handlers: {
       Project_status_onChange0: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ status: e.target.value }),
+      ) => save({ workflowStatus: e.target.value }),
       Project_priority_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ priority: Number(e.target.value) }),

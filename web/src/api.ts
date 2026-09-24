@@ -16,6 +16,7 @@ import type {
   Project,
   ProjectHealth,
   ProjectMilestone,
+  ProjectWorkflowStatus,
   RecurringIssue,
   SearchHit,
   View,
@@ -73,6 +74,12 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ statuses }),
     }),
+  projectWorkflowStatuses: () => req<ProjectWorkflowStatus[]>('/api/project-workflow-statuses'),
+  updateProjectWorkflowStatuses: (statuses: ProjectWorkflowStatus[]) =>
+    req<ProjectWorkflowStatus[]>('/api/project-workflow-statuses', {
+      method: 'PUT',
+      body: JSON.stringify({ statuses }),
+    }),
   labels: () => req<Label[]>('/api/labels'),
   createLabel: (body: { name: string; color: string }) =>
     req<Label>('/api/labels', { method: 'POST', body: JSON.stringify(body) }),
@@ -109,6 +116,7 @@ export const api = {
       name: string;
       description: string;
       status: string;
+      workflowStatus?: string;
       priority: number;
       startDate?: string;
       targetDate?: string;
@@ -210,6 +218,7 @@ export const api = {
     iconColor?: string;
     description?: string;
     status?: string;
+    workflowStatus?: string;
     priority?: number;
     startDate?: string;
     targetDate?: string;
@@ -520,10 +529,7 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   if (typeof raw.milestoneName === 'string' && raw.milestoneName.trim()) {
     out.milestoneName = raw.milestoneName.slice(0, 512);
   }
-  if (
-    typeof raw.projectStatus === 'string' &&
-    ['backlog', 'planned', 'started', 'completed', 'canceled'].includes(raw.projectStatus)
-  ) {
+  if (typeof raw.projectStatus === 'string' && /^[a-z0-9_-]{1,48}$/.test(raw.projectStatus)) {
     out.projectStatus = raw.projectStatus;
   }
   if (raw.projectPriority !== undefined && raw.projectPriority !== '') {

@@ -13,6 +13,7 @@ import type {
 } from '../issue-list.ts';
 import type { Cycle, Label, Project } from '../types.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
+import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 export type FilterChip = { key: string; label: string };
 
@@ -116,6 +117,7 @@ export function useIssueFiltersPresenter({
   onDisplayPropertyToggle,
 }: Props) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
+  const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { t } = useTranslation();
   const [viewName, setViewName] = useState('');
   const findRef = useRef<HTMLInputElement>(null);
@@ -212,7 +214,7 @@ export function useIssueFiltersPresenter({
       ? [
           {
             key: 'projectStatus',
-            label: `${t('filters.projectStatus')} · ${t(`projectStatus.${search.projectStatus}`)}`,
+            label: `${t('filters.projectStatus')} · ${projectWorkflowStatusLabel(search.projectStatus, projectWorkflowStatuses, t)}`,
           },
         ]
       : []),

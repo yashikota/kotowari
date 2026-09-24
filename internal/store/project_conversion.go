@@ -9,12 +9,13 @@ import (
 )
 
 type CreateProjectFromIssueInput struct {
-	Name        string
-	Description string
-	Status      string
-	Priority    int
-	StartDate   *string
-	TargetDate  *string
+	Name           string
+	Description    string
+	Status         string
+	WorkflowStatus string
+	Priority       int
+	StartDate      *string
+	TargetDate     *string
 }
 
 // CreateProjectFromIssue atomically creates a project and carries the source
@@ -40,6 +41,10 @@ func (s *Store) CreateProjectFromIssue(identifier string, in CreateProjectFromIs
 	var project Project
 	var issue Issue
 	err := s.mutate(func(m *mem) error {
+		resolvedStatus, ok := resolveProjectWorkflowStatus(m.Workspace, in.Status, in.WorkflowStatus)
+		if !ok {
+			return validationf("invalid project workflow status")
+		}
 		issueIndex := indexIssue(m, identifier)
 		if issueIndex < 0 {
 			return ErrNotFound
@@ -60,9 +65,13 @@ func (s *Store) CreateProjectFromIssue(identifier string, in CreateProjectFromIs
 			slug = base + "-" + strconv.Itoa(suffix)
 		}
 		now := domain.Now()
+		var completedAt *string
+		if resolvedStatus.Category == "completed" {
+			completedAt = &now
+		}
 		project = Project{
 			ID: m.nextID(), Name: in.Name, Slug: slug, Description: in.Description,
-			Status: in.Status, Priority: in.Priority, StartDate: in.StartDate,
+			Status: resolvedStatus.Category, WorkflowStatus: resolvedStatus.ID, CompletedAt: completedAt, Priority: in.Priority, StartDate: in.StartDate,
 			TargetDate: in.TargetDate, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
 		}
 		projectID := project.ID

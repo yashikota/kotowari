@@ -29,8 +29,9 @@ import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { ProjectUpdateFeed } from '../components/ProjectUpdateFeed.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
+import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
-import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
+import { CYCLE_STATUSES } from '../types.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { formatCalendarDate } from '../time.ts';
 import {
@@ -225,9 +226,13 @@ export function ProjectsPageView({
                       label={t('field.status')}
                       value={status}
                       onChange={handlers.New_project_status_onChange}
-                      data={PROJECT_STATUSES.map((value) => ({
-                        value,
-                        label: t(`projectStatus.${value}`),
+                      data={model.projectWorkflowStatuses.map((workflowStatus) => ({
+                        value: workflowStatus.id,
+                        label: projectWorkflowStatusLabel(
+                          workflowStatus.id,
+                          model.projectWorkflowStatuses,
+                          t,
+                        ),
                       }))}
                     />
                     <NativeSelect
@@ -453,11 +458,15 @@ export function ProjectDetailPageView({
                   <Group gap="xs" wrap="wrap">
                     <NativeSelect
                       aria-label={t('ui.projectStatus')}
-                      value={project.status}
+                      value={project.workflowStatus ?? project.status}
                       onChange={handlers.Project_status_onChange0}
-                      data={PROJECT_STATUSES.map((s) => ({
-                        value: s,
-                        label: t(`projectStatus.${s}`),
+                      data={model.projectWorkflowStatuses.map((status) => ({
+                        value: status.id,
+                        label: projectWorkflowStatusLabel(
+                          status.id,
+                          model.projectWorkflowStatuses,
+                          t,
+                        ),
                       }))}
                     />
                     <NativeSelect

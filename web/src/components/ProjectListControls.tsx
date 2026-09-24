@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import type { Label } from '../types.ts';
 import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
+import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 export type ProjectListControlsModel = {
   search: string;
@@ -69,6 +70,7 @@ export type ProjectListControlsModel = {
 
 export function ProjectListControls({ model }: { model: ProjectListControlsModel }) {
   const { t } = useTranslation();
+  const { statuses: projectStatuses } = useProjectWorkflow();
   const { handlers } = model;
   return (
     <Group gap="xs" align="flex-end" wrap="wrap" mb="sm">
@@ -122,13 +124,10 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
               label={t('filters.projectStatus')}
               value={model.statuses}
               onChange={handlers.onStatusesChange}
-              data={[
-                { value: 'backlog', label: t('projectStatus.backlog') },
-                { value: 'planned', label: t('projectStatus.planned') },
-                { value: 'started', label: t('projectStatus.started') },
-                { value: 'completed', label: t('projectStatus.completed') },
-                { value: 'canceled', label: t('projectStatus.canceled') },
-              ]}
+              data={projectStatuses.map((status) => ({
+                value: status.id,
+                label: projectWorkflowStatusLabel(status.id, projectStatuses, t),
+              }))}
               searchable
               comboboxProps={{ withinPortal: false }}
             />
