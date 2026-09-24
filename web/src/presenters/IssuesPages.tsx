@@ -82,6 +82,10 @@ export function useIssuesPagePresenter() {
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
+  const [newViewOpen, setNewViewOpen] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
+  const [newViewSaving, setNewViewSaving] = useState(false);
+  const [newViewError, setNewViewError] = useState('');
   const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');
   const [showSubIssues, setShowSubIssues] = useState(true);
   const [nestedSubIssues, setNestedSubIssues] = useState<'showMatching' | 'showAll'>(
@@ -131,6 +135,22 @@ export function useIssuesPagePresenter() {
     await navigate({ to: '/views/$slug', params: { slug: saved.slug } });
   }
 
+  async function createView() {
+    const name = newViewName.trim();
+    if (!name || newViewSaving) return;
+    setNewViewSaving(true);
+    setNewViewError('');
+    try {
+      await saveView(name);
+      setNewViewOpen(false);
+      setNewViewName('');
+    } catch (error) {
+      setNewViewError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setNewViewSaving(false);
+    }
+  }
+
   useKeyboard((event) => {
     if (
       !(event.ctrlKey || event.metaKey) ||
@@ -175,6 +195,10 @@ export function useIssuesPagePresenter() {
     subGroupBy,
     direction,
     completedIssues,
+    newViewOpen,
+    newViewName,
+    newViewSaving,
+    newViewError,
     showSubIssues,
     nestedSubIssues,
     showEmptyGroups,
@@ -183,12 +207,20 @@ export function useIssuesPagePresenter() {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
       ) => navigate({ to: '/issues', search: compactSearch(next) }),
-      onSaveView10: (
-        ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onSaveView']>>
+      onNewViewOpen: () => {
+        setNewViewName('');
+        setNewViewError('');
+        setNewViewOpen(true);
+      },
+      onNewViewClose: () => setNewViewOpen(false),
+      onNewViewNameChange: (
+        event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setNewViewName(event.target.value),
+      onNewViewSubmit: (
+        event: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
       ) => {
-        const handle: NonNullable<React.ComponentProps<typeof IssueFilters>['onSaveView']> =
-          saveView;
-        return handle(...args);
+        event.preventDefault();
+        return createView();
       },
       onFind2: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onFind']>>

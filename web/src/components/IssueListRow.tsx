@@ -1,4 +1,4 @@
-import { Button, Group, Text } from '@mantine/core';
+import { ActionIcon, Button, Group, Text } from '@mantine/core';
 import {
   IconChartBar,
   IconChevronDown,
@@ -6,6 +6,7 @@ import {
   IconFolder,
   IconGitPullRequest,
   IconLink,
+  IconPlus,
   IconStar,
 } from '@tabler/icons-react';
 import { isOverdue } from '../due.ts';
@@ -21,9 +22,11 @@ import styles from './IssueListRow.module.css';
 export function IssueGroupRow({
   row,
   onToggle,
+  onCreate,
 }: {
   row: Extract<IssueListRowModel, { kind: 'group' }>;
   onToggle: (key: string) => void;
+  onCreate?: (row: Extract<IssueListRowModel, { kind: 'group' }>) => void;
 }) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const label =
@@ -54,7 +57,7 @@ export function IssueGroupRow({
     ) : row.groupBy === 'estimate' ? (
       <IconChartBar size={14} stroke={1.8} aria-hidden />
     ) : row.groupBy === 'priority' ? (
-      <IconChartBar size={14} stroke={1.8} aria-hidden />
+      <IssuePriorityIcon priority={row.priority ?? 0} />
     ) : row.groupBy === 'status' && row.status ? (
       <IssueStatusIcon
         status={workflowStatuses.find((status) => status.id === row.status)?.category ?? 'todo'}
@@ -64,32 +67,45 @@ export function IssueGroupRow({
     );
 
   return (
-    <Button
-      type="button"
-      variant="subtle"
-      color="gray"
-      fullWidth
-      justify="flex-start"
-      aria-label={i18n.t('ui.issueGroupCount', { label, count: row.count })}
-      aria-expanded={!row.collapsed}
-      onClick={() => onToggle(row.key)}
-      classNames={{ root: styles.groupButton, inner: styles.groupButtonInner }}
-    >
-      <Group gap={8} wrap="nowrap">
-        {row.collapsed ? (
-          <IconChevronRight size={13} stroke={1.8} aria-hidden />
-        ) : (
-          <IconChevronDown size={13} stroke={1.8} aria-hidden />
-        )}
-        {icon}
-        <Text size="xs" fw={550} c="dimmed">
-          {label}
-        </Text>
-        <Text size="xs" c="dimmed">
-          {row.count}
-        </Text>
-      </Group>
-    </Button>
+    <div className={styles.groupRow}>
+      <Button
+        type="button"
+        variant="subtle"
+        color="gray"
+        aria-label={i18n.t('ui.issueGroupCount', { label, count: row.count })}
+        aria-expanded={!row.collapsed}
+        onClick={() => onToggle(row.key)}
+        classNames={{ root: styles.groupButton, inner: styles.groupButtonInner }}
+      >
+        <Group gap={8} wrap="nowrap">
+          {row.collapsed ? (
+            <IconChevronRight size={13} stroke={1.8} aria-hidden />
+          ) : (
+            <IconChevronDown size={13} stroke={1.8} aria-hidden />
+          )}
+          {icon}
+          <Text size="xs" fw={550} c="dimmed">
+            {label}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {row.count}
+          </Text>
+        </Group>
+      </Button>
+      {row.groupBy === 'priority' && onCreate ? (
+        <ActionIcon
+          type="button"
+          variant="subtle"
+          color="gray"
+          size="sm"
+          aria-label={i18n.t('ui.createIssueInPriorityGroup', { label })}
+          title={i18n.t('ui.createIssueInPriorityGroup', { label })}
+          onClick={() => onCreate(row)}
+        >
+          <IconPlus size={14} stroke={1.8} aria-hidden />
+        </ActionIcon>
+      ) : null}
+    </div>
   );
 }
 

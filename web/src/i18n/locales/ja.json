@@ -1000,7 +1000,8 @@
     "active": "アクティブ",
     "backlog": "バックログ",
     "all": "すべてのイシュー",
-    "archived": "アーカイブ済み"
+    "archived": "アーカイブ済み",
+    "addNew": "新しいビューを追加"
   },
   "documentEditor": {
     "writeMarkdown": "Markdown を入力…"
@@ -1151,6 +1152,7 @@
     "issueColumnLabel": "{{status}}のイシュー",
     "issueCards": "{{status}}のイシューカード",
     "issueGroupCount": "{{label}} · {{count}} 件のイシュー",
+    "createIssueInPriorityGroup": "{{label}}優先度グループに新しいイシューを作成",
     "projectProgress": "プロジェクトの進捗 {{progress}}%",
     "searchShortcut": "検索 · Ctrl K",
     "startNewConversationConfirmation": "このドキュメントの新しい会話を開始しますか？",

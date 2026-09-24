@@ -1,4 +1,5 @@
 import { expect, test, type APIResponse } from '@playwright/test';
+import { fillIssueSearch } from './issue-list-controls.ts';
 
 async function json<T>(res: APIResponse): Promise<T> {
   if (!res.ok()) {
@@ -60,10 +61,10 @@ test.describe('lived-in workspace', () => {
     await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
     const issueList = page.getByRole('listbox', { name: 'Issues' });
     for (const title of [epicTitle, childTitle, doneTitle]) {
-      await page.getByLabel('Find issues').fill(title);
+      await fillIssueSearch(page, title);
       await expect(issueList.getByRole('option', { name: new RegExp(title) })).toBeVisible();
     }
-    await page.getByLabel('Find issues').fill('');
+    await fillIssueSearch(page, '');
 
     await page.getByRole('link', { name: viewName, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/views/harbor-todo-${stamp}`));

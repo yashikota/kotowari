@@ -1,4 +1,5 @@
-import { Box, Group, Stack, TextInput, Textarea } from '@mantine/core';
+import { ActionIcon, Box, Group, TextInput } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { IssueDisplayOptions } from './IssueDisplayOptions.tsx';
 import { IssueFilterMenu } from './IssueFilterMenu.tsx';
@@ -20,10 +21,9 @@ export function IssueFiltersView({
         projects,
         cycles,
         labels,
-        onSaveView,
         find,
         onFind,
-        viewName,
+        findOpen,
         findRef,
         selectedLabels,
         selectedProjectLabels,
@@ -46,15 +46,15 @@ export function IssueFiltersView({
       return (
         <Box
           px="sm"
-          pb="xs"
+          py={6}
           style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
         >
           <Group
             role="search"
             aria-label={t('ui.issueFilters')}
-            gap={6}
-            wrap="wrap"
-            align="flex-start"
+            gap={4}
+            wrap="nowrap"
+            align="center"
           >
             <IssueFilterMenu
               search={search}
@@ -89,6 +89,19 @@ export function IssueFiltersView({
               onClear={handlers.onClearFilters}
             />
             {onFind ? (
+              <ActionIcon
+                type="button"
+                variant={findOpen ? 'light' : 'subtle'}
+                color="gray"
+                aria-label={t('ui.findIssues')}
+                title={t('ui.findIssues')}
+                aria-expanded={findOpen}
+                onClick={handlers.onFindToggle}
+              >
+                <IconSearch size={16} stroke={1.7} aria-hidden="true" />
+              </ActionIcon>
+            ) : null}
+            {onFind && findOpen ? (
               <TextInput
                 ref={findRef}
                 aria-label={t('ui.findIssues')}
@@ -96,12 +109,12 @@ export function IssueFiltersView({
                 value={find ?? ''}
                 onChange={handlers.onFindChange}
                 size="xs"
-                w={180}
+                w={190}
                 styles={{ input: { height: 28, minHeight: 28, backgroundColor: 'transparent' } }}
               />
             ) : null}
             {model.onGroupBy && model.onLayout && model.onOrderBy ? (
-              <Stack ml="auto">
+              <Group ml="auto" gap={2} wrap="nowrap">
                 <IssueDisplayOptions
                   layout={layout ?? 'list'}
                   groupBy={groupBy ?? 'priority'}
@@ -127,23 +140,9 @@ export function IssueFiltersView({
                   onShowEmptyGroupsChange={handlers.onShowEmptyGroupsChange}
                   onDisplayPropertyToggle={handlers.onDisplayPropertyToggle}
                 />
-              </Stack>
+              </Group>
             ) : null}
           </Group>
-          {onSaveView ? (
-            <Box component="form" mt={6} onSubmit={handlers.onSubmitView}>
-              <Textarea
-                rows={2}
-                aria-label={t('ui.newViewName')}
-                placeholder={t('ui.saveAsView')}
-                value={viewName}
-                onChange={handlers.onViewNameChange}
-                size="xs"
-                autosize
-                minRows={1}
-              />
-            </Box>
-          ) : null}
         </Box>
       );
     }

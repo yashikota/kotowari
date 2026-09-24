@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Button,
   Checkbox,
   NativeSelect,
@@ -8,6 +9,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
+import { IconAdjustments } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type {
   CompletedIssuesFilter,
@@ -113,16 +115,17 @@ export function IssueDisplayOptions({
   return (
     <Popover opened={opened} onChange={onOpenChange} position="bottom-end" shadow="md" width={280}>
       <Popover.Target>
-        <Button
+        <ActionIcon
           type="button"
-          size="xs"
           variant={opened ? 'light' : 'default'}
+          color="gray"
           aria-label={t('displayOptions.button')}
+          title={t('displayOptions.button')}
           aria-expanded={opened}
           onClick={onToggle}
         >
-          {t('displayOptions.button')}
-        </Button>
+          <IconAdjustments size={16} stroke={1.7} aria-hidden="true" />
+        </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown>
         <Stack gap="sm">

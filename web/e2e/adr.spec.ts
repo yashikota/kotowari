@@ -1,4 +1,5 @@
 import { expect, test, type APIResponse } from '@playwright/test';
+import { fillIssueSearch } from './issue-list-controls.ts';
 
 async function json<T>(res: APIResponse): Promise<T> {
   if (!res.ok()) {
@@ -50,7 +51,7 @@ test('new ADR only inherits an issue on its detail route', async ({ page, reques
     await request.post('/api/issues', { data: { title: `Context ${Date.now()}` } }),
   );
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(issue.identifier);
+  await fillIssueSearch(page, issue.identifier);
   await page
     .getByRole('listbox', { name: 'Issues' })
     .getByRole('option')
@@ -76,7 +77,7 @@ test('returning to a cached list reflects an ADR unlink immediately', async ({ p
     }),
   );
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(issue.identifier);
+  await fillIssueSearch(page, issue.identifier);
   const row = page
     .getByRole('listbox', { name: 'Issues' })
     .getByRole('option')
@@ -86,7 +87,7 @@ test('returning to a cached list reflects an ADR unlink immediately', async ({ p
   await page.getByRole('button', { name: `Unlink ${adr.identifier}`, exact: true }).click();
   await expect(page.getByText('No linked decisions.', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Back to issues' }).click();
-  await page.getByLabel('Find issues').fill(issue.identifier);
+  await fillIssueSearch(page, issue.identifier);
   await expect(row).toBeVisible();
   await expect(row.getByText('1 ADR', { exact: true })).toHaveCount(0);
 });

@@ -1,8 +1,16 @@
-.groupButton {
+.groupRow {
+  display: flex;
+  align-items: center;
   height: 34px;
-  min-height: 34px;
-  padding-inline: var(--mantine-spacing-md);
   border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.groupButton {
+  flex: 1;
+  min-width: 0;
+  height: 33px;
+  min-height: 33px;
+  padding-inline: var(--mantine-spacing-md);
   border-radius: 0;
   font-size: var(--mantine-font-size-xs);
 }

@@ -225,9 +225,10 @@ export function useShellPresenter() {
 
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
   useIntentHandler('issue.create', (value) => {
-    const detail = (value ?? {}) as { projectId?: number; cycleId?: number };
+    const detail = (value ?? {}) as { projectId?: number; cycleId?: number; priority?: number };
     setIssueProjectId(detail.projectId ? String(detail.projectId) : '');
     setIssueCycleId(detail.cycleId ? String(detail.cycleId) : '');
+    setIssuePriority(detail.priority ?? 0);
     setCreateIssue(true);
   });
   useIntentHandler('adr.create', (value) => {
@@ -442,7 +443,7 @@ export function useShellPresenter() {
     }
     if (action === 'find') {
       e.preventDefault();
-      document.querySelector<HTMLInputElement>('[aria-label="Find issues"]')?.focus();
+      send('issues.find.open');
       return true;
     }
     if (action.startsWith('nav-')) {

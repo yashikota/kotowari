@@ -12,6 +12,7 @@ import {
   type IssueDisplayProperty,
   type IssueGroupBy,
   type IssueOrderBy,
+  type IssueListRow,
 } from '../issue-list.ts';
 import type { IssueBoardColumnProps } from '../components/IssueBoardColumn.tsx';
 import { localToday } from '../due.ts';
@@ -152,6 +153,9 @@ export function useIssueListPresenter({
         setCollapsedGroups((current) =>
           current.includes(key) ? current.filter((value) => value !== key) : [...current, key],
         );
+      },
+      onCreateInGroup2: (row: Extract<IssueListRow, { kind: 'group' }>) => {
+        if (row.groupBy === 'priority') sendIntent('issue.create', { priority: row.priority ?? 0 });
       },
     },
   };

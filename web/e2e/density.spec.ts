@@ -26,8 +26,9 @@ test('shortcuts, find, and project-scoped create', async ({ page, request }) => 
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveCount(0);
 
   await page.keyboard.press('/');
-  await expect(page.getByLabel('Find issues')).toBeFocused();
-  await page.getByLabel('Find issues').fill('Needle');
+  const findInput = page.getByRole('textbox', { name: 'Find issues' });
+  await expect(findInput).toBeFocused();
+  await findInput.fill('Needle');
   const list = page.getByRole('listbox', { name: 'Issues' });
   await expect(list.getByRole('option', { name: new RegExp(needle) })).toBeVisible();
   await expect(list.getByRole('option', { name: new RegExp(hay) })).toHaveCount(0);

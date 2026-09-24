@@ -1,16 +1,17 @@
-import { Group, Tabs, Text } from '@mantine/core';
+import { ActionIcon, Group, Tabs } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 export type IssueView = 'active' | 'backlog' | 'all' | 'archived';
 
 export function IssueViewTabs({
   value,
-  count,
   onChange,
+  onAddNewView,
 }: {
   value: IssueView;
-  count: number;
   onChange: (value: string | null) => void;
+  onAddNewView: () => void;
 }) {
   const { t } = useTranslation();
   const tabs: { value: IssueView; label: string }[] = [
@@ -25,7 +26,7 @@ export function IssueViewTabs({
       aria-label={t('ui.issueViews')}
       gap="sm"
       wrap="nowrap"
-      px="md"
+      px="sm"
       mih={42}
       style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
     >
@@ -47,9 +48,16 @@ export function IssueViewTabs({
           ))}
         </Tabs.List>
       </Tabs>
-      <Text size="xs" c="dimmed" ml="auto" aria-live="polite">
-        {count}
-      </Text>
+      <ActionIcon
+        type="button"
+        variant="subtle"
+        color="gray"
+        aria-label={t('issueViews.addNew')}
+        title={t('issueViews.addNew')}
+        onClick={onAddNewView}
+      >
+        <IconPlus size={16} stroke={1.7} aria-hidden="true" />
+      </ActionIcon>
     </Group>
   );
 }

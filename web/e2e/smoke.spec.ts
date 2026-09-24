@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
+import { createIssueView, fillIssueSearch } from './issue-list-controls.ts';
 
 test('archive and restore an issue', async ({ page, request }) => {
   const title = `Archive candidate ${Date.now()}`;
@@ -341,17 +342,13 @@ test('sub-issue and saved view', async ({ page, request }) => {
 
   await page.getByRole('link', { name: 'Back to issues' }).click();
   const issueList = page.getByRole('listbox', { name: 'Issues' });
-  await page.getByLabel('Find issues').fill(parentTitle);
+  await fillIssueSearch(page, parentTitle);
   await expect(issueList.getByRole('option', { name: new RegExp(parentTitle) })).toBeVisible();
-  await page.getByLabel('Find issues').fill(childTitle);
+  await fillIssueSearch(page, childTitle);
   await expect(issueList.getByRole('option', { name: new RegExp(childTitle) })).toBeVisible();
-  await page.getByLabel('Find issues').fill('');
+  await fillIssueSearch(page, '');
 
-  await page.getByRole('button', { name: 'New view' }).click();
-  const viewName = page.getByPlaceholder('View name');
-  await expect(viewName).toBeFocused();
-  await viewName.fill('Todos');
-  await viewName.press('ControlOrMeta+Enter');
+  await createIssueView(page, 'Todos');
   await expect(page).toHaveURL(/\/views\/todos/);
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');

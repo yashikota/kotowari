@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { fillIssueSearch } from './issue-list-controls.ts';
 
 test('Linear-style workspace shell and collapsible priority groups', async ({ page }) => {
   await page.goto('/issues');
@@ -21,7 +22,7 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await expect(allIssuesTab).toBeFocused();
 
   const createdIssueTitle = `Priority group smoke test ${Date.now()}`;
-  await page.getByRole('button', { name: 'Create issue' }).click();
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
   const title = page.getByPlaceholder('Issue title');
   await title.fill(createdIssueTitle);
   await page.getByRole('dialog').getByLabel('Priority').selectOption('0');
@@ -36,7 +37,7 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
     'aria-selected',
     'true',
   );
-  await page.getByLabel('Find issues').fill(createdIssueTitle);
+  await fillIssueSearch(page, createdIssueTitle);
   const noPriority = page
     .getByRole('button')
     .filter({ has: page.getByText('No priority', { exact: true }) });
@@ -91,4 +92,32 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
     .click();
   await expect(page).toHaveURL(/\/projects$/);
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeHidden();
+});
+
+test('priority group quick-create inherits the group priority', async ({ page, request }) => {
+  const stamp = Date.now();
+  const seed = await request.post('/api/issues', {
+    data: { title: `High group seed ${stamp}`, status: 'todo', priority: 2 },
+  });
+  expect(seed.ok()).toBeTruthy();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, stamp.toString());
+  await page.getByRole('button', { name: 'Create new issue in High priority group' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  const title = dialog.getByPlaceholder('Issue title');
+  await expect(dialog.getByLabel('Priority')).toHaveValue('2');
+  await title.fill(`Created from high group ${stamp}`);
+  await title.press('ControlOrMeta+Enter');
+  await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
+
+  const identifier = new URL(page.url()).pathname.match(/\/issues\/([^/]+)/)?.[1];
+  expect(identifier).toBeTruthy();
+  const created = await request.get(`/api/issues/${identifier}`);
+  expect(created.ok()).toBeTruthy();
+  expect(await created.json()).toMatchObject({
+    title: `Created from high group ${stamp}`,
+    priority: 2,
+  });
 });

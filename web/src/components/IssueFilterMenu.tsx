@@ -1,4 +1,14 @@
-import { Button, Group, NativeSelect, Popover, Stack, Text, TextInput } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  Group,
+  NativeSelect,
+  Popover,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { IconFilter } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { IssueSearch } from '../api.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
@@ -103,17 +113,17 @@ export function IssueFilterMenu({
         width={300}
       >
         <Popover.Target>
-          <Button
+          <ActionIcon
             type="button"
-            size="xs"
-            variant={chips.length > 0 ? 'light' : 'default'}
+            variant={chips.length > 0 ? 'light' : 'subtle'}
+            color="gray"
             aria-label={t('filters.button')}
+            title={t('filters.button')}
             aria-expanded={opened}
             onClick={onToggle}
           >
-            {t('filters.button')}
-            {chips.length > 0 ? ` · ${chips.length}` : ''}
-          </Button>
+            <IconFilter size={16} stroke={1.7} aria-hidden="true" />
+          </ActionIcon>
         </Popover.Target>
         <Popover.Dropdown mah="70vh" style={{ overflowY: 'auto' }}>
           <Stack gap="xs">

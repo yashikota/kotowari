@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { chooseIssueProperty } from './issue-properties.ts';
+import { createIssueView, fillIssueSearch } from './issue-list-controls.ts';
 
 test('issue list row opens a detail view with an editable properties panel', async ({
   page,
@@ -51,7 +52,7 @@ test('issue list row opens a detail view with an editable properties panel', asy
 
   await page.goto('/issues');
   const issueList = page.getByRole('listbox', { name: 'Issues' });
-  await page.getByLabel('Find issues').fill(title);
+  await fillIssueSearch(page, title);
 
   const row = issueList.getByRole('option', { name: new RegExp(title) });
   await expect(row).toHaveAttribute('aria-posinset', '1');
@@ -154,7 +155,7 @@ test('type and estimate filters survive saving a reusable view', async ({ page, 
   expect(otherResponse.ok()).toBeTruthy();
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByLabel('Filter type').selectOption('feature');
   await page.getByLabel('Filter estimate').selectOption('8');
@@ -166,8 +167,7 @@ test('type and estimate filters survive saving a reusable view', async ({ page, 
   await expect(page.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
 
   const viewName = `Feature estimate ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const slug = `feature-estimate-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
   const saved = await request.get(`/api/views/${slug}`);
@@ -198,7 +198,7 @@ test('due-date filters match relative windows and a custom date', async ({ page,
   }
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByLabel('Filter due date').selectOption('threeDays');
   const issues = page.getByRole('listbox', { name: 'Issues' });
@@ -233,7 +233,7 @@ test('relation filters distinguish blocked issues and survive saving a view', as
   expect(relation.ok()).toBeTruthy();
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByLabel('Filter relation').selectOption('subissue');
   const issues = page.getByRole('listbox', { name: 'Issues' });
@@ -245,8 +245,7 @@ test('relation filters distinguish blocked issues and survive saving a view', as
   await expect(issues.getByRole('option', { name: new RegExp(blocker.title) })).toHaveCount(0);
 
   const viewName = `Relation filter ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const slug = `relation-filter-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
   const saved = await request.get(`/api/views/${slug}`);
@@ -283,8 +282,7 @@ test('content filter searches descriptions and persists on a saved view', async 
   await expect(issues.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
 
   const viewName = `Content filter ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const slug = `content-filter-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
   const saved = await request.get(`/api/views/${slug}`);
@@ -306,7 +304,7 @@ test('created-date filters support relative and exact dates on saved views', asy
   const issue = (await created.json()) as { title: string; createdAt: string };
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByLabel('Filter issue date').selectOption('createdAt');
   await page.getByLabel('Filter date timeframe').selectOption('weekAgo');
@@ -322,8 +320,7 @@ test('created-date filters support relative and exact dates on saved views', asy
   await expect(issues.getByRole('option', { name: new RegExp(title) })).toBeVisible();
 
   const viewName = `Created date ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const slug = `created-date-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
   const saved = await request.get(`/api/views/${slug}`);
@@ -356,7 +353,7 @@ test('time-in-current-status filters by elapsed status time and persist on a sav
   ).toBe(false);
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByLabel('Filter issue date').selectOption('timeInCurrentStatus');
   await page.getByLabel('Filter date timeframe').selectOption('dayAgo');
@@ -364,8 +361,7 @@ test('time-in-current-status filters by elapsed status time and persist on a sav
   await expect(issueList.getByRole('option', { name: new RegExp(title) })).toHaveCount(0);
 
   const viewName = `Status age ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const viewSlug = `status-age-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${viewSlug}$`));
   const saved = await request.get(`/api/views/${viewSlug}`);
@@ -416,7 +412,7 @@ test('project status and priority filter linked issues and persist on a saved vi
   }
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByLabel('Filter project status').selectOption('started');
   await page.getByLabel('Filter project priority').selectOption('2');
@@ -425,8 +421,7 @@ test('project status and priority filter linked issues and persist on a saved vi
   await expect(issues.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
 
   const viewName = `Project properties ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const slug = `project-properties-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
   const saved = await request.get(`/api/views/${slug}`);
@@ -472,7 +467,7 @@ test('milestone-name contains filter matches linked issues and persists on a sav
   expect(assigned.ok()).toBeTruthy();
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByLabel('Filter milestone name').fill('beta rollout');
   const issues = page.getByRole('listbox', { name: 'Issues' });
@@ -480,8 +475,7 @@ test('milestone-name contains filter matches linked issues and persists on a sav
   await expect(issues.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
 
   const viewName = `Milestone filter ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const viewSlug = `milestone-filter-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${viewSlug}$`));
   const saved = await request.get(`/api/views/${viewSlug}`);
@@ -538,7 +532,7 @@ test('project labels are editable, filter linked issues, and persist on a saved 
   }
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   const projectLabels = page.getByRole('group', { name: 'Filter project labels' });
   await projectLabels.getByText(labelName, { exact: true }).click();
@@ -547,8 +541,7 @@ test('project labels are editable, filter linked issues, and persist on a saved 
   await expect(issues.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
 
   const viewName = `Project label view ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const viewSlug = `project-label-view-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${viewSlug}$`));
   const saved = await request.get(`/api/views/${viewSlug}`);
@@ -598,7 +591,7 @@ test('added-to-cycle phases filter issues and persist on a saved view', async ({
   }
 
   await page.goto('/issues');
-  await page.getByLabel('Find issues').fill(stamp.toString());
+  await fillIssueSearch(page, stamp.toString());
   await page.getByRole('button', { name: 'Filter' }).click();
   const addedToCycle = page.getByRole('group', { name: 'Filter added to cycle' });
   await addedToCycle.getByText('Planned', { exact: true }).click();
@@ -614,8 +607,7 @@ test('added-to-cycle phases filter issues and persist on a saved view', async ({
   );
 
   const viewName = `Added to cycle ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const viewSlug = `added-to-cycle-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${viewSlug}$`));
   const saved = await request.get(`/api/views/${viewSlug}`);
@@ -654,7 +646,7 @@ test('issue links can be added, displayed, sorted as real links, and removed', a
 
   await page.goto('/issues');
   await page.reload();
-  await page.getByLabel('Find issues').fill(title);
+  await fillIssueSearch(page, title);
   const row = page.getByRole('option', { name: new RegExp(title) });
   await expect(row.getByLabel('1 link')).toBeVisible();
   await expect(row.getByLabel('1 pull request')).toBeVisible();
@@ -1534,8 +1526,7 @@ test('Linear-style display settings persist on a saved view and render empty gro
   await page.getByRole('checkbox', { name: 'Time in status' }).check();
 
   const viewName = `Display settings ${stamp}`;
-  await page.getByLabel('New view name').fill(viewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, viewName);
   const slug = `display-settings-${stamp}`;
   await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
 

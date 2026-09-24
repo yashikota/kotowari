@@ -1,4 +1,5 @@
 import { expect, test, type APIResponse } from '@playwright/test';
+import { createIssueView, fillIssueSearch } from './issue-list-controls.ts';
 
 async function json<T>(res: APIResponse): Promise<T> {
   if (!res.ok()) {
@@ -39,7 +40,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
 
   await page.goto(`/issues`);
-  await page.getByLabel('Find issues').fill(keepTitle);
+  await fillIssueSearch(page, keepTitle);
   const issueList = page.getByRole('listbox', { name: 'Issues' });
   await issueList.getByRole('option', { name: new RegExp(keepTitle) }).click();
   await expect(page).toHaveURL(/\/issues\/ISS-/);
@@ -62,8 +63,7 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await page.getByLabel('Filter status').selectOption('todo');
   const filteredViewName = `Todo filtered ${stamp}`;
-  await page.getByLabel('New view name').fill(filteredViewName);
-  await page.getByLabel('New view name').press('ControlOrMeta+Enter');
+  await createIssueView(page, filteredViewName);
   await expect(page).toHaveURL(new RegExp(`/views/todo-filtered-${stamp}`));
   await expect(page.getByRole('heading', { name: filteredViewName })).toBeVisible();
 });

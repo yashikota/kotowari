@@ -54,7 +54,7 @@ test('app controls and the emoji picker follow the configured Japanese locale', 
   await expect(page.getByLabel('AI へのメッセージ')).toBeVisible();
 
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'イシューを作成' }).click();
+  await page.getByRole('button', { name: 'イシューを作成', exact: true }).click();
   const issueTitle = page.getByPlaceholder('イシューのタイトル');
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('絵文字検索のロケール確認');

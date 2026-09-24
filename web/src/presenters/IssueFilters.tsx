@@ -1,7 +1,7 @@
 import type * as React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMachineFlag } from '../application/Root.tsx';
+import { useMachineFlag, useRootMachineFlag } from '../application/Root.tsx';
 import type { IssueSearch } from '../api.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import type {
@@ -61,7 +61,6 @@ type Props = {
   cycles: Cycle[];
   labels: Label[];
   onChange: (next: IssueSearch) => void;
-  onSaveView?: (name: string, search: IssueSearch) => Promise<void>;
   find?: string;
   onFind?: (q: string) => void;
   groupBy?: IssueGroupBy;
@@ -92,7 +91,6 @@ export function useIssueFiltersPresenter({
   cycles,
   labels,
   onChange,
-  onSaveView,
   find,
   onFind,
   groupBy,
@@ -119,7 +117,7 @@ export function useIssueFiltersPresenter({
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { t } = useTranslation();
-  const [viewName, setViewName] = useState('');
+  const [findOpen, setFindOpen] = useRootMachineFlag('issues.find');
   const findRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef(search);
   const observedSearchRef = useRef(search);
@@ -136,6 +134,10 @@ export function useIssueFiltersPresenter({
   }
   const [filterOpened, setFilterOpened] = useMachineFlag('filter');
   const [displayOpened, setDisplayOpened] = useMachineFlag('display');
+
+  useEffect(() => {
+    if (findOpen) findRef.current?.focus();
+  }, [findOpen]);
 
   const selectedLabels = (search.labels ?? '')
     .split(',')
@@ -255,8 +257,7 @@ export function useIssueFiltersPresenter({
     cycles,
     labels,
     onChange,
-    onSaveView,
-    viewName,
+    findOpen,
     find,
     onFind,
     groupBy,
@@ -284,6 +285,14 @@ export function useIssueFiltersPresenter({
       onFilterOpenChange: (next: boolean) => setFilterOpened(next),
       onDisplayToggle: () => setDisplayOpened((current) => !current),
       onDisplayOpenChange: (next: boolean) => setDisplayOpened(next),
+      onFindToggle: () => {
+        if (findOpen) {
+          onFind?.('');
+          setFindOpen(false);
+        } else {
+          setFindOpen(true);
+        }
+      },
       onStatusChange: (value: string) => set({ status: value || undefined }),
       onProjectChange: (value: string) => set({ project: value || undefined }),
       onCycleChange: (value: string) => set({ cycle: value ? Number(value) : undefined }),
@@ -437,15 +446,6 @@ export function useIssueFiltersPresenter({
           : [...current, phase];
         set({ addedToCycle: next.length ? next : undefined });
       },
-      onSubmitView: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
-        e.preventDefault();
-        const name = viewName.trim();
-        if (!name) return;
-        return onSaveView?.(name, searchRef.current).then(() => setViewName(''));
-      },
-      onViewNameChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setViewName(e.target.value),
     },
   };
 }

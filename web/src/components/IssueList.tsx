@@ -54,7 +54,11 @@ export function IssueListView({
               if (row.kind === 'group') {
                 return (
                   <Box key={row.key} ml={row.level ? row.level * 20 : 0}>
-                    <IssueGroupRow row={row} onToggle={handlers.onToggleGroup1} />
+                    <IssueGroupRow
+                      row={row}
+                      onToggle={handlers.onToggleGroup1}
+                      onCreate={handlers.onCreateInGroup2}
+                    />
                   </Box>
                 );
               }

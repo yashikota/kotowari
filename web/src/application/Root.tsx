@@ -129,6 +129,18 @@ export function useMachineFlag(name: string, defaultValue = false) {
   return [value, set] as const;
 }
 
+/** A small set of transient controls belongs to Root so sibling scopes can observe it. */
+export function useRootMachineFlag(name: string, defaultValue = false) {
+  const key = `${mediator.root.id}:${name}`;
+  const value = useSyncExternalStore(mediator.subscribe, () => mediator.getFlag(key, defaultValue));
+  const set = useMemo(
+    () => (next: boolean | ((previous: boolean) => boolean)) =>
+      mediator.setFlag(key, next, defaultValue),
+    [key, defaultValue],
+  );
+  return [value, set] as const;
+}
+
 function ErrorNoticeView({
   error,
   dismissLabel,
@@ -176,6 +188,7 @@ export function Root({
   navigate: (href: string) => Promise<void>;
 }) {
   useLocaleSync();
+  useIntentHandler('issues.find.open', () => mediator.setFlag('Root:issues.find', true));
   const overlay = useSyncExternalStore(mediator.subscribe, mediator.getOverlay);
   const restore = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
