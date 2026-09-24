@@ -20,6 +20,7 @@ export type ProjectListControlsModel = {
   search: string;
   statuses: string[];
   priorities: string[];
+  healths: string[];
   labels: string[];
   groupBy: string;
   orderBy: string;
@@ -44,6 +45,7 @@ export type ProjectListControlsModel = {
     onSearchChange: (value: string) => void;
     onStatusesChange: (value: string[]) => void;
     onPrioritiesChange: (value: string[]) => void;
+    onHealthsChange: (value: string[]) => void;
     onLabelsChange: (value: string[]) => void;
     onDateFieldChange: (value: string | null) => void;
     onDateFromChange: (value: string) => void;
@@ -193,6 +195,18 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
               data={[0, 1, 2, 3, 4].map((priority) => ({
                 value: String(priority),
                 label: t(`priority.${priority}`),
+              }))}
+              searchable
+              comboboxProps={{ withinPortal: false }}
+            />
+            <MultiSelect
+              aria-label={t('projectList.filterHealth')}
+              label={t('projectList.filterHealth')}
+              value={model.healths}
+              onChange={handlers.onHealthsChange}
+              data={['none', 'on_track', 'at_risk', 'off_track'].map((health) => ({
+                value: health,
+                label: t(`projectHealth.status.${health}`),
               }))}
               searchable
               comboboxProps={{ withinPortal: false }}

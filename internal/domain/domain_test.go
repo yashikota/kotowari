@@ -173,6 +173,14 @@ func TestValidators(t *testing.T) {
 	if ValidProjectStatus("active") {
 		t.Fatal("project must not use cycle statuses")
 	}
+	for _, health := range []string{"", "on_track", "at_risk", "off_track"} {
+		if !ValidProjectHealth(health) {
+			t.Fatalf("project health %q", health)
+		}
+	}
+	if ValidProjectHealth("unknown") {
+		t.Fatal("unknown project health must not be accepted")
+	}
 	for _, s := range []string{"upcoming", "active", "completed"} {
 		if !ValidCycleStatus(s) {
 			t.Fatalf("cycle status %q", s)

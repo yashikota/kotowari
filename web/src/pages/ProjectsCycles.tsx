@@ -430,6 +430,15 @@ export function ProjectDetailPageView({
                         label: priorityLabel(priority),
                       }))}
                     />
+                    <NativeSelect
+                      aria-label={t('projectList.property.health')}
+                      value={project.health || 'none'}
+                      onChange={handlers.onProjectHealthChange}
+                      data={['none', 'on_track', 'at_risk', 'off_track'].map((health) => ({
+                        value: health,
+                        label: t(`projectHealth.status.${health}`),
+                      }))}
+                    />
                     <Button type="button" variant="subtle" onClick={handlers.onClick1}>
                       {t('ui.newIssue')}
                     </Button>

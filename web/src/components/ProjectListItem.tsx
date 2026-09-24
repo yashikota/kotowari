@@ -76,6 +76,23 @@ export function ProjectListItem({
               {t(`projectStatus.${project.status}`)}
             </Badge>
           ) : null}
+          {shows('health') ? (
+            <Badge
+              variant="light"
+              color={
+                project.health === 'on_track'
+                  ? 'teal'
+                  : project.health === 'at_risk'
+                    ? 'yellow'
+                    : project.health === 'off_track'
+                      ? 'red'
+                      : 'gray'
+              }
+              size="sm"
+            >
+              {t(`projectHealth.status.${project.health || 'none'}`)}
+            </Badge>
+          ) : null}
           {shows('progress') ? (
             <Progress
               aria-label={t('ui.projectProgress', { progress })}

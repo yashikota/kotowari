@@ -82,6 +82,7 @@ export function useProjectsPagePresenter() {
       q: search.q,
       status: search.status,
       priority: search.priority,
+      health: search.health,
       labels: search.labels,
       groupBy,
       orderBy: search.orderBy ?? 'manual',
@@ -166,6 +167,7 @@ export function useProjectsPagePresenter() {
 
   const statusFilters = search.status ?? [];
   const priorityFilters = search.priority ?? [];
+  const healthFilters = search.health ?? [];
   const labelFilters = search.labels ?? [];
   const milestoneFilters = search.milestones ?? [];
   const relationFilters = search.relations ?? [];
@@ -194,6 +196,7 @@ export function useProjectsPagePresenter() {
       if (statusFilters.length && !statusFilters.includes(project.status)) return false;
       if (priorityFilters.length && !priorityFilters.includes(String(project.priority)))
         return false;
+      if (healthFilters.length && !healthFilters.includes(project.health || 'none')) return false;
       if (
         labelFilters.length &&
         !labelFilters.some((label) => (project.labels ?? []).includes(label))
@@ -285,6 +288,7 @@ export function useProjectsPagePresenter() {
     search.q,
     statusFilters,
     priorityFilters,
+    healthFilters,
     labelFilters,
     milestoneFilters,
     relationFilters,
@@ -423,6 +427,7 @@ export function useProjectsPagePresenter() {
   const filterCount =
     statusFilters.length +
     priorityFilters.length +
+    healthFilters.length +
     labelFilters.length +
     milestoneFilters.length +
     relationFilters.length +
@@ -432,6 +437,7 @@ export function useProjectsPagePresenter() {
     search: search.q ?? '',
     statuses: statusFilters,
     priorities: priorityFilters,
+    healths: healthFilters,
     labels: labelFilters,
     groupBy,
     orderBy: search.orderBy ?? 'manual',
@@ -458,6 +464,10 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ status: value.length ? value : undefined }),
       onPrioritiesChange: (value) =>
         void updateProjectSearch({ priority: value.length ? value : undefined }),
+      onHealthsChange: (value) =>
+        void updateProjectSearch({
+          health: value.length ? (value as NonNullable<typeof search.health>) : undefined,
+        }),
       onLabelsChange: (value) =>
         void updateProjectSearch({ labels: value.length ? value : undefined }),
       onDateFieldChange: (value) =>
@@ -505,6 +515,7 @@ export function useProjectsPagePresenter() {
           q: undefined,
           status: undefined,
           priority: undefined,
+          health: undefined,
           labels: undefined,
           dateField: undefined,
           dateFrom: undefined,
@@ -712,6 +723,8 @@ export function useProjectDetailPagePresenter() {
       Project_priority_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ priority: Number(e.target.value) }),
+      onProjectHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+        save({ health: e.target.value === 'none' ? '' : e.target.value }),
       onProjectLabelToggle: (name: string) => {
         const current = project.labels ?? [];
         const next = current.includes(name)

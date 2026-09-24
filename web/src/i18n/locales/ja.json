@@ -315,6 +315,7 @@
     "dateTo": "終了日",
     "filterMilestones": "プロジェクトのマイルストーン",
     "filterRelations": "プロジェクトの依存関係",
+    "filterHealth": "プロジェクトの健全性",
     "startDate": "開始日",
     "noStartDate": "開始日なし",
     "milestonesCount": "マイルストーン {{count}} 件",
@@ -329,6 +330,7 @@
       "summary": "概要",
       "priority": "優先度",
       "status": "ステータス",
+      "health": "健全性",
       "dependencies": "依存関係",
       "startDate": "開始日",
       "targetDate": "目標日",
@@ -390,6 +392,14 @@
     "started": "進行中",
     "completed": "完了",
     "canceled": "キャンセル"
+  },
+  "projectHealth": {
+    "status": {
+      "none": "更新なし",
+      "on_track": "順調",
+      "at_risk": "注意が必要",
+      "off_track": "遅延中"
+    }
   },
   "issueRelations": {
     "heading": "関連イシュー",

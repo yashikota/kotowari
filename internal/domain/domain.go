@@ -206,6 +206,15 @@ func ValidProjectStatus(s string) bool {
 	}
 }
 
+func ValidProjectHealth(s string) bool {
+	switch s {
+	case "", "on_track", "at_risk", "off_track":
+		return true
+	default:
+		return false
+	}
+}
+
 func ValidCycleStatus(s string) bool {
 	switch s {
 	case "upcoming", "active", "completed":

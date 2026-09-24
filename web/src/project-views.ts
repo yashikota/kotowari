@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import type { ProjectHealth } from './types.ts';
 
 export type ProjectViewSearch = {
   q?: string;
   status?: string[];
   priority?: string[];
+  health?: Array<ProjectHealth | 'none'>;
   labels?: string[];
   groupBy?: 'none' | 'status' | 'priority';
   orderBy?:

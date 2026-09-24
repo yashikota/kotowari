@@ -109,6 +109,22 @@ func TestCreateProjectAcceptsKnownLabelsAndRejectsUnknownLabels(t *testing.T) {
 	}
 }
 
+func TestPatchProjectHealth(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", created.Code, created.Body.String())
+	}
+	updated := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"health":"at_risk"}`)
+	if updated.Code != http.StatusOK || !strings.Contains(updated.Body.String(), `"health":"at_risk"`) {
+		t.Fatalf("update health %d %s", updated.Code, updated.Body.String())
+	}
+	invalid := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"health":"unknown"}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid health status %d %s", invalid.Code, invalid.Body.String())
+	}
+}
+
 func TestProjectDependencyAPIIsReciprocalAndRemovable(t *testing.T) {
 	s := testAPI(t)
 	for _, project := range []struct{ name, slug string }{

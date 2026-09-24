@@ -570,7 +570,7 @@ func TestProjectLabelsFilterLinkedIssuesAndPersistWithViews(t *testing.T) {
 		t.Fatal(err)
 	}
 	projectLabels := []string{label.Name}
-	withLabel, err = s.UpdateProject(withLabel.Slug, nil, nil, nil, nil, nil, nil, &projectLabels)
+	withLabel, err = s.UpdateProject(withLabel.Slug, nil, nil, nil, nil, nil, nil, nil, &projectLabels)
 	if err != nil {
 		t.Fatal(err)
 	}

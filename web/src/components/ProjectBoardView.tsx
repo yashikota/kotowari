@@ -159,7 +159,7 @@ function ProjectBoardCard({
           <Text size="sm" fw={550} lineClamp={2}>
             {project.name}
           </Text>
-          {shows('priority') || shows('status') || shows('labels') ? (
+          {shows('priority') || shows('status') || shows('health') || shows('labels') ? (
             <Group gap={6} wrap="wrap">
               {shows('priority') ? (
                 <Badge size="xs" variant="light" color="gray">
@@ -169,6 +169,23 @@ function ProjectBoardCard({
               {shows('status') ? (
                 <Badge size="xs" variant="light" color="gray">
                   {t(`projectStatus.${project.status}`)}
+                </Badge>
+              ) : null}
+              {shows('health') ? (
+                <Badge
+                  size="xs"
+                  variant="light"
+                  color={
+                    project.health === 'on_track'
+                      ? 'teal'
+                      : project.health === 'at_risk'
+                        ? 'yellow'
+                        : project.health === 'off_track'
+                          ? 'red'
+                          : 'gray'
+                  }
+                >
+                  {t(`projectHealth.status.${project.health || 'none'}`)}
                 </Badge>
               ) : null}
               {shows('labels')

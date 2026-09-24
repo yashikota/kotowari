@@ -491,7 +491,7 @@ func (s *Store) DeleteMilestone(projectSlug string, milestoneID int64) error {
 	})
 }
 
-func (s *Store) UpdateProject(slug string, name, description, status *string, priority *int, start, target **string, labels *[]string) (Project, error) {
+func (s *Store) UpdateProject(slug string, name, description, status, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)
@@ -513,6 +513,12 @@ func (s *Store) UpdateProject(slug string, name, description, status *string, pr
 				return validationf("invalid status")
 			}
 			p.Status = *status
+		}
+		if health != nil {
+			if !domain.ValidProjectHealth(*health) {
+				return validationf("invalid project health")
+			}
+			p.Health = *health
 		}
 		if priority != nil {
 			if !domain.ValidPriority(*priority) {

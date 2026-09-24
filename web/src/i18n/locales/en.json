@@ -317,6 +317,7 @@
     "dateTo": "Date to",
     "filterMilestones": "Project milestones",
     "filterRelations": "Project relations",
+    "filterHealth": "Project health",
     "startDate": "Start date",
     "noStartDate": "No start date",
     "milestonesCount": "{{count}} milestones",
@@ -331,6 +332,7 @@
       "summary": "Summary",
       "priority": "Priority",
       "status": "Status",
+      "health": "Health",
       "dependencies": "Dependencies",
       "startDate": "Start date",
       "targetDate": "Target date",
@@ -392,6 +394,14 @@
     "started": "In progress",
     "completed": "Completed",
     "canceled": "Canceled"
+  },
+  "projectHealth": {
+    "status": {
+      "none": "No update",
+      "on_track": "On track",
+      "at_risk": "At risk",
+      "off_track": "Off track"
+    }
   },
   "issueRelations": {
     "heading": "Relations",

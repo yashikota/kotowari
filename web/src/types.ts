@@ -94,6 +94,7 @@ export type Project = {
   slug: string;
   description: string;
   status: string;
+  health?: ProjectHealth | null;
   priority: number;
   startDate: string | null;
   targetDate: string | null;
@@ -104,6 +105,10 @@ export type Project = {
   createdAt: string;
   updatedAt: string;
 };
+
+export const PROJECT_HEALTH_STATUSES = ['on_track', 'at_risk', 'off_track'] as const;
+
+export type ProjectHealth = (typeof PROJECT_HEALTH_STATUSES)[number];
 
 export type ProjectDependency = {
   projectSlug: string;

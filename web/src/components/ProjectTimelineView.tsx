@@ -317,7 +317,7 @@ function ProjectTimelineProjectLabel({
           {project.description}
         </Text>
       ) : null}
-      {shows('status') || shows('priority') || shows('labels') ? (
+      {shows('status') || shows('priority') || shows('health') || shows('labels') ? (
         <Group gap={4} wrap="wrap">
           {shows('status') ? (
             <Badge size="xs" variant="light" color={STATUS_COLORS[project.status] ?? 'gray'}>
@@ -327,6 +327,23 @@ function ProjectTimelineProjectLabel({
           {shows('priority') ? (
             <Badge size="xs" variant="light" color="gray">
               {priorityLabel(project.priority)}
+            </Badge>
+          ) : null}
+          {shows('health') ? (
+            <Badge
+              size="xs"
+              variant="light"
+              color={
+                project.health === 'on_track'
+                  ? 'teal'
+                  : project.health === 'at_risk'
+                    ? 'yellow'
+                    : project.health === 'off_track'
+                      ? 'red'
+                      : 'gray'
+              }
+            >
+              {t(`projectHealth.status.${project.health || 'none'}`)}
             </Badge>
           ) : null}
           {shows('labels')

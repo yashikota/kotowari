@@ -11,7 +11,9 @@ async function openProjectFilterPopover(page: Page) {
 async function clearProjectFilters(page: Page) {
   const clearButton = page.getByRole('button', { name: 'Clear all filters' });
   if (!(await clearButton.isVisible())) await openProjectFilterPopover(page);
-  await page.keyboard.press('Escape');
+  const openOption = page.getByRole('option').first();
+  if (await openOption.isVisible()) await page.keyboard.press('Escape');
+  await expect(clearButton).toBeVisible();
   await clearButton.click();
 }
 
@@ -271,4 +273,67 @@ test('personal project views can be created, updated, reopened, and deleted', as
     JSON.parse(localStorage.getItem('kotowari.project-views.v1') ?? '[]'),
   );
   expect(storedViews).toEqual([]);
+});
+
+test('project health can be edited, filtered, and displayed in project views', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projects = [
+    { name: `Steady ${stamp}`, slug: `steady-${stamp}`, health: 'on_track' },
+    { name: `At risk ${stamp}`, slug: `at-risk-${stamp}`, health: 'at_risk' },
+    { name: `Blocked ${stamp}`, slug: `blocked-${stamp}`, health: 'off_track' },
+  ];
+  for (const project of projects) {
+    const created = await request.post('/api/projects', {
+      data: { name: project.name, slug: project.slug, status: 'started' },
+    });
+    expect(created.ok()).toBeTruthy();
+    const updated = await request.patch(`/api/projects/${project.slug}`, {
+      data: { health: project.health },
+    });
+    expect(updated.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  const healthFilter = page.getByRole('combobox', { name: 'Project health' });
+  await healthFilter.fill('At risk');
+  await page.getByRole('option', { name: 'At risk', exact: true }).click();
+  await expect(page.getByRole('link', { name: new RegExp(projects[1].name) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(projects[0].name) })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: new RegExp(projects[2].name) })).toHaveCount(0);
+  await expect.poll(() => new URL(page.url()).searchParams.get('health')).toBe('["at_risk"]');
+
+  await clearProjectFilters(page);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('checkbox', { name: 'Health' }).check();
+  await expect(page.getByRole('link', { name: new RegExp(projects[0].name) })).toContainText(
+    'On track',
+  );
+  await expect(page.getByRole('link', { name: new RegExp(projects[1].name) })).toContainText(
+    'At risk',
+  );
+  await page.getByRole('button', { name: 'Display options' }).click();
+
+  await page.getByRole('button', { name: 'Board', exact: true }).click();
+  await expect(page.getByRole('gridcell', { name: 'In progress' })).toContainText('On track');
+  await page.getByRole('button', { name: 'Timeline', exact: true }).click();
+  await expect(page.getByRole('rowheader').filter({ hasText: projects[1].name })).toContainText(
+    'At risk',
+  );
+
+  await page.getByRole('link', { name: new RegExp(projects[2].name) }).click();
+  const healthSelect = page.getByRole('combobox', { name: 'Health' });
+  await healthSelect.selectOption('on_track');
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/projects/${projects[2].slug}`);
+      const project = await response.json();
+      return project.health;
+    })
+    .toBe('on_track');
+  await page.reload();
+  await expect(page.getByRole('combobox', { name: 'Health' })).toHaveValue('on_track');
 });

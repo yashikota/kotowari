@@ -220,6 +220,10 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (status.length) result.status = status;
   const priority = searchStringList(raw.priority).filter((value) => /^[0-4]$/.test(value));
   if (priority.length) result.priority = priority;
+  const health = searchStringList(raw.health).filter((value) =>
+    ['none', 'on_track', 'at_risk', 'off_track'].includes(value),
+  );
+  if (health.length) result.health = health as NonNullable<ProjectListSearch['health']>;
   const labels = searchStringList(raw.labels).filter((value) => value.length <= 100);
   if (labels.length) result.labels = labels;
   if (raw.groupBy === 'status' || raw.groupBy === 'priority') result.groupBy = raw.groupBy;
@@ -262,6 +266,7 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
       'summary',
       'priority',
       'status',
+      'health',
       'dependencies',
       'startDate',
       'targetDate',

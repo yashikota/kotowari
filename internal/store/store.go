@@ -43,6 +43,7 @@ type Project struct {
 	Slug         string              `json:"slug" toml:"slug"`
 	Description  string              `json:"description" toml:"description"`
 	Status       string              `json:"status" toml:"status"`
+	Health       string              `json:"health,omitempty" toml:"health,omitempty"`
 	Priority     int                 `json:"priority" toml:"priority"`
 	StartDate    *string             `json:"startDate" toml:"startDate,omitempty"`
 	TargetDate   *string             `json:"targetDate" toml:"targetDate,omitempty"`

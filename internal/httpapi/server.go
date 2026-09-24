@@ -300,6 +300,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		Name        *string   `json:"name"`
 		Description *string   `json:"description"`
 		Status      *string   `json:"status"`
+		Health      *string   `json:"health"`
 		Priority    *int      `json:"priority"`
 		StartDate   *string   `json:"startDate"`
 		TargetDate  *string   `json:"targetDate"`
@@ -324,7 +325,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateProject(r.PathValue("slug"), in.Name, in.Description, in.Status, in.Priority, start, target, in.Labels)
+	out, err := s.store.UpdateProject(r.PathValue("slug"), in.Name, in.Description, in.Status, in.Health, in.Priority, start, target, in.Labels)
 	if err != nil {
 		writeError(w, err)
 		return
