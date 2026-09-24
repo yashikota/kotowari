@@ -125,6 +125,40 @@ func TestPatchProjectHealth(t *testing.T) {
 	}
 }
 
+func TestProjectCompletedAtTracksCompletionTransitions(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch","status":"started"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", created.Code, created.Body.String())
+	}
+	completed := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"status":"completed"}`)
+	if completed.Code != http.StatusOK {
+		t.Fatalf("complete project %d %s", completed.Code, completed.Body.String())
+	}
+	var project struct {
+		CompletedAt *string `json:"completedAt"`
+	}
+	if err := json.Unmarshal(completed.Body.Bytes(), &project); err != nil {
+		t.Fatal(err)
+	}
+	if project.CompletedAt == nil || *project.CompletedAt == "" {
+		t.Fatalf("completed date missing: %s", completed.Body.String())
+	}
+	reopened := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"status":"started"}`)
+	if reopened.Code != http.StatusOK {
+		t.Fatalf("reopen project %d %s", reopened.Code, reopened.Body.String())
+	}
+	var reopenedProject struct {
+		CompletedAt *string `json:"completedAt"`
+	}
+	if err := json.Unmarshal(reopened.Body.Bytes(), &reopenedProject); err != nil {
+		t.Fatal(err)
+	}
+	if reopenedProject.CompletedAt != nil {
+		t.Fatalf("reopened project kept completion date: %s", reopened.Body.String())
+	}
+}
+
 func TestProjectDependencyAPIIsReciprocalAndRemovable(t *testing.T) {
 	s := testAPI(t)
 	for _, project := range []struct{ name, slug string }{

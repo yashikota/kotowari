@@ -11,8 +11,12 @@ async function openProjectFilterPopover(page: Page) {
 async function clearProjectFilters(page: Page) {
   const clearButton = page.getByRole('button', { name: 'Clear all filters' });
   if (!(await clearButton.isVisible())) await openProjectFilterPopover(page);
-  const openOption = page.getByRole('option').first();
-  if (await openOption.isVisible()) await page.keyboard.press('Escape');
+  for (const combobox of await page.getByRole('combobox').all()) {
+    if ((await combobox.getAttribute('aria-expanded')) === 'true') {
+      await combobox.click();
+      break;
+    }
+  }
   await expect(clearButton).toBeVisible();
   await clearButton.click();
 }
@@ -123,7 +127,9 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await page.getByRole('button', { name: 'Add filter' }).click();
   await page.getByRole('combobox', { name: 'Project date field' }).click();
   await page.getByRole('option', { name: 'Target date', exact: true }).click();
+  await openProjectFilterPopover(page);
   await page.getByLabel('Date from').fill(timelineTarget);
+  await openProjectFilterPopover(page);
   await page.getByLabel('Date to').fill(timelineTarget);
   await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
@@ -336,4 +342,45 @@ test('project health can be edited, filtered, and displayed in project views', a
     .toBe('on_track');
   await page.reload();
   await expect(page.getByRole('combobox', { name: 'Health' })).toHaveValue('on_track');
+});
+
+test('completion dates are recorded, displayed, and filterable', async ({ page, request }) => {
+  const stamp = Date.now();
+  const completedName = `Shipped ${stamp}`;
+  const openName = `Still building ${stamp}`;
+  const created = await request.post('/api/projects', {
+    data: { name: completedName, slug: `shipped-${stamp}`, status: 'started' },
+  });
+  const open = await request.post('/api/projects', {
+    data: { name: openName, slug: `still-building-${stamp}`, status: 'started' },
+  });
+  expect(created.ok() && open.ok()).toBeTruthy();
+
+  const completed = await request.patch(`/api/projects/shipped-${stamp}`, {
+    data: { status: 'completed' },
+  });
+  expect(completed.ok()).toBeTruthy();
+  const project = await completed.json();
+  expect(project.completedAt).toBeTruthy();
+  const completedDate = project.completedAt.slice(0, 10);
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('checkbox', { name: 'Completed', exact: true }).check();
+  await expect(page.getByRole('link', { name: new RegExp(completedName) })).toContainText(
+    'Completed',
+  );
+  await page.getByRole('button', { name: 'Display options' }).click();
+
+  await openProjectFilterPopover(page);
+  await page.getByRole('combobox', { name: 'Project date field' }).click();
+  await page.getByRole('option', { name: 'Completed', exact: true }).click();
+  await page.getByLabel('Date from').fill(completedDate);
+  await page.getByLabel('Date to').fill(completedDate);
+  await expect(page.getByRole('link', { name: new RegExp(completedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(openName) })).toHaveCount(0);
+  await expect(page).toHaveURL(/dateField=completed/);
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(completedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(openName) })).toHaveCount(0);
 });

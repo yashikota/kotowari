@@ -263,6 +263,13 @@ function ProjectBoardCard({
               })}
             </Text>
           ) : null}
+          {shows('completed') && project.completedAt ? (
+            <Text size="xs" c="dimmed">
+              {t('projectList.completedDate', {
+                date: formatCalendarDate(project.completedAt, i18n.language),
+              })}
+            </Text>
+          ) : null}
         </Stack>
       </Card>
     </Link>

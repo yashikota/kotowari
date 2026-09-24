@@ -228,7 +228,9 @@ export function useProjectsPagePresenter() {
                 ? project.createdAt
                 : search.dateField === 'updated'
                   ? project.updatedAt
-                  : null;
+                  : search.dateField === 'completed'
+                    ? project.completedAt
+                    : null;
         const date = value?.slice(0, 10);
         if (
           !date ||
@@ -270,7 +272,9 @@ export function useProjectsPagePresenter() {
                 ? 'targetDate'
                 : orderBy === 'created'
                   ? 'createdAt'
-                  : 'updatedAt';
+                  : orderBy === 'completed'
+                    ? 'completedAt'
+                    : 'updatedAt';
         const value = (project: Project) => project[field] ?? '';
         result = value(left).localeCompare(value(right));
       }

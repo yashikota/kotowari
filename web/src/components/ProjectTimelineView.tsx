@@ -355,13 +355,16 @@ function ProjectTimelineProjectLabel({
             : null}
         </Group>
       ) : null}
-      {shows('startDate') || shows('targetDate') ? (
+      {shows('startDate') || shows('targetDate') || (shows('completed') && project.completedAt) ? (
         <Text size="xs" c="dimmed">
           {shows('startDate') && project.startDate
             ? formatCalendarDate(project.startDate, i18n.language)
             : '—'}
           {shows('targetDate') && project.targetDate
             ? ` – ${formatCalendarDate(project.targetDate, i18n.language)}`
+            : ''}
+          {shows('completed') && project.completedAt
+            ? ` · ${t('projectList.completedDate', { date: formatCalendarDate(project.completedAt, i18n.language) })}`
             : ''}
         </Text>
       ) : null}

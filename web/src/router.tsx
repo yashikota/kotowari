@@ -235,7 +235,8 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     raw.orderBy === 'startDate' ||
     raw.orderBy === 'targetDate' ||
     raw.orderBy === 'created' ||
-    raw.orderBy === 'updated'
+    raw.orderBy === 'updated' ||
+    raw.orderBy === 'completed'
   ) {
     result.orderBy = raw.orderBy;
   }
@@ -274,6 +275,7 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
       'progress',
       'created',
       'updated',
+      'completed',
       'labels',
     ].includes(value),
   );
@@ -288,7 +290,8 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     raw.dateField === 'startDate' ||
     raw.dateField === 'targetDate' ||
     raw.dateField === 'created' ||
-    raw.dateField === 'updated'
+    raw.dateField === 'updated' ||
+    raw.dateField === 'completed'
   ) {
     result.dateField = raw.dateField;
   }

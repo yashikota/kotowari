@@ -323,6 +323,7 @@
     "issuesCount": "イシュー {{count}} 件",
     "createdDate": "作成 {{date}}",
     "updatedDate": "更新 {{date}}",
+    "completedDate": "完了 {{date}}",
     "displayProperties": "表示プロパティ",
     "property": {
       "id": "ID",
@@ -331,6 +332,7 @@
       "priority": "優先度",
       "status": "ステータス",
       "health": "健全性",
+      "completed": "完了日",
       "dependencies": "依存関係",
       "startDate": "開始日",
       "targetDate": "目標日",
@@ -368,6 +370,7 @@
     "orderTargetDate": "目標日",
     "orderCreated": "作成日",
     "orderUpdated": "更新日",
+    "orderCompleted": "完了日",
     "direction": "順序",
     "ascending": "昇順",
     "descending": "降順",

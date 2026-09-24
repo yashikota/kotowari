@@ -186,6 +186,10 @@ func (s *Store) CreateProjectWithPriorityAndLabels(name, slug, description, stat
 		return Project{}, validationf("project dates must use YYYY-MM-DD")
 	}
 	now := domain.Now()
+	var completedAt *string
+	if status == "completed" {
+		completedAt = &now
+	}
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		if _, ok := projectBySlug(m, slug); ok {
@@ -197,7 +201,7 @@ func (s *Store) CreateProjectWithPriorityAndLabels(name, slug, description, stat
 		}
 		out = Project{
 			ID: m.nextID(), Name: name, Slug: slug, Description: description, Status: status,
-			Priority: priority, StartDate: start, TargetDate: target,
+			Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
 			Labels: projectLabels, Dependencies: []ProjectDependency{}, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
 		}
 		m.Projects = append(m.Projects, out)
@@ -499,6 +503,7 @@ func (s *Store) UpdateProject(slug string, name, description, status, health *st
 			return ErrNotFound
 		}
 		p := m.Projects[i]
+		previousStatus := p.Status
 		if name != nil {
 			if strings.TrimSpace(*name) == "" {
 				return validationf("name required")
@@ -546,6 +551,13 @@ func (s *Store) UpdateProject(slug string, name, description, status, health *st
 			p.Labels = nextLabels
 		}
 		now := domain.Now()
+		if status != nil {
+			if p.Status == "completed" && previousStatus != "completed" {
+				p.CompletedAt = &now
+			} else if p.Status != "completed" && previousStatus == "completed" {
+				p.CompletedAt = nil
+			}
+		}
 		p.UpdatedAt = now
 		m.Projects[i] = p
 		m.bump(now)

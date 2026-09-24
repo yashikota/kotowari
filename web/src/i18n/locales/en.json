@@ -325,6 +325,7 @@
     "issuesCount": "{{count}} issues",
     "createdDate": "Created {{date}}",
     "updatedDate": "Updated {{date}}",
+    "completedDate": "Completed {{date}}",
     "displayProperties": "Display properties",
     "property": {
       "id": "ID",
@@ -333,6 +334,7 @@
       "priority": "Priority",
       "status": "Status",
       "health": "Health",
+      "completed": "Completed",
       "dependencies": "Dependencies",
       "startDate": "Start date",
       "targetDate": "Target date",
@@ -370,6 +372,7 @@
     "orderTargetDate": "Target date",
     "orderCreated": "Created",
     "orderUpdated": "Updated",
+    "orderCompleted": "Completed",
     "direction": "Direction",
     "ascending": "Ascending",
     "descending": "Descending",

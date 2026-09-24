@@ -16,7 +16,8 @@ export type ProjectViewSearch = {
     | 'startDate'
     | 'targetDate'
     | 'created'
-    | 'updated';
+    | 'updated'
+    | 'completed';
   direction?: 'asc' | 'desc';
   closed?: 'all' | 'open' | 'closed';
   view?: 'list' | 'board' | 'timeline';
@@ -27,7 +28,7 @@ export type ProjectViewSearch = {
   showWeekNumbers?: boolean;
   timelineStart?: string;
   displayProperties?: string[];
-  dateField?: 'startDate' | 'targetDate' | 'created' | 'updated';
+  dateField?: 'startDate' | 'targetDate' | 'created' | 'updated' | 'completed';
   dateFrom?: string;
   dateTo?: string;
   milestones?: string[];

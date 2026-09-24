@@ -95,6 +95,7 @@ export type Project = {
   description: string;
   status: string;
   health?: ProjectHealth | null;
+  completedAt?: string | null;
   priority: number;
   startDate: string | null;
   targetDate: string | null;

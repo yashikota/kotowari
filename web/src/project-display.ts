@@ -12,6 +12,7 @@ export const PROJECT_DISPLAY_PROPERTIES = [
   'progress',
   'created',
   'updated',
+  'completed',
   'labels',
 ] as const;
 

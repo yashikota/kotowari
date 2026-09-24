@@ -143,6 +143,7 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
                 { value: 'targetDate', label: t('projectList.orderTargetDate') },
                 { value: 'created', label: t('projectList.orderCreated') },
                 { value: 'updated', label: t('projectList.orderUpdated') },
+                { value: 'completed', label: t('projectList.orderCompleted') },
               ]}
               clearable
               comboboxProps={{ withinPortal: false }}
@@ -337,6 +338,7 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
                 { value: 'targetDate', label: t('projectList.orderTargetDate') },
                 { value: 'created', label: t('projectList.orderCreated') },
                 { value: 'updated', label: t('projectList.orderUpdated') },
+                { value: 'completed', label: t('projectList.orderCompleted') },
               ]}
               allowDeselect={false}
               comboboxProps={{ withinPortal: false }}

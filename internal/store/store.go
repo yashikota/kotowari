@@ -44,6 +44,7 @@ type Project struct {
 	Description  string              `json:"description" toml:"description"`
 	Status       string              `json:"status" toml:"status"`
 	Health       string              `json:"health,omitempty" toml:"health,omitempty"`
+	CompletedAt  *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
 	Priority     int                 `json:"priority" toml:"priority"`
 	StartDate    *string             `json:"startDate" toml:"startDate,omitempty"`
 	TargetDate   *string             `json:"targetDate" toml:"targetDate,omitempty"`
