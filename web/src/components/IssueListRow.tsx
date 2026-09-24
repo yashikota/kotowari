@@ -13,7 +13,7 @@ import { isOverdue } from '../due.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import i18n from '../i18n/index.ts';
 import type { IssueListRow as IssueListRowModel } from '../issue-list.ts';
-import type { IssueDisplayProperty } from '../issue-list.ts';
+import { formatIssueCreatedDate, type IssueDisplayProperty } from '../issue-list.ts';
 import type { Issue, IssueType } from '../types.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
@@ -274,7 +274,16 @@ export function IssueListRow({
               </Text>
             ) : null}
             {shows('created') ? (
-              <IssueMetaText>{issue.createdAt.slice(0, 10)}</IssueMetaText>
+              <IssueMetaText
+                aria-label={i18n.t('projectList.createdDate', {
+                  date: new Intl.DateTimeFormat(i18n.language, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  }).format(new Date(issue.createdAt)),
+                })}
+              >
+                {formatIssueCreatedDate(issue.createdAt, i18n.language)}
+              </IssueMetaText>
             ) : null}
             {shows('updated') ? (
               <IssueMetaText>{issue.updatedAt.slice(0, 10)}</IssueMetaText>

@@ -65,13 +65,19 @@ export const DEFAULT_DISPLAY_PROPERTIES = [
   'priority',
   'project',
   'dueDate',
-  'milestone',
   'cycle',
   'estimate',
   'labels',
   'links',
   'pullRequests',
+  'created',
 ] as const;
+
+export function formatIssueCreatedDate(value: string, locale: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(date);
+}
 
 const PRIORITY_ORDER = [1, 2, 3, 4, 0] as const;
 const STATUS_ORDER: IssueStatus[] = ['backlog', 'todo', 'in_progress', 'done', 'canceled'];

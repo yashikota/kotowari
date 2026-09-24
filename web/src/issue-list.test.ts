@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   buildIssueListRows,
+  DEFAULT_DISPLAY_PROPERTIES,
   filterCompletedIssues,
+  formatIssueCreatedDate,
   includeNestedIssueMatches,
   sortIssues,
 } from './issue-list.ts';
@@ -34,6 +36,23 @@ function issue(number: number, priority: number): Issue {
     completedAt: null,
   };
 }
+
+describe('issue list display defaults', () => {
+  it('shows the created date by default without adding workspace-only milestone metadata', () => {
+    expect(DEFAULT_DISPLAY_PROPERTIES).toContain('created');
+    expect(DEFAULT_DISPLAY_PROPERTIES).not.toContain('milestone');
+  });
+
+  it('formats the issue creation date as a compact localized month and day', () => {
+    const value = '2026-06-27T12:39:56Z';
+    expect(formatIssueCreatedDate(value, 'en-US')).toBe(
+      new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(value)),
+    );
+    expect(formatIssueCreatedDate(value, 'ja-JP')).toBe(
+      new Intl.DateTimeFormat('ja-JP', { month: 'short', day: 'numeric' }).format(new Date(value)),
+    );
+  });
+});
 
 describe('buildIssueListRows', () => {
   it('groups issues in Linear priority order and preserves order within each group', () => {

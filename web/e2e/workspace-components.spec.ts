@@ -54,7 +54,7 @@ test('issue list row opens a Linear-style full-width detail view with editable p
     data: { title, status: 'todo', priority: 2 },
   });
   expect(response.ok()).toBeTruthy();
-  const issue = (await response.json()) as { identifier: string };
+  const issue = (await response.json()) as { identifier: string; createdAt: string };
   const commentBody = `Activity note ${stamp}`;
   const commentResponse = await request.post(`/api/issues/${issue.identifier}/comments`, {
     data: { body: commentBody },
@@ -66,6 +66,11 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   await fillIssueSearch(page, title);
 
   const row = issueList.getByRole('option', { name: new RegExp(title) });
+  const createdDate = new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(issue.createdAt));
+  await expect(row).toContainText(createdDate);
   await expect(row).toHaveAttribute('aria-posinset', '1');
   await expect(row).toHaveAttribute('aria-setsize', '1');
   await row.click();
