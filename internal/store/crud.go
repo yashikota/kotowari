@@ -2059,6 +2059,38 @@ func (s *Store) ListActivities(identifier string) ([]Activity, error) {
 	return out, err
 }
 
+// ListCycleActivities returns status history for the issues currently assigned
+// to a cycle, newest first. The cycle progress view uses this to reconstruct
+// how work moved through the cycle without loading one activity feed per issue.
+func (s *Store) ListCycleActivities(number int) ([]Activity, error) {
+	var out []Activity
+	err := s.snapshot(func(m *mem) error {
+		cycle, ok := cycleByNumber(m, number)
+		if !ok {
+			return ErrNotFound
+		}
+		issueIDs := make(map[int64]struct{})
+		for _, issue := range m.Issues {
+			if (issue.CycleID != nil && *issue.CycleID == cycle.ID) ||
+				(issue.CycleNumber != nil && *issue.CycleNumber == cycle.Number) {
+				issueIDs[issue.ID] = struct{}{}
+			}
+		}
+		out = []Activity{}
+		for i := len(m.Activities) - 1; i >= 0; i-- {
+			activity := m.Activities[i]
+			if activity.EntityType != "issue" || activity.Action != "status_changed" {
+				continue
+			}
+			if _, inCycle := issueIDs[activity.EntityID]; inCycle {
+				out = append(out, activity)
+			}
+		}
+		return nil
+	})
+	return out, err
+}
+
 func (s *Store) ListProjectActivities(slug string) ([]Activity, error) {
 	var out []Activity
 	err := s.snapshot(func(m *mem) error {

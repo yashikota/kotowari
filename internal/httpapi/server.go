@@ -96,6 +96,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/projects/{slug}/milestones/{milestoneId}", s.deleteMilestone)
 	s.mux.HandleFunc("GET /api/cycles", s.listCycles)
 	s.mux.HandleFunc("POST /api/cycles", s.createCycle)
+	s.mux.HandleFunc("GET /api/cycles/{number}/activities", s.listCycleActivities)
 	s.mux.HandleFunc("GET /api/cycles/{number}", s.getCycle)
 	s.mux.HandleFunc("PATCH /api/cycles/{number}", s.patchCycle)
 	s.mux.HandleFunc("POST /api/cycles/{number}/links", s.addCycleLink)
@@ -415,6 +416,20 @@ func (s *Server) getCycle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out, err := s.store.GetCycle(n)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) listCycleActivities(w http.ResponseWriter, r *http.Request) {
+	n, err := strconv.Atoi(r.PathValue("number"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid cycle number"})
+		return
+	}
+	out, err := s.store.ListCycleActivities(n)
 	if err != nil {
 		writeError(w, err)
 		return

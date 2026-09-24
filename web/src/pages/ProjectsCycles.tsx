@@ -21,6 +21,7 @@ import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { CycleListItem, CycleStatusHeading } from '../components/CycleListItem.tsx';
 import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
+import { CycleProgressChart } from '../components/CycleProgressChart.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
@@ -963,6 +964,7 @@ export function CycleDetailPageView({
         selected,
         cycle,
         resources,
+        progressTimeline,
         started,
         startedPercent,
         done,
@@ -1143,6 +1145,7 @@ export function CycleDetailPageView({
                     completed={done}
                     completionPercent={completionPercent}
                   />
+                  <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
                   {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
                   <Stack
                     component="section"

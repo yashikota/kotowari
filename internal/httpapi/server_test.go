@@ -228,6 +228,52 @@ func TestProjectActivityListsSingleUserChangesInNewestFirstOrder(t *testing.T) {
 	}
 }
 
+func TestCycleActivityEndpointReturnsStatusHistoryForCurrentMembers(t *testing.T) {
+	s := testAPI(t)
+	start := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
+	end := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	createdCycle := doJSON(t, s, http.MethodPost, "/api/cycles", `{"startsAt":"`+start+`","endsAt":"`+end+`","status":"active"}`)
+	if createdCycle.Code != http.StatusCreated {
+		t.Fatalf("create cycle %d %s", createdCycle.Code, createdCycle.Body.String())
+	}
+	var cycle store.Cycle
+	if err := json.Unmarshal(createdCycle.Body.Bytes(), &cycle); err != nil {
+		t.Fatal(err)
+	}
+	createdIssue := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Cycle history","cycleId":`+strconv.FormatInt(cycle.ID, 10)+`}`)
+	if createdIssue.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", createdIssue.Code, createdIssue.Body.String())
+	}
+	var issue store.Issue
+	if err := json.Unmarshal(createdIssue.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	for _, status := range []string{"in_progress", "done"} {
+		updated := doJSON(t, s, http.MethodPatch, "/api/issues/"+issue.Identifier, `{"status":"`+status+`"}`)
+		if updated.Code != http.StatusOK {
+			t.Fatalf("update issue status %s: %d %s", status, updated.Code, updated.Body.String())
+		}
+	}
+
+	listed := doJSON(t, s, http.MethodGet, "/api/cycles/"+strconv.Itoa(cycle.Number)+"/activities", "")
+	if listed.Code != http.StatusOK {
+		t.Fatalf("list cycle activities %d %s", listed.Code, listed.Body.String())
+	}
+	var activities []store.Activity
+	if err := json.Unmarshal(listed.Body.Bytes(), &activities); err != nil {
+		t.Fatal(err)
+	}
+	if len(activities) != 2 || activities[0].Action != "status_changed" {
+		t.Fatalf("cycle activities = %#v", activities)
+	}
+	if malformed := doJSON(t, s, http.MethodGet, "/api/cycles/nope/activities", ""); malformed.Code != http.StatusBadRequest {
+		t.Fatalf("malformed cycle number status %d", malformed.Code)
+	}
+	if missing := doJSON(t, s, http.MethodGet, "/api/cycles/999/activities", ""); missing.Code != http.StatusNotFound {
+		t.Fatalf("missing cycle status %d", missing.Code)
+	}
+}
+
 func TestCommentAttachmentsAreStoredScopedAndServedAsDownloads(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Attachment issue"}`)

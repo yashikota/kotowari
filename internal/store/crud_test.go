@@ -803,6 +803,58 @@ func TestIssueStartedAtIsTrackedAndPersisted(t *testing.T) {
 	}
 }
 
+func TestCycleActivitiesIncludeStatusHistoryForCurrentMembers(t *testing.T) {
+	s := openTest(t)
+	start := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
+	end := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	cycle, err := s.CreateCycle(start, end, "active")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	member, err := s.CreateIssue(CreateIssueInput{Title: "cycle member", CycleID: &cycle.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	status := "in_progress"
+	if _, err := s.UpdateIssue(member.Identifier, PatchIssueInput{Status: &status}); err != nil {
+		t.Fatal(err)
+	}
+	status = "done"
+	if _, err := s.UpdateIssue(member.Identifier, PatchIssueInput{Status: &status}); err != nil {
+		t.Fatal(err)
+	}
+
+	unrelated, err := s.CreateIssue(CreateIssueInput{Title: "not in cycle"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	status = "in_progress"
+	if _, err := s.UpdateIssue(unrelated.Identifier, PatchIssueInput{Status: &status}); err != nil {
+		t.Fatal(err)
+	}
+
+	activities, err := s.ListCycleActivities(cycle.Number)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(activities) != 2 {
+		t.Fatalf("cycle activities = %#v, want two status changes", activities)
+	}
+	if activities[0].Action != "status_changed" || activities[0].Payload == nil {
+		t.Fatalf("latest cycle activity = %#v", activities[0])
+	}
+	if got := activities[0].Payload; !strings.Contains(string(got), `"to":"done"`) {
+		t.Fatalf("latest cycle activity payload = %s", got)
+	}
+	if got := activities[1].Payload; !strings.Contains(string(got), `"to":"in_progress"`) {
+		t.Fatalf("earlier cycle activity payload = %s", got)
+	}
+	if _, err := s.ListCycleActivities(cycle.Number + 1); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing cycle activities error = %v", err)
+	}
+}
+
 func TestCreateLabelValidation(t *testing.T) {
 	s := openTest(t)
 	if _, err := s.CreateLabel(" ", "#aabbcc"); !errors.Is(err, ErrValidation) {

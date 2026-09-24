@@ -12,6 +12,7 @@ import { useIntent } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleIssuesCSV } from '../cycle-export.ts';
+import { cycleProgressTimeline } from '../cycle-progress.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import {
   DEFAULT_DISPLAY_PROPERTIES,
@@ -1115,6 +1116,7 @@ export function useCycleDetailPagePresenter() {
     cycle: Cycle;
     issues: Issue[];
     cycleIssues: Issue[];
+    activities: Activity[];
     pages: Page[];
     projects: Project[];
     cycles: Cycle[];
@@ -1124,10 +1126,14 @@ export function useCycleDetailPagePresenter() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [cycle, setCycle] = useState(data.cycle);
-  const started = data.cycleIssues.filter((i) => i.status === 'in_progress').length;
-  const done = data.cycleIssues.filter(
-    (i) => i.status === 'done' || i.status === 'canceled',
-  ).length;
+  const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
+  const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
+  const progress = progressTimeline.reduce(
+    (current, point) => (Date.parse(point.at) <= asOf ? point : current),
+    progressTimeline[0] ?? { at: cycle.startsAt, scope: 0, started: 0, completed: 0 },
+  );
+  const started = progress.started;
+  const done = progress.completed;
   const startedPercent = data.cycleIssues.length
     ? Math.round((started / data.cycleIssues.length) * 100)
     : 0;
@@ -1298,6 +1304,7 @@ export function useCycleDetailPagePresenter() {
     selected: selectedId,
     cycle,
     resources,
+    progressTimeline,
     started,
     startedPercent,
     done,

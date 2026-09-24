@@ -1583,11 +1583,11 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   }
 
   await page.goto(`/cycles/${cycle.number}`);
-  const progress = page.getByRole('region', { name: 'Progress' });
+  const progress = page.getByRole('region', { name: 'Progress', exact: true });
   await expect(progress).toBeVisible();
-  await expect(progress.getByText('Scope', { exact: true })).toBeVisible();
-  await expect(progress.getByText('Started', { exact: true })).toBeVisible();
-  await expect(progress.getByText('Completed', { exact: true })).toBeVisible();
+  await expect(progress.getByText('Scope', { exact: true }).first()).toBeVisible();
+  await expect(progress.getByText('Started', { exact: true }).first()).toBeVisible();
+  await expect(progress.getByText('Completed', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('3', { exact: true })).toBeVisible();
   await expect(progress.getByText('1 · 33%', { exact: true })).toBeVisible();
   await expect(progress.getByText('2 · 67%', { exact: true })).toBeVisible();

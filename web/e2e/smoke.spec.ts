@@ -266,14 +266,20 @@ test('create issue, comment, and page', async ({ page, request }) => {
   if (!cycleName) {
     throw new Error('expected cycle heading');
   }
-  const cycleProgress = page.getByRole('region', { name: 'Progress' });
-  await expect(cycleProgress.getByText('Scope', { exact: true })).toBeVisible();
-  await expect(cycleProgress.getByText('Started', { exact: true })).toBeVisible();
-  await expect(cycleProgress.getByText('Completed', { exact: true })).toBeVisible();
+  const cycleProgress = page.getByRole('region', { name: 'Progress', exact: true });
+  await expect(cycleProgress.getByText('Scope', { exact: true }).first()).toBeVisible();
+  await expect(cycleProgress.getByText('Started', { exact: true }).first()).toBeVisible();
+  await expect(cycleProgress.getByText('Completed', { exact: true }).first()).toBeVisible();
   await expect(cycleProgress.getByText('0 · 0%', { exact: true })).toHaveCount(2);
   await expect(
     cycleProgress.getByRole('progressbar', { name: 'Cycle completion' }),
   ).toHaveAttribute('aria-valuetext', '0%');
+  const cycleProgressChart = page.getByRole('region', { name: 'Progress over time' });
+  await expect(cycleProgressChart.getByRole('img')).toHaveAttribute(
+    'aria-label',
+    'Cycle progress over time: 0 in scope, 0 started, 0 completed',
+  );
+  await expect(cycleProgressChart.getByText('Ideal', { exact: true })).toBeVisible();
 
   await page.goto(`/issues/${identifier}`);
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');

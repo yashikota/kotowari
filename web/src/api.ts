@@ -228,6 +228,7 @@ export const api = {
   deleteProject: (slug: string) => req<void>(`/api/projects/${slug}`, { method: 'DELETE' }),
   cycles: () => req<Cycle[]>('/api/cycles'),
   cycle: (n: number) => req<Cycle>(`/api/cycles/${n}`),
+  cycleActivities: (n: number) => req<Activity[]>(`/api/cycles/${n}/activities`),
   createCycle: (body: { startsAt: string; endsAt: string; status?: string }) =>
     req<Cycle>('/api/cycles', { method: 'POST', body: JSON.stringify(body) }),
   patchCycle: (n: number, body: Record<string, unknown>) =>

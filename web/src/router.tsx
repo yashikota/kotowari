@@ -351,16 +351,18 @@ const cycleRoute = createRoute({
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {
     const number = Number(params.number);
-    const [cycle, issues, cycleIssues, pages, projects, cycles, labels] = await Promise.all([
-      api.cycle(number),
-      api.issues(issuesQuery(searchToFilter({ ...deps, cycle: number }))),
-      api.issues(`?cycle=${number}`),
-      api.pages(),
-      api.projects(),
-      api.cycles(),
-      api.labels(),
-    ]);
-    return { cycle, issues, cycleIssues, pages, projects, cycles, labels };
+    const [cycle, issues, cycleIssues, activities, pages, projects, cycles, labels] =
+      await Promise.all([
+        api.cycle(number),
+        api.issues(issuesQuery(searchToFilter({ ...deps, cycle: number }))),
+        api.issues(`?cycle=${number}`),
+        api.cycleActivities(number),
+        api.pages(),
+        api.projects(),
+        api.cycles(),
+        api.labels(),
+      ]);
+    return { cycle, issues, cycleIssues, activities, pages, projects, cycles, labels };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CycleDetailPage'),
 });
