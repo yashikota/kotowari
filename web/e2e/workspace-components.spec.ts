@@ -1565,6 +1565,39 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
   });
 });
 
+test('cycle details summarize scope, started, and completed work', async ({ page, request }) => {
+  const created = await request.post('/api/cycles', {
+    data: {
+      startsAt: '2033-02-01T00:00:00Z',
+      endsAt: '2033-02-14T00:00:00Z',
+      status: 'active',
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const cycle = (await created.json()) as { id: number; number: number };
+  for (const [index, status] of ['in_progress', 'done', 'canceled'].entries()) {
+    const issue = await request.post('/api/issues', {
+      data: { title: `Cycle detail progress ${cycle.number} ${index}`, status, cycleId: cycle.id },
+    });
+    expect(issue.ok()).toBeTruthy();
+  }
+
+  await page.goto(`/cycles/${cycle.number}`);
+  const progress = page.getByRole('region', { name: 'Progress' });
+  await expect(progress).toBeVisible();
+  await expect(progress.getByText('Scope', { exact: true })).toBeVisible();
+  await expect(progress.getByText('Started', { exact: true })).toBeVisible();
+  await expect(progress.getByText('Completed', { exact: true })).toBeVisible();
+  await expect(progress.getByText('3', { exact: true })).toBeVisible();
+  await expect(progress.getByText('1 · 33%', { exact: true })).toBeVisible();
+  await expect(progress.getByText('2 · 67%', { exact: true })).toBeVisible();
+  await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toBeVisible();
+  await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toHaveAttribute(
+    'aria-valuetext',
+    '67%',
+  );
+});
+
 test('cycle details add, open, and remove documents and links', async ({ page, request }) => {
   const stamp = Date.now();
   const created = await request.post('/api/cycles', {

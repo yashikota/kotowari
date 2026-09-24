@@ -8,7 +8,6 @@ import {
   Modal,
   MultiSelect,
   NativeSelect,
-  Progress,
   Stack,
   Switch,
   Text,
@@ -20,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 
 import { IssueList } from '../components/IssueList.tsx';
 import { CycleListItem, CycleStatusHeading } from '../components/CycleListItem.tsx';
+import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
@@ -960,7 +960,10 @@ export function CycleDetailPageView({
         selected,
         cycle,
         resources,
+        started,
+        startedPercent,
         done,
+        completionPercent,
         metadataOpen,
         datesOpen,
         resourceLinkOpen,
@@ -1074,26 +1077,12 @@ export function CycleDetailPageView({
                       </Button>
                     </Group>
                   </Stack>
-                  <Group grow align="flex-start">
-                    <Stack gap={4}>
-                      <Text size="xs" c="dimmed">
-                        {t('cycle.scope')}
-                      </Text>
-                      <Text size="sm">{data.issues.length}</Text>
-                    </Stack>
-                    <Stack gap={4}>
-                      <Text size="xs" c="dimmed">
-                        {t('cycle.completed')}
-                      </Text>
-                      <Text size="sm">
-                        {done} / {data.issues.length}
-                      </Text>
-                    </Stack>
-                  </Group>
-                  <Progress
-                    aria-label={t('cycle.progress')}
-                    value={data.issues.length ? (done / data.issues.length) * 100 : 0}
-                    size="sm"
+                  <CycleProgressSummary
+                    scope={data.issues.length}
+                    started={started}
+                    startedPercent={startedPercent}
+                    completed={done}
+                    completionPercent={completionPercent}
                   />
                   {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
                   <Stack

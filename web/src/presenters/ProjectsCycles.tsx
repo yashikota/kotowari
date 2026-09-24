@@ -1109,7 +1109,10 @@ export function useCycleDetailPagePresenter() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [cycle, setCycle] = useState(data.cycle);
+  const started = data.issues.filter((i) => i.status === 'in_progress').length;
   const done = data.issues.filter((i) => i.status === 'done' || i.status === 'canceled').length;
+  const startedPercent = data.issues.length ? Math.round((started / data.issues.length) * 100) : 0;
+  const completionPercent = data.issues.length ? Math.round((done / data.issues.length) * 100) : 0;
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
   const [resourceLinkOpen, setResourceLinkOpen] = useState(false);
@@ -1249,7 +1252,10 @@ export function useCycleDetailPagePresenter() {
     selected,
     cycle,
     resources,
+    started,
+    startedPercent,
     done,
+    completionPercent,
     metadataOpen,
     datesOpen,
     resourceLinkOpen,

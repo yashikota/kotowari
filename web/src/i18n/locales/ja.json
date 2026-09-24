@@ -39,6 +39,7 @@
     "completed": "完了",
     "issuesCount": "{{count}} 件のイシュー",
     "progress": "サイクルの進捗",
+    "progressHeading": "進捗",
     "progressFor": "サイクル{{number}}の進捗 {{progress}}%",
     "started": "着手",
     "issuesInScope": "対象 {{count}} 件",

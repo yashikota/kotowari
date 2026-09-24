@@ -266,8 +266,14 @@ test('create issue, comment, and page', async ({ page, request }) => {
   if (!cycleName) {
     throw new Error('expected cycle heading');
   }
-  await expect(page.getByLabel('Cycle completion')).toHaveAttribute('aria-valuetext', '0%');
-  await expect(page.getByText('0 / 0')).toBeVisible();
+  const cycleProgress = page.getByRole('region', { name: 'Progress' });
+  await expect(cycleProgress.getByText('Scope', { exact: true })).toBeVisible();
+  await expect(cycleProgress.getByText('Started', { exact: true })).toBeVisible();
+  await expect(cycleProgress.getByText('Completed', { exact: true })).toBeVisible();
+  await expect(cycleProgress.getByText('0 · 0%', { exact: true })).toHaveCount(2);
+  await expect(
+    cycleProgress.getByRole('progressbar', { name: 'Cycle completion' }),
+  ).toHaveAttribute('aria-valuetext', '0%');
 
   await page.goto(`/issues/${identifier}`);
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
