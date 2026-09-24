@@ -972,11 +972,12 @@ test('issue options add resource links and set, edit, and clear due dates', asyn
   expect(updated.dueDate).toBeNull();
 });
 
-test('issue options expose Linear copy actions and make a property-preserving copy', async ({
+test('issue detail exposes Linear quick-copy actions and makes a property-preserving copy', async ({
   page,
   request,
 }) => {
-  const title = `Copy source ${Date.now()}`;
+  const stamp = Date.now();
+  const title = `Copy source ${stamp}`;
   const created = await request.post('/api/issues', {
     data: {
       title,
@@ -991,6 +992,18 @@ test('issue options expose Linear copy actions and make a property-preserving co
   const issue = (await created.json()) as { identifier: string };
 
   await page.goto(`/issues/${issue.identifier}`);
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  const copyURL = page.getByRole('button', { name: 'Copy URL', exact: true });
+  const copyBranch = page.getByRole('button', { name: 'Copy git branch name', exact: true });
+  await expect(copyURL).toBeVisible();
+  await expect(copyBranch).toBeVisible();
+  await copyURL.click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(page.url());
+  await copyBranch.click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(`${issue.identifier.toLowerCase()}-copy-source-${stamp}`);
+
   await page.getByRole('button', { name: 'Issue options' }).click();
   const menu = page.getByRole('menu');
   await expect(menu.getByRole('menuitem', { name: 'Copy URL' })).toBeVisible();

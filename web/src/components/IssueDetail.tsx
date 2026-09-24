@@ -20,6 +20,8 @@ import {
   IconDotsVertical,
   IconExternalLink,
   IconFileText,
+  IconGitBranch,
+  IconLink,
   IconPaperclip,
   IconStar,
   IconTrash,
@@ -158,6 +160,26 @@ export function IssueDetailView({
               >
                 {copied ? t('ui.copied') : issue.identifier}
               </Button>
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                color="gray"
+                aria-label={t('issueActions.copyUrl')}
+                title={t('issueActions.copyUrl')}
+                onClick={handlers.Copy_url_onClick35}
+              >
+                <IconLink size={15} stroke={1.7} aria-hidden="true" />
+              </ActionIcon>
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                color="gray"
+                aria-label={t('issueActions.copyBranch')}
+                title={t('issueActions.copyBranch')}
+                onClick={handlers.Copy_branch_onClick40}
+              >
+                <IconGitBranch size={15} stroke={1.7} aria-hidden="true" />
+              </ActionIcon>
               {!issue.archivedAt ? (
                 <ActionIcon
                   type="button"
