@@ -1,6 +1,6 @@
 import { isCommentSubmitShortcut, isSubmitShortcut } from './keymap.ts';
 import { describe, expect, it } from 'vite-plus/test';
-import { actionFromKeyboard, isTypingTarget } from './keymap.ts';
+import { actionFromKeyboard, isTypingTarget, issueCopyShortcutFromKeyboard } from './keymap.ts';
 
 function el(tagName: string): EventTarget {
   return { tagName, isContentEditable: false } as unknown as EventTarget;
@@ -261,6 +261,38 @@ describe('actionFromKeyboard', () => {
         target: el('BODY'),
       }),
     ).toBeNull();
+  });
+});
+
+describe('issue copy shortcuts', () => {
+  const body = el('BODY');
+  const shortcut = (overrides: Partial<Parameters<typeof issueCopyShortcutFromKeyboard>[0]> = {}) =>
+    issueCopyShortcutFromKeyboard({
+      key: '',
+      ctrlKey: false,
+      metaKey: false,
+      target: body,
+      ...overrides,
+    });
+
+  it.each([{ ctrlKey: true }, { metaKey: true }])('supports platform modifier %#', (modifier) => {
+    expect(shortcut({ ...modifier, key: '.', code: 'Period' })).toBe('copy-id');
+    expect(shortcut({ ...modifier, key: '>', code: 'Period', shiftKey: true })).toBe('copy-branch');
+    expect(shortcut({ ...modifier, key: '<', code: 'Comma', shiftKey: true })).toBe('copy-url');
+    expect(shortcut({ ...modifier, key: '"', code: 'Quote', shiftKey: true })).toBe('copy-title');
+    expect(shortcut({ ...modifier, key: 'c' })).toBe('copy-title-link');
+    expect(shortcut({ ...modifier, key: 'c', altKey: true })).toBe('copy-everything');
+    expect(shortcut({ ...modifier, key: 'p', altKey: true })).toBe('copy-prompt');
+  });
+
+  it('leaves editing, repeated, composing, and modified combinations alone', () => {
+    expect(shortcut({ ctrlKey: true, key: '.', code: 'Period', target: el('INPUT') })).toBeNull();
+    expect(shortcut({ ctrlKey: true, key: '.', code: 'Period', repeat: true })).toBeNull();
+    expect(shortcut({ ctrlKey: true, key: '.', code: 'Period', isComposing: true })).toBeNull();
+    expect(
+      shortcut({ ctrlKey: true, key: 'c', code: 'KeyC', altKey: true, shiftKey: true }),
+    ).toBeNull();
+    expect(shortcut({ key: '.', code: 'Period' })).toBeNull();
   });
 });
 

@@ -78,6 +78,55 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return TYPING_TAGS.has(el.tagName ?? '');
 }
 
+export type IssueCopyShortcut =
+  | 'copy-id'
+  | 'copy-url'
+  | 'copy-title'
+  | 'copy-title-link'
+  | 'copy-everything'
+  | 'copy-branch'
+  | 'copy-prompt';
+
+export function issueCopyShortcutFromKeyboard(event: {
+  key: string;
+  code?: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  repeat?: boolean;
+  isComposing?: boolean;
+  defaultPrevented?: boolean;
+  target: EventTarget | null;
+}): IssueCopyShortcut | null {
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.repeat ||
+    isTypingTarget(event.target) ||
+    !(event.ctrlKey || event.metaKey)
+  )
+    return null;
+
+  const key = event.key.toLowerCase();
+  if (event.altKey) {
+    if (event.shiftKey) return null;
+    if (key === 'c') return 'copy-everything';
+    if (key === 'p') return 'copy-prompt';
+    return null;
+  }
+
+  if (event.code === 'Period') return event.shiftKey ? 'copy-branch' : 'copy-id';
+  if (event.code === 'Comma' && event.shiftKey) return 'copy-url';
+  if (event.code === 'Quote' && event.shiftKey) return 'copy-title';
+  if (event.shiftKey && event.key === '>') return 'copy-branch';
+  if (event.shiftKey && (event.key === '<' || event.key === ',')) return 'copy-url';
+  if (event.shiftKey && event.key === '"') return 'copy-title';
+  if (!event.shiftKey && event.key === '.') return 'copy-id';
+  if (!event.shiftKey && key === 'c') return 'copy-title-link';
+  return null;
+}
+
 export function actionFromKeyboard(event: {
   key: string;
   isComposing?: boolean;

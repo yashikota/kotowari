@@ -49,8 +49,28 @@ import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
 import { formatAttachmentSize, IssueAttachmentList } from './IssueAttachmentList.tsx';
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
 
-import { PresenterScope, useActions } from '../application/Root.tsx';
+import { PresenterScope, useActions, useIntent, useKeyboard } from '../application/Root.tsx';
+import { issueCopyShortcutFromKeyboard } from '../keymap.ts';
+import type { IssueCopyShortcut } from '../keymap.ts';
 import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
+
+const ISSUE_COPY_SHORTCUT_INTENTS: Record<IssueCopyShortcut, string> = {
+  'copy-id': 'Copy_id_onClick34',
+  'copy-url': 'Copy_url_onClick35',
+  'copy-title': 'Copy_title_onClick36',
+  'copy-title-link': 'Copy_title_link_onClick37',
+  'copy-everything': 'Copy_everything_onClick39',
+  'copy-branch': 'Copy_branch_onClick40',
+  'copy-prompt': 'Copy_prompt_onClick41',
+};
+
+function CopyShortcut({ label }: { label: string }) {
+  return (
+    <Text component="span" size="xs" c="dimmed" aria-hidden="true" data-testid="copy-shortcut">
+      {label}
+    </Text>
+  );
+}
 
 export function IssueDetailView({
   model,
@@ -65,6 +85,11 @@ export function IssueDetailView({
 }) {
   const { t } = useTranslation();
   const { statuses: workflowStatuses } = useIssueWorkflow();
+  const isApplePlatform =
+    typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+  const modifierKey = isApplePlatform ? '⌘' : 'Ctrl';
+  const shiftKey = '⇧';
+  const alternateKey = isApplePlatform ? '⌥' : 'Alt';
   switch (model._view) {
     case 0: {
       const { error } = model;
@@ -366,29 +391,50 @@ export function IssueDetailView({
                       <Menu.Sub.Target>
                         <Menu.Sub.Item>{t('issueActions.copy')}</Menu.Sub.Item>
                       </Menu.Sub.Target>
-                      <Menu.Sub.Dropdown>
-                        <Menu.Item onClick={handlers.Copy_id_onClick34}>
+                      <Menu.Sub.Dropdown style={{ minWidth: 300 }}>
+                        <Menu.Item
+                          onClick={handlers.Copy_id_onClick34}
+                          rightSection={<CopyShortcut label={`${modifierKey} .`} />}
+                        >
                           {t('issueActions.copyId')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_url_onClick35}>
+                        <Menu.Item
+                          onClick={handlers.Copy_url_onClick35}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} ,`} />}
+                        >
                           {t('issueActions.copyUrl')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_title_onClick36}>
+                        <Menu.Item
+                          onClick={handlers.Copy_title_onClick36}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} '`} />}
+                        >
                           {t('issueActions.copyTitle')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_title_link_onClick37}>
+                        <Menu.Item
+                          onClick={handlers.Copy_title_link_onClick37}
+                          rightSection={<CopyShortcut label={`${modifierKey} C`} />}
+                        >
                           {t('issueActions.copyTitleLink')}
                         </Menu.Item>
                         <Menu.Item onClick={handlers.Copy_issue_markdown_onClick38}>
                           {t('issueActions.copyIssueMarkdown')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_everything_onClick39}>
+                        <Menu.Item
+                          onClick={handlers.Copy_everything_onClick39}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} C`} />}
+                        >
                           {t('issueActions.copyEverything')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_branch_onClick40}>
+                        <Menu.Item
+                          onClick={handlers.Copy_branch_onClick40}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} .`} />}
+                        >
                           {t('issueActions.copyBranch')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_prompt_onClick41}>
+                        <Menu.Item
+                          onClick={handlers.Copy_prompt_onClick41}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} P`} />}
+                        >
                           {t('issueActions.copyPrompt')}
                         </Menu.Item>
                       </Menu.Sub.Dropdown>
@@ -514,24 +560,51 @@ export function IssueDetailView({
                       <Menu.Sub.Target>
                         <Menu.Sub.Item>{t('issueActions.copy')}</Menu.Sub.Item>
                       </Menu.Sub.Target>
-                      <Menu.Sub.Dropdown>
-                        <Menu.Item onClick={handlers.Copy_id_onClick34}>
+                      <Menu.Sub.Dropdown style={{ minWidth: 300 }}>
+                        <Menu.Item
+                          onClick={handlers.Copy_id_onClick34}
+                          rightSection={<CopyShortcut label={`${modifierKey} .`} />}
+                        >
                           {t('issueActions.copyId')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_url_onClick35}>
+                        <Menu.Item
+                          onClick={handlers.Copy_url_onClick35}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} ,`} />}
+                        >
                           {t('issueActions.copyUrl')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_title_onClick36}>
+                        <Menu.Item
+                          onClick={handlers.Copy_title_onClick36}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} '`} />}
+                        >
                           {t('issueActions.copyTitle')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_title_link_onClick37}>
+                        <Menu.Item
+                          onClick={handlers.Copy_title_link_onClick37}
+                          rightSection={<CopyShortcut label={`${modifierKey} C`} />}
+                        >
                           {t('issueActions.copyTitleLink')}
                         </Menu.Item>
                         <Menu.Item onClick={handlers.Copy_issue_markdown_onClick38}>
                           {t('issueActions.copyIssueMarkdown')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.Copy_everything_onClick39}>
+                        <Menu.Item
+                          onClick={handlers.Copy_everything_onClick39}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} C`} />}
+                        >
                           {t('issueActions.copyEverything')}
+                        </Menu.Item>
+                        <Menu.Item
+                          onClick={handlers.Copy_branch_onClick40}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} .`} />}
+                        >
+                          {t('issueActions.copyBranch')}
+                        </Menu.Item>
+                        <Menu.Item
+                          onClick={handlers.Copy_prompt_onClick41}
+                          rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} P`} />}
+                        >
+                          {t('issueActions.copyPrompt')}
                         </Menu.Item>
                       </Menu.Sub.Dropdown>
                     </Menu.Sub>
@@ -1525,6 +1598,14 @@ export function IssueDetail(props: Parameters<typeof useIssueDetailPresenter>[0]
 function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]) {
   const model = useIssueDetailPresenter(props);
   const handlers = useActions(model.handlers);
+  const sendIntent = useIntent();
+  useKeyboard((event) => {
+    const shortcut = issueCopyShortcutFromKeyboard(event);
+    if (model._view !== 2 || !shortcut) return false;
+    event.preventDefault();
+    void sendIntent(ISSUE_COPY_SHORTCUT_INTENTS[shortcut], []);
+    return true;
+  });
   const autofocusTitle = useAutofocusTarget('title');
   const identifier = model._view === 2 ? model.identifier : '';
   const focusSub = model._view === 2 ? model.focusSub : 0;

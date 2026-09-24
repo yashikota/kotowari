@@ -1204,6 +1204,15 @@ test('issue detail exposes Linear quick-copy actions and makes a property-preser
   await expect(copySubmenu).toBeVisible();
   await expect(copySubmenu).toHaveAttribute('aria-haspopup', 'menu');
   await copySubmenu.hover();
+  const copyMenu = page.getByRole('menu', { name: 'Copy', exact: true });
+  await expect(copyMenu).toHaveCSS('min-width', '300px');
+  const copyMenuBounds = await copyMenu.boundingBox();
+  const lastShortcutBounds = await page.getByTestId('copy-shortcut').last().boundingBox();
+  expect(copyMenuBounds).not.toBeNull();
+  expect(lastShortcutBounds).not.toBeNull();
+  expect(lastShortcutBounds!.x + lastShortcutBounds!.width).toBeLessThanOrEqual(
+    copyMenuBounds!.x + copyMenuBounds!.width - 8,
+  );
   const copyURLMenuItem = page.getByRole('menuitem', { name: 'Copy URL', exact: true });
   await expect(copyURLMenuItem).toBeVisible();
   await expect(copyURLMenuItem).not.toHaveAttribute('aria-haspopup', 'menu');
@@ -1220,7 +1229,14 @@ test('issue detail exposes Linear quick-copy actions and makes a property-preser
   await page.getByRole('menuitem', { name: 'Copy title', exact: true }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(title);
 
-  await page.getByRole('button', { name: 'Issue options' }).click();
+  const issueOptions = page.getByRole('button', { name: 'Issue options' });
+  await issueOptions.focus();
+  await page.keyboard.press('Control+Period');
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(issue.identifier);
+
+  await issueOptions.click();
   await menu.getByRole('menuitem', { name: 'Make a copy' }).click();
 
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+$/);
