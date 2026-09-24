@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
-import { CycleListItem, CycleStatusHeading } from '../components/CycleListItem.tsx';
+import { CycleListItem } from '../components/CycleListItem.tsx';
 import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { CycleProgressChart } from '../components/CycleProgressChart.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
@@ -1116,11 +1116,6 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
         datesValid,
         handlers,
       } = model;
-      const sections = [
-        { status: 'upcoming', rows: cycles.filter((cycle) => cycle.status === 'upcoming') },
-        { status: 'active', rows: cycles.filter((cycle) => cycle.status === 'active') },
-        { status: 'completed', rows: cycles.filter((cycle) => cycle.status === 'completed') },
-      ].filter((section) => section.rows.length > 0);
       return (
         <SplitLayout single>
           <Pane single>
@@ -1135,17 +1130,9 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
             {cycles.length === 0 ? (
               <EmptyState>{t('cycle.emptyState')}</EmptyState>
             ) : (
-              <Stack gap="lg" p="md" pb="xl">
-                {sections.map((section) => (
-                  <Stack gap={0} key={section.status}>
-                    <CycleStatusHeading
-                      title={t(`cycle.status.${section.status}`)}
-                      count={section.rows.length}
-                    />
-                    {section.rows.map((cycle) => (
-                      <CycleListItem key={cycle.number} cycle={cycle} />
-                    ))}
-                  </Stack>
+              <Stack gap={0} p="md" pb="xl">
+                {cycles.map((cycle) => (
+                  <CycleListItem key={cycle.number} cycle={cycle} />
                 ))}
               </Stack>
             )}

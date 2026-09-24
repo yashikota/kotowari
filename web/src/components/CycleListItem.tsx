@@ -153,16 +153,3 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
     </Group>
   );
 }
-
-export function CycleStatusHeading({ title, count }: { title: string; count: number }) {
-  return (
-    <Group justify="space-between" mih={32} px={4}>
-      <Text size="sm" fw={550} c="dimmed">
-        {title}
-      </Text>
-      <Text size="xs" c="dimmed">
-        {count}
-      </Text>
-    </Group>
-  );
-}

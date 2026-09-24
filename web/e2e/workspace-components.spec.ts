@@ -1429,7 +1429,7 @@ test('board columns group cards by status and reflect a detail edit', async ({ p
   await expect(todoColumn.getByRole('button', { name: cardName })).toHaveCount(0);
 });
 
-test('cycles are grouped under the team navigation and current/upcoming links filter the list', async ({
+test('cycle navigation stays under the team and the list follows Linear chronology', async ({
   page,
   request,
 }) => {
@@ -1454,6 +1454,45 @@ test('cycles are grouped under the team navigation and current/upcoming links fi
   });
   expect(upcomingResponse.ok()).toBeTruthy();
   const upcomingCycle = (await upcomingResponse.json()) as { number: number };
+  const completedStart = new Date(now - 21 * 24 * 60 * 60 * 1000);
+  const completedResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: completedStart.toISOString(),
+      endsAt: new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'completed',
+    },
+  });
+  expect(completedResponse.ok()).toBeTruthy();
+  const completedCycle = (await completedResponse.json()) as { number: number };
+
+  await page.goto('/cycles');
+  const main = page.getByRole('main');
+  const upcomingRow = main.getByRole('region', { name: `Cycle ${upcomingCycle.number}` });
+  const activeRow = main.getByRole('region', { name: `Cycle ${activeCycle.number}` });
+  const completedRow = main.getByRole('region', { name: `Cycle ${completedCycle.number}` });
+  await expect(upcomingRow.getByRole('link')).toHaveAttribute(
+    'href',
+    `/cycles/${upcomingCycle.number}`,
+  );
+  await expect(activeRow.getByRole('link')).toHaveAttribute(
+    'href',
+    `/cycles/${activeCycle.number}`,
+  );
+  await expect(completedRow.getByRole('link')).toHaveAttribute(
+    'href',
+    `/cycles/${completedCycle.number}`,
+  );
+  const upcomingTop = (await upcomingRow.boundingBox())?.y;
+  const activeTop = (await activeRow.boundingBox())?.y;
+  const completedTop = (await completedRow.boundingBox())?.y;
+  expect(upcomingTop).toBeDefined();
+  expect(activeTop).toBeDefined();
+  expect(completedTop).toBeDefined();
+  expect(upcomingTop).toBeLessThan(activeTop!);
+  expect(activeTop).toBeLessThan(completedTop!);
+  await expect(upcomingRow.getByText('Upcoming', { exact: true })).toHaveCount(1);
+  await expect(activeRow.getByText('Current', { exact: true })).toHaveCount(1);
+  await expect(completedRow.getByText('Completed', { exact: true })).toHaveCount(1);
 
   await page.goto('/issues');
   const teamNavigation = page.getByRole('navigation', { name: 'Team navigation' });
@@ -1467,7 +1506,6 @@ test('cycles are grouped under the team navigation and current/upcoming links fi
 
   await currentLink.click();
   await expect(page).toHaveURL(/\/cycles\?scope=current$/);
-  const main = page.getByRole('main');
   await expect(
     main.getByRole('link', { name: new RegExp(`Cycle ${activeCycle.number}\\b`) }),
   ).toBeVisible();
