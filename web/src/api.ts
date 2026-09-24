@@ -160,6 +160,7 @@ export const api = {
     priority?: number;
     startDate?: string;
     targetDate?: string;
+    labels?: string[];
   }) => req<Project>('/api/projects', { method: 'POST', body: JSON.stringify(body) }),
   patchProject: (slug: string, body: Record<string, unknown>) =>
     req<Project>(`/api/projects/${slug}`, {

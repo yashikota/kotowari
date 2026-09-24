@@ -66,6 +66,9 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await projectDialog.getByLabel('Description').fill('A user-created project');
   await projectDialog.getByLabel('Status').selectOption('started');
   await projectDialog.getByLabel('Priority').selectOption('2');
+  const projectLabels = projectDialog.getByRole('combobox', { name: 'Project labels' });
+  await projectLabels.fill('Bug');
+  await page.getByRole('option', { name: 'Bug', exact: true }).click();
   await projectDialog.getByLabel('Start date').fill('2026-09-01');
   await projectDialog.getByLabel('Target date').fill('2026-10-01');
   await projectDialog.getByRole('button', { name: 'Create project' }).click();
@@ -80,6 +83,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
       description: 'A user-created project',
       status: 'started',
       priority: 2,
+      labels: ['Bug'],
       startDate: '2026-09-01',
       targetDate: '2026-10-01',
     });

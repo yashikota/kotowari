@@ -790,6 +790,25 @@ func TestCreateProjectDefaultsAndConflict(t *testing.T) {
 	}
 }
 
+func TestCreateProjectWithLabelsCanonicalizesAndValidatesLabels(t *testing.T) {
+	s := openTest(t)
+	project, err := s.CreateProjectWithPriorityAndLabels("Launch", "launch", "", "planned", 0, nil, nil, []string{" bug ", "BUG"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(project.Labels) != 1 || project.Labels[0] != "Bug" {
+		t.Fatalf("project labels %#v", project.Labels)
+	}
+	if _, err := s.GetProject(project.Slug); err != nil {
+		t.Fatal(err)
+	} else if got, err := s.GetProject(project.Slug); err != nil || len(got.Labels) != 1 || got.Labels[0] != "Bug" {
+		t.Fatalf("persisted project labels %#v, err %v", got.Labels, err)
+	}
+	if _, err := s.CreateProjectWithPriorityAndLabels("Unknown", "unknown", "", "planned", 0, nil, nil, []string{"not-a-label"}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("unknown label: %v", err)
+	}
+}
+
 func TestCreateProjectFromIssuePreservesAndAssociatesSourceIssue(t *testing.T) {
 	s := openTest(t)
 	issue, err := s.CreateIssue(CreateIssueInput{

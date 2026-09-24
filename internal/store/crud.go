@@ -155,6 +155,10 @@ func (s *Store) CreateProject(name, slug, description, status string, start, tar
 }
 
 func (s *Store) CreateProjectWithPriority(name, slug, description, status string, priority int, start, target *string) (Project, error) {
+	return s.CreateProjectWithPriorityAndLabels(name, slug, description, status, priority, start, target, nil)
+}
+
+func (s *Store) CreateProjectWithPriorityAndLabels(name, slug, description, status string, priority int, start, target *string, labels []string) (Project, error) {
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
@@ -181,10 +185,14 @@ func (s *Store) CreateProjectWithPriority(name, slug, description, status string
 		if _, ok := projectBySlug(m, slug); ok {
 			return errf(ErrConflict, "slug")
 		}
+		projectLabels, err := canonicalProjectLabels(m, labels)
+		if err != nil {
+			return err
+		}
 		out = Project{
 			ID: m.nextID(), Name: name, Slug: slug, Description: description, Status: status,
 			Priority: priority, StartDate: start, TargetDate: target,
-			Labels: []string{}, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
+			Labels: projectLabels, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
 		}
 		m.Projects = append(m.Projects, out)
 		addActivity(m, "project", out.ID, "created", map[string]any{"slug": slug}, now)
@@ -192,6 +200,32 @@ func (s *Store) CreateProjectWithPriority(name, slug, description, status string
 		return nil
 	})
 	return out, err
+}
+
+func canonicalProjectLabels(m *mem, labels []string) ([]string, error) {
+	available := make(map[string]string, len(m.Labels))
+	for _, label := range m.Labels {
+		available[strings.ToLower(label.Name)] = label.Name
+	}
+	seen := make(map[string]struct{}, len(labels))
+	nextLabels := make([]string, 0, len(labels))
+	for _, label := range labels {
+		name := strings.TrimSpace(label)
+		if name == "" {
+			return nil, validationf("project labels must not be empty")
+		}
+		canonical, ok := available[strings.ToLower(name)]
+		if !ok {
+			return nil, validationf("unknown project label %q", name)
+		}
+		key := strings.ToLower(canonical)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		nextLabels = append(nextLabels, canonical)
+	}
+	return nextLabels, nil
 }
 
 func validMilestoneDate(value *string) bool {
@@ -370,27 +404,9 @@ func (s *Store) UpdateProject(slug string, name, description, status *string, pr
 			p.TargetDate = *target
 		}
 		if labels != nil {
-			available := make(map[string]string, len(m.Labels))
-			for _, label := range m.Labels {
-				available[strings.ToLower(label.Name)] = label.Name
-			}
-			seen := make(map[string]struct{}, len(*labels))
-			nextLabels := make([]string, 0, len(*labels))
-			for _, label := range *labels {
-				name := strings.TrimSpace(label)
-				if name == "" {
-					return validationf("project labels must not be empty")
-				}
-				canonical, ok := available[strings.ToLower(name)]
-				if !ok {
-					return validationf("unknown project label %q", name)
-				}
-				key := strings.ToLower(canonical)
-				if _, ok := seen[key]; ok {
-					continue
-				}
-				seen[key] = struct{}{}
-				nextLabels = append(nextLabels, canonical)
+			nextLabels, err := canonicalProjectLabels(m, *labels)
+			if err != nil {
+				return err
 			}
 			p.Labels = nextLabels
 		}

@@ -263,19 +263,20 @@ func (s *Server) listProjects(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name        string  `json:"name"`
-		Slug        string  `json:"slug"`
-		Description string  `json:"description"`
-		Status      string  `json:"status"`
-		Priority    int     `json:"priority"`
-		StartDate   *string `json:"startDate"`
-		TargetDate  *string `json:"targetDate"`
+		Name        string   `json:"name"`
+		Slug        string   `json:"slug"`
+		Description string   `json:"description"`
+		Status      string   `json:"status"`
+		Priority    int      `json:"priority"`
+		StartDate   *string  `json:"startDate"`
+		TargetDate  *string  `json:"targetDate"`
+		Labels      []string `json:"labels"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectWithPriority(in.Name, in.Slug, in.Description, in.Status, in.Priority, in.StartDate, in.TargetDate)
+	out, err := s.store.CreateProjectWithPriorityAndLabels(in.Name, in.Slug, in.Description, in.Status, in.Priority, in.StartDate, in.TargetDate, in.Labels)
 	if err != nil {
 		writeError(w, err)
 		return

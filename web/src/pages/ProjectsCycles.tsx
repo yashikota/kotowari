@@ -6,6 +6,7 @@ import {
   Group,
   Menu,
   Modal,
+  MultiSelect,
   NativeSelect,
   Progress,
   Stack,
@@ -54,12 +55,14 @@ export function ProjectsPageView({
     case 0: {
       const {
         projects,
+        availableLabels,
         name,
         description,
         status,
         priority,
         startDate,
         targetDate,
+        selectedLabels,
         createOpen,
         handlers,
       } = model;
@@ -136,6 +139,19 @@ export function ProjectsPageView({
                       }))}
                     />
                   </Group>
+                  <MultiSelect
+                    label={t('filters.projectLabels')}
+                    aria-label={t('filters.projectLabels')}
+                    value={selectedLabels}
+                    onChange={handlers.New_project_labels_onChange}
+                    data={availableLabels.map((label) => ({
+                      value: label.name,
+                      label: label.name,
+                    }))}
+                    searchable
+                    hidePickedOptions
+                    maxDropdownHeight={240}
+                  />
                   <Group grow>
                     <TextInput
                       type="date"

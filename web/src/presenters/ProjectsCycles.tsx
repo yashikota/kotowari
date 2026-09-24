@@ -16,7 +16,8 @@ import { IssueList } from '../components/IssueList.tsx';
 import type { ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
 
 export function useProjectsPagePresenter() {
-  const projects = useLoaderData({ from: '/projects' }) as Project[];
+  const data = useLoaderData({ from: '/projects' }) as { projects: Project[]; labels: Label[] };
+  const { projects } = data;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] =
@@ -24,6 +25,7 @@ export function useProjectsPagePresenter() {
   const [priority, setPriority] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [targetDate, setTargetDate] = useState('');
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -47,6 +49,7 @@ export function useProjectsPagePresenter() {
       priority,
       ...(startDate ? { startDate } : {}),
       ...(targetDate ? { targetDate } : {}),
+      labels: selectedLabels,
     });
     setCreateOpen(false);
     await navigate({
@@ -58,12 +61,14 @@ export function useProjectsPagePresenter() {
   return {
     _view: 0 as const,
     projects,
+    availableLabels: data.labels,
     name,
     description,
     status,
     priority,
     startDate,
     targetDate,
+    selectedLabels,
     createOpen,
     handlers: {
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
@@ -76,6 +81,7 @@ export function useProjectsPagePresenter() {
         setPriority(0);
         setStartDate('');
         setTargetDate('');
+        setSelectedLabels([]);
         setCreateOpen(true);
       },
       onCloseCreateProject: () => setCreateOpen(false),
@@ -97,6 +103,7 @@ export function useProjectsPagePresenter() {
       New_project_target_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setTargetDate(e.target.value),
+      New_project_labels_onChange: (value: string[]) => setSelectedLabels(value),
     },
   };
 }

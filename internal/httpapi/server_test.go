@@ -88,6 +88,27 @@ func TestCreateIssueRequiresTitle(t *testing.T) {
 	}
 }
 
+func TestCreateProjectAcceptsKnownLabelsAndRejectsUnknownLabels(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Labeled release","slug":"labeled-release","labels":["bug","BUG"]}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", created.Code, created.Body.String())
+	}
+	var project struct {
+		Labels []string `json:"labels"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &project); err != nil {
+		t.Fatal(err)
+	}
+	if len(project.Labels) != 1 || project.Labels[0] != "Bug" {
+		t.Fatalf("created labels %#v", project.Labels)
+	}
+	bad := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Invalid release","slug":"invalid-release","labels":["missing"]}`)
+	if bad.Code != http.StatusBadRequest {
+		t.Fatalf("unknown label status %d body %s", bad.Code, bad.Body.String())
+	}
+}
+
 func TestConvertIssueToProjectPreservesIssue(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Release plan","body":"Context","status":"in_progress","priority":2}`)

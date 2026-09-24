@@ -175,7 +175,10 @@ const adrRoute = createRoute({
 const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects',
-  loader: () => api.projects(),
+  loader: async () => {
+    const [projects, labels] = await Promise.all([api.projects(), api.labels()]);
+    return { projects, labels };
+  },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
 });
 
