@@ -177,8 +177,12 @@ const projectsRoute = createRoute({
   path: '/projects',
   validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
   loader: async () => {
-    const [projects, labels] = await Promise.all([api.projects(), api.labels()]);
-    return { projects, labels };
+    const [projects, labels, issues] = await Promise.all([
+      api.projects(),
+      api.labels(),
+      api.issues(),
+    ]);
+    return { projects, labels, issues: issues ?? [] };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
 });
@@ -207,6 +211,12 @@ type ProjectListSearch = {
   showProjectList?: boolean;
   showWeekNumbers?: boolean;
   timelineStart?: string;
+  displayProperties?: string[];
+  dateField?: 'startDate' | 'targetDate' | 'created' | 'updated';
+  dateFrom?: string;
+  dateTo?: string;
+  milestones?: string[];
+  relations?: Array<'blocks' | 'blocked_by' | 'related'>;
 };
 
 function searchStringList(value: unknown): string[] {
@@ -271,6 +281,50 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (typeof raw.timelineStart === 'string' && /^\d{4}-\d{2}$/.test(raw.timelineStart)) {
     result.timelineStart = raw.timelineStart;
   }
+  const displayProperties = searchStringList(raw.displayProperties).filter((value) =>
+    [
+      'id',
+      'milestones',
+      'summary',
+      'priority',
+      'status',
+      'dependencies',
+      'startDate',
+      'targetDate',
+      'issues',
+      'progress',
+      'created',
+      'updated',
+      'labels',
+    ].includes(value),
+  );
+  if (
+    displayProperties.length ||
+    (typeof raw.displayProperties === 'string' && raw.displayProperties.startsWith('[')) ||
+    Array.isArray(raw.displayProperties)
+  ) {
+    result.displayProperties = displayProperties;
+  }
+  if (
+    raw.dateField === 'startDate' ||
+    raw.dateField === 'targetDate' ||
+    raw.dateField === 'created' ||
+    raw.dateField === 'updated'
+  ) {
+    result.dateField = raw.dateField;
+  }
+  if (typeof raw.dateFrom === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.dateFrom)) {
+    result.dateFrom = raw.dateFrom;
+  }
+  if (typeof raw.dateTo === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.dateTo)) {
+    result.dateTo = raw.dateTo;
+  }
+  const milestones = searchStringList(raw.milestones).filter((value) => value.length <= 120);
+  if (milestones.length) result.milestones = milestones;
+  const relations = searchStringList(raw.relations).filter((value) =>
+    ['blocks', 'blocked_by', 'related'].includes(value),
+  );
+  if (relations.length) result.relations = relations as NonNullable<ProjectListSearch['relations']>;
   return result;
 }
 

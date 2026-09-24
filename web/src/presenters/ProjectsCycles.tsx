@@ -16,6 +16,8 @@ import { IssueList } from '../components/IssueList.tsx';
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
 import type { ProjectBoardModel } from '../components/ProjectBoardView.tsx';
 import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
+import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
+import type { ProjectDisplayProperty } from '../project-display.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { PROJECT_STATUSES } from '../types.ts';
 import type { ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
@@ -42,7 +44,11 @@ function dateOrdinal(value: Date) {
 }
 
 export function useProjectsPagePresenter() {
-  const data = useLoaderData({ from: '/projects' }) as { projects: Project[]; labels: Label[] };
+  const data = useLoaderData({ from: '/projects' }) as {
+    projects: Project[];
+    labels: Label[];
+    issues: Issue[];
+  };
   const { projects } = data;
   const search = useSearch({ from: '/projects' });
   const [name, setName] = useState('');
@@ -68,6 +74,27 @@ export function useProjectsPagePresenter() {
   const statusFilters = search.status ?? [];
   const priorityFilters = search.priority ?? [];
   const labelFilters = search.labels ?? [];
+  const milestoneFilters = search.milestones ?? [];
+  const relationFilters = search.relations ?? [];
+  const availableMilestones = useMemo(
+    () =>
+      [
+        ...new Set(
+          projects.flatMap((project) => project.milestones.map((milestone) => milestone.name)),
+        ),
+      ].sort(),
+    [projects],
+  );
+  const displayProperties = (search.displayProperties ??
+    DEFAULT_PROJECT_DISPLAY_PROPERTIES) as ProjectDisplayProperty[];
+  const projectIssueCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const issue of data.issues) {
+      if (issue.projectSlug)
+        counts.set(issue.projectSlug, (counts.get(issue.projectSlug) ?? 0) + 1);
+    }
+    return counts;
+  }, [data.issues]);
   const filteredProjects = useMemo(() => {
     const query = (search.q ?? '').trim().toLocaleLowerCase();
     const projectsToSort = projects.filter((project) => {
@@ -79,6 +106,42 @@ export function useProjectsPagePresenter() {
         !labelFilters.some((label) => (project.labels ?? []).includes(label))
       )
         return false;
+      if (
+        milestoneFilters.length &&
+        !milestoneFilters.some((name) =>
+          project.milestones.some((milestone) => milestone.name === name),
+        )
+      ) {
+        return false;
+      }
+      if (
+        relationFilters.length &&
+        !relationFilters.some((kind) =>
+          project.dependencies?.some((dependency) => dependency.kind === kind),
+        )
+      ) {
+        return false;
+      }
+      if (search.dateField && (search.dateFrom || search.dateTo)) {
+        const value =
+          search.dateField === 'startDate'
+            ? project.startDate
+            : search.dateField === 'targetDate'
+              ? project.targetDate
+              : search.dateField === 'created'
+                ? project.createdAt
+                : search.dateField === 'updated'
+                  ? project.updatedAt
+                  : null;
+        const date = value?.slice(0, 10);
+        if (
+          !date ||
+          (search.dateFrom && date < search.dateFrom) ||
+          (search.dateTo && date > search.dateTo)
+        ) {
+          return false;
+        }
+      }
       const closed = project.status === 'completed' || project.status === 'canceled';
       if (search.closed === 'open' && closed) return false;
       if (search.closed === 'closed' && !closed) return false;
@@ -121,12 +184,17 @@ export function useProjectsPagePresenter() {
   }, [
     projects,
     search.closed,
+    search.dateField,
+    search.dateFrom,
+    search.dateTo,
     search.direction,
     search.orderBy,
     search.q,
     statusFilters,
     priorityFilters,
     labelFilters,
+    milestoneFilters,
+    relationFilters,
   ]);
 
   const groupBy = search.groupBy ?? 'none';
@@ -260,7 +328,13 @@ export function useProjectsPagePresenter() {
   }, [projectGroups, timelineStart]);
 
   const filterCount =
-    statusFilters.length + priorityFilters.length + labelFilters.length + (search.closed ? 1 : 0);
+    statusFilters.length +
+    priorityFilters.length +
+    labelFilters.length +
+    milestoneFilters.length +
+    relationFilters.length +
+    (search.dateField && (search.dateFrom || search.dateTo) ? 1 : 0) +
+    (search.closed ? 1 : 0);
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
     statuses: statusFilters,
@@ -276,6 +350,13 @@ export function useProjectsPagePresenter() {
     showEmptyColumns,
     showProjectList: search.showProjectList ?? true,
     showWeekNumbers: search.showWeekNumbers ?? false,
+    displayProperties,
+    dateField: search.dateField ?? '',
+    dateFrom: search.dateFrom ?? '',
+    dateTo: search.dateTo ?? '',
+    milestones: milestoneFilters,
+    relations: relationFilters,
+    availableMilestones,
     availableLabels: data.labels,
     filterCount,
     handlers: {
@@ -286,6 +367,20 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ priority: value.length ? value : undefined }),
       onLabelsChange: (value) =>
         void updateProjectSearch({ labels: value.length ? value : undefined }),
+      onDateFieldChange: (value) =>
+        void updateProjectSearch({
+          dateField: value ? (value as typeof search.dateField) : undefined,
+          dateFrom: undefined,
+          dateTo: undefined,
+        }),
+      onDateFromChange: (value) => void updateProjectSearch({ dateFrom: value || undefined }),
+      onDateToChange: (value) => void updateProjectSearch({ dateTo: value || undefined }),
+      onMilestonesChange: (value) =>
+        void updateProjectSearch({ milestones: value.length ? value : undefined }),
+      onRelationsChange: (value) =>
+        void updateProjectSearch({
+          relations: value.length ? (value as NonNullable<typeof search.relations>) : undefined,
+        }),
       onGroupByChange: (value) =>
         void updateProjectSearch({ groupBy: value as typeof search.groupBy }),
       onOrderByChange: (value) =>
@@ -306,12 +401,23 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ showProjectList: value ? undefined : false }),
       onShowWeekNumbersChange: (value) =>
         void updateProjectSearch({ showWeekNumbers: value ? true : undefined }),
+      onDisplayPropertyToggle: (property) => {
+        const next = displayProperties.includes(property)
+          ? displayProperties.filter((item) => item !== property)
+          : [...displayProperties, property];
+        void updateProjectSearch({ displayProperties: next });
+      },
       onReset: () =>
         void updateProjectSearch({
           q: undefined,
           status: undefined,
           priority: undefined,
           labels: undefined,
+          dateField: undefined,
+          dateFrom: undefined,
+          dateTo: undefined,
+          milestones: undefined,
+          relations: undefined,
           groupBy: undefined,
           orderBy: undefined,
           direction: undefined,
@@ -362,6 +468,8 @@ export function useProjectsPagePresenter() {
     projectBoard,
     projectTimeline,
     timelineFocusToday: !search.timelineStart,
+    displayProperties,
+    projectIssueCounts: Object.fromEntries(projectIssueCounts),
     visibleProjectCount: filteredProjects.length,
     isGrouped: groupBy !== 'none',
     hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,

@@ -1,6 +1,9 @@
-import { Badge, Box, Group, Progress, Text } from '@mantine/core';
+import { Badge, Box, Group, Progress, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { RouterNavLink } from '../mantine-ui.tsx';
+import { formatCalendarDate } from '../time.ts';
+import type { ProjectDisplayProperty } from '../project-display.ts';
+import { priorityLabel } from '../i18n/labels.ts';
 import type { Project } from '../types.ts';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -9,8 +12,17 @@ const STATUS_COLORS: Record<string, string> = {
   canceled: 'red',
 };
 
-export function ProjectListItem({ project }: { project: Project }) {
-  const { t } = useTranslation();
+export function ProjectListItem({
+  project,
+  displayProperties,
+  issueCount = 0,
+}: {
+  project: Project;
+  displayProperties: ProjectDisplayProperty[];
+  issueCount?: number;
+}) {
+  const { t, i18n } = useTranslation();
+  const shows = (property: ProjectDisplayProperty) => displayProperties.includes(property);
   const progress = Math.round(project.progress * 100);
   const indicatorColor =
     project.status === 'started'
@@ -25,29 +37,103 @@ export function ProjectListItem({ project }: { project: Project }) {
     <RouterNavLink
       to="/projects/$slug"
       params={{ slug: project.slug }}
-      label={project.name}
+      label={
+        <Stack gap={2}>
+          <Text size="sm" fw={500} truncate>
+            {project.name}
+          </Text>
+          {shows('summary') && project.description ? (
+            <Text size="xs" c="dimmed" lineClamp={1}>
+              {project.description}
+            </Text>
+          ) : null}
+        </Stack>
+      }
       leftSection={
-        <Box
-          w={3}
-          h={22}
-          style={{ borderRadius: 2, backgroundColor: indicatorColor }}
-          aria-hidden
-        />
+        shows('status') ? (
+          <Box
+            w={3}
+            h={22}
+            style={{ borderRadius: 2, backgroundColor: indicatorColor }}
+            aria-hidden
+          />
+        ) : undefined
       }
       rightSection={
-        <Group gap="md" wrap="nowrap">
-          <Badge variant="light" color={STATUS_COLORS[project.status] ?? 'gray'} size="sm">
-            {t(`projectStatus.${project.status}`)}
-          </Badge>
-          <Progress
-            aria-label={t('ui.projectProgress', { progress })}
-            value={progress}
-            w={112}
-            size="sm"
-          />
-          <Text size="xs" c="dimmed" w={92} ta="right" visibleFrom="sm">
-            {project.targetDate ? project.targetDate.slice(0, 10) : t('projectList.noTargetDate')}
-          </Text>
+        <Group gap="xs" wrap="wrap" justify="flex-end">
+          {shows('id') ? (
+            <Text size="xs" c="dimmed">
+              #{project.id}
+            </Text>
+          ) : null}
+          {shows('priority') ? (
+            <Badge variant="light" color="gray" size="sm">
+              {priorityLabel(project.priority)}
+            </Badge>
+          ) : null}
+          {shows('status') ? (
+            <Badge variant="light" color={STATUS_COLORS[project.status] ?? 'gray'} size="sm">
+              {t(`projectStatus.${project.status}`)}
+            </Badge>
+          ) : null}
+          {shows('progress') ? (
+            <Progress
+              aria-label={t('ui.projectProgress', { progress })}
+              value={progress}
+              w={92}
+              size="sm"
+            />
+          ) : null}
+          {shows('startDate') ? (
+            <Text size="xs" c="dimmed">
+              {project.startDate
+                ? formatCalendarDate(project.startDate, i18n.language)
+                : t('projectList.noStartDate')}
+            </Text>
+          ) : null}
+          {shows('targetDate') ? (
+            <Text size="xs" c="dimmed">
+              {project.targetDate
+                ? formatCalendarDate(project.targetDate, i18n.language)
+                : t('projectList.noTargetDate')}
+            </Text>
+          ) : null}
+          {shows('milestones') ? (
+            <Badge variant="outline" color="gray" size="sm">
+              {t('projectList.milestonesCount', { count: project.milestones.length })}
+            </Badge>
+          ) : null}
+          {shows('dependencies') ? (
+            <Badge variant="outline" color="gray" size="sm">
+              {t('projectList.dependenciesCount', { count: project.dependencies?.length ?? 0 })}
+            </Badge>
+          ) : null}
+          {shows('issues') ? (
+            <Badge variant="outline" color="gray" size="sm">
+              {t('projectList.issuesCount', { count: issueCount })}
+            </Badge>
+          ) : null}
+          {shows('labels')
+            ? (project.labels ?? []).slice(0, 2).map((label) => (
+                <Badge key={label} variant="outline" color="gray" size="sm">
+                  {label}
+                </Badge>
+              ))
+            : null}
+          {shows('created') ? (
+            <Text size="xs" c="dimmed">
+              {t('projectList.createdDate', {
+                date: formatCalendarDate(project.createdAt, i18n.language),
+              })}
+            </Text>
+          ) : null}
+          {shows('updated') ? (
+            <Text size="xs" c="dimmed">
+              {t('projectList.updatedDate', {
+                date: formatCalendarDate(project.updatedAt, i18n.language),
+              })}
+            </Text>
+          ) : null}
         </Group>
       }
       styles={{

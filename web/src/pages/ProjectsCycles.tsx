@@ -61,6 +61,8 @@ export function ProjectsPageView({
         projectBoard,
         projectTimeline,
         timelineFocusToday,
+        displayProperties,
+        projectIssueCounts,
         visibleProjectCount,
         isGrouped,
         hasActiveSearch,
@@ -107,13 +109,20 @@ export function ProjectsPageView({
                 </Button>
               </Stack>
             ) : controls.view === 'board' ? (
-              <ProjectBoardView model={projectBoard} showRows={controls.rowsBy !== 'none'} />
+              <ProjectBoardView
+                model={projectBoard}
+                showRows={controls.rowsBy !== 'none'}
+                displayProperties={displayProperties}
+                issueCounts={projectIssueCounts}
+              />
             ) : controls.view === 'timeline' ? (
               <ProjectTimelineView
                 model={projectTimeline}
                 showProjectList={controls.showProjectList}
                 showWeekNumbers={controls.showWeekNumbers}
                 focusToday={timelineFocusToday}
+                displayProperties={displayProperties}
+                issueCounts={projectIssueCounts}
                 grouped={isGrouped}
                 handlers={{
                   onPrevious: handlers.onTimelinePrevious,
@@ -128,14 +137,24 @@ export function ProjectsPageView({
                     <Section key={group.key} title={group.label} ariaLabel={group.label}>
                       <Stack gap={0}>
                         {group.projects.map((project) => (
-                          <ProjectListItem key={project.slug} project={project} />
+                          <ProjectListItem
+                            key={project.slug}
+                            project={project}
+                            displayProperties={displayProperties}
+                            issueCount={projectIssueCounts[project.slug] ?? 0}
+                          />
                         ))}
                       </Stack>
                     </Section>
                   ) : (
                     <Stack key={group.key} gap={0}>
                       {group.projects.map((project) => (
-                        <ProjectListItem key={project.slug} project={project} />
+                        <ProjectListItem
+                          key={project.slug}
+                          project={project}
+                          displayProperties={displayProperties}
+                          issueCount={projectIssueCounts[project.slug] ?? 0}
+                        />
                       ))}
                     </Stack>
                   ),

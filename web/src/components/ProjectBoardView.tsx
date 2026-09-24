@@ -2,6 +2,8 @@ import { Badge, Box, Card, Group, Progress, Stack, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { priorityLabel } from '../i18n/labels.ts';
+import { formatCalendarDate } from '../time.ts';
+import type { ProjectDisplayProperty } from '../project-display.ts';
 import type { Project } from '../types.ts';
 
 export type ProjectBoardModel = {
@@ -12,9 +14,13 @@ export type ProjectBoardModel = {
 export function ProjectBoardView({
   model,
   showRows,
+  displayProperties,
+  issueCounts,
 }: {
   model: ProjectBoardModel;
   showRows: boolean;
+  displayProperties: ProjectDisplayProperty[];
+  issueCounts: Record<string, number>;
 }) {
   const { t } = useTranslation();
   const rowHeaderWidth = showRows ? 144 : 0;
@@ -100,7 +106,12 @@ export function ProjectBoardView({
                     }}
                   >
                     {projects.map((project) => (
-                      <ProjectBoardCard key={project.slug} project={project} />
+                      <ProjectBoardCard
+                        key={project.slug}
+                        project={project}
+                        displayProperties={displayProperties}
+                        issueCount={issueCounts[project.slug] ?? 0}
+                      />
                     ))}
                   </Stack>
                 );
@@ -113,8 +124,17 @@ export function ProjectBoardView({
   );
 }
 
-function ProjectBoardCard({ project }: { project: Project }) {
-  const { t } = useTranslation();
+function ProjectBoardCard({
+  project,
+  displayProperties,
+  issueCount,
+}: {
+  project: Project;
+  displayProperties: ProjectDisplayProperty[];
+  issueCount: number;
+}) {
+  const { t, i18n } = useTranslation();
+  const shows = (property: ProjectDisplayProperty) => displayProperties.includes(property);
   const progress = Math.round(project.progress * 100);
   return (
     <Link
@@ -131,43 +151,99 @@ function ProjectBoardCard({ project }: { project: Project }) {
         style={{ background: 'var(--mantine-color-body)' }}
       >
         <Stack gap="xs">
+          {shows('id') ? (
+            <Text size="xs" c="dimmed">
+              #{project.id}
+            </Text>
+          ) : null}
           <Text size="sm" fw={550} lineClamp={2}>
             {project.name}
           </Text>
-          <Group gap={6} wrap="wrap">
-            <Badge size="xs" variant="light" color="gray">
-              {priorityLabel(project.priority)}
-            </Badge>
-            {(project.labels ?? []).slice(0, 3).map((label) => (
-              <Badge key={label} size="xs" variant="outline" color="gray">
-                {label}
-              </Badge>
-            ))}
-            {(project.labels?.length ?? 0) > 3 ? (
-              <Text size="xs" c="dimmed">
-                +{project.labels!.length - 3}
-              </Text>
-            ) : null}
-          </Group>
-          {project.description ? (
+          {shows('priority') || shows('status') || shows('labels') ? (
+            <Group gap={6} wrap="wrap">
+              {shows('priority') ? (
+                <Badge size="xs" variant="light" color="gray">
+                  {priorityLabel(project.priority)}
+                </Badge>
+              ) : null}
+              {shows('status') ? (
+                <Badge size="xs" variant="light" color="gray">
+                  {t(`projectStatus.${project.status}`)}
+                </Badge>
+              ) : null}
+              {shows('labels')
+                ? (project.labels ?? []).slice(0, 3).map((label) => (
+                    <Badge key={label} size="xs" variant="outline" color="gray">
+                      {label}
+                    </Badge>
+                  ))
+                : null}
+              {shows('labels') && (project.labels?.length ?? 0) > 3 ? (
+                <Text size="xs" c="dimmed">
+                  +{project.labels!.length - 3}
+                </Text>
+              ) : null}
+            </Group>
+          ) : null}
+          {shows('summary') && project.description ? (
             <Text size="xs" c="dimmed" lineClamp={2}>
               {project.description}
             </Text>
           ) : null}
-          <Group gap="xs" wrap="nowrap" align="center">
-            <Progress
-              aria-label={t('ui.projectProgress', { progress })}
-              value={progress}
-              size="xs"
-              flex={1}
-            />
-            <Text size="xs" c="dimmed" w={32} ta="right">
-              {progress}%
-            </Text>
-          </Group>
-          {project.targetDate ? (
+          {shows('milestones') || shows('dependencies') || shows('issues') ? (
+            <Group gap={6} wrap="wrap">
+              {shows('milestones') ? (
+                <Badge size="xs" variant="outline" color="gray">
+                  {t('projectList.milestonesCount', { count: project.milestones.length })}
+                </Badge>
+              ) : null}
+              {shows('dependencies') ? (
+                <Badge size="xs" variant="outline" color="gray">
+                  {t('projectList.dependenciesCount', { count: project.dependencies?.length ?? 0 })}
+                </Badge>
+              ) : null}
+              {shows('issues') ? (
+                <Badge size="xs" variant="outline" color="gray">
+                  {t('projectList.issuesCount', { count: issueCount })}
+                </Badge>
+              ) : null}
+            </Group>
+          ) : null}
+          {shows('progress') ? (
+            <Group gap="xs" wrap="nowrap" align="center">
+              <Progress
+                aria-label={t('ui.projectProgress', { progress })}
+                value={progress}
+                size="xs"
+                flex={1}
+              />
+              <Text size="xs" c="dimmed" w={32} ta="right">
+                {progress}%
+              </Text>
+            </Group>
+          ) : null}
+          {shows('startDate') && project.startDate ? (
             <Text size="xs" c="dimmed">
-              {t('projectList.targetDate')}: {project.targetDate.slice(0, 10)}
+              {t('projectList.startDate')}: {formatCalendarDate(project.startDate, i18n.language)}
+            </Text>
+          ) : null}
+          {shows('targetDate') && project.targetDate ? (
+            <Text size="xs" c="dimmed">
+              {t('projectList.targetDate')}: {formatCalendarDate(project.targetDate, i18n.language)}
+            </Text>
+          ) : null}
+          {shows('created') ? (
+            <Text size="xs" c="dimmed">
+              {t('projectList.createdDate', {
+                date: formatCalendarDate(project.createdAt, i18n.language),
+              })}
+            </Text>
+          ) : null}
+          {shows('updated') ? (
+            <Text size="xs" c="dimmed">
+              {t('projectList.updatedDate', {
+                date: formatCalendarDate(project.updatedAt, i18n.language),
+              })}
             </Text>
           ) : null}
         </Stack>

@@ -20,7 +20,14 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   const timelineStart = localDateKey(startDate);
   const timelineTarget = localDateKey(targetDate);
   const planned = await request.post('/api/projects', {
-    data: { name: plannedName, slug: plannedSlug, status: 'planned', priority: 4, labels: ['Bug'] },
+    data: {
+      name: plannedName,
+      slug: plannedSlug,
+      status: 'planned',
+      priority: 4,
+      labels: ['Bug'],
+      description: `Summary for ${plannedName}`,
+    },
   });
   const started = await request.post('/api/projects', {
     data: {
@@ -42,6 +49,13 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
     },
   });
   expect(planned.ok() && started.ok() && completed.ok()).toBeTruthy();
+  const milestone = await request.post(`/api/projects/${plannedSlug}/milestones`, {
+    data: { name: `Release marker ${stamp}` },
+  });
+  const dependency = await request.post(`/api/projects/${plannedSlug}/dependencies`, {
+    data: { projectSlug: startedSlug, kind: 'blocks' },
+  });
+  expect(milestone.ok() && dependency.ok()).toBeTruthy();
 
   await page.goto('/projects');
   const search = page.getByRole('textbox', { name: 'Search projects' });
@@ -75,6 +89,34 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await page.getByRole('button', { name: /Add filter/ }).click();
   await page.getByRole('button', { name: 'Clear all filters' }).click();
 
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  const milestoneFilter = page.getByRole('combobox', { name: 'Project milestones' });
+  await milestoneFilter.fill(`Release marker ${stamp}`);
+  await page.getByRole('option', { name: `Release marker ${stamp}`, exact: true }).click();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(startedName) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Clear all filters' }).click();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  const relationFilter = page.getByRole('combobox', { name: 'Project relations' });
+  await relationFilter.fill('Blocks');
+  await page.getByRole('option', { name: 'Blocks', exact: true }).click();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(completedName) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Clear all filters' }).click();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('combobox', { name: 'Project date field' }).click();
+  await page.getByRole('option', { name: 'Target date', exact: true }).click();
+  await page.getByLabel('Date from').fill(timelineTarget);
+  await page.getByLabel('Date to').fill(timelineTarget);
+  await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Clear all filters' }).click();
+
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('combobox', { name: 'Show closed projects' }).click();
   await page.getByRole('option', { name: 'Closed', exact: true }).click();
@@ -104,6 +146,18 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
     `a[href="/projects/${startedSlug}"], a[href="/projects/${plannedSlug}"], a[href="/projects/${completedSlug}"]`,
   );
   await expect(orderedRows.first()).toHaveAttribute('href', `/projects/${startedSlug}`);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  const summaryProperty = page.getByRole('checkbox', { name: 'Summary' });
+  await summaryProperty.check();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toContainText(
+    `Summary for ${plannedName}`,
+  );
+  await expect(page).toHaveURL(/displayProperties=/);
+  await page.reload();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(summaryProperty).toBeChecked();
+  await page.getByRole('button', { name: 'Display options' }).click();
 
   await page.getByRole('button', { name: 'Board', exact: true }).click();
   await expect(page).toHaveURL(/view=board/);

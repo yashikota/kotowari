@@ -1,15 +1,20 @@
 import {
   Button,
+  Checkbox,
   Group,
   MultiSelect,
   Popover,
   Select,
+  SimpleGrid,
   Stack,
   Switch,
+  Text,
   TextInput,
 } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import type { Label } from '../types.ts';
+import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
+import type { ProjectDisplayProperty } from '../project-display.ts';
 
 export type ProjectListControlsModel = {
   search: string;
@@ -26,6 +31,13 @@ export type ProjectListControlsModel = {
   showEmptyColumns: boolean;
   showProjectList: boolean;
   showWeekNumbers: boolean;
+  displayProperties: ProjectDisplayProperty[];
+  dateField: string;
+  dateFrom: string;
+  dateTo: string;
+  milestones: string[];
+  relations: string[];
+  availableMilestones: string[];
   availableLabels: Label[];
   filterCount: number;
   handlers: {
@@ -33,6 +45,11 @@ export type ProjectListControlsModel = {
     onStatusesChange: (value: string[]) => void;
     onPrioritiesChange: (value: string[]) => void;
     onLabelsChange: (value: string[]) => void;
+    onDateFieldChange: (value: string | null) => void;
+    onDateFromChange: (value: string) => void;
+    onDateToChange: (value: string) => void;
+    onMilestonesChange: (value: string[]) => void;
+    onRelationsChange: (value: string[]) => void;
     onGroupByChange: (value: string | null) => void;
     onOrderByChange: (value: string | null) => void;
     onDirectionChange: (value: string | null) => void;
@@ -43,6 +60,7 @@ export type ProjectListControlsModel = {
     onShowEmptyColumnsChange: (value: boolean) => void;
     onShowProjectListChange: (value: boolean) => void;
     onShowWeekNumbersChange: (value: boolean) => void;
+    onDisplayPropertyToggle: (property: ProjectDisplayProperty) => void;
     onReset: () => void;
   };
 };
@@ -108,6 +126,61 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
                 { value: 'started', label: t('projectStatus.started') },
                 { value: 'completed', label: t('projectStatus.completed') },
                 { value: 'canceled', label: t('projectStatus.canceled') },
+              ]}
+              searchable
+              comboboxProps={{ withinPortal: false }}
+            />
+            <Select
+              aria-label={t('projectList.filterDateField')}
+              label={t('projectList.filterDates')}
+              placeholder={t('projectList.chooseDateField')}
+              value={model.dateField || null}
+              onChange={handlers.onDateFieldChange}
+              data={[
+                { value: 'startDate', label: t('projectList.orderStartDate') },
+                { value: 'targetDate', label: t('projectList.orderTargetDate') },
+                { value: 'created', label: t('projectList.orderCreated') },
+                { value: 'updated', label: t('projectList.orderUpdated') },
+              ]}
+              clearable
+              comboboxProps={{ withinPortal: false }}
+            />
+            {model.dateField ? (
+              <Group grow>
+                <TextInput
+                  aria-label={t('projectList.dateFrom')}
+                  label={t('projectList.dateFrom')}
+                  type="date"
+                  value={model.dateFrom}
+                  onChange={(event) => handlers.onDateFromChange(event.currentTarget.value)}
+                />
+                <TextInput
+                  aria-label={t('projectList.dateTo')}
+                  label={t('projectList.dateTo')}
+                  type="date"
+                  value={model.dateTo}
+                  onChange={(event) => handlers.onDateToChange(event.currentTarget.value)}
+                />
+              </Group>
+            ) : null}
+            <MultiSelect
+              aria-label={t('projectList.filterMilestones')}
+              label={t('projectList.filterMilestones')}
+              value={model.milestones}
+              onChange={handlers.onMilestonesChange}
+              data={model.availableMilestones}
+              searchable
+              comboboxProps={{ withinPortal: false }}
+            />
+            <MultiSelect
+              aria-label={t('projectList.filterRelations')}
+              label={t('projectList.filterRelations')}
+              value={model.relations}
+              onChange={handlers.onRelationsChange}
+              data={[
+                { value: 'blocks', label: t('projectDependencies.kindOptions.blocks') },
+                { value: 'blocked_by', label: t('projectDependencies.kindOptions.blocked_by') },
+                { value: 'related', label: t('projectDependencies.kindOptions.related') },
               ]}
               searchable
               comboboxProps={{ withinPortal: false }}
@@ -220,6 +293,22 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
                 />
               </>
             ) : null}
+            <Stack gap={4}>
+              <Text size="xs" fw={600} c="dimmed">
+                {t('projectList.displayProperties')}
+              </Text>
+              <SimpleGrid cols={2} spacing={4}>
+                {PROJECT_DISPLAY_PROPERTIES.map((property) => (
+                  <Checkbox
+                    key={property}
+                    size="xs"
+                    label={t(`projectList.property.${property}`)}
+                    checked={model.displayProperties.includes(property)}
+                    onChange={() => handlers.onDisplayPropertyToggle(property)}
+                  />
+                ))}
+              </SimpleGrid>
+            </Stack>
             <Select
               aria-label={t('projectList.orderBy')}
               label={t('projectList.orderBy')}
