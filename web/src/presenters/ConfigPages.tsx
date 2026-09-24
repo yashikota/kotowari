@@ -10,6 +10,8 @@ import { applyLocale } from '../i18n/index.ts';
 import { languageOptions, normalizeWorkspace, resolveLocale } from '../i18n/locale.ts';
 import { timeZoneOptions, systemTimeZone } from '../time.ts';
 import type { Diagnostic, Workspace } from '../types.ts';
+import { isWebCodingToolURLTemplate, useCodingToolPreferences } from '../coding-tools.ts';
+import type { CodingToolPreferences } from '../coding-tools.ts';
 import {
   usePersonalPreferences,
   type CommentSubmitShortcut,
@@ -35,6 +37,11 @@ export function useConfigPagePresenter() {
     useMachineFlag('sidebar-customization');
   const [workspace, setWorkspace] = useState(() => normalizeWorkspace(data.workspace));
   const { preferences, update: updatePreferences } = usePersonalPreferences();
+  const { preferences: codingToolPreferences, update: updateCodingToolPreferences } =
+    useCodingToolPreferences();
+  const [codingToolDraft, setCodingToolDraft] = useState(codingToolPreferences);
+  const [codingToolError, setCodingToolError] = useState('');
+  const [codingToolSaved, setCodingToolSaved] = useState(false);
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -42,6 +49,10 @@ export function useConfigPagePresenter() {
   useEffect(() => {
     setWorkspace(normalizeWorkspace(data.workspace));
   }, [data.workspace]);
+
+  useEffect(() => {
+    setCodingToolDraft(codingToolPreferences);
+  }, [codingToolPreferences]);
 
   const timeZones = useMemo(() => timeZoneOptions(workspace.timezone), [workspace.timezone]);
   const languages = useMemo(
@@ -55,6 +66,9 @@ export function useConfigPagePresenter() {
     timeZones,
     languages,
     preferences,
+    codingToolDraft,
+    codingToolError,
+    codingToolSaved,
     sidebarGroups: sidebarSettingsGroups(preferences).map(({ group, items }) => ({
       group,
       label: t(`config.sidebarGroup.${group}`),
@@ -121,6 +135,55 @@ export function useConfigPagePresenter() {
       onUnderlineLinksChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => updatePreferences({ underlineLinks: e.currentTarget.checked }),
+      onCodingToolEnabledChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        setCodingToolSaved(false);
+        setCodingToolDraft((current) => ({
+          ...current,
+          customLinkEnabled: e.currentTarget.checked,
+        }));
+      },
+      onCodingToolNameChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        setCodingToolSaved(false);
+        setCodingToolDraft((current) => ({ ...current, customLinkName: e.target.value }));
+      },
+      onCodingToolURLChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        setCodingToolSaved(false);
+        setCodingToolDraft((current) => ({ ...current, customLinkURL: e.target.value }));
+      },
+      onCodingToolPromptChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+      ) => {
+        setCodingToolSaved(false);
+        setCodingToolDraft((current) => ({ ...current, promptTemplate: e.target.value }));
+      },
+      onSaveCodingTools: (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const next: CodingToolPreferences = {
+          ...codingToolDraft,
+          customLinkName: codingToolDraft.customLinkName.trim() || 'Custom link',
+          customLinkURL: codingToolDraft.customLinkURL.trim(),
+        };
+        if (!next.promptTemplate.trim()) {
+          setCodingToolError(t('codingTools.promptRequired'));
+          setCodingToolSaved(false);
+          return;
+        }
+        if (next.customLinkEnabled && !isWebCodingToolURLTemplate(next.customLinkURL)) {
+          setCodingToolError(t('codingTools.invalidURL'));
+          setCodingToolSaved(false);
+          return;
+        }
+        setCodingToolError('');
+        setCodingToolDraft(next);
+        updateCodingToolPreferences(next);
+        setCodingToolSaved(true);
+      },
       onOpenSidebarCustomization: () => setSidebarCustomizationOpen(true),
       onCloseSidebarCustomization: () => setSidebarCustomizationOpen(false),
       onSidebarLocationChange: (id: string, value: string | null) => {

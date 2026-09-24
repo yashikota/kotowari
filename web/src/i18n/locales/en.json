@@ -163,6 +163,23 @@
     "diagnostics": "Diagnostics",
     "noDiagnostics": "No diagnostics. Workspace files look consistent."
   },
+  "codingTools": {
+    "heading": "Coding tools",
+    "chooseTool": "Choose coding tool",
+    "configure": "Configure coding tools…",
+    "openWith": "Open with {{name}}",
+    "enableCustomLink": "Enable custom web tool",
+    "name": "Tool name",
+    "url": "Custom link URL",
+    "urlPlaceholder": "https://agent.example/open?prompt=",
+    "urlHint": "Use an HTTP or HTTPS URL and include the prompt placeholder where the issue prompt should go.",
+    "promptTemplate": "Prompt template",
+    "promptHint": "Available values: issue.identifier, issue.title, issue.branchName, and context.",
+    "save": "Save coding tools",
+    "saved": "Coding tool settings saved locally.",
+    "invalidURL": "Enter a valid HTTP or HTTPS URL to enable the custom tool.",
+    "promptRequired": "Prompt template cannot be empty."
+  },
   "modal": {
     "createIssue": "Create issue",
     "createAdr": "Create ADR",

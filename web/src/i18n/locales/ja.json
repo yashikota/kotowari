@@ -161,6 +161,23 @@
     "diagnostics": "診断",
     "noDiagnostics": "診断結果はありません。ワークスペースファイルは整合しています。"
   },
+  "codingTools": {
+    "heading": "コーディングツール",
+    "chooseTool": "コーディングツールを選択",
+    "configure": "コーディングツールを設定…",
+    "openWith": "{{name}}で開く",
+    "enableCustomLink": "カスタムWebツールを有効にする",
+    "name": "ツール名",
+    "url": "カスタムリンクURL",
+    "urlPlaceholder": "https://agent.example/open?prompt=",
+    "urlHint": "HTTPまたはHTTPSのURLを指定し、イシュープロンプトを渡す位置にprompt用プレースホルダーを含めます。",
+    "promptTemplate": "プロンプトテンプレート",
+    "promptHint": "利用できる値：issue.identifier、issue.title、issue.branchName、context",
+    "save": "コーディングツールを保存",
+    "saved": "コーディングツール設定をこのデバイスに保存しました。",
+    "invalidURL": "カスタムツールを有効にするには有効なHTTPまたはHTTPS URLを入力してください。",
+    "promptRequired": "プロンプトテンプレートは空にできません。"
+  },
   "modal": {
     "createIssue": "イシューを作成",
     "createAdr": "ADR を作成",

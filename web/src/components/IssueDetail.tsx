@@ -16,6 +16,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import {
+  IconCopy,
   IconDotsVertical,
   IconExternalLink,
   IconFileText,
@@ -125,6 +126,8 @@ export function IssueDetailView({
         relationKind,
         relationIssues,
         relationTargetOptions,
+        codingToolName,
+        codingToolURL,
         handlers,
       } = model;
       return (
@@ -193,6 +196,39 @@ export function IssueDetailView({
               ) : null}
               {issue.archivedAt ? <MetaBadge>{t('issueActions.archivedBadge')}</MetaBadge> : null}
             </Group>
+            <Button
+              type="button"
+              variant="default"
+              leftSection={<IconCopy size={14} />}
+              onClick={handlers.Copy_prompt_onClick41}
+            >
+              {t('issueActions.copyPrompt')}
+            </Button>
+            <Menu position="bottom-end" shadow="md" withinPortal>
+              <Menu.Target>
+                <Button
+                  type="button"
+                  variant="default"
+                  leftSection={<IconExternalLink size={14} />}
+                >
+                  {t('codingTools.chooseTool')}
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown aria-label={t('codingTools.chooseTool')}>
+                <Menu.Item onClick={handlers.Copy_prompt_onClick41}>
+                  {t('issueActions.copyPrompt')}
+                </Menu.Item>
+                {codingToolURL ? (
+                  <Menu.Item onClick={handlers.onOpenCodingTool}>
+                    {t('codingTools.openWith', { name: codingToolName })}
+                  </Menu.Item>
+                ) : null}
+                <Menu.Divider />
+                <Menu.Item onClick={handlers.onOpenCodingToolSettings}>
+                  {t('codingTools.configure')}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
             <Menu
               position="bottom-end"
               shadow="md"

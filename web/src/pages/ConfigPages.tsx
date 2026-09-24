@@ -10,6 +10,7 @@ import {
   Select,
   Stack,
   Text,
+  Textarea,
   TextInput,
   Title,
 } from '@mantine/core';
@@ -34,6 +35,9 @@ export function ConfigPageView({
         timeZones,
         languages,
         preferences,
+        codingToolDraft,
+        codingToolError,
+        codingToolSaved,
         sidebarGroups,
         sidebarCustomizationOpen,
         colorScheme,
@@ -164,6 +168,61 @@ export function ConfigPageView({
                     {t('config.preferencesSavedLocally')}
                   </Text>
                 </Stack>
+              </Stack>
+
+              <Stack gap="md" component="section" aria-label={t('codingTools.heading')}>
+                <Title order={4}>{t('codingTools.heading')}</Title>
+                {codingToolError ? (
+                  <Alert color="red" variant="light">
+                    {codingToolError}
+                  </Alert>
+                ) : null}
+                {codingToolSaved ? (
+                  <Alert color="green" variant="light">
+                    {t('codingTools.saved')}
+                  </Alert>
+                ) : null}
+                <Box component="form" onSubmit={handlers.onSaveCodingTools}>
+                  <Stack gap="md" maw={480}>
+                    <Checkbox
+                      label={t('codingTools.enableCustomLink')}
+                      checked={codingToolDraft.customLinkEnabled}
+                      onChange={handlers.onCodingToolEnabledChange}
+                    />
+                    <TextInput
+                      label={t('codingTools.name')}
+                      value={codingToolDraft.customLinkName}
+                      onChange={handlers.onCodingToolNameChange}
+                    />
+                    <TextInput
+                      label={t('codingTools.url')}
+                      placeholder={t('codingTools.urlPlaceholder')}
+                      value={codingToolDraft.customLinkURL}
+                      onChange={handlers.onCodingToolURLChange}
+                    />
+                    <Text size="xs" c="dimmed">
+                      {t('codingTools.urlHint')}
+                    </Text>
+                    <Textarea
+                      required
+                      maxLength={10000}
+                      minRows={6}
+                      autosize
+                      label={t('codingTools.promptTemplate')}
+                      value={codingToolDraft.promptTemplate}
+                      onChange={handlers.onCodingToolPromptChange}
+                    />
+                    <Text size="xs" c="dimmed">
+                      {t('codingTools.promptHint')}
+                    </Text>
+                    <Group>
+                      <Button type="submit">{t('codingTools.save')}</Button>
+                    </Group>
+                  </Stack>
+                </Box>
+                <Text size="xs" c="dimmed">
+                  {t('config.preferencesSavedLocally')}
+                </Text>
               </Stack>
 
               <Stack gap="md" component="section" aria-label={t('config.application')}>

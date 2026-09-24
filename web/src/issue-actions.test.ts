@@ -53,7 +53,8 @@ describe('issue actions', () => {
   });
 
   it('creates a self-contained coding prompt', () => {
-    expect(issuePrompt(sample)).toContain('Help me work on KOT-4: Improve issue navigation');
+    expect(issuePrompt(sample)).toContain('Work on Linear issue KOT-4:');
+    expect(issuePrompt(sample)).toContain('Suggested branch name: kot-4-improve-issue-navigation');
     expect(issuePrompt(sample)).toContain('Keep issue context visible.');
     expect(issuePrompt(sample)).toContain('Due date: 2026-10-02');
   });

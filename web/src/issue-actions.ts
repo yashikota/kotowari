@@ -41,16 +41,23 @@ export function issueMarkdown(issue: Issue, url: string, everything = false): st
   return `${sections.join('\n\n')}\n`;
 }
 
+export const DEFAULT_CODING_PROMPT_TEMPLATE =
+  'Work on Linear issue {{issue.identifier}}:\nSuggested branch name: {{issue.branchName}}\n{{context}}';
+
+export function renderIssuePrompt(issue: Issue, template: string, issueURL: string): string {
+  const values: Record<string, string> = {
+    'issue.identifier': issue.identifier,
+    'issue.title': issue.title,
+    'issue.branchName': issueBranchName(issue),
+    context: issueMarkdown(issue, issueURL, true).trim(),
+  };
+  return template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (_match, key: string) => values[key] ?? '');
+}
+
 export function issuePrompt(issue: Issue): string {
-  const description = issue.body.trim();
-  const properties = [
-    `Status: ${issue.status}`,
-    `Priority: ${issue.priority}`,
-    issue.type ? `Type: ${issue.type}` : '',
-    issue.projectSlug ? `Project: ${issue.projectSlug}` : '',
-    issue.dueDate ? `Due date: ${issue.dueDate}` : '',
-  ].filter(Boolean);
-  return [`Help me work on ${issue.identifier}: ${issue.title}`, description, properties.join('\n')]
-    .filter(Boolean)
-    .join('\n\n');
+  return renderIssuePrompt(
+    issue,
+    DEFAULT_CODING_PROMPT_TEMPLATE,
+    `/issues/${encodeURIComponent(issue.identifier)}`,
+  );
 }

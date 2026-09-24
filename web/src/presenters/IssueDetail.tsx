@@ -3,7 +3,8 @@ import { useNavigate, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.ts';
-import { issueBranchName, issueMarkdown, issuePrompt } from '../issue-actions.ts';
+import { issueBranchName, issueMarkdown, renderIssuePrompt } from '../issue-actions.ts';
+import { buildCodingToolURL, useCodingToolPreferences } from '../coding-tools.ts';
 import { cachedIssue, useIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
 import { useIntent } from '../application/Root.tsx';
@@ -41,6 +42,7 @@ type Props = {
 export function useIssueDetailPresenter({ identifier }: Props) {
   const sendIntent = useIntent();
   const { preferences } = usePersonalPreferences();
+  const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const navigate = useNavigate();
   const router = useRouter();
   const [storedIssue, setIssue] = useState<Issue | null>(() => cachedIssue(identifier));
@@ -223,6 +225,11 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       candidate.id !== issue.id &&
       !issue.relations.some((relation) => relation.targetIdentifier === candidate.identifier),
   );
+  const issueURL =
+    typeof window === 'undefined'
+      ? `/issues/${encodeURIComponent(identifier)}`
+      : new URL(`/issues/${encodeURIComponent(identifier)}`, window.location.origin).href;
+  const codingToolURL = buildCodingToolURL(issue, codingToolPreferences, issueURL);
   const markAsForbiddenIds = new Set<number>();
   if (markAsKind === 'parentOf') {
     let ancestorId = issue.parentId;
@@ -677,6 +684,8 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     relationKind,
     relationIssues,
     relationTargetOptions,
+    codingToolName: codingToolPreferences.customLinkName,
+    codingToolURL,
     timeZone,
     copied,
     historyRequest,
@@ -839,7 +848,12 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       Copy_issue_markdown_onClick38: () => copyText(issueMarkdown(issue, window.location.href)),
       Copy_everything_onClick39: () => copyText(issueMarkdown(issue, window.location.href, true)),
       Copy_branch_onClick40: () => copyText(issueBranchName(issue)),
-      Copy_prompt_onClick41: () => copyText(issuePrompt(issue)),
+      Copy_prompt_onClick41: () =>
+        copyText(renderIssuePrompt(issue, codingToolPreferences.promptTemplate, issueURL)),
+      onOpenCodingTool: () => {
+        if (codingToolURL) window.open(codingToolURL, '_blank', 'noopener,noreferrer');
+      },
+      onOpenCodingToolSettings: () => navigate({ to: '/config' }),
       Make_copy_onClick42: () => makeCopy(),
       onOpenCreateRelated: (kind: RelatedIssueKind) => {
         setIssueOptionsOpen(false);
