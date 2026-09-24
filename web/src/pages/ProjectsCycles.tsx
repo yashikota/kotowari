@@ -24,6 +24,7 @@ import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
 import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
+import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
 import { priorityLabel } from '../i18n/labels.ts';
@@ -76,6 +77,8 @@ export function ProjectsPageView({
         availableLabels,
         name,
         summary,
+        icon,
+        iconColor,
         description,
         status,
         priority,
@@ -182,16 +185,25 @@ export function ProjectsPageView({
             >
               <Box component="form" onSubmit={handlers.onSubmit0}>
                 <Stack>
-                  <TextInput
-                    ref={projectNameRef}
-                    autoFocus
-                    required
-                    maxLength={120}
-                    aria-label={t('modal.projectName')}
-                    label={t('modal.projectName')}
-                    value={name}
-                    onChange={handlers.New_project_name_onChange1}
-                  />
+                  <Group align="flex-end" wrap="nowrap">
+                    <ProjectIconPicker
+                      icon={icon}
+                      color={iconColor}
+                      onChange={handlers.onProjectIconChange}
+                      onColorChange={handlers.onProjectIconColorChange}
+                    />
+                    <TextInput
+                      ref={projectNameRef}
+                      autoFocus
+                      required
+                      maxLength={120}
+                      style={{ flex: 1 }}
+                      aria-label={t('modal.projectName')}
+                      label={t('modal.projectName')}
+                      value={name}
+                      onChange={handlers.New_project_name_onChange1}
+                    />
+                  </Group>
                   <TextInput
                     label={t('modal.projectSummary')}
                     value={summary}
@@ -415,7 +427,19 @@ export function ProjectDetailPageView({
           <SplitLayout single>
             <Pane single>
               <PageHeader
-                title={project.name}
+                title={
+                  <Group gap="xs" wrap="nowrap">
+                    <ProjectIconPicker
+                      icon={project.icon}
+                      color={project.iconColor}
+                      onChange={handlers.onProjectIconChange}
+                      onColorChange={handlers.onProjectIconColorChange}
+                    />
+                    <Text component="span" size="sm" fw={550} truncate>
+                      {project.name}
+                    </Text>
+                  </Group>
+                }
                 actions={
                   <Group gap="xs" wrap="wrap">
                     <NativeSelect

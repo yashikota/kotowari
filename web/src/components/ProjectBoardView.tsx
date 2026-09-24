@@ -5,6 +5,7 @@ import { priorityLabel } from '../i18n/labels.ts';
 import { formatCalendarDate } from '../time.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import type { Project } from '../types.ts';
+import { ProjectIconMark } from './ProjectIcon.tsx';
 
 export type ProjectBoardModel = {
   columns: { key: string; label: string }[];
@@ -156,9 +157,12 @@ function ProjectBoardCard({
               #{project.id}
             </Text>
           ) : null}
-          <Text size="sm" fw={550} lineClamp={2}>
-            {project.name}
-          </Text>
+          <Group gap="xs" wrap="nowrap" align="flex-start">
+            <ProjectIconMark icon={project.icon} color={project.iconColor} size={18} />
+            <Text size="sm" fw={550} lineClamp={2}>
+              {project.name}
+            </Text>
+          </Group>
           {shows('priority') || shows('status') || shows('health') || shows('labels') ? (
             <Group gap={6} wrap="wrap">
               {shows('priority') ? (

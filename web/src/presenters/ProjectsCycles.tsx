@@ -55,6 +55,8 @@ export function useProjectsPagePresenter() {
   const search = useSearch({ from: '/projects' });
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
+  const [icon, setIcon] = useState('');
+  const [iconColor, setIconColor] = useState('grey');
   const [description, setDescription] = useState('');
   const [status, setStatus] =
     useState<(typeof import('../types.ts').PROJECT_STATUSES)[number]>('planned');
@@ -563,6 +565,8 @@ export function useProjectsPagePresenter() {
       name: projectName,
       slug,
       summary,
+      icon,
+      iconColor,
       description,
       status,
       priority,
@@ -597,6 +601,8 @@ export function useProjectsPagePresenter() {
     availableLabels: data.labels,
     name,
     summary,
+    icon,
+    iconColor,
     description,
     status,
     priority,
@@ -627,6 +633,8 @@ export function useProjectsPagePresenter() {
       onOpenCreateProject: () => {
         setName('');
         setSummary('');
+        setIcon('');
+        setIconColor('grey');
         setDescription('');
         setStatus('planned');
         setPriority(0);
@@ -642,6 +650,8 @@ export function useProjectsPagePresenter() {
       New_project_summary_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setSummary(e.target.value),
+      onProjectIconChange: (value: string) => setIcon(value),
+      onProjectIconColorChange: (value: string) => setIconColor(value),
       New_project_description_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setDescription(e.target.value),
@@ -698,6 +708,8 @@ export function useProjectDetailPagePresenter() {
       const locallyEditable = [
         'name',
         'summary',
+        'icon',
+        'iconColor',
         'description',
         'status',
         'health',
@@ -807,6 +819,8 @@ export function useProjectDetailPagePresenter() {
       },
       Project_summary_onBlur: (e: React.FocusEvent<HTMLInputElement>) =>
         save({ summary: e.currentTarget.value }),
+      onProjectIconChange: (value: string) => save({ icon: value }),
+      onProjectIconColorChange: (value: string) => save({ iconColor: value }),
       Start_date_onChange5: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => save(e.target.value ? { startDate: e.target.value } : { clearStartDate: true }),

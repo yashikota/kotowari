@@ -42,6 +42,8 @@ type Project struct {
 	Name         string              `json:"name" toml:"name"`
 	Slug         string              `json:"slug" toml:"slug"`
 	Summary      string              `json:"summary" toml:"summary,omitempty"`
+	Icon         string              `json:"icon,omitempty" toml:"icon,omitempty"`
+	IconColor    string              `json:"iconColor,omitempty" toml:"icon_color,omitempty"`
 	Description  string              `json:"description" toml:"description"`
 	Status       string              `json:"status" toml:"status"`
 	Health       string              `json:"health,omitempty" toml:"health,omitempty"`

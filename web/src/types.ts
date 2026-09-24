@@ -93,6 +93,8 @@ export type Project = {
   name: string;
   slug: string;
   summary?: string;
+  icon?: string;
+  iconColor?: string;
   description: string;
   status: string;
   health?: ProjectHealth | null;

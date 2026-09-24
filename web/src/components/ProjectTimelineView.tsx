@@ -6,6 +6,7 @@ import type { Project } from '../types.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { formatCalendarDate } from '../time.ts';
 import { priorityLabel } from '../i18n/labels.ts';
+import { ProjectIconMark } from './ProjectIcon.tsx';
 
 export type ProjectTimelineModel = {
   startMonth: string;
@@ -300,8 +301,16 @@ function ProjectTimelineProjectLabel({
         <Link
           to="/projects/$slug"
           params={{ slug: project.slug }}
-          style={{ color: 'inherit', textDecoration: 'none', minWidth: 0 }}
+          style={{
+            color: 'inherit',
+            textDecoration: 'none',
+            minWidth: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--mantine-spacing-xs)',
+          }}
         >
+          <ProjectIconMark icon={project.icon} color={project.iconColor} size={18} />
           <Text size="sm" truncate>
             {project.name}
           </Text>

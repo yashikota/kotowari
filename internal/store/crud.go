@@ -169,6 +169,10 @@ func (s *Store) CreateProjectWithPriorityAndLabels(name, slug, description, stat
 }
 
 func (s *Store) CreateProjectWithSummaryAndLabels(name, slug, summary, description, status string, priority int, start, target *string, labels []string) (Project, error) {
+	return s.CreateProjectWithAppearance(name, slug, summary, "", "", description, status, priority, start, target, labels)
+}
+
+func (s *Store) CreateProjectWithAppearance(name, slug, summary, icon, iconColor, description, status string, priority int, start, target *string, labels []string) (Project, error) {
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
@@ -185,6 +189,9 @@ func (s *Store) CreateProjectWithSummaryAndLabels(name, slug, summary, descripti
 	}
 	if !domain.ValidPriority(priority) {
 		return Project{}, validationf("invalid priority")
+	}
+	if !validProjectIcon(icon) || !validProjectIconColor(iconColor) {
+		return Project{}, validationf("invalid project appearance")
 	}
 	if !validMilestoneDate(start) || !validMilestoneDate(target) {
 		return Project{}, validationf("project dates must use YYYY-MM-DD")
@@ -204,7 +211,7 @@ func (s *Store) CreateProjectWithSummaryAndLabels(name, slug, summary, descripti
 			return err
 		}
 		out = Project{
-			ID: m.nextID(), Name: name, Slug: slug, Summary: summary, Description: description, Status: status,
+			ID: m.nextID(), Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: status,
 			Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
 			Labels: projectLabels, Dependencies: []ProjectDependency{}, Milestones: []Milestone{}, CreatedAt: now, UpdatedAt: now,
 		}
@@ -214,6 +221,49 @@ func (s *Store) CreateProjectWithSummaryAndLabels(name, slug, summary, descripti
 		return nil
 	})
 	return out, err
+}
+
+func validProjectIcon(icon string) bool {
+	if icon == "" {
+		return true
+	}
+	_, ok := projectIcons[icon]
+	return ok
+}
+
+func validProjectIconColor(color string) bool {
+	if color == "" {
+		return true
+	}
+	if _, ok := projectIconColors[color]; ok {
+		return true
+	}
+	if len(color) != 7 || color[0] != '#' {
+		return false
+	}
+	for _, c := range color[1:] {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
+var projectIcons = map[string]struct{}{
+	"folder": {}, "rocket": {}, "bolt": {}, "book": {}, "bug": {}, "briefcase": {}, "building": {},
+	"calendar": {}, "chart-bar": {}, "code": {}, "coffee": {}, "compass": {}, "cpu": {}, "database": {},
+	"desktop": {}, "diamond": {}, "flame": {}, "flask": {}, "heart": {}, "home": {}, "leaf": {}, "lock": {},
+	"map": {}, "message": {}, "moon": {}, "palette": {}, "puzzle": {}, "shield": {}, "sparkles": {},
+	"star": {}, "sun": {}, "target": {}, "terminal": {}, "tools": {}, "trophy": {}, "world": {},
+	"emoji:rocket": {}, "emoji:star": {}, "emoji:sparkles": {}, "emoji:fire": {}, "emoji:lightning": {},
+	"emoji:bug": {}, "emoji:books": {}, "emoji:bulb": {}, "emoji:heart": {}, "emoji:leaf": {}, "emoji:globe": {},
+	"emoji:moon": {}, "emoji:sun": {}, "emoji:rainbow": {}, "emoji:gem": {}, "emoji:coffee": {}, "emoji:computer": {},
+	"emoji:paint": {}, "emoji:target": {}, "emoji:construction": {}, "emoji:package": {}, "emoji:seedling": {},
+	"emoji:wave": {}, "emoji:mountain": {}, "emoji:music": {}, "emoji:camera": {}, "emoji:airplane": {},
+}
+
+var projectIconColors = map[string]struct{}{
+	"grey": {}, "blue": {}, "purple": {}, "pink": {}, "red": {}, "orange": {}, "yellow": {}, "green": {},
 }
 
 func canonicalProjectLabels(m *mem, labels []string) ([]string, error) {
@@ -504,6 +554,10 @@ func (s *Store) UpdateProject(slug string, name, description, status, health *st
 }
 
 func (s *Store) UpdateProjectWithSummary(slug string, name, summary, description, status, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
+	return s.UpdateProjectWithAppearance(slug, name, summary, nil, nil, description, status, health, priority, start, target, labels)
+}
+
+func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, iconColor, description, status, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)
@@ -523,6 +577,18 @@ func (s *Store) UpdateProjectWithSummary(slug string, name, summary, description
 		}
 		if summary != nil {
 			p.Summary = *summary
+		}
+		if icon != nil {
+			if !validProjectIcon(*icon) {
+				return validationf("invalid project icon")
+			}
+			p.Icon = *icon
+		}
+		if iconColor != nil {
+			if !validProjectIconColor(*iconColor) {
+				return validationf("invalid project icon color")
+			}
+			p.IconColor = *iconColor
 		}
 		if status != nil {
 			if !domain.ValidProjectStatus(*status) {

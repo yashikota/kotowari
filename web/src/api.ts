@@ -156,6 +156,8 @@ export const api = {
     name: string;
     slug: string;
     summary?: string;
+    icon?: string;
+    iconColor?: string;
     description?: string;
     status?: string;
     priority?: number;

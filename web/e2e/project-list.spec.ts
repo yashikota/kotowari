@@ -400,6 +400,9 @@ test('project summary is distinct from description through creation and editing'
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'New project' }).first().click();
+  await page.getByRole('button', { name: 'Choose project icon' }).click();
+  await page.getByRole('button', { name: 'Choose Purple icon color' }).click();
+  await page.getByRole('button', { name: 'Rocket', exact: true }).click();
   await page.getByLabel('Project name').fill(name);
   await page.getByLabel('Summary').fill(summary);
   await page.getByLabel('Description').fill(description);
@@ -407,6 +410,8 @@ test('project summary is distinct from description through creation and editing'
   await expect(page).toHaveURL(/\/projects\/[^/]+$/);
   const projectSlug = new URL(page.url()).pathname.split('/').pop();
   if (!projectSlug) throw new Error('expected created project route');
+  const createdResponse = await request.get(`/api/projects/${projectSlug}`);
+  await expect(await createdResponse.json()).toMatchObject({ icon: 'rocket', iconColor: 'purple' });
 
   const summaryField = page.getByLabel('Project summary');
   const descriptionField = page.getByLabel('Project description');
@@ -414,13 +419,20 @@ test('project summary is distinct from description through creation and editing'
   await expect(descriptionField).toHaveValue(description);
   await summaryField.fill(revisedSummary);
   await expect(summaryField).toHaveValue(revisedSummary);
+  await page.getByRole('button', { name: 'Choose project icon' }).click();
+  await page.getByRole('tab', { name: 'Emojis' }).click();
+  await page.getByRole('button', { name: 'Package', exact: true }).click();
   await descriptionField.click();
   await expect
     .poll(async () => {
       const response = await request.get(`/api/projects/${projectSlug}`);
-      return (await response.json()).summary;
+      return await response.json();
     })
-    .toBe(revisedSummary);
+    .toMatchObject({
+      summary: revisedSummary,
+      icon: 'emoji:package',
+      iconColor: 'purple',
+    });
   await page.reload();
   await expect(summaryField).toHaveValue(revisedSummary);
   await expect(descriptionField).toHaveValue(description);

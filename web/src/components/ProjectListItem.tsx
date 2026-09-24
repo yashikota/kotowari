@@ -5,6 +5,7 @@ import { formatCalendarDate } from '../time.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type { Project } from '../types.ts';
+import { ProjectIconMark } from './ProjectIcon.tsx';
 
 const STATUS_COLORS: Record<string, string> = {
   started: 'indigo',
@@ -50,14 +51,17 @@ export function ProjectListItem({
         </Stack>
       }
       leftSection={
-        shows('status') ? (
-          <Box
-            w={3}
-            h={22}
-            style={{ borderRadius: 2, backgroundColor: indicatorColor }}
-            aria-hidden
-          />
-        ) : undefined
+        <Group gap="sm" wrap="nowrap">
+          <ProjectIconMark icon={project.icon} color={project.iconColor} />
+          {shows('status') ? (
+            <Box
+              w={3}
+              h={22}
+              style={{ borderRadius: 2, backgroundColor: indicatorColor }}
+              aria-hidden
+            />
+          ) : null}
+        </Group>
       }
       rightSection={
         <Group gap="xs" wrap="wrap" justify="flex-end">

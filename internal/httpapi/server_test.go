@@ -111,30 +111,36 @@ func TestCreateProjectAcceptsKnownLabelsAndRejectsUnknownLabels(t *testing.T) {
 
 func TestProjectSummaryCanBeCreatedAndUpdatedIndependently(t *testing.T) {
 	s := testAPI(t)
-	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch","summary":"Ship the first release","description":"Detailed release plan"}`)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch","summary":"Ship the first release","icon":"rocket","iconColor":"purple","description":"Detailed release plan"}`)
 	if created.Code != http.StatusCreated {
 		t.Fatalf("create project %d %s", created.Code, created.Body.String())
 	}
 	var project struct {
 		Summary     string `json:"summary"`
+		Icon        string `json:"icon"`
+		IconColor   string `json:"iconColor"`
 		Description string `json:"description"`
 	}
 	if err := json.Unmarshal(created.Body.Bytes(), &project); err != nil {
 		t.Fatal(err)
 	}
-	if project.Summary != "Ship the first release" || project.Description != "Detailed release plan" {
+	if project.Summary != "Ship the first release" || project.Description != "Detailed release plan" || project.Icon != "rocket" || project.IconColor != "purple" {
 		t.Fatalf("project details = %#v", project)
 	}
 
-	updated := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"summary":"Release is ready"}`)
+	updated := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"summary":"Release is ready","icon":"emoji:package","iconColor":"#fa923e"}`)
 	if updated.Code != http.StatusOK {
 		t.Fatalf("update project %d %s", updated.Code, updated.Body.String())
 	}
 	if err := json.Unmarshal(updated.Body.Bytes(), &project); err != nil {
 		t.Fatal(err)
 	}
-	if project.Summary != "Release is ready" || project.Description != "Detailed release plan" {
+	if project.Summary != "Release is ready" || project.Description != "Detailed release plan" || project.Icon != "emoji:package" || project.IconColor != "#fa923e" {
 		t.Fatalf("updated project details = %#v", project)
+	}
+	invalid := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"icon":"script"}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid icon status %d body %s", invalid.Code, invalid.Body.String())
 	}
 }
 
