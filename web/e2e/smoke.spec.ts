@@ -35,7 +35,11 @@ test('archive and restore an issue', async ({ page, request }) => {
   );
 
   await page.getByRole('link', { name: 'Back to issues' }).click();
-  await page.getByRole('tab', { name: 'Archived' }).click();
+  await expandMoreNavigation(page);
+  await page
+    .getByRole('navigation', { name: 'More' })
+    .getByRole('link', { name: 'Archived issues', exact: true })
+    .click();
   const archivedIssue = page.getByRole('option', { name: new RegExp(identifier) });
   await expect(archivedIssue).toBeVisible();
   await page.goto(`/issues/${identifier}`);

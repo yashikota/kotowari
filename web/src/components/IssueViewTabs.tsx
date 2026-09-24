@@ -18,7 +18,6 @@ export function IssueViewTabs({
     { value: 'active', label: t('issueViews.active') },
     { value: 'backlog', label: t('issueViews.backlog') },
     { value: 'all', label: t('issueViews.all') },
-    { value: 'archived', label: t('issueViews.archived') },
   ];
   return (
     <Group
@@ -31,7 +30,7 @@ export function IssueViewTabs({
       style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
     >
       <Tabs
-        value={value}
+        value={value === 'archived' ? null : value}
         onChange={onChange}
         variant="default"
         styles={{

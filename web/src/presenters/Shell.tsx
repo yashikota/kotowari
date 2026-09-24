@@ -273,7 +273,8 @@ export function useShellPresenter() {
     if (pathname === '/reminders') return 'Reminders';
     if (pathname === '/templates') return 'Templates';
     if (pathname === '/recurring') return 'Recurring issues';
-    if (pathname === '/issues') return 'Issues';
+    if (pathname === '/issues' && routeSearch.archived) return t('issueViews.archived');
+    if (pathname === '/issues') return t('nav.issues');
     if (pathname.startsWith('/issues/'))
       return pathname.slice('/issues/'.length).split('/')[0] ?? 'Issue';
     if (pathname === '/board') return 'Board';

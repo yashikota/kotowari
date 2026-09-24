@@ -21,6 +21,7 @@ import {
 } from '@mantine/core';
 import {
   IconBook,
+  IconArchive,
   IconBell,
   IconChevronRight,
   IconCircleDot,
@@ -288,6 +289,12 @@ export function ShellView({
                               leftSection={NAV_ICONS[item.to as string]}
                             />
                           ))}
+                          <RouterNavLink
+                            to="/issues"
+                            search={{ archived: true }}
+                            label={t('nav.archivedIssues')}
+                            leftSection={<IconArchive size={14} aria-hidden />}
+                          />
                         </Stack>
                       ) : null}
                     </Stack>

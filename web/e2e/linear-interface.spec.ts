@@ -38,6 +38,7 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
     'aria-selected',
     'true',
   );
+  await expect(page.getByRole('tab', { name: 'Archived' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Search' }).first()).toBeVisible();
   const allIssuesTab = page.getByRole('tab', { name: 'All issues' });
   const backlogTab = page.getByRole('tab', { name: 'Backlog' });

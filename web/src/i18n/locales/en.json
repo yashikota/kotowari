@@ -4,6 +4,7 @@
     "reminders": "Reminders",
     "agent": "Agent",
     "issues": "Issues",
+    "archivedIssues": "Archived issues",
     "board": "Board",
     "adrs": "ADRs",
     "projects": "Projects",

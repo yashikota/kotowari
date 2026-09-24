@@ -4,6 +4,7 @@
     "reminders": "リマインダー",
     "agent": "AI エージェント",
     "issues": "イシュー",
+    "archivedIssues": "アーカイブ済みイシュー",
     "board": "ボード",
     "adrs": "ADR",
     "projects": "プロジェクト",
