@@ -292,6 +292,22 @@
     "empty": "プロジェクト依存関係はありません。",
     "remove": "{{project}}への依存関係を削除"
   },
+  "projectActivity": {
+    "heading": "アクティビティ",
+    "empty": "プロジェクトの変更がここに表示されます。",
+    "events": {
+      "created": "プロジェクトを作成しました",
+      "updated": "プロジェクトを更新しました",
+      "statusChanged": "ステータスを{{from}}から{{to}}に変更しました",
+      "healthChanged": "ヘルスを{{from}}から{{to}}に変更しました",
+      "priorityChanged": "優先度を{{from}}から{{to}}に変更しました",
+      "dependencyAdded": "依存関係を追加しました：{{project}}",
+      "dependencyRemoved": "依存関係を削除しました：{{project}}",
+      "milestoneCreated": "マイルストーンを追加しました：{{name}}",
+      "milestoneUpdated": "マイルストーンを更新しました：{{name}}",
+      "milestoneDeleted": "マイルストーンを削除しました：{{name}}"
+    }
+  },
   "projectIcons": {
     "choose": "プロジェクトアイコンを選択",
     "iconsTab": "アイコン",

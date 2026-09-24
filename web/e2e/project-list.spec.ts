@@ -433,7 +433,13 @@ test('project summary is distinct from description through creation and editing'
       icon: 'emoji:package',
       iconColor: 'purple',
     });
+  await page.getByLabel('Project status').selectOption('started');
+  await expect(page.getByText('Status changed from Planned to In progress')).toBeVisible();
+  await page.getByLabel('Health').selectOption('at_risk');
+  await expect(page.getByText('Health changed from No update to At risk')).toBeVisible();
   await page.reload();
   await expect(summaryField).toHaveValue(revisedSummary);
   await expect(descriptionField).toHaveValue(description);
+  await expect(page.getByText('Status changed from Planned to In progress')).toBeVisible();
+  await expect(page.getByText('Health changed from No update to At risk')).toBeVisible();
 });

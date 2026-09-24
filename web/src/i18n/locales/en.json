@@ -294,6 +294,22 @@
     "empty": "No project dependencies yet.",
     "remove": "Remove dependency on {{project}}"
   },
+  "projectActivity": {
+    "heading": "Activity",
+    "empty": "Project changes will appear here.",
+    "events": {
+      "created": "Project created",
+      "updated": "Project updated",
+      "statusChanged": "Status changed from {{from}} to {{to}}",
+      "healthChanged": "Health changed from {{from}} to {{to}}",
+      "priorityChanged": "Priority changed from {{from}} to {{to}}",
+      "dependencyAdded": "Dependency added: {{project}}",
+      "dependencyRemoved": "Dependency removed: {{project}}",
+      "milestoneCreated": "Milestone added: {{name}}",
+      "milestoneUpdated": "Milestone updated: {{name}}",
+      "milestoneDeleted": "Milestone removed: {{name}}"
+    }
+  },
   "projectIcons": {
     "choose": "Choose project icon",
     "iconsTab": "Icons",

@@ -85,6 +85,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/labels", s.createLabel)
 	s.mux.HandleFunc("GET /api/projects", s.listProjects)
 	s.mux.HandleFunc("POST /api/projects", s.createProject)
+	s.mux.HandleFunc("GET /api/projects/{slug}/activities", s.listProjectActivities)
 	s.mux.HandleFunc("GET /api/projects/{slug}", s.getProject)
 	s.mux.HandleFunc("PATCH /api/projects/{slug}", s.patchProject)
 	s.mux.HandleFunc("DELETE /api/projects/{slug}", s.deleteProject)
@@ -845,6 +846,15 @@ func (s *Server) addComment(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) listActivities(w http.ResponseWriter, r *http.Request) {
 	out, err := s.store.ListActivities(r.PathValue("id"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) listProjectActivities(w http.ResponseWriter, r *http.Request) {
+	out, err := s.store.ListProjectActivities(r.PathValue("slug"))
 	if err != nil {
 		writeError(w, err)
 		return

@@ -152,6 +152,7 @@ export const api = {
   activities: (id: string) => req<Activity[]>(`/api/issues/${id}/activities`),
   projects: () => req<Project[]>('/api/projects'),
   project: (slug: string) => req<Project>(`/api/projects/${slug}`),
+  projectActivities: (slug: string) => req<Activity[]>(`/api/projects/${slug}/activities`),
   createProject: (body: {
     name: string;
     slug: string;

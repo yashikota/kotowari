@@ -22,7 +22,7 @@ import { useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { PROJECT_STATUSES } from '../types.ts';
-import type { ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
+import type { Activity, ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
 
 const DAY_MS = 86_400_000;
 
@@ -43,6 +43,59 @@ function monthOrdinal(key: string) {
 
 function dateOrdinal(value: Date) {
   return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) / DAY_MS;
+}
+
+function describeProjectActivity(activity: Activity, projects: Project[]) {
+  const payload = activity.payload;
+  const payloadString = (value: unknown) =>
+    typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+  const from = payloadString(payload.from);
+  const to = payloadString(payload.to);
+  switch (activity.action) {
+    case 'created':
+      return i18n.t('projectActivity.events.created');
+    case 'status_changed':
+      return i18n.t('projectActivity.events.statusChanged', {
+        from: i18n.t(`projectStatus.${from}`),
+        to: i18n.t(`projectStatus.${to}`),
+      });
+    case 'health_changed':
+      return i18n.t('projectActivity.events.healthChanged', {
+        from: i18n.t(`projectHealth.status.${from || 'none'}`),
+        to: i18n.t(`projectHealth.status.${to || 'none'}`),
+      });
+    case 'priority_changed':
+      return i18n.t('projectActivity.events.priorityChanged', {
+        from: priorityLabel(Number(from)),
+        to: priorityLabel(Number(to)),
+      });
+    case 'dependency_added':
+    case 'dependency_removed': {
+      const projectSlug = payloadString(payload.projectSlug);
+      const projectName =
+        projects.find((project) => project.slug === projectSlug)?.name ?? projectSlug;
+      return i18n.t(
+        activity.action === 'dependency_added'
+          ? 'projectActivity.events.dependencyAdded'
+          : 'projectActivity.events.dependencyRemoved',
+        { project: projectName },
+      );
+    }
+    case 'milestone_created':
+    case 'milestone_updated':
+    case 'milestone_deleted': {
+      const name = payloadString(payload.name);
+      const key =
+        activity.action === 'milestone_created'
+          ? 'projectActivity.events.milestoneCreated'
+          : activity.action === 'milestone_updated'
+            ? 'projectActivity.events.milestoneUpdated'
+            : 'projectActivity.events.milestoneDeleted';
+      return i18n.t(key, { name });
+    }
+    default:
+      return i18n.t('projectActivity.events.updated');
+  }
 }
 
 export function useProjectsPagePresenter() {
@@ -682,6 +735,7 @@ export function useProjectDetailPagePresenter() {
     adrs: ADR[];
     pages: Page[];
     labels: Label[];
+    activities: Activity[];
   };
   const router = useRouter();
   const navigate = useNavigate();
@@ -752,6 +806,11 @@ export function useProjectDetailPagePresenter() {
     data,
     selected,
     project,
+    projectActivityItems: data.activities.map((activity) => ({
+      id: activity.id,
+      message: describeProjectActivity(activity, data.projects),
+      createdAt: activity.createdAt,
+    })),
     availableDependencyProjects: data.projects.filter(
       (candidate) =>
         candidate.slug !== slug &&

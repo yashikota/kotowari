@@ -144,6 +144,46 @@ func TestProjectSummaryCanBeCreatedAndUpdatedIndependently(t *testing.T) {
 	}
 }
 
+func TestProjectActivityListsSingleUserChangesInNewestFirstOrder(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch","status":"planned"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", created.Code, created.Body.String())
+	}
+	for _, body := range []string{
+		`{"status":"started"}`,
+		`{"health":"at_risk"}`,
+		`{"priority":3}`,
+	} {
+		updated := doJSON(t, s, http.MethodPatch, "/api/projects/launch", body)
+		if updated.Code != http.StatusOK {
+			t.Fatalf("update project %s: %d %s", body, updated.Code, updated.Body.String())
+		}
+	}
+
+	listed := doJSON(t, s, http.MethodGet, "/api/projects/launch/activities", "")
+	if listed.Code != http.StatusOK {
+		t.Fatalf("list project activity %d %s", listed.Code, listed.Body.String())
+	}
+	var activities []store.Activity
+	if err := json.Unmarshal(listed.Body.Bytes(), &activities); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"priority_changed", "health_changed", "status_changed", "created"}
+	if len(activities) != len(want) {
+		t.Fatalf("got %d project activities: %#v", len(activities), activities)
+	}
+	for i, action := range want {
+		if activities[i].Action != action {
+			t.Fatalf("activity %d action = %q, want %q", i, activities[i].Action, action)
+		}
+	}
+	missing := doJSON(t, s, http.MethodGet, "/api/projects/missing/activities", "")
+	if missing.Code != http.StatusNotFound {
+		t.Fatalf("missing project activity status %d body %s", missing.Code, missing.Body.String())
+	}
+}
+
 func TestPatchProjectHealth(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch"}`)

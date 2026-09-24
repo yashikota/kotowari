@@ -314,15 +314,16 @@ const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects/$slug',
   loader: async ({ params }) => {
-    const [project, adrs, pages, issues, labels, projects] = await Promise.all([
+    const [project, adrs, pages, issues, labels, projects, activities] = await Promise.all([
       api.project(params.slug),
       api.adrs(),
       api.pages(),
       api.issues(`?project=${encodeURIComponent(params.slug)}`),
       api.labels(),
       api.projects(),
+      api.projectActivities(params.slug),
     ]);
-    return { project, adrs, pages, issues, labels, projects };
+    return { project, adrs, pages, issues, labels, projects, activities };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectDetailPage'),
 });

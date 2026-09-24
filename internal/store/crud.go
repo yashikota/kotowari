@@ -566,6 +566,8 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 		}
 		p := m.Projects[i]
 		previousStatus := p.Status
+		previousHealth := p.Health
+		previousPriority := p.Priority
 		if name != nil {
 			if strings.TrimSpace(*name) == "" {
 				return validationf("name required")
@@ -637,6 +639,15 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 		}
 		p.UpdatedAt = now
 		m.Projects[i] = p
+		if previousStatus != p.Status {
+			addActivity(m, "project", p.ID, "status_changed", map[string]any{"from": previousStatus, "to": p.Status}, now)
+		}
+		if previousHealth != p.Health {
+			addActivity(m, "project", p.ID, "health_changed", map[string]any{"from": previousHealth, "to": p.Health}, now)
+		}
+		if previousPriority != p.Priority {
+			addActivity(m, "project", p.ID, "priority_changed", map[string]any{"from": previousPriority, "to": p.Priority}, now)
+		}
 		m.bump(now)
 		p.Progress = projectProgress(m, p.ID)
 		out = p
@@ -1695,6 +1706,26 @@ func (s *Store) ListActivities(identifier string) ([]Activity, error) {
 			a := m.Activities[i]
 			if a.EntityType == "issue" && a.EntityID == iss.ID {
 				out = append(out, a)
+			}
+		}
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) ListProjectActivities(slug string) ([]Activity, error) {
+	var out []Activity
+	err := s.snapshot(func(m *mem) error {
+		i := indexProject(m, slug)
+		if i < 0 {
+			return ErrNotFound
+		}
+		projectID := m.Projects[i].ID
+		out = []Activity{}
+		for i := len(m.Activities) - 1; i >= 0; i-- {
+			activity := m.Activities[i]
+			if activity.EntityType == "project" && activity.EntityID == projectID {
+				out = append(out, activity)
 			}
 		}
 		return nil

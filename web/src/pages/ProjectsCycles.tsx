@@ -24,6 +24,7 @@ import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
 import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
+import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
@@ -415,6 +416,7 @@ export function ProjectDetailPageView({
         data,
         selected,
         project,
+        projectActivityItems,
         milestoneName,
         milestoneTargetDate,
         availableDependencyProjects,
@@ -769,6 +771,12 @@ export function ProjectDetailPageView({
                   groupBy="status"
                   hideProjectSlug
                 />
+                <Section title={t('projectActivity.heading')}>
+                  <ProjectActivityFeed
+                    activities={projectActivityItems}
+                    emptyLabel={t('projectActivity.empty')}
+                  />
+                </Section>
               </Stack>
             </Pane>
           </SplitLayout>
