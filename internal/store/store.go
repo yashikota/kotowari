@@ -122,6 +122,7 @@ type Issue struct {
 	ADRNumbers       []int           `json:"adrNumbers"`
 	ExternalLinks    []IssueLink     `json:"externalLinks"`
 	Relations        []IssueRelation `json:"relations"`
+	Reactions        []string        `json:"reactions"`
 	RecurringSlug    *string         `json:"-"`
 	IsFavorite       bool            `json:"isFavorite"`
 	CreatedAt        string          `json:"createdAt"`
@@ -166,6 +167,7 @@ type Comment struct {
 	CreatedAt   string              `json:"createdAt"`
 	UpdatedAt   string              `json:"updatedAt,omitempty"`
 	Attachments []CommentAttachment `json:"attachments,omitempty"`
+	Reactions   []string            `json:"reactions"`
 }
 
 type CommentAttachment struct {

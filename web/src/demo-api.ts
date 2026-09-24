@@ -880,7 +880,22 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     patch(target, {});
     return json(relation, 201);
   }
-  match = path.match(/^\/api\/issues\/([^/]+)\/(comments|activities)(?:\/(\d+))?$/);
+  match = path.match(/^\/api\/issues\/([^/]+)\/reactions$/);
+  if (match && method === 'POST') {
+    const item = findIssue(decodeURIComponent(match[1]!));
+    if (!item) return notFound();
+    const emoji = text(body(init).emoji);
+    if (!emoji || emoji.length > 16) return json({ error: 'invalid reaction' }, 400);
+    const current = item.reactions ?? [];
+    item.reactions = current.includes(emoji)
+      ? current.filter((reaction) => reaction !== emoji)
+      : [...current, emoji];
+    patch(item, {});
+    return json(item);
+  }
+  match = path.match(
+    /^\/api\/issues\/([^/]+)\/(comments|activities)(?:\/(\d+)(?:\/(reactions))?)?$/,
+  );
   if (match) {
     const item = findIssue(decodeURIComponent(match[1]!));
     if (!item) return notFound();
@@ -891,6 +906,16 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         (comment) => comment.issueId === item.id && comment.id === commentId,
       );
       if (commentIndex < 0) return notFound();
+      if (match[4] === 'reactions' && method === 'POST') {
+        const emoji = text(body(init).emoji);
+        if (!emoji || emoji.length > 16) return json({ error: 'invalid reaction' }, 400);
+        const current = comments[commentIndex]!.reactions ?? [];
+        comments[commentIndex]!.reactions = current.includes(emoji)
+          ? current.filter((reaction) => reaction !== emoji)
+          : [...current, emoji];
+        revision += 1;
+        return json(comments[commentIndex]);
+      }
       if (method === 'PATCH') {
         const nextBody = text(body(init).body).trim();
         if (!nextBody) return json({ error: 'body required' }, 400);
@@ -916,6 +941,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         issueId: item.id,
         body: String(value.body),
         createdAt: new Date().toISOString(),
+        reactions: [],
       };
       comments.push(comment);
       return json(comment, 201);

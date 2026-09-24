@@ -314,6 +314,45 @@ func TestIssueCommentCanBeEditedAndDeleted(t *testing.T) {
 	}
 }
 
+func TestIssueAndCommentReactionsCanBeToggled(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Reaction issue"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	var issue store.Issue
+	if err := json.Unmarshal(created.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	issuePath := "/api/issues/" + issue.Identifier
+	issueReaction := doJSON(t, s, http.MethodPost, issuePath+"/reactions", `{"emoji":"👍"}`)
+	if issueReaction.Code != http.StatusOK || !strings.Contains(issueReaction.Body.String(), `"reactions":["👍"]`) {
+		t.Fatalf("add issue reaction %d %s", issueReaction.Code, issueReaction.Body.String())
+	}
+	if invalid := doJSON(t, s, http.MethodPost, issuePath+"/reactions", `{"emoji":"<script>"}`); invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid reaction status %d %s", invalid.Code, invalid.Body.String())
+	}
+
+	added := doJSON(t, s, http.MethodPost, issuePath+"/comments", `{"body":"A note"}`)
+	if added.Code != http.StatusCreated {
+		t.Fatalf("add comment %d %s", added.Code, added.Body.String())
+	}
+	var comment store.Comment
+	if err := json.Unmarshal(added.Body.Bytes(), &comment); err != nil {
+		t.Fatal(err)
+	}
+	commentReactionPath := issuePath + "/comments/" + strconv.FormatInt(comment.ID, 10) + "/reactions"
+	commentReaction := doJSON(t, s, http.MethodPost, commentReactionPath, `{"emoji":"❤️"}`)
+	if commentReaction.Code != http.StatusOK || !strings.Contains(commentReaction.Body.String(), `"reactions":["❤️"]`) {
+		t.Fatalf("add comment reaction %d %s", commentReaction.Code, commentReaction.Body.String())
+	}
+
+	removed := doJSON(t, s, http.MethodPost, commentReactionPath, `{"emoji":"❤️"}`)
+	if removed.Code != http.StatusOK || !strings.Contains(removed.Body.String(), `"reactions":[]`) {
+		t.Fatalf("remove comment reaction %d %s", removed.Code, removed.Body.String())
+	}
+}
+
 func TestPatchProjectHealth(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch"}`)

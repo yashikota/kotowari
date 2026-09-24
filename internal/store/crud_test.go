@@ -1329,6 +1329,61 @@ func TestCommentsEmptyAndAdd(t *testing.T) {
 	}
 }
 
+func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
+	s := openTest(t)
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "react to this"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	comment, err := s.AddComment(issue.Identifier, "A note")
+	if err != nil {
+		t.Fatal(err)
+	}
+	issue, err = s.ToggleIssueReaction(issue.Identifier, "👍")
+	if err != nil {
+		t.Fatal(err)
+	}
+	comment, err = s.ToggleCommentReaction(issue.Identifier, comment.ID, "❤️")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issue.Reactions) != 1 || issue.Reactions[0] != "👍" || len(comment.Reactions) != 1 || comment.Reactions[0] != "❤️" {
+		t.Fatalf("reactions issue=%#v comment=%#v", issue.Reactions, comment.Reactions)
+	}
+	if _, err := s.ToggleIssueReaction(issue.Identifier, "script"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid issue reaction: %v", err)
+	}
+
+	reopened, err := Open(s.Path())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	persistedIssue, err := reopened.GetIssue(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	persistedComments, err := reopened.ListComments(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(persistedIssue.Reactions) != 1 || persistedIssue.Reactions[0] != "👍" || len(persistedComments) != 1 || len(persistedComments[0].Reactions) != 1 || persistedComments[0].Reactions[0] != "❤️" {
+		t.Fatalf("reactions after reload: issue=%#v comments=%#v", persistedIssue.Reactions, persistedComments)
+	}
+
+	issue, err = reopened.ToggleIssueReaction(issue.Identifier, "👍")
+	if err != nil {
+		t.Fatal(err)
+	}
+	comment, err = reopened.ToggleCommentReaction(issue.Identifier, comment.ID, "❤️")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issue.Reactions) != 0 || len(comment.Reactions) != 0 {
+		t.Fatalf("reaction toggle did not remove: issue=%#v comment=%#v", issue.Reactions, comment.Reactions)
+	}
+}
+
 func TestCompletedAtSetOnDone(t *testing.T) {
 	s := openTest(t)
 	iss, err := s.CreateIssue(CreateIssueInput{Title: "ship", Status: "done"})

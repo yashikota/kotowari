@@ -53,6 +53,21 @@ export function formatActivity(action: string, payload: Record<string, unknown>)
   if (action === 'comment_deleted') {
     return i18n.t('activity.commentDeleted');
   }
+  if (
+    action === 'reaction_added' ||
+    action === 'reaction_removed' ||
+    action === 'comment_reaction_added' ||
+    action === 'comment_reaction_removed'
+  ) {
+    const emoji = typeof payload.emoji === 'string' ? payload.emoji : '';
+    const key = {
+      reaction_added: 'activity.reactionAdded',
+      reaction_removed: 'activity.reactionRemoved',
+      comment_reaction_added: 'activity.commentReactionAdded',
+      comment_reaction_removed: 'activity.commentReactionRemoved',
+    }[action];
+    return i18n.t(key, { emoji });
+  }
   if (action === 'link_added' || action === 'link_removed') {
     const title = typeof payload.title === 'string' && payload.title ? payload.title : payload.url;
     return i18n.t(action === 'link_added' ? 'activity.linkAdded' : 'activity.linkRemoved', {

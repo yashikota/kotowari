@@ -1312,7 +1312,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
 			Status: in.Status, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
 			DueDate: in.DueDate, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
-			StartedAt: startedAt, CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{},
+			StartedAt: startedAt, CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{}, Reactions: []string{},
 		}
 		if in.MilestoneID != nil {
 			p, milestone, ok := milestoneByID(m, *in.MilestoneID)
@@ -1720,7 +1720,7 @@ func (s *Store) AddCommentWithAttachments(identifier, body string, attachments [
 		m.commentSeq[identifier]++
 		out = Comment{
 			ID: m.commentSeq[identifier], IssueID: iss.ID, Body: body, CreatedAt: now,
-			Attachments: append([]CommentAttachment{}, attachments...),
+			Attachments: append([]CommentAttachment{}, attachments...), Reactions: []string{},
 		}
 		m.Comments[identifier] = append(m.Comments[identifier], out)
 		addActivity(m, "issue", iss.ID, "commented", map[string]any{"commentId": out.ID}, now)
@@ -1754,6 +1754,85 @@ func (s *Store) UpdateComment(identifier string, commentID int64, body string) (
 			m.Comments[iss.Identifier] = comments
 			addActivity(m, "issue", iss.ID, "comment_edited", map[string]any{"commentId": commentID}, comments[i].UpdatedAt)
 			m.bump(comments[i].UpdatedAt)
+			out = comments[i]
+			return nil
+		}
+		return ErrNotFound
+	})
+	return out, err
+}
+
+var validReactions = map[string]struct{}{
+	"👍": {}, "👎": {}, "❤️": {}, "🎉": {}, "🔥": {}, "👀": {}, "🚀": {}, "✅": {}, "🙌": {}, "💯": {},
+	"😂": {}, "😄": {}, "😮": {}, "😢": {}, "😡": {}, "🤔": {}, "👏": {}, "🙏": {}, "💡": {}, "🐛": {},
+	"✨": {}, "🤝": {}, "🥳": {}, "🤩": {}, "😕": {}, "💪": {}, "☕": {}, "🌱": {}, "🎯": {}, "🫡": {},
+}
+
+func toggleReaction(current []string, emoji string) ([]string, bool) {
+	for i, existing := range current {
+		if existing == emoji {
+			return append(append([]string{}, current[:i]...), current[i+1:]...), false
+		}
+	}
+	return append(append([]string{}, current...), emoji), true
+}
+
+func (s *Store) ToggleIssueReaction(identifier, emoji string) (Issue, error) {
+	if _, ok := validReactions[emoji]; !ok {
+		return Issue{}, validationf("invalid reaction")
+	}
+	var out Issue
+	err := s.mutate(func(m *mem) error {
+		i := indexIssue(m, identifier)
+		if i < 0 {
+			return ErrNotFound
+		}
+		iss := m.Issues[i]
+		reactions, added := toggleReaction(iss.Reactions, emoji)
+		iss.Reactions = reactions
+		now := domain.Now()
+		iss.UpdatedAt = now
+		m.Issues[i] = iss
+		action := "reaction_removed"
+		if added {
+			action = "reaction_added"
+		}
+		addActivity(m, "issue", iss.ID, action, map[string]any{"emoji": emoji}, now)
+		m.bump(now)
+		out = iss
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) ToggleCommentReaction(identifier string, commentID int64, emoji string) (Comment, error) {
+	if commentID < 1 {
+		return Comment{}, validationf("invalid comment id")
+	}
+	if _, ok := validReactions[emoji]; !ok {
+		return Comment{}, validationf("invalid reaction")
+	}
+	var out Comment
+	err := s.mutate(func(m *mem) error {
+		iss, ok := issueByIdent(m, identifier)
+		if !ok {
+			return ErrNotFound
+		}
+		comments := m.Comments[iss.Identifier]
+		for i := range comments {
+			if comments[i].ID != commentID {
+				continue
+			}
+			reactions, added := toggleReaction(comments[i].Reactions, emoji)
+			comments[i].Reactions = reactions
+			m.Comments[iss.Identifier] = comments
+			action := "comment_reaction_removed"
+			if added {
+				action = "comment_reaction_added"
+			}
+			now := domain.Now()
+			addActivity(m, "issue", iss.ID, action, map[string]any{"commentId": commentID, "emoji": emoji}, now)
+			m.bump(now)
 			out = comments[i]
 			return nil
 		}

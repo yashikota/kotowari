@@ -37,6 +37,7 @@ import { PROJECT_STATUSES } from '../types.ts';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
 import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
+import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
@@ -86,6 +87,9 @@ export function IssueDetailView({
         comments,
         editingCommentId,
         editingCommentDraft,
+        reactionPickerTarget,
+        reactionPickerQuery,
+        reactionError,
         commentFiles,
         commentError,
         commentFilesInputRef,
@@ -422,6 +426,25 @@ export function IssueDetailView({
                   inline
                   historyRequest={historyRequest}
                 />
+                <Group gap="xs">
+                  <ReactionPicker
+                    target="issue"
+                    openedTarget={reactionPickerTarget}
+                    query={reactionPickerQuery}
+                    onOpenChange={handlers.onReactionPickerChange}
+                    onQueryChange={handlers.onReactionSearchChange}
+                    onSelect={handlers.onSelectReaction}
+                  />
+                  <ReactionSummary
+                    reactions={issue.reactions ?? []}
+                    onToggle={(emoji) => handlers.onToggleReaction('issue', emoji)}
+                  />
+                </Group>
+                {reactionError ? (
+                  <Alert color="red" role="alert">
+                    {reactionError}
+                  </Alert>
+                ) : null}
 
                 <Section title={t('issueLinks.heading')}>
                   {issue.externalLinks.length === 0 ? (
@@ -819,6 +842,22 @@ export function IssueDetailView({
                             </Anchor>
                           );
                         })}
+                        <Group gap="xs">
+                          <ReactionPicker
+                            target={`comment:${c.id}`}
+                            openedTarget={reactionPickerTarget}
+                            query={reactionPickerQuery}
+                            onOpenChange={handlers.onReactionPickerChange}
+                            onQueryChange={handlers.onReactionSearchChange}
+                            onSelect={handlers.onSelectReaction}
+                          />
+                          <ReactionSummary
+                            reactions={c.reactions ?? []}
+                            onToggle={(emoji) =>
+                              handlers.onToggleReaction(`comment:${c.id}`, emoji)
+                            }
+                          />
+                        </Group>
                       </Stack>
                     ))}
                     <input

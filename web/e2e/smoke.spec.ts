@@ -42,6 +42,13 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await documentEditor.getByRole('button', { name: 'Preview', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Goal' })).toBeVisible();
 
+  await page.getByRole('button', { name: 'Add reaction' }).first().click();
+  await page.getByLabel('Search reactions').fill('thumbs up');
+  await page.getByRole('button', { name: 'Thumbs up', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Remove Thumbs up reaction' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Remove Thumbs up reaction' })).toBeVisible();
+
   const comment = page.getByLabel('New note');
   await comment.fill('looks good');
   await comment.press('ControlOrMeta+Enter');
@@ -56,12 +63,17 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Submit comment' }).click();
   const attachmentLink = page.getByRole('link', { name: 'release-note.txt' });
   await expect(attachmentLink).toBeVisible();
+  await page.getByRole('button', { name: 'Add reaction' }).last().click();
+  await page.getByLabel('Search reactions').fill('heart');
+  await page.getByRole('button', { name: 'Heart', exact: true }).click();
   const commentsResponse = await request.get(`/api/issues/${identifier}/comments`);
   const comments = (await commentsResponse.json()) as {
     attachments?: { id: string; name: string }[];
+    reactions?: string[];
   }[];
   const attachment = comments.at(-1)?.attachments?.[0];
   if (!attachment) throw new Error('expected persisted issue attachment');
+  expect(comments.at(-1)?.reactions).toContain('❤️');
   const downloaded = await request.get(`/api/issues/${identifier}/attachments/${attachment.id}`);
   await expect(downloaded).toBeOK();
   await expect(await downloaded.text()).toBe('local attachment contents');

@@ -32,6 +32,7 @@ type issueFM struct {
 	ADRs          []int           `toml:"adrs,omitempty"`
 	Links         []IssueLink     `toml:"links,omitempty"`
 	Relations     []IssueRelation `toml:"relations,omitempty"`
+	Reactions     []string        `toml:"reactions,omitempty"`
 	RecurringSlug *string         `toml:"recurring_slug,omitempty"`
 	Comments      []commentFM     `toml:"comments,omitempty"`
 }
@@ -55,6 +56,7 @@ type commentFM struct {
 	Updated     string              `toml:"updated,omitempty"`
 	Body        string              `toml:"body"`
 	Attachments []CommentAttachment `toml:"attachments,omitempty"`
+	Reactions   []string            `toml:"reactions,omitempty"`
 }
 
 type pageFM struct {
@@ -138,9 +140,13 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		ADRNumbers:       fm.ADRs,
 		ExternalLinks:    fm.Links,
 		Relations:        fm.Relations,
+		Reactions:        fm.Reactions,
 		RecurringSlug:    fm.RecurringSlug,
 		IsFavorite:       fm.Favorite,
 		Labels:           []Label{},
+	}
+	if iss.Reactions == nil {
+		iss.Reactions = []string{}
 	}
 	for _, name := range fm.Labels {
 		if l, ok := labelByName(m, name); ok {
@@ -156,8 +162,12 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 			id = int64(i + 1)
 			m.dirtyMeta = true
 		}
+		reactions := c.Reactions
+		if reactions == nil {
+			reactions = []string{}
+		}
 		comments = append(comments, Comment{
-			ID: id, IssueID: int64(n), Body: c.Body, CreatedAt: c.Created, UpdatedAt: c.Updated, Attachments: c.Attachments,
+			ID: id, IssueID: int64(n), Body: c.Body, CreatedAt: c.Created, UpdatedAt: c.Updated, Attachments: c.Attachments, Reactions: reactions,
 		})
 	}
 	return iss, comments, nil
@@ -276,6 +286,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		ADRs:          iss.ADRNumbers,
 		Links:         iss.ExternalLinks,
 		Relations:     iss.Relations,
+		Reactions:     iss.Reactions,
 		RecurringSlug: iss.RecurringSlug,
 		Labels:        make([]string, 0, len(iss.Labels)),
 	}
@@ -308,7 +319,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 	}
 	for _, c := range comments {
 		fm.Comments = append(fm.Comments, commentFM{
-			ID: c.ID, Created: c.CreatedAt, Updated: c.UpdatedAt, Body: c.Body, Attachments: c.Attachments,
+			ID: c.ID, Created: c.CreatedAt, Updated: c.UpdatedAt, Body: c.Body, Attachments: c.Attachments, Reactions: c.Reactions,
 		})
 	}
 	return marshalDoc(fm, iss.Body)

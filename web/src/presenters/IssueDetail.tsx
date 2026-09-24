@@ -50,6 +50,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentDraft, setEditingCommentDraft] = useState('');
+  const [reactionPickerTarget, setReactionPickerTarget] = useState<string | null>(null);
+  const [reactionPickerQuery, setReactionPickerQuery] = useState('');
+  const [reactionError, setReactionError] = useState('');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -145,6 +148,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     setCommentError('');
     setEditingCommentId(null);
     setEditingCommentDraft('');
+    setReactionPickerTarget(null);
+    setReactionPickerQuery('');
+    setReactionError('');
   }, [identifier]);
 
   async function patch(body: Record<string, unknown>) {
@@ -569,6 +575,26 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     }
   }
 
+  async function toggleReaction(target: string, emoji: string) {
+    setReactionError('');
+    try {
+      if (target === 'issue') {
+        setIssue(await api.toggleIssueReaction(identifier, emoji));
+      } else {
+        const commentId = Number(target.slice('comment:'.length));
+        const updated = await api.toggleCommentReaction(identifier, commentId, emoji);
+        setComments((current) =>
+          current.map((comment) => (comment.id === commentId ? updated : comment)),
+        );
+      }
+      setReactionPickerTarget(null);
+      setReactionPickerQuery('');
+      setActivities(await api.activities(identifier));
+    } catch {
+      setReactionError(i18n.t('reactions.updateFailed'));
+    }
+  }
+
   return {
     _view: 2 as const,
     identifier,
@@ -577,6 +603,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     comments,
     editingCommentId,
     editingCommentDraft,
+    reactionPickerTarget,
+    reactionPickerQuery,
+    reactionError,
     commentFiles,
     commentError,
     commentFilesInputRef,
@@ -963,6 +992,16 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       },
       onSaveCommentEdit: (commentId: number) => saveCommentEdit(commentId),
       onDeleteComment: (commentId: number) => deleteComment(commentId),
+      onReactionPickerChange: (target: string, opened: boolean) => {
+        setReactionPickerTarget((current) => {
+          if (opened) return target;
+          return current === target ? null : current;
+        });
+        if (opened) setReactionPickerQuery('');
+      },
+      onReactionSearchChange: (query: string) => setReactionPickerQuery(query),
+      onSelectReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
+      onToggleReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
     },
   };
 }

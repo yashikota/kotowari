@@ -144,6 +144,16 @@ export const api = {
   removeIssueRelation: (id: string, relationId: number) =>
     req<void>(`/api/issues/${id}/relations/${relationId}`, { method: 'DELETE' }),
   comments: (id: string) => req<Comment[]>(`/api/issues/${id}/comments`),
+  toggleIssueReaction: (id: string, emoji: string) =>
+    req<Issue>(`/api/issues/${id}/reactions`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
+    }),
+  toggleCommentReaction: (id: string, commentId: number, emoji: string) =>
+    req<Comment>(`/api/issues/${id}/comments/${commentId}/reactions`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
+    }),
   addComment: (id: string, body: string) =>
     req<Comment>(`/api/issues/${id}/comments`, {
       method: 'POST',

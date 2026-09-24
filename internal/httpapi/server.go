@@ -126,6 +126,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/issues/{id}/comments", s.addComment)
 	s.mux.HandleFunc("PATCH /api/issues/{id}/comments/{commentId}", s.patchComment)
 	s.mux.HandleFunc("DELETE /api/issues/{id}/comments/{commentId}", s.deleteComment)
+	s.mux.HandleFunc("POST /api/issues/{id}/comments/{commentId}/reactions", s.toggleCommentReaction)
+	s.mux.HandleFunc("POST /api/issues/{id}/reactions", s.toggleIssueReaction)
 	s.mux.HandleFunc("GET /api/issues/{id}/attachments/{attachmentId}", s.getIssueCommentAttachment)
 	s.mux.HandleFunc("GET /api/issues/{id}/activities", s.listActivities)
 	s.mux.HandleFunc("GET /api/pages", s.listPages)
@@ -883,6 +885,43 @@ func (s *Server) deleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) toggleIssueReaction(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Emoji string `json:"emoji"`
+	}
+	if err := decodeJSON(r, &in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	out, err := s.store.ToggleIssueReaction(r.PathValue("id"), in.Emoji)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) toggleCommentReaction(w http.ResponseWriter, r *http.Request) {
+	commentID, err := strconv.ParseInt(r.PathValue("commentId"), 10, 64)
+	if err != nil || commentID < 1 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid comment id"})
+		return
+	}
+	var in struct {
+		Emoji string `json:"emoji"`
+	}
+	if err := decodeJSON(r, &in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	out, err := s.store.ToggleCommentReaction(r.PathValue("id"), commentID, in.Emoji)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) listActivities(w http.ResponseWriter, r *http.Request) {

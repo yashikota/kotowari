@@ -49,6 +49,7 @@ export type Issue = {
   adrNumbers: number[];
   externalLinks: IssueLink[];
   relations: IssueRelation[];
+  reactions?: string[];
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
@@ -225,6 +226,7 @@ export type Comment = {
   createdAt: string;
   updatedAt?: string;
   attachments?: CommentAttachment[];
+  reactions?: string[];
 };
 
 export type CommentAttachment = {
