@@ -422,6 +422,10 @@ func TestIssueAndCommentReactionsCanBeToggled(t *testing.T) {
 	if issueReaction.Code != http.StatusOK || !strings.Contains(issueReaction.Body.String(), `"reactions":["👍"]`) {
 		t.Fatalf("add issue reaction %d %s", issueReaction.Code, issueReaction.Body.String())
 	}
+	issueReaction = doJSON(t, s, http.MethodPost, issuePath+"/reactions", `{"emoji":"🫠"}`)
+	if issueReaction.Code != http.StatusOK || !strings.Contains(issueReaction.Body.String(), `"reactions":["👍","🫠"]`) {
+		t.Fatalf("add extended issue reaction %d %s", issueReaction.Code, issueReaction.Body.String())
+	}
 	if invalid := doJSON(t, s, http.MethodPost, issuePath+"/reactions", `{"emoji":"<script>"}`); invalid.Code != http.StatusBadRequest {
 		t.Fatalf("invalid reaction status %d %s", invalid.Code, invalid.Body.String())
 	}
@@ -439,10 +443,18 @@ func TestIssueAndCommentReactionsCanBeToggled(t *testing.T) {
 	if commentReaction.Code != http.StatusOK || !strings.Contains(commentReaction.Body.String(), `"reactions":["❤️"]`) {
 		t.Fatalf("add comment reaction %d %s", commentReaction.Code, commentReaction.Body.String())
 	}
+	commentReaction = doJSON(t, s, http.MethodPost, commentReactionPath, `{"emoji":"👩🏽‍💻"}`)
+	if commentReaction.Code != http.StatusOK || !strings.Contains(commentReaction.Body.String(), `"reactions":["❤️","👩🏽‍💻"]`) {
+		t.Fatalf("add skin-tone comment reaction %d %s", commentReaction.Code, commentReaction.Body.String())
+	}
 
 	removed := doJSON(t, s, http.MethodPost, commentReactionPath, `{"emoji":"❤️"}`)
-	if removed.Code != http.StatusOK || !strings.Contains(removed.Body.String(), `"reactions":[]`) {
+	if removed.Code != http.StatusOK || !strings.Contains(removed.Body.String(), `"reactions":["👩🏽‍💻"]`) {
 		t.Fatalf("remove comment reaction %d %s", removed.Code, removed.Body.String())
+	}
+	removed = doJSON(t, s, http.MethodPost, commentReactionPath, `{"emoji":"👩🏽‍💻"}`)
+	if removed.Code != http.StatusOK || !strings.Contains(removed.Body.String(), `"reactions":[]`) {
+		t.Fatalf("remove skin-tone comment reaction %d %s", removed.Code, removed.Body.String())
 	}
 }
 

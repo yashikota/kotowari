@@ -555,7 +555,8 @@
   },
   "reactions": {
     "add": "Add reaction",
-    "search": "Search reactions",
+    "picker": "Emoji picker",
+    "search": "Search emoji",
     "noMatches": "No matching reactions",
     "list": "Reactions",
     "remove": "Remove {{name}} reaction",

@@ -16,6 +16,8 @@
     "@mantine/hooks": "^9.6.1",
     "@tabler/icons-react": "^3.46.0",
     "@tanstack/react-router": "^1.170.29",
+    "emoji-picker-element": "1.29.1",
+    "emoji-picker-element-data": "1.8.0",
     "i18next": "^26.4.2",
     "markdown-it": "^15.0.1",
     "react": "^19.2.8",

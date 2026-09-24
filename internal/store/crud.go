@@ -1818,12 +1818,6 @@ func (s *Store) UpdateComment(identifier string, commentID int64, body string) (
 	return out, err
 }
 
-var validReactions = map[string]struct{}{
-	"👍": {}, "👎": {}, "❤️": {}, "🎉": {}, "🔥": {}, "👀": {}, "🚀": {}, "✅": {}, "🙌": {}, "💯": {},
-	"😂": {}, "😄": {}, "😮": {}, "😢": {}, "😡": {}, "🤔": {}, "👏": {}, "🙏": {}, "💡": {}, "🐛": {},
-	"✨": {}, "🤝": {}, "🥳": {}, "🤩": {}, "😕": {}, "💪": {}, "☕": {}, "🌱": {}, "🎯": {}, "🫡": {},
-}
-
 func toggleReaction(current []string, emoji string) ([]string, bool) {
 	for i, existing := range current {
 		if existing == emoji {
@@ -1834,7 +1828,7 @@ func toggleReaction(current []string, emoji string) ([]string, bool) {
 }
 
 func (s *Store) ToggleIssueReaction(identifier, emoji string) (Issue, error) {
-	if _, ok := validReactions[emoji]; !ok {
+	if !validReactionEmoji(emoji) {
 		return Issue{}, validationf("invalid reaction")
 	}
 	var out Issue
@@ -1947,7 +1941,7 @@ func (s *Store) ToggleCommentReaction(identifier string, commentID int64, emoji 
 	if commentID < 1 {
 		return Comment{}, validationf("invalid comment id")
 	}
-	if _, ok := validReactions[emoji]; !ok {
+	if !validReactionEmoji(emoji) {
 		return Comment{}, validationf("invalid reaction")
 	}
 	var out Comment

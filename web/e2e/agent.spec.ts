@@ -39,7 +39,9 @@ test('standalone Agent keeps separate conversations and restores chat history', 
   ).toBeVisible();
 });
 
-test('Agent and its controls follow the configured Japanese locale', async ({ page }) => {
+test('app controls and the emoji picker follow the configured Japanese locale', async ({
+  page,
+}) => {
   await page.goto('/config');
   await page.getByRole('combobox', { name: 'Language' }).click();
   await page.getByRole('option', { name: 'Japanese' }).click();
@@ -50,4 +52,20 @@ test('Agent and its controls follow the configured Japanese locale', async ({ pa
   await expect(page.getByRole('button', { name: 'チャット履歴' })).toBeVisible();
   await expect(page.getByRole('button', { name: '新しいチャット' })).toBeVisible();
   await expect(page.getByLabel('AI へのメッセージ')).toBeVisible();
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'イシューを作成' }).click();
+  const issueTitle = page.getByPlaceholder('イシューのタイトル');
+  await expect(issueTitle).toBeFocused();
+  await issueTitle.fill('絵文字検索のロケール確認');
+  await issueTitle.press('ControlOrMeta+Enter');
+  await expect(page.getByLabel('イシューのタイトル')).toHaveValue('絵文字検索のロケール確認');
+
+  await page.getByRole('button', { name: 'リアクションを追加' }).first().click();
+  const picker = page.locator('emoji-picker');
+  await expect(picker).toBeVisible();
+  const search = page.getByLabel('絵文字を検索');
+  await expect(search).toBeVisible();
+  await search.fill('溶けている顔');
+  await expect(picker.getByRole('option', { name: /溶けている顔/ })).toBeVisible();
 });

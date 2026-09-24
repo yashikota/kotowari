@@ -96,11 +96,33 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await expect(page.getByRole('heading', { name: 'Goal' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Add reaction' }).first().click();
-  await page.getByLabel('Search reactions').fill('thumbs up');
-  await page.getByRole('button', { name: 'Thumbs up', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Remove Thumbs up reaction' })).toBeVisible();
+  const issueReactionPicker = page.locator('emoji-picker');
+  await expect(issueReactionPicker).toBeVisible();
+  await page.getByLabel('Search emoji').fill('melting face');
+  await issueReactionPicker.getByRole('option', { name: /melting face/ }).click();
+  await expect(page.getByRole('button', { name: 'Remove 🫠 reaction' })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Remove Thumbs up reaction' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove 🫠 reaction' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add reaction' }).first().click();
+  const skinTonePicker = page.locator('emoji-picker');
+  await skinTonePicker.getByRole('button', { name: /Choose a skin tone/ }).click();
+  await skinTonePicker.getByRole('option', { name: 'Medium', exact: true }).click();
+  await page.getByLabel('Search emoji').fill('thumbs up');
+  const skinToneReactionResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      /\/api\/issues\/[^/]+\/reactions$/.test(new URL(response.url()).pathname),
+    { timeout: 8000 },
+  );
+  await skinTonePicker.getByRole('option', { name: /thumbs up/ }).click();
+  const skinToneReactionResult = await skinToneReactionResponse;
+  if (!skinToneReactionResult.ok()) {
+    throw new Error(
+      `save skin-tone reaction failed: ${skinToneReactionResult.status()} ${await skinToneReactionResult.text()}`,
+    );
+  }
+  await expect(page.getByRole('button', { name: 'Remove 👍🏽 reaction' })).toBeVisible();
 
   await page.getByLabel('Choose files to attach to issue').setInputFiles({
     name: 'architecture.png',
@@ -149,8 +171,23 @@ test('create issue, comment, and page', async ({ page, request }) => {
   const attachmentLink = page.getByRole('link', { name: 'release-note.txt' });
   await expect(attachmentLink).toBeVisible();
   await page.getByRole('button', { name: 'Add reaction' }).last().click();
-  await page.getByLabel('Search reactions').fill('heart');
-  await page.getByRole('button', { name: 'Heart', exact: true }).click();
+  await page.getByLabel('Search emoji').fill('red heart');
+  const commentReactionResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      /\/comments\/\d+\/reactions$/.test(new URL(response.url()).pathname),
+    { timeout: 8000 },
+  );
+  await page
+    .locator('emoji-picker')
+    .getByRole('option', { name: /red heart/ })
+    .click();
+  const reactionResult = await commentReactionResponse;
+  if (!reactionResult.ok()) {
+    throw new Error(
+      `save comment reaction failed: ${reactionResult.status()} ${await reactionResult.text()}`,
+    );
+  }
   const commentsResponse = await request.get(`/api/issues/${identifier}/comments`);
   const comments = (await commentsResponse.json()) as {
     attachments?: { id: string; name: string }[];

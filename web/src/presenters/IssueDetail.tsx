@@ -51,7 +51,6 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentDraft, setEditingCommentDraft] = useState('');
   const [reactionPickerTarget, setReactionPickerTarget] = useState<string | null>(null);
-  const [reactionPickerQuery, setReactionPickerQuery] = useState('');
   const [reactionError, setReactionError] = useState('');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -152,7 +151,6 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     setEditingCommentId(null);
     setEditingCommentDraft('');
     setReactionPickerTarget(null);
-    setReactionPickerQuery('');
     setReactionError('');
     setIssueAttachmentError('');
     setIssueAttachmentBusy(false);
@@ -598,7 +596,6 @@ export function useIssueDetailPresenter({ identifier }: Props) {
         );
       }
       setReactionPickerTarget(null);
-      setReactionPickerQuery('');
       setActivities(await api.activities(identifier));
     } catch {
       setReactionError(i18n.t('reactions.updateFailed'));
@@ -648,7 +645,6 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     editingCommentId,
     editingCommentDraft,
     reactionPickerTarget,
-    reactionPickerQuery,
     reactionError,
     commentFiles,
     commentError,
@@ -1045,9 +1041,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
           if (opened) return target;
           return current === target ? null : current;
         });
-        if (opened) setReactionPickerQuery('');
       },
-      onReactionSearchChange: (query: string) => setReactionPickerQuery(query),
       onSelectReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
       onToggleReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
       onChooseIssueFiles: () => issueFilesInputRef.current?.click(),

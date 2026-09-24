@@ -75,7 +75,6 @@ export function IssueDetailView({
         editingCommentId,
         editingCommentDraft,
         reactionPickerTarget,
-        reactionPickerQuery,
         reactionError,
         issueAttachmentError,
         issueAttachmentBusy,
@@ -479,9 +478,7 @@ export function IssueDetailView({
                   <ReactionPicker
                     target="issue"
                     openedTarget={reactionPickerTarget}
-                    query={reactionPickerQuery}
                     onOpenChange={handlers.onReactionPickerChange}
-                    onQueryChange={handlers.onReactionSearchChange}
                     onSelect={handlers.onSelectReaction}
                   />
                   <ReactionSummary
@@ -869,9 +866,7 @@ export function IssueDetailView({
                           <ReactionPicker
                             target={`comment:${c.id}`}
                             openedTarget={reactionPickerTarget}
-                            query={reactionPickerQuery}
                             onOpenChange={handlers.onReactionPickerChange}
-                            onQueryChange={handlers.onReactionSearchChange}
                             onSelect={handlers.onSelectReaction}
                           />
                           <ReactionSummary

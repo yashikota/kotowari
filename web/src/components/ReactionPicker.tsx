@@ -1,84 +1,136 @@
-import {
-  ActionIcon,
-  Button,
-  Group,
-  Popover,
-  SimpleGrid,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import 'emoji-picker-element';
+import enPickerI18n from 'emoji-picker-element/i18n/en';
+import jaPickerI18n from 'emoji-picker-element/i18n/ja';
+import type PickerElement from 'emoji-picker-element/picker';
+import type { EmojiClickEvent, I18n } from 'emoji-picker-element/shared';
+import enEmojiDataUrl from 'emoji-picker-element-data/en/emojibase/data.json?url';
+import jaEmojiDataUrl from 'emoji-picker-element-data/ja/emojibase/data.json?url';
+import { ActionIcon, Button, Group, Popover, Text, useComputedColorScheme } from '@mantine/core';
 import { IconMoodSmile } from '@tabler/icons-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { reactionEmojiFromPickerDetail } from '../emoji-reactions.ts';
 
-export const REACTION_CHOICES = [
-  { key: 'thumbsUp', emoji: '👍' },
-  { key: 'thumbsDown', emoji: '👎' },
-  { key: 'heart', emoji: '❤️' },
-  { key: 'laugh', emoji: '😂' },
-  { key: 'party', emoji: '🎉' },
-  { key: 'fire', emoji: '🔥' },
-  { key: 'eyes', emoji: '👀' },
-  { key: 'rocket', emoji: '🚀' },
-  { key: 'check', emoji: '✅' },
-  { key: 'raisedHands', emoji: '🙌' },
-  { key: 'hundred', emoji: '💯' },
-  { key: 'smile', emoji: '😄' },
-  { key: 'surprised', emoji: '😮' },
-  { key: 'sad', emoji: '😢' },
-  { key: 'angry', emoji: '😡' },
-  { key: 'thinking', emoji: '🤔' },
-  { key: 'clap', emoji: '👏' },
-  { key: 'pray', emoji: '🙏' },
-  { key: 'idea', emoji: '💡' },
-  { key: 'bug', emoji: '🐛' },
-  { key: 'sparkles', emoji: '✨' },
-  { key: 'handshake', emoji: '🤝' },
-  { key: 'celebrate', emoji: '🥳' },
-  { key: 'starStruck', emoji: '🤩' },
-  { key: 'confused', emoji: '😕' },
-  { key: 'muscle', emoji: '💪' },
-  { key: 'coffee', emoji: '☕' },
-  { key: 'seedling', emoji: '🌱' },
-  { key: 'target', emoji: '🎯' },
-  { key: 'salute', emoji: '🫡' },
-] as const;
+const REACTION_NAME_KEYS: Readonly<Record<string, string>> = {
+  '👍': 'thumbsUp',
+  '👎': 'thumbsDown',
+  '❤': 'heart',
+  '❤️': 'heart',
+  '😂': 'laugh',
+  '🎉': 'party',
+  '🔥': 'fire',
+  '👀': 'eyes',
+  '🚀': 'rocket',
+  '✅': 'check',
+  '🙌': 'raisedHands',
+  '💯': 'hundred',
+  '😄': 'smile',
+  '😮': 'surprised',
+  '😢': 'sad',
+  '😡': 'angry',
+  '🤔': 'thinking',
+  '👏': 'clap',
+  '🙏': 'pray',
+  '💡': 'idea',
+  '🐛': 'bug',
+  '✨': 'sparkles',
+  '🤝': 'handshake',
+  '🥳': 'celebrate',
+  '🤩': 'starStruck',
+  '😕': 'confused',
+  '💪': 'muscle',
+  '☕': 'coffee',
+  '🌱': 'seedling',
+  '🎯': 'target',
+  '🫡': 'salute',
+};
 
-type ReactionChoice = (typeof REACTION_CHOICES)[number];
+const PICKER_STYLE: Readonly<Record<string, string>> = {
+  '--background': 'var(--mantine-color-body)',
+  '--border-color': 'var(--mantine-color-default-border)',
+  '--border-size': '0px',
+  '--border-radius': 'var(--mantine-radius-md)',
+  '--button-hover-background': 'var(--mantine-color-default-hover)',
+  '--button-active-background': 'var(--mantine-primary-color-light)',
+  '--category-font-color': 'var(--mantine-color-dimmed)',
+  '--category-font-size': 'var(--mantine-font-size-xs)',
+  '--emoji-font-family': 'var(--mantine-font-family)',
+  '--emoji-size': '22px',
+  '--emoji-padding': '4px',
+  '--indicator-color': 'var(--mantine-primary-color-filled)',
+  '--input-border-color': 'var(--mantine-color-default-border)',
+  '--input-border-radius': 'var(--mantine-radius-sm)',
+  '--input-border-size': '1px',
+  '--input-font-color': 'var(--mantine-color-text)',
+  '--input-font-size': 'var(--mantine-font-size-sm)',
+  '--input-padding': '6px',
+  '--num-columns': '8',
+};
 
 function reactionName(emoji: string, t: (key: string) => string) {
-  const choice = REACTION_CHOICES.find((item) => item.emoji === emoji);
-  return choice ? t(`reactions.emojiNames.${choice.key}`) : emoji;
+  const key = REACTION_NAME_KEYS[emoji] ?? REACTION_NAME_KEYS[emoji.replaceAll('\ufe0f', '')];
+  return key ? t(`reactions.emojiNames.${key}`) : emoji;
 }
 
 export function ReactionPicker({
   target,
   openedTarget,
-  query,
   onOpenChange,
-  onQueryChange,
   onSelect,
 }: {
   target: string;
   openedTarget: string | null;
-  query: string;
   onOpenChange: (target: string, opened: boolean) => void;
-  onQueryChange: (query: string) => void;
   onSelect: (target: string, emoji: string) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const normalizedQuery = query.trim().toLocaleLowerCase(i18n.language);
-  const choices = REACTION_CHOICES.filter((choice) => {
-    const name = t(`reactions.emojiNames.${choice.key}`);
-    return `${choice.emoji} ${name} ${choice.key}`
-      .toLocaleLowerCase(i18n.language)
-      .includes(normalizedQuery);
-  });
+  const colorScheme = useComputedColorScheme('light');
+  const locale = (i18n.resolvedLanguage ?? i18n.language).startsWith('ja') ? 'ja' : 'en';
+  const dataSource = locale === 'ja' ? jaEmojiDataUrl : enEmojiDataUrl;
+  const basePickerI18n = locale === 'ja' ? jaPickerI18n : enPickerI18n;
+  const pickerI18n = useMemo<I18n>(
+    () => ({
+      ...basePickerI18n,
+      regionLabel: t('reactions.picker'),
+      searchLabel: t('reactions.search'),
+    }),
+    [basePickerI18n, t],
+  );
+  const opened = openedTarget === target;
+  const [pickerHost, setPickerHost] = useState<HTMLDivElement | null>(null);
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
+
+  useEffect(() => {
+    if (!opened || !pickerHost) return;
+
+    const picker = document.createElement('emoji-picker') as PickerElement;
+    picker.locale = locale;
+    picker.dataSource = dataSource;
+    picker.i18n = pickerI18n;
+    picker.classList.add(colorScheme);
+    picker.style.width = '328px';
+    picker.style.height = '364px';
+    for (const [property, value] of Object.entries(PICKER_STYLE)) {
+      picker.style.setProperty(property, value);
+    }
+    const handleEmojiClick = (event: EmojiClickEvent) => {
+      const emoji = reactionEmojiFromPickerDetail(event.detail);
+      if (emoji) onSelectRef.current(target, emoji);
+    };
+    picker.addEventListener('emoji-click', handleEmojiClick);
+    pickerHost.replaceChildren(picker);
+
+    return () => {
+      picker.removeEventListener('emoji-click', handleEmojiClick);
+      picker.remove();
+    };
+  }, [colorScheme, dataSource, locale, opened, pickerHost, pickerI18n, target]);
 
   return (
     <Popover
-      opened={openedTarget === target}
-      onChange={(opened) => onOpenChange(target, opened)}
+      opened={opened}
+      onChange={(nextOpened) => onOpenChange(target, nextOpened)}
       position="bottom-start"
       withinPortal
       shadow="md"
@@ -90,42 +142,13 @@ export function ReactionPicker({
           color="gray"
           size="sm"
           aria-label={t('reactions.add')}
-          onClick={() => onOpenChange(target, openedTarget !== target)}
+          onClick={() => onOpenChange(target, !opened)}
         >
           <IconMoodSmile size={16} aria-hidden="true" />
         </ActionIcon>
       </Popover.Target>
-      <Popover.Dropdown p="sm" w={292}>
-        <Stack gap="xs">
-          <TextInput
-            size="xs"
-            aria-label={t('reactions.search')}
-            placeholder={t('reactions.search')}
-            value={query}
-            onChange={(event) => onQueryChange(event.currentTarget.value)}
-          />
-          {choices.length ? (
-            <SimpleGrid cols={6} spacing={4}>
-              {choices.map((choice) => (
-                <ActionIcon
-                  key={choice.key}
-                  type="button"
-                  variant="subtle"
-                  size="lg"
-                  aria-label={t(`reactions.emojiNames.${choice.key}`)}
-                  onClick={() => onSelect(target, choice.emoji)}
-                  style={{ fontSize: 20 }}
-                >
-                  {choice.emoji}
-                </ActionIcon>
-              ))}
-            </SimpleGrid>
-          ) : (
-            <Text c="dimmed" size="xs" ta="center" py="xs">
-              {t('reactions.noMatches')}
-            </Text>
-          )}
-        </Stack>
+      <Popover.Dropdown p={4} w={336}>
+        <div ref={setPickerHost} />
       </Popover.Dropdown>
     </Popover>
   );
@@ -163,8 +186,4 @@ export function ReactionSummary({
       ))}
     </Group>
   );
-}
-
-export function reactionChoiceFor(emoji: string): ReactionChoice | undefined {
-  return REACTION_CHOICES.find((choice) => choice.emoji === emoji);
 }

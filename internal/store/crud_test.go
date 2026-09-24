@@ -1402,11 +1402,20 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	issue, err = s.ToggleIssueReaction(issue.Identifier, "🫠")
+	if err != nil {
+		t.Fatal(err)
+	}
 	comment, err = s.ToggleCommentReaction(issue.Identifier, comment.ID, "❤️")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(issue.Reactions) != 1 || issue.Reactions[0] != "👍" || len(comment.Reactions) != 1 || comment.Reactions[0] != "❤️" {
+	comment, err = s.ToggleCommentReaction(issue.Identifier, comment.ID, "👩🏽‍💻")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issue.Reactions) != 2 || issue.Reactions[0] != "👍" || issue.Reactions[1] != "🫠" ||
+		len(comment.Reactions) != 2 || comment.Reactions[0] != "❤️" || comment.Reactions[1] != "👩🏽‍💻" {
 		t.Fatalf("reactions issue=%#v comment=%#v", issue.Reactions, comment.Reactions)
 	}
 	if _, err := s.ToggleIssueReaction(issue.Identifier, "script"); !errors.Is(err, ErrValidation) {
@@ -1426,7 +1435,9 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(persistedIssue.Reactions) != 1 || persistedIssue.Reactions[0] != "👍" || len(persistedComments) != 1 || len(persistedComments[0].Reactions) != 1 || persistedComments[0].Reactions[0] != "❤️" {
+	if len(persistedIssue.Reactions) != 2 || persistedIssue.Reactions[0] != "👍" || persistedIssue.Reactions[1] != "🫠" ||
+		len(persistedComments) != 1 || len(persistedComments[0].Reactions) != 2 ||
+		persistedComments[0].Reactions[0] != "❤️" || persistedComments[0].Reactions[1] != "👩🏽‍💻" {
 		t.Fatalf("reactions after reload: issue=%#v comments=%#v", persistedIssue.Reactions, persistedComments)
 	}
 
@@ -1438,7 +1449,7 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(issue.Reactions) != 0 || len(comment.Reactions) != 0 {
+	if len(issue.Reactions) != 1 || issue.Reactions[0] != "🫠" || len(comment.Reactions) != 1 || comment.Reactions[0] != "👩🏽‍💻" {
 		t.Fatalf("reaction toggle did not remove: issue=%#v comment=%#v", issue.Reactions, comment.Reactions)
 	}
 }
