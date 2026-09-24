@@ -63,6 +63,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [commentError, setCommentError] = useState('');
   const commentFilesInputRef = useRef<HTMLInputElement>(null);
+  const [issueAttachmentError, setIssueAttachmentError] = useState('');
+  const [issueAttachmentBusy, setIssueAttachmentBusy] = useState(false);
+  const issueFilesInputRef = useRef<HTMLInputElement>(null);
   const [subTitle, setSubTitle] = useState('');
   const [labelName, setLabelName] = useState('');
   const [focusSub, setFocusSub] = useState(0);
@@ -151,6 +154,8 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     setReactionPickerTarget(null);
     setReactionPickerQuery('');
     setReactionError('');
+    setIssueAttachmentError('');
+    setIssueAttachmentBusy(false);
   }, [identifier]);
 
   async function patch(body: Record<string, unknown>) {
@@ -595,6 +600,40 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     }
   }
 
+  async function uploadIssueAttachments(files: File[]) {
+    if (files.length === 0 || issueAttachmentBusy) return;
+    setIssueAttachmentError('');
+    if (files.some((file) => file.size > 20 * 1024 * 1024)) {
+      setIssueAttachmentError(i18n.t('issueAttachments.tooLarge'));
+      return;
+    }
+    if (files.length > 10) {
+      setIssueAttachmentError(i18n.t('issueAttachments.tooMany'));
+      return;
+    }
+    setIssueAttachmentBusy(true);
+    try {
+      await api.addIssueAttachments(identifier, files);
+      setIssue(await api.issue(identifier));
+      setActivities(await api.activities(identifier));
+    } catch {
+      setIssueAttachmentError(i18n.t('issueAttachments.uploadFailed'));
+    } finally {
+      setIssueAttachmentBusy(false);
+    }
+  }
+
+  async function removeIssueAttachment(attachmentId: string) {
+    setIssueAttachmentError('');
+    try {
+      await api.deleteIssueAttachment(identifier, attachmentId);
+      setIssue(await api.issue(identifier));
+      setActivities(await api.activities(identifier));
+    } catch {
+      setIssueAttachmentError(i18n.t('issueAttachments.deleteFailed'));
+    }
+  }
+
   return {
     _view: 2 as const,
     identifier,
@@ -609,6 +648,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     commentFiles,
     commentError,
     commentFilesInputRef,
+    issueAttachmentError,
+    issueAttachmentBusy,
+    issueFilesInputRef,
     commentSubmitShortcut: preferences.commentSubmitShortcut,
     activities,
     projects,
@@ -1002,6 +1044,13 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       onReactionSearchChange: (query: string) => setReactionPickerQuery(query),
       onSelectReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
       onToggleReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
+      onChooseIssueFiles: () => issueFilesInputRef.current?.click(),
+      onIssueFilesChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selected = Array.from(e.currentTarget.files ?? []);
+        e.currentTarget.value = '';
+        return uploadIssueAttachments(selected);
+      },
+      onRemoveIssueAttachment: (attachmentId: string) => removeIssueAttachment(attachmentId),
     },
   };
 }

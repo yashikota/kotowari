@@ -68,6 +68,14 @@ export function formatActivity(action: string, payload: Record<string, unknown>)
     }[action];
     return i18n.t(key, { emoji });
   }
+  if (action === 'attachment_added') {
+    const count = typeof payload.count === 'number' ? payload.count : 1;
+    return i18n.t('activity.attachmentsAdded', { count });
+  }
+  if (action === 'attachment_removed') {
+    const name = typeof payload.name === 'string' ? payload.name : '';
+    return i18n.t('activity.attachmentRemoved', { name });
+  }
   if (action === 'link_added' || action === 'link_removed') {
     const title = typeof payload.title === 'string' && payload.title ? payload.title : payload.url;
     return i18n.t(action === 'link_added' ? 'activity.linkAdded' : 'activity.linkRemoved', {

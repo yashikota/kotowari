@@ -9,32 +9,33 @@ import (
 )
 
 type issueFM struct {
-	Title         string          `toml:"title"`
-	Status        string          `toml:"status"`
-	Type          string          `toml:"type,omitempty"`
-	Priority      int             `toml:"priority"`
-	Estimate      *int            `toml:"estimate,omitempty"`
-	Project       *string         `toml:"project,omitempty"`
-	Milestone     *int64          `toml:"milestone,omitempty"`
-	Cycle         *int            `toml:"cycle,omitempty"`
-	CycleAddedAt  *string         `toml:"cycle_added_at,omitempty"`
-	Parent        *string         `toml:"parent,omitempty"`
-	Labels        []string        `toml:"labels"`
-	Due           *string         `toml:"due,omitempty"`
-	Reminder      *string         `toml:"reminder_at,omitempty"`
-	Sort          float64         `toml:"sort"`
-	Created       string          `toml:"created"`
-	Updated       string          `toml:"updated"`
-	StatusChanged string          `toml:"status_changed,omitempty"`
-	Started       *string         `toml:"started_at,omitempty"`
-	Favorite      bool            `toml:"favorite,omitempty"`
-	Completed     *string         `toml:"completed,omitempty"`
-	ADRs          []int           `toml:"adrs,omitempty"`
-	Links         []IssueLink     `toml:"links,omitempty"`
-	Relations     []IssueRelation `toml:"relations,omitempty"`
-	Reactions     []string        `toml:"reactions,omitempty"`
-	RecurringSlug *string         `toml:"recurring_slug,omitempty"`
-	Comments      []commentFM     `toml:"comments,omitempty"`
+	Title         string              `toml:"title"`
+	Status        string              `toml:"status"`
+	Type          string              `toml:"type,omitempty"`
+	Priority      int                 `toml:"priority"`
+	Estimate      *int                `toml:"estimate,omitempty"`
+	Project       *string             `toml:"project,omitempty"`
+	Milestone     *int64              `toml:"milestone,omitempty"`
+	Cycle         *int                `toml:"cycle,omitempty"`
+	CycleAddedAt  *string             `toml:"cycle_added_at,omitempty"`
+	Parent        *string             `toml:"parent,omitempty"`
+	Labels        []string            `toml:"labels"`
+	Due           *string             `toml:"due,omitempty"`
+	Reminder      *string             `toml:"reminder_at,omitempty"`
+	Sort          float64             `toml:"sort"`
+	Created       string              `toml:"created"`
+	Updated       string              `toml:"updated"`
+	StatusChanged string              `toml:"status_changed,omitempty"`
+	Started       *string             `toml:"started_at,omitempty"`
+	Favorite      bool                `toml:"favorite,omitempty"`
+	Completed     *string             `toml:"completed,omitempty"`
+	ADRs          []int               `toml:"adrs,omitempty"`
+	Links         []IssueLink         `toml:"links,omitempty"`
+	Relations     []IssueRelation     `toml:"relations,omitempty"`
+	Reactions     []string            `toml:"reactions,omitempty"`
+	Attachments   []CommentAttachment `toml:"attachments,omitempty"`
+	RecurringSlug *string             `toml:"recurring_slug,omitempty"`
+	Comments      []commentFM         `toml:"comments,omitempty"`
 }
 
 type adrFM struct {
@@ -141,12 +142,16 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		ExternalLinks:    fm.Links,
 		Relations:        fm.Relations,
 		Reactions:        fm.Reactions,
+		Attachments:      fm.Attachments,
 		RecurringSlug:    fm.RecurringSlug,
 		IsFavorite:       fm.Favorite,
 		Labels:           []Label{},
 	}
 	if iss.Reactions == nil {
 		iss.Reactions = []string{}
+	}
+	if iss.Attachments == nil {
+		iss.Attachments = []CommentAttachment{}
 	}
 	for _, name := range fm.Labels {
 		if l, ok := labelByName(m, name); ok {
@@ -287,6 +292,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		Links:         iss.ExternalLinks,
 		Relations:     iss.Relations,
 		Reactions:     iss.Reactions,
+		Attachments:   iss.Attachments,
 		RecurringSlug: iss.RecurringSlug,
 		Labels:        make([]string, 0, len(iss.Labels)),
 	}

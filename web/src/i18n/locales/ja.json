@@ -527,12 +527,18 @@
     "pending": "添付予定のファイル",
     "removeFile": "{{name}}を削除",
     "submit": "コメントを送信",
-    "tooMany": "コメントには最大10個まで添付できます。",
+    "tooMany": "一度に最大10個まで添付できます。",
     "tooLarge": "添付ファイルは1つあたり20 MB以下にしてください。",
     "uploadFailed": "コメントまたは添付ファイルを保存できませんでした。もう一度お試しください。",
     "imagePreview": "画像{{name}}を開く",
     "fileSize": "{{size}}",
-    "limits": "最大10個、1ファイル20 MBまで。"
+    "limits": "最大10個、1ファイル20 MBまで。",
+    "chooseIssueFiles": "イシューに添付するファイルを選択",
+    "addToIssue": "イシューにファイルを添付",
+    "uploading": "アップロード中…",
+    "issueHeading": "添付ファイル",
+    "removeIssueAttachment": "イシューの添付ファイル{{name}}を削除",
+    "deleteFailed": "添付ファイルを削除できませんでした。もう一度お試しください。"
   },
   "issueComments": {
     "edit": "コメントを編集",
@@ -896,7 +902,9 @@
     "reactionAdded": "{{emoji}}でリアクション",
     "reactionRemoved": "{{emoji}}リアクションを解除",
     "commentReactionAdded": "コメントに{{emoji}}でリアクション",
-    "commentReactionRemoved": "コメントから{{emoji}}を解除"
+    "commentReactionRemoved": "コメントから{{emoji}}を解除",
+    "attachmentsAdded": "添付ファイルを{{count}}個追加",
+    "attachmentRemoved": "添付ファイル「{{name}}」を削除"
   },
   "commands": {
     "createIssue": "イシューを作成",

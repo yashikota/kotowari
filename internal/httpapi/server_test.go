@@ -255,6 +255,59 @@ func TestCommentAttachmentsAreStoredScopedAndServedAsDownloads(t *testing.T) {
 	}
 }
 
+func TestIssueAttachmentsUploadDownloadAndDelete(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Issue attachment"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	var issue store.Issue
+	if err := json.Unmarshal(created.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+
+	var requestBody bytes.Buffer
+	multipartWriter := multipart.NewWriter(&requestBody)
+	file, err := multipartWriter.CreateFormFile("files", "architecture.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const contents = "design reference"
+	if _, err := file.Write([]byte(contents)); err != nil {
+		t.Fatal(err)
+	}
+	if err := multipartWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/issues/"+issue.Identifier+"/attachments", &requestBody)
+	request.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+	recorder := httptest.NewRecorder()
+	s.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("upload issue attachment %d %s", recorder.Code, recorder.Body.String())
+	}
+	var attachments []store.CommentAttachment
+	if err := json.Unmarshal(recorder.Body.Bytes(), &attachments); err != nil {
+		t.Fatal(err)
+	}
+	if len(attachments) != 1 || attachments[0].Name != "architecture.txt" {
+		t.Fatalf("issue attachments %#v", attachments)
+	}
+	attachmentPath := "/api/issues/" + issue.Identifier + "/attachments/" + attachments[0].ID
+	download := doJSON(t, s, http.MethodGet, attachmentPath, "")
+	if download.Code != http.StatusOK || download.Body.String() != contents {
+		t.Fatalf("download attachment %d %q", download.Code, download.Body.String())
+	}
+	deleted := doJSON(t, s, http.MethodDelete, attachmentPath, "")
+	if deleted.Code != http.StatusNoContent {
+		t.Fatalf("delete issue attachment %d %s", deleted.Code, deleted.Body.String())
+	}
+	missing := doJSON(t, s, http.MethodGet, attachmentPath, "")
+	if missing.Code != http.StatusNotFound {
+		t.Fatalf("deleted attachment status %d %s", missing.Code, missing.Body.String())
+	}
+}
+
 func TestIssueCommentCanBeEditedAndDeleted(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Comment issue"}`)

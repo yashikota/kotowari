@@ -204,6 +204,7 @@ let views: View[] = [
 let comments: Comment[] = [
   { id: 1, issueId: 1, body: 'GitHub Pagesで公開する方針。', createdAt: now },
 ];
+const issueAttachmentFiles = new Map<string, File>();
 let issueTemplates: IssueTemplate[] = [];
 let recurringIssues: RecurringIssue[] = [];
 let revision = 1;
@@ -731,6 +732,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const item = findIssue(decodeURIComponent(match[1]!));
     if (!item) return notFound();
     if (method === 'DELETE') {
+      for (const attachment of item.attachments ?? []) issueAttachmentFiles.delete(attachment.id);
       issues = issues.filter((i) => i !== item);
       revision += 1;
       return json(null, 204);
@@ -892,6 +894,57 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       : [...current, emoji];
     patch(item, {});
     return json(item);
+  }
+  match = path.match(/^\/api\/issues\/([^/]+)\/attachments(?:\/([^/]+))?$/);
+  if (match) {
+    const item = findIssue(decodeURIComponent(match[1]!));
+    if (!item) return notFound();
+    const attachmentId = match[2] ? decodeURIComponent(match[2]) : null;
+    if (attachmentId) {
+      const attachment = (item.attachments ?? []).find(
+        (candidate) => candidate.id === attachmentId,
+      );
+      if (!attachment) return notFound();
+      if (method === 'GET') {
+        const file = issueAttachmentFiles.get(attachmentId);
+        if (!file) return notFound();
+        return new Response(file, {
+          headers: {
+            'Content-Type': attachment.mediaType,
+            'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(attachment.name)}`,
+            'X-Content-Type-Options': 'nosniff',
+          },
+        });
+      }
+      if (method === 'DELETE') {
+        item.attachments = (item.attachments ?? []).filter(
+          (candidate) => candidate.id !== attachmentId,
+        );
+        issueAttachmentFiles.delete(attachmentId);
+        patch(item, {});
+        return json(null, 204);
+      }
+      return notFound();
+    }
+    if (method !== 'POST' || !(init?.body instanceof FormData)) return notFound();
+    const files = init.body.getAll('files').filter((value): value is File => value instanceof File);
+    if (files.length === 0 || files.length > 10)
+      return json({ error: 'invalid attachment count' }, 400);
+    if (files.some((file) => file.size < 1 || file.size > 20 * 1024 * 1024))
+      return json({ error: 'invalid attachment size' }, 400);
+    const attachments = files.map((file) => {
+      const id = crypto.randomUUID().replaceAll('-', '');
+      issueAttachmentFiles.set(id, file);
+      return {
+        id,
+        name: file.name,
+        mediaType: file.type || 'application/octet-stream',
+        size: file.size,
+      };
+    });
+    item.attachments = [...(item.attachments ?? []), ...attachments];
+    patch(item, {});
+    return json(item.attachments, 201);
   }
   match = path.match(
     /^\/api\/issues\/([^/]+)\/(comments|activities)(?:\/(\d+)(?:\/(reactions))?)?$/,

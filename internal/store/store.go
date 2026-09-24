@@ -96,40 +96,41 @@ type UpdateCycleInput struct {
 }
 
 type Issue struct {
-	ID               int64           `json:"id"`
-	Number           int             `json:"number"`
-	Identifier       string          `json:"identifier"`
-	Title            string          `json:"title"`
-	Body             string          `json:"body"`
-	Status           string          `json:"status"`
-	Type             string          `json:"type,omitempty"`
-	Priority         int             `json:"priority"`
-	Estimate         *int            `json:"estimate,omitempty"`
-	ProjectID        *int64          `json:"projectId"`
-	ProjectSlug      *string         `json:"projectSlug,omitempty"`
-	MilestoneID      *int64          `json:"milestoneId"`
-	MilestoneName    *string         `json:"milestoneName,omitempty"`
-	CycleID          *int64          `json:"cycleId"`
-	CycleNumber      *int            `json:"cycleNumber,omitempty"`
-	CycleAddedAt     *string         `json:"cycleAddedAt,omitempty" toml:"cycle_added_at,omitempty"`
-	ParentID         *int64          `json:"parentId"`
-	ParentIdentifier *string         `json:"parentIdentifier,omitempty"`
-	Depth            int             `json:"depth"`
-	DueDate          *string         `json:"dueDate"`
-	ReminderAt       *string         `json:"reminderAt"`
-	SortOrder        float64         `json:"sortOrder"`
-	Labels           []Label         `json:"labels"`
-	ADRNumbers       []int           `json:"adrNumbers"`
-	ExternalLinks    []IssueLink     `json:"externalLinks"`
-	Relations        []IssueRelation `json:"relations"`
-	Reactions        []string        `json:"reactions"`
-	RecurringSlug    *string         `json:"-"`
-	IsFavorite       bool            `json:"isFavorite"`
-	CreatedAt        string          `json:"createdAt"`
-	UpdatedAt        string          `json:"updatedAt"`
-	StatusChangedAt  string          `json:"statusChangedAt"`
-	StartedAt        *string         `json:"startedAt,omitempty" toml:"started_at,omitempty"`
-	CompletedAt      *string         `json:"completedAt"`
+	ID               int64               `json:"id"`
+	Number           int                 `json:"number"`
+	Identifier       string              `json:"identifier"`
+	Title            string              `json:"title"`
+	Body             string              `json:"body"`
+	Status           string              `json:"status"`
+	Type             string              `json:"type,omitempty"`
+	Priority         int                 `json:"priority"`
+	Estimate         *int                `json:"estimate,omitempty"`
+	ProjectID        *int64              `json:"projectId"`
+	ProjectSlug      *string             `json:"projectSlug,omitempty"`
+	MilestoneID      *int64              `json:"milestoneId"`
+	MilestoneName    *string             `json:"milestoneName,omitempty"`
+	CycleID          *int64              `json:"cycleId"`
+	CycleNumber      *int                `json:"cycleNumber,omitempty"`
+	CycleAddedAt     *string             `json:"cycleAddedAt,omitempty" toml:"cycle_added_at,omitempty"`
+	ParentID         *int64              `json:"parentId"`
+	ParentIdentifier *string             `json:"parentIdentifier,omitempty"`
+	Depth            int                 `json:"depth"`
+	DueDate          *string             `json:"dueDate"`
+	ReminderAt       *string             `json:"reminderAt"`
+	SortOrder        float64             `json:"sortOrder"`
+	Labels           []Label             `json:"labels"`
+	ADRNumbers       []int               `json:"adrNumbers"`
+	ExternalLinks    []IssueLink         `json:"externalLinks"`
+	Relations        []IssueRelation     `json:"relations"`
+	Reactions        []string            `json:"reactions"`
+	Attachments      []CommentAttachment `json:"attachments"`
+	RecurringSlug    *string             `json:"-"`
+	IsFavorite       bool                `json:"isFavorite"`
+	CreatedAt        string              `json:"createdAt"`
+	UpdatedAt        string              `json:"updatedAt"`
+	StatusChangedAt  string              `json:"statusChangedAt"`
+	StartedAt        *string             `json:"startedAt,omitempty" toml:"started_at,omitempty"`
+	CompletedAt      *string             `json:"completedAt"`
 }
 
 // IssueLink is a user-managed external resource attached to an issue.

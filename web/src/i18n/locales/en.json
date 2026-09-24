@@ -529,12 +529,18 @@
     "pending": "Files to attach",
     "removeFile": "Remove {{name}}",
     "submit": "Submit comment",
-    "tooMany": "You can attach up to 10 files to a comment.",
+    "tooMany": "You can attach up to 10 files at a time.",
     "tooLarge": "Each attachment must be 20 MB or smaller.",
     "uploadFailed": "The comment or attachment could not be saved. Try again.",
     "imagePreview": "Open image {{name}}",
     "fileSize": "{{size}}",
-    "limits": "Up to 10 files, 20 MB each."
+    "limits": "Up to 10 files, 20 MB each.",
+    "chooseIssueFiles": "Choose files to attach to issue",
+    "addToIssue": "Attach files to issue",
+    "uploading": "Uploading…",
+    "issueHeading": "Attachments",
+    "removeIssueAttachment": "Remove issue attachment {{name}}",
+    "deleteFailed": "Could not remove this attachment. Try again."
   },
   "issueComments": {
     "edit": "Edit comment",
@@ -898,7 +904,10 @@
     "reactionAdded": "Reacted with {{emoji}}",
     "reactionRemoved": "Removed {{emoji}} reaction",
     "commentReactionAdded": "Reacted to a comment with {{emoji}}",
-    "commentReactionRemoved": "Removed {{emoji}} from a comment"
+    "commentReactionRemoved": "Removed {{emoji}} from a comment",
+    "attachmentsAdded_one": "Added {{count}} attachment",
+    "attachmentsAdded_other": "Added {{count}} attachments",
+    "attachmentRemoved": "Removed attachment {{name}}"
   },
   "commands": {
     "createIssue": "Create issue",

@@ -49,13 +49,45 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await page.reload();
   await expect(page.getByRole('button', { name: 'Remove Thumbs up reaction' })).toBeVisible();
 
+  await page.getByLabel('Choose files to attach to issue').setInputFiles({
+    name: 'architecture.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/KwAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  });
+  await expect(page.getByRole('img', { name: 'architecture.png' })).toBeVisible();
+  const issueResponse = await request.get(`/api/issues/${identifier}`);
+  const currentIssue = (await issueResponse.json()) as {
+    attachments?: { id: string; name: string }[];
+  };
+  const issueAttachment = currentIssue.attachments?.[0];
+  if (!issueAttachment) throw new Error('expected issue-level attachment');
+  const issueAttachmentResponse = await request.get(
+    `/api/issues/${identifier}/attachments/${issueAttachment.id}`,
+  );
+  await expect(issueAttachmentResponse).toBeOK();
+  await expect(issueAttachmentResponse.headers()).toMatchObject({
+    'content-type': 'image/png',
+    'content-disposition': expect.stringContaining('inline'),
+  });
+  await page.reload();
+  await expect(page.getByRole('img', { name: 'architecture.png' })).toBeVisible();
+  await page.getByRole('button', { name: 'Remove issue attachment architecture.png' }).click();
+  await expect(page.getByRole('img', { name: 'architecture.png' })).toHaveCount(0);
+  const removedAttachment = await request.get(
+    `/api/issues/${identifier}/attachments/${issueAttachment.id}`,
+  );
+  expect(removedAttachment.status()).toBe(404);
+
   const comment = page.getByLabel('New note');
   await comment.fill('looks good');
   await comment.press('ControlOrMeta+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
 
   await comment.fill('with a file');
-  await page.getByLabel('Choose files to attach').setInputFiles({
+  await page.getByLabel('Choose files to attach', { exact: true }).setInputFiles({
     name: 'release-note.txt',
     mimeType: 'text/plain',
     buffer: Buffer.from('local attachment contents'),

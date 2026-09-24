@@ -16,66 +16,97 @@ import (
 )
 
 const (
-	maxCommentAttachmentSize = 20 << 20
-	maxCommentUploadSize     = 50 << 20
-	maxCommentAttachments    = 10
+	maxAttachmentSize       = 20 << 20
+	maxAttachmentUploadSize = 50 << 20
+	maxAttachments          = 10
 )
 
 func (s *Server) addCommentWithFiles(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, maxCommentUploadSize)
+	body, attachments, ok := s.readAttachments(w, r)
+	if !ok {
+		return
+	}
+	if strings.TrimSpace(body) == "" && len(attachments) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "body or attachment required"})
+		return
+	}
+	out, err := s.store.AddCommentWithAttachments(r.PathValue("id"), body, attachments)
+	if err != nil {
+		deleteSavedAttachments(s, attachments)
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
+}
+
+func (s *Server) addIssueAttachments(w http.ResponseWriter, r *http.Request) {
+	_, attachments, ok := s.readAttachments(w, r)
+	if !ok {
+		return
+	}
+	if len(attachments) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "at least one attachment is required"})
+		return
+	}
+	out, err := s.store.AddIssueAttachments(r.PathValue("id"), attachments)
+	if err != nil {
+		deleteSavedAttachments(s, attachments)
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
+}
+
+func (s *Server) readAttachments(w http.ResponseWriter, r *http.Request) (string, []store.CommentAttachment, bool) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxAttachmentUploadSize)
 	if err := r.ParseMultipartForm(8 << 20); err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
-			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "comment attachments are too large"})
-			return
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "attachments are too large"})
+			return "", nil, false
 		}
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid multipart form"})
-		return
+		return "", nil, false
 	}
 	if r.MultipartForm != nil {
 		defer func() { _ = r.MultipartForm.RemoveAll() }()
 	}
 	files := r.MultipartForm.File["files"]
-	if len(files) > maxCommentAttachments {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "too many comment attachments"})
-		return
-	}
-	body := r.FormValue("body")
-	if strings.TrimSpace(body) == "" && len(files) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "body or attachment required"})
-		return
+	if len(files) > maxAttachments {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "too many attachments"})
+		return "", nil, false
 	}
 
 	attachments := make([]store.CommentAttachment, 0, len(files))
 	for _, header := range files {
-		if header.Size > maxCommentAttachmentSize {
+		if header.Size > maxAttachmentSize {
 			deleteSavedAttachments(s, attachments)
-			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "comment attachment is too large"})
-			return
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "attachment is too large"})
+			return "", nil, false
 		}
 		file, err := header.Open()
 		if err != nil {
 			deleteSavedAttachments(s, attachments)
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "could not read comment attachment"})
-			return
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "could not read attachment"})
+			return "", nil, false
 		}
-		data, readErr := io.ReadAll(io.LimitReader(file, maxCommentAttachmentSize+1))
+		data, readErr := io.ReadAll(io.LimitReader(file, maxAttachmentSize+1))
 		closeErr := file.Close()
 		if readErr != nil || closeErr != nil {
 			deleteSavedAttachments(s, attachments)
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "could not read comment attachment"})
-			return
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "could not read attachment"})
+			return "", nil, false
 		}
-		if len(data) == 0 || len(data) > maxCommentAttachmentSize {
+		if len(data) == 0 || len(data) > maxAttachmentSize {
 			deleteSavedAttachments(s, attachments)
-			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "comment attachment is empty or too large"})
-			return
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "attachment is empty or too large"})
+			return "", nil, false
 		}
-		id, err := newCommentAttachmentID()
+		id, err := newAttachmentID()
 		if err != nil {
 			deleteSavedAttachments(s, attachments)
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not save comment attachment"})
-			return
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not save attachment"})
+			return "", nil, false
 		}
 		attachment := store.CommentAttachment{
 			ID: id, Name: safeAttachmentName(header.Filename),
@@ -84,18 +115,11 @@ func (s *Server) addCommentWithFiles(w http.ResponseWriter, r *http.Request) {
 		if err := s.store.SaveCommentAttachment(id, data); err != nil {
 			deleteSavedAttachments(s, attachments)
 			writeError(w, err)
-			return
+			return "", nil, false
 		}
 		attachments = append(attachments, attachment)
 	}
-
-	out, err := s.store.AddCommentWithAttachments(r.PathValue("id"), body, attachments)
-	if err != nil {
-		deleteSavedAttachments(s, attachments)
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusCreated, out)
+	return r.FormValue("body"), attachments, true
 }
 
 func (s *Server) getIssueCommentAttachment(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +165,15 @@ func (s *Server) getIssueCommentAttachment(w http.ResponseWriter, r *http.Reques
 	http.ServeContent(w, r, attachment.Name, info.ModTime(), file)
 }
 
-func newCommentAttachmentID() (string, error) {
+func (s *Server) deleteIssueAttachment(w http.ResponseWriter, r *http.Request) {
+	if err := s.store.DeleteIssueAttachment(r.PathValue("id"), r.PathValue("attachmentId")); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func newAttachmentID() (string, error) {
 	var bytes [16]byte
 	if _, err := rand.Read(bytes[:]); err != nil {
 		return "", err

@@ -1312,7 +1312,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
 			Status: in.Status, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
 			DueDate: in.DueDate, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
-			StartedAt: startedAt, CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{}, Reactions: []string{},
+			StartedAt: startedAt, CompletedAt: completedAt(in.Status, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: []IssueLink{}, Relations: []IssueRelation{}, Reactions: []string{}, Attachments: []CommentAttachment{},
 		}
 		if in.MilestoneID != nil {
 			p, milestone, ok := milestoneByID(m, *in.MilestoneID)
@@ -1569,6 +1569,9 @@ func (s *Store) DeleteIssue(identifier string) error {
 				attachmentIDs = append(attachmentIDs, attachment.ID)
 			}
 		}
+		for _, attachment := range m.Issues[i].Attachments {
+			attachmentIDs = append(attachmentIDs, attachment.ID)
+		}
 		m.Issues = append(m.Issues[:i], m.Issues[i+1:]...)
 		delete(m.Comments, identifier)
 		for j := range m.Issues {
@@ -1805,6 +1808,79 @@ func (s *Store) ToggleIssueReaction(identifier, emoji string) (Issue, error) {
 	return out, err
 }
 
+func (s *Store) AddIssueAttachments(identifier string, attachments []CommentAttachment) ([]CommentAttachment, error) {
+	if len(attachments) == 0 || len(attachments) > 10 {
+		return nil, validationf("invalid issue attachment count")
+	}
+	seen := make(map[string]struct{}, len(attachments))
+	for _, attachment := range attachments {
+		if !validCommentAttachmentID(attachment.ID) || attachment.Name == "" || len([]rune(attachment.Name)) > 255 ||
+			attachment.MediaType == "" || attachment.Size < 1 || attachment.Size > 20<<20 {
+			return nil, validationf("invalid issue attachment")
+		}
+		if _, ok := seen[attachment.ID]; ok {
+			return nil, validationf("duplicate issue attachment")
+		}
+		seen[attachment.ID] = struct{}{}
+	}
+	var out []CommentAttachment
+	err := s.mutate(func(m *mem) error {
+		i := indexIssue(m, identifier)
+		if i < 0 {
+			return ErrNotFound
+		}
+		iss := m.Issues[i]
+		for _, comment := range m.Comments[iss.Identifier] {
+			for _, attachment := range comment.Attachments {
+				if _, ok := seen[attachment.ID]; ok {
+					return validationf("duplicate issue attachment")
+				}
+			}
+		}
+		for _, attachment := range iss.Attachments {
+			if _, ok := seen[attachment.ID]; ok {
+				return validationf("duplicate issue attachment")
+			}
+		}
+		iss.Attachments = append(append([]CommentAttachment{}, iss.Attachments...), attachments...)
+		now := domain.Now()
+		iss.UpdatedAt = now
+		m.Issues[i] = iss
+		addActivity(m, "issue", iss.ID, "attachment_added", map[string]any{"count": len(attachments)}, now)
+		m.bump(now)
+		out = append([]CommentAttachment{}, iss.Attachments...)
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) DeleteIssueAttachment(identifier, attachmentID string) error {
+	err := s.mutate(func(m *mem) error {
+		i := indexIssue(m, identifier)
+		if i < 0 {
+			return ErrNotFound
+		}
+		iss := m.Issues[i]
+		for index, attachment := range iss.Attachments {
+			if attachment.ID != attachmentID {
+				continue
+			}
+			iss.Attachments = append(iss.Attachments[:index], iss.Attachments[index+1:]...)
+			now := domain.Now()
+			iss.UpdatedAt = now
+			m.Issues[i] = iss
+			addActivity(m, "issue", iss.ID, "attachment_removed", map[string]any{"name": attachment.Name}, now)
+			m.bump(now)
+			return nil
+		}
+		return ErrNotFound
+	})
+	if err != nil {
+		return err
+	}
+	return s.DeleteCommentAttachment(attachmentID)
+}
+
 func (s *Store) ToggleCommentReaction(identifier string, commentID int64, emoji string) (Comment, error) {
 	if commentID < 1 {
 		return Comment{}, validationf("invalid comment id")
@@ -1882,6 +1958,12 @@ func (s *Store) GetCommentAttachment(identifier, attachmentID string) (CommentAt
 		iss, ok := issueByIdent(m, identifier)
 		if !ok {
 			return ErrNotFound
+		}
+		for _, attachment := range iss.Attachments {
+			if attachment.ID == attachmentID {
+				out = attachment
+				return nil
+			}
 		}
 		for _, comment := range m.Comments[iss.Identifier] {
 			for _, attachment := range comment.Attachments {

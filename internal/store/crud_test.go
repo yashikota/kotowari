@@ -1384,6 +1384,42 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 	}
 }
 
+func TestIssueAttachmentsPersistAndDeleteTheirBytes(t *testing.T) {
+	s := openTest(t)
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "attachment owner"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	attachment := CommentAttachment{
+		ID: strings.Repeat("a", 32), Name: "reference.txt", MediaType: "text/plain", Size: 12,
+	}
+	if err := s.SaveCommentAttachment(attachment.ID, []byte("hello world!")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddIssueAttachments(issue.Identifier, []CommentAttachment{attachment}); err != nil {
+		t.Fatal(err)
+	}
+
+	reopened, err := Open(s.Path())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	persisted, err := reopened.GetIssue(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(persisted.Attachments) != 1 || persisted.Attachments[0].ID != attachment.ID {
+		t.Fatalf("persisted issue attachments %#v", persisted.Attachments)
+	}
+	if err := reopened.DeleteIssueAttachment(issue.Identifier, attachment.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(s.Path(), "attachments", "issues", attachment.ID)); !os.IsNotExist(err) {
+		t.Fatalf("deleted attachment bytes remain: %v", err)
+	}
+}
+
 func TestCompletedAtSetOnDone(t *testing.T) {
 	s := openTest(t)
 	iss, err := s.CreateIssue(CreateIssueInput{Title: "ship", Status: "done"})

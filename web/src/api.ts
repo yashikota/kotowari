@@ -154,6 +154,18 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ emoji }),
     }),
+  addIssueAttachments: (id: string, files: File[]) => {
+    const form = new FormData();
+    files.forEach((file) => form.append('files', file, file.name));
+    return req<Issue['attachments']>(`/api/issues/${id}/attachments`, {
+      method: 'POST',
+      body: form,
+    });
+  },
+  deleteIssueAttachment: (id: string, attachmentId: string) =>
+    req<void>(`/api/issues/${id}/attachments/${encodeURIComponent(attachmentId)}`, {
+      method: 'DELETE',
+    }),
   addComment: (id: string, body: string) =>
     req<Comment>(`/api/issues/${id}/comments`, {
       method: 'POST',

@@ -50,6 +50,7 @@ export type Issue = {
   externalLinks: IssueLink[];
   relations: IssueRelation[];
   reactions?: string[];
+  attachments?: CommentAttachment[];
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
