@@ -17,12 +17,15 @@ import {
 } from '@mantine/core';
 import {
   IconCopy,
+  IconChevronDown,
+  IconChevronRight,
   IconDotsVertical,
   IconExternalLink,
   IconFileText,
   IconGitBranch,
   IconLink,
   IconPaperclip,
+  IconPlus,
   IconStar,
   IconTrash,
 } from '@tabler/icons-react';
@@ -122,6 +125,7 @@ export function IssueDetailView({
         externalLinkTitle,
         externalLinkKind,
         externalLinkOpen,
+        resourcesCollapsed,
         dueDateOpen,
         dueDateValue,
         hasUpcomingCycle,
@@ -498,7 +502,7 @@ export function IssueDetailView({
             aria-disabled={issue.archivedAt ? true : undefined}
             style={issue.archivedAt ? { opacity: 0.72 } : undefined}
           >
-            <Grid.Col span={{ base: 12, md: 9 }}>
+            <Grid.Col span={12}>
               <Stack gap="lg">
                 <TextInput
                   ref={titleRef}
@@ -519,6 +523,8 @@ export function IssueDetailView({
                     },
                   }}
                 />
+
+                <IssuePropertiesPanel model={model} />
 
                 <DocumentEditor
                   documentKey={`issues/${identifier}/body`}
@@ -580,103 +586,127 @@ export function IssueDetailView({
                   </Section>
                 ) : null}
 
-                <Section title={t('issueLinks.heading')}>
-                  {issue.externalLinks.length === 0 ? (
-                    <Text c="dimmed" size="sm">
-                      {t('issueLinks.empty')}
-                    </Text>
-                  ) : (
-                    <Stack gap="xs" role="list" aria-label={t('issueLinks.heading')}>
-                      {issue.externalLinks.map((link) => {
-                        let pageSlug: string | null = null;
-                        try {
-                          const url = new URL(link.url);
-                          const pageMarker = '/pages/';
-                          const markerIndex = url.pathname.lastIndexOf(pageMarker);
-                          if (url.origin === window.location.origin && markerIndex >= 0) {
-                            const candidate = url.pathname.slice(markerIndex + pageMarker.length);
-                            if (candidate && !candidate.includes('/')) {
-                              pageSlug = decodeURIComponent(candidate);
-                            }
-                          }
-                        } catch {
-                          pageSlug = null;
+                <Section
+                  title={t('issueLinks.resourcesHeading')}
+                  ariaLabel={t('issueLinks.resourcesHeading')}
+                  action={
+                    <Group gap={4}>
+                      <ActionIcon
+                        type="button"
+                        variant="subtle"
+                        color="gray"
+                        aria-label={
+                          resourcesCollapsed
+                            ? t('issueLinks.expandResources')
+                            : t('issueLinks.collapseResources')
                         }
-                        const page = pageSlug ? pages.find((item) => item.slug === pageSlug) : null;
-                        const title = page?.title || link.title || link.url;
-                        return (
-                          <Group
-                            key={link.id}
-                            justify="space-between"
-                            wrap="nowrap"
-                            role="listitem"
+                        aria-expanded={!resourcesCollapsed}
+                        aria-controls="issue-resources-content"
+                        onClick={handlers.onToggleResources}
+                      >
+                        {resourcesCollapsed ? (
+                          <IconChevronRight size={14} stroke={1.8} aria-hidden="true" />
+                        ) : (
+                          <IconChevronDown size={14} stroke={1.8} aria-hidden="true" />
+                        )}
+                      </ActionIcon>
+                      <Menu position="bottom-end" shadow="md" withinPortal>
+                        <Menu.Target>
+                          <ActionIcon
+                            type="button"
+                            variant="subtle"
+                            color="gray"
+                            aria-label={t('issueLinks.addResource')}
+                            title={t('issueLinks.addResource')}
                           >
-                            <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-                              {pageSlug ? (
-                                <IconFileText size={15} stroke={1.7} aria-hidden="true" />
-                              ) : (
-                                <IconExternalLink size={15} stroke={1.7} aria-hidden="true" />
-                              )}
-                              {pageSlug ? (
-                                <Link to="/pages/$slug" params={{ slug: pageSlug }}>
-                                  {title}
-                                </Link>
-                              ) : (
-                                <a href={link.url} target="_blank" rel="noreferrer">
-                                  {title}
-                                </a>
-                              )}
-                              <MetaBadge>{t(`issueLinks.${link.kind}`)}</MetaBadge>
-                            </Group>
-                            <Button
-                              type="button"
-                              variant="subtle"
-                              color="gray"
-                              size="compact-sm"
-                              aria-label={t('issueLinks.remove', { title })}
-                              onClick={() => handlers.onRemoveExternalLink28(link)}
-                            >
-                              <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                            </Button>
-                          </Group>
-                        );
-                      })}
-                    </Stack>
+                            <IconPlus size={15} stroke={1.8} aria-hidden="true" />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown aria-label={t('issueLinks.addResource')}>
+                          <Menu.Item onClick={() => handlers.onOpenExternalLink('link')}>
+                            {t('issueActions.addLink')}
+                          </Menu.Item>
+                          <Menu.Item onClick={() => handlers.onOpenExternalLink('pullRequest')}>
+                            {t('issueActions.addPullRequest')}
+                          </Menu.Item>
+                          <Menu.Item onClick={handlers.Create_document_onClick44}>
+                            {t('issueActions.addDocument')}
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Group>
+                  }
+                >
+                  {resourcesCollapsed ? null : (
+                    <Box id="issue-resources-content">
+                      {issue.externalLinks.length === 0 ? (
+                        <Text c="dimmed" size="sm">
+                          {t('issueLinks.empty')}
+                        </Text>
+                      ) : (
+                        <Stack gap="xs" role="list" aria-label={t('issueLinks.heading')}>
+                          {issue.externalLinks.map((link) => {
+                            let pageSlug: string | null = null;
+                            try {
+                              const url = new URL(link.url);
+                              const pageMarker = '/pages/';
+                              const markerIndex = url.pathname.lastIndexOf(pageMarker);
+                              if (url.origin === window.location.origin && markerIndex >= 0) {
+                                const candidate = url.pathname.slice(
+                                  markerIndex + pageMarker.length,
+                                );
+                                if (candidate && !candidate.includes('/')) {
+                                  pageSlug = decodeURIComponent(candidate);
+                                }
+                              }
+                            } catch {
+                              pageSlug = null;
+                            }
+                            const page = pageSlug
+                              ? pages.find((item) => item.slug === pageSlug)
+                              : null;
+                            const title = page?.title || link.title || link.url;
+                            return (
+                              <Group
+                                key={link.id}
+                                justify="space-between"
+                                wrap="nowrap"
+                                role="listitem"
+                              >
+                                <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                                  {pageSlug ? (
+                                    <IconFileText size={15} stroke={1.7} aria-hidden="true" />
+                                  ) : (
+                                    <IconExternalLink size={15} stroke={1.7} aria-hidden="true" />
+                                  )}
+                                  {pageSlug ? (
+                                    <Link to="/pages/$slug" params={{ slug: pageSlug }}>
+                                      {title}
+                                    </Link>
+                                  ) : (
+                                    <a href={link.url} target="_blank" rel="noreferrer">
+                                      {title}
+                                    </a>
+                                  )}
+                                  <MetaBadge>{t(`issueLinks.${link.kind}`)}</MetaBadge>
+                                </Group>
+                                <Button
+                                  type="button"
+                                  variant="subtle"
+                                  color="gray"
+                                  size="compact-sm"
+                                  aria-label={t('issueLinks.remove', { title })}
+                                  onClick={() => handlers.onRemoveExternalLink28(link)}
+                                >
+                                  <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                                </Button>
+                              </Group>
+                            );
+                          })}
+                        </Stack>
+                      )}
+                    </Box>
                   )}
-                  <form onSubmit={handlers.External_link_onSubmit27}>
-                    <Stack gap="xs">
-                      <Group align="flex-end" wrap="wrap">
-                        <TextInput
-                          type="url"
-                          required
-                          label={t('issueLinks.url')}
-                          placeholder={t('issueLinks.urlPlaceholder')}
-                          value={externalLinkURL}
-                          onChange={handlers.External_link_URL_onChange24}
-                          style={{ flex: '1 1 240px' }}
-                        />
-                        <TextInput
-                          label={t('issueLinks.title')}
-                          placeholder={t('issueLinks.titlePlaceholder')}
-                          value={externalLinkTitle}
-                          onChange={handlers.External_link_title_onChange25}
-                          style={{ flex: '1 1 200px' }}
-                        />
-                        <NativeSelect
-                          aria-label={t('issueLinks.kind')}
-                          value={externalLinkKind}
-                          onChange={handlers.External_link_kind_onChange26}
-                          data={(['link', 'pullRequest', 'document'] as const).map((kind) => ({
-                            value: kind,
-                            label: t(`issueLinks.${kind}`),
-                          }))}
-                        />
-                        <Button type="submit" disabled={!externalLinkURL.trim()}>
-                          {t('issueLinks.add')}
-                        </Button>
-                      </Group>
-                    </Stack>
-                  </form>
                 </Section>
 
                 <Section title={t('nav.adrs')}>
@@ -1031,9 +1061,6 @@ export function IssueDetailView({
                   </Stack>
                 </Section>
               </Stack>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 3 }}>
-              <IssuePropertiesPanel model={model} />
             </Grid.Col>
           </Grid>
           <Modal

@@ -293,6 +293,10 @@
   },
   "issueLinks": {
     "heading": "Links",
+    "resourcesHeading": "Resources",
+    "addResource": "Add resource to issue",
+    "collapseResources": "Collapse resources section",
+    "expandResources": "Expand resources section",
     "empty": "No external links yet.",
     "url": "URL",
     "urlPlaceholder": "https://…",

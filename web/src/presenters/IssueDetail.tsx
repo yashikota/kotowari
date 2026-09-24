@@ -78,6 +78,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const [externalLinkTitle, setExternalLinkTitle] = useState('');
   const [externalLinkKind, setExternalLinkKind] = useState<IssueLink['kind']>('link');
   const [externalLinkOpen, setExternalLinkOpen] = useState(false);
+  const [resourcesCollapsed, setResourcesCollapsed] = useState(false);
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [dueDateValue, setDueDateValue] = useState('');
   const [relationTarget, setRelationTarget] = useState('');
@@ -679,6 +680,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     externalLinkTitle,
     externalLinkKind,
     externalLinkOpen,
+    resourcesCollapsed,
     dueDateOpen,
     dueDateValue,
     relationTarget,
@@ -803,6 +805,7 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       ) => setExternalLinkKind(e.target.value as IssueLink['kind']),
       onOpenExternalLink: (kind: IssueLink['kind']) => openExternalLink(kind),
       onCloseExternalLink: () => setExternalLinkOpen(false),
+      onToggleResources: () => setResourcesCollapsed((current) => !current),
       External_link_onSubmit27: (
         e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
       ) => {

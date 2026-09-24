@@ -291,6 +291,10 @@
   },
   "issueLinks": {
     "heading": "リンク",
+    "resourcesHeading": "リソース",
+    "addResource": "イシューにリソースを追加",
+    "collapseResources": "リソースセクションを折りたたむ",
+    "expandResources": "リソースセクションを展開",
     "empty": "外部リンクはまだありません。",
     "url": "URL",
     "urlPlaceholder": "https://…",

@@ -70,7 +70,11 @@ export function IssuePropertiesPanel({
 
   return (
     <Box component="aside" aria-label={t('issueProperties.ariaLabel')} className={styles.aside}>
-      <Stack component="section" aria-label={t('issueProperties.heading')} gap={5}>
+      <Box
+        component="section"
+        aria-label={t('issueProperties.heading')}
+        className={styles.properties}
+      >
         <Text className={styles.heading}>{t('issueProperties.heading')}</Text>
 
         <PropertyRow
@@ -330,7 +334,7 @@ export function IssuePropertiesPanel({
             </Group>
           </PropertyRow>
         </Box>
-      </Stack>
+      </Box>
     </Box>
   );
 }

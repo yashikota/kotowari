@@ -8,7 +8,7 @@ import {
   openIssueFilterCategory,
 } from './issue-list-controls.ts';
 
-test('issue list row opens a detail view with an editable properties panel', async ({
+test('issue list row opens a Linear-style full-width detail view with editable properties', async ({
   page,
   request,
 }) => {
@@ -70,7 +70,30 @@ test('issue list row opens a detail view with an editable properties panel', asy
   await expect(properties).toBeVisible();
   await expect(properties.getByRole('region', { name: 'Properties' })).toBeVisible();
   await expect(properties.getByRole('group', { name: 'Labels' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Document editor' }).first()).toBeVisible();
+  const issueTitle = page.getByRole('textbox', { name: 'Issue title' });
+  const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
+  await expect(documentEditor).toBeVisible();
+  const [titleBounds, propertiesBounds, editorBounds] = await Promise.all([
+    issueTitle.boundingBox(),
+    properties.boundingBox(),
+    documentEditor.boundingBox(),
+  ]);
+  expect(titleBounds).not.toBeNull();
+  expect(propertiesBounds).not.toBeNull();
+  expect(editorBounds).not.toBeNull();
+  expect(propertiesBounds!.width).toBeGreaterThan(900);
+  expect(titleBounds!.y).toBeLessThan(propertiesBounds!.y);
+  expect(propertiesBounds!.y).toBeLessThan(editorBounds!.y);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const narrowPanel = await properties.evaluate((element: HTMLElement) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(narrowPanel.clientWidth).toBeLessThanOrEqual(narrowPanel.viewportWidth);
+  expect(narrowPanel.scrollWidth).toBeLessThanOrEqual(narrowPanel.clientWidth);
+  await page.setViewportSize({ width: 1280, height: 720 });
 
   await chooseIssueProperty(page, 'Status', 'In Progress');
   await chooseIssueProperty(page, 'Priority', 'Low');
@@ -650,10 +673,19 @@ test('issue links can be added, displayed, sorted as real links, and removed', a
 
   await page.goto(`/issues/${issue.identifier}`);
   const url = 'https://github.com/example/repo/pull/42';
-  await page.getByRole('textbox', { name: 'URL', exact: true }).fill(url);
-  await page.getByRole('textbox', { name: 'Title (optional)' }).fill('Review build');
-  await page.getByRole('combobox', { name: 'Resource type' }).selectOption('pullRequest');
-  await page.getByRole('button', { name: 'Add link', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'URL', exact: true })).toHaveCount(0);
+  const resources = page.getByRole('region', { name: 'Resources' });
+  await expect(resources.getByText('No external links yet.')).toBeVisible();
+  await resources.getByRole('button', { name: 'Collapse resources section' }).click();
+  await expect(resources.getByText('No external links yet.')).toHaveCount(0);
+  await resources.getByRole('button', { name: 'Expand resources section' }).click();
+  await expect(resources.getByText('No external links yet.')).toBeVisible();
+  await page.getByRole('button', { name: 'Add resource to issue' }).click();
+  await page.getByRole('menuitem', { name: 'Add pull request…' }).click();
+  const addResourceDialog = page.getByRole('dialog', { name: 'Add Pull request' });
+  await addResourceDialog.getByRole('textbox', { name: 'URL', exact: true }).fill(url);
+  await addResourceDialog.getByRole('textbox', { name: 'Title (optional)' }).fill('Review build');
+  await addResourceDialog.getByRole('button', { name: 'Add Pull request' }).click();
 
   const externalLink = page.getByRole('link', { name: 'Review build' });
   await expect(externalLink).toHaveAttribute('href', url);

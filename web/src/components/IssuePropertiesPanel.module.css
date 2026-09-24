@@ -1,14 +1,20 @@
 .aside {
-  position: sticky;
-  top: 16px;
-  align-self: start;
+  width: 100%;
   min-width: 0;
-  padding-left: 12px;
-  border-left: 1px solid var(--mantine-color-default-border);
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.properties {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
 }
 
 .heading {
-  margin: 0 0 5px 2px;
+  width: 100%;
+  margin: 0 0 2px 2px;
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-sm);
   font-weight: 550;
@@ -16,11 +22,13 @@
 }
 
 .row {
-  display: grid;
-  grid-template-columns: minmax(78px, 0.85fr) minmax(0, 1.4fr);
+  display: flex;
+  flex: 0 1 196px;
   align-items: center;
+  gap: 6px;
   min-height: 34px;
-  padding: 0 4px;
+  min-width: 0;
+  padding: 0 6px;
   border-radius: 5px;
   transition: background-color 100ms ease;
 }
@@ -32,6 +40,7 @@
 
 .label {
   display: flex;
+  flex: 0 1 82px;
   min-width: 0;
   align-items: center;
   gap: 7px;
@@ -48,6 +57,7 @@
 }
 
 .value {
+  flex: 1 1 92px;
   min-width: 0;
 }
 
@@ -89,6 +99,7 @@
 }
 
 .dateInput {
+  width: 100%;
   min-width: 0;
 }
 
@@ -160,12 +171,15 @@
 @media (max-width: 62em) {
   .aside {
     position: static;
-    padding: 12px 0 0;
-    border-top: 1px solid var(--mantine-color-default-border);
-    border-left: 0;
   }
 
   .row {
-    grid-template-columns: minmax(92px, 0.35fr) minmax(0, 1fr);
+    flex-basis: calc(50% - 4px);
+  }
+}
+
+@media (max-width: 26em) {
+  .row {
+    flex-basis: 100%;
   }
 }
