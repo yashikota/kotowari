@@ -55,6 +55,9 @@ export function useIssueDetailPresenter({ identifier }: Props) {
   const [labels, setLabels] = useState<Label[]>([]);
   const [adrs, setAdrs] = useState<ADR[]>([]);
   const [draft, setDraft] = useState('');
+  const [commentFiles, setCommentFiles] = useState<File[]>([]);
+  const [commentError, setCommentError] = useState('');
+  const commentFilesInputRef = useRef<HTMLInputElement>(null);
   const [subTitle, setSubTitle] = useState('');
   const [labelName, setLabelName] = useState('');
   const [focusSub, setFocusSub] = useState(0);
@@ -132,6 +135,12 @@ export function useIssueDetailPresenter({ identifier }: Props) {
       generation.current++;
       signals.removeEventListener('kotowari:refresh', onRefresh);
     };
+  }, [identifier]);
+
+  useEffect(() => {
+    setDraft('');
+    setCommentFiles([]);
+    setCommentError('');
   }, [identifier]);
 
   async function patch(body: Record<string, unknown>) {
@@ -503,12 +512,38 @@ export function useIssueDetailPresenter({ identifier }: Props) {
     }
   }
 
+  async function submitComment() {
+    const body = (preferences.convertEmoticons ? convertTextEmoticons(draft) : draft).trim();
+    const files = commentFiles;
+    if (!body && files.length === 0) return;
+    setCommentError('');
+    try {
+      if (files.length) await api.addCommentWithAttachments(identifier, body, files);
+      else await api.addComment(identifier, body);
+      setDraft('');
+      setCommentFiles([]);
+      if (commentFilesInputRef.current) commentFilesInputRef.current.value = '';
+      setFocusNote((current) => current + 1);
+      const [nextComments, nextActivities] = await Promise.all([
+        api.comments(identifier),
+        api.activities(identifier),
+      ]);
+      setComments(nextComments);
+      setActivities(nextActivities);
+    } catch {
+      setCommentError(i18n.t('issueAttachments.uploadFailed'));
+    }
+  }
+
   return {
     _view: 2 as const,
     identifier,
     issue,
     issues,
     comments,
+    commentFiles,
+    commentError,
+    commentFilesInputRef,
     commentSubmitShortcut: preferences.commentSubmitShortcut,
     activities,
     projects,
@@ -856,18 +891,29 @@ export function useIssueDetailPresenter({ identifier }: Props) {
 
         if (isCommentSubmitShortcut(e, preferences.commentSubmitShortcut)) {
           e.preventDefault();
-          const body = (preferences.convertEmoticons ? convertTextEmoticons(draft) : draft).trim();
-          if (!body) {
-            return;
-          }
-          return api.addComment(identifier, body).then(async () => {
-            setDraft('');
-            setFocusNote((n) => n + 1);
-            setComments(await api.comments(identifier));
-            setActivities(await api.activities(identifier));
-          });
+          return submitComment();
         }
       },
+      onChooseCommentFiles: () => commentFilesInputRef.current?.click(),
+      onCommentFilesChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selected = Array.from(e.currentTarget.files ?? []);
+        e.currentTarget.value = '';
+        if (selected.some((file) => file.size > 20 * 1024 * 1024)) {
+          setCommentError(i18n.t('issueAttachments.tooLarge'));
+          return;
+        }
+        if (commentFiles.length + selected.length > 10) {
+          setCommentError(i18n.t('issueAttachments.tooMany'));
+          return;
+        }
+        setCommentError('');
+        setCommentFiles((current) => [...current, ...selected]);
+      },
+      onRemoveCommentFile: (index: number) => {
+        setCommentError('');
+        setCommentFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
+      },
+      onSubmitComment: () => submitComment(),
     },
   };
 }

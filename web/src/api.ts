@@ -22,7 +22,7 @@ import type {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  if (!headers.has('Content-Type')) {
+  if (!headers.has('Content-Type') && !(init?.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
   const res = await fetch(path, {
@@ -149,6 +149,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
+  addCommentWithAttachments: (id: string, body: string, files: File[]) => {
+    const form = new FormData();
+    form.set('body', body);
+    files.forEach((file) => form.append('files', file, file.name));
+    return req<Comment>(`/api/issues/${id}/comments`, { method: 'POST', body: form });
+  },
   activities: (id: string) => req<Activity[]>(`/api/issues/${id}/activities`),
   projects: () => req<Project[]>('/api/projects'),
   project: (slug: string) => req<Project>(`/api/projects/${slug}`),

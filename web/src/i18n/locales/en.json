@@ -523,6 +523,19 @@
     "duplicateOf": "Duplicate of",
     "duplicateBy": "Duplicated by"
   },
+  "issueAttachments": {
+    "add": "Attach files",
+    "chooseFiles": "Choose files to attach",
+    "pending": "Files to attach",
+    "removeFile": "Remove {{name}}",
+    "submit": "Submit comment",
+    "tooMany": "You can attach up to 10 files to a comment.",
+    "tooLarge": "Each attachment must be 20 MB or smaller.",
+    "uploadFailed": "The comment or attachment could not be saved. Try again.",
+    "imagePreview": "Open image {{name}}",
+    "fileSize": "{{size}}",
+    "limits": "Up to 10 files, 20 MB each."
+  },
   "issueActions": {
     "button": "Issue options",
     "addLink": "Add link…",

@@ -223,6 +223,14 @@ export type Comment = {
   issueId: number;
   body: string;
   createdAt: string;
+  attachments?: CommentAttachment[];
+};
+
+export type CommentAttachment = {
+  id: string;
+  name: string;
+  mediaType: string;
+  size: number;
 };
 
 export type Activity = {

@@ -521,6 +521,19 @@
     "duplicateOf": "重複元",
     "duplicateBy": "重複として扱われる"
   },
+  "issueAttachments": {
+    "add": "ファイルを添付",
+    "chooseFiles": "添付するファイルを選択",
+    "pending": "添付予定のファイル",
+    "removeFile": "{{name}}を削除",
+    "submit": "コメントを送信",
+    "tooMany": "コメントには最大10個まで添付できます。",
+    "tooLarge": "添付ファイルは1つあたり20 MB以下にしてください。",
+    "uploadFailed": "コメントまたは添付ファイルを保存できませんでした。もう一度お試しください。",
+    "imagePreview": "画像{{name}}を開く",
+    "fileSize": "{{size}}",
+    "limits": "最大10個、1ファイル20 MBまで。"
+  },
   "issueActions": {
     "button": "イシューの操作",
     "addLink": "リンクを追加…",

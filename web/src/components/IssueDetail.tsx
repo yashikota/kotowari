@@ -1,11 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import {
   ActionIcon,
+  Anchor,
   Alert,
   Box,
   Button,
   Grid,
   Group,
+  Image,
   Menu,
   Modal,
   NativeSelect,
@@ -19,6 +21,7 @@ import {
   IconDotsVertical,
   IconExternalLink,
   IconFileText,
+  IconPaperclip,
   IconStar,
   IconTrash,
 } from '@tabler/icons-react';
@@ -36,6 +39,18 @@ import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
+
+function formatAttachmentSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let size = bytes / 1024;
+  let unit = 0;
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024;
+    unit++;
+  }
+  return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unit]}`;
+}
 
 export function IssueDetailView({
   model,
@@ -68,6 +83,9 @@ export function IssueDetailView({
         cycles,
         pages,
         comments,
+        commentFiles,
+        commentError,
+        commentFilesInputRef,
         commentSubmitShortcut,
         activities,
         draft,
@@ -675,9 +693,103 @@ export function IssueDetailView({
                         <Text c="dimmed" size="sm">
                           {formatStamp(c.createdAt, timeZone)}
                         </Text>
-                        <Text>{c.body}</Text>
+                        {c.body ? <Text>{c.body}</Text> : null}
+                        {(c.attachments ?? []).map((attachment) => {
+                          const src = `/api/issues/${encodeURIComponent(identifier)}/attachments/${encodeURIComponent(attachment.id)}`;
+                          const mediaType = attachment.mediaType.split(';')[0];
+                          const isPreviewImage = [
+                            'image/jpeg',
+                            'image/png',
+                            'image/gif',
+                            'image/webp',
+                          ].includes(mediaType);
+                          const isPreviewVideo = ['video/mp4', 'video/webm'].includes(mediaType);
+                          return isPreviewImage ? (
+                            <Anchor
+                              key={attachment.id}
+                              href={src}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={t('issueAttachments.imagePreview', {
+                                name: attachment.name,
+                              })}
+                              style={{ width: 'fit-content', maxWidth: '100%' }}
+                            >
+                              <Image
+                                src={src}
+                                alt={attachment.name}
+                                maw={420}
+                                mah={320}
+                                fit="contain"
+                                radius="sm"
+                              />
+                            </Anchor>
+                          ) : isPreviewVideo ? (
+                            <Box
+                              key={attachment.id}
+                              component="video"
+                              src={src}
+                              controls
+                              preload="metadata"
+                              aria-label={attachment.name}
+                              style={{ maxWidth: 'min(100%, 420px)', maxHeight: 320 }}
+                            />
+                          ) : (
+                            <Anchor
+                              key={attachment.id}
+                              href={src}
+                              download={attachment.name}
+                              style={{ width: 'fit-content' }}
+                            >
+                              <Group gap="xs" wrap="nowrap">
+                                <IconPaperclip size={16} aria-hidden="true" />
+                                <Text size="sm">{attachment.name}</Text>
+                                <Text size="xs" c="dimmed">
+                                  {t('issueAttachments.fileSize', {
+                                    size: formatAttachmentSize(attachment.size),
+                                  })}
+                                </Text>
+                              </Group>
+                            </Anchor>
+                          );
+                        })}
                       </Stack>
                     ))}
+                    <input
+                      ref={commentFilesInputRef}
+                      type="file"
+                      multiple
+                      aria-label={t('issueAttachments.chooseFiles')}
+                      onChange={handlers.onCommentFilesChange}
+                      style={{ display: 'none' }}
+                    />
+                    {commentFiles.length ? (
+                      <Stack gap={4} aria-label={t('issueAttachments.pending')}>
+                        {commentFiles.map((file, index) => (
+                          <Group key={`${file.name}-${file.lastModified}-${index}`} gap="xs">
+                            <IconPaperclip size={15} aria-hidden="true" />
+                            <Text size="sm" truncate>
+                              {file.name}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {t('issueAttachments.fileSize', {
+                                size: formatAttachmentSize(file.size),
+                              })}
+                            </Text>
+                            <ActionIcon
+                              type="button"
+                              variant="subtle"
+                              color="gray"
+                              size="sm"
+                              aria-label={t('issueAttachments.removeFile', { name: file.name })}
+                              onClick={() => handlers.onRemoveCommentFile(index)}
+                            >
+                              <IconTrash size={14} aria-hidden="true" />
+                            </ActionIcon>
+                          </Group>
+                        ))}
+                      </Stack>
+                    ) : null}
                     <Textarea
                       ref={noteRef}
                       rows={3}
@@ -687,6 +799,33 @@ export function IssueDetailView({
                       onChange={handlers.New_note_onChange21}
                       onKeyDown={handlers.New_note_onKeyDown22}
                     />
+                    <Group justify="space-between" wrap="wrap">
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        size="sm"
+                        leftSection={<IconPaperclip size={16} aria-hidden="true" />}
+                        onClick={handlers.onChooseCommentFiles}
+                      >
+                        {t('issueAttachments.add')}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handlers.onSubmitComment}
+                        disabled={!draft.trim() && commentFiles.length === 0}
+                      >
+                        {t('issueAttachments.submit')}
+                      </Button>
+                    </Group>
+                    <Text c="dimmed" size="xs">
+                      {t('issueAttachments.limits')}
+                    </Text>
+                    {commentError ? (
+                      <Alert color="red" role="alert">
+                        {commentError}
+                      </Alert>
+                    ) : null}
                     <Text c="dimmed" size="sm">
                       {t(
                         commentSubmitShortcut === 'enter' ? 'ui.enterToSave' : 'ui.modEnterToSave',

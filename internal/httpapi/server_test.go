@@ -1,9 +1,13 @@
 package httpapi
 
 import (
+	"bytes"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -181,6 +185,73 @@ func TestProjectActivityListsSingleUserChangesInNewestFirstOrder(t *testing.T) {
 	missing := doJSON(t, s, http.MethodGet, "/api/projects/missing/activities", "")
 	if missing.Code != http.StatusNotFound {
 		t.Fatalf("missing project activity status %d body %s", missing.Code, missing.Body.String())
+	}
+}
+
+func TestCommentAttachmentsAreStoredScopedAndServedAsDownloads(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Attachment issue"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	var issue store.Issue
+	if err := json.Unmarshal(created.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+
+	var requestBody bytes.Buffer
+	multipartWriter := multipart.NewWriter(&requestBody)
+	if err := multipartWriter.WriteField("body", "See the attached note."); err != nil {
+		t.Fatal(err)
+	}
+	file, err := multipartWriter.CreateFormFile("files", `../../release note.txt`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const contents = "private implementation note"
+	if _, err := file.Write([]byte(contents)); err != nil {
+		t.Fatal(err)
+	}
+	if err := multipartWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/issues/"+issue.Identifier+"/comments", &requestBody)
+	request.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+	recorder := httptest.NewRecorder()
+	s.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("add comment with attachment %d %s", recorder.Code, recorder.Body.String())
+	}
+	var comment store.Comment
+	if err := json.Unmarshal(recorder.Body.Bytes(), &comment); err != nil {
+		t.Fatal(err)
+	}
+	if len(comment.Attachments) != 1 || comment.Attachments[0].Name != "release note.txt" || comment.Attachments[0].Size != int64(len(contents)) {
+		t.Fatalf("comment attachments %#v", comment.Attachments)
+	}
+
+	commentsResponse := doJSON(t, s, http.MethodGet, "/api/issues/"+issue.Identifier+"/comments", "")
+	var comments []store.Comment
+	if err := json.Unmarshal(commentsResponse.Body.Bytes(), &comments); err != nil {
+		t.Fatal(err)
+	}
+	if len(comments) != 1 || len(comments[0].Attachments) != 1 {
+		t.Fatalf("persisted comments %#v", comments)
+	}
+
+	attachmentID := comment.Attachments[0].ID
+	attachment := doJSON(t, s, http.MethodGet, "/api/issues/"+issue.Identifier+"/attachments/"+attachmentID, "")
+	if attachment.Code != http.StatusOK || attachment.Body.String() != contents {
+		t.Fatalf("download attachment %d %q", attachment.Code, attachment.Body.String())
+	}
+	if !strings.Contains(attachment.Header().Get("Content-Disposition"), "attachment") || attachment.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Fatalf("unsafe attachment headers: %#v", attachment.Header())
+	}
+	if err := s.store.DeleteIssue(issue.Identifier); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(s.store.Path(), "attachments", "issues", attachmentID)); !os.IsNotExist(err) {
+		t.Fatalf("issue attachment was not cleaned up: %v", err)
 	}
 }
 

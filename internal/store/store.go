@@ -160,10 +160,18 @@ type CreateIssueRelationInput struct {
 }
 
 type Comment struct {
-	ID        int64  `json:"id"`
-	IssueID   int64  `json:"issueId"`
-	Body      string `json:"body"`
-	CreatedAt string `json:"createdAt"`
+	ID          int64               `json:"id"`
+	IssueID     int64               `json:"issueId"`
+	Body        string              `json:"body"`
+	CreatedAt   string              `json:"createdAt"`
+	Attachments []CommentAttachment `json:"attachments,omitempty"`
+}
+
+type CommentAttachment struct {
+	ID        string `json:"id" toml:"id"`
+	Name      string `json:"name" toml:"name"`
+	MediaType string `json:"mediaType" toml:"media_type"`
+	Size      int64  `json:"size" toml:"size"`
 }
 
 type Activity struct {

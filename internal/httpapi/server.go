@@ -124,6 +124,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("DELETE /api/issues/{id}/relations/{relationId}", s.removeIssueRelation)
 	s.mux.HandleFunc("GET /api/issues/{id}/comments", s.listComments)
 	s.mux.HandleFunc("POST /api/issues/{id}/comments", s.addComment)
+	s.mux.HandleFunc("GET /api/issues/{id}/attachments/{attachmentId}", s.getIssueCommentAttachment)
 	s.mux.HandleFunc("GET /api/issues/{id}/activities", s.listActivities)
 	s.mux.HandleFunc("GET /api/pages", s.listPages)
 	s.mux.HandleFunc("POST /api/pages", s.createPage)
@@ -829,6 +830,10 @@ func (s *Server) listComments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) addComment(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(strings.ToLower(r.Header.Get("Content-Type")), "multipart/form-data") {
+		s.addCommentWithFiles(w, r)
+		return
+	}
 	var in struct {
 		Body string `json:"body"`
 	}

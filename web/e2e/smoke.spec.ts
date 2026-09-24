@@ -47,6 +47,25 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await comment.press('ControlOrMeta+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
 
+  await comment.fill('with a file');
+  await page.getByLabel('Choose files to attach').setInputFiles({
+    name: 'release-note.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('local attachment contents'),
+  });
+  await page.getByRole('button', { name: 'Submit comment' }).click();
+  const attachmentLink = page.getByRole('link', { name: 'release-note.txt' });
+  await expect(attachmentLink).toBeVisible();
+  const commentsResponse = await request.get(`/api/issues/${identifier}/comments`);
+  const comments = (await commentsResponse.json()) as {
+    attachments?: { id: string; name: string }[];
+  }[];
+  const attachment = comments.at(-1)?.attachments?.[0];
+  if (!attachment) throw new Error('expected persisted issue attachment');
+  const downloaded = await request.get(`/api/issues/${identifier}/attachments/${attachment.id}`);
+  await expect(downloaded).toBeOK();
+  await expect(await downloaded.text()).toBe('local attachment contents');
+
   await page.getByRole('button', { name: 'Copy identifier' }).click();
   await page.keyboard.press('p');
   const adrTitle = page.getByPlaceholder('ADR title');

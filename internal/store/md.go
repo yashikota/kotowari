@@ -50,9 +50,10 @@ type adrFM struct {
 }
 
 type commentFM struct {
-	ID      int64  `toml:"id"`
-	Created string `toml:"created"`
-	Body    string `toml:"body"`
+	ID          int64               `toml:"id"`
+	Created     string              `toml:"created"`
+	Body        string              `toml:"body"`
+	Attachments []CommentAttachment `toml:"attachments,omitempty"`
 }
 
 type pageFM struct {
@@ -154,7 +155,9 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 			id = int64(i + 1)
 			m.dirtyMeta = true
 		}
-		comments = append(comments, Comment{ID: id, IssueID: int64(n), Body: c.Body, CreatedAt: c.Created})
+		comments = append(comments, Comment{
+			ID: id, IssueID: int64(n), Body: c.Body, CreatedAt: c.Created, Attachments: c.Attachments,
+		})
 	}
 	return iss, comments, nil
 }
@@ -303,7 +306,9 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		fm.Labels = append(fm.Labels, l.Name)
 	}
 	for _, c := range comments {
-		fm.Comments = append(fm.Comments, commentFM{ID: c.ID, Created: c.CreatedAt, Body: c.Body})
+		fm.Comments = append(fm.Comments, commentFM{
+			ID: c.ID, Created: c.CreatedAt, Body: c.Body, Attachments: c.Attachments,
+		})
 	}
 	return marshalDoc(fm, iss.Body)
 }

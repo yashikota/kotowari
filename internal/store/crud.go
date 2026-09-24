@@ -3,6 +3,7 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"mime"
 	"net/url"
 	"sort"
 	"strings"
@@ -1554,7 +1555,8 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 }
 
 func (s *Store) DeleteIssue(identifier string) error {
-	return s.mutate(func(m *mem) error {
+	var attachmentIDs []string
+	err := s.mutate(func(m *mem) error {
 		i := indexIssue(m, identifier)
 		if i < 0 {
 			return ErrNotFound
@@ -1562,6 +1564,11 @@ func (s *Store) DeleteIssue(identifier string) error {
 		deletedID := m.Issues[i].ID
 		deletedNum := m.Issues[i].Number
 		deletedIdentifier := m.Issues[i].Identifier
+		for _, comment := range m.Comments[deletedIdentifier] {
+			for _, attachment := range comment.Attachments {
+				attachmentIDs = append(attachmentIDs, attachment.ID)
+			}
+		}
 		m.Issues = append(m.Issues[:i], m.Issues[i+1:]...)
 		delete(m.Comments, identifier)
 		for j := range m.Issues {
@@ -1583,6 +1590,13 @@ func (s *Store) DeleteIssue(identifier string) error {
 		m.bump(domain.Now())
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	for _, attachmentID := range attachmentIDs {
+		_ = s.DeleteCommentAttachment(attachmentID)
+	}
+	return nil
 }
 
 func (s *Store) AddIssueLink(identifier string, in CreateIssueLinkInput) (IssueLink, error) {
@@ -1672,9 +1686,28 @@ func (s *Store) ListComments(identifier string) ([]Comment, error) {
 }
 
 func (s *Store) AddComment(identifier, body string) (Comment, error) {
+	return s.AddCommentWithAttachments(identifier, body, nil)
+}
+
+func (s *Store) AddCommentWithAttachments(identifier, body string, attachments []CommentAttachment) (Comment, error) {
 	body = strings.TrimSpace(body)
-	if body == "" {
+	if body == "" && len(attachments) == 0 {
 		return Comment{}, validationf("body required")
+	}
+	if len(attachments) > 10 {
+		return Comment{}, validationf("too many comment attachments")
+	}
+	seen := make(map[string]struct{}, len(attachments))
+	for _, attachment := range attachments {
+		mediaType, _, err := mime.ParseMediaType(attachment.MediaType)
+		if !validCommentAttachmentID(attachment.ID) || attachment.Name == "" || len([]rune(attachment.Name)) > 255 ||
+			strings.ContainsAny(attachment.Name, "/\\") || err != nil || mediaType == "" || attachment.Size <= 0 || attachment.Size > 20<<20 {
+			return Comment{}, validationf("invalid comment attachment")
+		}
+		if _, ok := seen[attachment.ID]; ok {
+			return Comment{}, validationf("duplicate comment attachment")
+		}
+		seen[attachment.ID] = struct{}{}
 	}
 	var out Comment
 	err := s.mutate(func(m *mem) error {
@@ -1685,11 +1718,34 @@ func (s *Store) AddComment(identifier, body string) (Comment, error) {
 		now := domain.Now()
 		identifier = iss.Identifier
 		m.commentSeq[identifier]++
-		out = Comment{ID: m.commentSeq[identifier], IssueID: iss.ID, Body: body, CreatedAt: now}
+		out = Comment{
+			ID: m.commentSeq[identifier], IssueID: iss.ID, Body: body, CreatedAt: now,
+			Attachments: append([]CommentAttachment{}, attachments...),
+		}
 		m.Comments[identifier] = append(m.Comments[identifier], out)
 		addActivity(m, "issue", iss.ID, "commented", map[string]any{"commentId": out.ID}, now)
 		m.bump(now)
 		return nil
+	})
+	return out, err
+}
+
+func (s *Store) GetCommentAttachment(identifier, attachmentID string) (CommentAttachment, error) {
+	var out CommentAttachment
+	err := s.snapshot(func(m *mem) error {
+		iss, ok := issueByIdent(m, identifier)
+		if !ok {
+			return ErrNotFound
+		}
+		for _, comment := range m.Comments[iss.Identifier] {
+			for _, attachment := range comment.Attachments {
+				if attachment.ID == attachmentID {
+					out = attachment
+					return nil
+				}
+			}
+		}
+		return ErrNotFound
 	})
 	return out, err
 }
