@@ -376,6 +376,16 @@
     "closedOpen": "Open",
     "closedOnly": "Closed"
   },
+  "projectViews": {
+    "views": "Project views",
+    "allProjects": "All projects",
+    "add": "Add new view",
+    "createTitle": "Create project view",
+    "name": "View name",
+    "description": "Description",
+    "saveChanges": "Save changes",
+    "delete": "Delete view"
+  },
   "projectStatus": {
     "backlog": "Backlog",
     "planned": "Planned",

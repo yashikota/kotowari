@@ -24,6 +24,7 @@ import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
 import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
+import type { ProjectSavedView } from '../project-views.ts';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { formatCalendarDate } from '../time.ts';
@@ -63,6 +64,11 @@ export function ProjectsPageView({
         timelineFocusToday,
         displayProperties,
         projectIssueCounts,
+        projectViews,
+        activeProjectView,
+        projectViewDialogOpen,
+        projectViewName,
+        projectViewDescription,
         visibleProjectCount,
         isGrouped,
         hasActiveSearch,
@@ -88,6 +94,11 @@ export function ProjectsPageView({
                   {t('projectList.newProject')}
                 </Button>
               }
+            />
+            <ProjectViewsBar
+              views={projectViews}
+              activeSlug={activeProjectView?.slug}
+              handlers={handlers}
             />
             <ProjectListControls model={controls} />
             {visibleProjectCount === 0 && hasActiveSearch ? (
@@ -245,11 +256,110 @@ export function ProjectsPageView({
                 </Stack>
               </Box>
             </Modal>
+            <Modal
+              opened={projectViewDialogOpen}
+              onClose={handlers.onCloseProjectView}
+              title={t('projectViews.createTitle')}
+              centered
+              size="md"
+            >
+              <Box component="form" onSubmit={handlers.onSubmitProjectView}>
+                <Stack>
+                  <TextInput
+                    required
+                    maxLength={80}
+                    label={t('projectViews.name')}
+                    value={projectViewName}
+                    onChange={handlers.onProjectViewNameChange}
+                    autoFocus
+                  />
+                  <Textarea
+                    label={t('projectViews.description')}
+                    value={projectViewDescription}
+                    onChange={handlers.onProjectViewDescriptionChange}
+                    minRows={2}
+                    autosize
+                  />
+                  <Group justify="flex-end">
+                    <Button type="button" variant="default" onClick={handlers.onCloseProjectView}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={!projectViewName.trim()}>
+                      {t('projectViews.createTitle')}
+                    </Button>
+                  </Group>
+                </Stack>
+              </Box>
+            </Modal>
           </Pane>
         </SplitLayout>
       );
     }
   }
+}
+
+function ProjectViewsBar({
+  views,
+  activeSlug,
+  handlers,
+}: {
+  views: ProjectSavedView[];
+  activeSlug?: string;
+  handlers: ReturnType<typeof useProjectsPagePresenter>['handlers'];
+}) {
+  const { t } = useTranslation();
+  return (
+    <Group gap={4} wrap="wrap" mb="sm" role="tablist" aria-label={t('projectViews.views')}>
+      <Button
+        type="button"
+        size="xs"
+        variant={activeSlug ? 'subtle' : 'light'}
+        role="tab"
+        aria-selected={!activeSlug}
+        onClick={handlers.onShowAllProjects}
+      >
+        {t('projectViews.allProjects')}
+      </Button>
+      {views.map((view) => (
+        <Button
+          key={view.slug}
+          type="button"
+          size="xs"
+          variant={activeSlug === view.slug ? 'light' : 'subtle'}
+          role="tab"
+          aria-selected={activeSlug === view.slug}
+          title={view.description || view.name}
+          onClick={() => void handlers.onApplyProjectView(view)}
+        >
+          {view.name}
+        </Button>
+      ))}
+      <Button type="button" size="xs" variant="subtle" onClick={handlers.onOpenCreateProjectView}>
+        {t('projectViews.add')}
+      </Button>
+      {activeSlug ? (
+        <>
+          <Button
+            type="button"
+            size="xs"
+            variant="subtle"
+            onClick={() => void handlers.onUpdateActiveProjectView()}
+          >
+            {t('projectViews.saveChanges')}
+          </Button>
+          <Button
+            type="button"
+            size="xs"
+            variant="subtle"
+            color="red"
+            onClick={() => void handlers.onDeleteActiveProjectView()}
+          >
+            {t('projectViews.delete')}
+          </Button>
+        </>
+      ) : null}
+    </Group>
+  );
 }
 
 export function ProjectsPage() {

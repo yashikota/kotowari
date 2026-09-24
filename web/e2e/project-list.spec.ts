@@ -1,4 +1,19 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function openProjectFilterPopover(page: Page) {
+  const statusFilter = page.getByRole('combobox', { name: 'Project status' });
+  if (!(await statusFilter.isVisible())) {
+    await page.getByRole('button', { name: 'Add filter' }).click();
+  }
+  await expect(statusFilter).toBeVisible();
+}
+
+async function clearProjectFilters(page: Page) {
+  const clearButton = page.getByRole('button', { name: 'Clear all filters' });
+  if (!(await clearButton.isVisible())) await openProjectFilterPopover(page);
+  await page.keyboard.press('Escape');
+  await clearButton.click();
+}
 
 test('project list filters, search, grouping, and ordering persist in the URL', async ({
   page,
@@ -66,7 +81,7 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await expect(search).toHaveValue('Beta build');
 
   await search.fill('');
-  await page.getByRole('button', { name: 'Add filter' }).click();
+  await openProjectFilterPopover(page);
   const statusFilter = page.getByRole('combobox', { name: 'Project status' });
   await statusFilter.fill('In progress');
   await page.getByRole('option', { name: 'In progress', exact: true }).click();
@@ -77,35 +92,31 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
 
-  await page.getByRole('button', { name: /Add filter/ }).click();
-  await page.getByRole('button', { name: 'Clear all filters' }).click();
-  await page.getByRole('button', { name: 'Add filter' }).click();
+  await clearProjectFilters(page);
+  await openProjectFilterPopover(page);
   const labelFilter = page.getByRole('combobox', { name: 'Project labels' });
   await labelFilter.fill('Bug');
   await page.getByRole('option', { name: 'Bug', exact: true }).click();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(completedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(startedName) })).toHaveCount(0);
-  await page.getByRole('button', { name: /Add filter/ }).click();
-  await page.getByRole('button', { name: 'Clear all filters' }).click();
+  await clearProjectFilters(page);
 
-  await page.getByRole('button', { name: 'Add filter' }).click();
+  await openProjectFilterPopover(page);
   const milestoneFilter = page.getByRole('combobox', { name: 'Project milestones' });
   await milestoneFilter.fill(`Release marker ${stamp}`);
   await page.getByRole('option', { name: `Release marker ${stamp}`, exact: true }).click();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(startedName) })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('button', { name: 'Clear all filters' }).click();
+  await clearProjectFilters(page);
 
-  await page.getByRole('button', { name: 'Add filter' }).click();
+  await openProjectFilterPopover(page);
   const relationFilter = page.getByRole('combobox', { name: 'Project relations' });
   await relationFilter.fill('Blocks');
   await page.getByRole('option', { name: 'Blocks', exact: true }).click();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(completedName) })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('button', { name: 'Clear all filters' }).click();
+  await clearProjectFilters(page);
 
   await page.getByRole('button', { name: 'Add filter' }).click();
   await page.getByRole('combobox', { name: 'Project date field' }).click();
@@ -198,4 +209,66 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await expect(page).toHaveURL(/timelineStart=/);
   await page.getByRole('button', { name: 'Today' }).click();
   await expect(page).not.toHaveURL(/timelineStart=/);
+});
+
+test('personal project views can be created, updated, reopened, and deleted', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const plannedName = `Planning ${stamp}`;
+  const startedName = `Building ${stamp}`;
+  const planned = await request.post('/api/projects', {
+    data: { name: plannedName, slug: `planning-${stamp}`, status: 'planned' },
+  });
+  const started = await request.post('/api/projects', {
+    data: { name: startedName, slug: `building-${stamp}`, status: 'started' },
+  });
+  expect(planned.ok() && started.ok()).toBeTruthy();
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  const statusFilter = page.getByRole('combobox', { name: 'Project status' });
+  await statusFilter.fill('In progress');
+  await page.getByRole('option', { name: 'In progress', exact: true }).click();
+  await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Add new view' }).click();
+  await page.getByRole('textbox', { name: 'View name' }).fill(`In progress ${stamp}`);
+  await page.getByRole('textbox', { name: 'Description' }).fill('Projects currently being built');
+  await page.getByRole('button', { name: 'Create project view' }).click();
+
+  const savedView = page.getByRole('tab', { name: `In progress ${stamp}` });
+  await expect(savedView).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL(/projectView=in-progress-/);
+  await page.getByRole('tab', { name: 'All projects' }).click();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
+
+  await savedView.click();
+  await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('tab', { name: `In progress ${stamp}` })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+
+  await page.getByRole('textbox', { name: 'Search projects' }).fill(startedName);
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await page.getByRole('tab', { name: 'All projects' }).click();
+  await page.getByRole('tab', { name: `In progress ${stamp}` }).click();
+  await expect(page.getByRole('textbox', { name: 'Search projects' })).toHaveValue(startedName);
+  await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Delete view' }).click();
+  await expect(page.getByRole('tab', { name: `In progress ${stamp}` })).toHaveCount(0);
+  await expect(page).not.toHaveURL(/projectView=/);
+  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
+  const storedViews = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('kotowari.project-views.v1') ?? '[]'),
+  );
+  expect(storedViews).toEqual([]);
 });

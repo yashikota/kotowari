@@ -12,6 +12,7 @@ import { api, issuesQuery, parseIssueSearch, searchToFilter, type IssueSearch } 
 import { EmptyState } from './mantine-ui.tsx';
 import { PresenterScope } from './application/Root.tsx';
 import { defaultHomeHref, getPersonalPreferences } from './preferences.ts';
+import type { ProjectViewSearch } from './project-views.ts';
 
 function NotFoundPage() {
   return (
@@ -187,37 +188,7 @@ const projectsRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
 });
 
-type ProjectListSearch = {
-  q?: string;
-  status?: string[];
-  priority?: string[];
-  labels?: string[];
-  groupBy?: 'none' | 'status' | 'priority';
-  orderBy?:
-    | 'manual'
-    | 'name'
-    | 'status'
-    | 'priority'
-    | 'startDate'
-    | 'targetDate'
-    | 'created'
-    | 'updated';
-  direction?: 'asc' | 'desc';
-  closed?: 'all' | 'open' | 'closed';
-  view?: 'list' | 'board' | 'timeline';
-  columnsBy?: 'status' | 'priority';
-  rowsBy?: 'none' | 'status' | 'priority';
-  showEmptyColumns?: boolean;
-  showProjectList?: boolean;
-  showWeekNumbers?: boolean;
-  timelineStart?: string;
-  displayProperties?: string[];
-  dateField?: 'startDate' | 'targetDate' | 'created' | 'updated';
-  dateFrom?: string;
-  dateTo?: string;
-  milestones?: string[];
-  relations?: Array<'blocks' | 'blocked_by' | 'related'>;
-};
+type ProjectListSearch = ProjectViewSearch & { projectView?: string };
 
 function searchStringList(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
@@ -240,6 +211,9 @@ function searchStringList(value: unknown): string[] {
 function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch {
   const result: ProjectListSearch = {};
   if (typeof raw.q === 'string' && raw.q.trim()) result.q = raw.q;
+  if (typeof raw.projectView === 'string' && raw.projectView.length <= 120) {
+    result.projectView = raw.projectView;
+  }
   const status = searchStringList(raw.status).filter((value) =>
     ['backlog', 'planned', 'started', 'completed', 'canceled'].includes(value),
   );

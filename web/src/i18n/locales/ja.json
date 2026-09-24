@@ -374,6 +374,16 @@
     "closedOpen": "未完了",
     "closedOnly": "完了済み"
   },
+  "projectViews": {
+    "views": "プロジェクトビュー",
+    "allProjects": "すべてのプロジェクト",
+    "add": "ビューを追加",
+    "createTitle": "プロジェクトビューを作成",
+    "name": "ビュー名",
+    "description": "説明",
+    "saveChanges": "変更を保存",
+    "delete": "ビューを削除"
+  },
   "projectStatus": {
     "backlog": "バックログ",
     "planned": "予定",

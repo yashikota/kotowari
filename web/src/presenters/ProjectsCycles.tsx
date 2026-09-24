@@ -18,6 +18,8 @@ import type { ProjectBoardModel } from '../components/ProjectBoardView.tsx';
 import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
+import { useProjectViews } from '../project-views.ts';
+import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { PROJECT_STATUSES } from '../types.ts';
 import type { ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
@@ -60,6 +62,10 @@ export function useProjectsPagePresenter() {
   const [targetDate, setTargetDate] = useState('');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [projectViewDialogOpen, setProjectViewDialogOpen] = useState(false);
+  const [projectViewName, setProjectViewName] = useState('');
+  const [projectViewDescription, setProjectViewDescription] = useState('');
+  const projectViews = useProjectViews();
   const navigate = useNavigate({ from: '/projects' });
 
   function updateProjectSearch(patch: Partial<typeof search>) {
@@ -69,6 +75,93 @@ export function useProjectsPagePresenter() {
       replace: true,
       resetScroll: false,
     });
+  }
+
+  function projectViewSearch(): ProjectViewSearch {
+    return {
+      q: search.q,
+      status: search.status,
+      priority: search.priority,
+      labels: search.labels,
+      groupBy,
+      orderBy: search.orderBy ?? 'manual',
+      direction: search.direction ?? 'asc',
+      closed: search.closed ?? 'all',
+      view: search.view ?? 'list',
+      columnsBy,
+      rowsBy,
+      showEmptyColumns,
+      showProjectList: search.showProjectList ?? true,
+      showWeekNumbers: search.showWeekNumbers ?? false,
+      timelineStart: search.timelineStart,
+      displayProperties,
+      dateField: search.dateField,
+      dateFrom: search.dateFrom,
+      dateTo: search.dateTo,
+      milestones: search.milestones,
+      relations: search.relations,
+    };
+  }
+
+  function applyProjectView(view: ProjectSavedView) {
+    return navigate({
+      to: '/projects',
+      search: { ...view.search, projectView: view.slug },
+      resetScroll: false,
+    });
+  }
+
+  function openProjectView() {
+    setProjectViewName('');
+    setProjectViewDescription('');
+    setProjectViewDialogOpen(true);
+  }
+
+  async function createProjectView(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = projectViewName.trim();
+    if (!name) return;
+    const base =
+      name
+        .toLocaleLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || `project-view-${Date.now()}`;
+    let slug = base;
+    for (let suffix = 2; projectViews.views.some((view) => view.slug === slug); suffix++) {
+      slug = `${base}-${suffix}`;
+    }
+    const view: ProjectSavedView = {
+      slug,
+      name,
+      description: projectViewDescription.trim(),
+      search: projectViewSearch(),
+      updatedAt: new Date().toISOString(),
+    };
+    projectViews.save(view);
+    setProjectViewDialogOpen(false);
+    await applyProjectView(view);
+  }
+
+  const activeProjectView = projectViews.views.find((view) => view.slug === search.projectView);
+
+  async function updateActiveProjectView() {
+    if (!activeProjectView) return;
+    const updated = {
+      ...activeProjectView,
+      search: projectViewSearch(),
+      updatedAt: new Date().toISOString(),
+    };
+    projectViews.save(updated);
+  }
+
+  async function deleteActiveProjectView() {
+    if (!activeProjectView) return;
+    projectViews.remove(activeProjectView.slug);
+    await navigate({ to: '/projects', search: {}, resetScroll: false });
+  }
+
+  function showAllProjects() {
+    return navigate({ to: '/projects', search: {}, resetScroll: false });
   }
 
   const statusFilters = search.status ?? [];
@@ -470,6 +563,11 @@ export function useProjectsPagePresenter() {
     timelineFocusToday: !search.timelineStart,
     displayProperties,
     projectIssueCounts: Object.fromEntries(projectIssueCounts),
+    projectViews: projectViews.views,
+    activeProjectView,
+    projectViewDialogOpen,
+    projectViewName,
+    projectViewDescription,
     visibleProjectCount: filteredProjects.length,
     isGrouped: groupBy !== 'none',
     hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,
@@ -484,6 +582,17 @@ export function useProjectsPagePresenter() {
     selectedLabels,
     createOpen,
     handlers: {
+      onOpenCreateProjectView: openProjectView,
+      onCloseProjectView: () => setProjectViewDialogOpen(false),
+      onProjectViewNameChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+        setProjectViewName(event.target.value),
+      onProjectViewDescriptionChange: (event: React.ChangeEvent<HTMLTextAreaElement>) =>
+        setProjectViewDescription(event.target.value),
+      onSubmitProjectView: createProjectView,
+      onApplyProjectView: (view: ProjectSavedView) => applyProjectView(view),
+      onShowAllProjects: showAllProjects,
+      onUpdateActiveProjectView: updateActiveProjectView,
+      onDeleteActiveProjectView: deleteActiveProjectView,
       onTimelinePrevious: () =>
         void updateProjectSearch({ timelineStart: shiftMonthKey(timelineStart, -4) }),
       onTimelineNext: () =>

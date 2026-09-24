@@ -1753,7 +1753,8 @@ test('cycle list menu edits cycle metadata and dates', async ({ page, request })
   await metadata.getByLabel('Description').fill('Prepare the next release.');
   await metadata.getByRole('button', { name: 'Save' }).click();
 
-  row = page.getByRole('region', { name: 'Next release' });
+  row = page.getByRole('region', { name: 'Next release', exact: true });
+  await expect(row).toHaveCount(1);
   await row.getByRole('button', { name: 'Cycle options' }).click();
   await page.getByRole('menuitem', { name: 'Change cycle dates' }).click();
   const dates = page.getByRole('dialog', { name: 'Change cycle dates' });
@@ -1761,13 +1762,17 @@ test('cycle list menu edits cycle metadata and dates', async ({ page, request })
   await dates.getByLabel('End date').fill('2032-02-16');
   await dates.getByRole('button', { name: 'Save' }).click();
 
-  const saved = await request.get(`/api/cycles/${cycle.number}`);
-  expect(await saved.json()).toMatchObject({
-    name: 'Next release',
-    description: 'Prepare the next release.',
-    startsAt: '2032-02-02T00:00:00Z',
-    endsAt: '2032-02-16T00:00:00Z',
-  });
+  await expect
+    .poll(async () => {
+      const saved = await request.get(`/api/cycles/${cycle.number}`);
+      return saved.json();
+    })
+    .toMatchObject({
+      name: 'Next release',
+      description: 'Prepare the next release.',
+      startsAt: '2032-02-02T00:00:00Z',
+      endsAt: '2032-02-16T00:00:00Z',
+    });
 });
 
 test('current cycle list card summarizes scope, started, and completed work', async ({
