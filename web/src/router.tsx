@@ -175,12 +175,79 @@ const adrRoute = createRoute({
 const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects',
+  validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
   loader: async () => {
     const [projects, labels] = await Promise.all([api.projects(), api.labels()]);
     return { projects, labels };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
 });
+
+type ProjectListSearch = {
+  q?: string;
+  status?: string[];
+  priority?: string[];
+  labels?: string[];
+  groupBy?: 'none' | 'status' | 'priority';
+  orderBy?:
+    | 'manual'
+    | 'name'
+    | 'status'
+    | 'priority'
+    | 'startDate'
+    | 'targetDate'
+    | 'created'
+    | 'updated';
+  direction?: 'asc' | 'desc';
+  closed?: 'all' | 'open' | 'closed';
+};
+
+function searchStringList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
+  if (typeof value === 'string' && value) {
+    if (value.startsWith('[')) {
+      try {
+        const parsed: unknown = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item): item is string => typeof item === 'string');
+        }
+      } catch {
+        // Fall back to the comma-separated form used by older shared project links.
+      }
+    }
+    return value.split(',').filter(Boolean);
+  }
+  return [];
+}
+
+function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch {
+  const result: ProjectListSearch = {};
+  if (typeof raw.q === 'string' && raw.q.trim()) result.q = raw.q;
+  const status = searchStringList(raw.status).filter((value) =>
+    ['backlog', 'planned', 'started', 'completed', 'canceled'].includes(value),
+  );
+  if (status.length) result.status = status;
+  const priority = searchStringList(raw.priority).filter((value) => /^[0-4]$/.test(value));
+  if (priority.length) result.priority = priority;
+  const labels = searchStringList(raw.labels).filter((value) => value.length <= 100);
+  if (labels.length) result.labels = labels;
+  if (raw.groupBy === 'status' || raw.groupBy === 'priority') result.groupBy = raw.groupBy;
+  if (
+    raw.orderBy === 'manual' ||
+    raw.orderBy === 'name' ||
+    raw.orderBy === 'status' ||
+    raw.orderBy === 'priority' ||
+    raw.orderBy === 'startDate' ||
+    raw.orderBy === 'targetDate' ||
+    raw.orderBy === 'created' ||
+    raw.orderBy === 'updated'
+  ) {
+    result.orderBy = raw.orderBy;
+  }
+  if (raw.direction === 'asc' || raw.direction === 'desc') result.direction = raw.direction;
+  if (raw.closed === 'open' || raw.closed === 'closed') result.closed = raw.closed;
+  return result;
+}
 
 const projectRoute = createRoute({
   getParentRoute: () => rootRoute,

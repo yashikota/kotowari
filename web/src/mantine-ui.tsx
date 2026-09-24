@@ -104,14 +104,17 @@ export function Section({
   title,
   action,
   children,
+  ariaLabel,
 }: {
   title: ReactNode;
   action?: ReactNode;
   children: ReactNode;
+  ariaLabel?: string;
 }) {
   return (
     <Stack
       component="section"
+      aria-label={ariaLabel}
       gap="xs"
       pt="sm"
       style={{

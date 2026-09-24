@@ -46,7 +46,7 @@ export function ProjectListItem({ project }: { project: Project }) {
             size="sm"
           />
           <Text size="xs" c="dimmed" w={92} ta="right" visibleFrom="sm">
-            {project.targetDate ? project.targetDate.slice(0, 10) : 'No target date'}
+            {project.targetDate ? project.targetDate.slice(0, 10) : t('projectList.noTargetDate')}
           </Text>
         </Group>
       }

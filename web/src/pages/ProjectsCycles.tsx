@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { IssueList } from '../components/IssueList.tsx';
 import { CycleListItem, CycleStatusHeading } from '../components/CycleListItem.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
+import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { formatCalendarDate } from '../time.ts';
@@ -54,7 +55,11 @@ export function ProjectsPageView({
   switch (model._view) {
     case 0: {
       const {
-        projects,
+        projectGroups,
+        visibleProjectCount,
+        isGrouped,
+        hasActiveSearch,
+        controls,
         availableLabels,
         name,
         description,
@@ -77,7 +82,17 @@ export function ProjectsPageView({
                 </Button>
               }
             />
-            {projects.length === 0 ? (
+            <ProjectListControls model={controls} />
+            {visibleProjectCount === 0 && hasActiveSearch ? (
+              <Stack align="center" py="xl" gap="xs">
+                <Text c="dimmed" ta="center">
+                  {t('projectList.noResults')}
+                </Text>
+                <Button type="button" variant="subtle" onClick={controls.handlers.onReset}>
+                  {t('projectList.clearFilters')}
+                </Button>
+              </Stack>
+            ) : visibleProjectCount === 0 ? (
               <Stack align="center" py="xl" gap="xs">
                 <Text c="dimmed" ta="center">
                   {t('projectList.empty')}
@@ -87,10 +102,24 @@ export function ProjectsPageView({
                 </Button>
               </Stack>
             ) : (
-              <Stack gap={0}>
-                {projects.map((project) => (
-                  <ProjectListItem key={project.slug} project={project} />
-                ))}
+              <Stack gap="md">
+                {projectGroups.map((group) =>
+                  isGrouped ? (
+                    <Section key={group.key} title={group.label} ariaLabel={group.label}>
+                      <Stack gap={0}>
+                        {group.projects.map((project) => (
+                          <ProjectListItem key={project.slug} project={project} />
+                        ))}
+                      </Stack>
+                    </Section>
+                  ) : (
+                    <Stack key={group.key} gap={0}>
+                      {group.projects.map((project) => (
+                        <ProjectListItem key={project.slug} project={project} />
+                      ))}
+                    </Stack>
+                  ),
+                )}
               </Stack>
             )}
             <Modal

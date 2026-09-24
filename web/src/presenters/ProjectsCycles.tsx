@@ -6,18 +6,22 @@ import {
   useSearch,
 } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { api } from '../api.ts';
 import { useIntent } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleIssuesCSV } from '../cycle-export.ts';
 import { IssueList } from '../components/IssueList.tsx';
+import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
+import { priorityLabel } from '../i18n/labels.ts';
+import { PROJECT_STATUSES } from '../types.ts';
 import type { ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
 
 export function useProjectsPagePresenter() {
   const data = useLoaderData({ from: '/projects' }) as { projects: Project[]; labels: Label[] };
   const { projects } = data;
+  const search = useSearch({ from: '/projects' });
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] =
@@ -27,7 +31,146 @@ export function useProjectsPagePresenter() {
   const [targetDate, setTargetDate] = useState('');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: '/projects' });
+
+  function updateProjectSearch(patch: Partial<typeof search>) {
+    return navigate({
+      to: '/projects',
+      search: (previous) => ({ ...previous, ...patch }),
+      replace: true,
+      resetScroll: false,
+    });
+  }
+
+  const statusFilters = search.status ?? [];
+  const priorityFilters = search.priority ?? [];
+  const labelFilters = search.labels ?? [];
+  const filteredProjects = useMemo(() => {
+    const query = (search.q ?? '').trim().toLocaleLowerCase();
+    const projectsToSort = projects.filter((project) => {
+      if (statusFilters.length && !statusFilters.includes(project.status)) return false;
+      if (priorityFilters.length && !priorityFilters.includes(String(project.priority)))
+        return false;
+      if (
+        labelFilters.length &&
+        !labelFilters.some((label) => (project.labels ?? []).includes(label))
+      )
+        return false;
+      const closed = project.status === 'completed' || project.status === 'canceled';
+      if (search.closed === 'open' && closed) return false;
+      if (search.closed === 'closed' && !closed) return false;
+      if (query && !`${project.name} ${project.description}`.toLocaleLowerCase().includes(query)) {
+        return false;
+      }
+      return true;
+    });
+    const orderBy = search.orderBy ?? 'manual';
+    const direction = search.direction === 'desc' ? -1 : 1;
+    const originalOrder = new Map(projects.map((project, index) => [project.slug, index]));
+    projectsToSort.sort((left, right) => {
+      let result = 0;
+      if (orderBy === 'manual') {
+        result = (originalOrder.get(left.slug) ?? 0) - (originalOrder.get(right.slug) ?? 0);
+      } else if (orderBy === 'priority') {
+        const rank = (value: number) => (value === 0 ? 5 : value);
+        result = rank(left.priority) - rank(right.priority);
+      } else if (orderBy === 'status') {
+        result =
+          PROJECT_STATUSES.indexOf(left.status as (typeof PROJECT_STATUSES)[number]) -
+          PROJECT_STATUSES.indexOf(right.status as (typeof PROJECT_STATUSES)[number]);
+      } else {
+        const field =
+          orderBy === 'name'
+            ? 'name'
+            : orderBy === 'startDate'
+              ? 'startDate'
+              : orderBy === 'targetDate'
+                ? 'targetDate'
+                : orderBy === 'created'
+                  ? 'createdAt'
+                  : 'updatedAt';
+        const value = (project: Project) => project[field] ?? '';
+        result = value(left).localeCompare(value(right));
+      }
+      return result === 0 ? left.slug.localeCompare(right.slug) : result * direction;
+    });
+    return projectsToSort;
+  }, [
+    projects,
+    search.closed,
+    search.direction,
+    search.orderBy,
+    search.q,
+    statusFilters,
+    priorityFilters,
+    labelFilters,
+  ]);
+
+  const groupBy = search.groupBy ?? 'none';
+  const projectGroups = useMemo(() => {
+    if (groupBy === 'none') {
+      return filteredProjects.length ? [{ key: 'all', label: '', projects: filteredProjects }] : [];
+    }
+    const groups = new Map<string, Project[]>();
+    for (const project of filteredProjects) {
+      const key = groupBy === 'status' ? project.status : String(project.priority);
+      const group = groups.get(key) ?? [];
+      group.push(project);
+      groups.set(key, group);
+    }
+    const keys =
+      groupBy === 'status'
+        ? PROJECT_STATUSES.filter((statusValue) => groups.has(statusValue))
+        : ['1', '2', '3', '4', '0'].filter((priorityValue) => groups.has(priorityValue));
+    return keys.map((key) => ({
+      key,
+      label: groupBy === 'status' ? i18n.t(`projectStatus.${key}`) : priorityLabel(Number(key)),
+      projects: groups.get(key) ?? [],
+    }));
+  }, [filteredProjects, groupBy]);
+
+  const filterCount =
+    statusFilters.length + priorityFilters.length + labelFilters.length + (search.closed ? 1 : 0);
+  const controls: ProjectListControlsModel = {
+    search: search.q ?? '',
+    statuses: statusFilters,
+    priorities: priorityFilters,
+    labels: labelFilters,
+    groupBy,
+    orderBy: search.orderBy ?? 'manual',
+    direction: search.direction ?? 'asc',
+    closed: search.closed ?? 'all',
+    availableLabels: data.labels,
+    filterCount,
+    handlers: {
+      onSearchChange: (value) => void updateProjectSearch({ q: value || undefined }),
+      onStatusesChange: (value) =>
+        void updateProjectSearch({ status: value.length ? value : undefined }),
+      onPrioritiesChange: (value) =>
+        void updateProjectSearch({ priority: value.length ? value : undefined }),
+      onLabelsChange: (value) =>
+        void updateProjectSearch({ labels: value.length ? value : undefined }),
+      onGroupByChange: (value) =>
+        void updateProjectSearch({ groupBy: value as typeof search.groupBy }),
+      onOrderByChange: (value) =>
+        void updateProjectSearch({ orderBy: value as typeof search.orderBy }),
+      onDirectionChange: (value) =>
+        void updateProjectSearch({ direction: value as typeof search.direction }),
+      onClosedChange: (value) =>
+        void updateProjectSearch({ closed: value as typeof search.closed }),
+      onReset: () =>
+        void updateProjectSearch({
+          q: undefined,
+          status: undefined,
+          priority: undefined,
+          labels: undefined,
+          groupBy: undefined,
+          orderBy: undefined,
+          direction: undefined,
+          closed: undefined,
+        }),
+    },
+  };
 
   async function createProject(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,7 +203,11 @@ export function useProjectsPagePresenter() {
   }
   return {
     _view: 0 as const,
-    projects,
+    projectGroups,
+    visibleProjectCount: filteredProjects.length,
+    isGrouped: groupBy !== 'none',
+    hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,
+    controls,
     availableLabels: data.labels,
     name,
     description,
