@@ -314,6 +314,15 @@
       "milestoneDeleted": "Milestone removed: {{name}}"
     }
   },
+  "projectUpdates": {
+    "heading": "Updates",
+    "empty": "No status updates yet.",
+    "postButton": "Post update",
+    "modalTitle": "Post a project update",
+    "health": "Project health",
+    "body": "Update",
+    "bodyPlaceholder": "Share progress, risks, and next steps…"
+  },
   "projectIcons": {
     "choose": "Choose project icon",
     "iconsTab": "Icons",

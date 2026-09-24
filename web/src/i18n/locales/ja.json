@@ -312,6 +312,15 @@
       "milestoneDeleted": "マイルストーンを削除しました：{{name}}"
     }
   },
+  "projectUpdates": {
+    "heading": "状況更新",
+    "empty": "状況更新はまだありません。",
+    "postButton": "更新を投稿",
+    "modalTitle": "プロジェクトの状況を更新",
+    "health": "プロジェクトの状況",
+    "body": "更新内容",
+    "bodyPlaceholder": "進捗、リスク、次のステップを共有…"
+  },
   "projectIcons": {
     "choose": "プロジェクトアイコンを選択",
     "iconsTab": "アイコン",

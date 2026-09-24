@@ -674,6 +674,37 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 	return out, err
 }
 
+func (s *Store) PostProjectUpdate(slug, health, body string) (Activity, error) {
+	health = strings.TrimSpace(health)
+	body = strings.TrimSpace(body)
+	if !domain.ValidProjectHealth(health) {
+		return Activity{}, validationf("invalid project health")
+	}
+	if body == "" || utf8.RuneCountInString(body) > 10000 {
+		return Activity{}, validationf("project update body must contain 1 to 10000 characters")
+	}
+	now := domain.Now()
+	var out Activity
+	err := s.mutate(func(m *mem) error {
+		i := indexProject(m, slug)
+		if i < 0 {
+			return ErrNotFound
+		}
+		project := m.Projects[i]
+		project.Health = health
+		project.UpdatedAt = now
+		m.Projects[i] = project
+		addActivity(m, "project", project.ID, "status_update_posted", map[string]any{
+			"health": health,
+			"body":   body,
+		}, now)
+		out = m.Activities[len(m.Activities)-1]
+		m.bump(now)
+		return nil
+	})
+	return out, err
+}
+
 func (s *Store) DeleteProject(slug string) error {
 	return s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)

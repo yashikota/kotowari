@@ -33,7 +33,7 @@ import { useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { PROJECT_STATUSES } from '../types.ts';
-import type { Activity, ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
+import type { Activity, ADR, Cycle, Issue, Label, Page, Project, ProjectHealth } from '../types.ts';
 
 const DAY_MS = 86_400_000;
 
@@ -758,12 +758,20 @@ export function useProjectDetailPagePresenter() {
   const [dependencyKind, setDependencyKind] = useState<'blocks' | 'blocked_by' | 'related'>(
     'blocks',
   );
+  const [projectUpdateOpen, setProjectUpdateOpen] = useState(false);
+  const [projectUpdateHealth, setProjectUpdateHealth] = useState<ProjectHealth>(
+    project.health ?? 'on_track',
+  );
+  const [projectUpdateBody, setProjectUpdateBody] = useState('');
 
   if (project.slug !== data.project.slug) {
     setProject(data.project);
     setSelected(null);
     setDependencyProjectSlug('');
     setDependencyKind('blocks');
+    setProjectUpdateHealth(data.project.health ?? 'on_track');
+    setProjectUpdateBody('');
+    setProjectUpdateOpen(false);
   }
 
   async function save(body: Record<string, unknown>) {
@@ -817,11 +825,30 @@ export function useProjectDetailPagePresenter() {
     data,
     selected,
     project,
-    projectActivityItems: data.activities.map((activity) => ({
-      id: activity.id,
-      message: describeProjectActivity(activity, data.projects),
-      createdAt: activity.createdAt,
-    })),
+    projectUpdates: data.activities.flatMap((activity) => {
+      if (activity.action !== 'status_update_posted') return [];
+      const health = activity.payload.health;
+      const body = activity.payload.body;
+      if (
+        (health !== 'on_track' && health !== 'at_risk' && health !== 'off_track') ||
+        typeof body !== 'string'
+      ) {
+        return [];
+      }
+      return [
+        { id: activity.id, health: health as ProjectHealth, body, createdAt: activity.createdAt },
+      ];
+    }),
+    projectActivityItems: data.activities
+      .filter((activity) => activity.action !== 'status_update_posted')
+      .map((activity) => ({
+        id: activity.id,
+        message: describeProjectActivity(activity, data.projects),
+        createdAt: activity.createdAt,
+      })),
+    projectUpdateOpen,
+    projectUpdateHealth,
+    projectUpdateBody,
     availableDependencyProjects: data.projects.filter(
       (candidate) =>
         candidate.slug !== slug &&
@@ -842,6 +869,25 @@ export function useProjectDetailPagePresenter() {
       ) => save({ priority: Number(e.target.value) }),
       onProjectHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
         save({ health: e.target.value === 'none' ? '' : e.target.value }),
+      onOpenProjectUpdate: () => {
+        setProjectUpdateHealth(project.health ?? 'on_track');
+        setProjectUpdateBody('');
+        setProjectUpdateOpen(true);
+      },
+      onCloseProjectUpdate: () => setProjectUpdateOpen(false),
+      onProjectUpdateHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+        setProjectUpdateHealth(e.target.value as ProjectHealth),
+      onProjectUpdateBodyChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+        setProjectUpdateBody(e.target.value),
+      onSubmitProjectUpdate: async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const body = projectUpdateBody.trim();
+        if (!body) return;
+        await api.postProjectUpdate(slug, projectUpdateHealth, body);
+        setProjectUpdateOpen(false);
+        setProjectUpdateBody('');
+        await refreshProject();
+      },
       onProjectLabelToggle: (name: string) => {
         const current = project.labels ?? [];
         const next = current.includes(name)

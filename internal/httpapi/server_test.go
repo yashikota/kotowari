@@ -228,6 +228,44 @@ func TestProjectActivityListsSingleUserChangesInNewestFirstOrder(t *testing.T) {
 	}
 }
 
+func TestProjectStatusUpdateEndpointPostsHealthAndHistory(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch","status":"started"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", created.Code, created.Body.String())
+	}
+	posted := doJSON(t, s, http.MethodPost, "/api/projects/launch/updates", `{"health":"off_track","body":"Root cause identified.\n\nMitigation is underway."}`)
+	if posted.Code != http.StatusCreated {
+		t.Fatalf("post project update %d %s", posted.Code, posted.Body.String())
+	}
+	var activity store.Activity
+	if err := json.Unmarshal(posted.Body.Bytes(), &activity); err != nil {
+		t.Fatal(err)
+	}
+	if activity.Action != "status_update_posted" || activity.EntityType != "project" {
+		t.Fatalf("posted project update = %#v", activity)
+	}
+	projectResponse := doJSON(t, s, http.MethodGet, "/api/projects/launch", "")
+	var project store.Project
+	if projectResponse.Code != http.StatusOK || json.Unmarshal(projectResponse.Body.Bytes(), &project) != nil || project.Health != "off_track" {
+		t.Fatalf("updated project = %s", projectResponse.Body.String())
+	}
+	listed := doJSON(t, s, http.MethodGet, "/api/projects/launch/activities", "")
+	var activities []store.Activity
+	if listed.Code != http.StatusOK || json.Unmarshal(listed.Body.Bytes(), &activities) != nil || len(activities) != 2 || activities[0].Action != "status_update_posted" {
+		t.Fatalf("project update history = %d %s", listed.Code, listed.Body.String())
+	}
+	if invalidHealth := doJSON(t, s, http.MethodPost, "/api/projects/launch/updates", `{"health":"unknown","body":"Update"}`); invalidHealth.Code != http.StatusBadRequest {
+		t.Fatalf("invalid health status %d", invalidHealth.Code)
+	}
+	if emptyBody := doJSON(t, s, http.MethodPost, "/api/projects/launch/updates", `{"health":"on_track","body":" "}`); emptyBody.Code != http.StatusBadRequest {
+		t.Fatalf("empty body status %d", emptyBody.Code)
+	}
+	if missing := doJSON(t, s, http.MethodPost, "/api/projects/missing/updates", `{"health":"on_track","body":"Update"}`); missing.Code != http.StatusNotFound {
+		t.Fatalf("missing project status %d", missing.Code)
+	}
+}
+
 func TestCycleActivityEndpointReturnsStatusHistoryForCurrentMembers(t *testing.T) {
 	s := testAPI(t)
 	start := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)

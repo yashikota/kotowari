@@ -13,6 +13,7 @@ import type {
   Page,
   ADR,
   Project,
+  ProjectHealth,
   ProjectMilestone,
   RecurringIssue,
   SearchHit,
@@ -188,6 +189,11 @@ export const api = {
   projects: () => req<Project[]>('/api/projects'),
   project: (slug: string) => req<Project>(`/api/projects/${slug}`),
   projectActivities: (slug: string) => req<Activity[]>(`/api/projects/${slug}/activities`),
+  postProjectUpdate: (slug: string, health: ProjectHealth, body: string) =>
+    req<Activity>(`/api/projects/${slug}/updates`, {
+      method: 'POST',
+      body: JSON.stringify({ health, body }),
+    }),
   createProject: (body: {
     name: string;
     slug: string;

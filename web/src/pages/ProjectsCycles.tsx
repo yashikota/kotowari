@@ -27,6 +27,7 @@ import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
 import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
+import { ProjectUpdateFeed } from '../components/ProjectUpdateFeed.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
 import { CYCLE_STATUSES, PROJECT_STATUSES } from '../types.ts';
@@ -418,7 +419,11 @@ export function ProjectDetailPageView({
         data,
         selected,
         project,
+        projectUpdates,
         projectActivityItems,
+        projectUpdateOpen,
+        projectUpdateHealth,
+        projectUpdateBody,
         milestoneName,
         milestoneTargetDate,
         availableDependencyProjects,
@@ -476,6 +481,9 @@ export function ProjectDetailPageView({
                     <Button type="button" variant="subtle" onClick={handlers.onClick1}>
                       {t('ui.newIssue')}
                     </Button>
+                    <Button type="button" variant="default" onClick={handlers.onOpenProjectUpdate}>
+                      {t('projectUpdates.postButton')}
+                    </Button>
                     <Button type="button" variant="subtle" color="red" onClick={handlers.onClick2}>
                       {t('ui.delete')}
                     </Button>
@@ -505,6 +513,15 @@ export function ProjectDetailPageView({
                     },
                   }}
                 />
+                <Section
+                  title={t('projectUpdates.heading')}
+                  ariaLabel={t('projectUpdates.heading')}
+                >
+                  <ProjectUpdateFeed
+                    updates={projectUpdates}
+                    emptyLabel={t('projectUpdates.empty')}
+                  />
+                </Section>
                 <Group gap="md" wrap="wrap" align="flex-end">
                   <TextInput
                     type="date"
@@ -782,6 +799,44 @@ export function ProjectDetailPageView({
               </Stack>
             </Pane>
           </SplitLayout>
+          <Modal
+            opened={projectUpdateOpen}
+            onClose={handlers.onCloseProjectUpdate}
+            title={t('projectUpdates.modalTitle')}
+            centered
+          >
+            <Box component="form" onSubmit={handlers.onSubmitProjectUpdate}>
+              <Stack>
+                <NativeSelect
+                  label={t('projectUpdates.health')}
+                  value={projectUpdateHealth}
+                  onChange={handlers.onProjectUpdateHealthChange}
+                  data={(['on_track', 'at_risk', 'off_track'] as const).map((health) => ({
+                    value: health,
+                    label: t(`projectHealth.status.${health}`),
+                  }))}
+                />
+                <Textarea
+                  required
+                  maxLength={10000}
+                  minRows={5}
+                  autosize
+                  label={t('projectUpdates.body')}
+                  placeholder={t('projectUpdates.bodyPlaceholder')}
+                  value={projectUpdateBody}
+                  onChange={handlers.onProjectUpdateBodyChange}
+                />
+                <Group justify="flex-end">
+                  <Button type="button" variant="default" onClick={handlers.onCloseProjectUpdate}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={!projectUpdateBody.trim()}>
+                    {t('projectUpdates.postButton')}
+                  </Button>
+                </Group>
+              </Stack>
+            </Box>
+          </Modal>
         </Box>
       );
     }

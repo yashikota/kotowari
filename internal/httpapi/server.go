@@ -86,6 +86,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/projects", s.listProjects)
 	s.mux.HandleFunc("POST /api/projects", s.createProject)
 	s.mux.HandleFunc("GET /api/projects/{slug}/activities", s.listProjectActivities)
+	s.mux.HandleFunc("POST /api/projects/{slug}/updates", s.postProjectUpdate)
 	s.mux.HandleFunc("GET /api/projects/{slug}", s.getProject)
 	s.mux.HandleFunc("PATCH /api/projects/{slug}", s.patchProject)
 	s.mux.HandleFunc("DELETE /api/projects/{slug}", s.deleteProject)
@@ -973,6 +974,23 @@ func (s *Server) listProjectActivities(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) postProjectUpdate(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Health string `json:"health"`
+		Body   string `json:"body"`
+	}
+	if err := decodeJSON(r, &in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	out, err := s.store.PostProjectUpdate(r.PathValue("slug"), in.Health, in.Body)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
 }
 
 func (s *Server) listPages(w http.ResponseWriter, _ *http.Request) {

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -898,6 +899,64 @@ func TestCreateProjectDefaultsAndConflict(t *testing.T) {
 	}
 	if _, err := s.GetProject("missing"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing project: %v", err)
+	}
+}
+
+func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
+	s := openTest(t)
+	project, err := s.CreateProject("Launch", "launch", "", "started", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.PostProjectUpdate(project.Slug, "at_risk", "Mitigation is underway."); err != nil {
+		t.Fatal(err)
+	}
+	updated, err := s.GetProject(project.Slug)
+	if err != nil || updated.Health != "at_risk" {
+		t.Fatalf("updated project health = %q, error %v", updated.Health, err)
+	}
+	activities, err := s.ListProjectActivities(project.Slug)
+	if err != nil || len(activities) != 2 || activities[0].Action != "status_update_posted" {
+		t.Fatalf("project update history = %#v, error %v", activities, err)
+	}
+	var payload struct {
+		Health string `json:"health"`
+		Body   string `json:"body"`
+	}
+	if err := json.Unmarshal(activities[0].Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Health != "at_risk" || payload.Body != "Mitigation is underway." {
+		t.Fatalf("project update payload = %#v", payload)
+	}
+	if _, err := s.PostProjectUpdate(project.Slug, "unknown", "invalid health"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid health error = %v", err)
+	}
+	if _, err := s.PostProjectUpdate(project.Slug, "on_track", "  "); !errors.Is(err, ErrValidation) {
+		t.Fatalf("empty body error = %v", err)
+	}
+	if _, err := s.PostProjectUpdate("missing", "on_track", "Update"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing project error = %v", err)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	persisted, err := reopened.GetProject(project.Slug)
+	if err != nil || persisted.Health != "at_risk" {
+		t.Fatalf("persisted project health = %q, error %v", persisted.Health, err)
+	}
+	persistedActivities, err := reopened.ListProjectActivities(project.Slug)
+	if err != nil || len(persistedActivities) != 2 || persistedActivities[0].Action != "status_update_posted" {
+		t.Fatalf("persisted project update history = %#v, error %v", persistedActivities, err)
+	}
+	if err := json.Unmarshal(persistedActivities[0].Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Health != "at_risk" || payload.Body != "Mitigation is underway." {
+		t.Fatalf("persisted project update payload = %#v", payload)
 	}
 }
 
