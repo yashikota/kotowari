@@ -340,6 +340,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		Description    string                    `json:"description"`
 		Status         string                    `json:"status"`
 		WorkflowStatus string                    `json:"workflowStatus"`
+		TemplateSlug   string                    `json:"templateSlug"`
 		Priority       int                       `json:"priority"`
 		StartDate      *string                   `json:"startDate"`
 		TargetDate     *string                   `json:"targetDate"`
@@ -351,7 +352,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectWithWorkflowAndOptions(in.Name, in.Slug, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Priority, in.StartDate, in.TargetDate, in.Labels, store.ProjectCreationOptions{Milestones: in.Milestones, Dependencies: in.Dependencies})
+	out, err := s.store.CreateProjectWithWorkflowAndOptions(in.Name, in.Slug, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Priority, in.StartDate, in.TargetDate, in.Labels, store.ProjectCreationOptions{TemplateSlug: in.TemplateSlug, Milestones: in.Milestones, Dependencies: in.Dependencies})
 	if err != nil {
 		writeError(w, err)
 		return

@@ -116,6 +116,7 @@ export type Project = {
   description: string;
   status: string;
   workflowStatus?: string;
+  templateSlug?: string;
   health?: ProjectHealth | null;
   completedAt?: string | null;
   priority: number;

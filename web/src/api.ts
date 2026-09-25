@@ -235,6 +235,7 @@ export const api = {
     description?: string;
     status?: string;
     workflowStatus?: string;
+    templateSlug?: string;
     priority?: number;
     startDate?: string;
     targetDate?: string;

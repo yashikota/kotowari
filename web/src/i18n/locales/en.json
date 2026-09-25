@@ -614,6 +614,8 @@
     "filterCategoryHealth": "Health",
     "filterCategoryMilestones": "Milestones",
     "filterCategoryRelations": "Relations",
+    "filterTemplate": "Template",
+    "filterNoTemplate": "No template",
     "filterTitleSummary": "Title & summary",
     "searchOperator": "Title & summary operator",
     "searchContains": "contains",

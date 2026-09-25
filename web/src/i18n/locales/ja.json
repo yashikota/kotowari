@@ -612,6 +612,8 @@
     "filterCategoryHealth": "健全性",
     "filterCategoryMilestones": "マイルストーン",
     "filterCategoryRelations": "関連",
+    "filterTemplate": "テンプレート",
+    "filterNoTemplate": "テンプレートなし",
     "filterTitleSummary": "タイトルと概要",
     "searchOperator": "タイトルと概要の条件",
     "searchContains": "次を含む",

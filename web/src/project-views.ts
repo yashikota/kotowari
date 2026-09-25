@@ -11,6 +11,7 @@ export type ProjectViewSearch = {
   priority?: string[];
   health?: Array<ProjectHealth | 'none'>;
   labels?: string[];
+  templates?: string[];
   groupBy?: 'none' | 'status' | 'priority';
   orderBy?:
     | 'manual'

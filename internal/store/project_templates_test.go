@@ -40,6 +40,23 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 		template.Milestones[0] != (ProjectTemplateMilestone{Name: "Beta", Description: "Validate with users."}) {
 		t.Fatalf("created template %#v", template)
 	}
+	fromTemplate, err := s.CreateProjectWithWorkflowAndOptions(
+		"Reused launch", "reused-launch", template.Summary, template.Icon, template.IconColor,
+		template.Description, template.Status, template.WorkflowStatus, template.Priority,
+		nil, nil, template.Labels, ProjectCreationOptions{TemplateSlug: template.Slug},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fromTemplate.TemplateSlug != template.Slug {
+		t.Fatalf("created project template origin %q, want %q", fromTemplate.TemplateSlug, template.Slug)
+	}
+	if _, err := s.CreateProjectWithWorkflowAndOptions(
+		"Invalid origin", "invalid-origin", "", "", "", "", "planned", "planned", 0, nil, nil, nil,
+		ProjectCreationOptions{TemplateSlug: "../escape"},
+	); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid template origin error %v", err)
+	}
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}

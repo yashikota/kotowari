@@ -190,6 +190,7 @@ export function useProjectsPagePresenter() {
       priority: search.priority,
       health: search.health,
       labels: search.labels,
+      templates: search.templates,
       groupBy,
       orderBy: search.orderBy ?? 'manual',
       direction: search.direction ?? 'asc',
@@ -244,6 +245,7 @@ export function useProjectsPagePresenter() {
   const priorityFilters = search.priority ?? [];
   const healthFilters = search.health ?? [];
   const labelFilters = search.labels ?? [];
+  const templateFilters = search.templates ?? [];
   const milestoneFilters = search.milestones ?? [];
   const relationFilters = search.relations ?? [];
   const availableMilestones = useMemo(
@@ -255,6 +257,17 @@ export function useProjectsPagePresenter() {
       ].sort(),
     [projects],
   );
+  const availableTemplates = useMemo(() => {
+    const templateNames = new Map(
+      data.projectTemplates.map((template) => [template.slug, template.name]),
+    );
+    for (const project of projects) {
+      if (project.templateSlug && !templateNames.has(project.templateSlug)) {
+        templateNames.set(project.templateSlug, project.templateSlug);
+      }
+    }
+    return [...templateNames].map(([slug, label]) => ({ value: `template:${slug}`, label }));
+  }, [data.projectTemplates, projects]);
   const displayProperties = (search.displayProperties ??
     DEFAULT_PROJECT_DISPLAY_PROPERTIES) as ProjectDisplayProperty[];
   const projectIssueCounts = useMemo(() => {
@@ -269,6 +282,11 @@ export function useProjectsPagePresenter() {
     const query = search.q ?? '';
     const projectsToSort = projects.filter((project) => {
       if (search.specificProject && project.slug !== search.specificProject) return false;
+      if (
+        templateFilters.length &&
+        !templateFilters.includes(`template:${project.templateSlug ?? ''}`)
+      )
+        return false;
       if (
         statusFilters.length &&
         !statusFilters.includes(project.workflowStatus ?? project.status) &&
@@ -371,6 +389,7 @@ export function useProjectsPagePresenter() {
     search.orderBy,
     search.q,
     search.specificProject,
+    templateFilters,
     statusFilters,
     priorityFilters,
     healthFilters,
@@ -533,6 +552,7 @@ export function useProjectsPagePresenter() {
     priorityFilters.length +
     healthFilters.length +
     labelFilters.length +
+    templateFilters.length +
     milestoneFilters.length +
     relationFilters.length +
     Number(Boolean(search.q?.trim())) +
@@ -546,6 +566,7 @@ export function useProjectsPagePresenter() {
     priorities: priorityFilters,
     healths: healthFilters,
     labels: labelFilters,
+    templates: templateFilters,
     groupBy,
     orderBy: search.orderBy ?? 'manual',
     direction: search.direction ?? 'asc',
@@ -563,6 +584,7 @@ export function useProjectsPagePresenter() {
     milestones: milestoneFilters,
     relations: relationFilters,
     availableMilestones,
+    availableTemplates,
     availableProjects: projects.map((project) => ({ value: project.slug, label: project.name })),
     specificProject: search.specificProject ?? '',
     availableLabels: data.labels,
@@ -587,6 +609,8 @@ export function useProjectsPagePresenter() {
         }),
       onLabelsChange: (value) =>
         void updateProjectSearch({ labels: value.length ? value : undefined }),
+      onTemplatesChange: (value) =>
+        void updateProjectSearch({ templates: value.length ? value : undefined }),
       onDateFieldChange: (value) =>
         void updateProjectSearch({
           dateField: value ? (value as typeof search.dateField) : undefined,
@@ -637,6 +661,7 @@ export function useProjectsPagePresenter() {
           priority: undefined,
           health: undefined,
           labels: undefined,
+          templates: undefined,
           dateField: undefined,
           dateFrom: undefined,
           dateTo: undefined,
@@ -678,6 +703,7 @@ export function useProjectsPagePresenter() {
       description,
       status: projectWorkflowStatusCategory(status, projectWorkflowStatuses),
       workflowStatus: status,
+      ...(selectedProjectTemplate ? { templateSlug: selectedProjectTemplate } : {}),
       priority,
       ...(startDate ? { startDate } : {}),
       ...(targetDate ? { targetDate } : {}),

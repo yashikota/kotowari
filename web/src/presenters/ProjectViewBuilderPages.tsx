@@ -10,11 +10,12 @@ import type { ProjectDisplayProperty } from '../project-display.ts';
 import { matchesProjectTitleSummary, useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
-import type { Project, ViewIconName } from '../types.ts';
+import type { Project, ProjectTemplate, ViewIconName } from '../types.ts';
 import { VIEW_ICON_NAMES } from '../components/ViewIcon.tsx';
 
 type BuilderData = {
   projects: Project[];
+  projectTemplates: ProjectTemplate[];
   labels: import('../types.ts').Label[];
   issues: import('../types.ts').Issue[];
 };
@@ -82,6 +83,16 @@ export function useProjectViewBuilderPresenter() {
       ].sort(),
     [data.projects],
   );
+  const availableTemplates = useMemo(() => {
+    const templateNames = new Map(
+      data.projectTemplates.map((template) => [template.slug, template.name]),
+    );
+    for (const project of data.projects) {
+      if (project.templateSlug && !templateNames.has(project.templateSlug))
+        templateNames.set(project.templateSlug, project.templateSlug);
+    }
+    return [...templateNames].map(([slug, label]) => ({ value: `template:${slug}`, label }));
+  }, [data.projectTemplates, data.projects]);
 
   const filteredProjects = useMemo(() => {
     const query = search.q ?? '';
@@ -89,10 +100,16 @@ export function useProjectViewBuilderPresenter() {
     const priorityFilters = search.priority ?? [];
     const healthFilters = search.health ?? [];
     const labelFilters = search.labels ?? [];
+    const templateFilters = search.templates ?? [];
     const milestoneFilters = search.milestones ?? [];
     const relationFilters = search.relations ?? [];
     const filtered = data.projects.filter((project) => {
       if (search.specificProject && project.slug !== search.specificProject) return false;
+      if (
+        templateFilters.length &&
+        !templateFilters.includes(`template:${project.templateSlug ?? ''}`)
+      )
+        return false;
       if (
         statusFilters.length &&
         !statusFilters.includes(project.workflowStatus ?? project.status) &&
@@ -338,6 +355,7 @@ export function useProjectViewBuilderPresenter() {
   const priorityFilters = search.priority ?? [];
   const healthFilters = search.health ?? [];
   const labelFilters = search.labels ?? [];
+  const templateFilters = search.templates ?? [];
   const milestoneFilters = search.milestones ?? [];
   const relationFilters = search.relations ?? [];
   const filterCount =
@@ -345,6 +363,7 @@ export function useProjectViewBuilderPresenter() {
     priorityFilters.length +
     healthFilters.length +
     labelFilters.length +
+    templateFilters.length +
     milestoneFilters.length +
     relationFilters.length +
     Number(Boolean(search.q?.trim())) +
@@ -359,6 +378,7 @@ export function useProjectViewBuilderPresenter() {
     priorities: priorityFilters,
     healths: healthFilters,
     labels: labelFilters,
+    templates: templateFilters,
     groupBy: search.groupBy ?? 'none',
     orderBy: search.orderBy ?? 'manual',
     direction: search.direction ?? 'asc',
@@ -376,6 +396,7 @@ export function useProjectViewBuilderPresenter() {
     milestones: milestoneFilters,
     relations: relationFilters,
     availableMilestones,
+    availableTemplates,
     availableProjects: data.projects.map((project) => ({
       value: project.slug,
       label: project.name,
@@ -401,6 +422,8 @@ export function useProjectViewBuilderPresenter() {
           health: value.length ? (value as ProjectViewSearch['health']) : undefined,
         }),
       onLabelsChange: (value) => void updateSearch({ labels: value.length ? value : undefined }),
+      onTemplatesChange: (value) =>
+        void updateSearch({ templates: value.length ? value : undefined }),
       onDateFieldChange: (value) =>
         void updateSearch({
           dateField: (value as ProjectViewSearch['dateField']) || undefined,

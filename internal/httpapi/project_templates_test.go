@@ -33,6 +33,22 @@ func TestProjectTemplateAPI(t *testing.T) {
 		len(template.Milestones) != 1 || template.Milestones[0].Name != "Beta" || template.Milestones[0].Description != "Validate" {
 		t.Fatalf("created template %#v", template)
 	}
+	createdFromTemplate := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Reused","slug":"reused","status":"started","workflowStatus":"started","templateSlug":"launch-plan"}`)
+	if createdFromTemplate.Code != http.StatusCreated {
+		t.Fatalf("create project from template %d %s", createdFromTemplate.Code, createdFromTemplate.Body.String())
+	}
+	var reused struct {
+		TemplateSlug string `json:"templateSlug"`
+	}
+	if err := json.Unmarshal(createdFromTemplate.Body.Bytes(), &reused); err != nil {
+		t.Fatal(err)
+	}
+	if reused.TemplateSlug != template.Slug {
+		t.Fatalf("project template origin %q, want %q", reused.TemplateSlug, template.Slug)
+	}
+	if invalid := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Invalid","slug":"invalid","templateSlug":"../escape"}`); invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid template origin %d %s", invalid.Code, invalid.Body.String())
+	}
 
 	listed := doJSON(t, s, http.MethodGet, "/api/project-templates", "")
 	var templates []struct {

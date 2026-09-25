@@ -76,6 +76,7 @@ type Project struct {
 	Description    string              `json:"description" toml:"description"`
 	Status         string              `json:"status" toml:"status"`
 	WorkflowStatus string              `json:"workflowStatus,omitempty" toml:"workflow_status,omitempty"`
+	TemplateSlug   string              `json:"templateSlug,omitempty" toml:"template_slug,omitempty"`
 	Health         string              `json:"health,omitempty" toml:"health,omitempty"`
 	CompletedAt    *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
 	Priority       int                 `json:"priority" toml:"priority"`
@@ -105,6 +106,7 @@ type MilestoneInput struct {
 }
 
 type ProjectCreationOptions struct {
+	TemplateSlug string              `json:"templateSlug,omitempty"`
 	Milestones   []MilestoneInput    `json:"milestones,omitempty"`
 	Dependencies []ProjectDependency `json:"dependencies,omitempty"`
 }

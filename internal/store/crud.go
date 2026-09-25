@@ -223,6 +223,9 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 	if !validProjectIcon(icon) || !validProjectIconColor(iconColor) {
 		return Project{}, validationf("invalid project appearance")
 	}
+	if options.TemplateSlug != "" && issueTemplateSlug(options.TemplateSlug) != options.TemplateSlug {
+		return Project{}, validationf("invalid project template identifier")
+	}
 	if !validMilestoneDate(start) || !validMilestoneDate(target) {
 		return Project{}, validationf("project dates must use YYYY-MM-DD")
 	}
@@ -300,7 +303,7 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 		}
 		out = Project{
 			ID: projectID, Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: resolvedStatus.Category, WorkflowStatus: resolvedStatus.ID,
-			Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
+			TemplateSlug: options.TemplateSlug, Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
 			Labels: projectLabels, Dependencies: dependencies, Milestones: milestones, CreatedAt: now, UpdatedAt: now,
 		}
 		for i, dependency := range dependencies {

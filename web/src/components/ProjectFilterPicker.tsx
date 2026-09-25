@@ -39,6 +39,7 @@ const FILTERS = [
   'dates',
   'milestones',
   'relations',
+  'template',
   'title',
   'specificProject',
 ] as const;
@@ -47,7 +48,7 @@ type FilterKey = (typeof FILTERS)[number];
 
 const FILTER_GROUPS: FilterKey[][] = [
   ['status', 'priority', 'labels', 'health', 'dates', 'milestones', 'relations'],
-  ['title'],
+  ['template', 'title'],
   ['specificProject'],
 ];
 
@@ -59,6 +60,7 @@ const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
   dates: IconCalendar,
   milestones: IconFlag,
   relations: IconLink,
+  template: IconFileText,
   title: IconFileText,
   specificProject: IconStack2,
 };
@@ -86,6 +88,7 @@ export function ProjectFilterPicker({
     dates: t('projectList.filterDates'),
     milestones: t('projectList.filterCategoryMilestones'),
     relations: t('projectList.filterCategoryRelations'),
+    template: t('projectList.filterTemplate'),
     title: t('projectList.filterTitleSummary'),
     specificProject: t('projectList.filterSpecificProject'),
   };
@@ -105,9 +108,11 @@ export function ProjectFilterPicker({
                   ? model.milestones.length
                   : key === 'relations'
                     ? model.relations.length
-                    : key === 'title'
-                      ? Number(Boolean(model.search.trim()))
-                      : Number(Boolean(model.specificProject));
+                    : key === 'template'
+                      ? model.templates.length
+                      : key === 'title'
+                        ? Number(Boolean(model.search.trim()))
+                        : Number(Boolean(model.specificProject));
     if (!count) return [];
     const dateFieldLabels: Record<string, string> = {
       startDate: t('projectList.orderStartDate'),
@@ -137,11 +142,21 @@ export function ProjectFilterPicker({
                         .join(', ')
                     : key === 'title'
                       ? `“${model.search.trim()}”`
-                      : (model.availableProjects?.find(
-                          (project) => project.value === model.specificProject,
-                        )?.label ??
-                        model.specificProject ??
-                        '');
+                      : key === 'template'
+                        ? model.templates
+                            .map((template) =>
+                              template === 'template:'
+                                ? t('projectList.filterNoTemplate')
+                                : (model.availableTemplates.find(
+                                    (option) => option.value === template,
+                                  )?.label ?? template.slice('template:'.length)),
+                            )
+                            .join(', ')
+                        : (model.availableProjects?.find(
+                            (project) => project.value === model.specificProject,
+                          )?.label ??
+                          model.specificProject ??
+                          '');
     const label =
       key === 'title'
         ? `${labels.title} ${t(
@@ -187,6 +202,9 @@ export function ProjectFilterPicker({
         break;
       case 'relations':
         model.handlers.onRelationsChange([]);
+        break;
+      case 'template':
+        model.handlers.onTemplatesChange([]);
         break;
       case 'title':
         model.handlers.onSearchChange('');
@@ -309,6 +327,20 @@ export function ProjectFilterPicker({
               { value: 'blocks', label: t('projectDependencies.kindOptions.blocks') },
               { value: 'blocked_by', label: t('projectDependencies.kindOptions.blocked_by') },
               { value: 'related', label: t('projectDependencies.kindOptions.related') },
+            ]}
+            searchable
+            comboboxProps={{ withinPortal: false }}
+          />
+        );
+      case 'template':
+        return (
+          <MultiSelect
+            aria-label={labels.template}
+            value={model.templates}
+            onChange={model.handlers.onTemplatesChange}
+            data={[
+              { value: 'template:', label: t('projectList.filterNoTemplate') },
+              ...model.availableTemplates,
             ]}
             searchable
             comboboxProps={{ withinPortal: false }}

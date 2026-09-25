@@ -76,10 +76,24 @@ test('a project can be saved as a template and reused without stale dates', asyn
     description: '## Launch\nShip a reliable release.',
     status: 'started',
     priority: 2,
+    templateSlug: template?.slug,
     startDate: null,
     targetDate: null,
     milestones: [{ name: 'Beta', description: 'Validate the flow.', targetDate: null }],
   });
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Template', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Template' }).click();
+  await expect(page.getByRole('option', { name: 'No template' })).toBeVisible();
+  await page.getByRole('option', { name: templateName }).click();
+  await expect(page).toHaveURL(/templates=/);
+  await expect(page.getByRole('link', { name: newName })).toBeVisible();
+  await expect(page.getByRole('link', { name: projectName })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('link', { name: newName })).toBeVisible();
+  await expect(page.getByRole('link', { name: projectName })).toHaveCount(0);
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'New project' }).first().click();

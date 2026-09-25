@@ -242,6 +242,10 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (health.length) result.health = health as NonNullable<ProjectListSearch['health']>;
   const labels = searchStringList(raw.labels).filter((value) => value.length <= 100);
   if (labels.length) result.labels = labels;
+  const templates = searchStringList(raw.templates).filter((value) =>
+    /^template:(?:[\p{L}\p{N}-]+)?$/u.test(value),
+  );
+  if (templates.length) result.templates = templates;
   if (raw.groupBy === 'status' || raw.groupBy === 'priority') result.groupBy = raw.groupBy;
   if (
     raw.orderBy === 'manual' ||
@@ -418,12 +422,13 @@ const projectViewBuilderRoute = createRoute({
   path: '/views/projects/new',
   validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
   loader: async () => {
-    const [projects, labels, issues] = await Promise.all([
+    const [projects, labels, issues, projectTemplates] = await Promise.all([
       api.projects(),
       api.labels(),
       api.issues(),
+      api.projectTemplates(),
     ]);
-    return { projects, labels, issues };
+    return { projects, labels, issues, projectTemplates };
   },
   component: lazyRouteComponent(
     () => import('./pages/ProjectViewBuilderPages.tsx'),
