@@ -12,7 +12,7 @@ import { api, type IssueSearch } from '../api.ts';
 import { useIntent } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
-import { cycleCalendarICS, cycleIssuesCSV } from '../cycle-export.ts';
+import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
 import { cycleProgressTimeline } from '../cycle-progress.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import type { IssueNavigationState } from '../focus.ts';
@@ -54,6 +54,10 @@ import {
 const DAY_MS = 86_400_000;
 
 type ProjectMilestoneDraft = { name: string; description: string; targetDate: string };
+
+function cycleURL(number: number) {
+  return new URL(`${import.meta.env.BASE_URL}cycles/${number}`, window.location.origin).toString();
+}
 
 function monthKey(year: number, month: number) {
   const value = new Date(Date.UTC(year, month, 1));
@@ -1171,13 +1175,6 @@ export function useCyclesPagePresenter() {
         : data.cycles;
   const navigate = useNavigate();
 
-  function cycleURL(number: number) {
-    return new URL(
-      `${import.meta.env.BASE_URL}cycles/${number}`,
-      window.location.origin,
-    ).toString();
-  }
-
   async function updateCycle(number: number, body: Record<string, unknown>) {
     await api.patchCycle(number, body);
     await router.invalidate();
@@ -1245,6 +1242,7 @@ export function useCyclesPagePresenter() {
       const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       return {
         ...cycle,
+        googleCalendarURL: cycleGoogleCalendarURL(cycle, cycleURL(cycle.number)),
         issueCount: issues.length,
         startedCount: issues.filter((issue) => issue.status === 'in_progress').length,
         completedCount: issues.filter(
@@ -1348,6 +1346,7 @@ export function useCycleDetailPagePresenter() {
     locationState.issueListSelectedId ?? null,
   );
   const [cycle, setCycle] = useState(data.cycle);
+  const googleCalendarURL = cycleGoogleCalendarURL(cycle, cycleURL(cycle.number));
   const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
   const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
   const progress = progressTimeline.reduce(
@@ -1525,6 +1524,7 @@ export function useCycleDetailPagePresenter() {
     search,
     selected: selectedId,
     cycle,
+    googleCalendarURL,
     resources,
     progressTimeline,
     started,

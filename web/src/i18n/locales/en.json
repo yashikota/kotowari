@@ -97,6 +97,8 @@
     "exportIssues": "Export issues as CSV…",
     "copyLink": "Copy link",
     "linkCopied": "Link copied",
+    "subscribeCalendar": "Subscribe to cycle calendar",
+    "addToGoogleCalendar": "Add to Google Calendar",
     "exportCalendar": "Download calendar file (.ics)…",
     "addDocumentOrLink": "Add document or link…",
     "createDocument": "Create new document…",

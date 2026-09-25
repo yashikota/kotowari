@@ -7,6 +7,7 @@ import { formatCalendarDate } from '../time.ts';
 import styles from './CycleListItem.module.css';
 
 type CycleSummary = Cycle & {
+  googleCalendarURL: string;
   linkCopied: boolean;
   onEdit: () => void;
   onChangeDates: () => void;
@@ -90,7 +91,22 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
           <Menu.Item onClick={cycle.onCopyLink}>
             {cycle.linkCopied ? t('cycle.linkCopied') : t('cycle.copyLink')}
           </Menu.Item>
-          <Menu.Item onClick={cycle.onExportCalendar}>{t('cycle.exportCalendar')}</Menu.Item>
+          <Menu.Sub>
+            <Menu.Sub.Target>
+              <Menu.Sub.Item>{t('cycle.subscribeCalendar')}</Menu.Sub.Item>
+            </Menu.Sub.Target>
+            <Menu.Sub.Dropdown>
+              <Menu.Item
+                component="a"
+                href={cycle.googleCalendarURL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('cycle.addToGoogleCalendar')}
+              </Menu.Item>
+              <Menu.Item onClick={cycle.onExportCalendar}>{t('cycle.exportCalendar')}</Menu.Item>
+            </Menu.Sub.Dropdown>
+          </Menu.Sub>
         </Menu.Dropdown>
       </Menu>
     </Group>

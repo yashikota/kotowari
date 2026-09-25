@@ -1263,6 +1263,7 @@ export function CycleDetailPageView({
         search,
         selected,
         cycle,
+        googleCalendarURL,
         resources,
         progressTimeline,
         started,
@@ -1337,9 +1338,24 @@ export function CycleDetailPageView({
                     <Menu.Item onClick={handlers.onExportIssues}>
                       {t('cycle.exportIssues')}
                     </Menu.Item>
-                    <Menu.Item onClick={handlers.onExportCalendar}>
-                      {t('cycle.exportCalendar')}
-                    </Menu.Item>
+                    <Menu.Sub>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{t('cycle.subscribeCalendar')}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Item
+                          component="a"
+                          href={googleCalendarURL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t('cycle.addToGoogleCalendar')}
+                        </Menu.Item>
+                        <Menu.Item onClick={handlers.onExportCalendar}>
+                          {t('cycle.exportCalendar')}
+                        </Menu.Item>
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
                   </Menu.Dropdown>
                 </Menu>
                 <Button type="button" variant="subtle" onClick={handlers.onClick1}>

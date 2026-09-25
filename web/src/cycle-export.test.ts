@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 import type { Cycle, Issue } from './types.ts';
-import { cycleCalendarICS, cycleIssuesCSV } from './cycle-export.ts';
+import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from './cycle-export.ts';
 
 describe('cycleCalendarICS', () => {
   it('exports a cycle as an all-day event with an exclusive end date', () => {
@@ -33,6 +33,31 @@ describe('cycleCalendarICS', () => {
     for (const line of calendar.split('\r\n')) {
       expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
     }
+  });
+});
+
+describe('cycleGoogleCalendarURL', () => {
+  it('creates a Google Calendar all-day template with the cycle context', () => {
+    const url = new URL(
+      cycleGoogleCalendarURL(
+        {
+          number: 7,
+          name: 'Release planning',
+          description: 'Review the release checklist.',
+          startsAt: '2026-09-21T00:00:00Z',
+          endsAt: '2026-09-27T00:00:00Z',
+        } as Cycle,
+        'http://localhost:5108/cycles/7',
+      ),
+    );
+
+    expect(url.origin).toBe('https://calendar.google.com');
+    expect(url.searchParams.get('action')).toBe('TEMPLATE');
+    expect(url.searchParams.get('text')).toBe('Release planning');
+    expect(url.searchParams.get('dates')).toBe('20260921/20260928');
+    expect(url.searchParams.get('details')).toBe(
+      'Cycle 7\nReview the release checklist.\nhttp://localhost:5108/cycles/7',
+    );
   });
 });
 

@@ -2030,6 +2030,10 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
 
   const calendarDownloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Cycle options' }).click();
+  await page.getByRole('menuitem', { name: 'Subscribe to cycle calendar' }).hover();
+  const addToGoogleCalendar = page.getByRole('menuitem', { name: 'Add to Google Calendar' });
+  await expect(addToGoogleCalendar).toHaveAttribute('href', /^https:\/\/calendar\.google\.com\//);
+  await expect(addToGoogleCalendar).toHaveAttribute('target', '_blank');
   await page.getByRole('menuitem', { name: 'Download calendar file (.ics)…' }).click();
   const calendarDownload = await calendarDownloadPromise;
   expect(calendarDownload.suggestedFilename()).toBe(`cycle-${cycle.number}.ics`);
@@ -2274,6 +2278,10 @@ test('cycle list actions favorite, copy, export, and start an upcoming cycle', a
 
   const calendarDownloadPromise = page.waitForEvent('download');
   await options.click();
+  await page.getByRole('menuitem', { name: 'Subscribe to cycle calendar' }).hover();
+  const addToGoogleCalendar = page.getByRole('menuitem', { name: 'Add to Google Calendar' });
+  await expect(addToGoogleCalendar).toHaveAttribute('href', /^https:\/\/calendar\.google\.com\//);
+  await expect(addToGoogleCalendar).toHaveAttribute('target', '_blank');
   await page.getByRole('menuitem', { name: 'Download calendar file (.ics)…' }).click();
   const calendarDownload = await calendarDownloadPromise;
   expect(calendarDownload.suggestedFilename()).toBe(`cycle-${cycle.number}.ics`);

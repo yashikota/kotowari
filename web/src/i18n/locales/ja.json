@@ -95,6 +95,8 @@
     "exportIssues": "イシューをCSVに書き出す…",
     "copyLink": "リンクをコピー",
     "linkCopied": "リンクをコピーしました",
+    "subscribeCalendar": "サイクルカレンダーを購読",
+    "addToGoogleCalendar": "Google カレンダーに追加",
     "exportCalendar": "カレンダーファイル（.ics）をダウンロード…",
     "addDocumentOrLink": "ドキュメントまたはリンクを追加…",
     "createDocument": "新しいドキュメントを作成…",

@@ -84,3 +84,24 @@ export function cycleCalendarICS(cycle: Cycle, url: string): string {
   ];
   return `${lines.map(foldCalendarLine).join('\r\n')}\r\n`;
 }
+
+export function cycleGoogleCalendarURL(cycle: Cycle, url: string): string {
+  const end = new Date(`${cycle.endsAt.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(end.getTime())) throw new RangeError('invalid cycle end date');
+  end.setUTCDate(end.getUTCDate() + 1);
+
+  const dates = `${cycle.startsAt.slice(0, 10).replaceAll('-', '')}/${end
+    .toISOString()
+    .slice(0, 10)
+    .replaceAll('-', '')}`;
+  const details = [`Cycle ${cycle.number}`, cycle.description?.trim(), url]
+    .filter(Boolean)
+    .join('\n');
+  const query = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: cycle.name || `Cycle ${cycle.number}`,
+    dates,
+    details,
+  });
+  return `https://calendar.google.com/calendar/render?${query.toString()}`;
+}
