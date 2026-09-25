@@ -19,7 +19,7 @@ export function useSearchPagePresenter() {
     submittedQuery: search.q ?? '',
     tab,
     order,
-    hits: orderSearchHits(filterSearchHits(hits, tab), order),
+    hits: orderSearchHits(filterSearchHits(hits, tab), order, search.q ?? ''),
     handlers: {
       onQueryChange: (value: string) => setQuery(value),
       onSubmit: (event: FormEvent<HTMLFormElement>) => {

@@ -46,14 +46,13 @@ test('large lists stay bounded, reuse data, and isolate modal keyboard input', a
   await list.focus();
   await page.keyboard.press('j');
   const selected = await list.locator('[aria-selected="true"]').getAttribute('aria-posinset');
-  const paletteButton = page.getByRole('button', { name: 'Search' }).first();
-  await paletteButton.click();
+  await page.keyboard.press('ControlOrMeta+k');
   const dialog = page.getByRole('dialog', { name: 'Command palette' });
   await expect(dialog).toBeVisible();
   await page.getByLabel('Command search').fill('j');
   await expect(list.locator('[aria-selected="true"]')).toHaveAttribute('aria-posinset', selected!);
   await page.keyboard.press('Escape');
-  await expect(paletteButton).toBeFocused();
+  await expect(list).toBeFocused();
   await list.evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });
@@ -124,7 +123,8 @@ test('optimistic status is visible before the response and rolls back on rejecti
 test('reduced motion disables modal animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'Search' }).first().click();
+  await page.getByRole('button', { name: 'Search' }).first().focus();
+  await page.keyboard.press('ControlOrMeta+k');
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate((el) => getComputedStyle(el).animationName)).toBe(
     'none',

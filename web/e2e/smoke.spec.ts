@@ -297,7 +297,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
 
   await page.goto(`/issues/${identifier}`);
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
-  await page.getByRole('button', { name: 'Search' }).first().click();
+  await page.keyboard.press('ControlOrMeta+k');
   await page.getByLabel('Command search').fill(`Assign to ${cycleName}`);
   await page.getByRole('option', { name: `Assign to ${cycleName}` }).click();
   await expect(page.getByRole('combobox', { name: 'Cycle' })).toHaveValue(/Cycle [1-9]/);
@@ -310,7 +310,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
 
   await expandMoreNavigation(page);
   await page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Pages' }).click();
-  await page.getByRole('button', { name: 'Search' }).first().click();
+  await page.keyboard.press('ControlOrMeta+k');
   await page.getByLabel('Command search').fill('Create page');
   await page.getByRole('option', { name: 'Create page' }).click();
   const pageTitle = page.getByPlaceholder('Page title');

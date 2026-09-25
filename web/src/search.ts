@@ -28,11 +28,32 @@ export function filterSearchHits(hits: SearchHit[], tab: SearchTab): SearchHit[]
   }
 }
 
-export function orderSearchHits(hits: SearchHit[], order: SearchOrder): SearchHit[] {
-  if (order === 'relevance') return hits;
+export function orderSearchHits(hits: SearchHit[], order: SearchOrder, query = ''): SearchHit[] {
+  if (order === 'relevance') {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return hits;
+    return hits
+      .map((hit, index) => ({ hit, index, score: relevanceScore(hit, needle) }))
+      .sort((left, right) => left.score - right.score || left.index - right.index)
+      .map(({ hit }) => hit);
+  }
   return [...hits].sort((left, right) => {
-    const a = left.title.toLocaleLowerCase();
-    const b = right.title.toLocaleLowerCase();
+    const a = left.title.toLowerCase();
+    const b = right.title.toLowerCase();
     return a < b ? -1 : a > b ? 1 : 0;
   });
+}
+
+function relevanceScore(hit: SearchHit, query: string): number {
+  const title = hit.title.toLowerCase();
+  const identifier = hit.id.toLowerCase();
+  const snippet = hit.snippet?.toLowerCase() ?? '';
+  if (title === query) return 0;
+  if (identifier === query) return 1;
+  if (title.startsWith(query)) return 2;
+  if (identifier.startsWith(query)) return 3;
+  if (title.includes(query)) return 4;
+  if (identifier.includes(query)) return 5;
+  if (snippet.includes(query)) return 6;
+  return 7;
 }

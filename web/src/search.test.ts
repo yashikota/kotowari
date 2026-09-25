@@ -39,4 +39,20 @@ describe('search page state', () => {
     ]);
     expect(hits[0]?.title).toBe('Zebra issue');
   });
+
+  it('ranks exact titles above title, identifier, and document-body matches', () => {
+    const matches: SearchHit[] = [
+      { kind: 'page', id: 'guide', title: 'Guide', snippet: 'Release planning' },
+      { kind: 'issue', id: 'REL-1', title: 'Release planning' },
+      { kind: 'project', id: 'release', title: 'Release' },
+      { kind: 'adr', id: 'ADR-1', title: 'Release' },
+    ];
+    expect(orderSearchHits(matches, 'relevance', 'release').map((hit) => hit.id)).toEqual([
+      'release',
+      'ADR-1',
+      'REL-1',
+      'guide',
+    ]);
+    expect(matches[0]?.id).toBe('guide');
+  });
 });

@@ -15,6 +15,11 @@ test('workspace search finds issues, projects and documents with shareable categ
       data: { title: `${query} issue`, status: 'todo' },
     }),
   );
+  const exactIssue = await json<{ identifier: string }>(
+    await request.post('/api/issues', {
+      data: { title: query, status: 'todo' },
+    }),
+  );
   const project = await json<{ slug: string }>(
     await request.post('/api/projects', {
       data: { name: `${query} project`, slug: `search-${Date.now()}` },
@@ -43,6 +48,7 @@ test('workspace search finds issues, projects and documents with shareable categ
   await expect(results.getByRole('link', { name: new RegExp(`${query} project`) })).toBeVisible();
   await expect(results.getByRole('link', { name: new RegExp(adr.identifier) })).toBeVisible();
   await expect(results.getByRole('link', { name: new RegExp(`${query} guide`) })).toBeVisible();
+  await expect(results.getByRole('listitem').first()).toContainText(exactIssue.identifier);
 
   await page.getByRole('tab', { name: 'Documents' }).click();
   await expect(page).toHaveURL(/tab=documents/);
