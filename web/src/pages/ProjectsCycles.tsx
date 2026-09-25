@@ -1040,74 +1040,6 @@ export function CycleDetailPageView({
       } = model;
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <PageHeader
-            title={null}
-            actions={
-              <Group gap="xs" wrap="wrap">
-                <Switch
-                  aria-label={t('cycle.favorite')}
-                  checked={!!cycle.isFavorite}
-                  onChange={handlers.onToggleFavorite}
-                />
-                <NativeSelect
-                  aria-label={t('field.status')}
-                  value={cycle.status}
-                  onChange={handlers.Cycle_status_onChange0}
-                  data={CYCLE_STATUSES.map((s) => ({
-                    value: s,
-                    label: t(`cycle.status.${s}`),
-                  }))}
-                />
-                <Menu withinPortal shadow="md" position="bottom-end">
-                  <Menu.Target>
-                    <Button type="button" variant="default" aria-label={t('cycle.options')}>
-                      {t('cycle.options')}
-                    </Button>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item onClick={handlers.onOpenMetadata}>
-                      {t('cycle.editNameAndDescription')}
-                    </Menu.Item>
-                    {cycle.status !== 'completed' ? (
-                      <Menu.Item onClick={handlers.onOpenDates}>{t('cycle.changeDates')}</Menu.Item>
-                    ) : null}
-                    {cycle.status === 'upcoming' ? (
-                      <Menu.Item onClick={handlers.onStartCycleToday}>
-                        {t('cycle.startToday')}
-                      </Menu.Item>
-                    ) : null}
-                    <Menu.Item onClick={handlers.onCopyLink}>
-                      {cycleLinkCopied ? t('cycle.linkCopied') : t('cycle.copyLink')}
-                    </Menu.Item>
-                    <Menu.Item onClick={handlers.onExportIssues}>
-                      {t('cycle.exportIssues')}
-                    </Menu.Item>
-                    <Menu.Sub>
-                      <Menu.Sub.Target>
-                        <Menu.Sub.Item>{t('cycle.subscribeCalendar')}</Menu.Sub.Item>
-                      </Menu.Sub.Target>
-                      <Menu.Sub.Dropdown>
-                        <Menu.Item
-                          component="a"
-                          href={googleCalendarURL}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {t('cycle.addToGoogleCalendar')}
-                        </Menu.Item>
-                        <Menu.Item onClick={handlers.onExportCalendar}>
-                          {t('cycle.exportCalendar')}
-                        </Menu.Item>
-                      </Menu.Sub.Dropdown>
-                    </Menu.Sub>
-                  </Menu.Dropdown>
-                </Menu>
-                <Button type="button" variant="subtle" onClick={handlers.onClick1}>
-                  {t('cycle.newIssue')}
-                </Button>
-              </Group>
-            }
-          />
           <Box style={{ flex: 1, minHeight: 0 }}>
             <SplitLayout>
               <Pane variant="list">
@@ -1121,6 +1053,15 @@ export function CycleDetailPageView({
                   <Text size="sm" c="dimmed">
                     {t('cycle.issuesCount', { count: issues.length })}
                   </Text>
+                  <Button
+                    type="button"
+                    size="compact-sm"
+                    variant="subtle"
+                    leftSection={<IconPlus size={14} aria-hidden="true" />}
+                    onClick={handlers.onClick1}
+                  >
+                    {t('cycle.newIssue')}
+                  </Button>
                 </Group>
                 <IssueFilters
                   search={search}
@@ -1180,9 +1121,21 @@ export function CycleDetailPageView({
               <Pane variant="detail">
                 <Stack gap="lg">
                   <Stack gap="xs">
-                    <Text size="xs" c="dimmed">
-                      {t('cycle.dates')}
-                    </Text>
+                    <Group justify="space-between" align="center" wrap="nowrap">
+                      <NativeSelect
+                        aria-label={t('field.status')}
+                        value={cycle.status}
+                        onChange={handlers.Cycle_status_onChange0}
+                        data={CYCLE_STATUSES.map((s) => ({
+                          value: s,
+                          label: t(`cycle.status.${s}`),
+                        }))}
+                        w={144}
+                      />
+                      <Text size="xs" c="dimmed">
+                        {t('cycle.dates')}
+                      </Text>
+                    </Group>
                     <Group justify="space-between" align="center" wrap="nowrap">
                       <Text size="sm">
                         {formatCalendarDate(cycle.startsAt, locale)} —{' '}
@@ -1196,6 +1149,69 @@ export function CycleDetailPageView({
                       >
                         {t('cycle.changeDates')}
                       </Button>
+                    </Group>
+                    <Group justify="space-between" align="center" wrap="nowrap" pt="xs">
+                      <Text size="md" fw={550} truncate>
+                        {cycle.name || t('field.cycleN', { number: cycle.number })}
+                      </Text>
+                      <Group gap="xs" wrap="nowrap">
+                        <Switch
+                          aria-label={t('cycle.favorite')}
+                          checked={!!cycle.isFavorite}
+                          onChange={handlers.onToggleFavorite}
+                        />
+                        <Menu withinPortal shadow="md" position="bottom-end">
+                          <Menu.Target>
+                            <Button
+                              type="button"
+                              size="compact-sm"
+                              variant="subtle"
+                              aria-label={t('cycle.options')}
+                            >
+                              {t('cycle.options')}
+                            </Button>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            <Menu.Item onClick={handlers.onOpenMetadata}>
+                              {t('cycle.editNameAndDescription')}
+                            </Menu.Item>
+                            {cycle.status !== 'completed' ? (
+                              <Menu.Item onClick={handlers.onOpenDates}>
+                                {t('cycle.changeDates')}
+                              </Menu.Item>
+                            ) : null}
+                            {cycle.status === 'upcoming' ? (
+                              <Menu.Item onClick={handlers.onStartCycleToday}>
+                                {t('cycle.startToday')}
+                              </Menu.Item>
+                            ) : null}
+                            <Menu.Item onClick={handlers.onCopyLink}>
+                              {cycleLinkCopied ? t('cycle.linkCopied') : t('cycle.copyLink')}
+                            </Menu.Item>
+                            <Menu.Item onClick={handlers.onExportIssues}>
+                              {t('cycle.exportIssues')}
+                            </Menu.Item>
+                            <Menu.Sub>
+                              <Menu.Sub.Target>
+                                <Menu.Sub.Item>{t('cycle.subscribeCalendar')}</Menu.Sub.Item>
+                              </Menu.Sub.Target>
+                              <Menu.Sub.Dropdown>
+                                <Menu.Item
+                                  component="a"
+                                  href={googleCalendarURL}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {t('cycle.addToGoogleCalendar')}
+                                </Menu.Item>
+                                <Menu.Item onClick={handlers.onExportCalendar}>
+                                  {t('cycle.exportCalendar')}
+                                </Menu.Item>
+                              </Menu.Sub.Dropdown>
+                            </Menu.Sub>
+                          </Menu.Dropdown>
+                        </Menu>
+                      </Group>
                     </Group>
                   </Stack>
                   <CycleProgressSummary
