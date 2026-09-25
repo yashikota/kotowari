@@ -14,8 +14,15 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconExternalLink, IconFileText, IconTrash } from '@tabler/icons-react';
+import {
+  IconExternalLink,
+  IconFileText,
+  IconPlus,
+  IconStack2,
+  IconTrash,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import type { ReactNode } from 'react';
 
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
@@ -104,21 +111,32 @@ export function ProjectsPageView({
       } = model;
       return (
         <SplitLayout single>
-          <Pane single>
+          <Pane single flush>
             <PageHeader
               title={t('nav.projects')}
+              minHeight={62}
+              titleSize="md"
+              paddingX={19}
               actions={
-                <Button type="button" variant="default" onClick={handlers.onOpenCreateProject}>
-                  {t('projectList.newProject')}
-                </Button>
+                <ActionIcon
+                  type="button"
+                  variant="default"
+                  aria-label={t('projectList.newProject')}
+                  title={t('projectList.newProject')}
+                  onClick={handlers.onOpenCreateProject}
+                >
+                  <IconPlus size={16} stroke={1.7} aria-hidden="true" />
+                </ActionIcon>
               }
             />
             <ProjectViewsBar
               views={projectViews}
               activeSlug={activeProjectView?.slug}
               handlers={handlers}
+              controls={
+                <ProjectListControls model={controls} compact filterPosition="bottom-end" />
+              }
             />
-            <ProjectListControls model={controls} />
             {visibleProjectCount === 0 && hasActiveSearch ? (
               <Stack align="center" py="xl" gap="xs">
                 <Text c="dimmed" ta="center">
@@ -493,65 +511,80 @@ function ProjectViewsBar({
   views,
   activeSlug,
   handlers,
+  controls,
 }: {
   views: ProjectSavedView[];
   activeSlug?: string;
   handlers: ReturnType<typeof useProjectsPagePresenter>['handlers'];
+  controls: ReactNode;
 }) {
   const { t } = useTranslation();
   return (
-    <Group gap={4} wrap="wrap" mb="sm" role="tablist" aria-label={t('projectViews.views')}>
-      <Button
-        type="button"
-        size="xs"
-        variant={activeSlug ? 'subtle' : 'light'}
-        role="tab"
-        aria-selected={!activeSlug}
-        onClick={handlers.onShowAllProjects}
-      >
-        {t('projectViews.allProjects')}
-      </Button>
-      {views.map((view) => (
+    <Group justify="space-between" align="center" gap="sm" wrap="wrap" mb="sm" pl={9} pr={8}>
+      <Group gap={4} wrap="wrap" role="tablist" aria-label={t('projectViews.views')}>
         <Button
-          key={view.slug}
           type="button"
           size="xs"
-          variant={activeSlug === view.slug ? 'light' : 'subtle'}
+          h={28}
+          variant={activeSlug ? 'subtle' : 'light'}
           role="tab"
-          aria-selected={activeSlug === view.slug}
-          title={view.description || view.name}
-          onClick={() => void handlers.onApplyProjectView(view)}
+          aria-selected={!activeSlug}
+          onClick={handlers.onShowAllProjects}
         >
-          <Group gap={4} wrap="nowrap">
-            <ViewIcon name={view.icon ?? 'list'} />
-            {view.name}
-          </Group>
+          {t('projectViews.allProjects')}
         </Button>
-      ))}
-      <Button type="button" size="xs" variant="subtle" onClick={handlers.onOpenCreateProjectView}>
-        {t('projectViews.add')}
-      </Button>
-      {activeSlug ? (
-        <>
+        {views.map((view) => (
           <Button
+            key={view.slug}
             type="button"
             size="xs"
-            variant="subtle"
-            onClick={() => void handlers.onUpdateActiveProjectView()}
+            h={28}
+            variant={activeSlug === view.slug ? 'light' : 'subtle'}
+            role="tab"
+            aria-selected={activeSlug === view.slug}
+            title={view.description || view.name}
+            onClick={() => void handlers.onApplyProjectView(view)}
           >
-            {t('projectViews.saveChanges')}
+            <Group gap={4} wrap="nowrap">
+              <ViewIcon name={view.icon ?? 'list'} />
+              {view.name}
+            </Group>
           </Button>
-          <Button
-            type="button"
-            size="xs"
-            variant="subtle"
-            color="red"
-            onClick={() => void handlers.onDeleteActiveProjectView()}
-          >
-            {t('projectViews.delete')}
-          </Button>
-        </>
-      ) : null}
+        ))}
+        <ActionIcon
+          type="button"
+          size={28}
+          variant="subtle"
+          color="gray"
+          aria-label={t('projectViews.add')}
+          title={t('projectViews.add')}
+          onClick={handlers.onOpenCreateProjectView}
+        >
+          <IconStack2 size={16} stroke={1.7} aria-hidden="true" />
+        </ActionIcon>
+        {activeSlug ? (
+          <>
+            <Button
+              type="button"
+              size="xs"
+              variant="subtle"
+              onClick={() => void handlers.onUpdateActiveProjectView()}
+            >
+              {t('projectViews.saveChanges')}
+            </Button>
+            <Button
+              type="button"
+              size="xs"
+              variant="subtle"
+              color="red"
+              onClick={() => void handlers.onDeleteActiveProjectView()}
+            >
+              {t('projectViews.delete')}
+            </Button>
+          </>
+        ) : null}
+      </Group>
+      <Box style={{ marginInlineEnd: 11 }}>{controls}</Box>
     </Group>
   );
 }

@@ -66,9 +66,13 @@ const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
 export function ProjectFilterPicker({
   model,
   projectStatuses,
+  compact = false,
+  position = 'bottom-start',
 }: {
   model: ProjectListControlsModel;
   projectStatuses: ProjectWorkflowStatus[];
+  compact?: boolean;
+  position?: 'bottom-start' | 'bottom-end';
 }) {
   const { t } = useTranslation();
   const [opened, setOpened] = useState(false);
@@ -360,22 +364,35 @@ export function ProjectFilterPicker({
             setQuery('');
           }
         }}
-        position="bottom-start"
+        position={position}
         shadow="md"
         withinPortal
       >
         <Popover.Target>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            aria-label={t('projectList.addFilter')}
-            title={t('projectList.addFilter')}
-            leftSection={<IconFilter size={15} stroke={1.7} aria-hidden="true" />}
-            onClick={() => setOpened((current) => !current)}
-          >
-            {t('projectList.addFilter')}
-          </Button>
+          {compact ? (
+            <ActionIcon
+              type="button"
+              variant="default"
+              size={28}
+              aria-label={t('projectList.addFilter')}
+              title={t('projectList.addFilter')}
+              onClick={() => setOpened((current) => !current)}
+            >
+              <IconFilter size={16} stroke={1.7} aria-hidden="true" />
+            </ActionIcon>
+          ) : (
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              aria-label={t('projectList.addFilter')}
+              title={t('projectList.addFilter')}
+              leftSection={<IconFilter size={15} stroke={1.7} aria-hidden="true" />}
+              onClick={() => setOpened((current) => !current)}
+            >
+              {t('projectList.addFilter')}
+            </Button>
+          )}
         </Popover.Target>
         <Popover.Dropdown w={248} p={0}>
           {activeFilter ? (

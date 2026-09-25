@@ -79,10 +79,12 @@ export type ProjectListControlsModel = {
 export function ProjectListControls({
   model,
   compact = false,
+  filterPosition,
   leading,
 }: {
   model: ProjectListControlsModel;
   compact?: boolean;
+  filterPosition?: 'bottom-start' | 'bottom-end';
   leading?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -90,20 +92,25 @@ export function ProjectListControls({
   const { handlers } = model;
   return (
     <Group
-      gap={compact ? 4 : 'xs'}
+      gap={compact ? 6 : 'xs'}
       align={compact ? 'center' : 'flex-end'}
       wrap="wrap"
       mb={compact ? 0 : 'sm'}
     >
       {compact && leading ? <Box style={{ marginRight: 'auto' }}>{leading}</Box> : leading}
-      <ProjectFilterPicker model={model} projectStatuses={projectStatuses} />
+      <ProjectFilterPicker
+        model={model}
+        projectStatuses={projectStatuses}
+        compact={compact}
+        position={filterPosition}
+      />
       <Popover position="bottom-start" shadow="md" withinPortal>
         <Popover.Target>
           {compact ? (
             <ActionIcon
               type="button"
               variant="default"
-              size={30}
+              size={28}
               aria-label={t('projectList.displayOptions')}
               title={t('projectList.displayOptions')}
             >

@@ -91,6 +91,7 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   expect(milestone.ok() && dependency.ok()).toBeTruthy();
 
   await page.goto('/projects');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeHidden();
   await page.getByRole('button', { name: 'Add filter' }).click();
   await page.getByRole('button', { name: 'Title & summary', exact: true }).click();
   const titleSearch = page.getByRole('textbox', { name: 'Title & summary' });
@@ -248,7 +249,6 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await expect(page).toHaveURL(/showProjectList=false/);
   await expect(page).toHaveURL(/showWeekNumbers=true/);
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('button', { name: 'Next period' }).click();
   await expect(page).toHaveURL(/timelineStart=/);
   await page.getByRole('button', { name: 'Today' }).click();

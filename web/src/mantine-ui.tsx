@@ -77,18 +77,30 @@ function RouterNavLinkView({
   );
 }
 
-export function PageHeader({ title, actions }: { title: ReactNode; actions?: ReactNode }) {
+export function PageHeader({
+  title,
+  actions,
+  minHeight = 42,
+  titleSize = 'sm',
+  paddingX = 16,
+}: {
+  title: ReactNode;
+  actions?: ReactNode;
+  minHeight?: number;
+  titleSize?: string;
+  paddingX?: number;
+}) {
   return (
     <Group
       component="header"
       justify="space-between"
       gap="md"
       wrap="nowrap"
-      mih={42}
-      px="md"
+      mih={minHeight}
+      px={paddingX}
       style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
     >
-      <Title order={2} size="sm" fw={550} c="var(--mantine-color-text)">
+      <Title order={2} size={titleSize} fw={550} c="var(--mantine-color-text)">
         {title}
       </Title>
       {actions ? (
@@ -159,11 +171,13 @@ export function Pane({
   single,
   variant = 'default',
   compact,
+  flush,
 }: {
   children: ReactNode;
   single?: boolean;
   variant?: 'default' | 'list' | 'detail';
   compact?: boolean;
+  flush?: boolean;
 }) {
   const variantStyle =
     variant === 'list'
@@ -191,7 +205,12 @@ export function Pane({
           };
 
   return (
-    <Paper p={variant === 'list' ? 0 : 'md'} radius={0} bg="transparent" style={variantStyle}>
+    <Paper
+      p={flush || variant === 'list' ? 0 : 'md'}
+      radius={0}
+      bg="transparent"
+      style={variantStyle}
+    >
       {children}
     </Paper>
   );

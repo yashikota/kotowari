@@ -17,6 +17,10 @@
   display: none;
 }
 
+.projectIndexHeader {
+  display: none;
+}
+
 .issueDetailBreadcrumb {
   min-width: 0;
 }
@@ -32,6 +36,14 @@
   }
 
   .issueDetailBreadcrumb {
+    display: none;
+  }
+
+  .projectIndexHeader {
+    display: flex;
+  }
+
+  .projectIndexBreadcrumb {
     display: none;
   }
 
