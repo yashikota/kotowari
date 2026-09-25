@@ -604,34 +604,6 @@ export function ShellView({
                   data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
                 />
                 <NativeSelect
-                  aria-label={t('field.type')}
-                  label={t('field.type')}
-                  value={model.issueType || 'none'}
-                  onChange={handlers.Issue_type_onChange32}
-                  data={[
-                    { value: 'none', label: t('issueProperties.noType') },
-                    ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
-                      value: type,
-                      label: t(`issueType.${type}`),
-                    })),
-                  ]}
-                />
-                <NativeSelect
-                  aria-label={t('field.estimate')}
-                  label={t('field.estimate')}
-                  value={model.issueEstimate || 'none'}
-                  onChange={handlers.Issue_estimate_onChange33}
-                  data={[
-                    { value: 'none', label: t('issueProperties.noEstimate') },
-                    ...[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
-                      value: String(estimate),
-                      label: String(estimate),
-                    })),
-                  ]}
-                />
-              </Group>
-              <Group grow align="flex-start">
-                <NativeSelect
                   aria-label={t('field.assignee')}
                   label={t('field.assignee')}
                   value={issueAssignee}
@@ -653,15 +625,30 @@ export function ShellView({
                   ]}
                 />
                 <NativeSelect
-                  aria-label={t('field.cycle')}
-                  label={t('field.cycle')}
-                  value={issueCycleId}
-                  onChange={handlers.Issue_cycle_onChange17}
+                  aria-label={t('field.estimate')}
+                  label={t('field.estimate')}
+                  value={model.issueEstimate || 'none'}
+                  onChange={handlers.Issue_estimate_onChange33}
                   data={[
-                    { value: '', label: t('field.noCycle') },
-                    ...cycles.map((c) => ({
-                      value: String(c.id),
-                      label: t('field.cycleN', { number: c.number }),
+                    { value: 'none', label: t('issueProperties.noEstimate') },
+                    ...[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
+                      value: String(estimate),
+                      label: String(estimate),
+                    })),
+                  ]}
+                />
+              </Group>
+              <Group grow align="flex-end">
+                <NativeSelect
+                  aria-label={t('field.type')}
+                  label={t('field.type')}
+                  value={model.issueType || 'none'}
+                  onChange={handlers.Issue_type_onChange32}
+                  data={[
+                    { value: 'none', label: t('issueProperties.noType') },
+                    ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
+                      value: type,
+                      label: t(`issueType.${type}`),
                     })),
                   ]}
                 />
@@ -675,6 +662,17 @@ export function ShellView({
                   }))}
                   value={model.issueLabelNames}
                   onChange={handlers.Issue_labels_onChange34}
+                />
+                <Select
+                  aria-label={t('issueActions.addToCycle')}
+                  placeholder={t('issueActions.addToCycle')}
+                  value={issueCycleId || null}
+                  onChange={handlers.Issue_cycle_onChange17}
+                  clearable
+                  data={cycles.map((cycle) => ({
+                    value: String(cycle.id),
+                    label: t('field.cycleN', { number: cycle.number }),
+                  }))}
                 />
                 <Menu position="bottom-end" withinPortal>
                   <Menu.Target>

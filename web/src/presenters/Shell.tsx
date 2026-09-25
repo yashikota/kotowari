@@ -913,9 +913,7 @@ export function useShellPresenter() {
         setIssueAssignee(
           e.target.value === 'self' || e.target.value === 'agent' ? e.target.value : '',
         ),
-      Issue_cycle_onChange17: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueCycleId(e.target.value),
+      Issue_cycle_onChange17: (value: string | null) => setIssueCycleId(value ?? ''),
       onClick18: () => setCreateADR(false),
       Create_ADR_onClick19: (
         e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],

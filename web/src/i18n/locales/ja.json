@@ -861,6 +861,7 @@
   "issueActions": {
     "button": "イシューの操作",
     "moreActions": "その他の操作",
+    "addToCycle": "サイクルに追加",
     "makeRecurring": "定期設定…",
     "addSubIssue": "サブイシューを追加",
     "createRecurringIssue": "定期イシューを作成",

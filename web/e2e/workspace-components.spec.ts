@@ -1367,6 +1367,49 @@ test('issues can be converted into reusable workspace templates', async ({ page,
   });
 });
 
+test('new issues can be added to a cycle after labels in the create dialog', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const cycleResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: new Date(Date.now() - 60_000).toISOString(),
+      endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'active',
+    },
+  });
+  expect(cycleResponse.ok()).toBeTruthy();
+  const cycle = (await cycleResponse.json()) as { id: number; number: number };
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  const title = `Cycle placement ${stamp}`;
+  await dialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
+  const labelPicker = dialog.getByRole('combobox', { name: 'Label' });
+  const cyclePicker = dialog.getByRole('combobox', { name: 'Add to cycle' });
+  const moreActions = dialog.getByRole('button', { name: 'More actions' });
+  const [labelBounds, cycleBounds, moreActionsBounds] = await Promise.all([
+    labelPicker.boundingBox(),
+    cyclePicker.boundingBox(),
+    moreActions.boundingBox(),
+  ]);
+  expect(labelBounds).not.toBeNull();
+  expect(cycleBounds).not.toBeNull();
+  expect(moreActionsBounds).not.toBeNull();
+  expect(cycleBounds!.x).toBeGreaterThan(labelBounds!.x);
+  expect(moreActionsBounds!.x).toBeGreaterThan(cycleBounds!.x);
+
+  await cyclePicker.click();
+  await page.getByRole('option', { name: `Cycle ${cycle.number}` }).click();
+  const createRequest = page.waitForRequest(
+    (candidate) => candidate.url().endsWith('/api/issues') && candidate.method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  expect((await createRequest).postDataJSON()).toMatchObject({ title, cycleId: cycle.id });
+});
+
 test('new issues can be created as sub-issues of an existing issue', async ({ page, request }) => {
   const stamp = Date.now();
   const parentTitle = `Create parent ${stamp}`;

@@ -863,6 +863,7 @@
   "issueActions": {
     "button": "Issue options",
     "moreActions": "More actions",
+    "addToCycle": "Add to cycle",
     "makeRecurring": "Make recurring…",
     "addSubIssue": "Add sub-issue",
     "createRecurringIssue": "Create recurring issue",
