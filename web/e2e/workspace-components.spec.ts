@@ -612,6 +612,8 @@ test('project status and priority filter linked issues and persist on a saved vi
   await openIssueFilterCategory(page, 'Project properties');
   await chooseIssueFilterOption(page, 'Filter project status', 'In progress');
   await chooseIssueFilterOption(page, 'Filter project priority', 'High');
+  await expect(page).toHaveURL(/projectStatus=started/);
+  await expect(page).toHaveURL(/projectPriority=2/);
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(matchingTitle) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
@@ -1365,6 +1367,75 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     estimate: 3,
     dueDate,
   });
+});
+
+test('new issues can include file attachments before creation', async ({ page, request }) => {
+  const stamp = Date.now();
+  const title = `Attachment on create ${stamp}`;
+  const name = `implementation-${stamp}.txt`;
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await dialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
+  await dialog.locator('input[type="file"]').setInputFiles({
+    name,
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Issue attachment uploaded from the create dialog.'),
+  });
+  await expect(dialog.getByText(name, { exact: true })).toBeVisible();
+
+  const createResponse = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
+  );
+  const attachmentResponse = page.waitForResponse(
+    (candidate) =>
+      /\/api\/issues\/[^/]+\/attachments$/.test(new URL(candidate.url()).pathname) &&
+      candidate.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  const created = (await (await createResponse).json()) as { identifier: string };
+  expect((await attachmentResponse).ok()).toBeTruthy();
+  await expect(page).toHaveURL(new RegExp(`/issues/${created.identifier}$`));
+  const saved = await request.get(`/api/issues/${created.identifier}`);
+  expect(await saved.json()).toMatchObject({
+    title,
+    attachments: [
+      expect.objectContaining({ name, mediaType: expect.stringContaining('text/plain') }),
+    ],
+  });
+  await expect(page.getByRole('link', { name: new RegExp(name) })).toBeVisible();
+});
+
+test('an attachment upload failure keeps the created issue and explains where to recover', async ({
+  page,
+  request,
+}) => {
+  const title = `Attachment recovery ${Date.now()}`;
+  await page.route(/\/api\/issues\/[^/]+\/attachments$/, (route) => route.abort());
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await dialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
+  await dialog.locator('input[type="file"]').setInputFiles({
+    name: 'recovery.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Recovery path'),
+  });
+
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+$/);
+  await expect(page.getByRole('alert')).toContainText(
+    'The issue was created, but its attachments could not be uploaded.',
+  );
+  const issues = (await (await request.get('/api/issues')).json()) as {
+    identifier: string;
+    title: string;
+    attachments?: unknown[];
+  }[];
+  const saved = issues.filter((issue) => issue.title === title);
+  expect(saved).toHaveLength(1);
+  expect(saved[0]?.attachments ?? []).toEqual([]);
 });
 
 test('new issues can be added to a cycle after labels in the create dialog', async ({

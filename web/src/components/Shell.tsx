@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Divider,
+  FileInput,
   Group,
   Modal,
   Menu,
@@ -32,6 +33,7 @@ import {
   IconListCheck,
   IconMenu2,
   IconPlus,
+  IconPaperclip,
   IconSearch,
   IconScale,
   IconSettings,
@@ -528,7 +530,13 @@ export function ShellView({
               </Group>
               <Box style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0, overflow: 'auto' }}>
                 {error ? (
-                  <Alert color="red" variant="light" m="sm">
+                  <Alert
+                    color="red"
+                    variant="light"
+                    m="sm"
+                    withCloseButton
+                    onClose={handlers.onDismissError}
+                  >
                     {error}
                   </Alert>
                 ) : null}
@@ -796,19 +804,37 @@ export function ShellView({
                 </Stack>
               ) : null}
               <Group justify="space-between" align="center">
-                <Text size="sm" c="dimmed">
-                  {t('modal.enterHint')}
-                </Text>
-                <Button
-                  type="button"
-                  onClick={handlers.submitIssue}
-                  disabled={model.issueSubmitDisabled}
-                >
-                  {model.issueRecurringOpen
-                    ? t('issueActions.createRecurringIssue')
-                    : t('modal.create')}
-                </Button>
+                <FileInput
+                  aria-label={t('issueAttachments.attachToNewIssue')}
+                  placeholder={t('issueAttachments.attachToNewIssue')}
+                  value={model.issueAttachments}
+                  onChange={handlers.Issue_attachments_onChange}
+                  leftSection={<IconPaperclip size={14} aria-hidden />}
+                  multiple
+                  clearable
+                  size="xs"
+                  w={290}
+                />
+                <Group gap="sm" align="center">
+                  <Text size="sm" c="dimmed">
+                    {t('modal.enterHint')}
+                  </Text>
+                  <Button
+                    type="button"
+                    onClick={handlers.submitIssue}
+                    disabled={model.issueSubmitDisabled}
+                  >
+                    {model.issueRecurringOpen
+                      ? t('issueActions.createRecurringIssue')
+                      : t('modal.create')}
+                  </Button>
+                </Group>
               </Group>
+              {model.issueAttachmentError ? (
+                <Alert color="red" variant="light" role="alert">
+                  {model.issueAttachmentError}
+                </Alert>
+              ) : null}
             </Stack>
           </Modal>
 

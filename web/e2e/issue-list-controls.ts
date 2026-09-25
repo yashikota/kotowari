@@ -41,6 +41,8 @@ export async function createIssueView(page: Page, name: string) {
   await page.waitForURL(/\/views\/new/);
   await page.getByRole('textbox', { name: 'View name', exact: true }).fill(name);
   await page.getByRole('button', { name: 'Create view', exact: true }).click();
+  await page.waitForURL(/\/views\/[^/?#]+$/);
+  await page.getByRole('heading', { name, exact: true }).waitFor({ state: 'visible' });
 }
 
 export async function expandMoreNavigation(page: Page) {

@@ -123,6 +123,8 @@ export function useShellPresenter() {
   const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
   const [issueEstimate, setIssueEstimate] = useState('');
   const [issueBody, setIssueBody] = useState('');
+  const [issueAttachments, setIssueAttachments] = useState<File[]>([]);
+  const [issueAttachmentError, setIssueAttachmentError] = useState('');
   const [issueDueDate, setIssueDueDate] = useState('');
   const [issueDueDateOpen, setIssueDueDateOpen] = useState(false);
   const [issueRecurringOpen, setIssueRecurringOpen] = useState(false);
@@ -546,7 +548,7 @@ export function useShellPresenter() {
   useIntentHandler('submit:Page', submitPage);
   async function submitIssue() {
     const title = issueTitle.trim();
-    if (!title || issueParentLoading || issueLinkOpen) {
+    if (!title || issueParentLoading || issueLinkOpen || issueAttachmentError) {
       return;
     }
     const recurrenceInterval = Number(issueRecurringInterval);
@@ -585,8 +587,18 @@ export function useShellPresenter() {
           }
         : undefined,
     });
+    let attachmentUploadFailed = false;
+    if (issueAttachments.length > 0) {
+      try {
+        await api.addIssueAttachments(issue.identifier, issueAttachments);
+      } catch {
+        attachmentUploadFailed = true;
+      }
+    }
     setIssueTitle('');
     setIssueBody('');
+    setIssueAttachments([]);
+    setIssueAttachmentError('');
     setIssueDueDate('');
     setIssueDueDateOpen(false);
     setIssueRecurringOpen(false);
@@ -613,6 +625,7 @@ export function useShellPresenter() {
     setIssueCycleId('');
     setIssueAssignee('self');
     setCreateIssue(false);
+    if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
     await router.invalidate();
     await navigate({
       to: '/issues/$identifier',
@@ -688,6 +701,8 @@ export function useShellPresenter() {
     issueType,
     issueEstimate,
     issueBody,
+    issueAttachments,
+    issueAttachmentError,
     issueDueDate,
     issueDueDateOpen,
     issueRecurringOpen,
@@ -697,6 +712,7 @@ export function useShellPresenter() {
     issueSubmitDisabled:
       issueParentLoading ||
       issueLinkOpen ||
+      Boolean(issueAttachmentError) ||
       (issueRecurringOpen &&
         (!issueRecurringFirstDueDate ||
           !Number.isInteger(Number(issueRecurringInterval)) ||
@@ -743,6 +759,7 @@ export function useShellPresenter() {
       },
       onOpenSearch: () => navigate({ to: '/search', search: {} }),
       onCreateIssue: () => setCreateIssue(true),
+      onDismissError: () => setError(''),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onToggleWorkspaceNavigation: () => setWorkspaceNavigationOpen((open) => !open),
       onToggleMoreLinks: () => setMoreLinksOpen((open) => !open),
@@ -904,6 +921,25 @@ export function useShellPresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueEstimate(e.target.value),
       Issue_labels_onChange34: (values: string[]) => setIssueLabelNames(values),
+      Issue_attachments_onChange: (files: File[]) => {
+        if (files.length > 10) {
+          setIssueAttachments([]);
+          setIssueAttachmentError(t('issueAttachments.tooMany'));
+          return;
+        }
+        if (files.some((file) => file.size === 0)) {
+          setIssueAttachments([]);
+          setIssueAttachmentError(t('issueAttachments.emptyFile'));
+          return;
+        }
+        if (files.some((file) => file.size > 20 * 1024 * 1024)) {
+          setIssueAttachments([]);
+          setIssueAttachmentError(t('issueAttachments.tooLarge'));
+          return;
+        }
+        setIssueAttachments(files);
+        setIssueAttachmentError('');
+      },
       Issue_project_onChange16: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueProjectId(e.target.value),
