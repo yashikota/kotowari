@@ -17,7 +17,6 @@ import {
   IconCalendarEvent,
   IconChartBar,
   IconCheck,
-  IconChevronDown,
   IconFolder,
   IconFlag,
   IconGitBranch,
@@ -71,6 +70,22 @@ export function IssuePropertiesPanel({
     handlers,
   } = model;
   const selectedLabels = labels.filter((label) => selectedLabelIds.has(label.id));
+  const statusLabel = workflowStatusLabel(issue.workflowStatus ?? issue.status, workflowStatuses);
+  const priorityValueLabel = priorityLabel(issue.priority);
+  const assigneeValueLabel =
+    issue.assignee === 'self'
+      ? t('issueAssignment.you')
+      : issue.assignee === 'agent'
+        ? t('issueAssignment.agent')
+        : t('issueAssignment.unassigned');
+  const projectValueLabel =
+    projects.find((project) => project.id === issue.projectId)?.name ?? t('field.project');
+  const estimateValueLabel =
+    issue.estimate == null ? t('issueProperties.noEstimate') : String(issue.estimate);
+  const currentCycle = cycles.find((cycle) => cycle.id === issue.cycleId);
+  const cycleValueLabel = currentCycle
+    ? t('field.cycleN', { number: currentCycle.number })
+    : t('field.noCycle');
   const optionalProperties: Array<{
     key: IssueOptionalProperty;
     label: string;
@@ -109,7 +124,8 @@ export function IssuePropertiesPanel({
           }
         >
           <PropertySelect
-            compactChars={8}
+            compactChars={12}
+            compactLabel={statusLabel}
             aria-label={t('field.status')}
             value={issue.workflowStatus ?? issue.status}
             onChange={handlers.Status_onChange5}
@@ -134,13 +150,14 @@ export function IssuePropertiesPanel({
           icon={<IssuePriorityIcon priority={issue.priority} />}
         >
           <PropertySelect
-            compactChars={10}
+            compactChars={12}
+            compactLabel={priorityValueLabel}
             aria-label={t('field.priority')}
             value={String(issue.priority)}
             onChange={handlers.Priority_onChange6}
             data={[0, 1, 2, 3, 4].map((priority) => ({
               value: String(priority),
-              label: priority === 0 ? t('field.priority') : priorityLabel(priority),
+              label: priorityLabel(priority),
             }))}
             renderOption={({ option }) => (
               <Group gap="xs" wrap="nowrap">
@@ -154,6 +171,7 @@ export function IssuePropertiesPanel({
         <PropertyRow label={t('field.assignee')} icon={<IconUser size={14} stroke={1.7} />}>
           <PropertySelect
             compactChars={10}
+            compactLabel={assigneeValueLabel}
             aria-label={t('field.assignee')}
             value={issue.assignee ?? 'none'}
             onChange={handlers.Assignee_onChange}
@@ -167,7 +185,8 @@ export function IssuePropertiesPanel({
 
         <PropertyRow label={t('field.project')} icon={<IconFolder size={14} stroke={1.7} />}>
           <PropertySelect
-            compactChars={12}
+            compactChars={14}
+            compactLabel={projectValueLabel}
             aria-label={t('field.project')}
             value={issue.projectId != null ? String(issue.projectId) : 'none'}
             onChange={handlers.Project_onChange7}
@@ -185,12 +204,13 @@ export function IssuePropertiesPanel({
 
         <PropertyRow label={t('field.estimate')} icon={<IconChartBar size={14} stroke={1.7} />}>
           <PropertySelect
-            compactChars={10}
+            compactChars={12}
+            compactLabel={estimateValueLabel}
             aria-label={t('field.estimate')}
             value={issue.estimate == null ? 'none' : String(issue.estimate)}
             onChange={handlers.Estimate_onChange15}
             data={[
-              { value: 'none', label: t('field.estimate') },
+              { value: 'none', label: t('issueProperties.noEstimate') },
               ...Array.from(new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, issue.estimate]))
                 .filter((estimate): estimate is number => estimate != null)
                 .map((estimate) => ({ value: String(estimate), label: String(estimate) })),
@@ -299,12 +319,13 @@ export function IssuePropertiesPanel({
 
         <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
           <PropertySelect
-            compactChars={9}
+            compactChars={12}
+            compactLabel={cycleValueLabel}
             aria-label={t('field.cycle')}
             value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
             onChange={handlers.Cycle_onChange8}
             data={[
-              { value: 'none', label: t('field.cycle') },
+              { value: 'none', label: t('field.noCycle') },
               ...cycles.map((cycle) => ({
                 value: String(cycle.id),
                 label: t('field.cycleN', { number: cycle.number }),
@@ -321,7 +342,8 @@ export function IssuePropertiesPanel({
         {optionalIssuePropertyVisibility.type ? (
           <PropertyRow label={t('field.type')} icon={<IconTag size={14} stroke={1.7} />}>
             <PropertySelect
-              compactChars={9}
+              compactChars={12}
+              compactLabel={issue.type ? t(`issueType.${issue.type}`) : t('issueProperties.noType')}
               aria-label={t('field.type')}
               value={issue.type ?? 'none'}
               onChange={handlers.Type_onChange14}
@@ -343,6 +365,10 @@ export function IssuePropertiesPanel({
           >
             <PropertySelect
               compactChars={14}
+              compactLabel={
+                parentOptions.find((parent) => parent.id === issue.parentId)?.identifier ??
+                t('issueProperties.noParent')
+              }
               aria-label={t('issueProperties.parent')}
               value={issue.parentId != null ? String(issue.parentId) : 'none'}
               onChange={handlers.Parent_onChange9}
@@ -380,6 +406,10 @@ export function IssuePropertiesPanel({
           <PropertyRow label={t('field.milestone')} icon={<IconFlag size={14} stroke={1.7} />}>
             <PropertySelect
               compactChars={14}
+              compactLabel={
+                milestones.find((milestone) => milestone.id === issue.milestoneId)?.name ??
+                t('issueProperties.noMilestone')
+              }
               aria-label={t('field.milestone')}
               value={issue.milestoneId != null ? String(issue.milestoneId) : 'none'}
               onChange={handlers.Milestone_onChange43}
@@ -401,8 +431,10 @@ export function IssuePropertiesPanel({
           <Menu.Target>
             <ActionIcon
               type="button"
-              variant="default"
+              variant="subtle"
+              color="gray"
               size="sm"
+              className={styles.addPropertyButton}
               aria-label={t('issueProperties.addProperty')}
               title={t('issueProperties.addProperty')}
             >
@@ -460,17 +492,22 @@ function PropertyRow({
 
 function PropertySelect({
   compactChars = 10,
+  compactLabel,
   ...props
-}: SelectProps<string> & { compactChars?: number }) {
+}: SelectProps<string> & { compactChars?: number; compactLabel?: string }) {
+  const labelWidth = Array.from(compactLabel ?? props.value ?? '').reduce(
+    (width, character) => width + ((character.codePointAt(0) ?? 0) <= 0xff ? 1 : 2),
+    0,
+  );
+  const inputWidth = Math.max(4, Math.min(compactChars, labelWidth + 1));
   return (
     <Select
       {...props}
       size="sm"
       className={styles.select}
       classNames={{ input: styles.input, option: styles.option, dropdown: styles.dropdown }}
-      styles={{ input: { width: `${compactChars}ch` } }}
-      rightSection={<IconChevronDown size={13} stroke={1.7} />}
-      rightSectionPointerEvents="none"
+      styles={{ input: { width: `${inputWidth}ch` } }}
+      rightSection={null}
       withCheckIcon={false}
     />
   );

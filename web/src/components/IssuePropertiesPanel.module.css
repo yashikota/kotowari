@@ -8,7 +8,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .heading {
@@ -27,13 +27,13 @@
   display: inline-flex;
   flex: 0 1 auto;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   min-height: 30px;
   min-width: 0;
   max-width: 100%;
-  padding: 0 6px;
+  padding: 0 4px;
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: 7px;
+  border-radius: 999px;
   background: var(--mantine-color-body);
   transition: background-color 100ms ease;
 }
@@ -96,7 +96,7 @@
   max-width: 136px;
   min-height: 26px;
   height: 26px;
-  padding: 0 17px 0 1px;
+  padding: 0 1px;
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
@@ -124,6 +124,13 @@
 .dropdown {
   padding: 4px;
   border-color: var(--mantine-color-default-border);
+}
+
+.addPropertyButton {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
 }
 
 .dateInput {

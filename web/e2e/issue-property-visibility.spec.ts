@@ -10,18 +10,36 @@ test('issue details keep optional properties out of the way until added', async 
   const issue = (await created.json()) as { identifier: string };
 
   await page.goto(`/issues/${issue.identifier}`);
+  await page.setViewportSize({ width: 930, height: 900 });
   const properties = page.getByRole('region', { name: 'Issue properties' });
   await expect(properties.getByRole('combobox', { name: 'Status' })).toBeVisible();
   await expect(properties.getByRole('combobox', { name: 'Priority' })).toBeVisible();
   await expect(properties.getByRole('combobox', { name: 'Assignee' })).toBeVisible();
   await expect(properties.getByRole('combobox', { name: 'Project' })).toBeVisible();
-  await expect(properties.getByRole('combobox', { name: 'Priority' })).toHaveValue('Priority');
+  await expect(properties.getByRole('combobox', { name: 'Priority' })).toHaveValue('No priority');
   await expect(properties.getByRole('combobox', { name: 'Project' })).toHaveValue('Project');
-  await expect(properties.getByRole('combobox', { name: 'Estimate' })).toHaveValue('Estimate');
-  await expect(properties.getByRole('combobox', { name: 'Cycle' })).toHaveValue('Cycle');
+  await expect(properties.getByRole('combobox', { name: 'Estimate' })).toHaveValue('No estimate');
+  await expect(properties.getByRole('combobox', { name: 'Cycle' })).toHaveValue('No cycle');
   await expect(properties.getByRole('combobox', { name: 'Estimate' })).toBeVisible();
   await expect(properties.getByRole('group', { name: 'Labels' })).toBeVisible();
   await expect(properties.getByRole('combobox', { name: 'Cycle' })).toBeVisible();
+  const propertyRows = properties.locator('div[class*="row"]');
+  const propertyRowBounds = await propertyRows.evaluateAll((rows) =>
+    rows.map((row) => ({ y: row.getBoundingClientRect().y })),
+  );
+  expect(Math.max(...propertyRowBounds.map((bounds) => bounds.y))).toBe(
+    Math.min(...propertyRowBounds.map((bounds) => bounds.y)),
+  );
+  const statusRadius = await properties
+    .locator('div[class*="row"]')
+    .first()
+    .evaluate((row) => Number.parseFloat(getComputedStyle(row).borderTopLeftRadius));
+  expect(statusRadius).toBeGreaterThan(12);
+  const addPropertyBounds = await properties
+    .getByRole('button', { name: 'Add property' })
+    .boundingBox();
+  expect(addPropertyBounds).not.toBeNull();
+  expect(Math.abs(addPropertyBounds!.y - propertyRowBounds[0]!.y)).toBeLessThan(4);
   for (const name of ['Due date', 'Milestone', 'Parent', 'Type']) {
     await expect(properties.getByLabel(name, { exact: true })).toHaveCount(0);
   }
