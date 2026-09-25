@@ -42,6 +42,14 @@
     "inputLabel": "Search issues, projects, and documents",
     "placeholder": "Search issues, projects, and documents…",
     "clear": "Clear search",
+    "addFilter": "Add filter",
+    "filters": {
+      "status": "Status type",
+      "active": "Active search filters",
+      "statusValue": "Status: {{status}}",
+      "removeStatus": "Remove status filter: {{status}}",
+      "clear": "Clear"
+    },
     "categories": "Search categories",
     "tabs": {
       "all": "All",
@@ -55,6 +63,7 @@
     "titleAZ": "Title A–Z",
     "results": "Search results",
     "noResults": "No results found",
+    "noResultsFiltered": "No results found for “{{query}}” with the selected filters.",
     "tryDifferentQuery": "Try a different search term.",
     "startTitle": "Search your workspace",
     "startDescription": "Find issues, projects, documents, and saved views.",

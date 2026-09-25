@@ -3070,7 +3070,7 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 		}
 		for _, iss := range m.Issues {
 			if strings.Contains(strings.ToLower(iss.Title), q) || strings.Contains(strings.ToLower(iss.Identifier), q) || strings.Contains(strings.ToLower(iss.Body), q) {
-				hits = append(hits, SearchHit{Kind: "issue", ID: iss.Identifier, Title: iss.Title, Snippet: searchSnippet(iss.Body, q)})
+				hits = append(hits, SearchHit{Kind: "issue", ID: iss.Identifier, Title: iss.Title, Status: iss.Status, Snippet: searchSnippet(iss.Body, q)})
 			}
 		}
 		for _, p := range m.Projects {

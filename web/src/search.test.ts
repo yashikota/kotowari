@@ -3,7 +3,7 @@ import { filterSearchHits, orderSearchHits, parseSearchPageSearch } from './sear
 import type { SearchHit } from './types.ts';
 
 const hits: SearchHit[] = [
-  { kind: 'issue', id: 'APP-1', title: 'Zebra issue' },
+  { kind: 'issue', id: 'APP-1', title: 'Zebra issue', status: 'todo' },
   { kind: 'project', id: 'alpha', title: 'Alpha project' },
   { kind: 'adr', id: 'ADR-1', title: 'Decision' },
   { kind: 'page', id: 'guide', title: 'Guide' },
@@ -19,6 +19,9 @@ describe('search page state', () => {
     });
     expect(parseSearchPageSearch({ q: '   ', tab: 'unknown', order: 'unknown' })).toEqual({});
     expect(parseSearchPageSearch({ q: 'x'.repeat(205) }).q).toHaveLength(200);
+    expect(parseSearchPageSearch({ status: 'todo,in_progress,todo,unknown' }).status).toBe(
+      'todo,in_progress',
+    );
   });
 
   it('filters search categories like Linear tabs while retaining Kotowari-only views in All', () => {
@@ -26,6 +29,8 @@ describe('search page state', () => {
     expect(filterSearchHits(hits, 'issues').map((hit) => hit.kind)).toEqual(['issue']);
     expect(filterSearchHits(hits, 'projects').map((hit) => hit.kind)).toEqual(['project']);
     expect(filterSearchHits(hits, 'documents').map((hit) => hit.kind)).toEqual(['adr', 'page']);
+    expect(filterSearchHits(hits, 'all', ['todo']).map((hit) => hit.id)).toEqual(['APP-1']);
+    expect(filterSearchHits(hits, 'projects', ['todo'])).toEqual([]);
   });
 
   it('orders titles without mutating the source result order', () => {

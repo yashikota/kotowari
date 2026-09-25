@@ -373,6 +373,7 @@ type SearchHit struct {
 	Kind    string `json:"kind"`
 	ID      string `json:"id"`
 	Title   string `json:"title"`
+	Status  string `json:"status,omitempty"`
 }
 
 type IssueFilter struct {

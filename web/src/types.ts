@@ -297,6 +297,7 @@ export type SearchHit = {
   kind: 'issue' | 'project' | 'view' | 'adr' | 'page';
   id: string;
   title: string;
+  status?: IssueStatus;
 };
 
 export type AgentChat = {

@@ -42,6 +42,14 @@
     "inputLabel": "イシュー、プロジェクト、ドキュメントを検索",
     "placeholder": "イシュー、プロジェクト、ドキュメントを検索…",
     "clear": "検索をクリア",
+    "addFilter": "フィルターを追加",
+    "filters": {
+      "status": "ステータス種別",
+      "active": "有効な検索フィルター",
+      "statusValue": "ステータス: {{status}}",
+      "removeStatus": "ステータスフィルターを解除: {{status}}",
+      "clear": "クリア"
+    },
     "categories": "検索カテゴリ",
     "tabs": {
       "all": "すべて",
@@ -55,6 +63,7 @@
     "titleAZ": "タイトル順",
     "results": "検索結果",
     "noResults": "結果が見つかりません",
+    "noResultsFiltered": "「{{query}}」に一致する結果が選択したフィルター内にありません。",
     "tryDifferentQuery": "別の検索語をお試しください。",
     "startTitle": "ワークスペースを検索",
     "startDescription": "イシュー、プロジェクト、ドキュメント、保存済みビューを検索できます。",

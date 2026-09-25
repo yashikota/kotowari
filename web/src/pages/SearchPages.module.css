@@ -32,6 +32,36 @@
   color: var(--mantine-color-text);
 }
 
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.filterChip:hover,
+.filterChip:focus-visible {
+  background: var(--mantine-color-default-hover);
+  color: var(--mantine-color-text);
+}
+
+.clearFilters {
+  padding: 3px 5px;
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.clearFilters:hover,
+.clearFilters:focus-visible {
+  color: var(--mantine-color-text);
+  text-decoration: underline;
+}
+
 .scroll {
   flex: 1 1 auto;
   min-height: 0;

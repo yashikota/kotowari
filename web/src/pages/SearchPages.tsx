@@ -17,6 +17,7 @@ import {
   IconCheck,
   IconChevronDown,
   IconFileText,
+  IconFilter,
   IconLayoutList,
   IconScale,
   IconSearch,
@@ -27,7 +28,7 @@ import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useFocusWhen } from '../focus.ts';
-import type { SearchHit } from '../types.ts';
+import { ISSUE_STATUSES, type SearchHit } from '../types.ts';
 import { useSearchPagePresenter } from '../presenters/SearchPages.tsx';
 import styles from './SearchPages.module.css';
 
@@ -91,7 +92,7 @@ function SearchPageView({
   const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { query, submittedQuery, tab, order, hits, handlers } = model;
+      const { query, submittedQuery, tab, order, statuses, hits, handlers } = model;
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <VisuallyHidden>
@@ -141,39 +142,99 @@ function SearchPageView({
                     <Tabs.Tab value="documents">{t('searchPage.tabs.documents')}</Tabs.Tab>
                   </Tabs.List>
                 </Tabs>
-                <Menu position="bottom-end" withinPortal shadow="md">
-                  <Menu.Target>
-                    <UnstyledButton
-                      type="button"
-                      className={styles.displayOptions}
-                      aria-label={t('searchPage.displayOptions')}
-                    >
-                      <IconFileText size={14} stroke={1.7} aria-hidden />
-                      <span>{t('searchPage.displayOptions')}</span>
-                      <IconChevronDown size={13} stroke={1.8} aria-hidden />
-                    </UnstyledButton>
-                  </Menu.Target>
-                  <Menu.Dropdown aria-label={t('searchPage.displayOptions')}>
-                    <Menu.Label>{t('searchPage.ordering')}</Menu.Label>
-                    <Menu.Item
-                      aria-checked={order === 'relevance'}
-                      leftSection={
-                        order === 'relevance' ? <IconCheck size={14} aria-hidden /> : null
-                      }
-                      onClick={() => handlers.onOrderChange('relevance')}
-                    >
-                      {t('searchPage.mostRelevant')}
-                    </Menu.Item>
-                    <Menu.Item
-                      aria-checked={order === 'title'}
-                      leftSection={order === 'title' ? <IconCheck size={14} aria-hidden /> : null}
-                      onClick={() => handlers.onOrderChange('title')}
-                    >
-                      {t('searchPage.titleAZ')}
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
+                <Group gap={6} wrap="nowrap">
+                  <Menu position="bottom-end" withinPortal shadow="md">
+                    <Menu.Target>
+                      <UnstyledButton
+                        type="button"
+                        className={styles.displayOptions}
+                        aria-label={t('searchPage.addFilter')}
+                      >
+                        <IconFilter size={14} stroke={1.7} aria-hidden />
+                        <span>{t('searchPage.addFilter')}</span>
+                        <IconChevronDown size={13} stroke={1.8} aria-hidden />
+                      </UnstyledButton>
+                    </Menu.Target>
+                    <Menu.Dropdown aria-label={t('searchPage.addFilter')}>
+                      <Menu.Label>{t('searchPage.filters.status')}</Menu.Label>
+                      {ISSUE_STATUSES.map((status) => (
+                        <Menu.CheckboxItem
+                          key={status}
+                          checked={statuses.includes(status)}
+                          onChange={() => handlers.onToggleStatus(status)}
+                        >
+                          {t(`issueStatus.${status}`)}
+                        </Menu.CheckboxItem>
+                      ))}
+                    </Menu.Dropdown>
+                  </Menu>
+                  <Menu position="bottom-end" withinPortal shadow="md">
+                    <Menu.Target>
+                      <UnstyledButton
+                        type="button"
+                        className={styles.displayOptions}
+                        aria-label={t('searchPage.displayOptions')}
+                      >
+                        <IconFileText size={14} stroke={1.7} aria-hidden />
+                        <span>{t('searchPage.displayOptions')}</span>
+                        <IconChevronDown size={13} stroke={1.8} aria-hidden />
+                      </UnstyledButton>
+                    </Menu.Target>
+                    <Menu.Dropdown aria-label={t('searchPage.displayOptions')}>
+                      <Menu.Label>{t('searchPage.ordering')}</Menu.Label>
+                      <Menu.Item
+                        aria-checked={order === 'relevance'}
+                        leftSection={
+                          order === 'relevance' ? <IconCheck size={14} aria-hidden /> : null
+                        }
+                        onClick={() => handlers.onOrderChange('relevance')}
+                      >
+                        {t('searchPage.mostRelevant')}
+                      </Menu.Item>
+                      <Menu.Item
+                        aria-checked={order === 'title'}
+                        leftSection={order === 'title' ? <IconCheck size={14} aria-hidden /> : null}
+                        onClick={() => handlers.onOrderChange('title')}
+                      >
+                        {t('searchPage.titleAZ')}
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                </Group>
               </Group>
+              {statuses.length ? (
+                <Group
+                  gap={6}
+                  mt="sm"
+                  wrap="wrap"
+                  role="group"
+                  aria-label={t('searchPage.filters.active')}
+                >
+                  {statuses.map((status) => (
+                    <UnstyledButton
+                      key={status}
+                      type="button"
+                      className={styles.filterChip}
+                      aria-label={t('searchPage.filters.removeStatus', {
+                        status: t(`issueStatus.${status}`),
+                      })}
+                      onClick={() => handlers.onToggleStatus(status)}
+                    >
+                      {t('searchPage.filters.statusValue', {
+                        status: t(`issueStatus.${status}`),
+                      })}
+                      <IconX size={12} aria-hidden />
+                    </UnstyledButton>
+                  ))}
+                  <UnstyledButton
+                    type="button"
+                    className={styles.clearFilters}
+                    onClick={handlers.onClearStatuses}
+                  >
+                    {t('searchPage.filters.clear')}
+                  </UnstyledButton>
+                </Group>
+              ) : null}
             </Box>
           </Box>
           <ScrollArea className={styles.scroll} type="auto">
@@ -215,7 +276,11 @@ function SearchPageView({
                   </Stack>
                 ) : (
                   <Stack align="center" gap={4} py="xl" role="status">
-                    <Text fw={550}>{t('searchPage.noResults')}</Text>
+                    <Text fw={550}>
+                      {statuses.length
+                        ? t('searchPage.noResultsFiltered', { query: submittedQuery })
+                        : t('searchPage.noResults')}
+                    </Text>
                     <Text size="sm" c="dimmed">
                       {t('searchPage.tryDifferentQuery')}
                     </Text>

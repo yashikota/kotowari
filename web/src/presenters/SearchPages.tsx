@@ -2,6 +2,7 @@ import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { filterSearchHits, orderSearchHits, type SearchOrder, type SearchTab } from '../search.ts';
+import type { IssueStatus } from '../types.ts';
 
 export function useSearchPagePresenter() {
   const search = useSearch({ from: '/search' });
@@ -10,6 +11,7 @@ export function useSearchPagePresenter() {
   const [query, setQuery] = useState(search.q ?? '');
   const tab = search.tab ?? 'all';
   const order = search.order ?? 'relevance';
+  const statuses = (search.status?.split(',') ?? []) as IssueStatus[];
 
   useEffect(() => setQuery(search.q ?? ''), [search.q]);
 
@@ -19,7 +21,8 @@ export function useSearchPagePresenter() {
     submittedQuery: search.q ?? '',
     tab,
     order,
-    hits: orderSearchHits(filterSearchHits(hits, tab), order, search.q ?? ''),
+    statuses,
+    hits: orderSearchHits(filterSearchHits(hits, tab, statuses), order, search.q ?? ''),
     handlers: {
       onQueryChange: (value: string) => setQuery(value),
       onSubmit: (event: FormEvent<HTMLFormElement>) => {
@@ -42,6 +45,18 @@ export function useSearchPagePresenter() {
         navigate({
           search: (previous) => ({ ...previous, order: order === 'relevance' ? undefined : order }),
         }),
+      onToggleStatus: (status: IssueStatus) =>
+        navigate({
+          search: (previous) => {
+            const next = new Set((previous.status?.split(',') ?? []) as IssueStatus[]);
+            if (next.has(status)) next.delete(status);
+            else next.add(status);
+            const statuses = [...next];
+            return { ...previous, status: statuses.length ? statuses.join(',') : undefined };
+          },
+        }),
+      onClearStatuses: () =>
+        navigate({ search: (previous) => ({ ...previous, status: undefined }) }),
     },
   };
 }

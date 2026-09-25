@@ -1243,7 +1243,7 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 	if hits == nil || len(hits) != 0 {
 		t.Fatalf("empty query %#v", hits)
 	}
-	iss, err := s.CreateIssue(CreateIssueInput{Title: "Find me"})
+	iss, err := s.CreateIssue(CreateIssueInput{Title: "Find me", Status: "todo"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1251,7 +1251,7 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(hits) != 1 || hits[0].Kind != "issue" || hits[0].ID != iss.Identifier {
+	if len(hits) != 1 || hits[0].Kind != "issue" || hits[0].ID != iss.Identifier || hits[0].Status != "todo" {
 		t.Fatalf("identifier search %#v", hits)
 	}
 	hits, err = s.Search("no-such-thing")

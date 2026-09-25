@@ -20,6 +20,11 @@ test('workspace search finds issues, projects and documents with shareable categ
       data: { title: query, status: 'todo' },
     }),
   );
+  const startedIssue = await json<{ identifier: string }>(
+    await request.post('/api/issues', {
+      data: { title: `${query} started`, status: 'in_progress' },
+    }),
+  );
   const project = await json<{ slug: string }>(
     await request.post('/api/projects', {
       data: { name: `${query} project`, slug: `search-${Date.now()}` },
@@ -57,6 +62,28 @@ test('workspace search finds issues, projects and documents with shareable categ
   await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toHaveCount(0);
 
   await page.getByRole('tab', { name: 'Issues' }).click();
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'In Progress' }).click();
+  await expect(page).toHaveURL(/status=in_progress/);
+  await expect(
+    results.getByRole('link', { name: new RegExp(startedIssue.identifier) }),
+  ).toBeVisible();
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Todo' }).click();
+  await expect(page).toHaveURL(/status=.*todo/);
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('button', { name: 'Remove status filter: In Progress' }).click();
+  await expect(page).toHaveURL(/status=todo/);
+  await expect(
+    results.getByRole('link', { name: new RegExp(startedIssue.identifier) }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Remove status filter: Todo' }).click();
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Done' }).click();
+  await expect(page.getByRole('status')).toContainText('with the selected filters');
+  await page.getByRole('button', { name: 'Remove status filter: Done' }).click();
+
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('menuitem', { name: 'Title A–Z' }).click();
   await expect(page).toHaveURL(/order=title/);
