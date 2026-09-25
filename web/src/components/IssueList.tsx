@@ -38,6 +38,9 @@ export function IssueListView({
         windowed,
         today,
         displayProperties,
+        projects,
+        cycles,
+        labels,
         handlers,
       } = model;
       return (
@@ -93,6 +96,14 @@ export function IssueListView({
                 onSetAssignee={handlers.onSetBulkAssignee}
                 onSetType={handlers.onSetBulkType}
                 onSetEstimate={handlers.onSetBulkEstimate}
+                onSetDueDate={handlers.onSetBulkDueDate}
+                projects={projects}
+                cycles={cycles}
+                labels={labels}
+                onSetProject={handlers.onSetBulkProject}
+                onSetCycle={handlers.onSetBulkCycle}
+                onAddLabel={handlers.onAddBulkLabel}
+                onRemoveLabel={handlers.onRemoveBulkLabel}
                 onClear={handlers.onClearBulkSelection}
               />
             ) : null}
@@ -107,6 +118,9 @@ export function IssueList(
   props: Parameters<typeof useIssueListPresenter>[0] & {
     groupBy?: IssueGroupBy;
     hideProjectSlug?: boolean;
+    projects?: import('../types.ts').Project[];
+    cycles?: import('../types.ts').Cycle[];
+    labels?: import('../types.ts').Label[];
   },
 ) {
   return (

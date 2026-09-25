@@ -394,6 +394,147 @@ test('issue list applies bulk assignee, type, and estimate changes', async ({ pa
     .toEqual([8, 8]);
 });
 
+test('issue list applies bulk project, cycle, and label changes without replacing other labels', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projectName = `Bulk project ${stamp}`;
+  const projectResponse = await request.post('/api/projects', {
+    data: { name: projectName, slug: `bulk-${stamp}` },
+  });
+  expect(projectResponse.ok()).toBeTruthy();
+  const project = (await projectResponse.json()) as { id: number };
+
+  const cycleResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+      endsAt: new Date(Date.now() + 14 * 86_400_000).toISOString(),
+      status: 'upcoming',
+    },
+  });
+  expect(cycleResponse.ok()).toBeTruthy();
+  const cycle = (await cycleResponse.json()) as { id: number; number: number };
+
+  const labelName = `Bulk label ${stamp}`;
+  const labelResponse = await request.post('/api/labels', {
+    data: { name: labelName, color: '#7c3aed' },
+  });
+  expect(labelResponse.ok()).toBeTruthy();
+  const label = (await labelResponse.json()) as { id: number };
+
+  const keepLabelName = `Keep label ${stamp}`;
+  const keepLabelResponse = await request.post('/api/labels', {
+    data: { name: keepLabelName, color: '#0ea5e9' },
+  });
+  expect(keepLabelResponse.ok()).toBeTruthy();
+  const keepLabel = (await keepLabelResponse.json()) as { id: number };
+
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: {
+        title: `Bulk project cycle labels ${stamp} ${index}`,
+        status: 'todo',
+        ...(index === 0 ? { labelIds: [keepLabel.id] } : {}),
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    identifiers.push(((await response.json()) as { identifier: string }).identifier);
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  const selectAllRows = async () => {
+    for (const identifier of identifiers) {
+      await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+    }
+    await page.getByRole('button', { name: 'Actions' }).click();
+  };
+  const openSubmenu = async (name: string) => {
+    const item = page.getByRole('menuitem', { name, exact: true });
+    await item.hover();
+  };
+  const selectedIssues = () =>
+    Promise.all(
+      identifiers.map(async (identifier) => {
+        const response = await request.get(`/api/issues/${identifier}`);
+        expect(response.ok()).toBeTruthy();
+        return (await response.json()) as {
+          projectId: number | null;
+          cycleId: number | null;
+          dueDate: string | null;
+          labels: { id: number; name: string }[];
+        };
+      }),
+    );
+
+  await selectAllRows();
+  await openSubmenu('Add to project…');
+  await page.getByRole('menuitem', { name: projectName, exact: true }).click();
+  await expect
+    .poll(async () => (await selectedIssues()).map((issue) => issue.projectId))
+    .toEqual([project.id, project.id]);
+
+  await selectAllRows();
+  await openSubmenu('Add to cycle…');
+  await page.getByRole('menuitem', { name: `Cycle ${cycle.number}`, exact: true }).click();
+  await expect
+    .poll(async () => (await selectedIssues()).map((issue) => issue.cycleId))
+    .toEqual([cycle.id, cycle.id]);
+
+  const customDueDate = new Date(Date.now() + 3 * 86_400_000);
+  const dueDate = `${customDueDate.getFullYear()}-${String(customDueDate.getMonth() + 1).padStart(2, '0')}-${String(customDueDate.getDate()).padStart(2, '0')}`;
+  await selectAllRows();
+  await openSubmenu('Set due date…');
+  await page.getByLabel('Choose a date').fill(dueDate);
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect
+    .poll(async () => (await selectedIssues()).map((issue) => issue.dueDate))
+    .toEqual([dueDate, dueDate]);
+
+  await selectAllRows();
+  await openSubmenu('Change or add labels…');
+  await page.getByRole('menuitem', { name: `Add label ${labelName}`, exact: true }).click();
+  await expect
+    .poll(async () =>
+      (await selectedIssues()).map((issue) =>
+        issue.labels.map((item) => item.id).sort((left, right) => left - right),
+      ),
+    )
+    .toEqual([[keepLabel.id, label.id].sort((left, right) => left - right), [label.id]]);
+
+  await selectAllRows();
+  await openSubmenu('Change or add labels…');
+  await page.getByRole('menuitem', { name: `Remove label ${labelName}`, exact: true }).click();
+  await expect
+    .poll(async () =>
+      (await selectedIssues()).map((issue) => issue.labels.map((item) => item.name)),
+    )
+    .toEqual([[keepLabelName], []]);
+
+  await selectAllRows();
+  await openSubmenu('Add to project…');
+  await page.getByRole('menuitem', { name: 'No project', exact: true }).click();
+  await expect
+    .poll(async () => (await selectedIssues()).map((issue) => issue.projectId))
+    .toEqual([null, null]);
+
+  await selectAllRows();
+  await openSubmenu('Add to cycle…');
+  await page.getByRole('menuitem', { name: 'No cycle', exact: true }).click();
+  await expect
+    .poll(async () => (await selectedIssues()).map((issue) => issue.cycleId))
+    .toEqual([null, null]);
+
+  await selectAllRows();
+  await openSubmenu('Set due date…');
+  await page.getByRole('menuitem', { name: 'No due date', exact: true }).click();
+  await expect
+    .poll(async () => (await selectedIssues()).map((issue) => issue.dueDate))
+    .toEqual([null, null]);
+});
+
 test('type and estimate filters survive saving a reusable view', async ({ page, request }) => {
   const stamp = Date.now();
   const matchingTitle = `Feature estimate ${stamp}`;

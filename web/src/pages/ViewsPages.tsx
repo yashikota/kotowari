@@ -142,6 +142,9 @@ export function ViewPageView({
                     showEmptyGroups={showEmptyGroups}
                     showSubIssues={showSubIssues}
                     displayProperties={displayProperties}
+                    projects={data.projects}
+                    cycles={data.cycles}
+                    labels={data.labels}
                   />
                 )}
               </Stack>

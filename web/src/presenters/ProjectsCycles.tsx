@@ -995,6 +995,7 @@ export function useProjectDetailPagePresenter() {
   const data = useLoaderData({ from: '/projects/$slug' }) as {
     project: Project;
     projects: Project[];
+    cycles: Cycle[];
     issues: Issue[];
     adrs: ADR[];
     pages: Page[];

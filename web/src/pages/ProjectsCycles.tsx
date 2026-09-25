@@ -741,6 +741,9 @@ export function ProjectDetailPageView({
                   onSelect={handlers.onSelect8}
                   groupBy="status"
                   hideProjectSlug
+                  projects={data.projects}
+                  cycles={data.cycles}
+                  labels={data.labels}
                 />
                 <Section title={t('projectActivity.heading')}>
                   <ProjectActivityFeed
@@ -1123,6 +1126,9 @@ export function CycleDetailPageView({
                       showEmptyGroups={showEmptyGroups}
                       showSubIssues={showSubIssues}
                       displayProperties={displayProperties}
+                      projects={data.projects}
+                      cycles={data.cycles}
+                      labels={data.labels}
                     />
                   ) : (
                     <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

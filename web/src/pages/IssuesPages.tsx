@@ -115,6 +115,9 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
                     showEmptyGroups={showEmptyGroups}
                     showSubIssues={showSubIssues}
                     displayProperties={displayProperties}
+                    projects={data.projects}
+                    cycles={data.cycles}
+                    labels={data.labels}
                   />
                 ) : (
                   <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

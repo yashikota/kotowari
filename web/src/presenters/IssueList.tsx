@@ -18,7 +18,7 @@ import {
 import type { IssueBoardColumnProps } from '../components/IssueBoardColumn.tsx';
 import { localToday } from '../due.ts';
 import { actionFromKeyboard } from '../keymap.ts';
-import type { Issue } from '../types.ts';
+import type { Cycle, Issue, Label, Project } from '../types.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 
@@ -36,6 +36,9 @@ type Props = {
   showSubIssues?: boolean;
   direction?: 'asc' | 'desc';
   displayProperties?: IssueDisplayProperty[];
+  projects?: Project[];
+  cycles?: Cycle[];
+  labels?: Label[];
 };
 
 export function useIssueListPresenter({
@@ -52,6 +55,9 @@ export function useIssueListPresenter({
   showSubIssues = true,
   direction,
   displayProperties,
+  projects = [],
+  cycles = [],
+  labels = [],
 }: Props) {
   const sendIntent = useIntent();
   const { statuses: workflowStatuses } = useIssueWorkflow();
@@ -103,6 +109,23 @@ export function useIssueListPresenter({
 
   async function updateSelectedIssues(patch: Record<string, unknown>) {
     await Promise.all(bulkSelectedIds.map((id) => api.patchIssue(id, patch)));
+    await router.invalidate();
+    setBulkSelectedIds([]);
+  }
+
+  async function updateSelectedLabels(labelId: number, add: boolean) {
+    await Promise.all(
+      bulkSelectedIds.map(async (identifier) => {
+        const issue = await api.issue(identifier);
+        const labelIds = issue.labels.map((label) => label.id);
+        const next = add
+          ? labelIds.includes(labelId)
+            ? labelIds
+            : [...labelIds, labelId]
+          : labelIds.filter((id) => id !== labelId);
+        if (next.length !== labelIds.length) await api.patchIssue(identifier, { labelIds: next });
+      }),
+    );
     await router.invalidate();
     setBulkSelectedIds([]);
   }
@@ -175,6 +198,9 @@ export function useIssueListPresenter({
     childCounts,
     windowed,
     today,
+    projects,
+    cycles,
+    labels,
     handlers: {
       onClick0: (issue: Issue) => {
         onSelect(issue.identifier);
@@ -199,6 +225,11 @@ export function useIssueListPresenter({
       onSetBulkAssignee: (assignee: 'self' | 'agent' | '') => updateSelectedIssues({ assignee }),
       onSetBulkType: (type: Issue['type']) => updateSelectedIssues({ type }),
       onSetBulkEstimate: (estimate: number | null) => updateSelectedIssues({ estimate }),
+      onSetBulkDueDate: (dueDate: string | null) => updateSelectedIssues({ dueDate }),
+      onSetBulkProject: (projectId: number | null) => updateSelectedIssues({ projectId }),
+      onSetBulkCycle: (cycleId: number | null) => updateSelectedIssues({ cycleId }),
+      onAddBulkLabel: (labelId: number) => updateSelectedLabels(labelId, true),
+      onRemoveBulkLabel: (labelId: number) => updateSelectedLabels(labelId, false),
       onClearBulkSelection: () => setBulkSelectedIds([]),
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>
