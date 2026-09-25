@@ -28,6 +28,7 @@ export type ProjectListControlsModel = {
   healths: string[];
   labels: string[];
   templates: string[];
+  initiatives: string[];
   groupBy: string;
   orderBy: string;
   direction: string;
@@ -46,6 +47,7 @@ export type ProjectListControlsModel = {
   relations: string[];
   availableMilestones: string[];
   availableTemplates: { value: string; label: string }[];
+  availableInitiatives: { value: string; label: string }[];
   availableProjects?: { value: string; label: string }[];
   specificProject?: string;
   availableLabels: Label[];
@@ -58,6 +60,7 @@ export type ProjectListControlsModel = {
     onHealthsChange: (value: string[]) => void;
     onLabelsChange: (value: string[]) => void;
     onTemplatesChange: (value: string[]) => void;
+    onInitiativesChange: (value: string[]) => void;
     onDateFieldChange: (value: string | null) => void;
     onDateFromChange: (value: string) => void;
     onDateToChange: (value: string) => void;

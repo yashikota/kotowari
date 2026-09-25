@@ -793,6 +793,21 @@ export function ProjectDetailPageView({
                     onChange={handlers.Target_date_onChange6}
                   />
                 </Group>
+                <Section title={t('initiatives.projectProperty')}>
+                  <MultiSelect
+                    aria-label={t('initiatives.projectProperty')}
+                    value={project.initiativeSlugs ?? []}
+                    onChange={handlers.onProjectInitiativesChange}
+                    data={data.initiatives.map((initiative) => ({
+                      value: initiative.slug,
+                      label: initiative.name,
+                    }))}
+                    searchable
+                    clearable
+                    hidePickedOptions
+                    comboboxProps={{ withinPortal: false }}
+                  />
+                </Section>
                 <Section title={t('filters.projectLabels')}>
                   {data.labels.length > 0 ? (
                     <Group gap={4}>

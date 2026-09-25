@@ -7,6 +7,7 @@ import type {
   IssueLink,
   IssueRelation,
   IssueWorkflowStatus,
+  Initiative,
   ProjectWorkflowStatus,
   IssueTemplate,
   Label,
@@ -89,6 +90,7 @@ let projects: Project[] = [
     updatedAt: now,
   },
 ];
+let initiatives: Initiative[] = [];
 let cycles: Cycle[] = [
   {
     id: 1,
@@ -375,6 +377,82 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   if (path === '/api/revision') {
     processDemoRecurringIssues();
     return json({ revision: String(revision) });
+  }
+  if (path === '/api/initiatives' && method === 'GET') return json(initiatives);
+  if (path === '/api/initiatives' && method === 'POST') {
+    const value = body(init);
+    const name = text(value.name).trim();
+    const slug = text(value.slug).trim();
+    if (!name || !slug) return json({ error: 'initiative name and slug required' }, 400);
+    if (initiatives.some((initiative) => initiative.slug === slug))
+      return json({ error: 'initiative slug already exists' }, 409);
+    const projectSlugs = Array.isArray(value.projectSlugs) ? (value.projectSlugs as string[]) : [];
+    if (
+      projectSlugs.some((projectSlug) => !projects.some((project) => project.slug === projectSlug))
+    )
+      return notFound();
+    const initiative: Initiative = {
+      id: Math.max(0, ...initiatives.map((item) => item.id)) + 1,
+      name,
+      slug,
+      description: text(value.description),
+      status: (value.status as Initiative['status']) ?? 'planned',
+      color: text(value.color),
+      startDate: text(value.startDate) || null,
+      targetDate: text(value.targetDate) || null,
+      projectSlugs,
+      createdAt: now,
+      updatedAt: now,
+    };
+    initiatives = [...initiatives, initiative];
+    for (const project of projects) {
+      if (projectSlugs.includes(project.slug))
+        project.initiativeSlugs = [...new Set([...(project.initiativeSlugs ?? []), slug])];
+    }
+    revision += 1;
+    return json(initiative, 201);
+  }
+  let initiativeMatch = path.match(/^\/api\/initiatives\/([^/]+)$/);
+  if (initiativeMatch) {
+    const slug = decodeURIComponent(initiativeMatch[1]!);
+    const initiative = initiatives.find((item) => item.slug === slug);
+    if (!initiative) return notFound();
+    if (method === 'GET') return json(initiative);
+    if (method === 'PATCH') {
+      const value = body(init);
+      if (Array.isArray(value.projectSlugs)) {
+        const projectSlugs = value.projectSlugs as string[];
+        if (
+          projectSlugs.some(
+            (projectSlug) => !projects.some((project) => project.slug === projectSlug),
+          )
+        )
+          return notFound();
+        for (const project of projects) {
+          const linked = projectSlugs.includes(project.slug);
+          const current = (project.initiativeSlugs ?? []).filter((item) => item !== slug);
+          project.initiativeSlugs = linked ? [...current, slug] : current;
+          if (!project.initiativeSlugs.length) delete project.initiativeSlugs;
+        }
+        initiative.projectSlugs = projectSlugs;
+      }
+      const { clearStartDate, clearTargetDate, ...changes } = value;
+      patch(initiative, {
+        ...changes,
+        ...(clearStartDate ? { startDate: null } : {}),
+        ...(clearTargetDate ? { targetDate: null } : {}),
+      });
+      return json(initiative);
+    }
+    if (method === 'DELETE') {
+      initiatives = initiatives.filter((item) => item.slug !== slug);
+      for (const project of projects) {
+        project.initiativeSlugs = (project.initiativeSlugs ?? []).filter((item) => item !== slug);
+        if (!project.initiativeSlugs.length) delete project.initiativeSlugs;
+      }
+      revision += 1;
+      return json(null, 204);
+    }
   }
   if (path === '/api/project-templates' && method === 'GET') return json(projectTemplates);
   let match = path.match(/^\/api\/project-templates\/([^/]+)$/);
@@ -1599,6 +1677,29 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     }
     if (method === 'PATCH') {
       const value = body(init);
+      if (kind === 'projects' && 'initiativeSlugs' in value) {
+        if (!Array.isArray(value.initiativeSlugs))
+          return json({ error: 'initiativeSlugs must be an array' }, 400);
+        const next = value.initiativeSlugs as string[];
+        if (
+          next.some(
+            (slug) => typeof slug !== 'string' || !initiatives.some((item) => item.slug === slug),
+          )
+        )
+          return notFound();
+        if (new Set(next).size !== next.length)
+          return json({ error: 'initiative already assigned' }, 409);
+        const project = projects.find((candidate) => candidate.slug === key);
+        if (!project) return notFound();
+        const previous = project.initiativeSlugs ?? [];
+        for (const slug of new Set([...previous, ...next])) {
+          const initiative = initiatives.find((item) => item.slug === slug);
+          if (!initiative) continue;
+          initiative.projectSlugs = next.includes(slug)
+            ? [...new Set([...initiative.projectSlugs, project.slug])]
+            : initiative.projectSlugs.filter((projectSlug) => projectSlug !== project.slug);
+        }
+      }
       if (kind === 'projects' && typeof value.workflowStatus === 'string') {
         const state = projectWorkflowStatuses.find((status) => status.id === value.workflowStatus);
         if (!state) return json({ error: 'invalid project workflow status' }, 400);

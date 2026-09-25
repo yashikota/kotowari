@@ -12,6 +12,7 @@ export type ProjectViewSearch = {
   health?: Array<ProjectHealth | 'none'>;
   labels?: string[];
   templates?: string[];
+  initiatives?: string[];
   groupBy?: 'none' | 'status' | 'priority';
   orderBy?:
     | 'manual'

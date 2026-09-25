@@ -24,6 +24,7 @@ import {
   IconSearch,
   IconStack2,
   IconTag,
+  IconTarget,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +40,7 @@ const FILTERS = [
   'dates',
   'milestones',
   'relations',
+  'initiatives',
   'template',
   'title',
   'specificProject',
@@ -47,7 +49,7 @@ const FILTERS = [
 type FilterKey = (typeof FILTERS)[number];
 
 const FILTER_GROUPS: FilterKey[][] = [
-  ['status', 'priority', 'labels', 'health', 'dates', 'milestones', 'relations'],
+  ['status', 'priority', 'labels', 'health', 'dates', 'milestones', 'relations', 'initiatives'],
   ['template', 'title'],
   ['specificProject'],
 ];
@@ -60,6 +62,7 @@ const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
   dates: IconCalendar,
   milestones: IconFlag,
   relations: IconLink,
+  initiatives: IconTarget,
   template: IconFileText,
   title: IconFileText,
   specificProject: IconStack2,
@@ -88,6 +91,7 @@ export function ProjectFilterPicker({
     dates: t('projectList.filterDates'),
     milestones: t('projectList.filterCategoryMilestones'),
     relations: t('projectList.filterCategoryRelations'),
+    initiatives: t('projectList.filterInitiative'),
     template: t('projectList.filterTemplate'),
     title: t('projectList.filterTitleSummary'),
     specificProject: t('projectList.filterSpecificProject'),
@@ -110,9 +114,11 @@ export function ProjectFilterPicker({
                     ? model.relations.length
                     : key === 'template'
                       ? model.templates.length
-                      : key === 'title'
-                        ? Number(Boolean(model.search.trim()))
-                        : Number(Boolean(model.specificProject));
+                      : key === 'initiatives'
+                        ? model.initiatives.length
+                        : key === 'title'
+                          ? Number(Boolean(model.search.trim()))
+                          : Number(Boolean(model.specificProject));
     if (!count) return [];
     const dateFieldLabels: Record<string, string> = {
       startDate: t('projectList.orderStartDate'),
@@ -152,11 +158,21 @@ export function ProjectFilterPicker({
                                   )?.label ?? template.slice('template:'.length)),
                             )
                             .join(', ')
-                        : (model.availableProjects?.find(
-                            (project) => project.value === model.specificProject,
-                          )?.label ??
-                          model.specificProject ??
-                          '');
+                        : key === 'initiatives'
+                          ? model.initiatives
+                              .map((value) =>
+                                value === 'initiative:none'
+                                  ? t('projectList.filterNoInitiatives')
+                                  : (model.availableInitiatives.find(
+                                      (option) => option.value === value,
+                                    )?.label ?? value.slice('initiative:'.length)),
+                              )
+                              .join(', ')
+                          : (model.availableProjects?.find(
+                              (project) => project.value === model.specificProject,
+                            )?.label ??
+                            model.specificProject ??
+                            '');
     const label =
       key === 'title'
         ? `${labels.title} ${t(
@@ -202,6 +218,9 @@ export function ProjectFilterPicker({
         break;
       case 'relations':
         model.handlers.onRelationsChange([]);
+        break;
+      case 'initiatives':
+        model.handlers.onInitiativesChange([]);
         break;
       case 'template':
         model.handlers.onTemplatesChange([]);
@@ -327,6 +346,20 @@ export function ProjectFilterPicker({
               { value: 'blocks', label: t('projectDependencies.kindOptions.blocks') },
               { value: 'blocked_by', label: t('projectDependencies.kindOptions.blocked_by') },
               { value: 'related', label: t('projectDependencies.kindOptions.related') },
+            ]}
+            searchable
+            comboboxProps={{ withinPortal: false }}
+          />
+        );
+      case 'initiatives':
+        return (
+          <MultiSelect
+            aria-label={labels.initiatives}
+            value={model.initiatives}
+            onChange={model.handlers.onInitiativesChange}
+            data={[
+              { value: 'initiative:none', label: t('projectList.filterNoInitiatives') },
+              ...model.availableInitiatives,
             ]}
             searchable
             comboboxProps={{ withinPortal: false }}

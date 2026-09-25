@@ -690,6 +690,10 @@ func (s *Store) UpdateProjectWithAppearance(slug string, name, summary, icon, ic
 }
 
 func (s *Store) UpdateProjectWithWorkflow(slug string, name, summary, icon, iconColor, description, status, workflowStatus, health *string, priority *int, start, target **string, labels *[]string) (Project, error) {
+	return s.UpdateProjectWithWorkflowAndInitiatives(slug, name, summary, icon, iconColor, description, status, workflowStatus, health, priority, start, target, labels, nil)
+}
+
+func (s *Store) UpdateProjectWithWorkflowAndInitiatives(slug string, name, summary, icon, iconColor, description, status, workflowStatus, health *string, priority *int, start, target **string, labels, initiativeSlugs *[]string) (Project, error) {
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)
@@ -766,6 +770,37 @@ func (s *Store) UpdateProjectWithWorkflow(slug string, name, summary, icon, icon
 			p.Labels = nextLabels
 		}
 		now := domain.Now()
+		if initiativeSlugs != nil {
+			nextInitiatives := make(map[string]struct{}, len(*initiativeSlugs))
+			for _, initiativeSlug := range *initiativeSlugs {
+				if !domain.ValidSlug(initiativeSlug) {
+					return validationf("invalid initiative slug")
+				}
+				if _, exists := nextInitiatives[initiativeSlug]; exists {
+					return errf(ErrConflict, "initiative already assigned")
+				}
+				if initiativeIndex(m, initiativeSlug) < 0 {
+					return ErrNotFound
+				}
+				nextInitiatives[initiativeSlug] = struct{}{}
+			}
+			previousInitiatives := make(map[string]struct{}, len(p.InitiativeSlugs))
+			for _, initiativeSlug := range p.InitiativeSlugs {
+				previousInitiatives[initiativeSlug] = struct{}{}
+			}
+			for initiativeSlug := range previousInitiatives {
+				if _, keep := nextInitiatives[initiativeSlug]; !keep {
+					addActivity(m, "project", p.ID, "initiative_removed", map[string]any{"initiativeSlug": initiativeSlug}, now)
+				}
+			}
+			for initiativeSlug := range nextInitiatives {
+				if _, wasLinked := previousInitiatives[initiativeSlug]; !wasLinked {
+					addActivity(m, "project", p.ID, "initiative_added", map[string]any{"initiativeSlug": initiativeSlug}, now)
+				}
+			}
+			p.InitiativeSlugs = append([]string{}, (*initiativeSlugs)...)
+			sort.Strings(p.InitiativeSlugs)
+		}
 		if statusChanged {
 			category := p.Status
 			workflowID := ""

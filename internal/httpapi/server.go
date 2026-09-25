@@ -89,6 +89,11 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/labels", s.createLabel)
 	s.mux.HandleFunc("GET /api/projects", s.listProjects)
 	s.mux.HandleFunc("POST /api/projects", s.createProject)
+	s.mux.HandleFunc("GET /api/initiatives", s.listInitiatives)
+	s.mux.HandleFunc("POST /api/initiatives", s.createInitiative)
+	s.mux.HandleFunc("GET /api/initiatives/{slug}", s.getInitiative)
+	s.mux.HandleFunc("PATCH /api/initiatives/{slug}", s.patchInitiative)
+	s.mux.HandleFunc("DELETE /api/initiatives/{slug}", s.deleteInitiative)
 	s.mux.HandleFunc("GET /api/project-templates", s.listProjectTemplates)
 	s.mux.HandleFunc("POST /api/projects/{slug}/templates", s.createProjectTemplate)
 	s.mux.HandleFunc("DELETE /api/project-templates/{slug}", s.deleteProjectTemplate)
@@ -371,20 +376,21 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name           *string   `json:"name"`
-		Summary        *string   `json:"summary"`
-		Icon           *string   `json:"icon"`
-		IconColor      *string   `json:"iconColor"`
-		Description    *string   `json:"description"`
-		Status         *string   `json:"status"`
-		WorkflowStatus *string   `json:"workflowStatus"`
-		Health         *string   `json:"health"`
-		Priority       *int      `json:"priority"`
-		StartDate      *string   `json:"startDate"`
-		TargetDate     *string   `json:"targetDate"`
-		Labels         *[]string `json:"labels"`
-		ClearStart     bool      `json:"clearStartDate"`
-		ClearTarget    bool      `json:"clearTargetDate"`
+		Name            *string   `json:"name"`
+		Summary         *string   `json:"summary"`
+		Icon            *string   `json:"icon"`
+		IconColor       *string   `json:"iconColor"`
+		Description     *string   `json:"description"`
+		Status          *string   `json:"status"`
+		WorkflowStatus  *string   `json:"workflowStatus"`
+		Health          *string   `json:"health"`
+		Priority        *int      `json:"priority"`
+		StartDate       *string   `json:"startDate"`
+		TargetDate      *string   `json:"targetDate"`
+		Labels          *[]string `json:"labels"`
+		InitiativeSlugs *[]string `json:"initiativeSlugs"`
+		ClearStart      bool      `json:"clearStartDate"`
+		ClearTarget     bool      `json:"clearTargetDate"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
@@ -403,7 +409,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateProjectWithWorkflow(r.PathValue("slug"), in.Name, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Health, in.Priority, start, target, in.Labels)
+	out, err := s.store.UpdateProjectWithWorkflowAndInitiatives(r.PathValue("slug"), in.Name, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Health, in.Priority, start, target, in.Labels, in.InitiativeSlugs)
 	if err != nil {
 		writeError(w, err)
 		return

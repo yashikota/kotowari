@@ -39,6 +39,7 @@ import type {
   ADR,
   Cycle,
   Issue,
+  Initiative,
   Label,
   Page,
   Project,
@@ -142,6 +143,7 @@ export function useProjectsPagePresenter() {
     labels: Label[];
     issues: Issue[];
     projectTemplates: ProjectTemplate[];
+    initiatives: Initiative[];
   };
   const { projects } = data;
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
@@ -191,6 +193,7 @@ export function useProjectsPagePresenter() {
       health: search.health,
       labels: search.labels,
       templates: search.templates,
+      initiatives: search.initiatives,
       groupBy,
       orderBy: search.orderBy ?? 'manual',
       direction: search.direction ?? 'asc',
@@ -246,6 +249,7 @@ export function useProjectsPagePresenter() {
   const healthFilters = search.health ?? [];
   const labelFilters = search.labels ?? [];
   const templateFilters = search.templates ?? [];
+  const initiativeFilters = search.initiatives ?? [];
   const milestoneFilters = search.milestones ?? [];
   const relationFilters = search.relations ?? [];
   const availableMilestones = useMemo(
@@ -268,6 +272,14 @@ export function useProjectsPagePresenter() {
     }
     return [...templateNames].map(([slug, label]) => ({ value: `template:${slug}`, label }));
   }, [data.projectTemplates, projects]);
+  const availableInitiatives = useMemo(
+    () =>
+      data.initiatives.map((initiative) => ({
+        value: `initiative:${initiative.slug}`,
+        label: initiative.name,
+      })),
+    [data.initiatives],
+  );
   const displayProperties = (search.displayProperties ??
     DEFAULT_PROJECT_DISPLAY_PROPERTIES) as ProjectDisplayProperty[];
   const projectIssueCounts = useMemo(() => {
@@ -285,6 +297,15 @@ export function useProjectsPagePresenter() {
       if (
         templateFilters.length &&
         !templateFilters.includes(`template:${project.templateSlug ?? ''}`)
+      )
+        return false;
+      if (
+        initiativeFilters.length &&
+        !initiativeFilters.some((value) =>
+          value === 'initiative:none'
+            ? !project.initiativeSlugs?.length
+            : (project.initiativeSlugs ?? []).includes(value.slice('initiative:'.length)),
+        )
       )
         return false;
       if (
@@ -390,6 +411,7 @@ export function useProjectsPagePresenter() {
     search.q,
     search.specificProject,
     templateFilters,
+    initiativeFilters,
     statusFilters,
     priorityFilters,
     healthFilters,
@@ -553,6 +575,7 @@ export function useProjectsPagePresenter() {
     healthFilters.length +
     labelFilters.length +
     templateFilters.length +
+    initiativeFilters.length +
     milestoneFilters.length +
     relationFilters.length +
     Number(Boolean(search.q?.trim())) +
@@ -567,6 +590,7 @@ export function useProjectsPagePresenter() {
     healths: healthFilters,
     labels: labelFilters,
     templates: templateFilters,
+    initiatives: initiativeFilters,
     groupBy,
     orderBy: search.orderBy ?? 'manual',
     direction: search.direction ?? 'asc',
@@ -585,6 +609,7 @@ export function useProjectsPagePresenter() {
     relations: relationFilters,
     availableMilestones,
     availableTemplates,
+    availableInitiatives,
     availableProjects: projects.map((project) => ({ value: project.slug, label: project.name })),
     specificProject: search.specificProject ?? '',
     availableLabels: data.labels,
@@ -611,6 +636,8 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ labels: value.length ? value : undefined }),
       onTemplatesChange: (value) =>
         void updateProjectSearch({ templates: value.length ? value : undefined }),
+      onInitiativesChange: (value) =>
+        void updateProjectSearch({ initiatives: value.length ? value : undefined }),
       onDateFieldChange: (value) =>
         void updateProjectSearch({
           dateField: value ? (value as typeof search.dateField) : undefined,
@@ -662,6 +689,7 @@ export function useProjectsPagePresenter() {
           health: undefined,
           labels: undefined,
           templates: undefined,
+          initiatives: undefined,
           dateField: undefined,
           dateFrom: undefined,
           dateTo: undefined,
@@ -956,6 +984,7 @@ export function useProjectDetailPagePresenter() {
     pages: Page[];
     labels: Label[];
     activities: Activity[];
+    initiatives: import('../types.ts').Initiative[];
   };
   const router = useRouter();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
@@ -1005,6 +1034,7 @@ export function useProjectDetailPagePresenter() {
         'startDate',
         'targetDate',
         'labels',
+        'initiativeSlugs',
       ] as const;
       const newerEdits = Object.fromEntries(
         locallyEditable
@@ -1145,6 +1175,7 @@ export function useProjectDetailPagePresenter() {
           : [...current, name];
         return save({ labels: next });
       },
+      onProjectInitiativesChange: (initiativeSlugs: string[]) => save({ initiativeSlugs }),
       onDependencyProjectChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
         setDependencyProjectSlug(e.target.value),
       onDependencyKindChange: (e: React.ChangeEvent<HTMLSelectElement>) =>

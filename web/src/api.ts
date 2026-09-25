@@ -10,6 +10,7 @@ import type {
   IssueRelation,
   IssueTemplate,
   IssueWorkflowStatus,
+  Initiative,
   Label,
   Page,
   ADR,
@@ -211,6 +212,24 @@ export const api = {
   },
   activities: (id: string) => req<Activity[]>(`/api/issues/${id}/activities`),
   projects: () => req<Project[]>('/api/projects'),
+  initiatives: () => req<Initiative[]>('/api/initiatives'),
+  initiative: (slug: string) => req<Initiative>(`/api/initiatives/${encodeURIComponent(slug)}`),
+  createInitiative: (body: {
+    name: string;
+    slug: string;
+    description?: string;
+    status?: Initiative['status'];
+    color?: string;
+    startDate?: string;
+    targetDate?: string;
+  }) => req<Initiative>('/api/initiatives', { method: 'POST', body: JSON.stringify(body) }),
+  patchInitiative: (slug: string, body: Record<string, unknown>) =>
+    req<Initiative>(`/api/initiatives/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteInitiative: (slug: string) =>
+    req<void>(`/api/initiatives/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
   projectTemplates: () => req<ProjectTemplate[]>('/api/project-templates'),
   createProjectTemplate: (slug: string, name: string) =>
     req<ProjectTemplate>(`/api/projects/${encodeURIComponent(slug)}/templates`, {

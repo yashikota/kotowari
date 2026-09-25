@@ -1,6 +1,6 @@
 import type { LinkProps } from '@tanstack/react-router';
 
-type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'a' | 'r' | 't';
+type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'a' | 'i' | 'r' | 't';
 
 export type NavTarget = {
   key: NavKey;
@@ -21,6 +21,7 @@ export const TEAM_NAV: NavTarget[] = [
   { key: '2', labelKey: 'nav.issues', to: '/issues', search: {} },
   { key: '6', labelKey: 'nav.cycles', to: '/cycles', fuzzy: true },
   { key: '5', labelKey: 'nav.projects', to: '/projects' },
+  { key: 'i', labelKey: 'nav.initiatives', to: '/initiatives' },
 ];
 
 export const MORE_NAV: NavTarget[] = [

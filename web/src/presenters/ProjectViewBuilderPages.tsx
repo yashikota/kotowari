@@ -10,12 +10,13 @@ import type { ProjectDisplayProperty } from '../project-display.ts';
 import { matchesProjectTitleSummary, useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
-import type { Project, ProjectTemplate, ViewIconName } from '../types.ts';
+import type { Initiative, Project, ProjectTemplate, ViewIconName } from '../types.ts';
 import { VIEW_ICON_NAMES } from '../components/ViewIcon.tsx';
 
 type BuilderData = {
   projects: Project[];
   projectTemplates: ProjectTemplate[];
+  initiatives: Initiative[];
   labels: import('../types.ts').Label[];
   issues: import('../types.ts').Issue[];
 };
@@ -93,6 +94,14 @@ export function useProjectViewBuilderPresenter() {
     }
     return [...templateNames].map(([slug, label]) => ({ value: `template:${slug}`, label }));
   }, [data.projectTemplates, data.projects]);
+  const availableInitiatives = useMemo(
+    () =>
+      data.initiatives.map((initiative) => ({
+        value: `initiative:${initiative.slug}`,
+        label: initiative.name,
+      })),
+    [data.initiatives],
+  );
 
   const filteredProjects = useMemo(() => {
     const query = search.q ?? '';
@@ -101,6 +110,7 @@ export function useProjectViewBuilderPresenter() {
     const healthFilters = search.health ?? [];
     const labelFilters = search.labels ?? [];
     const templateFilters = search.templates ?? [];
+    const initiativeFilters = search.initiatives ?? [];
     const milestoneFilters = search.milestones ?? [];
     const relationFilters = search.relations ?? [];
     const filtered = data.projects.filter((project) => {
@@ -108,6 +118,15 @@ export function useProjectViewBuilderPresenter() {
       if (
         templateFilters.length &&
         !templateFilters.includes(`template:${project.templateSlug ?? ''}`)
+      )
+        return false;
+      if (
+        initiativeFilters.length &&
+        !initiativeFilters.some((value) =>
+          value === 'initiative:none'
+            ? !project.initiativeSlugs?.length
+            : (project.initiativeSlugs ?? []).includes(value.slice('initiative:'.length)),
+        )
       )
         return false;
       if (
@@ -356,6 +375,7 @@ export function useProjectViewBuilderPresenter() {
   const healthFilters = search.health ?? [];
   const labelFilters = search.labels ?? [];
   const templateFilters = search.templates ?? [];
+  const initiativeFilters = search.initiatives ?? [];
   const milestoneFilters = search.milestones ?? [];
   const relationFilters = search.relations ?? [];
   const filterCount =
@@ -364,6 +384,7 @@ export function useProjectViewBuilderPresenter() {
     healthFilters.length +
     labelFilters.length +
     templateFilters.length +
+    initiativeFilters.length +
     milestoneFilters.length +
     relationFilters.length +
     Number(Boolean(search.q?.trim())) +
@@ -379,6 +400,7 @@ export function useProjectViewBuilderPresenter() {
     healths: healthFilters,
     labels: labelFilters,
     templates: templateFilters,
+    initiatives: initiativeFilters,
     groupBy: search.groupBy ?? 'none',
     orderBy: search.orderBy ?? 'manual',
     direction: search.direction ?? 'asc',
@@ -397,6 +419,7 @@ export function useProjectViewBuilderPresenter() {
     relations: relationFilters,
     availableMilestones,
     availableTemplates,
+    availableInitiatives,
     availableProjects: data.projects.map((project) => ({
       value: project.slug,
       label: project.name,
@@ -424,6 +447,8 @@ export function useProjectViewBuilderPresenter() {
       onLabelsChange: (value) => void updateSearch({ labels: value.length ? value : undefined }),
       onTemplatesChange: (value) =>
         void updateSearch({ templates: value.length ? value : undefined }),
+      onInitiativesChange: (value) =>
+        void updateSearch({ initiatives: value.length ? value : undefined }),
       onDateFieldChange: (value) =>
         void updateSearch({
           dateField: (value as ProjectViewSearch['dateField']) || undefined,

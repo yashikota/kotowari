@@ -148,6 +148,27 @@ func load(root string) (*mem, error) {
 		return nil, err
 	}
 
+	if err := readTOMLDir(filepath.Join(root, "initiatives"), func(name string, b []byte) error {
+		var initiative Initiative
+		if err := toml.Unmarshal(b, &initiative); err != nil {
+			return err
+		}
+		stem := strings.TrimSuffix(name, ".toml")
+		if initiative.Slug != "" && initiative.Slug != stem {
+			m.diag("initiatives/"+name, "slug_mismatch", fmt.Sprintf("slug %q does not match filename", initiative.Slug))
+		}
+		initiative.Slug = stem
+		if initiative.ID == 0 {
+			initiative.ID = m.nextID()
+		} else {
+			m.observeID(initiative.ID)
+		}
+		m.Initiatives = append(m.Initiatives, initiative)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
 	if err := readTOMLDir(filepath.Join(root, "cycles"), func(name string, b []byte) error {
 		var c Cycle
 		if err := toml.Unmarshal(b, &c); err != nil {
@@ -264,6 +285,9 @@ func save(root string, m *mem) error {
 	if err := os.MkdirAll(filepath.Join(root, "projects"), 0o755); err != nil {
 		return err
 	}
+	if err := os.MkdirAll(filepath.Join(root, "initiatives"), 0o755); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Join(root, "cycles"), 0o755); err != nil {
 		return err
 	}
@@ -291,6 +315,18 @@ func save(root string, m *mem) error {
 		return err
 	}
 	_ = pruneDir(filepath.Join(root, "projects"), ".yaml", map[string]struct{}{})
+
+	wantInitiatives := map[string]struct{}{}
+	for _, initiative := range m.Initiatives {
+		name := initiative.Slug + ".toml"
+		wantInitiatives[name] = struct{}{}
+		if err := writeTOML(filepath.Join(root, "initiatives", name), initiative); err != nil {
+			return err
+		}
+	}
+	if err := pruneDir(filepath.Join(root, "initiatives"), ".toml", wantInitiatives); err != nil {
+		return err
+	}
 
 	wantCycles := map[string]struct{}{}
 	for _, c := range m.Cycles {

@@ -19,6 +19,7 @@ import type {
   Issue,
   IssueLink,
   IssueTemplate,
+  Initiative,
   Label,
   Project,
   RecurringIssue,
@@ -98,8 +99,10 @@ export function useShellPresenter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const routeSearch = useRouterState({ select: (s) => s.location.search });
   const isIssueDetail = pathname.startsWith('/issues/');
-  const isPageOwnedHeader = pathname === '/projects' || pathname === '/cycles';
+  const isPageOwnedHeader =
+    pathname === '/projects' || pathname === '/cycles' || pathname === '/initiatives';
   const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [views, setViews] = useState<View[]>([]);
   const [favoriteIssues, setFavoriteIssues] = useState<Issue[]>([]);
   const [workspaceName, setWorkspaceName] = useState('');
@@ -163,18 +166,20 @@ export function useShellPresenter() {
 
   const loadWorkspace = useCallback(async () => {
     try {
-      const [ws, cyc, vs, proj, favorites] = await Promise.all([
+      const [ws, cyc, vs, proj, favorites, initiativeList] = await Promise.all([
         api.workspace(),
         api.cycles(),
         api.views(),
         api.projects(),
         api.issues('?favorite=true'),
+        api.initiatives(),
       ]);
       setWorkspaceName(ws.name);
       setCycles(cyc);
       setViews(vs);
       setProjects(proj);
       setFavoriteIssues(favorites);
+      setInitiatives(initiativeList);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'failed to load workspace');
     }
@@ -289,6 +294,12 @@ export function useShellPresenter() {
       );
     if (pathname === '/cycles') return 'Cycles';
     if (pathname.startsWith('/cycles/')) return `Cycle ${pathname.slice('/cycles/'.length)}`;
+    if (pathname === '/initiatives') return t('nav.initiatives');
+    if (pathname.startsWith('/initiatives/'))
+      return (
+        initiatives.find((initiative) => initiative.slug === pathname.slice('/initiatives/'.length))
+          ?.name ?? t('initiatives.title')
+      );
     if (pathname === '/views') return t('nav.views');
     if (pathname === '/views/new') return t('viewBuilder.issueParent');
     if (pathname === '/views/projects/new') return t('viewBuilder.projectParent');

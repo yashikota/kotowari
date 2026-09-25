@@ -117,6 +117,7 @@ export type Project = {
   status: string;
   workflowStatus?: string;
   templateSlug?: string;
+  initiativeSlugs?: string[];
   health?: ProjectHealth | null;
   completedAt?: string | null;
   priority: number;
@@ -126,6 +127,22 @@ export type Project = {
   dependencies?: ProjectDependency[];
   progress: number;
   milestones: ProjectMilestone[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InitiativeStatus = 'planned' | 'active' | 'completed' | 'canceled';
+
+export type Initiative = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  status: InitiativeStatus;
+  color?: string;
+  startDate?: string | null;
+  targetDate?: string | null;
+  projectSlugs: string[];
   createdAt: string;
   updatedAt: string;
 };

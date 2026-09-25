@@ -67,27 +67,53 @@ type Label struct {
 }
 
 type Project struct {
-	ID             int64               `json:"id" toml:"id"`
-	Name           string              `json:"name" toml:"name"`
-	Slug           string              `json:"slug" toml:"slug"`
-	Summary        string              `json:"summary" toml:"summary,omitempty"`
-	Icon           string              `json:"icon,omitempty" toml:"icon,omitempty"`
-	IconColor      string              `json:"iconColor,omitempty" toml:"icon_color,omitempty"`
-	Description    string              `json:"description" toml:"description"`
-	Status         string              `json:"status" toml:"status"`
-	WorkflowStatus string              `json:"workflowStatus,omitempty" toml:"workflow_status,omitempty"`
-	TemplateSlug   string              `json:"templateSlug,omitempty" toml:"template_slug,omitempty"`
-	Health         string              `json:"health,omitempty" toml:"health,omitempty"`
-	CompletedAt    *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
-	Priority       int                 `json:"priority" toml:"priority"`
-	StartDate      *string             `json:"startDate" toml:"startDate,omitempty"`
-	TargetDate     *string             `json:"targetDate" toml:"targetDate,omitempty"`
-	Labels         []string            `json:"labels" toml:"labels,omitempty"`
-	Dependencies   []ProjectDependency `json:"dependencies" toml:"dependencies,omitempty"`
-	Progress       float64             `json:"progress" toml:"-"`
-	Milestones     []Milestone         `json:"milestones" toml:"milestones,omitempty"`
-	CreatedAt      string              `json:"createdAt" toml:"createdAt"`
-	UpdatedAt      string              `json:"updatedAt" toml:"updatedAt"`
+	ID              int64               `json:"id" toml:"id"`
+	Name            string              `json:"name" toml:"name"`
+	Slug            string              `json:"slug" toml:"slug"`
+	Summary         string              `json:"summary" toml:"summary,omitempty"`
+	Icon            string              `json:"icon,omitempty" toml:"icon,omitempty"`
+	IconColor       string              `json:"iconColor,omitempty" toml:"icon_color,omitempty"`
+	Description     string              `json:"description" toml:"description"`
+	Status          string              `json:"status" toml:"status"`
+	WorkflowStatus  string              `json:"workflowStatus,omitempty" toml:"workflow_status,omitempty"`
+	TemplateSlug    string              `json:"templateSlug,omitempty" toml:"template_slug,omitempty"`
+	InitiativeSlugs []string            `json:"initiativeSlugs,omitempty" toml:"initiative_slugs,omitempty"`
+	Health          string              `json:"health,omitempty" toml:"health,omitempty"`
+	CompletedAt     *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
+	Priority        int                 `json:"priority" toml:"priority"`
+	StartDate       *string             `json:"startDate" toml:"startDate,omitempty"`
+	TargetDate      *string             `json:"targetDate" toml:"targetDate,omitempty"`
+	Labels          []string            `json:"labels" toml:"labels,omitempty"`
+	Dependencies    []ProjectDependency `json:"dependencies" toml:"dependencies,omitempty"`
+	Progress        float64             `json:"progress" toml:"-"`
+	Milestones      []Milestone         `json:"milestones" toml:"milestones,omitempty"`
+	CreatedAt       string              `json:"createdAt" toml:"createdAt"`
+	UpdatedAt       string              `json:"updatedAt" toml:"updatedAt"`
+}
+
+// Initiative groups projects around a single strategic outcome.
+type Initiative struct {
+	ID           int64    `json:"id" toml:"id"`
+	Name         string   `json:"name" toml:"name"`
+	Slug         string   `json:"slug" toml:"slug"`
+	Description  string   `json:"description" toml:"description,omitempty"`
+	Status       string   `json:"status" toml:"status"`
+	Color        string   `json:"color,omitempty" toml:"color,omitempty"`
+	StartDate    *string  `json:"startDate" toml:"start_date,omitempty"`
+	TargetDate   *string  `json:"targetDate" toml:"target_date,omitempty"`
+	ProjectSlugs []string `json:"projectSlugs" toml:"-"`
+	CreatedAt    string   `json:"createdAt" toml:"created_at"`
+	UpdatedAt    string   `json:"updatedAt" toml:"updated_at"`
+}
+
+type UpdateInitiativeInput struct {
+	Name         *string
+	Description  *string
+	Status       *string
+	Color        *string
+	StartDate    **string
+	TargetDate   **string
+	ProjectSlugs *[]string
 }
 
 type Milestone struct {
@@ -481,6 +507,7 @@ type mem struct {
 	Workspace   workspaceFile
 	Labels      []Label
 	Projects    []Project
+	Initiatives []Initiative
 	Cycles      []Cycle
 	Views       []View
 	Issues      []Issue

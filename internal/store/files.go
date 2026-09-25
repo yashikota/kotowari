@@ -28,6 +28,11 @@ func workspaceFiles(m *mem) (map[string][]byte, error) {
 			return nil, err
 		}
 	}
+	for _, initiative := range m.Initiatives {
+		if err := put("initiatives/"+initiative.Slug+".toml", initiative); err != nil {
+			return nil, err
+		}
+	}
 	for _, c := range m.Cycles {
 		if err := put(fmt.Sprintf("cycles/%d.toml", c.Number), c); err != nil {
 			return nil, err

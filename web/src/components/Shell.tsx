@@ -40,6 +40,7 @@ import {
   IconRepeat,
   IconSparkles,
   IconTemplate,
+  IconTarget,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -66,6 +67,7 @@ const NAV_ICONS: Record<string, ReactNode> = {
   '/board': <IconLayoutKanban size={14} aria-hidden />,
   '/adrs': <IconScale size={14} aria-hidden />,
   '/projects': <IconStack2 size={14} aria-hidden />,
+  '/initiatives': <IconTarget size={14} aria-hidden />,
   '/cycles': <IconCircleDot size={14} aria-hidden />,
   '/pages': <IconBook size={14} aria-hidden />,
   '/config': <IconSettings size={14} aria-hidden />,

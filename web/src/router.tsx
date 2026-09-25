@@ -188,15 +188,39 @@ const projectsRoute = createRoute({
   path: '/projects',
   validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
   loader: async () => {
-    const [projects, labels, issues, projectTemplates] = await Promise.all([
+    const [projects, labels, issues, projectTemplates, initiatives] = await Promise.all([
       api.projects(),
       api.labels(),
       api.issues(),
       api.projectTemplates(),
+      api.initiatives(),
     ]);
-    return { projects, labels, issues: issues ?? [], projectTemplates };
+    return { projects, labels, issues: issues ?? [], projectTemplates, initiatives };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
+});
+
+const initiativesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/initiatives',
+  loader: async () => {
+    const [initiatives, projects] = await Promise.all([api.initiatives(), api.projects()]);
+    return { initiatives, projects };
+  },
+  component: lazyRouteComponent(() => import('./pages/InitiativesPages.tsx'), 'InitiativesPage'),
+});
+
+const initiativeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/initiatives/$slug',
+  loader: async ({ params }) => {
+    const [initiative, projects] = await Promise.all([api.initiative(params.slug), api.projects()]);
+    return { initiative, projects };
+  },
+  component: lazyRouteComponent(
+    () => import('./pages/InitiativesPages.tsx'),
+    'InitiativeDetailPage',
+  ),
 });
 
 type ProjectListSearch = ProjectViewSearch & { projectView?: string };
@@ -246,6 +270,10 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     /^template:(?:[\p{L}\p{N}-]+)?$/u.test(value),
   );
   if (templates.length) result.templates = templates;
+  const initiatives = searchStringList(raw.initiatives).filter((value) =>
+    /^initiative:(?:none|[\p{L}\p{N}-]+)$/u.test(value),
+  );
+  if (initiatives.length) result.initiatives = initiatives;
   if (raw.groupBy === 'status' || raw.groupBy === 'priority') result.groupBy = raw.groupBy;
   if (
     raw.orderBy === 'manual' ||
@@ -334,16 +362,18 @@ const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects/$slug',
   loader: async ({ params }) => {
-    const [project, adrs, pages, issues, labels, projects, activities] = await Promise.all([
-      api.project(params.slug),
-      api.adrs(),
-      api.pages(),
-      api.issues(`?project=${encodeURIComponent(params.slug)}`),
-      api.labels(),
-      api.projects(),
-      api.projectActivities(params.slug),
-    ]);
-    return { project, adrs, pages, issues, labels, projects, activities };
+    const [project, adrs, pages, issues, labels, projects, activities, initiatives] =
+      await Promise.all([
+        api.project(params.slug),
+        api.adrs(),
+        api.pages(),
+        api.issues(`?project=${encodeURIComponent(params.slug)}`),
+        api.labels(),
+        api.projects(),
+        api.projectActivities(params.slug),
+        api.initiatives(),
+      ]);
+    return { project, adrs, pages, issues, labels, projects, activities, initiatives };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectDetailPage'),
 });
@@ -422,13 +452,14 @@ const projectViewBuilderRoute = createRoute({
   path: '/views/projects/new',
   validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
   loader: async () => {
-    const [projects, labels, issues, projectTemplates] = await Promise.all([
+    const [projects, labels, issues, projectTemplates, initiatives] = await Promise.all([
       api.projects(),
       api.labels(),
       api.issues(),
       api.projectTemplates(),
+      api.initiatives(),
     ]);
-    return { projects, labels, issues, projectTemplates };
+    return { projects, labels, issues, projectTemplates, initiatives };
   },
   component: lazyRouteComponent(
     () => import('./pages/ProjectViewBuilderPages.tsx'),
@@ -480,6 +511,8 @@ const routeTree = rootRoute.addChildren([
   adrsRoute,
   adrRoute,
   projectsRoute,
+  initiativesRoute,
+  initiativeRoute,
   projectRoute,
   cyclesRoute,
   cycleRoute,

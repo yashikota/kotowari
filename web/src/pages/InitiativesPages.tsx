@@ -1,0 +1,344 @@
+import {
+  Badge,
+  Button,
+  Group,
+  Modal,
+  MultiSelect,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
+import { IconArrowLeft, IconTarget, IconTrash } from '@tabler/icons-react';
+import { PresenterScope, useActions } from '../application/Root.tsx';
+import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
+import type { Initiative, InitiativeStatus } from '../types.ts';
+import {
+  useInitiativeDetailPresenter,
+  useInitiativesPagePresenter,
+} from '../presenters/InitiativesPages.tsx';
+import { useTranslation } from 'react-i18next';
+
+const INITIATIVE_STATUSES: InitiativeStatus[] = ['planned', 'active', 'completed', 'canceled'];
+const INITIATIVE_COLORS = ['grey', 'blue', 'purple', 'pink', 'red', 'orange', 'yellow', 'green'];
+
+export function InitiativesPageView({
+  model,
+}: {
+  model: ReturnType<typeof useInitiativesPagePresenter>;
+}) {
+  const { t } = useTranslation();
+  const {
+    initiatives,
+    createOpen,
+    name,
+    description,
+    status,
+    color,
+    startDate,
+    targetDate,
+    error,
+    saving,
+    handlers,
+  } = model;
+  const statusOptions = INITIATIVE_STATUSES.map((value) => ({
+    value,
+    label: handlers.onStatusLabel(value),
+  }));
+  const colorOptions = INITIATIVE_COLORS.map((value) => ({ value, label: value }));
+  return (
+    <SplitLayout single>
+      <Pane single>
+        <PageHeader
+          title={t('initiatives.title')}
+          actions={
+            <Button type="button" onClick={handlers.onOpenCreate}>
+              {t('initiatives.new')}
+            </Button>
+          }
+        />
+        {initiatives.length === 0 ? (
+          <EmptyState>
+            <Stack align="center" gap="sm">
+              <IconTarget size={24} stroke={1.5} aria-hidden />
+              <Text fw={600}>{t('initiatives.empty')}</Text>
+              <Text c="dimmed" ta="center" maw={380}>
+                {t('initiatives.emptyDescription')}
+              </Text>
+              <Button type="button" onClick={handlers.onOpenCreate}>
+                {t('initiatives.new')}
+              </Button>
+            </Stack>
+          </EmptyState>
+        ) : (
+          <Stack gap={4} p="md" style={{ overflow: 'auto', minHeight: 0 }}>
+            {initiatives.map((initiative: Initiative) => (
+              <Button
+                key={initiative.slug}
+                type="button"
+                variant="subtle"
+                color="gray"
+                justify="space-between"
+                h="auto"
+                p="sm"
+                onClick={() => handlers.onOpenInitiative(initiative)}
+              >
+                <Group wrap="nowrap" gap="sm" style={{ minWidth: 0 }}>
+                  <IconTarget size={17} color={initiative.color} aria-hidden />
+                  <Text size="sm" fw={550} truncate>
+                    {initiative.name}
+                  </Text>
+                </Group>
+                <Group gap="xs" wrap="nowrap">
+                  <Badge variant="light" color="gray">
+                    {handlers.onStatusLabel(initiative.status)}
+                  </Badge>
+                  <Text size="xs" c="dimmed">
+                    {t('initiatives.projectCount', { count: initiative.projectSlugs.length })}
+                  </Text>
+                </Group>
+              </Button>
+            ))}
+          </Stack>
+        )}
+        <Modal opened={createOpen} onClose={handlers.onCloseCreate} title={t('initiatives.new')}>
+          <form onSubmit={handlers.onSubmitCreate}>
+            <Stack>
+              <TextInput
+                label={t('initiatives.name')}
+                value={name}
+                onChange={handlers.onNameChange}
+                required
+                maxLength={120}
+                autoFocus
+              />
+              <Textarea
+                label={t('initiatives.description')}
+                value={description}
+                onChange={handlers.onDescriptionChange}
+                minRows={3}
+                autosize
+              />
+              <Group grow>
+                <Select
+                  label={t('initiatives.status')}
+                  value={status}
+                  onChange={handlers.onStatusChange}
+                  data={statusOptions}
+                />
+                <Select
+                  label={t('initiatives.color')}
+                  value={color}
+                  onChange={handlers.onColorChange}
+                  data={colorOptions}
+                />
+              </Group>
+              <Group grow>
+                <TextInput
+                  type="date"
+                  label={t('initiatives.startDate')}
+                  value={startDate}
+                  onChange={handlers.onStartDateChange}
+                />
+                <TextInput
+                  type="date"
+                  label={t('initiatives.targetDate')}
+                  value={targetDate}
+                  onChange={handlers.onTargetDateChange}
+                />
+              </Group>
+              {error ? (
+                <Text c="red" role="alert">
+                  {error}
+                </Text>
+              ) : null}
+              <Group justify="flex-end">
+                <Button type="button" variant="default" onClick={handlers.onCloseCreate}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" loading={saving} disabled={!name.trim()}>
+                  {t('initiatives.create')}
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        </Modal>
+      </Pane>
+    </SplitLayout>
+  );
+}
+
+export function InitiativesPage() {
+  return (
+    <PresenterScope name="InitiativesPage">
+      <InitiativesPageBinding />
+    </PresenterScope>
+  );
+}
+
+function InitiativesPageBinding() {
+  const model = useInitiativesPagePresenter();
+  const handlers = useActions(model.handlers);
+  return <InitiativesPageView model={{ ...model, handlers } as typeof model} />;
+}
+
+export function InitiativeDetailPageView({
+  model,
+}: {
+  model: ReturnType<typeof useInitiativeDetailPresenter>;
+}) {
+  const { t } = useTranslation();
+  const {
+    initiative,
+    availableProjects,
+    linkedProjects,
+    name,
+    description,
+    status,
+    color,
+    startDate,
+    targetDate,
+    projectSlugs,
+    error,
+    saving,
+    handlers,
+  } = model;
+  return (
+    <SplitLayout single>
+      <Pane single>
+        <PageHeader
+          title={initiative.name}
+          actions={
+            <Group gap="xs">
+              <Button
+                type="button"
+                variant="default"
+                leftSection={<IconArrowLeft size={15} />}
+                onClick={handlers.onBack}
+              >
+                {t('nav.initiatives')}
+              </Button>
+              <Button
+                type="button"
+                variant="subtle"
+                color="red"
+                leftSection={<IconTrash size={15} />}
+                onClick={handlers.onDelete}
+              >
+                {t('initiatives.delete')}
+              </Button>
+            </Group>
+          }
+        />
+        <form onSubmit={handlers.onSubmit}>
+          <Stack p="md" maw={900} style={{ overflow: 'auto', minHeight: 0 }}>
+            <Group grow align="flex-start">
+              <TextInput
+                label={t('initiatives.name')}
+                value={name}
+                onChange={handlers.onNameChange}
+                required
+                maxLength={120}
+              />
+              <Select
+                label={t('initiatives.status')}
+                value={status}
+                onChange={handlers.onStatusChange}
+                data={INITIATIVE_STATUSES.map((value) => ({
+                  value,
+                  label: handlers.onStatusLabel(value),
+                }))}
+              />
+              <Select
+                label={t('initiatives.color')}
+                value={color}
+                onChange={handlers.onColorChange}
+                data={INITIATIVE_COLORS.map((value) => ({ value, label: value }))}
+              />
+            </Group>
+            <Textarea
+              label={t('initiatives.description')}
+              value={description}
+              onChange={handlers.onDescriptionChange}
+              minRows={5}
+              autosize
+            />
+            <Group grow>
+              <TextInput
+                type="date"
+                label={t('initiatives.startDate')}
+                value={startDate}
+                onChange={handlers.onStartDateChange}
+              />
+              <TextInput
+                type="date"
+                label={t('initiatives.targetDate')}
+                value={targetDate}
+                onChange={handlers.onTargetDateChange}
+              />
+            </Group>
+            <MultiSelect
+              label={t('initiatives.addProjects')}
+              aria-label={t('initiatives.addProjects')}
+              value={projectSlugs}
+              onChange={handlers.onProjectSlugsChange}
+              data={availableProjects}
+              searchable
+              clearable
+              comboboxProps={{ withinPortal: false }}
+            />
+            <Stack gap="xs">
+              <Text size="sm" fw={600}>
+                {t('initiatives.projects')}
+              </Text>
+              {linkedProjects.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  {t('initiatives.noProjects')}
+                </Text>
+              ) : (
+                <Group gap="xs">
+                  {linkedProjects.map((project) => (
+                    <Button
+                      key={project.slug}
+                      type="button"
+                      size="compact-sm"
+                      variant="default"
+                      onClick={() => handlers.onProjectOpen(project.slug)}
+                    >
+                      {project.name}
+                    </Button>
+                  ))}
+                </Group>
+              )}
+            </Stack>
+            {error ? (
+              <Text c="red" role="alert">
+                {error}
+              </Text>
+            ) : null}
+            <Group justify="flex-end">
+              <Button type="submit" loading={saving} disabled={!name.trim()}>
+                {t('initiatives.save')}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Pane>
+    </SplitLayout>
+  );
+}
+
+export function InitiativeDetailPage() {
+  return (
+    <PresenterScope name="InitiativeDetailPage">
+      <InitiativeDetailPageBinding />
+    </PresenterScope>
+  );
+}
+
+function InitiativeDetailPageBinding() {
+  const model = useInitiativeDetailPresenter();
+  const handlers = useActions(model.handlers);
+  return <InitiativeDetailPageView model={{ ...model, handlers } as typeof model} />;
+}
