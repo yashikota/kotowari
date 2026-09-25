@@ -34,10 +34,12 @@ export function CycleProgressChart({
   cycle,
   points,
   locale,
+  showLegend = true,
 }: {
   cycle: Cycle;
   points: CycleProgressPoint[];
   locale: string;
+  showLegend?: boolean;
 }) {
   const { t } = useTranslation();
   const start = Date.parse(cycle.startsAt);
@@ -155,12 +157,14 @@ export function CycleProgressChart({
           {dateFormat.format(end)}
         </text>
       </svg>
-      <Group gap="sm" wrap="wrap" aria-hidden="true">
-        <Legend label={t('cycle.scope')} color="var(--mantine-color-gray-6)" />
-        <Legend label={t('cycle.started')} color="var(--mantine-color-yellow-7)" />
-        <Legend label={t('cycle.completed')} color="var(--mantine-color-indigo-5)" />
-        <Legend label={t('cycle.ideal')} color="var(--mantine-color-indigo-5)" dashed />
-      </Group>
+      {showLegend ? (
+        <Group gap="sm" wrap="wrap" aria-hidden="true">
+          <Legend label={t('cycle.scope')} color="var(--mantine-color-gray-6)" />
+          <Legend label={t('cycle.started')} color="var(--mantine-color-yellow-7)" />
+          <Legend label={t('cycle.completed')} color="var(--mantine-color-indigo-5)" />
+          <Legend label={t('cycle.ideal')} color="var(--mantine-color-indigo-5)" dashed />
+        </Group>
+      ) : null}
     </Stack>
   );
 }

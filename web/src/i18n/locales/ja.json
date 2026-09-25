@@ -79,6 +79,7 @@
     "issuesCount": "{{count}} 件のイシュー",
     "progress": "サイクルの進捗",
     "progressHeading": "進捗",
+    "currentOverview": "現在のサイクル概要",
     "progressChartHeading": "期間内の推移",
     "progressChartDescription": "サイクルの推移: 対象 {{scope}} 件、着手 {{started}} 件、完了 {{completed}} 件",
     "ideal": "理想のペース",

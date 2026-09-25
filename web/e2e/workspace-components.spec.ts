@@ -1901,6 +1901,17 @@ test('cycle navigation stays under the team and the list follows Linear chronolo
   const upcomingRow = main.getByRole('region', { name: `Cycle ${upcomingCycle.number}` });
   const activeRow = main.getByRole('region', { name: `Cycle ${activeCycle.number}` });
   const completedRow = main.getByRole('region', { name: `Cycle ${completedCycle.number}` });
+  const currentOverview = main.getByRole('region', { name: 'Current cycle overview' });
+  const upcomingDate = new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(upcomingStart);
+  await expect(currentOverview).toBeVisible();
+  await expect(currentOverview.getByRole('img')).toBeVisible();
+  await expect(
+    upcomingRow.getByRole('link').getByText(upcomingDate, { exact: true }),
+  ).toBeVisible();
   await expect(upcomingRow.getByRole('link')).toHaveAttribute(
     'href',
     `/cycles/${upcomingCycle.number}`,
@@ -2349,12 +2360,12 @@ test('current cycle list card summarizes scope, started, and completed work', as
 
   await page.goto('/cycles');
   const row = page.getByRole('region', { name: cycle.name });
-  await expect(row.getByText('Scope')).toBeVisible();
-  await expect(row.getByText('Started')).toBeVisible();
-  await expect(row.getByText('Completed')).toBeVisible();
-  await expect(row.getByText('1 · 33%')).toBeVisible();
-  await expect(row.getByText('2 · 67%')).toBeVisible();
-  await expect(
-    row.getByRole('progressbar', { name: `Cycle ${cycle.number} completion 67%` }),
-  ).toBeVisible();
+  const overview = page.getByRole('region', { name: 'Current cycle overview' });
+  await expect(row.getByText('Current')).toBeVisible();
+  await expect(overview.getByText('Scope')).toBeVisible();
+  await expect(overview.getByText('Started')).toBeVisible();
+  await expect(overview.getByText('Completed')).toBeVisible();
+  await expect(overview.getByText('1 · 33%')).toBeVisible();
+  await expect(overview.getByText('2 · 67%')).toBeVisible();
+  await expect(overview.getByRole('img')).toBeVisible();
 });

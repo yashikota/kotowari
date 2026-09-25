@@ -1,0 +1,83 @@
+.row {
+  position: relative;
+}
+
+.row::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 112px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  content: '';
+  pointer-events: none;
+}
+
+.dateRail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 118px;
+  min-width: 118px;
+  height: 44px;
+}
+
+.dateLabel {
+  width: 42px;
+  overflow: hidden;
+  color: var(--mantine-color-dimmed);
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dateMarker {
+  position: absolute;
+  left: 43px;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--mantine-color-body);
+  border-radius: 50%;
+  background: var(--mantine-color-gray-6);
+}
+
+.cycleIcon {
+  margin-left: auto;
+  color: var(--mantine-color-dimmed);
+}
+
+.cycleIcon[data-active='true'] {
+  color: var(--mantine-color-indigo-5);
+}
+
+.cyclePlayIcon {
+  box-sizing: border-box;
+  display: grid;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+@media (max-width: 680px) {
+  .row::after {
+    left: 82px;
+  }
+
+  .dateRail {
+    width: 88px;
+    min-width: 88px;
+  }
+
+  .dateLabel {
+    width: 36px;
+    font-size: 10px;
+  }
+
+  .dateMarker {
+    left: 48px;
+  }
+}

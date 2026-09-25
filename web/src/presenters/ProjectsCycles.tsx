@@ -1149,7 +1149,11 @@ export function useProjectDetailPagePresenter() {
 }
 
 export function useCyclesPagePresenter() {
-  const data = useLoaderData({ from: '/cycles' }) as { cycles: Cycle[]; issues: Issue[] };
+  const data = useLoaderData({ from: '/cycles' }) as {
+    cycles: Cycle[];
+    issues: Issue[];
+    activeCycleActivities: Activity[];
+  };
   const { scope } = useSearch({ from: '/cycles' });
   const router = useRouter();
   const [copiedCycleNumber, setCopiedCycleNumber] = useState<number | null>(null);
@@ -1256,10 +1260,37 @@ export function useCyclesPagePresenter() {
         onExportCalendar: () => exportCalendar(cycle),
       };
     });
+  const activeCycle = scopedCycles.find((cycle) => cycle.status === 'active');
+  const activeCycleIssues = activeCycle
+    ? data.issues.filter((issue) => issue.cycleId === activeCycle.id)
+    : [];
+  const currentCyclePoints = activeCycle
+    ? cycleProgressTimeline(activeCycle, activeCycleIssues, data.activeCycleActivities)
+    : [];
+  const currentProgress = currentCyclePoints.reduce(
+    (current, point) => (Date.parse(point.at) <= Date.now() ? point : current),
+    currentCyclePoints[0] ?? { at: '', scope: 0, started: 0, completed: 0 },
+  );
+  const currentCycleOverview = activeCycle
+    ? {
+        cycle: activeCycle,
+        points: currentCyclePoints,
+        scope: currentProgress.scope,
+        started: currentProgress.started,
+        startedPercent: currentProgress.scope
+          ? Math.round((currentProgress.started / currentProgress.scope) * 100)
+          : 0,
+        completed: currentProgress.completed,
+        completionPercent: currentProgress.scope
+          ? Math.round((currentProgress.completed / currentProgress.scope) * 100)
+          : 0,
+      }
+    : null;
   return {
     _view: 0 as const,
     cycles,
     scope,
+    currentCycleOverview,
     metadataCycle,
     datesCycle,
     nameDraft,

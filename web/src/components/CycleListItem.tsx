@@ -1,14 +1,12 @@
-import { ActionIcon, Badge, Group, Menu, Progress, Stack, Text } from '@mantine/core';
-import { IconDotsVertical } from '@tabler/icons-react';
+import { ActionIcon, Badge, Box, Group, Menu, Text } from '@mantine/core';
+import { IconCircleCheck, IconDotsVertical, IconPlayerPlay } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { RouterNavLink } from '../mantine-ui.tsx';
 import type { Cycle } from '../types.ts';
 import { formatCalendarDate } from '../time.ts';
+import styles from './CycleListItem.module.css';
 
 type CycleSummary = Cycle & {
-  issueCount: number;
-  startedCount: number;
-  completedCount: number;
   linkCopied: boolean;
   onEdit: () => void;
   onChangeDates: () => void;
@@ -20,15 +18,9 @@ type CycleSummary = Cycle & {
 
 export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
   const { t, i18n } = useTranslation();
-  const start = new Date(`${cycle.startsAt.slice(0, 10)}T00:00:00Z`);
   const locale = i18n.resolvedLanguage || i18n.language;
-  const progress = cycle.issueCount
-    ? Math.round((cycle.completedCount / cycle.issueCount) * 100)
-    : 0;
-  const startedProgress = cycle.issueCount
-    ? Math.round((cycle.startedCount / cycle.issueCount) * 100)
-    : 0;
   const name = cycle.name || t('field.cycleN', { number: cycle.number });
+  const startDate = formatCalendarDate(cycle.startsAt, locale);
 
   return (
     <Group
@@ -36,86 +28,37 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
       aria-label={t('cycle.rowLabel', { name })}
       gap="xs"
       wrap="nowrap"
-      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+      className={styles.row}
     >
       <RouterNavLink
         to="/cycles/$number"
         params={{ number: String(cycle.number) }}
         label={
-          <Stack gap={4}>
-            <Group gap="sm" wrap="wrap">
-              <Text size="sm" fw={550}>
-                {name}
-              </Text>
-              <Badge
-                variant="light"
-                color={cycle.status === 'active' ? 'indigo' : 'gray'}
-                size="sm"
-              >
-                {t(`cycle.status.${cycle.status}`)}
-              </Badge>
-            </Group>
-            <Text size="xs" c="dimmed">
-              {formatCalendarDate(cycle.startsAt, locale)} —{' '}
-              {formatCalendarDate(cycle.endsAt, locale)}
-            </Text>
-          </Stack>
+          <Text size="sm" fw={550}>
+            {name}
+          </Text>
         }
         leftSection={
-          <Stack
-            align="center"
-            justify="center"
-            gap={0}
-            w={40}
-            h={44}
-            style={{
-              border: '1px solid var(--mantine-color-default-border)',
-              borderRadius: 'var(--mantine-radius-sm)',
-              backgroundColor: 'var(--mantine-color-body)',
-            }}
-          >
-            <Text size="10px" c="dimmed" tt="uppercase">
-              {new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(start)}
-            </Text>
-            <Text size="sm" fw={600}>
-              {start.getUTCDate()}
-            </Text>
-          </Stack>
+          <Box className={styles.dateRail}>
+            <Text className={styles.dateLabel}>{startDate}</Text>
+            <span className={styles.dateMarker} aria-hidden="true" />
+            {cycle.status === 'completed' ? (
+              <IconCircleCheck className={styles.cycleIcon} size={16} aria-hidden="true" />
+            ) : (
+              <span
+                className={`${styles.cycleIcon} ${styles.cyclePlayIcon}`}
+                data-active={cycle.status === 'active' || undefined}
+                aria-hidden="true"
+              >
+                <IconPlayerPlay size={8} />
+              </span>
+            )}
+          </Box>
         }
         rightSection={
-          cycle.status === 'active' ? (
-            <Stack gap={4}>
-              <Group gap="md" wrap="nowrap">
-                <Stack gap={0}>
-                  <Text size="10px" c="dimmed">
-                    {t('cycle.scope')}
-                  </Text>
-                  <Text size="xs">{cycle.issueCount}</Text>
-                </Stack>
-                <Stack gap={0}>
-                  <Text size="10px" c="dimmed">
-                    {t('cycle.started')}
-                  </Text>
-                  <Text size="xs">
-                    {cycle.startedCount} · {startedProgress}%
-                  </Text>
-                </Stack>
-                <Stack gap={0}>
-                  <Text size="10px" c="dimmed">
-                    {t('cycle.completed')}
-                  </Text>
-                  <Text size="xs">
-                    {cycle.completedCount} · {progress}%
-                  </Text>
-                </Stack>
-              </Group>
-              <Progress
-                aria-label={t('cycle.progressFor', { number: cycle.number, progress })}
-                value={progress}
-                size="xs"
-              />
-            </Stack>
-          ) : null
+          <Badge variant="light" color={cycle.status === 'active' ? 'indigo' : 'gray'} size="sm">
+            {t(`cycle.status.${cycle.status}`)}
+          </Badge>
         }
         styles={{
           root: {

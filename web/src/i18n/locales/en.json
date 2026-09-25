@@ -80,6 +80,7 @@
     "issuesCount_other": "{{count}} issues",
     "progress": "Cycle completion",
     "progressHeading": "Progress",
+    "currentOverview": "Current cycle overview",
     "progressChartHeading": "Progress over time",
     "progressChartDescription": "Cycle progress over time: {{scope}} in scope, {{started}} started, {{completed}} completed",
     "ideal": "Ideal",

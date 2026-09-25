@@ -344,7 +344,9 @@ const cyclesRoute = createRoute({
   }),
   loader: async () => {
     const [cycles, issues] = await Promise.all([api.cycles(), api.issues()]);
-    return { cycles, issues };
+    const activeCycle = cycles.find((cycle) => cycle.status === 'active');
+    const activeCycleActivities = activeCycle ? await api.cycleActivities(activeCycle.number) : [];
+    return { cycles, issues, activeCycleActivities };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CyclesPage'),
 });

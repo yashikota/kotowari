@@ -1,0 +1,20 @@
+.timeline {
+  position: relative;
+}
+
+.timeline::before {
+  position: absolute;
+  top: 20px;
+  bottom: 20px;
+  left: 74px;
+  width: 1px;
+  background: var(--mantine-color-default-border);
+  content: '';
+  pointer-events: none;
+}
+
+@media (max-width: 680px) {
+  .timeline::before {
+    left: 80px;
+  }
+}

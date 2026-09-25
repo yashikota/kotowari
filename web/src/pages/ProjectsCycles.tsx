@@ -37,6 +37,8 @@ import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { ProjectUpdateFeed } from '../components/ProjectUpdateFeed.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
 import { ViewIcon } from '../components/ViewIcon.tsx';
+import { CycleOverview } from '../components/CycleOverview.tsx';
+import timelineStyles from '../components/CyclesTimeline.module.css';
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
 import { CYCLE_STATUSES } from '../types.ts';
@@ -1101,11 +1103,12 @@ function ProjectDetailPageBinding() {
 }
 
 export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPagePresenter> }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   switch (model._view) {
     case 0: {
       const {
         cycles,
+        currentCycleOverview,
         metadataCycle,
         datesCycle,
         nameDraft,
@@ -1138,11 +1141,21 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
             {cycles.length === 0 ? (
               <EmptyState>{t('cycle.emptyState')}</EmptyState>
             ) : (
-              <Stack gap={0} p="md" pb="xl">
-                {cycles.map((cycle) => (
-                  <CycleListItem key={cycle.number} cycle={cycle} />
-                ))}
-              </Stack>
+              <Box className={timelineStyles.timeline}>
+                <Stack gap={0} p="md" pb="xl">
+                  {cycles.map((cycle) => (
+                    <Box key={cycle.number}>
+                      <CycleListItem cycle={cycle} />
+                      {currentCycleOverview?.cycle.number === cycle.number ? (
+                        <CycleOverview
+                          {...currentCycleOverview}
+                          locale={i18n.resolvedLanguage || i18n.language}
+                        />
+                      ) : null}
+                    </Box>
+                  ))}
+                </Stack>
+              </Box>
             )}
             <Modal
               opened={metadataCycle !== null}
