@@ -1267,6 +1267,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
       title: sourceTitle,
       body: '## Impact\n\nDescribe customer impact.\n',
       status: 'in_progress',
+      assignee: 'agent',
       type: 'bug',
       priority: 2,
       estimate: 3,
@@ -1290,6 +1291,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     title: string;
     body: string;
     status: string;
+    assignee: string;
     type: string;
     priority: number;
     estimate: number;
@@ -1300,6 +1302,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
       title: sourceTitle,
       body: expect.stringContaining('Describe customer impact.'),
       status: 'in_progress',
+      assignee: 'agent',
       type: 'bug',
       priority: 2,
       estimate: 3,
@@ -1318,6 +1321,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     'Describe customer impact.',
   );
   await expect(createDialog.getByLabel('Status')).toHaveValue('in_progress');
+  await expect(createDialog.getByLabel('Assignee')).toHaveValue('agent');
   await expect(createDialog.getByLabel('Priority')).toHaveValue('2');
   await expect(createDialog.getByLabel('Type')).toHaveValue('bug');
   await expect(createDialog.getByLabel('Estimate')).toHaveValue('3');
@@ -1338,10 +1342,15 @@ test('issues can be converted into reusable workspace templates', async ({ page,
       candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
   );
   await createDialog.getByRole('button', { name: 'Create', exact: true }).click();
-  expect((await createRequest).postDataJSON()).toMatchObject({ title: createdTitle, dueDate });
+  expect((await createRequest).postDataJSON()).toMatchObject({
+    title: createdTitle,
+    dueDate,
+    assignee: 'agent',
+  });
   const createdFromResponse = (await (await createResponse).json()) as {
     identifier: string;
     title: string;
+    assignee?: string;
   };
   expect(createdFromResponse.title).toBe(createdTitle);
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+$/);
@@ -1350,6 +1359,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     title: createdTitle,
     body: expect.stringContaining('Describe customer impact.'),
     status: 'in_progress',
+    assignee: 'agent',
     type: 'bug',
     priority: 2,
     estimate: 3,

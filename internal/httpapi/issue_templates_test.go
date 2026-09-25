@@ -9,7 +9,7 @@ import (
 
 func TestIssueTemplateAPI(t *testing.T) {
 	s := testAPI(t)
-	createdIssue := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Release","body":"## Checklist","status":"todo"}`)
+	createdIssue := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Release","body":"## Checklist","status":"todo","assignee":"agent"}`)
 	if createdIssue.Code != http.StatusCreated {
 		t.Fatalf("create issue %d %s", createdIssue.Code, createdIssue.Body.String())
 	}
@@ -25,14 +25,15 @@ func TestIssueTemplateAPI(t *testing.T) {
 		t.Fatalf("create template %d %s", created.Code, created.Body.String())
 	}
 	var template struct {
-		Slug string `json:"slug"`
-		Name string `json:"name"`
-		Body string `json:"body"`
+		Slug     string `json:"slug"`
+		Name     string `json:"name"`
+		Body     string `json:"body"`
+		Assignee string `json:"assignee"`
 	}
 	if err := json.Unmarshal(created.Body.Bytes(), &template); err != nil {
 		t.Fatal(err)
 	}
-	if template.Slug != "release-checklist" || template.Name != "Release checklist" || template.Body != "## Checklist\n" {
+	if template.Slug != "release-checklist" || template.Name != "Release checklist" || template.Body != "## Checklist\n" || template.Assignee != "agent" {
 		t.Fatalf("created template %#v", template)
 	}
 

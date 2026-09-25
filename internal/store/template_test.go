@@ -86,7 +86,7 @@ func TestIssueTemplateRoundTripAndNameConflicts(t *testing.T) {
 	}
 	issue, err := s.CreateIssue(CreateIssueInput{
 		Title: "Prepare release", Body: "## Checklist\n\n- [ ] Verify build\n",
-		Status: "in_progress", Type: "task", Priority: 2, LabelIDs: []int64{1},
+		Status: "in_progress", Assignee: "agent", Type: "task", Priority: 2, LabelIDs: []int64{1},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestIssueTemplateRoundTripAndNameConflicts(t *testing.T) {
 		t.Fatal(err)
 	}
 	if template.Slug != "release-checklist" || template.Title != issue.Title || template.Body != issue.Body ||
-		template.Status != issue.Status || template.Type != issue.Type || template.Priority != issue.Priority ||
+		template.Status != issue.Status || template.Assignee != issue.Assignee || template.Type != issue.Type || template.Priority != issue.Priority ||
 		len(template.Labels) != 1 || template.Labels[0] != "Bug" {
 		t.Fatalf("template did not preserve issue data: %#v", template)
 	}
@@ -116,8 +116,13 @@ func TestIssueTemplateRoundTripAndNameConflicts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(templates) != 1 || templates[0].Slug != template.Slug || templates[0].Body != template.Body {
+	if len(templates) != 1 || templates[0].Slug != template.Slug || templates[0].Body != template.Body || templates[0].Assignee != "agent" {
 		t.Fatalf("reopened templates %#v", templates)
+	}
+	if err := writeIssueTemplate(filepath.Join(dir, "TEMPLATE", "ISSUE-invalid.md"), IssueTemplate{
+		Name: "Invalid", Title: "Invalid assignee", Status: "todo", Assignee: "someone",
+	}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid template assignee error %v", err)
 	}
 	if err := reopened.DeleteIssueTemplate(template.Slug); err != nil {
 		t.Fatal(err)

@@ -81,6 +81,7 @@ export type IssueTemplate = {
   title: string;
   body: string;
   status: IssueStatus;
+  assignee?: 'self' | 'agent';
   type?: IssueType;
   priority: number;
   estimate?: number | null;

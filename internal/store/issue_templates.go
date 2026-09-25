@@ -19,6 +19,7 @@ type IssueTemplate struct {
 	Title    string   `json:"title"`
 	Body     string   `json:"body"`
 	Status   string   `json:"status"`
+	Assignee string   `json:"assignee,omitempty"`
 	Type     string   `json:"type,omitempty"`
 	Priority int      `json:"priority"`
 	Estimate *int     `json:"estimate,omitempty"`
@@ -29,6 +30,7 @@ type issueTemplateFM struct {
 	Name     string   `toml:"name"`
 	Title    string   `toml:"title"`
 	Status   string   `toml:"status"`
+	Assignee string   `toml:"assignee,omitempty"`
 	Type     string   `toml:"type,omitempty"`
 	Priority int      `toml:"priority"`
 	Estimate *int     `toml:"estimate,omitempty"`
@@ -94,7 +96,7 @@ func (s *Store) CreateIssueTemplate(identifier, name string) (IssueTemplate, err
 	}
 	template := IssueTemplate{
 		Slug: slug, Name: name, Title: issue.Title, Body: issue.Body,
-		Status: issue.Status, Type: issue.Type, Priority: issue.Priority,
+		Status: issue.Status, Assignee: issue.Assignee, Type: issue.Type, Priority: issue.Priority,
 		Estimate: issue.Estimate, Labels: labels,
 	}
 	if err := writeIssueTemplate(path, template); err != nil {
@@ -154,11 +156,12 @@ func readIssueTemplate(path string) (IssueTemplate, error) {
 	if fm.Status == "" {
 		fm.Status = "todo"
 	}
-	if !validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) {
+	if !validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) ||
+		!domain.ValidIssueAssignee(fm.Assignee) {
 		return IssueTemplate{}, validationf("template contains invalid issue properties")
 	}
 	return IssueTemplate{
-		Name: fm.Name, Title: fm.Title, Body: body, Status: fm.Status,
+		Name: fm.Name, Title: fm.Title, Body: body, Status: fm.Status, Assignee: fm.Assignee,
 		Type: fm.Type, Priority: fm.Priority, Estimate: fm.Estimate,
 		Labels: append([]string{}, fm.Labels...),
 	}, nil
@@ -166,7 +169,7 @@ func readIssueTemplate(path string) (IssueTemplate, error) {
 
 func writeIssueTemplate(path string, template IssueTemplate) error {
 	fm := issueTemplateFM{
-		Name: template.Name, Title: template.Title, Status: template.Status,
+		Name: template.Name, Title: template.Title, Status: template.Status, Assignee: template.Assignee,
 		Type: template.Type, Priority: template.Priority,
 		Estimate: template.Estimate, Labels: template.Labels,
 	}
@@ -193,7 +196,8 @@ func validTemplateProperties(status, issueType string, priority int, estimate *i
 
 func validateTemplateProperties(template IssueTemplate) error {
 	if strings.TrimSpace(template.Name) == "" || strings.TrimSpace(template.Title) == "" ||
-		!validTemplateProperties(template.Status, template.Type, template.Priority, template.Estimate) {
+		!validTemplateProperties(template.Status, template.Type, template.Priority, template.Estimate) ||
+		!domain.ValidIssueAssignee(template.Assignee) {
 		return validationf("invalid issue template")
 	}
 	return nil

@@ -530,6 +530,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       title: source.title,
       body: source.body,
       status: source.status,
+      assignee: source.assignee,
       type: source.type,
       priority: source.priority,
       estimate: source.estimate,

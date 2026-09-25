@@ -795,6 +795,7 @@ export function useShellPresenter() {
           setIssueBody('');
           setIssueStatus('todo');
           setIssuePriority(0);
+          setIssueAssignee('');
           setIssueType('');
           setIssueEstimate('');
           setIssueLabelNames([]);
@@ -804,6 +805,7 @@ export function useShellPresenter() {
         setIssueBody(template.body);
         setIssueStatus(template.status);
         setIssuePriority(template.priority);
+        setIssueAssignee(template.assignee ?? '');
         setIssueType(template.type ?? '');
         setIssueEstimate(template.estimate == null ? '' : String(template.estimate));
         const available = new Set(availableLabels.map((label) => label.name));
