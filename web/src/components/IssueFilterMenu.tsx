@@ -12,11 +12,24 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import {
+  IconCalendar,
+  IconCalendarPlus,
+  IconCalendarTime,
+  IconChartBar,
   IconCheck,
   IconChevronLeft,
   IconChevronRight,
+  IconCircleDot,
+  IconFileText,
+  IconFlag,
   IconFilter,
+  IconFolder,
+  IconFolderCog,
+  IconLink,
+  IconListCheck,
+  IconRepeat,
   IconSearch,
+  IconTag,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { IssueSearch } from '../api.ts';
@@ -47,6 +60,23 @@ const FILTER_CATEGORIES = [
   { id: 'dueDate', group: 'other', chips: ['dueDate'] },
   { id: 'milestone', group: 'other', chips: ['milestoneName'] },
 ] as const;
+
+const FILTER_CATEGORY_ICONS = {
+  status: IconCircleDot,
+  priority: IconFlag,
+  estimate: IconChartBar,
+  labels: IconTag,
+  relations: IconLink,
+  dates: IconCalendar,
+  project: IconFolder,
+  projectProperties: IconFolderCog,
+  cycle: IconRepeat,
+  addedToCycle: IconCalendarPlus,
+  content: IconFileText,
+  type: IconListCheck,
+  dueDate: IconCalendarTime,
+  milestone: IconFlag,
+} satisfies Record<FilterCategory, typeof IconCircleDot>;
 
 type FilterCategory = (typeof FILTER_CATEGORIES)[number]['id'];
 type SelectOption = { value: string; label: string };
@@ -316,6 +346,12 @@ export function IssueFilterMenu({
   const filteredCategories = FILTER_CATEGORIES.filter(({ id }) =>
     categoryLabels[id].toLocaleLowerCase().includes(filterQuery.trim().toLocaleLowerCase()),
   );
+  const visibleGroups = (['issue', 'planning', 'other'] as const)
+    .map((group) => ({
+      group,
+      categories: filteredCategories.filter((item) => item.group === group),
+    }))
+    .filter(({ categories }) => categories.length > 0);
   const activeFilterKeys = new Set(chips.map((chip) => chip.key));
 
   function isCategoryActive(filterCategory: FilterCategory): boolean {
@@ -634,7 +670,7 @@ export function IssueFilterMenu({
         }}
         position="bottom-start"
         shadow="md"
-        width={compact ? 320 : category ? 600 : 320}
+        width={compact ? 320 : category ? 520 : 240}
         withinPortal
       >
         <Popover.Target>
@@ -656,7 +692,11 @@ export function IssueFilterMenu({
           style={{ maxWidth: 'calc(100vw - 16px)', overflow: 'hidden' }}
         >
           <Group gap={0} align="stretch" wrap="nowrap">
-            <Stack w={320} gap={0} style={{ display: compact && category ? 'none' : undefined }}>
+            <Stack
+              w={compact ? 320 : 240}
+              gap={0}
+              style={{ display: compact && category ? 'none' : undefined }}
+            >
               <TextInput
                 aria-label={t('filters.searchFilters')}
                 placeholder={t('filters.searchPlaceholder')}
@@ -668,37 +708,47 @@ export function IssueFilterMenu({
               />
               <Divider />
               <Stack gap="xs" p="xs" mah="calc(70vh - 42px)" style={{ overflowY: 'auto' }}>
-                {(['issue', 'planning', 'other'] as const).map((group) => {
-                  const groupCategories = filteredCategories.filter((item) => item.group === group);
-                  if (groupCategories.length === 0) return null;
+                {visibleGroups.map(({ categories: groupCategories, group }, groupIndex) => {
                   return (
                     <Stack key={group} gap={2}>
-                      <Text px="xs" pt={4} size="xs" c="dimmed" fw={600}>
-                        {t(`filters.groups.${group}`)}
-                      </Text>
-                      {groupCategories.map(({ id }) => (
-                        <Button
-                          key={id}
-                          type="button"
-                          variant="subtle"
-                          color="gray"
-                          size="compact-sm"
-                          fullWidth
-                          justify="space-between"
-                          aria-pressed={isCategoryActive(id)}
-                          data-active={category === id || undefined}
-                          onClick={() => selectCategory(id)}
-                          rightSection={
-                            isCategoryActive(id) ? (
-                              <IconCheck size={14} aria-hidden="true" />
-                            ) : (
-                              <IconChevronRight size={14} aria-hidden="true" />
-                            )
-                          }
-                        >
-                          {categoryLabels[id]}
-                        </Button>
-                      ))}
+                      {groupIndex > 0 ? <Divider my={4} /> : null}
+                      {groupCategories.map(({ id }) => {
+                        const CategoryIcon = FILTER_CATEGORY_ICONS[id];
+                        return (
+                          <Button
+                            key={id}
+                            type="button"
+                            variant="subtle"
+                            color="gray"
+                            size="compact-sm"
+                            fullWidth
+                            justify="flex-start"
+                            aria-pressed={isCategoryActive(id)}
+                            data-active={category === id || undefined}
+                            onClick={() => selectCategory(id)}
+                            styles={{
+                              root: { minHeight: 30, height: 30, paddingInline: 8 },
+                              label: {
+                                display: 'block',
+                                width: '100%',
+                                textAlign: 'left',
+                              },
+                            }}
+                          >
+                            <Group gap="xs" wrap="nowrap" justify="space-between" w="100%">
+                              <CategoryIcon size={15} stroke={1.7} aria-hidden="true" />
+                              <Text size="sm" truncate style={{ flex: 1, textAlign: 'left' }}>
+                                {categoryLabels[id]}
+                              </Text>
+                              <IconChevronRight
+                                size={14}
+                                color="var(--mantine-color-dimmed)"
+                                aria-hidden="true"
+                              />
+                            </Group>
+                          </Button>
+                        );
+                      })}
                     </Stack>
                   );
                 })}

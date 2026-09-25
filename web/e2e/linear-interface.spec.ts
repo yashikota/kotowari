@@ -7,6 +7,22 @@ test('issue filters use a searchable category menu with a scoped editor', async 
   await page.getByRole('button', { name: 'Add filter', exact: true }).click();
   const searchFilters = page.getByRole('textbox', { name: 'Search filters' });
   await expect(searchFilters).toBeFocused();
+  const picker = page.getByRole('dialog', { name: 'Add filter' });
+  await expect(picker.getByText('Issue properties', { exact: true })).toHaveCount(0);
+  const statusFilter = picker.getByRole('button', { name: 'Status', exact: true });
+  await expect(statusFilter.locator('svg')).toHaveCount(2);
+  const [buttonBounds, iconBounds, labelBounds, chevronBounds] = await Promise.all([
+    statusFilter.boundingBox(),
+    statusFilter.locator('svg').first().boundingBox(),
+    statusFilter.getByText('Status', { exact: true }).boundingBox(),
+    statusFilter.locator('svg').last().boundingBox(),
+  ]);
+  expect(buttonBounds).not.toBeNull();
+  expect(iconBounds).not.toBeNull();
+  expect(labelBounds).not.toBeNull();
+  expect(chevronBounds).not.toBeNull();
+  expect(labelBounds!.x - iconBounds!.x - iconBounds!.width).toBeLessThan(40);
+  expect(chevronBounds!.x).toBeGreaterThan(buttonBounds!.x + buttonBounds!.width * 0.75);
   await searchFilters.fill('prior');
   await expect(page.getByRole('button', { name: 'Priority', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Status', exact: true })).toHaveCount(0);
