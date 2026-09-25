@@ -406,6 +406,8 @@
   },
   "issueAssignment": {
     "you": "自分",
+    "agent": "エージェント",
+    "noAgent": "エージェントなし",
     "unassigned": "未割当"
   },
   "issueLinks": {
@@ -986,6 +988,7 @@
     "noLabels": "利用できるラベルはありません。",
     "categories": {
       "status": "ステータス",
+      "assignee": "担当者",
       "priority": "優先度",
       "estimate": "見積もり",
       "labels": "ラベル",
@@ -1001,6 +1004,7 @@
       "milestone": "マイルストーン"
     },
     "filterStatus": "ステータスで絞り込む",
+    "filterAssignee": "担当者で絞り込む",
     "anyStatus": "すべてのステータス",
     "filterType": "種別で絞り込む",
     "anyType": "すべての種別",
@@ -1122,6 +1126,7 @@
     "group": {
       "status": "ステータス",
       "assignee": "担当者",
+      "agent": "エージェント",
       "priority": "優先度",
       "project": "プロジェクト",
       "cycle": "サイクル",

@@ -26,6 +26,7 @@ export function ViewPageView({
         issues,
         view,
         selected,
+        detailsOpen,
         search,
         find,
         restoreScrollTop,
@@ -48,7 +49,7 @@ export function ViewPageView({
             overflow: view.display === 'board' ? 'auto' : 'hidden',
           }}
         >
-          <SplitLayout single={view.display === 'board'}>
+          <SplitLayout single={view.display === 'board' || !detailsOpen}>
             <Pane single={view.display === 'board'}>
               <PageHeader
                 title={
@@ -108,6 +109,8 @@ export function ViewPageView({
                   onShowEmptyGroups={handlers.onShowEmptyGroups24}
                   displayProperties={displayProperties}
                   onDisplayPropertyToggle={handlers.onDisplayPropertyToggle25}
+                  detailsOpen={detailsOpen}
+                  onDetailsToggle={handlers.onDetailsToggle26}
                 />
                 {view.display === 'board' ? (
                   <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
@@ -143,7 +146,7 @@ export function ViewPageView({
                 )}
               </Stack>
             </Pane>
-            {view.display === 'list' ? (
+            {view.display === 'list' && detailsOpen ? (
               <Pane variant="detail">
                 {selected ? (
                   <IssueDetail identifier={selected} />

@@ -40,22 +40,28 @@ export function IssueGroupRow({
         : row.groupBy === 'assignee'
           ? row.key === 'assignee:self'
             ? i18n.t('issueAssignment.you')
-            : i18n.t('issueAssignment.unassigned')
-          : row.groupBy === 'priority'
-            ? priorityLabel(row.priority ?? 0)
-            : row.groupBy === 'status' && row.status
-              ? workflowStatusLabel(row.status, workflowStatuses)
-              : row.groupBy === 'project' && row.label === 'No project'
-                ? i18n.t('issueProperties.noProject')
-                : row.groupBy === 'cycle' && row.label === 'No cycle'
-                  ? i18n.t('field.noCycle')
-                  : row.groupBy === 'cycle' && row.label.startsWith('Cycle ')
-                    ? i18n.t('field.cycleN', { number: row.label.slice(6) })
-                    : row.groupBy === 'label' && row.label === 'No label'
-                      ? i18n.t('issueProperties.noLabels')
-                      : row.groupBy === 'parent' && row.label === 'No parent'
-                        ? i18n.t('issueProperties.noParent')
-                        : row.label;
+            : row.key === 'assignee:agent'
+              ? i18n.t('issueAssignment.agent')
+              : i18n.t('issueAssignment.unassigned')
+          : row.groupBy === 'agent'
+            ? row.key === 'agent:agent'
+              ? i18n.t('issueAssignment.agent')
+              : i18n.t('issueAssignment.noAgent')
+            : row.groupBy === 'priority'
+              ? priorityLabel(row.priority ?? 0)
+              : row.groupBy === 'status' && row.status
+                ? workflowStatusLabel(row.status, workflowStatuses)
+                : row.groupBy === 'project' && row.label === 'No project'
+                  ? i18n.t('issueProperties.noProject')
+                  : row.groupBy === 'cycle' && row.label === 'No cycle'
+                    ? i18n.t('field.noCycle')
+                    : row.groupBy === 'cycle' && row.label.startsWith('Cycle ')
+                      ? i18n.t('field.cycleN', { number: row.label.slice(6) })
+                      : row.groupBy === 'label' && row.label === 'No label'
+                        ? i18n.t('issueProperties.noLabels')
+                        : row.groupBy === 'parent' && row.label === 'No parent'
+                          ? i18n.t('issueProperties.noParent')
+                          : row.label;
   const icon =
     row.groupBy === 'type' ? (
       <IconFolder size={14} stroke={1.8} aria-hidden />
@@ -67,7 +73,7 @@ export function IssueGroupRow({
       <IssueStatusIcon
         status={workflowStatuses.find((status) => status.id === row.status)?.category ?? 'todo'}
       />
-    ) : row.groupBy === 'assignee' ? (
+    ) : row.groupBy === 'assignee' || row.groupBy === 'agent' ? (
       <IconUser size={14} stroke={1.8} aria-hidden />
     ) : (
       <IconFolder size={14} stroke={1.8} aria-hidden />
@@ -240,7 +246,11 @@ export function IssueListRow({
             {shows('assignee') ? (
               <IssueMetaText>
                 {i18n.t(
-                  issue.assignee === 'self' ? 'issueAssignment.you' : 'issueAssignment.unassigned',
+                  issue.assignee === 'self'
+                    ? 'issueAssignment.you'
+                    : issue.assignee === 'agent'
+                      ? 'issueAssignment.agent'
+                      : 'issueAssignment.unassigned',
                 )}
               </IssueMetaText>
             ) : null}

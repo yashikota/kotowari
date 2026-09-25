@@ -178,7 +178,7 @@ func (s *Store) CreateRecurringIssueFromInput(issueInput CreateIssueInput, in Cr
 	if !domain.ValidEstimate(issueInput.Estimate) {
 		return RecurringIssue{}, validationf("invalid estimate")
 	}
-	if issueInput.Assignee != "" && issueInput.Assignee != "self" {
+	if !domain.ValidIssueAssignee(issueInput.Assignee) {
 		return RecurringIssue{}, validationf("invalid issue assignee")
 	}
 
@@ -583,7 +583,7 @@ func readRecurringIssue(path string) (RecurringIssue, error) {
 		return RecurringIssue{}, validationf("invalid recurring issue next due date")
 	}
 	if !validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) ||
-		(fm.Assignee != "" && fm.Assignee != "self") {
+		!domain.ValidIssueAssignee(fm.Assignee) {
 		return RecurringIssue{}, validationf("recurring issue contains invalid issue properties")
 	}
 	links, err := normalizeIssueLinks(fm.Links)
@@ -616,7 +616,7 @@ func writeRecurringIssue(path string, recurring RecurringIssue) error {
 	}
 	if !validRecurringUnit(fm.Unit) || fm.Interval < 1 || fm.Interval > 365 ||
 		!validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) ||
-		(fm.Assignee != "" && fm.Assignee != "self") {
+		!domain.ValidIssueAssignee(fm.Assignee) {
 		return validationf("invalid recurring issue")
 	}
 	metadata, err := toml.Marshal(fm)

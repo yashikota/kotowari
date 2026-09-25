@@ -552,6 +552,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		ShowEmptyGroups   *bool    `json:"showEmptyGroups"`
 		DisplayProperties []string `json:"displayProperties"`
 		Status            *string  `json:"status"`
+		Assignee          *string  `json:"assignee"`
 		Project           *string  `json:"project"`
 		Cycle             *int     `json:"cycle"`
 		Labels            []string `json:"labels"`
@@ -576,7 +577,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Name: in.Name, Slug: in.Slug, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-		Status:  in.Status,
+		Status: in.Status, Assignee: in.Assignee,
 		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, DueDate: in.DueDate, Relation: in.Relation, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
 	}, nil
 }
@@ -642,7 +643,7 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 	f := store.IssueFilter{Status: q.Get("status"), Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
-	if f.Assignee != "" && f.Assignee != "self" {
+	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid assignee filter"})
 		return
 	}

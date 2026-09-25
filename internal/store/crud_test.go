@@ -156,6 +156,10 @@ func TestIssueAssigneeRoundTripAndFilter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	agentAssigned, err := s.CreateIssue(CreateIssueInput{Title: "agent issue", Assignee: "agent"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if assigned.Assignee != "self" {
 		t.Fatalf("created assignee = %q", assigned.Assignee)
 	}
@@ -163,6 +167,14 @@ func TestIssueAssigneeRoundTripAndFilter(t *testing.T) {
 	filtered, err := s.ListIssues(IssueFilter{Assignee: "self"})
 	if err != nil || len(filtered) != 1 || filtered[0].Identifier != assigned.Identifier {
 		t.Fatalf("assigned issues = %#v, err = %v", filtered, err)
+	}
+	filtered, err = s.ListIssues(IssueFilter{Assignee: "agent"})
+	if err != nil || len(filtered) != 1 || filtered[0].Identifier != agentAssigned.Identifier {
+		t.Fatalf("agent issues = %#v, err = %v", filtered, err)
+	}
+	filtered, err = s.ListIssues(IssueFilter{Assignee: "none"})
+	if err != nil || len(filtered) != 1 || filtered[0].Identifier != unassigned.Identifier {
+		t.Fatalf("unassigned issues = %#v, err = %v", filtered, err)
 	}
 	if _, err := s.ListIssues(IssueFilter{Assignee: "someone-else"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid assignee filter: %v", err)
@@ -176,6 +188,10 @@ func TestIssueAssigneeRoundTripAndFilter(t *testing.T) {
 	persisted, err := reopened.GetIssue(assigned.Identifier)
 	if err != nil || persisted.Assignee != "self" {
 		t.Fatalf("persisted assignee = %q, err = %v", persisted.Assignee, err)
+	}
+	persisted, err = reopened.GetIssue(agentAssigned.Identifier)
+	if err != nil || persisted.Assignee != "agent" {
+		t.Fatalf("persisted agent assignee = %q, err = %v", persisted.Assignee, err)
 	}
 
 	clear := ""
@@ -1364,7 +1380,7 @@ func TestCreateViewValidation(t *testing.T) {
 	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open", Display: "table"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid display: %v", err)
 	}
-	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open", GroupBy: "assignee"}); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open", GroupBy: "unknown"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid group by: %v", err)
 	}
 	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open", OrderBy: "random"}); !errors.Is(err, ErrValidation) {
@@ -1376,7 +1392,7 @@ func TestCreateViewValidation(t *testing.T) {
 	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "bad-completed", CompletedIssues: "forever"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid completed issue range: %v", err)
 	}
-	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "bad-property", DisplayProperties: []string{"assignee"}}); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "bad-property", DisplayProperties: []string{"unknown"}}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid display property: %v", err)
 	}
 	tooLongContent := strings.Repeat("x", 513)
@@ -1406,6 +1422,16 @@ func TestCreateViewValidation(t *testing.T) {
 	}
 	if len(v.DisplayProperties) == 0 || v.DisplayProperties[0] != "id" {
 		t.Fatalf("default display properties: %#v", v.DisplayProperties)
+	}
+	containsAssignee := false
+	for _, property := range v.DisplayProperties {
+		if property == "assignee" {
+			containsAssignee = true
+			break
+		}
+	}
+	if !containsAssignee {
+		t.Fatalf("default display properties omit assignee: %#v", v.DisplayProperties)
 	}
 	if _, err := s.CreateView(CreateViewInput{Name: "Again", Slug: "open"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate slug: %v", err)
@@ -1448,6 +1474,39 @@ func TestViewDisplayOptionsPersist(t *testing.T) {
 	}
 	if got.ShowSubIssues == nil || !*got.ShowSubIssues || got.ShowEmptyGroups || len(got.DisplayProperties) != 3 || got.DisplayProperties[0] != "priority" {
 		t.Fatalf("updated display properties did not persist: %#v", got)
+	}
+}
+
+func TestViewAssigneeFilterPersistsAndClears(t *testing.T) {
+	s := openTest(t)
+	agent := "agent"
+	view, err := s.CreateView(CreateViewInput{
+		Name: "Agent issues", Slug: "agent-issues", GroupBy: "agent", Assignee: &agent,
+		DisplayProperties: []string{"id", "assignee"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Assignee == nil || *view.Assignee != "agent" || view.Filter().Assignee != "agent" {
+		t.Fatalf("agent view filter = %#v", view)
+	}
+
+	none := "none"
+	view, err = s.UpdateView(view.Slug, CreateViewInput{Assignee: &none})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Assignee == nil || *view.Assignee != "none" || view.Filter().Assignee != "none" {
+		t.Fatalf("unassigned view filter = %#v", view)
+	}
+
+	clear := ""
+	view, err = s.UpdateView(view.Slug, CreateViewInput{Assignee: &clear})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Assignee != nil || view.Filter().Assignee != "" {
+		t.Fatalf("cleared view assignee = %#v", view)
 	}
 }
 

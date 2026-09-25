@@ -13,20 +13,9 @@ export async function openIssueFilterCategory(page: Page, category: string) {
   const addFilterButton = page.getByRole('button', { name: 'Add filter', exact: true });
   if ((await addFilterButton.getAttribute('aria-expanded')) !== 'true') {
     await addFilterButton.click();
-    await search.waitFor({ state: 'visible' });
+    await search.waitFor({ state: 'visible', timeout: 5000 });
   }
-
-  const expandedCategory = page.locator('[role="menuitem"][aria-expanded="true"]');
-  if (
-    await expandedCategory
-      .first()
-      .isVisible()
-      .catch(() => false)
-  ) {
-    await search.click();
-  } else {
-    await search.hover();
-  }
+  await search.waitFor({ state: 'visible', timeout: 5000 });
   await search.fill(category);
   await page.getByRole('menuitem', { name: category, exact: true }).click();
 }

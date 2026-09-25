@@ -28,6 +28,7 @@ const GROUP_BY: IssueGroupBy[] = [
   'priority',
   'status',
   'assignee',
+  'agent',
   'project',
   'cycle',
   'label',
@@ -168,6 +169,14 @@ export function useIssueFiltersPresenter({
           },
         ]
       : []),
+    ...(search.assignee
+      ? [
+          {
+            key: 'assignee',
+            label: `${t('field.assignee')} · ${t(`issueAssignment.${search.assignee === 'self' ? 'you' : search.assignee === 'agent' ? 'agent' : 'unassigned'}`)}`,
+          },
+        ]
+      : []),
     ...(search.project
       ? [
           {
@@ -301,6 +310,8 @@ export function useIssueFiltersPresenter({
         }
       },
       onStatusChange: (value: string) => set({ status: value || undefined }),
+      onAssigneeChange: (value: string) =>
+        set({ assignee: value ? (value as NonNullable<IssueSearch['assignee']>) : undefined }),
       onProjectChange: (value: string) => set({ project: value || undefined }),
       onCycleChange: (value: string) => set({ cycle: value ? Number(value) : undefined }),
       onPriorityChange: (value: string) =>
@@ -372,6 +383,7 @@ export function useIssueFiltersPresenter({
       onClearFilters: () => {
         set({
           status: undefined,
+          assignee: undefined,
           project: undefined,
           cycle: undefined,
           priority: undefined,
@@ -409,6 +421,7 @@ export function useIssueFiltersPresenter({
           set({ addedToCycle: next.length ? next : undefined });
         } else if (
           key === 'status' ||
+          key === 'assignee' ||
           key === 'project' ||
           key === 'cycle' ||
           key === 'priority' ||

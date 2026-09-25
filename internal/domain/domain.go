@@ -189,6 +189,15 @@ func ValidIssueType(s string) bool {
 	}
 }
 
+func ValidIssueAssignee(s string) bool {
+	switch s {
+	case "", "self", "agent":
+		return true
+	default:
+		return false
+	}
+}
+
 func ValidEstimate(p *int) bool {
 	return p == nil || (*p >= 0 && *p <= 999)
 }
@@ -239,7 +248,7 @@ func ValidViewDisplay(s string) bool {
 
 func ValidViewGroupBy(s string) bool {
 	switch s {
-	case "none", "priority", "status", "project", "cycle", "label", "parent", "type", "estimate":
+	case "none", "priority", "status", "assignee", "agent", "project", "cycle", "label", "parent", "type", "estimate":
 		return true
 	default:
 		return false
@@ -279,7 +288,7 @@ func ValidNestedSubIssues(s string) bool {
 
 func ValidDisplayProperty(s string) bool {
 	switch s {
-	case "id", "status", "priority", "project", "dueDate", "milestone", "cycle", "estimate", "labels", "links", "pullRequests", "timeInStatus", "created", "updated":
+	case "id", "status", "assignee", "priority", "project", "dueDate", "milestone", "cycle", "estimate", "labels", "links", "pullRequests", "timeInStatus", "created", "updated":
 		return true
 	default:
 		return false

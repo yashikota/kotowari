@@ -120,7 +120,7 @@ export function useMachineFlag(name: string, defaultValue = false) {
   const scope = useContext(ScopeContext);
   const key = `${scope.id}:${name}`;
   const value = useSyncExternalStore(mediator.subscribe, () => mediator.getFlag(key, defaultValue));
-  useEffect(() => () => mediator.clearFlag(key), [key]);
+  useLayoutEffect(() => () => mediator.clearFlag(key), [key]);
   const set = useMemo(
     () => (next: boolean | ((previous: boolean) => boolean)) =>
       mediator.setFlag(key, next, defaultValue),

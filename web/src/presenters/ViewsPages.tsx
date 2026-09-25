@@ -61,13 +61,15 @@ export function useViewPagePresenter() {
     data.cycles,
   );
   const [selected, setSelected] = useState<string | null>(
-    locationState.issueListSelectedId ?? issues[0]?.identifier ?? null,
+    locationState.issueListSelectedId ?? null,
   );
+  const [detailsOpen, setDetailsOpen] = useState(locationState.issueListSelectedId != null);
   const restoreScrollTop = locationState.issueListScrollTop ?? 0;
 
   if (view.slug !== data.view.slug || view.updatedAt !== data.view.updatedAt) {
     setView(data.view);
-    setSelected((data.issues ?? [])[0]?.identifier ?? null);
+    setSelected(null);
+    setDetailsOpen(false);
     setGroupBy((data.view.groupBy || 'priority') as IssueGroupBy);
     setOrderBy((data.view.orderBy || 'manual') as IssueOrderBy);
   }
@@ -80,6 +82,7 @@ export function useViewPagePresenter() {
 
   const search: IssueSearch = {
     status: view.status ?? undefined,
+    assignee: view.assignee ?? undefined,
     project: view.project ?? undefined,
     cycle: view.cycle ?? undefined,
     priority: view.priority ?? undefined,
@@ -105,6 +108,7 @@ export function useViewPagePresenter() {
     }
     return save({
       status: next.status ?? '',
+      assignee: next.assignee ?? '',
       project: next.project ?? '',
       cycle: next.cycle ?? 0,
       priority: next.priority ?? -1,
@@ -132,6 +136,7 @@ export function useViewPagePresenter() {
     view,
     selected,
     restoreScrollTop,
+    detailsOpen,
     search,
     find,
     groupBy,
@@ -165,8 +170,10 @@ export function useViewPagePresenter() {
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {
         const handle: NonNullable<React.ComponentProps<typeof IssueList>['onSelect']> = setSelected;
+        setDetailsOpen(true);
         return handle(...args);
       },
+      onDetailsToggle26: () => setDetailsOpen((current) => !current),
       onFilterChange12: (next: IssueSearch) => patchFilters(next),
       onFind13: (query: string) => setFind(query),
       onGroupBy14: (next: IssueGroupBy) => {

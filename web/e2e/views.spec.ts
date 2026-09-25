@@ -26,6 +26,13 @@ test('workspace views page lists saved views and opens them', async ({ page }) =
   await page.getByRole('navigation', { name: 'Saved views' }).getByRole('link', { name }).click();
   await expect(page).toHaveURL(new RegExp(`/views/${name.toLowerCase().replaceAll(' ', '-')}$`));
   await expect(page.getByRole('heading', { name })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open details' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close details' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Open details' }).click();
+  await expect(page.getByRole('button', { name: 'Close details' })).toBeVisible();
+  await expect(page.getByText('Select an issue')).toBeVisible();
+  await page.getByRole('button', { name: 'Close details' }).click();
+  await expect(page.getByRole('button', { name: 'Open details' })).toBeVisible();
 });
 
 test('workspace views page has a useful empty state and create action', async ({ page }) => {

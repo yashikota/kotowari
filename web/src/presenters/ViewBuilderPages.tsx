@@ -44,6 +44,7 @@ type ViewDraft = {
 function compactSearch(next: IssueSearch): IssueSearch {
   return {
     archived: next.archived,
+    assignee: next.assignee,
     status: next.status,
     project: next.project,
     cycle: next.cycle,
@@ -141,6 +142,7 @@ export function useViewBuilderPresenter() {
         showEmptyGroups,
         displayProperties,
         status: filter.status ?? null,
+        assignee: filter.assignee ?? null,
         project: filter.project ?? null,
         cycle: filter.cycle ?? null,
         labels: filter.labels ?? [],

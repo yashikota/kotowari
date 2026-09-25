@@ -364,14 +364,22 @@ test('sub-issue and saved view', async ({ page, request }) => {
   await expect(issueList.getByRole('option', { name: new RegExp(childTitle) })).toBeVisible();
   await fillIssueSearch(page, '');
 
-  await createIssueView(page, 'Todos');
-  await expect(page).toHaveURL(/\/views\/todos/);
+  const findToggle = page.getByRole('button', { name: 'Find issues', exact: true });
+  if ((await findToggle.getAttribute('aria-expanded')) === 'true') await findToggle.click();
+  const viewName = `Todos ${stamp}`;
+  const viewSlug = viewName.toLowerCase().replaceAll(' ', '-');
+  await createIssueView(page, viewName);
+  await expect(page).toHaveURL(new RegExp(`/views/${viewSlug}$`));
   await openIssueFilterCategory(page, 'Status');
   await chooseIssueFilterOption(page, 'Filter status', 'Todo');
   await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Todos' })).toBeVisible();
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Saved views' })
+      .getByRole('link', { name: viewName, exact: true }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByLabel('Grouping', { exact: true }).selectOption('status');
@@ -379,7 +387,8 @@ test('sub-issue and saved view', async ({ page, request }) => {
   await expect
     .poll(
       async () =>
-        ((await (await request.get('/api/views/todos')).json()) as { groupBy: string }).groupBy,
+        ((await (await request.get(`/api/views/${viewSlug}`)).json()) as { groupBy: string })
+          .groupBy,
       { timeout: 10_000 },
     )
     .toBe('status');
@@ -387,7 +396,8 @@ test('sub-issue and saved view', async ({ page, request }) => {
   await expect
     .poll(
       async () =>
-        ((await (await request.get('/api/views/todos')).json()) as { orderBy: string }).orderBy,
+        ((await (await request.get(`/api/views/${viewSlug}`)).json()) as { orderBy: string })
+          .orderBy,
     )
     .toBe('title');
   await page
@@ -397,7 +407,8 @@ test('sub-issue and saved view', async ({ page, request }) => {
   await expect
     .poll(
       async () =>
-        ((await (await request.get('/api/views/todos')).json()) as { display: string }).display,
+        ((await (await request.get(`/api/views/${viewSlug}`)).json()) as { display: string })
+          .display,
     )
     .toBe('board');
 

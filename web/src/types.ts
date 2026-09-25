@@ -42,7 +42,7 @@ export type Issue = {
   body: string;
   status: IssueStatus;
   workflowStatus?: string;
-  assignee?: 'self';
+  assignee?: 'self' | 'agent';
   type?: IssueType;
   priority: number;
   estimate?: number | null;
@@ -93,6 +93,7 @@ export type RecurringIssue = {
   title: string;
   body: string;
   status: IssueStatus;
+  assignee?: 'self' | 'agent';
   type?: IssueType;
   priority: number;
   estimate?: number | null;
@@ -262,6 +263,7 @@ export type View = {
   showEmptyGroups?: boolean;
   displayProperties?: string[];
   status: string | null;
+  assignee: 'self' | 'agent' | 'none' | null;
   project: string | null;
   cycle: number | null;
   labels: string[];

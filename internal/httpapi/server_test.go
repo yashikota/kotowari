@@ -1288,6 +1288,17 @@ func TestIssueAssigneeAPIAndPersonalFilter(t *testing.T) {
 	if created.Assignee != "self" {
 		t.Fatalf("created assignee = %q", created.Assignee)
 	}
+	agentResponse := doJSON(t, s, "POST", "/api/issues", `{"title":"agent issue","assignee":"agent"}`)
+	if agentResponse.Code != http.StatusCreated {
+		t.Fatalf("create agent issue %d %s", agentResponse.Code, agentResponse.Body.String())
+	}
+	var agentIssue store.Issue
+	if err := json.Unmarshal(agentResponse.Body.Bytes(), &agentIssue); err != nil {
+		t.Fatal(err)
+	}
+	if agentIssue.Assignee != "agent" {
+		t.Fatalf("created agent assignee = %q", agentIssue.Assignee)
+	}
 
 	rec = doJSON(t, s, "POST", "/api/issues", `{"title":"another issue"}`)
 	if rec.Code != http.StatusCreated {
@@ -1303,6 +1314,50 @@ func TestIssueAssigneeAPIAndPersonalFilter(t *testing.T) {
 	}
 	if len(assigned) != 1 || assigned[0].Identifier != created.Identifier {
 		t.Fatalf("assigned issues = %#v", assigned)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?assignee=agent", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("filter agent issues %d %s", rec.Code, rec.Body.String())
+	}
+	var agents []store.Issue
+	if err := json.Unmarshal(rec.Body.Bytes(), &agents); err != nil {
+		t.Fatal(err)
+	}
+	if len(agents) != 1 || agents[0].Identifier != agentIssue.Identifier {
+		t.Fatalf("agent issues = %#v", agents)
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?assignee=none", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("filter unassigned issues %d %s", rec.Code, rec.Body.String())
+	}
+	var unassigned []store.Issue
+	if err := json.Unmarshal(rec.Body.Bytes(), &unassigned); err != nil {
+		t.Fatal(err)
+	}
+	if len(unassigned) != 1 || unassigned[0].Title != "another issue" {
+		t.Fatalf("unassigned issues = %#v", unassigned)
+	}
+
+	rec = doJSON(t, s, "POST", "/api/views", `{"name":"Agent issues","slug":"agent-issues","groupBy":"agent","assignee":"agent","displayProperties":["id","assignee"]}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create agent view %d %s", rec.Code, rec.Body.String())
+	}
+	var agentView store.View
+	if err := json.Unmarshal(rec.Body.Bytes(), &agentView); err != nil {
+		t.Fatal(err)
+	}
+	if agentView.Assignee == nil || *agentView.Assignee != "agent" || agentView.Filter().Assignee != "agent" {
+		t.Fatalf("agent saved view = %#v", agentView)
+	}
+	rec = doJSON(t, s, "PATCH", "/api/views/agent-issues", `{"assignee":"none"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("set saved view assignee filter %d %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &agentView); err != nil {
+		t.Fatal(err)
+	}
+	if agentView.Assignee == nil || *agentView.Assignee != "none" {
+		t.Fatalf("saved view did not update assignee filter: %#v", agentView)
 	}
 
 	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"assignee":null}`)

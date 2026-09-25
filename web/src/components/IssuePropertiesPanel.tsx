@@ -137,6 +137,7 @@ export function IssuePropertiesPanel({
             data={[
               { value: 'none', label: t('issueAssignment.unassigned') },
               { value: 'self', label: t('issueAssignment.you') },
+              { value: 'agent', label: t('issueAssignment.agent') },
             ]}
           />
         </PropertyRow>

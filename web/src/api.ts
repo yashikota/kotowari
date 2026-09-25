@@ -133,7 +133,7 @@ export const api = {
     body?: string;
     status?: string;
     workflowStatus?: string;
-    assignee?: 'self';
+    assignee?: 'self' | 'agent';
     type?: string;
     priority?: number;
     estimate?: number | null;
@@ -371,6 +371,7 @@ export const api = {
     showEmptyGroups?: boolean;
     displayProperties?: string[];
     status?: string | null;
+    assignee?: 'self' | 'agent' | 'none' | null;
     project?: string | null;
     cycle?: number | null;
     labels?: string[];
@@ -399,7 +400,7 @@ export const api = {
 
 export function issuesQuery(filter: {
   status?: string | null;
-  assignee?: 'self' | null;
+  assignee?: 'self' | 'agent' | 'none' | null;
   project?: string | null;
   cycle?: number | null;
   labels?: string[] | null;
@@ -466,7 +467,7 @@ export function issuesQuery(filter: {
 
 export type IssueSearch = {
   archived?: boolean;
-  assignee?: 'self';
+  assignee?: 'self' | 'agent' | 'none';
   status?: string;
   project?: string;
   cycle?: number;
@@ -513,7 +514,9 @@ function localDateValue(date: Date): string {
 export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   const out: IssueSearch = {};
   if (raw.archived === true || raw.archived === 'true') out.archived = true;
-  if (raw.assignee === 'self') out.assignee = 'self';
+  if (raw.assignee === 'self' || raw.assignee === 'agent' || raw.assignee === 'none') {
+    out.assignee = raw.assignee;
+  }
   if (typeof raw.status === 'string' && raw.status) {
     out.status = raw.status;
   }
@@ -655,7 +658,7 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
 
 export function searchToFilter(search: IssueSearch): {
   archived?: boolean;
-  assignee?: 'self';
+  assignee?: 'self' | 'agent' | 'none';
   status?: string;
   project?: string;
   cycle?: number;

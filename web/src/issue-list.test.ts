@@ -229,17 +229,24 @@ describe('buildIssueListRows', () => {
     ]);
   });
 
-  it('groups and sorts personal assignees before unassigned issues', () => {
+  it('groups and sorts users, agents, and unassigned issues consistently', () => {
     const assigned = { ...issue(1, 2), assignee: 'self' as const };
-    const unassigned = issue(2, 2);
-    const rows = buildIssueListRows([unassigned, assigned], new Set(), 'assignee');
+    const agent = { ...issue(2, 2), assignee: 'agent' as const };
+    const unassigned = issue(3, 2);
+    const rows = buildIssueListRows([unassigned, agent, assigned], new Set(), 'assignee');
     expect(rows.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
       'assignee:self',
+      'assignee:agent',
       'assignee:none',
     ]);
-    expect(sortIssues([unassigned, assigned], 'assignee').map((item) => item.identifier)).toEqual([
-      assigned.identifier,
-      unassigned.identifier,
+    expect(
+      sortIssues([unassigned, agent, assigned], 'assignee').map((item) => item.identifier),
+    ).toEqual([assigned.identifier, agent.identifier, unassigned.identifier]);
+
+    const agentGroups = buildIssueListRows([unassigned, agent, assigned], new Set(), 'agent');
+    expect(agentGroups.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
+      'agent:agent',
+      'agent:none',
     ]);
   });
 

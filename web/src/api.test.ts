@@ -22,8 +22,13 @@ describe('issuesQuery', () => {
   it('encodes the personal issue assignment filter', () => {
     expect(issuesQuery({ assignee: 'self' })).toBe('?assignee=self');
     expect(parseIssueSearch({ assignee: 'self' })).toEqual({ assignee: 'self' });
+    expect(issuesQuery({ assignee: 'agent' })).toBe('?assignee=agent');
+    expect(parseIssueSearch({ assignee: 'agent' })).toEqual({ assignee: 'agent' });
+    expect(issuesQuery({ assignee: 'none' })).toBe('?assignee=none');
+    expect(parseIssueSearch({ assignee: 'none' })).toEqual({ assignee: 'none' });
     expect(parseIssueSearch({ assignee: 'someone-else' })).toEqual({});
     expect(searchToFilter({ assignee: 'self' })).toMatchObject({ assignee: 'self' });
+    expect(searchToFilter({ assignee: 'agent' })).toMatchObject({ assignee: 'agent' });
   });
 
   it('encodes issue type and estimate filters including zero estimates', () => {

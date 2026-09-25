@@ -59,3 +59,32 @@ test('self assignment works across issue details, My issues, and list grouping',
   await page.goto('/issues?assignee=self');
   await expect(page.getByRole('option', { name: new RegExp(issue.identifier) })).toHaveCount(0);
 });
+
+test('agent assignment filters issues and survives saving a reusable view', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const title = `Agent issue ${stamp}`;
+  const created = await request.post('/api/issues', { data: { title, assignee: 'agent' } });
+  await expect(created).toBeOK();
+  const issue = (await created.json()) as { identifier: string };
+
+  await page.goto('/issues?assignee=agent');
+  await expect(page.getByRole('option', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Grouping', { exact: true }).selectOption('agent');
+  await expect(page.getByRole('button', { name: /^Agent · \d+ issues?$/ })).toBeVisible();
+
+  const name = `Agent view ${stamp}`;
+  const slug = name.toLowerCase().replaceAll(' ', '-');
+  await page.goto('/views/new?assignee=agent');
+  await page.getByRole('textbox', { name: 'View name', exact: true }).fill(name);
+  await page.getByRole('button', { name: 'Create view', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
+
+  const saved = await request.get(`/api/views/${slug}`);
+  await expect(saved).toBeOK();
+  expect(await saved.json()).toMatchObject({ assignee: 'agent', groupBy: 'priority' });
+  await expect(page.getByRole('option', { name: new RegExp(issue.identifier) })).toBeVisible();
+});

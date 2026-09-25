@@ -149,7 +149,7 @@ export function useShellPresenter() {
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
-  const [issueAssignee, setIssueAssignee] = useState<'self' | ''>('');
+  const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>('');
   const helpOpen = overlay === 'help';
   const setHelpOpen = setOverlay('help');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -907,7 +907,10 @@ export function useShellPresenter() {
       ) => setIssueProjectId(e.target.value),
       Issue_assignee_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueAssignee(e.target.value === 'self' ? 'self' : ''),
+      ) =>
+        setIssueAssignee(
+          e.target.value === 'self' || e.target.value === 'agent' ? e.target.value : '',
+        ),
       Issue_cycle_onChange17: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueCycleId(e.target.value),

@@ -40,12 +40,14 @@ export function formatActivity(
     });
   }
   if (action === 'assignee_changed') {
-    const from =
-      payload.from === 'self'
+    const assigneeLabel = (value: unknown) =>
+      value === 'self'
         ? i18n.t('issueAssignment.you')
-        : i18n.t('issueAssignment.unassigned');
-    const to =
-      payload.to === 'self' ? i18n.t('issueAssignment.you') : i18n.t('issueAssignment.unassigned');
+        : value === 'agent'
+          ? i18n.t('issueAssignment.agent')
+          : i18n.t('issueAssignment.unassigned');
+    const from = assigneeLabel(payload.from);
+    const to = assigneeLabel(payload.to);
     return i18n.t('activity.assigneeChanged', { from, to });
   }
   if (action === 'milestone_changed') {

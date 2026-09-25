@@ -830,7 +830,7 @@ export function useIssueDetailPresenter({
       Status_onChange5: (value: string | null) =>
         value ? patch({ workflowStatus: value }) : undefined,
       Assignee_onChange: (value: string | null) =>
-        patch({ assignee: value === 'self' ? 'self' : null }),
+        patch({ assignee: value === 'self' || value === 'agent' ? value : null }),
       Type_onChange14: (value: string | null) =>
         patch({ type: value && value !== 'none' ? value : '' }),
       Priority_onChange6: (value: string | null) =>

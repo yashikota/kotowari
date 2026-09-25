@@ -19,6 +19,7 @@ export type IssueGroupBy =
   | 'priority'
   | 'status'
   | 'assignee'
+  | 'agent'
   | 'project'
   | 'cycle'
   | 'label'
@@ -217,13 +218,29 @@ function issueGroups(
     );
   if (groupBy === 'assignee') {
     const assigned = issues.some((issue) => issue.assignee === 'self');
-    const unassigned = issues.some((issue) => issue.assignee !== 'self');
+    const agent = issues.some((issue) => issue.assignee === 'agent');
+    const unassigned = issues.some((issue) => !issue.assignee);
     return [
       ...(assigned || showEmptyGroups
         ? [{ key: 'assignee:self', label: '', priority: null, status: null }]
         : []),
+      ...(agent || showEmptyGroups
+        ? [{ key: 'assignee:agent', label: '', priority: null, status: null }]
+        : []),
       ...(unassigned || showEmptyGroups
         ? [{ key: 'assignee:none', label: '', priority: null, status: null }]
+        : []),
+    ];
+  }
+  if (groupBy === 'agent') {
+    const assigned = issues.some((issue) => issue.assignee === 'agent');
+    const unassigned = issues.some((issue) => issue.assignee !== 'agent');
+    return [
+      ...(assigned || showEmptyGroups
+        ? [{ key: 'agent:agent', label: '', priority: null, status: null }]
+        : []),
+      ...(unassigned || showEmptyGroups
+        ? [{ key: 'agent:none', label: '', priority: null, status: null }]
         : []),
     ];
   }
@@ -318,7 +335,13 @@ function matchesGroup(issue: Issue, groupBy: IssueGroupBy, groupInfo: GroupInfo)
   if (groupBy === 'assignee')
     return groupInfo.key === 'assignee:self'
       ? issue.assignee === 'self'
-      : issue.assignee !== 'self';
+      : groupInfo.key === 'assignee:agent'
+        ? issue.assignee === 'agent'
+        : !issue.assignee;
+  if (groupBy === 'agent')
+    return groupInfo.key === 'agent:agent'
+      ? issue.assignee === 'agent'
+      : issue.assignee !== 'agent';
   if (groupBy === 'project') return (issue.projectSlug || 'No project') === groupInfo.label;
   if (groupBy === 'label')
     return groupInfo.label === 'No label'
@@ -414,7 +437,9 @@ export function sortIssues(
     } else if (orderBy === 'priority') {
       comparison = (PRIORITY_RANK.get(a.priority) ?? 5) - (PRIORITY_RANK.get(b.priority) ?? 5);
     } else if (orderBy === 'assignee') {
-      comparison = (a.assignee ? 0 : 1) - (b.assignee ? 0 : 1);
+      const assigneeOrder = (value: Issue['assignee']) =>
+        value === 'self' ? 0 : value === 'agent' ? 1 : 2;
+      comparison = assigneeOrder(a.assignee) - assigneeOrder(b.assignee);
     } else if (orderBy === 'updated') {
       comparison = Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
     } else if (orderBy === 'created') {

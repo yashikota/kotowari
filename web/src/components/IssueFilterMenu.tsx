@@ -31,6 +31,7 @@ import {
   IconRepeat,
   IconSearch,
   IconTag,
+  IconUser,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { IssueSearch } from '../api.ts';
@@ -44,6 +45,7 @@ import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 
 const FILTER_CATEGORIES = [
   { id: 'status', group: 'issue', chips: ['status'] },
+  { id: 'assignee', group: 'issue', chips: ['assignee'] },
   { id: 'priority', group: 'issue', chips: ['priority'] },
   { id: 'estimate', group: 'issue', chips: ['estimate'] },
   { id: 'labels', group: 'issue', chips: ['label:'] },
@@ -65,6 +67,7 @@ const FILTER_CATEGORIES = [
 
 const FILTER_CATEGORY_ICONS = {
   status: IconCircleDot,
+  assignee: IconUser,
   priority: IconFlag,
   estimate: IconChartBar,
   labels: IconTag,
@@ -271,6 +274,7 @@ export function IssueFilterMenu({
   chips,
   onOpenChange,
   onStatusChange,
+  onAssigneeChange,
   onProjectChange,
   onCycleChange,
   onPriorityChange,
@@ -301,6 +305,7 @@ export function IssueFilterMenu({
   chips: FilterChip[];
   onOpenChange: (next: boolean) => void;
   onStatusChange: (value: string) => void;
+  onAssigneeChange: (value: string) => void;
   onProjectChange: (value: string) => void;
   onCycleChange: (value: string) => void;
   onPriorityChange: (value: string) => void;
@@ -393,6 +398,20 @@ export function IssueFilterMenu({
               icon: <IssueStatusIcon status={status.category} />,
             }))}
             onChange={onStatusChange}
+          />
+        );
+      case 'assignee':
+        return (
+          <FilterOptionList
+            label={t('filters.filterAssignee')}
+            value={search.assignee ?? null}
+            options={(['self', 'agent', 'none'] as const).map((value) => ({
+              value,
+              label: t(
+                `issueAssignment.${value === 'self' ? 'you' : value === 'agent' ? 'agent' : 'unassigned'}`,
+              ),
+            }))}
+            onChange={onAssigneeChange}
           />
         );
       case 'priority':

@@ -101,6 +101,7 @@ export function IssueDisplayOptions({
       [
         'status',
         'assignee',
+        'agent',
         'project',
         'priority',
         'cycle',

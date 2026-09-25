@@ -639,6 +639,7 @@ export function ShellView({
                   data={[
                     { value: '', label: t('issueAssignment.unassigned') },
                     { value: 'self', label: t('issueAssignment.you') },
+                    { value: 'agent', label: t('issueAssignment.agent') },
                   ]}
                 />
                 <NativeSelect

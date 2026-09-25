@@ -1124,7 +1124,7 @@ func ensureSingleActive(m *mem, id int64, status string) {
 
 func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	var out []Issue
-	if f.Assignee != "" && f.Assignee != "self" {
+	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		return nil, validationf("invalid issue assignee")
 	}
 	if f.ProjectStatus != "" {
@@ -1202,7 +1202,8 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	customDueDate := strings.TrimPrefix(f.DueDate, "on:")
 	err := s.snapshot(func(m *mem) error {
 		for _, iss := range m.Issues {
-			if f.Assignee != "" && iss.Assignee != f.Assignee {
+			if f.Assignee == "none" && iss.Assignee != "" ||
+				f.Assignee != "" && f.Assignee != "none" && iss.Assignee != f.Assignee {
 				continue
 			}
 			if f.Archived == nil && iss.ArchivedAt != nil {
@@ -1518,7 +1519,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 	if !domain.ValidEstimate(in.Estimate) {
 		return Issue{}, validationf("invalid estimate")
 	}
-	if in.Assignee != "" && in.Assignee != "self" {
+	if !domain.ValidIssueAssignee(in.Assignee) {
 		return Issue{}, validationf("invalid issue assignee")
 	}
 	now := domain.Now()
@@ -1675,7 +1676,7 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			iss.Type = *in.Type
 		}
 		if in.Assignee != nil {
-			if *in.Assignee != "" && *in.Assignee != "self" {
+			if !domain.ValidIssueAssignee(*in.Assignee) {
 				return validationf("invalid issue assignee")
 			}
 			iss.Assignee = *in.Assignee
@@ -2738,6 +2739,12 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.Status != nil && *in.Status != "" && !domain.ValidIssueStatus(*in.Status) {
 		return View{}, validationf("invalid status")
 	}
+	if in.Assignee != nil && *in.Assignee != "none" && !domain.ValidIssueAssignee(*in.Assignee) {
+		return View{}, validationf("invalid assignee")
+	}
+	if in.Assignee != nil && *in.Assignee == "" {
+		in.Assignee = nil
+	}
 	if in.Priority != nil && !domain.ValidPriority(*in.Priority) {
 		return View{}, validationf("invalid priority")
 	}
@@ -2814,7 +2821,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 		in.ShowSubIssues = &showSubIssues
 	}
 	if in.DisplayProperties == nil {
-		in.DisplayProperties = []string{"id", "status", "priority", "project", "dueDate", "milestone", "cycle", "estimate", "labels", "links", "pullRequests"}
+		in.DisplayProperties = []string{"id", "status", "assignee", "priority", "project", "dueDate", "milestone", "cycle", "estimate", "labels", "links", "pullRequests"}
 	}
 	now := domain.Now()
 	var out View
@@ -2827,7 +2834,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy, Direction: in.Direction,
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-			Status: in.Status, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
+			Status: in.Status, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
 			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 		}
@@ -2942,6 +2949,16 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 					return validationf("invalid status")
 				}
 				v.Status = in.Status
+			}
+		}
+		if in.Assignee != nil {
+			if *in.Assignee == "" {
+				v.Assignee = nil
+			} else {
+				if *in.Assignee != "none" && !domain.ValidIssueAssignee(*in.Assignee) {
+					return validationf("invalid assignee")
+				}
+				v.Assignee = in.Assignee
 			}
 		}
 		if in.Project != nil {

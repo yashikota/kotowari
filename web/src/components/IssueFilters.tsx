@@ -74,6 +74,7 @@ export function IssueFiltersView({
               chips={chips}
               onOpenChange={handlers.onFilterOpenChange}
               onStatusChange={handlers.onStatusChange}
+              onAssigneeChange={handlers.onAssigneeChange}
               onProjectChange={handlers.onProjectChange}
               onCycleChange={handlers.onCycleChange}
               onPriorityChange={handlers.onPriorityChange}

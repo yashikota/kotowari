@@ -408,6 +408,8 @@
   },
   "issueAssignment": {
     "you": "You",
+    "agent": "Agent",
+    "noAgent": "No agent",
     "unassigned": "Unassigned"
   },
   "issueLinks": {
@@ -988,6 +990,7 @@
     "noLabels": "No labels are available.",
     "categories": {
       "status": "Status",
+      "assignee": "Assignee",
       "priority": "Priority",
       "estimate": "Estimate",
       "labels": "Labels",
@@ -1003,6 +1006,7 @@
       "milestone": "Milestone"
     },
     "filterStatus": "Filter status",
+    "filterAssignee": "Filter assignee",
     "anyStatus": "Any status",
     "filterType": "Filter type",
     "anyType": "Any type",
@@ -1124,6 +1128,7 @@
     "group": {
       "status": "Status",
       "assignee": "Assignee",
+      "agent": "Agent",
       "priority": "Priority",
       "project": "Project",
       "cycle": "Cycle",

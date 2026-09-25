@@ -206,6 +206,7 @@ let views: View[] = [
     displayProperties: [
       'id',
       'status',
+      'assignee',
       'priority',
       'project',
       'dueDate',
@@ -217,6 +218,7 @@ let views: View[] = [
       'pullRequests',
     ],
     status: null,
+    assignee: null,
     project: 'launch',
     cycle: null,
     labels: [],
@@ -331,6 +333,7 @@ function createRecurringDemoInstance(schedule: RecurringIssue, dueDate: string):
     labels.filter((label) => schedule.labels.includes(label.name)),
   );
   item.body = schedule.body;
+  item.assignee = schedule.assignee;
   item.type = schedule.type;
   item.estimate = schedule.estimate ?? null;
   item.externalLinks = (schedule.links ?? []).map((link, index) => ({
@@ -730,7 +733,10 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     processDemoRecurringIssues();
     let result = [...issues];
     const archived = url.searchParams.get('archived');
+    const assignee = url.searchParams.get('assignee');
     result = result.filter((item) => Boolean(item.archivedAt) === (archived === 'true'));
+    if (assignee === 'none') result = result.filter((item) => !item.assignee);
+    else if (assignee) result = result.filter((item) => item.assignee === assignee);
     const status = url.searchParams.get('status');
     const project = url.searchParams.get('project');
     const projectStatus = url.searchParams.get('projectStatus');
@@ -912,6 +918,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   }
   if (path === '/api/issues' && method === 'POST') {
     const value = body(init);
+    if (value.assignee != null && value.assignee !== 'self' && value.assignee !== 'agent')
+      return json({ error: 'invalid assignee' }, 400);
     const milestoneId = value.milestoneId == null ? null : Number(value.milestoneId);
     const milestone =
       milestoneId == null
@@ -975,6 +983,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     item.type = ['bug', 'feature', 'improvement', 'task'].includes(String(value.type))
       ? (String(value.type) as Issue['type'])
       : undefined;
+    item.assignee = value.assignee as Issue['assignee'];
     item.estimate = typeof value.estimate === 'number' ? value.estimate : null;
     const labelIds = Array.isArray(value.labelIds) ? value.labelIds.map(Number) : [];
     item.labels = labels.filter((label) => labelIds.includes(label.id));
@@ -1035,6 +1044,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         title: item.title,
         body: item.body,
         status: item.status,
+        assignee: item.assignee,
         type: item.type,
         priority: item.priority,
         estimate: item.estimate,
@@ -1146,6 +1156,16 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         );
         if (!workflowStatus) return json({ error: 'invalid workflow status' }, 400);
         changes.status = workflowStatus.category;
+      }
+      if ('assignee' in changes) {
+        if (
+          changes.assignee != null &&
+          changes.assignee !== '' &&
+          changes.assignee !== 'self' &&
+          changes.assignee !== 'agent'
+        )
+          return json({ error: 'invalid assignee' }, 400);
+        changes.assignee = changes.assignee || undefined;
       }
       patch(item, changes);
       if ('workflowStatus' in changes)
@@ -1519,6 +1539,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         displayProperties: value.displayProperties ?? [
           'id',
           'status',
+          'assignee',
           'priority',
           'project',
           'dueDate',
@@ -1530,6 +1551,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
           'pullRequests',
         ],
         status: value.status ?? null,
+        assignee: value.assignee ?? null,
         project: value.project ?? null,
         cycle: value.cycle ?? null,
         labels: value.labels ?? [],
