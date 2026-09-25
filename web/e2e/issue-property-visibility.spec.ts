@@ -15,6 +15,10 @@ test('issue details keep optional properties out of the way until added', async 
   await expect(properties.getByRole('combobox', { name: 'Priority' })).toBeVisible();
   await expect(properties.getByRole('combobox', { name: 'Assignee' })).toBeVisible();
   await expect(properties.getByRole('combobox', { name: 'Project' })).toBeVisible();
+  await expect(properties.getByRole('combobox', { name: 'Priority' })).toHaveValue('Priority');
+  await expect(properties.getByRole('combobox', { name: 'Project' })).toHaveValue('Project');
+  await expect(properties.getByRole('combobox', { name: 'Estimate' })).toHaveValue('Estimate');
+  await expect(properties.getByRole('combobox', { name: 'Cycle' })).toHaveValue('Cycle');
   await expect(properties.getByRole('combobox', { name: 'Estimate' })).toBeVisible();
   await expect(properties.getByRole('group', { name: 'Labels' })).toBeVisible();
   await expect(properties.getByRole('combobox', { name: 'Cycle' })).toBeVisible();

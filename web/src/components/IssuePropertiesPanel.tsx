@@ -134,18 +134,18 @@ export function IssuePropertiesPanel({
           icon={<IssuePriorityIcon priority={issue.priority} />}
         >
           <PropertySelect
-            compactChars={7}
+            compactChars={10}
             aria-label={t('field.priority')}
             value={String(issue.priority)}
             onChange={handlers.Priority_onChange6}
             data={[0, 1, 2, 3, 4].map((priority) => ({
               value: String(priority),
-              label: priorityLabel(priority),
+              label: priority === 0 ? t('field.priority') : priorityLabel(priority),
             }))}
             renderOption={({ option }) => (
               <Group gap="xs" wrap="nowrap">
                 <IssuePriorityIcon priority={Number(option.value)} />
-                <span>{option.label}</span>
+                <span>{option.value === '0' ? priorityLabel(0) : option.label}</span>
               </Group>
             )}
           />
@@ -172,9 +172,12 @@ export function IssuePropertiesPanel({
             value={issue.projectId != null ? String(issue.projectId) : 'none'}
             onChange={handlers.Project_onChange7}
             data={[
-              { value: 'none', label: t('issueProperties.noProject') },
+              { value: 'none', label: t('field.project') },
               ...projects.map((project) => ({ value: String(project.id), label: project.name })),
             ]}
+            renderOption={({ option }) => (
+              <span>{option.value === 'none' ? t('issueProperties.noProject') : option.label}</span>
+            )}
             searchable
             nothingFoundMessage={t('issueProperties.noProjectsFound')}
           />
@@ -187,11 +190,16 @@ export function IssuePropertiesPanel({
             value={issue.estimate == null ? 'none' : String(issue.estimate)}
             onChange={handlers.Estimate_onChange15}
             data={[
-              { value: 'none', label: t('issueProperties.noEstimate') },
+              { value: 'none', label: t('field.estimate') },
               ...Array.from(new Set([0, 1, 2, 3, 5, 8, 13, 21, 34, issue.estimate]))
                 .filter((estimate): estimate is number => estimate != null)
                 .map((estimate) => ({ value: String(estimate), label: String(estimate) })),
             ]}
+            renderOption={({ option }) => (
+              <span>
+                {option.value === 'none' ? t('issueProperties.noEstimate') : option.label}
+              </span>
+            )}
           />
         </PropertyRow>
 
@@ -296,12 +304,15 @@ export function IssuePropertiesPanel({
             value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
             onChange={handlers.Cycle_onChange8}
             data={[
-              { value: 'none', label: t('field.noCycle') },
+              { value: 'none', label: t('field.cycle') },
               ...cycles.map((cycle) => ({
                 value: String(cycle.id),
                 label: t('field.cycleN', { number: cycle.number }),
               })),
             ]}
+            renderOption={({ option }) => (
+              <span>{option.value === 'none' ? t('field.noCycle') : option.label}</span>
+            )}
             searchable
             nothingFoundMessage={t('issueProperties.noCyclesFound')}
           />
