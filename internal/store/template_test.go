@@ -249,7 +249,11 @@ func TestRecurringIssueFromNewInputCreatesOnlyTheFirstScheduledIssue(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	t.Cleanup(func() {
+		if err := reopened.Close(); err != nil {
+			t.Errorf("close reopened store: %v", err)
+		}
+	})
 	restoredSchedules, err := reopened.ListRecurringIssues()
 	if err != nil || len(restoredSchedules) != 1 || len(restoredSchedules[0].Links) != 1 {
 		t.Fatalf("restored recurring templates %#v, %v", restoredSchedules, err)

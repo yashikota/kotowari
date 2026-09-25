@@ -10,6 +10,15 @@ import (
 	"time"
 )
 
+func cleanupReopenedStore(t *testing.T, reopened *Store) {
+	t.Helper()
+	t.Cleanup(func() {
+		if err := reopened.Close(); err != nil {
+			t.Errorf("close reopened store: %v", err)
+		}
+	})
+}
+
 func TestCreateIssueDefaultsAndValidation(t *testing.T) {
 	s := openTest(t)
 	iss, err := s.CreateIssue(CreateIssueInput{Title: "untitled"})
@@ -62,7 +71,7 @@ func TestCreateIssueExternalLinksRoundTripAndValidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetIssue(created.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -104,7 +113,7 @@ func TestIssueTypeAndEstimateRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetIssue(created.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -173,7 +182,7 @@ func TestIssueArchiveLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	persisted, err := reopened.GetIssue(created.Identifier)
 	if err != nil || persisted.ArchivedAt == nil {
 		t.Fatalf("persisted archive = %#v, err = %v", persisted.ArchivedAt, err)
@@ -215,7 +224,7 @@ func TestIssueReminderRoundTripAndValidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetIssue(created.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -269,7 +278,7 @@ func TestIssueExternalLinksPersistAndValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetIssue(created.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -323,7 +332,7 @@ func TestCycleResourcesPersistAndValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetCycle(cycle.Number)
 	if err != nil {
 		t.Fatal(err)
@@ -372,7 +381,7 @@ func TestIssueFavoritePersistsAndFilters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetIssue(created.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -470,7 +479,7 @@ func TestIssueRelationsAreReciprocalAndPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	gotSecond, err = reopened.GetIssue(second.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -543,7 +552,7 @@ func TestIssueStatusChangedAtTracksOnlyStatusTransitions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetIssue(created.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -840,7 +849,7 @@ func TestIssueStartedAtIsTrackedAndPersisted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	persisted, err := reopened.GetIssue(created.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -989,7 +998,7 @@ func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	persisted, err := reopened.GetProject(project.Slug)
 	if err != nil || persisted.Health != "at_risk" {
 		t.Fatalf("persisted project health = %q, error %v", persisted.Health, err)
@@ -1059,7 +1068,7 @@ func TestProjectDependenciesAreReciprocalPersistedAndAcyclic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	first, err = reopened.GetProject(first.Slug)
 	if err != nil || len(first.Dependencies) != 1 || first.Dependencies[0] != (ProjectDependency{ProjectSlug: second.Slug, Kind: "blocks"}) {
 		t.Fatalf("persisted first dependency %#v, err %v", first.Dependencies, err)
@@ -1351,7 +1360,7 @@ func TestViewDisplayOptionsPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetView(created.Slug)
 	if err != nil {
 		t.Fatal(err)
@@ -1439,7 +1448,7 @@ func TestListIssuesAddedToCyclePhaseFilterAndPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	persisted, err := reopened.GetView(view.Slug)
 	if err != nil {
 		t.Fatal(err)
@@ -1495,7 +1504,7 @@ func TestCycleMetadataAndFavoritePersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	got, err := reopened.GetCycle(cycle.Number)
 	if err != nil {
 		t.Fatal(err)
@@ -1544,7 +1553,7 @@ func TestCommentsEmptyAndAdd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	persisted, err := reopened.ListComments(iss.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -1592,7 +1601,7 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	persistedIssue, err := reopened.GetIssue(issue.Identifier)
 	if err != nil {
 		t.Fatal(err)
@@ -1640,7 +1649,7 @@ func TestIssueAttachmentsPersistAndDeleteTheirBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reopened.Close()
+	cleanupReopenedStore(t, reopened)
 	persisted, err := reopened.GetIssue(issue.Identifier)
 	if err != nil {
 		t.Fatal(err)
