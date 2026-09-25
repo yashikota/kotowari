@@ -149,7 +149,7 @@ export function useShellPresenter() {
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
-  const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>('');
+  const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>('self');
   const helpOpen = overlay === 'help';
   const setHelpOpen = setOverlay('help');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -611,7 +611,7 @@ export function useShellPresenter() {
     setIssueTemplateSlug('');
     setIssueProjectId('');
     setIssueCycleId('');
-    setIssueAssignee('');
+    setIssueAssignee('self');
     setCreateIssue(false);
     await router.invalidate();
     await navigate({
@@ -795,7 +795,7 @@ export function useShellPresenter() {
           setIssueBody('');
           setIssueStatus('todo');
           setIssuePriority(0);
-          setIssueAssignee('');
+          setIssueAssignee('self');
           setIssueType('');
           setIssueEstimate('');
           setIssueLabelNames([]);

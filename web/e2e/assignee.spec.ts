@@ -6,8 +6,8 @@ test('creates a personally assigned issue from the issue composer', async ({ pag
   await page.goto('/issues');
   await page.getByRole('button', { name: 'Create issue', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(dialog.getByLabel('Assignee', { exact: true })).toHaveValue('self');
   await dialog.getByLabel('Issue title').fill(title);
-  await dialog.getByLabel('Assignee', { exact: true }).selectOption('self');
   await dialog.getByRole('button', { name: 'Create', exact: true }).click();
 
   await expect(page.getByLabel('Issue title')).toHaveValue(title);
