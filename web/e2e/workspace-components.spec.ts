@@ -539,6 +539,14 @@ test('issue list applies bulk project, cycle, and label changes without replacin
   await selectAllRows();
   await openSubmenu('Change or add labels…');
   await page.getByRole('textbox', { name: 'Find labels…' }).fill(labelName);
+  await expect(
+    page.getByRole('menuitem', { name: `Remove label ${labelName}`, exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('textbox', { name: 'Find labels…' }).fill(keepLabelName);
+  await expect(
+    page.getByRole('menuitem', { name: `Remove label ${keepLabelName}`, exact: true }),
+  ).toBeVisible();
+  await page.getByRole('textbox', { name: 'Find labels…' }).fill(labelName);
   await page.getByRole('menuitem', { name: `Add label ${labelName}`, exact: true }).click();
   await expect
     .poll(async () =>
@@ -557,6 +565,14 @@ test('issue list applies bulk project, cycle, and label changes without replacin
       (await selectedIssues()).map((issue) => issue.labels.map((item) => item.name)),
     )
     .toEqual([[keepLabelName], []]);
+
+  await selectAllRows();
+  await openSubmenu('Change or add labels…');
+  await page.getByRole('textbox', { name: 'Find labels…' }).fill(labelName);
+  await expect(
+    page.getByRole('menuitem', { name: `Remove label ${labelName}`, exact: true }),
+  ).toHaveCount(0);
+  await page.keyboard.press('Escape');
 
   await selectAllRows();
   await openSubmenu('Add to project…');

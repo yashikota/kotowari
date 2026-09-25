@@ -1362,6 +1362,7 @@
     "bulkLabels": "ラベルを変更・追加…",
     "bulkAddLabel": "ラベルを追加",
     "bulkRemoveLabel": "ラベルを削除",
+    "noSelectedIssueLabels": "削除できるラベルはありません",
     "addSelectedIssueLabel": "ラベル「{{label}}」を追加",
     "removeSelectedIssueLabel": "ラベル「{{label}}」を削除",
     "bulkDueDate": "期限を設定…",

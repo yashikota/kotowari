@@ -18,6 +18,7 @@ type Props = {
   projects?: Project[];
   cycles?: Cycle[];
   labels?: Label[];
+  removableLabels?: Label[];
   onSetProject: (projectId: number | null) => void;
   onSetCycle: (cycleId: number | null) => void;
   onAddLabel: (labelId: number) => void;
@@ -37,6 +38,7 @@ export function useIssueSelectionToolbarPresenter({
   projects = [],
   cycles = [],
   labels = [],
+  removableLabels = [],
   onSetProject,
   onSetCycle,
   onAddLabel,
@@ -81,6 +83,9 @@ export function useIssueSelectionToolbarPresenter({
         (cycle.name ?? String(cycle.number)).toLowerCase().includes(cycleQuery.toLowerCase()),
       ),
     labels: labels
+      .map(({ id, name }) => ({ id, name }))
+      .filter((label) => label.name.toLowerCase().includes(labelQuery.toLowerCase())),
+    removableLabels: removableLabels
       .map(({ id, name }) => ({ id, name }))
       .filter((label) => label.name.toLowerCase().includes(labelQuery.toLowerCase())),
     dueDateDraft,

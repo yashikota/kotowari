@@ -1366,6 +1366,7 @@
     "bulkLabels": "Change or add labels…",
     "bulkAddLabel": "Add label",
     "bulkRemoveLabel": "Remove label",
+    "noSelectedIssueLabels": "No labels to remove",
     "addSelectedIssueLabel": "Add label {{label}}",
     "removeSelectedIssueLabel": "Remove label {{label}}",
     "bulkDueDate": "Set due date…",

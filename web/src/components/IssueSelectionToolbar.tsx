@@ -31,6 +31,7 @@ function IssueSelectionToolbarView({
     projects,
     cycles,
     labels,
+    removableLabels,
     handlers,
   } = model;
   return (
@@ -131,12 +132,12 @@ function IssueSelectionToolbarView({
                 )}
                 {labels.length > 0 ? <Menu.Divider /> : null}
                 <Menu.Label>{t('ui.bulkRemoveLabel')}</Menu.Label>
-                {labels.length === 0 ? (
+                {removableLabels.length === 0 ? (
                   <Menu.Item disabled>
-                    {labelQuery ? t('ui.noMatchingLabels') : t('issueProperties.noLabels')}
+                    {labelQuery ? t('ui.noMatchingLabels') : t('ui.noSelectedIssueLabels')}
                   </Menu.Item>
                 ) : (
-                  labels.map((label) => (
+                  removableLabels.map((label) => (
                     <Menu.Item
                       key={`remove-${label.id}`}
                       aria-label={t('ui.removeSelectedIssueLabel', { label: label.name })}

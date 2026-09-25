@@ -41,6 +41,7 @@ export function IssueListView({
         projects,
         cycles,
         labels,
+        removableLabels,
         handlers,
       } = model;
       return (
@@ -100,6 +101,7 @@ export function IssueListView({
                 projects={projects}
                 cycles={cycles}
                 labels={labels}
+                removableLabels={removableLabels}
                 onSetProject={handlers.onSetBulkProject}
                 onSetCycle={handlers.onSetBulkCycle}
                 onAddLabel={handlers.onAddBulkLabel}

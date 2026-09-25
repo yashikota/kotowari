@@ -84,6 +84,11 @@ export function useIssueListPresenter({
   );
   const ids = useMemo(() => issueRows.map((row) => row.issue.identifier), [issueRows]);
   const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
+  const selectedLabelIds = new Set(
+    issueRows
+      .filter((row) => bulkSelectedIdSet.has(row.issue.identifier))
+      .flatMap((row) => row.issue.labels.map((label) => label.id)),
+  );
   const issuePositions = new Map(issueRows.map((row, index) => [row.issue.identifier, index + 1]));
   const childCounts = useMemo(() => {
     const counts = new Map<number, number>();
@@ -243,6 +248,7 @@ export function useIssueListPresenter({
     projects,
     cycles,
     labels,
+    removableLabels: labels.filter((label) => selectedLabelIds.has(label.id)),
     handlers: {
       onClick0: (issue: Issue) => {
         onSelect(issue.identifier);
