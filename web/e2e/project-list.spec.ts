@@ -250,6 +250,8 @@ test('personal project views can be created, updated, reopened, and deleted', as
     'true',
   );
   await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('textbox', { name: 'Add Filter…' }).fill('Show closed projects');
+  await expect(page.getByText('No matching filters')).toBeVisible();
   await page.getByRole('textbox', { name: 'Add Filter…' }).fill('Priority');
   await page.getByRole('button', { name: 'Priority', exact: true }).click();
   const builderPriorityFilter = page.getByRole('combobox', { name: 'Priority' });
@@ -269,6 +271,9 @@ test('personal project views can be created, updated, reopened, and deleted', as
   await expect(previewProjects).toHaveCount(1);
   await expect(previewProjects).toHaveAttribute('href', `/projects/building-${stamp}`);
   await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('combobox', { name: 'Show closed projects' }).click();
+  await page.getByRole('option', { name: 'Open', exact: true }).click();
+  await expect(page).toHaveURL(/closed=open/);
   const previewLayout = page.getByRole('combobox', { name: 'Project view' });
   await previewLayout.click();
   await page.getByRole('option', { name: 'Board', exact: true }).click();
@@ -302,6 +307,7 @@ test('personal project views can be created, updated, reopened, and deleted', as
   });
   expect(createdView.search.status).toContain('started');
   expect(createdView.search.priority).toContain('3');
+  expect(createdView.search.closed).toBe('open');
   expect(createdView.search.specificProject).toBe(`building-${stamp}`);
   await page.getByRole('tab', { name: 'All projects' }).click();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();

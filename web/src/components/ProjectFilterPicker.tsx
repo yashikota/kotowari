@@ -12,7 +12,6 @@ import {
   TextInput,
 } from '@mantine/core';
 import {
-  IconArchive,
   IconCalendar,
   IconChartBar,
   IconChevronLeft,
@@ -41,7 +40,6 @@ const FILTERS = [
   'milestones',
   'relations',
   'title',
-  'closed',
   'specificProject',
 ] as const;
 
@@ -49,7 +47,7 @@ type FilterKey = (typeof FILTERS)[number];
 
 const FILTER_GROUPS: FilterKey[][] = [
   ['status', 'priority', 'labels', 'health', 'dates', 'milestones', 'relations'],
-  ['title', 'closed'],
+  ['title'],
   ['specificProject'],
 ];
 
@@ -62,7 +60,6 @@ const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
   milestones: IconFlag,
   relations: IconLink,
   title: IconFileText,
-  closed: IconArchive,
   specificProject: IconStack2,
 };
 
@@ -86,7 +83,6 @@ export function ProjectFilterPicker({
     milestones: t('projectList.filterCategoryMilestones'),
     relations: t('projectList.filterCategoryRelations'),
     title: t('projectList.filterTitleSummary'),
-    closed: t('projectList.showClosed'),
     specificProject: t('projectList.filterSpecificProject'),
   };
   const active = FILTERS.flatMap((key) => {
@@ -107,9 +103,7 @@ export function ProjectFilterPicker({
                     ? model.relations.length
                     : key === 'title'
                       ? Number(Boolean(model.search.trim()))
-                      : key === 'closed'
-                        ? Number(model.closed !== 'all')
-                        : Number(Boolean(model.specificProject));
+                      : Number(Boolean(model.specificProject));
     if (!count) return [];
     const dateFieldLabels: Record<string, string> = {
       startDate: t('projectList.orderStartDate'),
@@ -139,17 +133,11 @@ export function ProjectFilterPicker({
                         .join(', ')
                     : key === 'title'
                       ? `“${model.search.trim()}”`
-                      : key === 'closed'
-                        ? t(
-                            model.closed === 'open'
-                              ? 'projectList.closedOpen'
-                              : 'projectList.closedOnly',
-                          )
-                        : (model.availableProjects?.find(
-                            (project) => project.value === model.specificProject,
-                          )?.label ??
-                          model.specificProject ??
-                          '');
+                      : (model.availableProjects?.find(
+                          (project) => project.value === model.specificProject,
+                        )?.label ??
+                        model.specificProject ??
+                        '');
     return [{ key, label: labels[key], value }];
   });
   const visibleFilters = FILTERS.filter((key) =>
@@ -190,9 +178,6 @@ export function ProjectFilterPicker({
         break;
       case 'title':
         model.handlers.onSearchChange('');
-        break;
-      case 'closed':
-        model.handlers.onClosedChange('all');
         break;
       case 'specificProject':
         model.handlers.onSpecificProjectChange(null);
@@ -324,21 +309,6 @@ export function ProjectFilterPicker({
             placeholder={t('projectList.searchPlaceholder')}
             value={model.search}
             onChange={(event) => model.handlers.onSearchChange(event.currentTarget.value)}
-          />
-        );
-      case 'closed':
-        return (
-          <Select
-            aria-label={t('projectList.showClosed')}
-            value={model.closed}
-            onChange={model.handlers.onClosedChange}
-            data={[
-              { value: 'all', label: t('projectList.closedAll') },
-              { value: 'open', label: t('projectList.closedOpen') },
-              { value: 'closed', label: t('projectList.closedOnly') },
-            ]}
-            allowDeselect={false}
-            comboboxProps={{ withinPortal: false }}
           />
         );
       case 'specificProject':
