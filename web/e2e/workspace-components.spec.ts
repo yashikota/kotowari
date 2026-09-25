@@ -321,6 +321,47 @@ test('issue list selects multiple issues and applies bulk status changes', async
   await expect(rows).toHaveCount(2);
 });
 
+test('issue list copies selected identifiers and URLs without clearing selection', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Bulk copy ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    identifiers.push(((await response.json()) as { identifier: string }).identifier);
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  for (const identifier of identifiers) {
+    await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+  }
+
+  const openCopyMenu = async () => {
+    await page.getByRole('button', { name: 'Actions' }).click();
+    await page.getByRole('menuitem', { name: 'Copy', exact: true }).hover();
+  };
+  const readClipboard = () =>
+    page.evaluate(() => navigator.clipboard.readText()).then((text) => text.replace(/\r\n/g, '\n'));
+  await openCopyMenu();
+  await page.getByRole('menuitem', { name: 'Copy ID', exact: true }).click();
+  await expect.poll(readClipboard).toBe(identifiers.join('\n'));
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+
+  await openCopyMenu();
+  await page.getByRole('menuitem', { name: 'Copy URL', exact: true }).click();
+  const origin = new URL(page.url()).origin;
+  await expect
+    .poll(readClipboard)
+    .toBe(identifiers.map((identifier) => `${origin}/issues/${identifier}`).join('\n'));
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+});
+
 test('issue list applies bulk assignee, type, and estimate changes', async ({ page, request }) => {
   const stamp = Date.now();
   const identifiers: string[] = [];

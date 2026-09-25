@@ -182,6 +182,31 @@ function IssueSelectionToolbarView({
                 </Group>
               </Menu.Sub.Dropdown>
             </Menu.Sub>
+            <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>{t('issueActions.copy')}</Menu.Sub.Item>
+              </Menu.Sub.Target>
+              <Menu.Sub.Dropdown>
+                <Menu.Item onClick={() => handlers.onCopyIssues('id')}>
+                  {t('issueActions.copyId')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('url')}>
+                  {t('issueActions.copyUrl')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('title')}>
+                  {t('issueActions.copyTitle')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('titleLink')}>
+                  {t('issueActions.copyTitleLink')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('markdown')}>
+                  {t('issueActions.copyEverything')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('branch')}>
+                  {t('issueActions.copyBranch')}
+                </Menu.Item>
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
             <Menu.Divider />
             <Menu.Label>{t('field.assignee')}</Menu.Label>
             <Menu.Item onClick={() => handlers.onSetAssignee('self')}>

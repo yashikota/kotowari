@@ -6,6 +6,7 @@ import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
+import { issueBranchName, issueMarkdown } from '../issue-actions.ts';
 import {
   buildIssueListRows,
   DEFAULT_DISPLAY_PROPERTIES,
@@ -40,6 +41,8 @@ type Props = {
   cycles?: Cycle[];
   labels?: Label[];
 };
+
+type BulkCopyKind = 'id' | 'url' | 'title' | 'titleLink' | 'markdown' | 'branch';
 
 export function useIssueListPresenter({
   issues: initialIssues,
@@ -128,6 +131,45 @@ export function useIssueListPresenter({
     );
     await router.invalidate();
     setBulkSelectedIds([]);
+  }
+
+  async function copySelectedIssues(kind: BulkCopyKind) {
+    try {
+      const selectedIssues = await Promise.all(
+        bulkSelectedIds.map(async (identifier) => {
+          const visible = issueRows.find((row) => row.issue.identifier === identifier);
+          return visible?.issue ?? api.issue(identifier);
+        }),
+      );
+      const copies = selectedIssues.map((issue) => {
+        const url = new URL(
+          `/issues/${encodeURIComponent(issue.identifier)}`,
+          window.location.origin,
+        ).toString();
+        switch (kind) {
+          case 'id':
+            return issue.identifier;
+          case 'url':
+            return url;
+          case 'title':
+            return issue.title;
+          case 'titleLink': {
+            const title = issue.title
+              .replaceAll('\\', '\\\\')
+              .replaceAll('[', '\\[')
+              .replaceAll(']', '\\]');
+            return `[${title}](${url})`;
+          }
+          case 'markdown':
+            return issueMarkdown(issue, url, true).trimEnd();
+          case 'branch':
+            return issueBranchName(issue);
+        }
+      });
+      await navigator.clipboard.writeText(copies.join(kind === 'markdown' ? '\n\n---\n\n' : '\n'));
+    } catch {
+      // Clipboard permissions can be unavailable in an embedded or insecure context.
+    }
   }
 
   useKeyboard((e) => {
@@ -230,6 +272,7 @@ export function useIssueListPresenter({
       onSetBulkCycle: (cycleId: number | null) => updateSelectedIssues({ cycleId }),
       onAddBulkLabel: (labelId: number) => updateSelectedLabels(labelId, true),
       onRemoveBulkLabel: (labelId: number) => updateSelectedLabels(labelId, false),
+      onCopyBulkIssues: (kind: BulkCopyKind) => copySelectedIssues(kind),
       onClearBulkSelection: () => setBulkSelectedIds([]),
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>

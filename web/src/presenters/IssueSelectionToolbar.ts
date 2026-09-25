@@ -5,6 +5,8 @@ import type { Cycle, Label, Project } from '../types.ts';
 import { localToday } from '../due.ts';
 import { useState } from 'react';
 
+type BulkCopyKind = 'id' | 'url' | 'title' | 'titleLink' | 'markdown' | 'branch';
+
 type Props = {
   selectedCount: number;
   onSetStatus: (status: string) => void;
@@ -20,6 +22,7 @@ type Props = {
   onSetCycle: (cycleId: number | null) => void;
   onAddLabel: (labelId: number) => void;
   onRemoveLabel: (labelId: number) => void;
+  onCopyIssues: (kind: BulkCopyKind) => void;
   onClear: () => void;
 };
 
@@ -38,6 +41,7 @@ export function useIssueSelectionToolbarPresenter({
   onSetCycle,
   onAddLabel,
   onRemoveLabel,
+  onCopyIssues,
   onClear,
 }: Props) {
   const { statuses } = useIssueWorkflow();
@@ -86,6 +90,7 @@ export function useIssueSelectionToolbarPresenter({
       onSetCycle: (cycleId: number | null) => onSetCycle(cycleId),
       onAddLabel: (labelId: number) => onAddLabel(labelId),
       onRemoveLabel: (labelId: number) => onRemoveLabel(labelId),
+      onCopyIssues: (kind: BulkCopyKind) => onCopyIssues(kind),
       onClear,
     },
   };

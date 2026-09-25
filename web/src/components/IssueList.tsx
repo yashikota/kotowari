@@ -104,6 +104,7 @@ export function IssueListView({
                 onSetCycle={handlers.onSetBulkCycle}
                 onAddLabel={handlers.onAddBulkLabel}
                 onRemoveLabel={handlers.onRemoveBulkLabel}
+                onCopyIssues={handlers.onCopyBulkIssues}
                 onClear={handlers.onClearBulkSelection}
               />
             ) : null}
