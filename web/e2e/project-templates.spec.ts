@@ -52,7 +52,7 @@ test('a project can be saved as a template and reused without stale dates', asyn
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'New project' }).first().click();
-  const createDialog = page.getByRole('dialog', { name: 'Create project' });
+  const createDialog = page.getByRole('dialog', { name: 'New project' });
   await createDialog.getByRole('combobox', { name: 'Project template' }).click();
   await page.getByRole('option', { name: templateName }).click();
   await expect(createDialog.getByLabel('Summary')).toHaveValue('Reusable launch plan');
@@ -102,7 +102,7 @@ test('a project can be saved as a template and reused without stale dates', asyn
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'New project' }).first().click();
-  const deleteDialog = page.getByRole('dialog', { name: 'Create project' });
+  const deleteDialog = page.getByRole('dialog', { name: 'New project' });
   await deleteDialog.getByRole('combobox', { name: 'Project template' }).click();
   await page.getByRole('option', { name: templateName }).click();
   const confirmation = page.waitForEvent('dialog').then((dialog) => dialog.accept());

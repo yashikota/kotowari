@@ -1,0 +1,433 @@
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Group,
+  Modal,
+  MultiSelect,
+  NativeSelect,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
+import { IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import type { RefObject } from 'react';
+import { ProjectIconPicker } from './ProjectIcon.tsx';
+import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
+import { priorityLabel } from '../i18n/labels.ts';
+import { formatCalendarDate } from '../time.ts';
+import type { useProjectsPagePresenter } from '../presenters/ProjectsCycles.tsx';
+
+type ProjectCreateDialogModel = ReturnType<typeof useProjectsPagePresenter>;
+
+export function ProjectCreateDialog({
+  model,
+  projectNameRef,
+}: {
+  model: ProjectCreateDialogModel;
+  projectNameRef: RefObject<HTMLInputElement | null>;
+}) {
+  const { t } = useTranslation();
+  const {
+    availableDependencyProjects,
+    availableLabels,
+    createOpen,
+    dependencyDraftKind,
+    dependencyDraftOpen,
+    dependencyDraftProjectSlug,
+    description,
+    handlers,
+    icon,
+    iconColor,
+    initialDependencies,
+    initialMilestones,
+    lead,
+    milestoneDraftDescription,
+    milestoneDraftName,
+    milestoneDraftOpen,
+    milestoneDraftTargetDate,
+    name,
+    priority,
+    projectNameBySlug,
+    projectTemplates,
+    selectedLabels,
+    selectedProjectTemplate,
+    startDate,
+    status,
+    summary,
+    targetDate,
+  } = model;
+
+  return (
+    <Modal
+      opened={createOpen}
+      onClose={handlers.onCloseCreateProject}
+      title={`${t('nav.projects')} › ${t('projectList.newProject')}`}
+      centered
+      size="1080px"
+      styles={{
+        content: { height: 'min(88vh, 920px)', display: 'flex', flexDirection: 'column' },
+        header: { minHeight: 52 },
+        body: { flex: 1, minHeight: 0, padding: 0, overflow: 'hidden' },
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={handlers.onSubmit0}
+        style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}
+      >
+        <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <Stack p="lg" gap="md">
+            <Group align="flex-end" wrap="nowrap">
+              <Select
+                label={t('projectTemplates.chooseTemplate')}
+                placeholder={t('projectTemplates.startBlank')}
+                value={selectedProjectTemplate}
+                onChange={handlers.onProjectTemplateChange}
+                data={projectTemplates.map((template) => ({
+                  value: template.slug,
+                  label: template.name,
+                }))}
+                searchable
+                clearable
+                style={{ flex: 1 }}
+                comboboxProps={{ withinPortal: false }}
+              />
+              {selectedProjectTemplate && (
+                <ActionIcon
+                  type="button"
+                  variant="default"
+                  color="red"
+                  aria-label={t('projectTemplates.deleteSelected')}
+                  title={t('projectTemplates.deleteSelected')}
+                  onClick={handlers.onDeleteProjectTemplate}
+                >
+                  <IconTrash size={15} stroke={1.7} aria-hidden="true" />
+                </ActionIcon>
+              )}
+            </Group>
+            <Group align="flex-end" wrap="nowrap">
+              <ProjectIconPicker
+                icon={icon}
+                color={iconColor}
+                onChange={handlers.onProjectIconChange}
+                onColorChange={handlers.onProjectIconColorChange}
+              />
+              <TextInput
+                ref={projectNameRef}
+                autoFocus
+                data-autofocus
+                required
+                maxLength={120}
+                style={{ flex: 1 }}
+                aria-label={t('modal.projectName')}
+                placeholder={t('modal.projectName')}
+                value={name}
+                onChange={handlers.New_project_name_onChange1}
+                size="xl"
+                variant="unstyled"
+                styles={{ input: { fontSize: 28, fontWeight: 600, lineHeight: 1.2 } }}
+              />
+            </Group>
+            <TextInput
+              aria-label={t('modal.projectSummary')}
+              placeholder={t('modal.projectSummary')}
+              value={summary}
+              onChange={handlers.New_project_summary_onChange}
+              variant="unstyled"
+              size="lg"
+            />
+            <Group gap="xs" wrap="wrap" align="center">
+              <NativeSelect
+                aria-label={t('field.status')}
+                value={status}
+                onChange={handlers.New_project_status_onChange}
+                size="xs"
+                style={{ width: 150 }}
+                styles={{ input: { borderRadius: 999 } }}
+                data={model.projectWorkflowStatuses.map((workflowStatus) => ({
+                  value: workflowStatus.id,
+                  label: projectWorkflowStatusLabel(
+                    workflowStatus.id,
+                    model.projectWorkflowStatuses,
+                    t,
+                  ),
+                }))}
+              />
+              <NativeSelect
+                aria-label={t('field.priority')}
+                value={String(priority)}
+                onChange={handlers.New_project_priority_onChange}
+                size="xs"
+                style={{ width: 140 }}
+                styles={{ input: { borderRadius: 999 } }}
+                data={[0, 1, 2, 3, 4].map((value) => ({
+                  value: String(value),
+                  label: priorityLabel(value),
+                }))}
+              />
+              <NativeSelect
+                aria-label={t('projectList.property.lead')}
+                value={lead}
+                onChange={handlers.New_project_lead_onChange}
+                size="xs"
+                style={{ width: 140 }}
+                styles={{ input: { borderRadius: 999 } }}
+                data={[
+                  { value: '', label: t('projectList.leadUnassigned') },
+                  { value: 'self', label: t('projectList.leadYou') },
+                ]}
+              />
+              <TextInput
+                type="date"
+                aria-label={t('modal.projectStartDate')}
+                value={startDate}
+                onChange={handlers.New_project_start_onChange}
+                size="xs"
+                style={{ width: 150 }}
+                styles={{ input: { borderRadius: 999 } }}
+              />
+              <TextInput
+                type="date"
+                aria-label={t('modal.projectTargetDate')}
+                value={targetDate}
+                onChange={handlers.New_project_target_onChange}
+                size="xs"
+                style={{ width: 150 }}
+                styles={{ input: { borderRadius: 999 } }}
+              />
+              <MultiSelect
+                aria-label={t('filters.projectLabels')}
+                placeholder={t('filters.projectLabels')}
+                value={selectedLabels}
+                onChange={handlers.New_project_labels_onChange}
+                data={availableLabels.map((label) => ({
+                  value: label.name,
+                  label: label.name,
+                }))}
+                searchable
+                hidePickedOptions
+                maxDropdownHeight={240}
+                size="xs"
+                style={{ minWidth: 180, maxWidth: 280 }}
+                styles={{ input: { borderRadius: 999 } }}
+              />
+            </Group>
+            <Textarea
+              aria-label={t('modal.projectDescription')}
+              placeholder={t('modal.projectDescription')}
+              value={description}
+              onChange={handlers.New_project_description_onChange}
+              minRows={8}
+              autosize
+              variant="unstyled"
+              styles={{ input: { borderTop: '1px solid var(--mantine-color-default-border)' } }}
+            />
+            <Stack gap="xs" aria-label={t('projectDependencies.heading')}>
+              <Group justify="space-between">
+                <Text size="sm" fw={600}>
+                  {t('projectDependencies.heading')}
+                </Text>
+                <Button
+                  type="button"
+                  variant="subtle"
+                  size="sm"
+                  disabled={availableDependencyProjects.length === 0}
+                  onClick={handlers.onOpenDependencyDraft}
+                >
+                  {t('projectDependencies.addFromCreate')}
+                </Button>
+              </Group>
+              {initialDependencies.map((dependency) => (
+                <Group key={dependency.projectSlug} justify="space-between" gap="xs">
+                  <Text size="sm">
+                    {t(`projectDependencies.kindOptions.${dependency.kind}`)}{' '}
+                    {projectNameBySlug[dependency.projectSlug] ?? dependency.projectSlug}
+                  </Text>
+                  <ActionIcon
+                    type="button"
+                    variant="subtle"
+                    color="gray"
+                    aria-label={t('projectDependencies.remove', {
+                      project: projectNameBySlug[dependency.projectSlug] ?? dependency.projectSlug,
+                    })}
+                    onClick={() => handlers.onRemoveInitialDependency(dependency.projectSlug)}
+                  >
+                    <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                  </ActionIcon>
+                </Group>
+              ))}
+              {dependencyDraftOpen && (
+                <Box
+                  p="sm"
+                  style={{
+                    border: '1px solid var(--mantine-color-default-border)',
+                    borderRadius: 'var(--mantine-radius-sm)',
+                  }}
+                >
+                  <Stack gap="xs">
+                    <Group grow>
+                      <NativeSelect
+                        aria-label={t('projectDependencies.project')}
+                        value={dependencyDraftProjectSlug}
+                        onChange={handlers.onDependencyDraftProjectChange}
+                        data={[
+                          { value: '', label: t('projectDependencies.chooseProject') },
+                          ...availableDependencyProjects.map((candidate) => ({
+                            value: candidate.slug,
+                            label: candidate.name,
+                          })),
+                        ]}
+                      />
+                      <NativeSelect
+                        aria-label={t('projectDependencies.kind')}
+                        value={dependencyDraftKind}
+                        onChange={handlers.onDependencyDraftKindChange}
+                        data={(['blocks', 'blocked_by', 'related'] as const).map((kind) => ({
+                          value: kind,
+                          label: t(`projectDependencies.kindOptions.${kind}`),
+                        }))}
+                      />
+                    </Group>
+                    <Group justify="flex-end">
+                      <Button
+                        type="button"
+                        variant="default"
+                        onClick={handlers.onCancelDependencyDraft}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                      <Button
+                        type="button"
+                        disabled={!dependencyDraftProjectSlug}
+                        onClick={handlers.onAddInitialDependency}
+                      >
+                        {t('projectDependencies.add')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Box>
+              )}
+            </Stack>
+            <Stack gap="xs" aria-label={t('projectMilestones.heading')}>
+              <Group justify="space-between">
+                <Text size="sm" fw={600}>
+                  {t('projectMilestones.heading')}
+                </Text>
+                <Button
+                  type="button"
+                  variant="subtle"
+                  size="sm"
+                  onClick={handlers.onOpenMilestoneDraft}
+                >
+                  {t('projectMilestones.addToProject')}
+                </Button>
+              </Group>
+              {initialMilestones.map((milestone, index) => (
+                <Group key={`${milestone.name}-${index}`} justify="space-between" gap="xs">
+                  <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                    <Text size="sm" fw={500}>
+                      {milestone.name}
+                    </Text>
+                    {milestone.description && (
+                      <Text size="xs" c="dimmed">
+                        {milestone.description}
+                      </Text>
+                    )}
+                    {milestone.targetDate && (
+                      <Text size="xs" c="dimmed">
+                        {formatCalendarDate(milestone.targetDate)}
+                      </Text>
+                    )}
+                  </Stack>
+                  <ActionIcon
+                    type="button"
+                    variant="subtle"
+                    color="gray"
+                    aria-label={t('projectMilestones.remove', { name: milestone.name })}
+                    onClick={() => handlers.onRemoveInitialMilestone(index)}
+                  >
+                    <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                  </ActionIcon>
+                </Group>
+              ))}
+              {milestoneDraftOpen && (
+                <Box
+                  p="sm"
+                  style={{
+                    border: '1px solid var(--mantine-color-default-border)',
+                    borderRadius: 'var(--mantine-radius-sm)',
+                  }}
+                >
+                  <Stack gap="xs">
+                    <Text size="sm" fw={500}>
+                      {t('projectMilestones.createMilestone')}
+                    </Text>
+                    <TextInput
+                      autoFocus
+                      required
+                      maxLength={120}
+                      label={t('projectMilestones.name')}
+                      placeholder={t('projectMilestones.namePlaceholder')}
+                      value={milestoneDraftName}
+                      onChange={handlers.onMilestoneDraftNameChange}
+                      onKeyDown={handlers.onMilestoneDraftNameKeyDown}
+                    />
+                    <Group grow align="flex-start">
+                      <Textarea
+                        label={t('projectMilestones.description')}
+                        placeholder={t('projectMilestones.descriptionPlaceholder')}
+                        value={milestoneDraftDescription}
+                        onChange={handlers.onMilestoneDraftDescriptionChange}
+                        minRows={2}
+                        autosize
+                      />
+                      <TextInput
+                        type="date"
+                        label={t('projectMilestones.targetDate')}
+                        value={milestoneDraftTargetDate}
+                        onChange={handlers.onMilestoneDraftTargetDateChange}
+                      />
+                    </Group>
+                    <Group justify="flex-end">
+                      <Button
+                        type="button"
+                        variant="default"
+                        onClick={handlers.onCancelMilestoneDraft}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                      <Button
+                        type="button"
+                        disabled={!milestoneDraftName.trim()}
+                        onClick={handlers.onAddInitialMilestone}
+                      >
+                        {t('projectMilestones.add')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Box>
+              )}
+            </Stack>
+          </Stack>
+        </Box>
+        <Group
+          justify="flex-end"
+          px="lg"
+          py="md"
+          style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
+        >
+          <Button type="button" variant="default" onClick={handlers.onCloseCreateProject}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" disabled={!name.trim()}>
+            {t('projectList.createTitle')}
+          </Button>
+        </Group>
+      </Box>
+    </Modal>
+  );
+}

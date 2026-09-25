@@ -244,7 +244,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
     .getByRole('link', { name: 'Projects', exact: true })
     .click();
   await page.getByRole('button', { name: 'New project' }).first().click();
-  const projectDialog = page.getByRole('dialog', { name: 'Create project' });
+  const projectDialog = page.getByRole('dialog', { name: 'New project' });
   await projectDialog.getByLabel('Project name').fill(projectName);
   await projectDialog.getByLabel('Description').fill('A user-created project');
   await projectDialog.getByLabel('Status').selectOption('started');

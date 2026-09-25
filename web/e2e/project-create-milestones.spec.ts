@@ -7,7 +7,7 @@ test('new projects can be created with described, dated milestones', async ({ pa
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'New project' }).first().click();
-  const dialog = page.getByRole('dialog', { name: 'Create project' });
+  const dialog = page.getByRole('dialog', { name: 'New project' });
   await dialog.getByLabel('Project name').fill(projectName);
   await dialog.getByRole('button', { name: 'Add', exact: true }).click();
   await dialog.getByLabel('Milestone name').fill(milestoneName);

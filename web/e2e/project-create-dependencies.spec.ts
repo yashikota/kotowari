@@ -12,7 +12,7 @@ test('new projects can link reciprocal dependencies before creation', async ({ p
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'New project' }).first().click();
-  const dialog = page.getByRole('dialog', { name: 'Create project' });
+  const dialog = page.getByRole('dialog', { name: 'New project' });
   await dialog.getByLabel('Project name').fill(projectName);
   await dialog.getByRole('button', { name: 'Add dependencies' }).click();
   await dialog.getByLabel('Project', { exact: true }).selectOption(dependencySlug);
