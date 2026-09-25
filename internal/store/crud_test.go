@@ -1296,12 +1296,20 @@ func TestCreateViewValidation(t *testing.T) {
 	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "bad-content", Content: &tooLongContent}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("content filter too long: %v", err)
 	}
+	tooLongDescription := strings.Repeat("x", 1001)
+	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "bad-description", Description: &tooLongDescription}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("description too long: %v", err)
+	}
+	invalidIcon := "unknown"
+	if _, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "bad-icon", Icon: &invalidIcon}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid icon: %v", err)
+	}
 	v, err := s.CreateView(CreateViewInput{Name: "Open", Slug: "open"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v.Display != "list" {
-		t.Fatalf("default display %q", v.Display)
+	if v.Display != "list" || v.Icon != "list" {
+		t.Fatalf("default display %q or icon %q", v.Display, v.Icon)
 	}
 	if v.GroupBy != "priority" || v.OrderBy != "manual" {
 		t.Fatalf("default display options: group=%q order=%q", v.GroupBy, v.OrderBy)
@@ -1321,7 +1329,7 @@ func TestViewDisplayOptionsPersist(t *testing.T) {
 	s := openTest(t)
 	showSubIssues, showEmptyGroups := false, true
 	created, err := s.CreateView(CreateViewInput{
-		Name: "Sprint board", Slug: "sprint-board", Display: "board", GroupBy: "status",
+		Name: "Sprint board", Slug: "sprint-board", Description: stringPointer("Sprint scope"), Icon: stringPointer("chart"), Display: "board", GroupBy: "status",
 		SubGroupBy: "priority", OrderBy: "created", Direction: "desc", CompletedIssues: "pastWeek",
 		ShowSubIssues: &showSubIssues, NestedSubIssues: "showAll", ShowEmptyGroups: &showEmptyGroups,
 		DisplayProperties: []string{"id", "status", "cycle"},
@@ -1331,6 +1339,7 @@ func TestViewDisplayOptionsPersist(t *testing.T) {
 	}
 	showSubIssues = true
 	_, err = s.UpdateView(created.Slug, CreateViewInput{
+		Description: stringPointer("Updated sprint scope"), Icon: stringPointer("target"),
 		ShowSubIssues: &showSubIssues, ShowEmptyGroups: boolPointer(false),
 		DisplayProperties: []string{"priority", "estimate", "updated"},
 	})
@@ -1347,7 +1356,7 @@ func TestViewDisplayOptionsPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Display != "board" || got.GroupBy != "status" || got.SubGroupBy != "priority" || got.OrderBy != "created" || got.Direction != "desc" || got.CompletedIssues != "pastWeek" || got.NestedSubIssues != "showAll" {
+	if got.Description != "Updated sprint scope" || got.Icon != "target" || got.Display != "board" || got.GroupBy != "status" || got.SubGroupBy != "priority" || got.OrderBy != "created" || got.Direction != "desc" || got.CompletedIssues != "pastWeek" || got.NestedSubIssues != "showAll" {
 		t.Fatalf("view preferences did not persist: %#v", got)
 	}
 	if got.ShowSubIssues == nil || !*got.ShowSubIssues || got.ShowEmptyGroups || len(got.DisplayProperties) != 3 || got.DisplayProperties[0] != "priority" {

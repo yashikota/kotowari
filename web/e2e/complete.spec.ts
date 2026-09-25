@@ -32,8 +32,11 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
   await expect(list.getByRole('option', { name: new RegExp(hideTitle) })).toBeVisible();
   await openIssueFilterCategory(page, 'Status');
   await chooseIssueFilterOption(page, 'Filter status', 'Todo');
+  await expect(page).toHaveURL(/status=todo/);
 
   await page.getByRole('button', { name: 'New view', exact: true }).click();
+  await expect(page).toHaveURL(/\/views\/new\?.*status=todo/);
+  await expect(page.getByRole('button', { name: 'Remove Status · Todo filter' })).toBeVisible();
   const viewName = page.getByRole('textbox', { name: 'View name', exact: true });
   await viewName.fill(`Todo ${stamp}`);
   await viewName.press('ControlOrMeta+Enter');

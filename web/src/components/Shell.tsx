@@ -52,6 +52,7 @@ import { IssueWorkflowProvider } from '../workflow.tsx';
 import { ProjectWorkflowProvider } from '../project-workflow.tsx';
 import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
+import { ViewIcon } from './ViewIcon.tsx';
 import styles from './Shell.module.css';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -122,14 +123,12 @@ export function ShellView({
   issueTitleRef,
   adrTitleRef,
   pageTitleRef,
-  viewNameRef,
 }: {
   model: ReturnType<typeof useShellPresenter>;
   t: ReturnType<typeof useTranslation>['t'];
   issueTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
   adrTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
   pageTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
-  viewNameRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   switch (model._view) {
     case 0: {
@@ -148,7 +147,6 @@ export function ShellView({
         createIssue,
         createADR,
         createPage,
-        createView,
         issueTitle,
         issueStatus,
         issueWorkflowStatuses,
@@ -160,7 +158,6 @@ export function ShellView({
         pageTitle,
         adrTitle,
         adrLinkIssue,
-        viewName,
         error,
         commands,
         handlers,
@@ -403,7 +400,7 @@ export function ShellView({
                                 to="/views/$slug"
                                 params={{ slug: view.slug }}
                                 label={view.name}
-                                leftSection={<IconFilter size={14} aria-hidden />}
+                                leftSection={<ViewIcon name={view.icon} size={14} />}
                               />
                             ))}
                             <Button
@@ -888,35 +885,6 @@ export function ShellView({
               </Group>
             </Stack>
           </Modal>
-
-          <Modal
-            opened={createView}
-            onClose={handlers.onClick26}
-            title={t('modal.createView')}
-            centered
-            autoFocus={false}
-          >
-            <Stack gap="md">
-              <Textarea
-                ref={viewNameRef}
-                data-autofocus
-                rows={2}
-                aria-label={t('modal.viewName')}
-                placeholder={t('modal.viewName')}
-                value={viewName}
-                onChange={handlers.View_name_onChange28}
-                onKeyDown={handlers.View_name_onKeyDown29}
-              />
-              <Group justify="space-between" align="center">
-                <Text size="sm" c="dimmed">
-                  {t('modal.enterHint')}
-                </Text>
-                <Button type="button" onClick={handlers.submitView}>
-                  {t('modal.create')}
-                </Button>
-              </Group>
-            </Stack>
-          </Modal>
         </>
       );
     }
@@ -938,7 +906,6 @@ function ShellBinding() {
   const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createIssue);
   const adrTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createADR);
   const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createPage);
-  const viewNameRef = useFocusWhen<HTMLTextAreaElement>(model.createView);
   return (
     <IssueWorkflowProvider>
       <ProjectWorkflowProvider>
@@ -948,7 +915,6 @@ function ShellBinding() {
           issueTitleRef={issueTitleRef}
           adrTitleRef={adrTitleRef}
           pageTitleRef={pageTitleRef}
-          viewNameRef={viewNameRef}
         />
       </ProjectWorkflowProvider>
     </IssueWorkflowProvider>

@@ -49,5 +49,17 @@ declare module '@tanstack/history' {
     issueListSelectedId?: string;
     issueListScrollTop?: number;
     issueListLayout?: 'list' | 'board';
+    viewDraft?: {
+      display?: 'list' | 'board';
+      groupBy?: string;
+      subGroupBy?: string;
+      orderBy?: string;
+      direction?: 'asc' | 'desc';
+      completedIssues?: 'all' | 'pastDay' | 'pastWeek' | 'pastMonth' | 'currentCycle' | 'none';
+      showSubIssues?: boolean;
+      nestedSubIssues?: 'showMatching' | 'showAll';
+      showEmptyGroups?: boolean;
+      displayProperties?: string[];
+    };
   }
 }

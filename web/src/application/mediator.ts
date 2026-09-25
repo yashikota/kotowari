@@ -1,4 +1,4 @@
-export type Overlay = 'none' | 'palette' | 'help' | 'issue' | 'adr' | 'page' | 'view';
+export type Overlay = 'none' | 'palette' | 'help' | 'issue' | 'adr' | 'page';
 export type Operation = 'idle' | 'running' | 'failed';
 export type Intent = { type: string; payload: unknown; source: EventScope };
 export type Handler = (payload: unknown) => unknown;

@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Group, Modal, Stack, TextInput, VisuallyHidden } from '@mantine/core';
+import { Box, Group, VisuallyHidden } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
@@ -33,10 +33,6 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         subGroupBy,
         direction,
         completedIssues,
-        newViewOpen,
-        newViewName,
-        newViewSaving,
-        newViewError,
         showSubIssues,
         nestedSubIssues,
         showEmptyGroups,
@@ -57,35 +53,6 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
             onChange={handlers.onView4}
             onAddNewView={handlers.onNewViewOpen}
           />
-          <Modal
-            opened={newViewOpen}
-            onClose={handlers.onNewViewClose}
-            title={t('modal.createView')}
-            centered
-            autoFocus={false}
-          >
-            <Box component="form" onSubmit={handlers.onNewViewSubmit}>
-              <Stack gap="md">
-                <TextInput
-                  autoFocus
-                  aria-label={t('modal.viewName')}
-                  placeholder={t('modal.viewName')}
-                  value={newViewName}
-                  onChange={handlers.onNewViewNameChange}
-                  maxLength={100}
-                />
-                {newViewError ? <Alert color="red">{newViewError}</Alert> : null}
-                <Group justify="flex-end" gap="xs">
-                  <Button type="button" variant="default" onClick={handlers.onNewViewClose}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" loading={newViewSaving} disabled={!newViewName.trim()}>
-                    {t('modal.create')}
-                  </Button>
-                </Group>
-              </Stack>
-            </Box>
-          </Modal>
           <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
             <IssueFilters
               search={search}

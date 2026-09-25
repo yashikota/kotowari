@@ -113,8 +113,6 @@ export function useShellPresenter() {
   const setCreateADR = setOverlay('adr');
   const createPage = overlay === 'page';
   const setCreatePage = setOverlay('page');
-  const createView = overlay === 'view';
-  const setCreateView = setOverlay('view');
   const [issueTitle, setIssueTitle] = useState('');
   const [issueStatus, setIssueStatus] = useState('todo');
   const [issuePriority, setIssuePriority] = useState(0);
@@ -153,7 +151,6 @@ export function useShellPresenter() {
   const [pageTitle, setPageTitle] = useState('');
   const [adrTitle, setAdrTitle] = useState('');
   const [adrLinkIssue, setAdrLinkIssue] = useState<number | undefined>(undefined);
-  const [viewName, setViewName] = useState('');
   const [error, setError] = useState('');
   const [focusedIssue, setFocusedIssue] = useState<string | null>(null);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
@@ -291,6 +288,7 @@ export function useShellPresenter() {
     if (pathname === '/cycles') return 'Cycles';
     if (pathname.startsWith('/cycles/')) return `Cycle ${pathname.slice('/cycles/'.length)}`;
     if (pathname === '/views') return t('nav.views');
+    if (pathname === '/views/new') return t('nav.newView');
     if (pathname === '/pages') return 'Pages';
     if (pathname.startsWith('/pages/'))
       return pathname.slice('/pages/'.length).replaceAll('-', ' ');
@@ -318,7 +316,11 @@ export function useShellPresenter() {
           setCreatePage(true);
           return;
         case 'new-view':
-          setCreateView(true);
+          await navigate({
+            to: '/views/new',
+            search: parseIssueSearch(routeSearch as Record<string, unknown>),
+            state: { autofocus: 'name' },
+          });
           return;
         case 'goto-issues':
           await navigate({ to: '/issues', search: {} });
@@ -440,7 +442,6 @@ export function useShellPresenter() {
       setCreateIssue(false);
       setCreateADR(false);
       setCreatePage(false);
-      setCreateView(false);
       setHelpOpen(false);
       return true;
     }
@@ -466,7 +467,7 @@ export function useShellPresenter() {
         return true;
       }
     }
-    if (paletteOpen || createIssue || createADR || createPage || createView || helpOpen) {
+    if (paletteOpen || createIssue || createADR || createPage || helpOpen) {
       return true;
     }
     if (action === 'new-issue') {
@@ -524,8 +525,6 @@ export function useShellPresenter() {
   useIntentHandler('submit:Issue', submitIssue);
   useIntentHandler('submit:ADR', submitADR);
   useIntentHandler('submit:Page', submitPage);
-  useIntentHandler('submit:View', submitView);
-
   async function submitIssue() {
     const title = issueTitle.trim();
     if (!title || issueParentLoading || issueLinkOpen) {
@@ -638,36 +637,6 @@ export function useShellPresenter() {
     });
   }
 
-  async function submitView() {
-    const name = viewName.trim();
-    if (!name) {
-      return;
-    }
-    const slug = slugify(name) || `view-${Date.now()}`;
-    const filters = parseIssueSearch(routeSearch as Record<string, unknown>);
-    const view = await api.createView({
-      name,
-      slug,
-      display: 'list',
-      groupBy: 'priority',
-      orderBy: 'manual',
-      status: filters.status,
-      project: filters.project,
-      cycle: filters.cycle,
-      labels: filters.labels?.split(',').filter(Boolean),
-      priority: filters.priority,
-    });
-    setViewName('');
-    setCreateView(false);
-    await loadWorkspace();
-    await router.invalidate();
-    await navigate({
-      to: '/views/$slug',
-      params: { slug: view.slug },
-      state: { autofocus: 'name' },
-    });
-  }
-
   return {
     _view: 0 as const,
     workspaceName,
@@ -689,7 +658,6 @@ export function useShellPresenter() {
     createIssue,
     createADR,
     createPage,
-    createView,
     issueTitle,
     issueStatus,
     issueWorkflowStatuses,
@@ -734,15 +702,18 @@ export function useShellPresenter() {
     pageTitle,
     adrTitle,
     adrLinkIssue,
-    viewName,
     error,
     commands,
     handlers: {
       submitIssue: () => send('submit:Issue'),
       submitADR: () => send('submit:ADR'),
       submitPage: () => send('submit:Page'),
-      submitView: () => send('submit:View'),
-      onClick0: () => setCreateView(true),
+      onClick0: () =>
+        navigate({
+          to: '/views/new',
+          search: parseIssueSearch(routeSearch as Record<string, unknown>),
+          state: { autofocus: 'name' },
+        }),
       onOpenPalette: () => {
         setQuery('');
         setPaletteOpen(true);
@@ -945,23 +916,6 @@ export function useShellPresenter() {
         if (isSubmitShortcut(e)) {
           e.preventDefault();
           return send('submit:Page');
-        }
-      },
-      onClick26: () => setCreateView(false),
-      Create_view_onClick27: (
-        e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
-      ) => e.stopPropagation(),
-      View_name_onChange28: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setViewName(e.target.value),
-      View_name_onKeyDown29: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
-      ) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-
-        if (isSubmitShortcut(e)) {
-          e.preventDefault();
-          return send('submit:View');
         }
       },
     },

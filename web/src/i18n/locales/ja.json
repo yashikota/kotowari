@@ -42,6 +42,30 @@
     "emptyTitle": "保存済みビューはありません",
     "emptyDescription": "ビューを作成して、フィルターやレイアウトを保存できます。"
   },
+  "viewBuilder": {
+    "defaultName": "すべてのイシュー",
+    "name": "ビュー名",
+    "description": "説明",
+    "descriptionPlaceholder": "説明（任意）",
+    "chooseIcon": "アイコンを選択",
+    "iconChoices": "ビューのアイコン",
+    "createView": "ビューを作成",
+    "preview": "プレビュー",
+    "icons": {
+      "list": "リストアイコン",
+      "circle": "円アイコン",
+      "bolt": "稲妻アイコン",
+      "target": "ターゲットアイコン",
+      "bug": "バグアイコン",
+      "rocket": "ロケットアイコン",
+      "bookmark": "ブックマークアイコン",
+      "flag": "旗アイコン",
+      "star": "星アイコン",
+      "sparkles": "きらめきアイコン",
+      "chart": "チャートアイコン",
+      "calendar": "カレンダーアイコン"
+    }
+  },
   "cycle": {
     "options": "サイクルのオプション",
     "dates": "期間",
@@ -211,12 +235,10 @@
     "createIssue": "イシューを作成",
     "createAdr": "ADR を作成",
     "createPage": "ページを作成",
-    "createView": "ビューを作成",
     "issueTitle": "イシューのタイトル",
     "issueDescription": "説明",
     "adrTitle": "ADR のタイトル",
     "pageTitle": "ページのタイトル",
-    "viewName": "ビュー名",
     "enterHint": "Enter で改行 · Ctrl/⌘+Enter で作成",
     "create": "作成",
     "projectName": "プロジェクト名",

@@ -381,6 +381,18 @@ const viewRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/ViewsPages.tsx'), 'ViewPage'),
 });
 
+const viewBuilderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/views/new',
+  validateSearch: (raw: Record<string, unknown>) => parseIssueSearch(raw),
+  loaderDeps: ({ search }) => search,
+  loader: async ({ deps }) => {
+    const [issues, views] = await Promise.all([loadFilteredIssues(deps), api.views()]);
+    return { ...issues, views };
+  },
+  component: lazyRouteComponent(() => import('./pages/ViewBuilderPages.tsx'), 'ViewBuilderPage'),
+});
+
 const viewsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/views',
@@ -428,6 +440,7 @@ const routeTree = rootRoute.addChildren([
   cyclesRoute,
   cycleRoute,
   viewsRoute,
+  viewBuilderRoute,
   viewRoute,
   pagesRoute,
   pageRoute,

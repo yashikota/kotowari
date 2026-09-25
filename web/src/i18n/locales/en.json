@@ -42,6 +42,30 @@
     "emptyTitle": "No saved views yet",
     "emptyDescription": "Create a view to save filters and layout."
   },
+  "viewBuilder": {
+    "defaultName": "All issues",
+    "name": "View name",
+    "description": "Description",
+    "descriptionPlaceholder": "Description (optional)",
+    "chooseIcon": "Choose icon",
+    "iconChoices": "View icons",
+    "createView": "Create view",
+    "preview": "Preview",
+    "icons": {
+      "list": "List icon",
+      "circle": "Circle icon",
+      "bolt": "Lightning icon",
+      "target": "Target icon",
+      "bug": "Bug icon",
+      "rocket": "Rocket icon",
+      "bookmark": "Bookmark icon",
+      "flag": "Flag icon",
+      "star": "Star icon",
+      "sparkles": "Sparkles icon",
+      "chart": "Chart icon",
+      "calendar": "Calendar icon"
+    }
+  },
   "cycle": {
     "options": "Cycle options",
     "dates": "Dates",
@@ -213,12 +237,10 @@
     "createIssue": "Create issue",
     "createAdr": "Create ADR",
     "createPage": "Create page",
-    "createView": "Create view",
     "issueTitle": "Issue title",
     "issueDescription": "Description",
     "adrTitle": "ADR title",
     "pageTitle": "Page title",
-    "viewName": "View name",
     "enterHint": "Enter to insert a line · Ctrl/⌘+Enter to create",
     "create": "Create",
     "projectName": "Project name",

@@ -328,6 +328,8 @@ export const api = {
   createView: (body: {
     name: string;
     slug: string;
+    description?: string;
+    icon?: string;
     display?: string;
     groupBy?: string;
     subGroupBy?: string;

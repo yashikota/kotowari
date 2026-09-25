@@ -42,9 +42,9 @@ export async function createIssueView(page: Page, name: string) {
   const addButton = page.getByRole('button', { name: 'Add new view', exact: true });
   if ((await addButton.count()) > 0) await addButton.click();
   else await page.getByRole('button', { name: 'New view', exact: true }).first().click();
-  const dialog = page.getByRole('dialog', { name: 'Create view' });
-  await dialog.getByLabel('View name').fill(name);
-  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  await page.waitForURL(/\/views\/new/);
+  await page.getByRole('textbox', { name: 'View name', exact: true }).fill(name);
+  await page.getByRole('button', { name: 'Create view', exact: true }).click();
 }
 
 export async function expandMoreNavigation(page: Page) {

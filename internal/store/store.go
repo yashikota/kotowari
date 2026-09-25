@@ -251,6 +251,8 @@ type View struct {
 	ID                int64    `json:"id" toml:"id"`
 	Name              string   `json:"name" toml:"name"`
 	Slug              string   `json:"slug" toml:"slug"`
+	Description       string   `json:"description,omitempty" toml:"description,omitempty"`
+	Icon              string   `json:"icon,omitempty" toml:"icon,omitempty"`
 	Display           string   `json:"display" toml:"display"`
 	GroupBy           string   `json:"groupBy" toml:"group_by"`
 	SubGroupBy        string   `json:"subGroupBy,omitempty" toml:"sub_group_by,omitempty"`
@@ -438,6 +440,8 @@ type PatchIssueInput struct {
 type CreateViewInput struct {
 	Name              string
 	Slug              string
+	Description       *string
+	Icon              *string
 	Display           string
 	GroupBy           string
 	OrderBy           string

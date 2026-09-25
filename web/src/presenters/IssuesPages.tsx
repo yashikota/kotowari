@@ -7,8 +7,8 @@ import {
   useSearch,
 } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useState } from 'react';
-import { api, parseIssueSearch, searchToFilter, type IssueSearch } from '../api.ts';
+import { useRef, useState } from 'react';
+import { api, parseIssueSearch, type IssueSearch } from '../api.ts';
 import {
   buildIssueFacetOptions,
   DEFAULT_DISPLAY_PROPERTIES,
@@ -66,17 +66,11 @@ function matchesFind(issue: Issue, q: string): boolean {
   return issue.title.toLowerCase().includes(n) || issue.identifier.toLowerCase().includes(n);
 }
 
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 48);
-}
-
 export function useIssuesPagePresenter() {
   const data = useLoaderData({ from: '/issues' }) as IssueListData;
   const search = useSearch({ from: '/issues' }) as IssueSearch;
+  const latestSearch = useRef(search);
+  latestSearch.current = search;
   const locationState = useRouterState({ select: (state) => state.location.state });
   const navigate = useNavigate();
   const router = useRouter();
@@ -87,10 +81,6 @@ export function useIssuesPagePresenter() {
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
-  const [newViewOpen, setNewViewOpen] = useState(false);
-  const [newViewName, setNewViewName] = useState('');
-  const [newViewSaving, setNewViewSaving] = useState(false);
-  const [newViewError, setNewViewError] = useState('');
   const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');
   const [showSubIssues, setShowSubIssues] = useState(true);
   const [nestedSubIssues, setNestedSubIssues] = useState<'showMatching' | 'showAll'>(
@@ -107,59 +97,6 @@ export function useIssuesPagePresenter() {
   );
   const restoreScrollTop = locationState.issueListScrollTop ?? 0;
   const activeView: 'active' | 'backlog' | 'all' | 'archived' = search.archived ? 'archived' : view;
-
-  async function saveView(name: string, activeSearch: IssueSearch = search) {
-    const filter = searchToFilter(activeSearch);
-    const saved = await api.createView({
-      name,
-      slug: slugify(name) || `view-${Date.now()}`,
-      display: layout,
-      groupBy,
-      subGroupBy,
-      orderBy,
-      direction,
-      completedIssues,
-      showSubIssues,
-      nestedSubIssues,
-      showEmptyGroups,
-      displayProperties,
-      status: filter.status ?? null,
-      project: filter.project ?? null,
-      cycle: filter.cycle ?? null,
-      labels: filter.labels ?? [],
-      priority: filter.priority ?? null,
-      type: filter.type ?? null,
-      estimate: filter.estimate ?? null,
-      dueDate: filter.dueDate ?? '',
-      relation: filter.relation ?? '',
-      content: filter.content ?? '',
-      milestoneName: filter.milestoneName ?? '',
-      dateField: filter.dateField ?? '',
-      dateRange: filter.dateRange ?? '',
-      projectStatus: filter.projectStatus ?? '',
-      projectPriority: filter.projectPriority ?? null,
-      projectLabels: filter.projectLabels ?? [],
-      addedToCycle: filter.addedToCycle ?? [],
-    });
-    await router.invalidate();
-    await navigate({ to: '/views/$slug', params: { slug: saved.slug } });
-  }
-
-  async function createView() {
-    const name = newViewName.trim();
-    if (!name || newViewSaving) return;
-    setNewViewSaving(true);
-    setNewViewError('');
-    try {
-      await saveView(name);
-      setNewViewOpen(false);
-      setNewViewName('');
-    } catch (error) {
-      setNewViewError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setNewViewSaving(false);
-    }
-  }
 
   useKeyboard((event) => {
     if (
@@ -219,10 +156,6 @@ export function useIssuesPagePresenter() {
     subGroupBy,
     direction,
     completedIssues,
-    newViewOpen,
-    newViewName,
-    newViewSaving,
-    newViewError,
     showSubIssues,
     nestedSubIssues,
     showEmptyGroups,
@@ -234,22 +167,31 @@ export function useIssuesPagePresenter() {
     handlers: {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
-      ) => navigate({ to: '/issues', search: compactSearch(next) }),
-      onNewViewOpen: () => {
-        setNewViewName('');
-        setNewViewError('');
-        setNewViewOpen(true);
-      },
-      onNewViewClose: () => setNewViewOpen(false),
-      onNewViewNameChange: (
-        event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setNewViewName(event.target.value),
-      onNewViewSubmit: (
-        event: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
       ) => {
-        event.preventDefault();
-        return createView();
+        const normalized = compactSearch(next);
+        latestSearch.current = normalized;
+        return navigate({ to: '/issues', search: normalized, replace: true });
       },
+      onNewViewOpen: () =>
+        navigate({
+          to: '/views/new',
+          search: compactSearch(latestSearch.current),
+          state: {
+            autofocus: 'name',
+            viewDraft: {
+              display: layout,
+              groupBy,
+              subGroupBy,
+              orderBy,
+              direction,
+              completedIssues,
+              showSubIssues,
+              nestedSubIssues,
+              showEmptyGroups,
+              displayProperties,
+            },
+          },
+        }),
       onFind2: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onFind']>>
       ) => {

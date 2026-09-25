@@ -1203,7 +1203,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"closed","status":"done"}`); rec.Code != http.StatusCreated {
 		t.Fatalf("done issue %d %s", rec.Code, rec.Body.String())
 	}
-	rec := doJSON(t, s, "POST", "/api/views", `{"name":"Open","slug":"open","display":"list","groupBy":"status","subGroupBy":"priority","orderBy":"title","direction":"desc","completedIssues":"pastWeek","showSubIssues":false,"nestedSubIssues":"showAll","showEmptyGroups":true,"displayProperties":["id","cycle"],"status":"todo"}`)
+	rec := doJSON(t, s, "POST", "/api/views", `{"name":"Open","slug":"open","description":"A useful filtered view","icon":"rocket","display":"list","groupBy":"status","subGroupBy":"priority","orderBy":"title","direction":"desc","completedIssues":"pastWeek","showSubIssues":false,"nestedSubIssues":"showAll","showEmptyGroups":true,"displayProperties":["id","cycle"],"status":"todo"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("create view %d %s", rec.Code, rec.Body.String())
 	}
@@ -1215,7 +1215,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &view); err != nil {
 		t.Fatal(err)
 	}
-	if view["name"] != "Open" || view["status"] != "todo" || view["groupBy"] != "status" || view["subGroupBy"] != "priority" || view["orderBy"] != "title" || view["direction"] != "desc" || view["completedIssues"] != "pastWeek" || view["showSubIssues"] != false || view["nestedSubIssues"] != "showAll" || view["showEmptyGroups"] != true {
+	if view["name"] != "Open" || view["description"] != "A useful filtered view" || view["icon"] != "rocket" || view["status"] != "todo" || view["groupBy"] != "status" || view["subGroupBy"] != "priority" || view["orderBy"] != "title" || view["direction"] != "desc" || view["completedIssues"] != "pastWeek" || view["showSubIssues"] != false || view["nestedSubIssues"] != "showAll" || view["showEmptyGroups"] != true {
 		t.Fatalf("view %#v", view)
 	}
 	if got, ok := view["displayProperties"].([]any); !ok || len(got) != 2 || got[0] != "id" || got[1] != "cycle" {
@@ -1229,7 +1229,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if len(issues) != 1 || issues[0]["title"] != "open" {
 		t.Fatalf("filtered %#v", issues)
 	}
-	rec = doJSON(t, s, "PATCH", "/api/views/open", `{"name":"Todos","display":"board","groupBy":"cycle","subGroupBy":"none","orderBy":"updated","direction":"asc","completedIssues":"none","showSubIssues":true,"nestedSubIssues":"showMatching","showEmptyGroups":false,"displayProperties":["status","estimate"]}`)
+	rec = doJSON(t, s, "PATCH", "/api/views/open", `{"name":"Todos","description":"","icon":"target","display":"board","groupBy":"cycle","subGroupBy":"none","orderBy":"updated","direction":"asc","completedIssues":"none","showSubIssues":true,"nestedSubIssues":"showMatching","showEmptyGroups":false,"displayProperties":["status","estimate"]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("patch view %d %s", rec.Code, rec.Body.String())
 	}
@@ -1238,7 +1238,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &views); err != nil {
 		t.Fatal(err)
 	}
-	if len(views) != 1 || views[0]["name"] != "Todos" || views[0]["display"] != "board" || views[0]["groupBy"] != "cycle" || views[0]["orderBy"] != "updated" || views[0]["direction"] != "asc" || views[0]["completedIssues"] != "none" || views[0]["showSubIssues"] != true || views[0]["showEmptyGroups"] != false {
+	if len(views) != 1 || views[0]["name"] != "Todos" || views[0]["description"] != nil || views[0]["icon"] != "target" || views[0]["display"] != "board" || views[0]["groupBy"] != "cycle" || views[0]["orderBy"] != "updated" || views[0]["direction"] != "asc" || views[0]["completedIssues"] != "none" || views[0]["showSubIssues"] != true || views[0]["showEmptyGroups"] != false {
 		t.Fatalf("list views %#v", views)
 	}
 	if got, ok := views[0]["displayProperties"].([]any); !ok || len(got) != 2 || got[0] != "status" || got[1] != "estimate" {

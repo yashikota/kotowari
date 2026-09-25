@@ -1,8 +1,9 @@
 import { Box, Button, Stack, Text } from '@mantine/core';
-import { IconFilter, IconPlus } from '@tabler/icons-react';
+import { IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { PageHeader, RouterNavLink } from '../mantine-ui.tsx';
+import { ViewIcon } from '../components/ViewIcon.tsx';
 import { useViewsIndexPresenter } from '../presenters/ViewsIndexPages.tsx';
 
 export function ViewsIndexPageView({
@@ -56,7 +57,8 @@ export function ViewsIndexPageView({
                     to="/views/$slug"
                     params={{ slug: view.slug }}
                     label={view.name}
-                    leftSection={<IconFilter size={14} aria-hidden />}
+                    description={view.description || undefined}
+                    leftSection={<ViewIcon name={view.icon} size={14} />}
                   />
                 ))}
               </Stack>

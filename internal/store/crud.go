@@ -2602,9 +2602,32 @@ func (s *Store) GetView(slug string) (View, error) {
 	return v, err
 }
 
+func validViewIcon(icon string) bool {
+	switch icon {
+	case "list", "circle", "bolt", "target", "bug", "rocket", "bookmark", "flag", "star", "sparkles", "chart", "calendar":
+		return true
+	default:
+		return false
+	}
+}
+
 func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	in.Name = strings.TrimSpace(in.Name)
 	in.Slug = strings.TrimSpace(in.Slug)
+	description := ""
+	if in.Description != nil {
+		description = strings.TrimSpace(*in.Description)
+		if utf8.RuneCountInString(description) > 1000 {
+			return View{}, validationf("view description is too long")
+		}
+	}
+	icon := "list"
+	if in.Icon != nil && *in.Icon != "" {
+		icon = *in.Icon
+	}
+	if !validViewIcon(icon) {
+		return View{}, validationf("invalid view icon")
+	}
 	if in.Name == "" {
 		return View{}, validationf("name required")
 	}
@@ -2741,7 +2764,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			return errf(ErrConflict, "slug %q exists", in.Slug)
 		}
 		out = View{
-			ID: m.nextID(), Name: in.Name, Slug: in.Slug, Display: in.Display,
+			ID: m.nextID(), Name: in.Name, Slug: in.Slug, Description: description, Icon: icon, Display: in.Display,
 			GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy, Direction: in.Direction,
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
@@ -2778,6 +2801,23 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 		v := m.Views[i]
 		if name := strings.TrimSpace(in.Name); name != "" {
 			v.Name = name
+		}
+		if in.Description != nil {
+			description := strings.TrimSpace(*in.Description)
+			if utf8.RuneCountInString(description) > 1000 {
+				return validationf("view description is too long")
+			}
+			v.Description = description
+		}
+		if in.Icon != nil {
+			icon := *in.Icon
+			if icon == "" {
+				icon = "list"
+			}
+			if !validViewIcon(icon) {
+				return validationf("invalid view icon")
+			}
+			v.Icon = icon
 		}
 		if in.Display != "" {
 			if !domain.ValidViewDisplay(in.Display) {

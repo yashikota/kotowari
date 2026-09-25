@@ -529,6 +529,8 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 	var in struct {
 		Name              string   `json:"name"`
 		Slug              string   `json:"slug"`
+		Description       *string  `json:"description"`
+		Icon              *string  `json:"icon"`
 		Display           string   `json:"display"`
 		GroupBy           string   `json:"groupBy"`
 		SubGroupBy        string   `json:"subGroupBy"`
@@ -561,7 +563,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		return store.CreateViewInput{}, err
 	}
 	return store.CreateViewInput{
-		Name: in.Name, Slug: in.Slug, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
+		Name: in.Name, Slug: in.Slug, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 		Status:  in.Status,

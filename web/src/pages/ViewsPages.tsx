@@ -1,9 +1,10 @@
-import { Box, Button, Group, Stack, TextInput } from '@mantine/core';
+import { Box, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
+import { ViewIcon } from '../components/ViewIcon.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -50,7 +51,12 @@ export function ViewPageView({
           <SplitLayout single={view.display === 'board'}>
             <Pane single={view.display === 'board'}>
               <PageHeader
-                title={view.name}
+                title={
+                  <Group gap="xs" wrap="nowrap">
+                    <ViewIcon name={view.icon} />
+                    <span>{view.name}</span>
+                  </Group>
+                }
                 actions={
                   <Group gap="xs" wrap="nowrap">
                     <TextInput
@@ -68,6 +74,11 @@ export function ViewPageView({
                   </Group>
                 }
               />
+              {view.description ? (
+                <Text size="sm" c="dimmed" px="md" py={6} aria-label={t('viewBuilder.description')}>
+                  {view.description}
+                </Text>
+              ) : null}
               <Stack gap={0} style={{ minHeight: 0, flex: 1 }}>
                 <IssueFilters
                   search={search}

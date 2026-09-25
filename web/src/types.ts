@@ -197,10 +197,26 @@ export type ADR = {
   updatedAt: string;
 };
 
+export type ViewIconName =
+  | 'list'
+  | 'circle'
+  | 'bolt'
+  | 'target'
+  | 'bug'
+  | 'rocket'
+  | 'bookmark'
+  | 'flag'
+  | 'star'
+  | 'sparkles'
+  | 'chart'
+  | 'calendar';
+
 export type View = {
   id: number;
   name: string;
   slug: string;
+  description?: string;
+  icon?: string;
   display: 'list' | 'board';
   groupBy: string;
   subGroupBy?: string;
