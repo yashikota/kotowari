@@ -13,6 +13,7 @@ export function staticCommands(t: TranslateCommand): Command[] {
     { id: 'new-adr', title: t('commands.createAdr'), hint: 'p' },
     { id: 'new-page', title: t('commands.createPage') },
     { id: 'new-view', title: t('commands.createView') },
+    { id: 'goto-search', title: t('commands.goToSearch') },
     { id: 'goto-issues', title: t('commands.goToIssues') },
     { id: 'goto-board', title: t('commands.goToBoard') },
     { id: 'goto-adrs', title: t('commands.goToAdrs') },

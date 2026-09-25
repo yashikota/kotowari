@@ -214,7 +214,7 @@ export function ShellView({
                     h={28}
                     aria-label={t('nav.search')}
                     title={t('ui.searchShortcut')}
-                    onClick={handlers.onOpenPalette}
+                    onClick={handlers.onOpenSearch}
                   >
                     <IconSearch size={15} stroke={1.7} aria-hidden />
                   </ActionIcon>
@@ -516,7 +516,7 @@ export function ShellView({
                     h={28}
                     aria-label={t('nav.search')}
                     title={t('ui.searchShortcut')}
-                    onClick={handlers.onOpenPalette}
+                    onClick={handlers.onOpenSearch}
                   >
                     <IconSearch size={15} stroke={1.7} aria-hidden />
                   </ActionIcon>

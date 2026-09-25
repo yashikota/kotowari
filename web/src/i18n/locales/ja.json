@@ -37,6 +37,35 @@
   "workspace": {
     "defaultName": "ワークスペース"
   },
+  "searchPage": {
+    "heading": "検索",
+    "inputLabel": "イシュー、プロジェクト、ドキュメントを検索",
+    "placeholder": "イシュー、プロジェクト、ドキュメントを検索…",
+    "clear": "検索をクリア",
+    "categories": "検索カテゴリ",
+    "tabs": {
+      "all": "すべて",
+      "issues": "イシュー",
+      "projects": "プロジェクト",
+      "documents": "ドキュメント"
+    },
+    "displayOptions": "表示オプション",
+    "ordering": "並び順",
+    "mostRelevant": "関連度順",
+    "titleAZ": "タイトル順",
+    "results": "検索結果",
+    "noResults": "結果が見つかりません",
+    "tryDifferentQuery": "別の検索語をお試しください。",
+    "startTitle": "ワークスペースを検索",
+    "startDescription": "イシュー、プロジェクト、ドキュメント、保存済みビューを検索できます。",
+    "kinds": {
+      "issue": "イシュー",
+      "project": "プロジェクト",
+      "view": "ビュー",
+      "adr": "ADR",
+      "page": "ドキュメント"
+    }
+  },
   "views": {
     "description": "ワークスペースの保存済みイシュービューです。",
     "emptyTitle": "保存済みビューはありません",
@@ -1074,6 +1103,7 @@
     "createAdr": "ADR を作成",
     "createPage": "ページを作成",
     "createView": "ビューを作成",
+    "goToSearch": "検索",
     "goToIssues": "イシューへ移動",
     "goToBoard": "ボードへ移動",
     "goToAdrs": "ADR へ移動",

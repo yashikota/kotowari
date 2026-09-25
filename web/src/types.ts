@@ -294,7 +294,7 @@ export type Workspace = {
 
 export type SearchHit = {
   snippet?: string;
-  kind: string;
+  kind: 'issue' | 'project' | 'view' | 'adr' | 'page';
   id: string;
   title: string;
 };

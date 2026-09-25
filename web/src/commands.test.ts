@@ -6,6 +6,7 @@ const english: Record<string, string> = {
   'commands.createAdr': 'Create ADR',
   'commands.createPage': 'Create page',
   'commands.createView': 'Create view',
+  'commands.goToSearch': 'Search',
   'commands.goToIssues': 'Go to Issues',
   'commands.goToBoard': 'Go to Board',
   'commands.goToAdrs': 'Go to ADRs',

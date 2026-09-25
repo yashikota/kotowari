@@ -37,6 +37,35 @@
   "workspace": {
     "defaultName": "workspace"
   },
+  "searchPage": {
+    "heading": "Search",
+    "inputLabel": "Search issues, projects, and documents",
+    "placeholder": "Search issues, projects, and documents…",
+    "clear": "Clear search",
+    "categories": "Search categories",
+    "tabs": {
+      "all": "All",
+      "issues": "Issues",
+      "projects": "Projects",
+      "documents": "Documents"
+    },
+    "displayOptions": "Display options",
+    "ordering": "Ordering",
+    "mostRelevant": "Most relevant",
+    "titleAZ": "Title A–Z",
+    "results": "Search results",
+    "noResults": "No results found",
+    "tryDifferentQuery": "Try a different search term.",
+    "startTitle": "Search your workspace",
+    "startDescription": "Find issues, projects, documents, and saved views.",
+    "kinds": {
+      "issue": "Issue",
+      "project": "Project",
+      "view": "View",
+      "adr": "ADR",
+      "page": "Document"
+    }
+  },
   "views": {
     "description": "Saved issue views for your workspace.",
     "emptyTitle": "No saved views yet",
@@ -1077,6 +1106,7 @@
     "createAdr": "Create ADR",
     "createPage": "Create page",
     "createView": "Create view",
+    "goToSearch": "Search",
     "goToIssues": "Go to Issues",
     "goToBoard": "Go to Board",
     "goToAdrs": "Go to ADRs",

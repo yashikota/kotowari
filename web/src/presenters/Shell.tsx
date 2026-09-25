@@ -269,6 +269,7 @@ export function useShellPresenter() {
       : focusedIssue;
   const routeTitle = (() => {
     if (pathname === '/') return 'Home';
+    if (pathname === '/search') return t('nav.search');
     if (pathname === '/reminders') return 'Reminders';
     if (pathname === '/templates') return 'Templates';
     if (pathname === '/recurring') return 'Recurring issues';
@@ -326,6 +327,9 @@ export function useShellPresenter() {
           return;
         case 'goto-issues':
           await navigate({ to: '/issues', search: {} });
+          return;
+        case 'goto-search':
+          await navigate({ to: '/search', search: {} });
           return;
         case 'goto-board':
           await navigate({ to: '/board', search: {} });
@@ -721,6 +725,7 @@ export function useShellPresenter() {
         setQuery('');
         setPaletteOpen(true);
       },
+      onOpenSearch: () => navigate({ to: '/search', search: {} }),
       onCreateIssue: () => setCreateIssue(true),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onToggleWorkspaceNavigation: () => setWorkspaceNavigationOpen((open) => !open),

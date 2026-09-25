@@ -13,6 +13,7 @@ import { EmptyState } from './mantine-ui.tsx';
 import { PresenterScope } from './application/Root.tsx';
 import { defaultHomeHref, getPersonalPreferences } from './preferences.ts';
 import type { ProjectViewSearch } from './project-views.ts';
+import { parseSearchPageSearch } from './search.ts';
 
 function NotFoundPage() {
   return (
@@ -112,6 +113,15 @@ const issuesRoute = createRoute({
   loaderDeps: ({ search }) => search,
   loader: ({ deps }) => loadFilteredIssues(deps),
   component: lazyRouteComponent(() => import('./pages/IssuesPages.tsx'), 'IssuesPage'),
+});
+
+const searchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/search',
+  validateSearch: (raw: Record<string, unknown>) => parseSearchPageSearch(raw),
+  loaderDeps: ({ search }) => ({ q: search.q }),
+  loader: async ({ deps }) => ({ hits: deps.q ? await api.search(deps.q) : [] }),
+  component: lazyRouteComponent(() => import('./pages/SearchPages.tsx'), 'SearchPage'),
 });
 
 const remindersRoute = createRoute({
@@ -453,6 +463,7 @@ const configRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  searchRoute,
   issuesRoute,
   remindersRoute,
   agentRoute,
