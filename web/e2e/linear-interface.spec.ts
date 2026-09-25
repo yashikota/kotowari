@@ -168,6 +168,10 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await expect(page.getByRole('button', { name: 'Search' }).first()).toBeVisible();
   const allIssuesTab = page.getByRole('tab', { name: 'All issues' });
   const backlogTab = page.getByRole('tab', { name: 'Backlog' });
+  const tabRadius = await allIssuesTab.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).borderTopLeftRadius),
+  );
+  expect(tabRadius).toBeGreaterThan(4);
   await allIssuesTab.focus();
   await page.keyboard.press('ArrowLeft');
   await expect(backlogTab).toBeFocused();

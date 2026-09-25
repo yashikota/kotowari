@@ -1,6 +1,7 @@
 import { ActionIcon, Group, Tabs } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import styles from './IssueViewTabs.module.css';
 
 export type IssueView = 'active' | 'backlog' | 'all' | 'archived';
 
@@ -32,16 +33,16 @@ export function IssueViewTabs({
       <Tabs
         value={value === 'archived' ? null : value}
         onChange={onChange}
-        variant="default"
+        variant="pills"
+        color="gray"
         styles={{
           root: { minWidth: 0 },
           list: { gap: 4, borderBottom: 0 },
-          tab: { height: 28, paddingInline: 10, fontSize: 'var(--mantine-font-size-xs)' },
         }}
       >
         <Tabs.List aria-label={t('ui.issueViews')}>
           {tabs.map((tab) => (
-            <Tabs.Tab key={tab.value} value={tab.value}>
+            <Tabs.Tab key={tab.value} value={tab.value} className={styles.tab}>
               {tab.label}
             </Tabs.Tab>
           ))}

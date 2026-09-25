@@ -1,0 +1,19 @@
+.tab {
+  height: 28px;
+  padding-inline: 10px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.tab[data-active='true'] {
+  border-color: var(--mantine-color-default-border);
+  background-color: var(--mantine-color-default-hover) !important;
+  color: var(--mantine-color-text) !important;
+}
+
+.tab:hover:not([data-active='true']) {
+  background-color: var(--mantine-color-default-hover);
+  color: var(--mantine-color-text);
+}
