@@ -1,0 +1,23 @@
+.inlinePreview {
+  position: relative;
+  border-radius: 4px;
+  cursor: text;
+  transition: background-color 100ms ease;
+}
+
+.inlinePreview:hover {
+  background-color: var(--mantine-color-default-hover);
+}
+
+.inlineEditTrigger {
+  position: absolute;
+  top: 0;
+  right: 0;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.inlinePreview:hover .inlineEditTrigger,
+.inlinePreview:focus-within .inlineEditTrigger {
+  opacity: 1;
+}

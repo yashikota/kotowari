@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Accordion,
   Alert,
   Anchor,
@@ -14,12 +15,14 @@ import {
   Textarea,
   Title,
 } from '@mantine/core';
+import { IconPencil } from '@tabler/icons-react';
 import { MarkdownContent } from '../mantine-ui.tsx';
 import { useTranslation } from 'react-i18next';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useFocusWhen } from '../focus.ts';
 import { useDocumentEditorPresenter, useEditorPresenter } from '../presenters/DocumentEditor.tsx';
+import styles from './DocumentEditor.module.css';
 
 export function DocumentEditorView({
   model,
@@ -93,65 +96,63 @@ export function EditorView({
           gap={inline ? 'xs' : 'md'}
           aria-busy={busy}
         >
-          <Group justify="space-between" wrap="wrap" mih={inline ? 24 : undefined}>
-            {inline ? (
-              mode === 'preview' && !server?.body.trim() ? null : (
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="subtle"
-                  onClick={handlers.onToggleMode}
-                  styles={
-                    inline
-                      ? {
-                          root: {
-                            height: 24,
-                            paddingInline: 6,
-                            color: 'var(--mantine-color-dimmed)',
-                            fontSize: 'var(--mantine-font-size-xs)',
-                          },
-                        }
-                      : undefined
-                  }
-                >
-                  {mode === 'edit' ? t('ui.preview') : t('ui.editDescription')}
-                </Button>
-              )
-            ) : (
-              <SegmentedControl
-                aria-label={t('ui.documentView')}
-                value={mode}
-                transitionDuration={0}
-                onChange={handlers.onModeChange}
-                data={[
-                  { label: t('ui.preview'), value: 'preview' },
-                  { label: t('ui.edit'), value: 'edit' },
-                  { label: t('ui.compare'), value: 'compare' },
-                ]}
-              />
-            )}
-            <Group gap="xs">
-              {(!inline || mode !== 'preview') && (
-                <>
+          {inline && mode === 'preview' && server?.body.trim() ? null : (
+            <Group justify="space-between" wrap="wrap" mih={inline ? 24 : undefined}>
+              {inline ? (
+                mode === 'preview' && !server?.body.trim() ? null : (
                   <Button
                     type="button"
-                    disabled={!server || busy || conflict || !dirty.current}
-                    onClick={handlers.onClick3}
+                    size="xs"
+                    variant="subtle"
+                    onClick={handlers.onToggleMode}
+                    styles={{
+                      root: {
+                        height: 24,
+                        paddingInline: 6,
+                        color: 'var(--mantine-color-dimmed)',
+                        fontSize: 'var(--mantine-font-size-xs)',
+                      },
+                    }}
                   >
-                    {t('common.save')}
+                    {t('ui.preview')}
                   </Button>
-                  <Text component="span" role="status" size="sm" c="dimmed">
-                    {status}
-                  </Text>
-                </>
+                )
+              ) : (
+                <SegmentedControl
+                  aria-label={t('ui.documentView')}
+                  value={mode}
+                  transitionDuration={0}
+                  onChange={handlers.onModeChange}
+                  data={[
+                    { label: t('ui.preview'), value: 'preview' },
+                    { label: t('ui.edit'), value: 'edit' },
+                    { label: t('ui.compare'), value: 'compare' },
+                  ]}
+                />
               )}
-              {showHistoryButton ? (
-                <Button type="button" variant="default" onClick={handlers.onClick4}>
-                  {t('documentHistory.button')}
-                </Button>
-              ) : null}
+              <Group gap="xs">
+                {(!inline || mode !== 'preview') && (
+                  <>
+                    <Button
+                      type="button"
+                      disabled={!server || busy || conflict || !dirty.current}
+                      onClick={handlers.onClick3}
+                    >
+                      {t('common.save')}
+                    </Button>
+                    <Text component="span" role="status" size="sm" c="dimmed">
+                      {status}
+                    </Text>
+                  </>
+                )}
+                {showHistoryButton ? (
+                  <Button type="button" variant="default" onClick={handlers.onClick4}>
+                    {t('documentHistory.button')}
+                  </Button>
+                ) : null}
+              </Group>
             </Group>
-          </Group>
+          )}
 
           {error ? (
             <Alert color="red" role="alert">
@@ -246,7 +247,19 @@ export function EditorView({
                   </List>
                 </nav>
               ) : null}
-              <Box ref={contentRef}>
+              <Box
+                ref={contentRef}
+                className={
+                  inline && mode === 'preview' && server?.body.trim()
+                    ? styles.inlinePreview
+                    : undefined
+                }
+                onClick={(event) => {
+                  if (!inline || mode !== 'preview' || !server?.body.trim()) return;
+                  if ((event.target as Element).closest('a,button')) return;
+                  handlers.onClick1();
+                }}
+              >
                 {inline && !server?.body.trim() ? (
                   <Button
                     type="button"
@@ -267,6 +280,22 @@ export function EditorView({
                 ) : (
                   <MarkdownContent html={html} />
                 )}
+                {inline && mode === 'preview' && server?.body.trim() ? (
+                  <ActionIcon
+                    type="button"
+                    variant="default"
+                    size="xs"
+                    className={styles.inlineEditTrigger}
+                    aria-label={t('ui.editDescription')}
+                    title={t('ui.editDescription')}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handlers.onClick1();
+                    }}
+                  >
+                    <IconPencil size={13} aria-hidden="true" />
+                  </ActionIcon>
+                ) : null}
               </Box>
             </>
           ) : null}

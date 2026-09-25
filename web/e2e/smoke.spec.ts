@@ -101,7 +101,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await page.getByLabel('Due date').fill('2026-09-01');
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
   await expect(page.getByRole('heading', { name: '目的' })).toBeVisible();
-  await documentEditor.getByRole('button', { name: 'Edit description' }).click();
+  await documentEditor.getByRole('heading', { name: '目的' }).click();
   await documentEditor.getByLabel('Markdown body').fill('## Goal\n\nShow **labels**.');
   await documentEditor.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toBeVisible();
