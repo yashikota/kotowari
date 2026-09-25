@@ -45,9 +45,51 @@
     "addFilter": "Add filter",
     "filters": {
       "status": "Status type",
+      "createdDate": "Created date",
+      "updatedDate": "Updated date",
+      "anyTime": "Any time",
       "active": "Active search filters",
       "statusValue": "Status: {{status}}",
       "removeStatus": "Remove status filter: {{status}}",
+      "dateValue": "{{field}}: {{date}}",
+      "removeDate": "Remove {{field}} filter: {{date}}",
+      "activeDate": "{{field}} {{operator}} {{date}}",
+      "changeDateOperator": "Change comparison for {{field}}",
+      "customTimeframe": "Custom date or timeframe…",
+      "timeframeDialog": "Choose a date or timeframe",
+      "timeframeInput": "Date or timeframe",
+      "timeframePlaceholder": "Try: May 2027, Q4, 2027/05/20",
+      "dayHint": "Choose a day or enter a date in YYYY-MM-DD format.",
+      "monthHint": "Choose a month or enter a month in YYYY-MM format.",
+      "chooseQuarter": "Quarter {{quarter}}, {{year}}",
+      "chooseHalfYear": "Half-year {{half}}, {{year}}",
+      "granularities": {
+        "day": "Day",
+        "month": "Month",
+        "quarter": "Quarter",
+        "halfYear": "Half-year",
+        "year": "Year"
+      },
+      "halfValues": {
+        "1": "First half",
+        "2": "Second half"
+      },
+      "operators": {
+        "after": "after",
+        "before": "before",
+        "in": "in"
+      },
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "dateWindows": {
+        "P1D": "1 day ago",
+        "P3D": "3 days ago",
+        "P1W": "1 week ago",
+        "P1M": "1 month ago",
+        "P3M": "3 months ago",
+        "P6M": "6 months ago",
+        "P1Y": "1 year ago"
+      },
       "clear": "Clear"
     },
     "categories": "Search categories",

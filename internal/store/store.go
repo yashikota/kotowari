@@ -369,11 +369,13 @@ type Diagnostic struct {
 }
 
 type SearchHit struct {
-	Snippet string `json:"snippet,omitempty"`
-	Kind    string `json:"kind"`
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	Status  string `json:"status,omitempty"`
+	Snippet   string `json:"snippet,omitempty"`
+	Kind      string `json:"kind"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Status    string `json:"status,omitempty"`
+	CreatedAt string `json:"createdAt,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
 }
 
 type IssueFilter struct {

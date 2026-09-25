@@ -10,7 +10,7 @@ test('workspace search finds issues, projects and documents with shareable categ
   request,
 }) => {
   const query = `Search${Date.now()}`;
-  const issue = await json<{ identifier: string }>(
+  const issue = await json<{ identifier: string; createdAt: string }>(
     await request.post('/api/issues', {
       data: { title: `${query} issue`, status: 'todo' },
     }),
@@ -83,6 +83,54 @@ test('workspace search finds issues, projects and documents with shareable categ
   await page.getByRole('menuitemcheckbox', { name: 'Done' }).click();
   await expect(page.getByRole('status')).toContainText('with the selected filters');
   await page.getByRole('button', { name: 'Remove status filter: Done' }).click();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Updated date' }).click();
+  await page.getByRole('menuitem', { name: '1 week ago' }).click();
+  await expect(page).toHaveURL(/updated=P1W/);
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Created date' }).click();
+  await page.getByRole('menuitem', { name: '1 day ago' }).click();
+  await expect(page).toHaveURL(/created=P1D/);
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Change comparison for Created date' }).click();
+  await page.getByRole('menuitem', { name: 'before' }).click();
+  await expect(page).toHaveURL(/created=before%3AP1D/);
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Change comparison for Created date' }).click();
+  await page.getByRole('menuitem', { name: 'after' }).click();
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('button', { name: 'Remove Updated date filter: 1 week ago' }).click();
+  await expect(page).not.toHaveURL(/updated=/);
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Updated date' }).click();
+  await page.getByRole('menuitem', { name: 'Custom date or timeframe…' }).click();
+  await expect(page.getByRole('dialog', { name: 'Updated date' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Day' }).click();
+  await page.getByRole('textbox', { name: 'Date or timeframe' }).fill(issue.createdAt.slice(0, 10));
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(page).toHaveURL(/updated=in%3A/);
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('button', { name: new RegExp('Remove Updated date filter') }).click();
+
+  const createdAt = new Date(issue.createdAt);
+  const issueQuarter = Math.floor(createdAt.getUTCMonth() / 3) + 1;
+  const issueYear = createdAt.getUTCFullYear();
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Updated date' }).click();
+  await page.getByRole('menuitem', { name: 'Custom date or timeframe…' }).click();
+  await page.getByRole('button', { name: `Quarter ${issueQuarter}, ${issueYear}` }).click();
+  await expect(page.getByRole('textbox', { name: 'Date or timeframe' })).toHaveValue(
+    `Q${issueQuarter} ${issueYear}`,
+  );
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('button', { name: new RegExp('Remove Updated date filter') }).click();
+
+  await page.getByRole('button', { name: 'Remove Created date filter: 1 day ago' }).click();
 
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('menuitem', { name: 'Title A–Z' }).click();

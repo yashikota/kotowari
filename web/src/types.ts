@@ -298,6 +298,8 @@ export type SearchHit = {
   id: string;
   title: string;
   status?: IssueStatus;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type AgentChat = {

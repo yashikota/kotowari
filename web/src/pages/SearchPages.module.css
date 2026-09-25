@@ -49,6 +49,21 @@
   color: var(--mantine-color-text);
 }
 
+.filterOperator {
+  padding-inline: 2px;
+  border-radius: var(--mantine-radius-xs);
+  color: var(--mantine-color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--mantine-color-dimmed);
+  text-underline-offset: 2px;
+}
+
+.filterOperator:hover,
+.filterOperator:focus-visible {
+  background: var(--mantine-color-default-hover);
+  text-decoration-color: currentColor;
+}
+
 .clearFilters {
   padding: 3px 5px;
   border-radius: var(--mantine-radius-sm);

@@ -1,7 +1,20 @@
 import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
-import { filterSearchHits, orderSearchHits, type SearchOrder, type SearchTab } from '../search.ts';
+import {
+  filterSearchHits,
+  orderSearchHits,
+  parseSearchDateFilter,
+  serializeSearchDateFilter,
+  type SearchDateField,
+  type SearchDateFilter,
+  type SearchDateFilters,
+  type SearchDateGranularity,
+  type SearchDateOperator,
+  type SearchDateRange,
+  type SearchOrder,
+  type SearchTab,
+} from '../search.ts';
 import type { IssueStatus } from '../types.ts';
 
 export function useSearchPagePresenter() {
@@ -12,6 +25,18 @@ export function useSearchPagePresenter() {
   const tab = search.tab ?? 'all';
   const order = search.order ?? 'relevance';
   const statuses = (search.status?.split(',') ?? []) as IssueStatus[];
+  const dates: SearchDateFilters = {
+    ...(parseSearchDateFilter(search.created)
+      ? { created: parseSearchDateFilter(search.created) }
+      : {}),
+    ...(parseSearchDateFilter(search.updated)
+      ? { updated: parseSearchDateFilter(search.updated) }
+      : {}),
+  };
+  const [customDateField, setCustomDateField] = useState<SearchDateField | null>(null);
+  const [customDateInput, setCustomDateInput] = useState('');
+  const [customDateGranularity, setCustomDateGranularity] =
+    useState<SearchDateGranularity>('quarter');
 
   useEffect(() => setQuery(search.q ?? ''), [search.q]);
 
@@ -22,7 +47,12 @@ export function useSearchPagePresenter() {
     tab,
     order,
     statuses,
-    hits: orderSearchHits(filterSearchHits(hits, tab, statuses), order, search.q ?? ''),
+    dates,
+    customDateField,
+    customDateInput,
+    customDateGranularity,
+    hasFilters: statuses.length > 0 || dates.created !== undefined || dates.updated !== undefined,
+    hits: orderSearchHits(filterSearchHits(hits, tab, statuses, dates), order, search.q ?? ''),
     handlers: {
       onQueryChange: (value: string) => setQuery(value),
       onSubmit: (event: FormEvent<HTMLFormElement>) => {
@@ -55,8 +85,63 @@ export function useSearchPagePresenter() {
             return { ...previous, status: statuses.length ? statuses.join(',') : undefined };
           },
         }),
-      onClearStatuses: () =>
-        navigate({ search: (previous) => ({ ...previous, status: undefined }) }),
+      onDateFilterChange: (field: SearchDateField, filter: SearchDateFilter | undefined) => {
+        return navigate({
+          search: (previous) => ({
+            ...previous,
+            [field]: filter ? serializeSearchDateFilter(filter) : undefined,
+          }),
+        });
+      },
+      onDateOperatorChange: (field: SearchDateField, operator: SearchDateOperator) => {
+        const current = dates[field];
+        if (!current || current.value.kind !== 'relative' || operator === 'in') return;
+        return navigate({
+          search: (previous) => ({
+            ...previous,
+            [field]: serializeSearchDateFilter({ ...current, operator }),
+          }),
+        });
+      },
+      onOpenCustomDate: (field: SearchDateField) => {
+        const current = dates[field];
+        setCustomDateField(field);
+        setCustomDateGranularity('quarter');
+        setCustomDateInput(
+          current?.value.kind === 'range'
+            ? current.value.start === current.value.end
+              ? current.value.start
+              : `${current.value.start}..${current.value.end}`
+            : '',
+        );
+      },
+      onCustomDateInputChange: (value: string) => setCustomDateInput(value),
+      onCustomDateGranularityChange: (value: SearchDateGranularity) => {
+        setCustomDateGranularity(value);
+        setCustomDateInput('');
+      },
+      onCustomDateCancel: () => setCustomDateField(null),
+      onCustomDateApply: (field: SearchDateField, range: SearchDateRange) => {
+        setCustomDateField(null);
+        return navigate({
+          search: (previous) => ({
+            ...previous,
+            [field]: serializeSearchDateFilter({
+              operator: 'in',
+              value: { kind: 'range', ...range },
+            }),
+          }),
+        });
+      },
+      onClearFilters: () =>
+        navigate({
+          search: (previous) => ({
+            ...previous,
+            status: undefined,
+            created: undefined,
+            updated: undefined,
+          }),
+        }),
     },
   };
 }

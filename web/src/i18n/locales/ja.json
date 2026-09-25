@@ -45,9 +45,51 @@
     "addFilter": "フィルターを追加",
     "filters": {
       "status": "ステータス種別",
+      "createdDate": "作成日",
+      "updatedDate": "更新日",
+      "anyTime": "指定なし",
       "active": "有効な検索フィルター",
       "statusValue": "ステータス: {{status}}",
       "removeStatus": "ステータスフィルターを解除: {{status}}",
+      "dateValue": "{{field}}: {{date}}",
+      "removeDate": "{{field}}フィルターを解除: {{date}}",
+      "activeDate": "{{field}} {{operator}} {{date}}",
+      "changeDateOperator": "{{field}}の日付比較方法を変更",
+      "customTimeframe": "カスタムの日付または期間…",
+      "timeframeDialog": "日付または期間を選択",
+      "timeframeInput": "日付または期間",
+      "timeframePlaceholder": "例: 2027年5月、Q4、2027/05/20",
+      "dayHint": "日付を選択するか、YYYY-MM-DD 形式で入力します。",
+      "monthHint": "月を選択するか、YYYY-MM 形式で入力します。",
+      "chooseQuarter": "{{year}}年第{{quarter}}四半期",
+      "chooseHalfYear": "{{year}}年{{half}}期",
+      "granularities": {
+        "day": "日",
+        "month": "月",
+        "quarter": "四半期",
+        "halfYear": "半期",
+        "year": "年"
+      },
+      "halfValues": {
+        "1": "上期",
+        "2": "下期"
+      },
+      "operators": {
+        "after": "以降",
+        "before": "より前",
+        "in": "期間内"
+      },
+      "apply": "適用",
+      "cancel": "キャンセル",
+      "dateWindows": {
+        "P1D": "1日前",
+        "P3D": "3日前",
+        "P1W": "1週間前",
+        "P1M": "1か月前",
+        "P3M": "3か月前",
+        "P6M": "6か月前",
+        "P1Y": "1年前"
+      },
       "clear": "クリア"
     },
     "categories": "検索カテゴリ",

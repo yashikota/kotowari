@@ -1251,7 +1251,8 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(hits) != 1 || hits[0].Kind != "issue" || hits[0].ID != iss.Identifier || hits[0].Status != "todo" {
+	if len(hits) != 1 || hits[0].Kind != "issue" || hits[0].ID != iss.Identifier ||
+		hits[0].Status != "todo" || hits[0].CreatedAt == "" || hits[0].UpdatedAt == "" {
 		t.Fatalf("identifier search %#v", hits)
 	}
 	hits, err = s.Search("no-such-thing")

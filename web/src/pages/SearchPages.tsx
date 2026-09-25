@@ -27,7 +27,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { PresenterScope, useActions } from '../application/Root.tsx';
+import { SearchDateTimeframeDialog } from '../components/SearchDateTimeframeDialog.tsx';
 import { useFocusWhen } from '../focus.ts';
+import { SEARCH_DATE_WINDOWS } from '../search.ts';
 import { ISSUE_STATUSES, type SearchHit } from '../types.ts';
 import { useSearchPagePresenter } from '../presenters/SearchPages.tsx';
 import styles from './SearchPages.module.css';
@@ -92,7 +94,20 @@ function SearchPageView({
   const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { query, submittedQuery, tab, order, statuses, hits, handlers } = model;
+      const {
+        query,
+        submittedQuery,
+        tab,
+        order,
+        statuses,
+        dates,
+        customDateField,
+        customDateInput,
+        customDateGranularity,
+        hasFilters,
+        hits,
+        handlers,
+      } = model;
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <VisuallyHidden>
@@ -166,6 +181,49 @@ function SearchPageView({
                           {t(`issueStatus.${status}`)}
                         </Menu.CheckboxItem>
                       ))}
+                      <Menu.Divider />
+                      {(['created', 'updated'] as const).map((field) => (
+                        <Menu.Sub key={field}>
+                          <Menu.Sub.Target>
+                            <Menu.Sub.Item>{t(`searchPage.filters.${field}Date`)}</Menu.Sub.Item>
+                          </Menu.Sub.Target>
+                          <Menu.Sub.Dropdown>
+                            <Menu.Label>{t(`searchPage.filters.${field}Date`)}</Menu.Label>
+                            <Menu.Item
+                              leftSection={
+                                !dates[field] ? <IconCheck size={14} aria-hidden /> : null
+                              }
+                              onClick={() => handlers.onDateFilterChange(field, undefined)}
+                            >
+                              {t('searchPage.filters.anyTime')}
+                            </Menu.Item>
+                            {SEARCH_DATE_WINDOWS.map((window) => (
+                              <Menu.Item
+                                key={window}
+                                leftSection={
+                                  dates[field]?.operator === 'after' &&
+                                  dates[field].value.kind === 'relative' &&
+                                  dates[field].value.window === window ? (
+                                    <IconCheck size={14} aria-hidden />
+                                  ) : null
+                                }
+                                onClick={() =>
+                                  handlers.onDateFilterChange(field, {
+                                    operator: 'after',
+                                    value: { kind: 'relative', window },
+                                  })
+                                }
+                              >
+                                {t(`searchPage.filters.dateWindows.${window}`)}
+                              </Menu.Item>
+                            ))}
+                            <Menu.Divider />
+                            <Menu.Item onClick={() => handlers.onOpenCustomDate(field)}>
+                              {t('searchPage.filters.customTimeframe')}
+                            </Menu.Item>
+                          </Menu.Sub.Dropdown>
+                        </Menu.Sub>
+                      ))}
                     </Menu.Dropdown>
                   </Menu>
                   <Menu position="bottom-end" withinPortal shadow="md">
@@ -202,7 +260,7 @@ function SearchPageView({
                   </Menu>
                 </Group>
               </Group>
-              {statuses.length ? (
+              {hasFilters ? (
                 <Group
                   gap={6}
                   mt="sm"
@@ -226,10 +284,90 @@ function SearchPageView({
                       <IconX size={12} aria-hidden />
                     </UnstyledButton>
                   ))}
+                  {(['created', 'updated'] as const).map((field) => {
+                    const filter = dates[field];
+                    if (!filter) return null;
+                    const fieldLabel = t(`searchPage.filters.${field}Date`);
+                    const dateLabel =
+                      filter.value.kind === 'relative'
+                        ? t(`searchPage.filters.dateWindows.${filter.value.window}`)
+                        : filter.value.start === filter.value.end
+                          ? filter.value.start
+                          : `${filter.value.start} – ${filter.value.end}`;
+                    return (
+                      <Group
+                        key={field}
+                        gap={5}
+                        wrap="nowrap"
+                        className={styles.filterChip}
+                        role="group"
+                        aria-label={t('searchPage.filters.activeDate', {
+                          field: fieldLabel,
+                          operator: t(`searchPage.filters.operators.${filter.operator}`),
+                          date: dateLabel,
+                        })}
+                      >
+                        <Text component="span" size="xs">
+                          {fieldLabel}
+                        </Text>
+                        {filter.value.kind === 'relative' ? (
+                          <Menu position="bottom-start" withinPortal shadow="md">
+                            <Menu.Target>
+                              <UnstyledButton
+                                type="button"
+                                className={styles.filterOperator}
+                                aria-label={t('searchPage.filters.changeDateOperator', {
+                                  field: fieldLabel,
+                                })}
+                              >
+                                {t(`searchPage.filters.operators.${filter.operator}`)}
+                              </UnstyledButton>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                              {(['after', 'before'] as const).map((operator) => (
+                                <Menu.Item
+                                  key={operator}
+                                  aria-checked={filter.operator === operator}
+                                  leftSection={
+                                    filter.operator === operator ? (
+                                      <IconCheck size={14} aria-hidden />
+                                    ) : null
+                                  }
+                                  onClick={() => handlers.onDateOperatorChange(field, operator)}
+                                >
+                                  {t(`searchPage.filters.operators.${operator}`)}
+                                </Menu.Item>
+                              ))}
+                            </Menu.Dropdown>
+                          </Menu>
+                        ) : (
+                          <Text component="span" size="xs">
+                            {t(`searchPage.filters.operators.${filter.operator}`)}
+                          </Text>
+                        )}
+                        <Text component="span" size="xs">
+                          {dateLabel}
+                        </Text>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          size="xs"
+                          aria-label={t('searchPage.filters.removeDate', {
+                            field: fieldLabel,
+                            date: dateLabel,
+                          })}
+                          onClick={() => handlers.onDateFilterChange(field, undefined)}
+                        >
+                          <IconX size={12} aria-hidden />
+                        </ActionIcon>
+                      </Group>
+                    );
+                  })}
                   <UnstyledButton
                     type="button"
                     className={styles.clearFilters}
-                    onClick={handlers.onClearStatuses}
+                    onClick={handlers.onClearFilters}
                   >
                     {t('searchPage.filters.clear')}
                   </UnstyledButton>
@@ -277,7 +415,7 @@ function SearchPageView({
                 ) : (
                   <Stack align="center" gap={4} py="xl" role="status">
                     <Text fw={550}>
-                      {statuses.length
+                      {hasFilters
                         ? t('searchPage.noResultsFiltered', { query: submittedQuery })
                         : t('searchPage.noResults')}
                     </Text>
@@ -296,6 +434,17 @@ function SearchPageView({
               )}
             </Box>
           </ScrollArea>
+          <SearchDateTimeframeDialog
+            field={customDateField}
+            value={customDateInput}
+            granularity={customDateGranularity}
+            onValueChange={handlers.onCustomDateInputChange}
+            onGranularityChange={handlers.onCustomDateGranularityChange}
+            onCancel={handlers.onCustomDateCancel}
+            onApply={(range) =>
+              customDateField && handlers.onCustomDateApply(customDateField, range)
+            }
+          />
         </Box>
       );
     }

@@ -1583,7 +1583,14 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   if (path === '/api/search') {
     const q = (url.searchParams.get('q') ?? '').toLowerCase();
     const hits = [
-      ...issues.map((i) => ({ kind: 'issue', id: i.identifier, title: i.title, status: i.status })),
+      ...issues.map((i) => ({
+        kind: 'issue',
+        id: i.identifier,
+        title: i.title,
+        status: i.status,
+        createdAt: i.createdAt,
+        updatedAt: i.updatedAt,
+      })),
       ...projects.map((p) => ({ kind: 'project', id: p.slug, title: p.name })),
       ...pages.map((p) => ({ kind: 'page', id: p.slug, title: p.title })),
       ...adrs.map((a) => ({ kind: 'adr', id: a.identifier, title: a.title })),
