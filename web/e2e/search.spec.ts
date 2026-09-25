@@ -25,6 +25,12 @@ test('workspace search finds issues, projects and documents with shareable categ
       data: { title: `${query} started`, status: 'in_progress' },
     }),
   );
+  const archivedIssue = await json<{ identifier: string }>(
+    await request.post('/api/issues', {
+      data: { title: `${query} archived`, status: 'todo' },
+    }),
+  );
+  await request.patch(`/api/issues/${archivedIssue.identifier}`, { data: { archived: true } });
   const project = await json<{ slug: string }>(
     await request.post('/api/projects', {
       data: { name: `${query} project`, slug: `search-${Date.now()}` },
@@ -132,14 +138,35 @@ test('workspace search finds issues, projects and documents with shareable categ
 
   await page.getByRole('button', { name: 'Remove Created date filter: 1 day ago' }).click();
 
+  await expect(
+    results.getByRole('link', { name: new RegExp(archivedIssue.identifier) }),
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'Display options' }).click();
-  await page.getByRole('menuitem', { name: 'Title A–Z' }).click();
-  await expect(page).toHaveURL(/order=title/);
+  await page.getByRole('menuitemcheckbox', { name: 'Include archived' }).click();
+  await expect(page).toHaveURL(/includeArchived=true/);
+  await expect(
+    results.getByRole('link', { name: new RegExp(archivedIssue.identifier) }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Display options' }).click();
-  await expect(page.getByRole('menuitem', { name: 'Title A–Z' })).toHaveAttribute(
+  await page.getByRole('menuitemcheckbox', { name: 'Include archived' }).click();
+  await expect(page).not.toHaveURL(/includeArchived=true/);
+  await expect(
+    results.getByRole('link', { name: new RegExp(archivedIssue.identifier) }),
+  ).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Last updated' }).click();
+  await expect(page).toHaveURL(/ordering=updatedAt/);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Last updated' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
+  await page.getByRole('menuitem', { name: 'Last created' }).click();
+  await expect(page).toHaveURL(/ordering=createdAt/);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Most relevant' }).click();
+  await expect(page).not.toHaveURL(/ordering=/);
   await page.keyboard.press('Escape');
 
   await results.getByRole('link', { name: new RegExp(issue.identifier) }).click();

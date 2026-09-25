@@ -18,12 +18,27 @@ const hits: SearchHit[] = [
 
 describe('search page state', () => {
   it('validates and bounds shareable search parameters', () => {
-    expect(parseSearchPageSearch({ q: '  release  ', tab: 'documents', order: 'title' })).toEqual({
+    expect(
+      parseSearchPageSearch({
+        q: '  release  ',
+        tab: 'documents',
+        ordering: 'createdAt',
+        includeArchived: 'true',
+      }),
+    ).toEqual({
       q: 'release',
       tab: 'documents',
-      order: 'title',
+      ordering: 'createdAt',
+      includeArchived: true,
     });
-    expect(parseSearchPageSearch({ q: '   ', tab: 'unknown', order: 'unknown' })).toEqual({});
+    expect(
+      parseSearchPageSearch({
+        q: '   ',
+        tab: 'unknown',
+        ordering: 'unknown',
+        includeArchived: 'sometimes',
+      }),
+    ).toEqual({});
     expect(parseSearchPageSearch({ q: 'x'.repeat(205) }).q).toHaveLength(200);
     expect(
       parseSearchPageSearch({
@@ -41,6 +56,24 @@ describe('search page state', () => {
     expect(filterSearchHits(hits, 'documents').map((hit) => hit.kind)).toEqual(['adr', 'page']);
     expect(filterSearchHits(hits, 'all', ['todo']).map((hit) => hit.id)).toEqual(['APP-1']);
     expect(filterSearchHits(hits, 'projects', ['todo'])).toEqual([]);
+  });
+
+  it('excludes archived issues unless the search option explicitly includes them', () => {
+    const archivedIssue: SearchHit = {
+      kind: 'issue',
+      id: 'APP-2',
+      title: 'Archived issue',
+      status: 'todo',
+      archived: true,
+    };
+    expect(filterSearchHits([...hits, archivedIssue], 'all').map((hit) => hit.id)).not.toContain(
+      'APP-2',
+    );
+    expect(
+      filterSearchHits([...hits, archivedIssue], 'all', [], {}, Date.now(), true).map(
+        (hit) => hit.id,
+      ),
+    ).toContain('APP-2');
   });
 
   it('combines created and updated date filters for issue results', () => {
@@ -181,15 +214,42 @@ describe('search page state', () => {
     ).toEqual(['APP-1', 'APP-2']);
   });
 
-  it('orders titles without mutating the source result order', () => {
+  it('orders results by recent updates or creation while keeping source arrays intact', () => {
     expect(orderSearchHits(hits, 'relevance')).toEqual(hits);
-    expect(orderSearchHits(hits, 'title').map((hit) => hit.title)).toEqual([
-      'Alpha project',
-      'Decision',
-      'Guide',
-      'Open work',
-      'Zebra issue',
+    const datedHits: SearchHit[] = [
+      {
+        kind: 'issue',
+        id: 'APP-1',
+        title: 'Older',
+        createdAt: '2026-09-01',
+        updatedAt: '2026-09-03',
+      },
+      {
+        kind: 'project',
+        id: 'project',
+        title: 'New',
+        createdAt: '2026-09-04',
+        updatedAt: '2026-09-05',
+      },
+      {
+        kind: 'page',
+        id: 'page',
+        title: 'Latest created',
+        createdAt: '2026-09-06',
+        updatedAt: '2026-09-02',
+      },
+    ];
+    expect(orderSearchHits(datedHits, 'updatedAt').map((hit) => hit.id)).toEqual([
+      'project',
+      'APP-1',
+      'page',
     ]);
+    expect(orderSearchHits(datedHits, 'createdAt').map((hit) => hit.id)).toEqual([
+      'page',
+      'project',
+      'APP-1',
+    ]);
+    expect(orderSearchHits(hits, 'createdAt')).toEqual(hits);
     expect(hits[0]?.title).toBe('Zebra issue');
   });
 

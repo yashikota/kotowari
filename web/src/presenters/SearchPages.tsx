@@ -23,7 +23,8 @@ export function useSearchPagePresenter() {
   const navigate = useNavigate({ from: '/search' });
   const [query, setQuery] = useState(search.q ?? '');
   const tab = search.tab ?? 'all';
-  const order = search.order ?? 'relevance';
+  const order = search.ordering ?? 'relevance';
+  const includeArchived = search.includeArchived ?? false;
   const statuses = (search.status?.split(',') ?? []) as IssueStatus[];
   const dates: SearchDateFilters = {
     ...(parseSearchDateFilter(search.created)
@@ -46,13 +47,18 @@ export function useSearchPagePresenter() {
     submittedQuery: search.q ?? '',
     tab,
     order,
+    includeArchived,
     statuses,
     dates,
     customDateField,
     customDateInput,
     customDateGranularity,
     hasFilters: statuses.length > 0 || dates.created !== undefined || dates.updated !== undefined,
-    hits: orderSearchHits(filterSearchHits(hits, tab, statuses, dates), order, search.q ?? ''),
+    hits: orderSearchHits(
+      filterSearchHits(hits, tab, statuses, dates, Date.now(), includeArchived),
+      order,
+      search.q ?? '',
+    ),
     handlers: {
       onQueryChange: (value: string) => setQuery(value),
       onSubmit: (event: FormEvent<HTMLFormElement>) => {
@@ -73,7 +79,17 @@ export function useSearchPagePresenter() {
       },
       onOrderChange: (order: SearchOrder) =>
         navigate({
-          search: (previous) => ({ ...previous, order: order === 'relevance' ? undefined : order }),
+          search: (previous) => ({
+            ...previous,
+            ordering: order === 'relevance' ? undefined : order,
+          }),
+        }),
+      onIncludeArchivedChange: (includeArchived: boolean) =>
+        navigate({
+          search: (previous) => ({
+            ...previous,
+            includeArchived: includeArchived ? true : undefined,
+          }),
         }),
       onToggleStatus: (status: IssueStatus) =>
         navigate({

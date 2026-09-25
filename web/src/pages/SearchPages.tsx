@@ -99,6 +99,7 @@ function SearchPageView({
         submittedQuery,
         tab,
         order,
+        includeArchived,
         statuses,
         dates,
         customDateField,
@@ -249,13 +250,27 @@ function SearchPageView({
                       >
                         {t('searchPage.mostRelevant')}
                       </Menu.Item>
-                      <Menu.Item
-                        aria-checked={order === 'title'}
-                        leftSection={order === 'title' ? <IconCheck size={14} aria-hidden /> : null}
-                        onClick={() => handlers.onOrderChange('title')}
+                      {(['updatedAt', 'createdAt'] as const).map((ordering) => (
+                        <Menu.Item
+                          key={ordering}
+                          aria-checked={order === ordering}
+                          leftSection={
+                            order === ordering ? <IconCheck size={14} aria-hidden /> : null
+                          }
+                          onClick={() => handlers.onOrderChange(ordering)}
+                        >
+                          {t(
+                            `searchPage.${ordering === 'updatedAt' ? 'lastUpdated' : 'lastCreated'}`,
+                          )}
+                        </Menu.Item>
+                      ))}
+                      <Menu.Divider />
+                      <Menu.CheckboxItem
+                        checked={includeArchived}
+                        onChange={() => handlers.onIncludeArchivedChange(!includeArchived)}
                       >
-                        {t('searchPage.titleAZ')}
-                      </Menu.Item>
+                        {t('searchPage.includeArchived')}
+                      </Menu.CheckboxItem>
                     </Menu.Dropdown>
                   </Menu>
                 </Group>

@@ -1255,6 +1255,14 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 		hits[0].Status != "todo" || hits[0].CreatedAt == "" || hits[0].UpdatedAt == "" {
 		t.Fatalf("identifier search %#v", hits)
 	}
+	archived := true
+	if _, err := s.UpdateIssue(iss.Identifier, PatchIssueInput{Archived: &archived}); err != nil {
+		t.Fatal(err)
+	}
+	hits, err = s.Search("iss-1")
+	if err != nil || len(hits) != 1 || !hits[0].Archived {
+		t.Fatalf("archived issue search %#v, err = %v", hits, err)
+	}
 	hits, err = s.Search("no-such-thing")
 	if err != nil {
 		t.Fatal(err)

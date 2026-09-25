@@ -1,7 +1,7 @@
 import { ISSUE_STATUSES, type IssueStatus, type SearchHit } from './types.ts';
 
 export type SearchTab = 'all' | 'issues' | 'projects' | 'documents';
-export type SearchOrder = 'relevance' | 'title';
+export type SearchOrder = 'relevance' | 'updatedAt' | 'createdAt';
 export type SearchDateWindow = 'P1D' | 'P3D' | 'P1W' | 'P1M' | 'P3M' | 'P6M' | 'P1Y';
 export type SearchDateField = 'created' | 'updated';
 export type SearchDateOperator = 'after' | 'before' | 'in';
@@ -24,10 +24,11 @@ export const SEARCH_DATE_WINDOWS: SearchDateWindow[] = [
 export type SearchPageSearch = {
   q?: string;
   tab?: SearchTab;
-  order?: SearchOrder;
+  ordering?: SearchOrder;
   status?: string;
   created?: string;
   updated?: string;
+  includeArchived?: boolean;
 };
 
 export function parseSearchPageSearch(raw: Record<string, unknown>): SearchPageSearch {
@@ -46,15 +47,19 @@ export function parseSearchPageSearch(raw: Record<string, unknown>): SearchPageS
       : [];
   const created = parseSearchDateFilter(raw.created);
   const updated = parseSearchDateFilter(raw.updated);
+  const ordering =
+    raw.ordering === 'updatedAt' || raw.ordering === 'createdAt' ? raw.ordering : undefined;
+  const includeArchived = raw.includeArchived === true || raw.includeArchived === 'true';
   return {
     ...(q ? { q } : {}),
     ...(raw.tab === 'issues' || raw.tab === 'projects' || raw.tab === 'documents'
       ? { tab: raw.tab }
       : {}),
-    ...(raw.order === 'title' ? { order: raw.order } : {}),
+    ...(ordering ? { ordering } : {}),
     ...(statuses.length ? { status: statuses.join(',') } : {}),
     ...(created ? { created: serializeSearchDateFilter(created) } : {}),
     ...(updated ? { updated: serializeSearchDateFilter(updated) } : {}),
+    ...(includeArchived ? { includeArchived: true } : {}),
   };
 }
 
@@ -225,20 +230,22 @@ export function filterSearchHits(
   statuses: IssueStatus[] = [],
   dates: SearchDateFilters = {},
   now = Date.now(),
+  includeArchived = false,
 ): SearchHit[] {
   let filtered: SearchHit[];
+  const visibleHits = includeArchived ? hits : hits.filter((hit) => !hit.archived);
   switch (tab) {
     case 'issues':
-      filtered = hits.filter((hit) => hit.kind === 'issue');
+      filtered = visibleHits.filter((hit) => hit.kind === 'issue');
       break;
     case 'projects':
-      filtered = hits.filter((hit) => hit.kind === 'project');
+      filtered = visibleHits.filter((hit) => hit.kind === 'project');
       break;
     case 'documents':
-      filtered = hits.filter((hit) => hit.kind === 'page' || hit.kind === 'adr');
+      filtered = visibleHits.filter((hit) => hit.kind === 'page' || hit.kind === 'adr');
       break;
     case 'all':
-      filtered = hits;
+      filtered = visibleHits;
       break;
   }
   if (!statuses.length && !dates.created && !dates.updated) return filtered;
@@ -301,19 +308,26 @@ function relativeDateCutoff(window: SearchDateWindow, now: number): string {
 }
 
 export function orderSearchHits(hits: SearchHit[], order: SearchOrder, query = ''): SearchHit[] {
-  if (order === 'relevance') {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return hits;
+  if (order !== 'relevance') {
     return hits
-      .map((hit, index) => ({ hit, index, score: relevanceScore(hit, needle) }))
-      .sort((left, right) => left.score - right.score || left.index - right.index)
+      .map((hit, index) => ({ hit, index, timestamp: Date.parse(hit[order] ?? '') }))
+      .sort((left, right) => {
+        const leftTime = Number.isFinite(left.timestamp)
+          ? left.timestamp
+          : Number.NEGATIVE_INFINITY;
+        const rightTime = Number.isFinite(right.timestamp)
+          ? right.timestamp
+          : Number.NEGATIVE_INFINITY;
+        return rightTime - leftTime || left.index - right.index;
+      })
       .map(({ hit }) => hit);
   }
-  return [...hits].sort((left, right) => {
-    const a = left.title.toLowerCase();
-    const b = right.title.toLowerCase();
-    return a < b ? -1 : a > b ? 1 : 0;
-  });
+  const needle = query.trim().toLowerCase();
+  if (!needle) return hits;
+  return hits
+    .map((hit, index) => ({ hit, index, score: relevanceScore(hit, needle) }))
+    .sort((left, right) => left.score - right.score || left.index - right.index)
+    .map(({ hit }) => hit);
 }
 
 function relevanceScore(hit: SearchHit, query: string): number {

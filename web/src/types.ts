@@ -298,6 +298,7 @@ export type SearchHit = {
   id: string;
   title: string;
   status?: IssueStatus;
+  archived?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };

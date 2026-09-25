@@ -1588,12 +1588,31 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         id: i.identifier,
         title: i.title,
         status: i.status,
+        archived: Boolean(i.archivedAt),
         createdAt: i.createdAt,
         updatedAt: i.updatedAt,
       })),
-      ...projects.map((p) => ({ kind: 'project', id: p.slug, title: p.name })),
-      ...pages.map((p) => ({ kind: 'page', id: p.slug, title: p.title })),
-      ...adrs.map((a) => ({ kind: 'adr', id: a.identifier, title: a.title })),
+      ...projects.map((p) => ({
+        kind: 'project',
+        id: p.slug,
+        title: p.name,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      })),
+      ...pages.map((p) => ({
+        kind: 'page',
+        id: p.slug,
+        title: p.title,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      })),
+      ...adrs.map((a) => ({
+        kind: 'adr',
+        id: a.identifier,
+        title: a.title,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+      })),
     ].filter((x) => x.title.toLowerCase().includes(q));
     return json(hits);
   }
