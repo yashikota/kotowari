@@ -9,7 +9,7 @@ import {
 import type * as React from 'react';
 import { useMemo, useState } from 'react';
 import { api, type IssueSearch } from '../api.ts';
-import { useIntent, useRootMachineFlag } from '../application/Root.tsx';
+import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
@@ -34,6 +34,7 @@ import type { ProjectDisplayProperty } from '../project-display.ts';
 import { matchesProjectTitleSummary, useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { groupProjects } from '../project-grouping.ts';
+import { isTypingTarget } from '../keymap.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type {
   Activity,
@@ -1546,6 +1547,49 @@ export function useCycleDetailPagePresenter() {
   const [descriptionDraft, setDescriptionDraft] = useState(cycle.description ?? '');
   const [startDateDraft, setStartDateDraft] = useState(cycle.startsAt.slice(0, 10));
   const [endDateDraft, setEndDateDraft] = useState(cycle.endsAt.slice(0, 10));
+
+  const cycleNavigationOptions = useMemo(() => {
+    const otherCycles = data.cycles.filter((candidate) => candidate.number !== cycle.number);
+    const next = otherCycles
+      .filter((candidate) => candidate.status === 'upcoming' && candidate.number > cycle.number)
+      .sort((a, b) => a.number - b.number);
+    const previous = otherCycles
+      .filter((candidate) => candidate.status === 'completed' && candidate.number < cycle.number)
+      .sort((a, b) => b.number - a.number);
+    return {
+      next: next.slice(0, 1),
+      previous: previous.slice(0, 1),
+    };
+  }, [cycle.number, data.cycles]);
+
+  function navigateToCycle(number: number) {
+    void navigate({ to: '/cycles/$number', params: { number: String(number) } });
+  }
+
+  useKeyboard((event) => {
+    if (
+      !event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      isTypingTarget(event.target)
+    )
+      return false;
+
+    const key = event.key.toLowerCase();
+    if (key === 'k' && cycleNavigationOptions.next[0]) {
+      event.preventDefault();
+      navigateToCycle(cycleNavigationOptions.next[0].number);
+      return true;
+    }
+    if (key === 'j' && cycleNavigationOptions.previous[0]) {
+      event.preventDefault();
+      navigateToCycle(cycleNavigationOptions.previous[0].number);
+      return true;
+    }
+    return false;
+  }, true);
 
   if (cycle.number !== data.cycle.number) {
     setCycle(data.cycle);

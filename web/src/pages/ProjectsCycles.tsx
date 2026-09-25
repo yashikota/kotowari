@@ -1041,7 +1041,7 @@ export function CycleDetailPageView({
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <PageHeader
-            title={cycle.name || t('field.cycleN', { number: cycle.number })}
+            title={null}
             actions={
               <Group gap="xs" wrap="wrap">
                 <Switch

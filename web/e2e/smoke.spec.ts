@@ -276,11 +276,13 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await page.getByRole('link', { name: 'Cycles' }).click();
   await page.getByRole('button', { name: 'New cycle' }).click();
   await expect(page).toHaveURL(/\/cycles\/\d+$/);
-  const cycleHeading = page.getByRole('heading', { name: /^Cycle \d+$/ });
-  await expect(cycleHeading).toBeVisible();
-  const cycleName = (await cycleHeading.textContent())?.trim();
+  const cycleNameButton = page
+    .getByRole('navigation', { name: 'Breadcrumb' })
+    .getByRole('button', { name: 'Open cycle' });
+  await expect(cycleNameButton).toBeVisible();
+  const cycleName = (await cycleNameButton.textContent())?.trim();
   if (!cycleName) {
-    throw new Error('expected cycle heading');
+    throw new Error('expected cycle navigation label');
   }
   const cycleProgress = page.getByRole('region', { name: 'Progress', exact: true });
   await expect(cycleProgress.getByText('Scope', { exact: true }).first()).toBeVisible();

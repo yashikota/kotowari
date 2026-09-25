@@ -1,4 +1,4 @@
-import { Outlet } from '@tanstack/react-router';
+import { Link, Outlet } from '@tanstack/react-router';
 import {
   Alert,
   ActionIcon,
@@ -49,6 +49,7 @@ import { useTranslation } from 'react-i18next';
 import { useFocusWhen } from '../focus.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { RouterNavLink } from '../mantine-ui.tsx';
+import { CycleNavigationMenu } from './CycleNavigationMenu.tsx';
 import { CONFIG_NAV } from '../nav.ts';
 import { workflowStatusLabel } from '../workflow.tsx';
 import { IssueWorkflowProvider } from '../workflow.tsx';
@@ -141,6 +142,12 @@ export function ShellView({
         workspaceName,
         routeTitle,
         isIssueDetail,
+        isCycleDetail,
+        currentCycleName,
+        cycleNavigationOpen,
+        cycleNavigationQuery,
+        nextCycles,
+        previousCycles,
         isPageOwnedHeader,
         mobileNavigationOpen,
         moreLinksOpen,
@@ -495,9 +502,42 @@ export function ShellView({
                     aria-hidden
                     color="var(--mantine-color-dimmed)"
                   />
-                  <Text size="sm" fw={500} truncate>
-                    {routeTitle}
-                  </Text>
+                  {isCycleDetail ? (
+                    <>
+                      <Link
+                        to="/cycles"
+                        search={{ scope: 'all' }}
+                        style={{
+                          color: 'var(--mantine-color-dimmed)',
+                          fontSize: 'var(--mantine-font-size-sm)',
+                          textDecoration: 'none',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {t('nav.cycles')}
+                      </Link>
+                      <IconChevronRight
+                        size={14}
+                        stroke={1.6}
+                        aria-hidden
+                        color="var(--mantine-color-dimmed)"
+                      />
+                      <CycleNavigationMenu
+                        currentCycleName={currentCycleName}
+                        opened={cycleNavigationOpen}
+                        nextCycles={nextCycles}
+                        previousCycles={previousCycles}
+                        searchQuery={cycleNavigationQuery}
+                        onOpenChange={handlers.onCycleNavigationOpenChange}
+                        onSearchChange={handlers.onCycleNavigationQueryChange}
+                        onNavigate={handlers.onNavigateCycle}
+                      />
+                    </>
+                  ) : (
+                    <Text size="sm" fw={500} truncate>
+                      {routeTitle}
+                    </Text>
+                  )}
                 </Group>
                 <Group gap={4} wrap="nowrap">
                   <ActionIcon

@@ -53,7 +53,7 @@ function localDateValue(date: Date): string {
 }
 
 export function useShellPresenter() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const send = useIntent();
   const navigate = useNavigate();
   const router = useRouter();
@@ -99,8 +99,11 @@ export function useShellPresenter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const routeSearch = useRouterState({ select: (s) => s.location.search });
   const isIssueDetail = pathname.startsWith('/issues/');
+  const isCycleDetail = pathname.startsWith('/cycles/');
   const isPageOwnedHeader =
     pathname === '/projects' || pathname === '/cycles' || pathname === '/initiatives';
+  const [cycleNavigationOpen, setCycleNavigationOpen] = useState(false);
+  const [cycleNavigationQuery, setCycleNavigationQuery] = useState('');
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [views, setViews] = useState<View[]>([]);
@@ -297,7 +300,11 @@ export function useShellPresenter() {
         'Project'
       );
     if (pathname === '/cycles') return 'Cycles';
-    if (pathname.startsWith('/cycles/')) return `Cycle ${pathname.slice('/cycles/'.length)}`;
+    if (pathname.startsWith('/cycles/')) {
+      const number = Number(pathname.slice('/cycles/'.length));
+      const cycle = cycles.find((candidate) => candidate.number === number);
+      return cycle?.name || t('field.cycleN', { number });
+    }
     if (pathname === '/initiatives') return t('nav.initiatives');
     if (pathname.startsWith('/initiatives/'))
       return (
@@ -315,6 +322,38 @@ export function useShellPresenter() {
     if (pathname === '/config') return 'Settings';
     return workspaceName || 'Workspace';
   })();
+  const currentCycleNumber = isCycleDetail ? Number(pathname.slice('/cycles/'.length)) : 0;
+  const currentCycle = cycles.find((cycle) => cycle.number === currentCycleNumber);
+  const currentCycleName = currentCycle?.name || t('field.cycleN', { number: currentCycleNumber });
+  const cycleNavigationOptions = (() => {
+    const query = cycleNavigationQuery.trim().toLocaleLowerCase(i18n.language);
+    const matches = cycles.filter((candidate) => {
+      if (candidate.number === currentCycleNumber) return false;
+      if (!query) return true;
+      const name = candidate.name || t('field.cycleN', { number: candidate.number });
+      return `${name} ${candidate.number}`.toLocaleLowerCase(i18n.language).includes(query);
+    });
+    const next = matches
+      .filter(
+        (candidate) => candidate.status === 'upcoming' && candidate.number > currentCycleNumber,
+      )
+      .sort((a, b) => a.number - b.number);
+    const previous = matches
+      .filter(
+        (candidate) => candidate.status === 'completed' && candidate.number < currentCycleNumber,
+      )
+      .sort((a, b) => b.number - a.number);
+    return {
+      next: query ? next : next.slice(0, 1),
+      previous: query ? previous : previous.slice(0, 1),
+    };
+  })();
+
+  function navigateToCycle(number: number) {
+    setCycleNavigationOpen(false);
+    setCycleNavigationQuery('');
+    void navigate({ to: '/cycles/$number', params: { number: String(number) } });
+  }
 
   const runCommand = useCallback(
     async (id: string) => {
@@ -676,6 +715,12 @@ export function useShellPresenter() {
     workspaceName,
     routeTitle,
     isIssueDetail,
+    isCycleDetail,
+    currentCycleName,
+    cycleNavigationOpen,
+    cycleNavigationQuery,
+    nextCycles: cycleNavigationOptions.next,
+    previousCycles: cycleNavigationOptions.previous,
     isPageOwnedHeader,
     mobileNavigationOpen,
     workspaceNavigationOpen,
@@ -744,6 +789,12 @@ export function useShellPresenter() {
     error,
     commands,
     handlers: {
+      onCycleNavigationOpenChange: (opened: boolean) => {
+        setCycleNavigationOpen(opened);
+        if (!opened) setCycleNavigationQuery('');
+      },
+      onCycleNavigationQueryChange: (query: string) => setCycleNavigationQuery(query),
+      onNavigateCycle: navigateToCycle,
       submitIssue: () => send('submit:Issue'),
       submitADR: () => send('submit:ADR'),
       submitPage: () => send('submit:Page'),
