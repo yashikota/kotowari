@@ -64,6 +64,7 @@ const NAV_ICONS: Record<string, ReactNode> = {
   '/reminders': <IconBell size={14} aria-hidden />,
   '/agent': <IconSparkles size={14} aria-hidden />,
   '/issues': <IconListCheck size={14} aria-hidden />,
+  '/my-issues': <IconListCheck size={14} aria-hidden />,
   '/board': <IconLayoutKanban size={14} aria-hidden />,
   '/adrs': <IconScale size={14} aria-hidden />,
   '/projects': <IconStack2 size={14} aria-hidden />,
@@ -154,6 +155,7 @@ export function ShellView({
         issueStatus,
         issueWorkflowStatuses,
         issuePriority,
+        issueAssignee,
         issueProjectId,
         issueCycleId,
         helpOpen,
@@ -629,6 +631,16 @@ export function ShellView({
                 />
               </Group>
               <Group grow align="flex-start">
+                <NativeSelect
+                  aria-label={t('field.assignee')}
+                  label={t('field.assignee')}
+                  value={issueAssignee}
+                  onChange={handlers.Issue_assignee_onChange}
+                  data={[
+                    { value: '', label: t('issueAssignment.unassigned') },
+                    { value: 'self', label: t('issueAssignment.you') },
+                  ]}
+                />
                 <NativeSelect
                   aria-label={t('field.project')}
                   label={t('field.project')}

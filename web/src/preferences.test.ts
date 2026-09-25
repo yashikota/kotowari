@@ -11,6 +11,7 @@ describe('personal preferences', () => {
       sidebarLocations: {
         '/': 'primary',
         '/reminders': 'primary',
+        '/my-issues': 'primary',
         '/agent': 'primary',
         '/issues': 'primary',
         '/board': 'more',
@@ -25,6 +26,7 @@ describe('personal preferences', () => {
       sidebarOrder: [
         '/',
         '/reminders',
+        '/my-issues',
         '/agent',
         '/issues',
         '/board',

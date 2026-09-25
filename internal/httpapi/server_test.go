@@ -1275,6 +1275,55 @@ func TestListIssuesPriorityQuery(t *testing.T) {
 	}
 }
 
+func TestIssueAssigneeAPIAndPersonalFilter(t *testing.T) {
+	s := testAPI(t)
+	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"my issue","assignee":"self"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create assigned issue %d %s", rec.Code, rec.Body.String())
+	}
+	var created store.Issue
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Assignee != "self" {
+		t.Fatalf("created assignee = %q", created.Assignee)
+	}
+
+	rec = doJSON(t, s, "POST", "/api/issues", `{"title":"another issue"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create unassigned issue %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/issues?assignee=self", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("filter assigned issues %d %s", rec.Code, rec.Body.String())
+	}
+	var assigned []store.Issue
+	if err := json.Unmarshal(rec.Body.Bytes(), &assigned); err != nil {
+		t.Fatal(err)
+	}
+	if len(assigned) != 1 || assigned[0].Identifier != created.Identifier {
+		t.Fatalf("assigned issues = %#v", assigned)
+	}
+
+	rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"assignee":null}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("clear assignee %d %s", rec.Code, rec.Body.String())
+	}
+	var cleared store.Issue
+	if err := json.Unmarshal(rec.Body.Bytes(), &cleared); err != nil {
+		t.Fatal(err)
+	}
+	if cleared.Assignee != "" {
+		t.Fatalf("cleared assignee = %q", cleared.Assignee)
+	}
+	if rec = doJSON(t, s, "PATCH", "/api/issues/"+created.Identifier, `{"assignee":"another-user"}`); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid assignee code %d: %s", rec.Code, rec.Body.String())
+	}
+	if rec = doJSON(t, s, "GET", "/api/issues?assignee=another-user", ""); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid assignee filter code %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestIssueMilestoneNameFilterAndSavedViewAPI(t *testing.T) {
 	s := testAPI(t)
 	projectResponse := doJSON(t, s, "POST", "/api/projects", `{"name":"Release","slug":"release"}`)

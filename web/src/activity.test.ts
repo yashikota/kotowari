@@ -26,6 +26,12 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes assignment changes for the single local user', () => {
+    expect(formatActivity('assignee_changed', { from: '', to: 'self' })).toBe(
+      'Assignee Unassigned → You',
+    );
+  });
+
   it('describes milestone changes', () => {
     expect(formatActivity('milestone_changed', { from: '', to: 'Beta' })).toBe(
       'Milestone No milestone → Beta',

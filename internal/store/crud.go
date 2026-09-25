@@ -26,7 +26,7 @@ func isRestoreOnlyIssuePatch(in PatchIssueInput) bool {
 	}
 	return in.Title == nil && in.Body == nil && in.Status == nil && in.WorkflowStatus == nil && in.Type == nil &&
 		in.Priority == nil && in.Estimate == nil && in.ProjectID == nil && in.MilestoneID == nil &&
-		in.CycleID == nil && in.ParentID == nil && in.DueDate == nil && in.ReminderAt == nil &&
+		in.Assignee == nil && in.CycleID == nil && in.ParentID == nil && in.DueDate == nil && in.ReminderAt == nil &&
 		in.LabelIDs == nil && in.SortOrder == nil && in.IsFavorite == nil
 }
 
@@ -1124,6 +1124,9 @@ func ensureSingleActive(m *mem, id int64, status string) {
 
 func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	var out []Issue
+	if f.Assignee != "" && f.Assignee != "self" {
+		return nil, validationf("invalid issue assignee")
+	}
 	if f.ProjectStatus != "" {
 		statuses, err := s.ProjectWorkflowStatuses()
 		if err != nil {
@@ -1199,6 +1202,9 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	customDueDate := strings.TrimPrefix(f.DueDate, "on:")
 	err := s.snapshot(func(m *mem) error {
 		for _, iss := range m.Issues {
+			if f.Assignee != "" && iss.Assignee != f.Assignee {
+				continue
+			}
 			if f.Archived == nil && iss.ArchivedAt != nil {
 				continue
 			}
@@ -1512,6 +1518,9 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 	if !domain.ValidEstimate(in.Estimate) {
 		return Issue{}, validationf("invalid estimate")
 	}
+	if in.Assignee != "" && in.Assignee != "self" {
+		return Issue{}, validationf("invalid issue assignee")
+	}
 	now := domain.Now()
 	normalizedLinks, err := normalizeIssueLinks(in.ExternalLinks)
 	if err != nil {
@@ -1554,7 +1563,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		}
 		out = Issue{
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
-			Status: workflowState.Category, WorkflowStatus: workflowState.ID, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
+			Status: workflowState.Category, WorkflowStatus: workflowState.ID, Assignee: in.Assignee, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
 			DueDate: in.DueDate, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
 			StartedAt: startedAt, CompletedAt: completedAt(workflowState.Category, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: externalLinks, Relations: []IssueRelation{}, Reactions: []string{}, Attachments: []CommentAttachment{},
 		}
@@ -1622,6 +1631,7 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		}
 		oldStatus := iss.Status
 		oldWorkflowStatus := iss.WorkflowStatus
+		oldAssignee := iss.Assignee
 		oldType := iss.Type
 		oldEstimate := iss.Estimate
 		oldFavorite := iss.IsFavorite
@@ -1663,6 +1673,12 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 				return validationf("invalid issue type")
 			}
 			iss.Type = *in.Type
+		}
+		if in.Assignee != nil {
+			if *in.Assignee != "" && *in.Assignee != "self" {
+				return validationf("invalid issue assignee")
+			}
+			iss.Assignee = *in.Assignee
 		}
 		if in.Priority != nil {
 			if !domain.ValidPriority(*in.Priority) {
@@ -1792,6 +1808,9 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		}
 		if in.Estimate != nil && !sameEstimate(oldEstimate, iss.Estimate) {
 			addActivity(m, "issue", iss.ID, "estimate_changed", map[string]any{"from": oldEstimate, "to": iss.Estimate}, now)
+		}
+		if oldAssignee != iss.Assignee {
+			addActivity(m, "issue", iss.ID, "assignee_changed", map[string]any{"from": oldAssignee, "to": iss.Assignee}, now)
 		}
 		if in.IsFavorite != nil && oldFavorite != iss.IsFavorite {
 			addActivity(m, "issue", iss.ID, "favorite_changed", map[string]any{"favorite": iss.IsFavorite}, now)

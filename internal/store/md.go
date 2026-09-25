@@ -12,6 +12,7 @@ type issueFM struct {
 	Title          string              `toml:"title"`
 	Status         string              `toml:"status"`
 	WorkflowStatus string              `toml:"workflow_status,omitempty"`
+	Assignee       string              `toml:"assignee,omitempty"`
 	Type           string              `toml:"type,omitempty"`
 	Priority       int                 `toml:"priority"`
 	Estimate       *int                `toml:"estimate,omitempty"`
@@ -128,6 +129,7 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		Body:             body,
 		Status:           fm.Status,
 		WorkflowStatus:   fm.WorkflowStatus,
+		Assignee:         fm.Assignee,
 		Type:             fm.Type,
 		Priority:         fm.Priority,
 		Estimate:         fm.Estimate,
@@ -282,6 +284,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		Title:          iss.Title,
 		Status:         iss.Status,
 		WorkflowStatus: iss.WorkflowStatus,
+		Assignee:       iss.Assignee,
 		Type:           iss.Type,
 		Priority:       iss.Priority,
 		Estimate:       iss.Estimate,

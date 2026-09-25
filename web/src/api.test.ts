@@ -19,6 +19,13 @@ describe('issuesQuery', () => {
     ).toBe('?status=todo&project=harbor&cycle=2&labels=Bug%2CFeature&priority=1');
   });
 
+  it('encodes the personal issue assignment filter', () => {
+    expect(issuesQuery({ assignee: 'self' })).toBe('?assignee=self');
+    expect(parseIssueSearch({ assignee: 'self' })).toEqual({ assignee: 'self' });
+    expect(parseIssueSearch({ assignee: 'someone-else' })).toEqual({});
+    expect(searchToFilter({ assignee: 'self' })).toMatchObject({ assignee: 'self' });
+  });
+
   it('encodes issue type and estimate filters including zero estimates', () => {
     expect(issuesQuery({ type: 'feature', estimate: 0 })).toBe('?type=feature&estimate=0');
   });

@@ -42,6 +42,7 @@ export type Issue = {
   body: string;
   status: IssueStatus;
   workflowStatus?: string;
+  assignee?: 'self';
   type?: IssueType;
   priority: number;
   estimate?: number | null;

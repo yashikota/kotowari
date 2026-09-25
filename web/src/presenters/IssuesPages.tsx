@@ -38,6 +38,7 @@ type IssueListData = {
 function compactSearch(next: IssueSearch): IssueSearch {
   return parseIssueSearch({
     archived: next.archived,
+    assignee: next.assignee ?? '',
     status: next.status ?? '',
     project: next.project ?? '',
     cycle: next.cycle ?? '',

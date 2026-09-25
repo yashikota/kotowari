@@ -42,6 +42,13 @@ describe('issue list display defaults', () => {
   it('shows the created date by default without adding workspace-only milestone metadata', () => {
     expect(DEFAULT_DISPLAY_PROPERTIES).toContain('created');
     expect(DEFAULT_DISPLAY_PROPERTIES).not.toContain('milestone');
+    expect(DEFAULT_DISPLAY_PROPERTIES.slice(0, 5)).toEqual([
+      'id',
+      'status',
+      'assignee',
+      'priority',
+      'project',
+    ]);
   });
 
   it('formats the issue creation date as a compact localized month and day', () => {
@@ -219,6 +226,20 @@ describe('buildIssueListRows', () => {
       'estimate:3',
       'estimate:8',
       'estimate:none',
+    ]);
+  });
+
+  it('groups and sorts personal assignees before unassigned issues', () => {
+    const assigned = { ...issue(1, 2), assignee: 'self' as const };
+    const unassigned = issue(2, 2);
+    const rows = buildIssueListRows([unassigned, assigned], new Set(), 'assignee');
+    expect(rows.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
+      'assignee:self',
+      'assignee:none',
+    ]);
+    expect(sortIssues([unassigned, assigned], 'assignee').map((item) => item.identifier)).toEqual([
+      assigned.identifier,
+      unassigned.identifier,
     ]);
   });
 

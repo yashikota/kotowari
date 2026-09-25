@@ -22,6 +22,7 @@ import type {
 const DISPLAY_PROPERTIES: IssueDisplayProperty[] = [
   'id',
   'status',
+  'assignee',
   'priority',
   'project',
   'dueDate',
@@ -97,7 +98,17 @@ export function IssueDisplayOptions({
   const groupOptions = [
     { value: 'none', label: t('displayOptions.noGrouping') },
     ...(
-      ['status', 'priority', 'project', 'cycle', 'label', 'parent', 'type', 'estimate'] as const
+      [
+        'status',
+        'assignee',
+        'project',
+        'priority',
+        'cycle',
+        'label',
+        'parent',
+        'type',
+        'estimate',
+      ] as const
     ).map((group) => ({ value: group, label: t(`displayOptions.group.${group}`) })),
   ];
   const orderOptions = [
@@ -105,6 +116,7 @@ export function IssueDisplayOptions({
     { value: 'title', label: t('displayOptions.order.title') },
     { value: 'status', label: t('field.status') },
     { value: 'priority', label: t('field.priority') },
+    { value: 'assignee', label: t('displayOptions.order.assignee') },
     { value: 'estimate', label: t('field.estimate') },
     { value: 'updated', label: t('displayOptions.order.updated') },
     { value: 'created', label: t('displayOptions.order.created') },

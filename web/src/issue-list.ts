@@ -18,6 +18,7 @@ export type IssueGroupBy =
   | 'none'
   | 'priority'
   | 'status'
+  | 'assignee'
   | 'project'
   | 'cycle'
   | 'label'
@@ -27,6 +28,7 @@ export type IssueGroupBy =
 export type IssueOrderBy =
   | 'manual'
   | 'status'
+  | 'assignee'
   | 'priority'
   | 'updated'
   | 'created'
@@ -43,6 +45,7 @@ export type IssueDisplayProperty =
   | 'status'
   | 'priority'
   | 'project'
+  | 'assignee'
   | 'dueDate'
   | 'milestone'
   | 'cycle'
@@ -64,6 +67,7 @@ export type CompletedIssuesFilter =
 export const DEFAULT_DISPLAY_PROPERTIES = [
   'id',
   'status',
+  'assignee',
   'priority',
   'project',
   'dueDate',
@@ -211,6 +215,18 @@ function issueGroups(
         status,
       }),
     );
+  if (groupBy === 'assignee') {
+    const assigned = issues.some((issue) => issue.assignee === 'self');
+    const unassigned = issues.some((issue) => issue.assignee !== 'self');
+    return [
+      ...(assigned || showEmptyGroups
+        ? [{ key: 'assignee:self', label: '', priority: null, status: null }]
+        : []),
+      ...(unassigned || showEmptyGroups
+        ? [{ key: 'assignee:none', label: '', priority: null, status: null }]
+        : []),
+    ];
+  }
   if (groupBy === 'project')
     return [
       ...new Set([
@@ -299,6 +315,10 @@ function issueGroups(
 function matchesGroup(issue: Issue, groupBy: IssueGroupBy, groupInfo: GroupInfo): boolean {
   if (groupBy === 'priority') return issue.priority === groupInfo.priority;
   if (groupBy === 'status') return (issue.workflowStatus ?? issue.status) === groupInfo.status;
+  if (groupBy === 'assignee')
+    return groupInfo.key === 'assignee:self'
+      ? issue.assignee === 'self'
+      : issue.assignee !== 'self';
   if (groupBy === 'project') return (issue.projectSlug || 'No project') === groupInfo.label;
   if (groupBy === 'label')
     return groupInfo.label === 'No label'
@@ -393,6 +413,8 @@ export function sortIssues(
       comparison = STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
     } else if (orderBy === 'priority') {
       comparison = (PRIORITY_RANK.get(a.priority) ?? 5) - (PRIORITY_RANK.get(b.priority) ?? 5);
+    } else if (orderBy === 'assignee') {
+      comparison = (a.assignee ? 0 : 1) - (b.assignee ? 0 : 1);
     } else if (orderBy === 'updated') {
       comparison = Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
     } else if (orderBy === 'created') {

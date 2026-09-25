@@ -2,6 +2,7 @@
   "nav": {
     "home": "ホーム",
     "reminders": "リマインダー",
+    "myIssues": "自分のイシュー",
     "agent": "AI エージェント",
     "issues": "イシュー",
     "archivedIssues": "アーカイブ済みイシュー",
@@ -354,6 +355,7 @@
   },
   "field": {
     "status": "ステータス",
+    "assignee": "担当者",
     "type": "種別",
     "priority": "優先度",
     "estimate": "見積もり",
@@ -401,6 +403,10 @@
     "newLabel": "新しいラベル",
     "findOrCreateLabel": "ラベルを検索または作成…",
     "createLabel": "「{{name}}」を作成"
+  },
+  "issueAssignment": {
+    "you": "自分",
+    "unassigned": "未割当"
   },
   "issueLinks": {
     "heading": "リンク",
@@ -1115,6 +1121,7 @@
     "shortcut": "ショートカット: Ctrl/⌘ B でレイアウトを切り替え",
     "group": {
       "status": "ステータス",
+      "assignee": "担当者",
       "priority": "優先度",
       "project": "プロジェクト",
       "cycle": "サイクル",
@@ -1125,6 +1132,7 @@
     },
     "order": {
       "manual": "手動",
+      "assignee": "担当者",
       "updated": "最終更新日",
       "created": "作成日",
       "title": "タイトル",
@@ -1145,6 +1153,7 @@
     "property": {
       "id": "ID",
       "status": "ステータス",
+      "assignee": "担当者",
       "priority": "優先度",
       "project": "プロジェクト",
       "dueDate": "期限",
@@ -1179,6 +1188,7 @@
     "statusChanged": "ステータス {{from}} → {{to}}",
     "typeChanged": "種別 {{from}} → {{to}}",
     "estimateChanged": "見積もり {{from}} → {{to}}",
+    "assigneeChanged": "担当者 {{from}} → {{to}}",
     "milestoneChanged": "マイルストーン {{from}} → {{to}}",
     "linkAdded": "リンク {{title}} を追加",
     "linkRemoved": "リンク {{title}} を削除",

@@ -146,6 +146,49 @@ func TestIssueTypeAndEstimateRoundTrip(t *testing.T) {
 	}
 }
 
+func TestIssueAssigneeRoundTripAndFilter(t *testing.T) {
+	s := openTest(t)
+	unassigned, err := s.CreateIssue(CreateIssueInput{Title: "unassigned issue"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assigned, err := s.CreateIssue(CreateIssueInput{Title: "my issue", Assignee: "self"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if assigned.Assignee != "self" {
+		t.Fatalf("created assignee = %q", assigned.Assignee)
+	}
+
+	filtered, err := s.ListIssues(IssueFilter{Assignee: "self"})
+	if err != nil || len(filtered) != 1 || filtered[0].Identifier != assigned.Identifier {
+		t.Fatalf("assigned issues = %#v, err = %v", filtered, err)
+	}
+	if _, err := s.ListIssues(IssueFilter{Assignee: "someone-else"}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid assignee filter: %v", err)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	persisted, err := reopened.GetIssue(assigned.Identifier)
+	if err != nil || persisted.Assignee != "self" {
+		t.Fatalf("persisted assignee = %q, err = %v", persisted.Assignee, err)
+	}
+
+	clear := ""
+	cleared, err := reopened.UpdateIssue(assigned.Identifier, PatchIssueInput{Assignee: &clear})
+	if err != nil || cleared.Assignee != "" {
+		t.Fatalf("clear assignee = %q, err = %v", cleared.Assignee, err)
+	}
+	invalidAssignee := "someone-else"
+	if _, err := reopened.UpdateIssue(unassigned.Identifier, PatchIssueInput{Assignee: &invalidAssignee}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid assignee update: %v", err)
+	}
+}
+
 func TestIssueArchiveLifecycle(t *testing.T) {
 	s := openTest(t)
 	created, err := s.CreateIssue(CreateIssueInput{Title: "archive me"})

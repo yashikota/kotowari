@@ -20,6 +20,7 @@ type RecurringIssue struct {
 	Title               string                 `json:"title"`
 	Body                string                 `json:"body"`
 	Status              string                 `json:"status"`
+	Assignee            string                 `json:"assignee,omitempty"`
 	Type                string                 `json:"type,omitempty"`
 	Priority            int                    `json:"priority"`
 	Estimate            *int                   `json:"estimate,omitempty"`
@@ -38,6 +39,7 @@ type recurringIssueFM struct {
 	Name                string                 `toml:"name"`
 	Title               string                 `toml:"title"`
 	Status              string                 `toml:"status"`
+	Assignee            string                 `toml:"assignee,omitempty"`
 	Type                string                 `toml:"type,omitempty"`
 	Priority            int                    `toml:"priority"`
 	Estimate            *int                   `toml:"estimate,omitempty"`
@@ -121,7 +123,7 @@ func (s *Store) CreateRecurringIssue(identifier string, in CreateRecurringIssueI
 	}
 	recurring := RecurringIssue{
 		Slug: slug, Name: in.Name, Title: issue.Title, Body: issue.Body,
-		Status: "backlog", Type: issue.Type, Priority: issue.Priority,
+		Status: "backlog", Assignee: issue.Assignee, Type: issue.Type, Priority: issue.Priority,
 		Estimate: issue.Estimate, ProjectSlug: issue.ProjectSlug, Labels: labels,
 		Links:        issueLinksForRecurring(issue.ExternalLinks),
 		FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,
@@ -176,6 +178,9 @@ func (s *Store) CreateRecurringIssueFromInput(issueInput CreateIssueInput, in Cr
 	if !domain.ValidEstimate(issueInput.Estimate) {
 		return RecurringIssue{}, validationf("invalid estimate")
 	}
+	if issueInput.Assignee != "" && issueInput.Assignee != "self" {
+		return RecurringIssue{}, validationf("invalid issue assignee")
+	}
 
 	normalizedLinks, err := normalizeIssueLinks(issueInput.ExternalLinks)
 	if err != nil {
@@ -202,7 +207,7 @@ func (s *Store) CreateRecurringIssueFromInput(issueInput CreateIssueInput, in Cr
 		}
 		recurring = RecurringIssue{
 			Slug: slug, Name: in.Name, Title: issueInput.Title, Body: issueInput.Body,
-			Status: workflowStatus.Category, Type: issueInput.Type, Priority: issueInput.Priority,
+			Status: workflowStatus.Category, Assignee: issueInput.Assignee, Type: issueInput.Type, Priority: issueInput.Priority,
 			Estimate: issueInput.Estimate, Labels: []string{}, Links: issueLinksForRecurringInput(issueInput.ExternalLinks),
 			FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,
 			NextDueDate: in.FirstDueDate, Enabled: true,
@@ -486,7 +491,7 @@ func (s *Store) createRecurringInstance(schedule RecurringIssue, dueDate string)
 	}
 	slug := schedule.Slug
 	return s.CreateIssue(CreateIssueInput{
-		Title: schedule.Title, Body: schedule.Body, Status: schedule.Status,
+		Title: schedule.Title, Body: schedule.Body, Status: schedule.Status, Assignee: schedule.Assignee,
 		Type: schedule.Type, Priority: schedule.Priority, Estimate: schedule.Estimate,
 		ProjectID: projectID, DueDate: &dueDate, LabelIDs: labelIDs, RecurringSlug: &slug, ExternalLinks: schedule.Links,
 	})
@@ -577,7 +582,8 @@ func readRecurringIssue(path string) (RecurringIssue, error) {
 	if _, err := time.Parse("2006-01-02", fm.NextDueDate); err != nil {
 		return RecurringIssue{}, validationf("invalid recurring issue next due date")
 	}
-	if !validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) {
+	if !validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) ||
+		(fm.Assignee != "" && fm.Assignee != "self") {
 		return RecurringIssue{}, validationf("recurring issue contains invalid issue properties")
 	}
 	links, err := normalizeIssueLinks(fm.Links)
@@ -585,7 +591,7 @@ func readRecurringIssue(path string) (RecurringIssue, error) {
 		return RecurringIssue{}, err
 	}
 	return RecurringIssue{
-		Name: fm.Name, Title: fm.Title, Body: body, Status: fm.Status,
+		Name: fm.Name, Title: fm.Title, Body: body, Status: fm.Status, Assignee: fm.Assignee,
 		Type: fm.Type, Priority: fm.Priority, Estimate: fm.Estimate,
 		ProjectSlug: fm.Project, Labels: append([]string{}, fm.Labels...),
 		Links:        links,
@@ -601,7 +607,7 @@ func writeRecurringIssue(path string, recurring RecurringIssue) error {
 		return err
 	}
 	fm := recurringIssueFM{
-		Name: recurring.Name, Title: recurring.Title, Status: recurring.Status,
+		Name: recurring.Name, Title: recurring.Title, Status: recurring.Status, Assignee: recurring.Assignee,
 		Type: recurring.Type, Priority: recurring.Priority, Estimate: recurring.Estimate,
 		Project: recurring.ProjectSlug, Labels: recurring.Labels, Links: links,
 		FirstDueDate: recurring.FirstDueDate, Interval: recurring.Interval,
@@ -609,7 +615,8 @@ func writeRecurringIssue(path string, recurring RecurringIssue) error {
 		LastIssueIdentifier: recurring.LastIssueIdentifier, Enabled: recurring.Enabled,
 	}
 	if !validRecurringUnit(fm.Unit) || fm.Interval < 1 || fm.Interval > 365 ||
-		!validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) {
+		!validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) ||
+		(fm.Assignee != "" && fm.Assignee != "self") {
 		return validationf("invalid recurring issue")
 	}
 	metadata, err := toml.Marshal(fm)

@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "reminders": "Reminders",
+    "myIssues": "My issues",
     "agent": "Agent",
     "issues": "Issues",
     "archivedIssues": "Archived issues",
@@ -356,6 +357,7 @@
   },
   "field": {
     "status": "Status",
+    "assignee": "Assignee",
     "type": "Type",
     "priority": "Priority",
     "estimate": "Estimate",
@@ -403,6 +405,10 @@
     "newLabel": "New label",
     "findOrCreateLabel": "Find or create a label…",
     "createLabel": "Create “{{name}}”"
+  },
+  "issueAssignment": {
+    "you": "You",
+    "unassigned": "Unassigned"
   },
   "issueLinks": {
     "heading": "Links",
@@ -1117,6 +1123,7 @@
     "shortcut": "Shortcut: Ctrl/⌘ B switches layout",
     "group": {
       "status": "Status",
+      "assignee": "Assignee",
       "priority": "Priority",
       "project": "Project",
       "cycle": "Cycle",
@@ -1127,6 +1134,7 @@
     },
     "order": {
       "manual": "Manual",
+      "assignee": "Assignee",
       "updated": "Last updated",
       "created": "Date created",
       "title": "Title",
@@ -1147,6 +1155,7 @@
     "property": {
       "id": "ID",
       "status": "Status",
+      "assignee": "Assignee",
       "priority": "Priority",
       "project": "Project",
       "dueDate": "Due date",
@@ -1181,6 +1190,7 @@
     "statusChanged": "Status {{from}} → {{to}}",
     "typeChanged": "Type {{from}} → {{to}}",
     "estimateChanged": "Estimate {{from}} → {{to}}",
+    "assigneeChanged": "Assignee {{from}} → {{to}}",
     "milestoneChanged": "Milestone {{from}} → {{to}}",
     "linkAdded": "Added link {{title}}",
     "linkRemoved": "Removed link {{title}}",

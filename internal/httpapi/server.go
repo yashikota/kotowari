@@ -641,7 +641,11 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := r.URL.Query()
-	f := store.IssueFilter{Status: q.Get("status"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
+	f := store.IssueFilter{Status: q.Get("status"), Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
+	if f.Assignee != "" && f.Assignee != "self" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid assignee filter"})
+		return
+	}
 	if archived := q.Get("archived"); archived != "" {
 		value, err := strconv.ParseBool(archived)
 		if err != nil {
@@ -742,6 +746,7 @@ func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 		Body           string                           `json:"body"`
 		Status         string                           `json:"status"`
 		WorkflowStatus string                           `json:"workflowStatus"`
+		Assignee       string                           `json:"assignee"`
 		Type           string                           `json:"type"`
 		Priority       int                              `json:"priority"`
 		Estimate       *int                             `json:"estimate"`
@@ -759,7 +764,7 @@ func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	issueInput := store.CreateIssueInput{
-		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
+		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus, Assignee: in.Assignee, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
 		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID, ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs, ExternalLinks: in.Links,
 	}
 	if in.Recurring != nil {
@@ -831,6 +836,16 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		in.WorkflowStatus = &s
+	}
+	if v, ok := raw["assignee"]; ok {
+		assignee := ""
+		if string(v) != "null" {
+			if err := json.Unmarshal(v, &assignee); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid assignee"})
+				return
+			}
+		}
+		in.Assignee = &assignee
 	}
 	if v, ok := raw["type"]; ok {
 		var issueType string

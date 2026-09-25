@@ -39,6 +39,15 @@ export function formatActivity(
       to: to ?? i18n.t('issueProperties.noEstimate'),
     });
   }
+  if (action === 'assignee_changed') {
+    const from =
+      payload.from === 'self'
+        ? i18n.t('issueAssignment.you')
+        : i18n.t('issueAssignment.unassigned');
+    const to =
+      payload.to === 'self' ? i18n.t('issueAssignment.you') : i18n.t('issueAssignment.unassigned');
+    return i18n.t('activity.assigneeChanged', { from, to });
+  }
   if (action === 'milestone_changed') {
     const from =
       typeof payload.from === 'string' && payload.from

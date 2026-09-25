@@ -174,6 +174,7 @@ type Issue struct {
 	Body             string              `json:"body"`
 	Status           string              `json:"status"`
 	WorkflowStatus   string              `json:"workflowStatus"`
+	Assignee         string              `json:"assignee,omitempty" toml:"assignee,omitempty"`
 	Type             string              `json:"type,omitempty"`
 	Priority         int                 `json:"priority"`
 	Estimate         *int                `json:"estimate,omitempty"`
@@ -410,6 +411,7 @@ type SearchHit struct {
 
 type IssueFilter struct {
 	Status          string
+	Assignee        string
 	ProjectSlug     string
 	CycleNumber     int
 	Labels          []string
@@ -437,6 +439,7 @@ type CreateIssueInput struct {
 	Body           string
 	Status         string
 	WorkflowStatus string
+	Assignee       string
 	Type           string
 	Priority       int
 	Estimate       *int
@@ -455,6 +458,7 @@ type PatchIssueInput struct {
 	Body           *string
 	Status         *string
 	WorkflowStatus *string
+	Assignee       *string
 	Type           *string
 	Priority       *int
 	Estimate       **int

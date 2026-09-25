@@ -133,6 +133,7 @@ export const api = {
     body?: string;
     status?: string;
     workflowStatus?: string;
+    assignee?: 'self';
     type?: string;
     priority?: number;
     estimate?: number | null;
@@ -398,6 +399,7 @@ export const api = {
 
 export function issuesQuery(filter: {
   status?: string | null;
+  assignee?: 'self' | null;
   project?: string | null;
   cycle?: number | null;
   labels?: string[] | null;
@@ -422,6 +424,7 @@ export function issuesQuery(filter: {
   if (filter.status) {
     q.set('status', filter.status);
   }
+  if (filter.assignee) q.set('assignee', filter.assignee);
   if (filter.project) {
     q.set('project', filter.project);
   }
@@ -463,6 +466,7 @@ export function issuesQuery(filter: {
 
 export type IssueSearch = {
   archived?: boolean;
+  assignee?: 'self';
   status?: string;
   project?: string;
   cycle?: number;
@@ -509,6 +513,7 @@ function localDateValue(date: Date): string {
 export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   const out: IssueSearch = {};
   if (raw.archived === true || raw.archived === 'true') out.archived = true;
+  if (raw.assignee === 'self') out.assignee = 'self';
   if (typeof raw.status === 'string' && raw.status) {
     out.status = raw.status;
   }
@@ -650,6 +655,7 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
 
 export function searchToFilter(search: IssueSearch): {
   archived?: boolean;
+  assignee?: 'self';
   status?: string;
   project?: string;
   cycle?: number;
@@ -670,6 +676,7 @@ export function searchToFilter(search: IssueSearch): {
 } {
   return {
     archived: search.archived,
+    assignee: search.assignee,
     status: search.status,
     project: search.project,
     cycle: search.cycle,

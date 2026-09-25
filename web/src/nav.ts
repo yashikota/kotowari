@@ -1,8 +1,9 @@
 import type { LinkProps } from '@tanstack/react-router';
 
-type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'a' | 'i' | 'r' | 't';
+type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'a' | 'i' | 'm' | 'r' | 't';
 
 export type NavTarget = {
+  id?: string;
   key: NavKey;
   labelKey: string;
   to: LinkProps['to'];
@@ -13,6 +14,14 @@ export type NavTarget = {
 
 export const HOME_NAV: NavTarget[] = [
   { key: '8', labelKey: 'nav.reminders', to: '/reminders', fuzzy: false },
+  {
+    key: 'm',
+    id: '/my-issues',
+    labelKey: 'nav.myIssues',
+    to: '/issues',
+    search: { assignee: 'self' },
+    fuzzy: false,
+  },
   { key: 'a', labelKey: 'nav.agent', to: '/agent', fuzzy: false },
 ];
 

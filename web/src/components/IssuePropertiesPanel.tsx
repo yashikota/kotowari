@@ -23,6 +23,7 @@ import {
   IconPlus,
   IconRefresh,
   IconTag,
+  IconUser,
   IconX,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
@@ -124,6 +125,19 @@ export function IssuePropertiesPanel({
                 <span>{option.label}</span>
               </Group>
             )}
+          />
+        </PropertyRow>
+
+        <PropertyRow label={t('field.assignee')} icon={<IconUser size={14} stroke={1.7} />}>
+          <PropertySelect
+            compactChars={10}
+            aria-label={t('field.assignee')}
+            value={issue.assignee ?? 'none'}
+            onChange={handlers.Assignee_onChange}
+            data={[
+              { value: 'none', label: t('issueAssignment.unassigned') },
+              { value: 'self', label: t('issueAssignment.you') },
+            ]}
           />
         </PropertyRow>
 

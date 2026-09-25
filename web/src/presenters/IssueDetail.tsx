@@ -829,6 +829,8 @@ export function useIssueDetailPresenter({
       Issue_title_onBlur4: () => patch({ title: issue.title }),
       Status_onChange5: (value: string | null) =>
         value ? patch({ workflowStatus: value }) : undefined,
+      Assignee_onChange: (value: string | null) =>
+        patch({ assignee: value === 'self' ? 'self' : null }),
       Type_onChange14: (value: string | null) =>
         patch({ type: value && value !== 'none' ? value : '' }),
       Priority_onChange6: (value: string | null) =>

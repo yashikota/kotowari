@@ -7,6 +7,7 @@ export type SidebarItem =
   | '/'
   | '/reminders'
   | '/agent'
+  | '/my-issues'
   | '/issues'
   | '/board'
   | '/cycles'
@@ -19,6 +20,7 @@ export type SidebarItem =
 export const SIDEBAR_ITEM_IDS = [
   '/',
   '/reminders',
+  '/my-issues',
   '/agent',
   '/issues',
   '/board',
@@ -51,6 +53,7 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
   sidebarLocations: {
     '/': 'primary',
     '/reminders': 'primary',
+    '/my-issues': 'primary',
     '/agent': 'primary',
     '/issues': 'primary',
     '/board': 'more',

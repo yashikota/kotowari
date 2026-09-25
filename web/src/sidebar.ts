@@ -17,17 +17,17 @@ const definitions: {
 }[] = [
   ...HOME_NAV.map((item) => ({
     item,
-    id: item.to as SidebarItemId,
+    id: (item.id ?? item.to) as SidebarItemId,
     defaultGroup: 'personal' as const,
   })),
   ...TEAM_NAV.map((item) => ({
     item,
-    id: item.to as SidebarItemId,
+    id: (item.id ?? item.to) as SidebarItemId,
     defaultGroup: 'workspace' as const,
   })),
   ...MORE_NAV.map((item) => ({
     item,
-    id: item.to as SidebarItemId,
+    id: (item.id ?? item.to) as SidebarItemId,
     defaultGroup: 'more' as const,
   })),
 ];

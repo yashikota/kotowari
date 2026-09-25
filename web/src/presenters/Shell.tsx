@@ -149,6 +149,7 @@ export function useShellPresenter() {
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
+  const [issueAssignee, setIssueAssignee] = useState<'self' | ''>('');
   const helpOpen = overlay === 'help';
   const setHelpOpen = setOverlay('help');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -279,7 +280,8 @@ export function useShellPresenter() {
     if (pathname === '/templates') return 'Templates';
     if (pathname === '/recurring') return 'Recurring issues';
     if (pathname === '/issues' && routeSearch.archived) return t('issueViews.archived');
-    if (pathname === '/issues') return t('nav.issues');
+    if (pathname === '/issues')
+      return routeSearch.assignee === 'self' ? t('nav.myIssues') : t('nav.issues');
     if (pathname.startsWith('/issues/'))
       return pathname.slice('/issues/'.length).split('/')[0] ?? 'Issue';
     if (pathname === '/board') return 'Board';
@@ -562,6 +564,7 @@ export function useShellPresenter() {
       body: issueBody,
       status: workflowStatusCategory(issueStatus, issueWorkflowStatuses),
       workflowStatus: issueStatus,
+      assignee: issueAssignee || undefined,
       priority: issuePriority,
       type: issueType || undefined,
       estimate: issueEstimate ? Number(issueEstimate) : null,
@@ -608,6 +611,7 @@ export function useShellPresenter() {
     setIssueTemplateSlug('');
     setIssueProjectId('');
     setIssueCycleId('');
+    setIssueAssignee('');
     setCreateIssue(false);
     await router.invalidate();
     await navigate({
@@ -680,6 +684,7 @@ export function useShellPresenter() {
     issueStatus,
     issueWorkflowStatuses,
     issuePriority,
+    issueAssignee,
     issueType,
     issueEstimate,
     issueBody,
@@ -900,6 +905,9 @@ export function useShellPresenter() {
       Issue_project_onChange16: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueProjectId(e.target.value),
+      Issue_assignee_onChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
+      ) => setIssueAssignee(e.target.value === 'self' ? 'self' : ''),
       Issue_cycle_onChange17: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueCycleId(e.target.value),
