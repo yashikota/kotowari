@@ -1,6 +1,11 @@
 import { isCommentSubmitShortcut, isSubmitShortcut } from './keymap.ts';
 import { describe, expect, it } from 'vite-plus/test';
-import { actionFromKeyboard, isTypingTarget, issueCopyShortcutFromKeyboard } from './keymap.ts';
+import {
+  actionFromKeyboard,
+  isTypingTarget,
+  issueCopyShortcutFromKeyboard,
+  projectCreateSequenceFromKeyboard,
+} from './keymap.ts';
 
 function el(tagName: string): EventTarget {
   return { tagName, isContentEditable: false } as unknown as EventTarget;
@@ -260,6 +265,83 @@ describe('actionFromKeyboard', () => {
         ctrlKey: false,
         target: el('BODY'),
       }),
+    ).toBeNull();
+  });
+});
+
+describe('project create keyboard sequence', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    overrides: Partial<Parameters<typeof projectCreateSequenceFromKeyboard>[0]> = {},
+  ) =>
+    projectCreateSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      null,
+      100,
+    );
+
+  it('recognizes N, then P and clears the pending sequence', () => {
+    const started = projectCreateSequenceFromKeyboard(
+      { key: 'n', metaKey: false, ctrlKey: false, target: body },
+      null,
+      100,
+    );
+    expect(started).toEqual({ action: null, pendingSince: 100 });
+    expect(
+      projectCreateSequenceFromKeyboard(
+        { key: 'p', metaKey: false, ctrlKey: false, target: body },
+        started.pendingSince,
+        500,
+      ),
+    ).toEqual({ action: 'new-project', pendingSince: null });
+  });
+
+  it('expires the sequence and does not swallow an ordinary P shortcut', () => {
+    expect(
+      projectCreateSequenceFromKeyboard(
+        { key: 'p', metaKey: false, ctrlKey: false, target: body },
+        100,
+        1101,
+      ),
+    ).toEqual({ action: null, pendingSince: null });
+    expect(key('p').action).toBeNull();
+  });
+
+  it('does not arm or complete while typing, composing, repeating, or modified', () => {
+    expect(key('n', { target: el('INPUT') }).pendingSince).toBeNull();
+    expect(key('n', { isComposing: true }).pendingSince).toBeNull();
+    expect(key('n', { repeat: true }).pendingSince).toBeNull();
+    expect(key('n', { metaKey: true }).pendingSince).toBeNull();
+    expect(key('n', { defaultPrevented: true }).pendingSince).toBeNull();
+    expect(
+      projectCreateSequenceFromKeyboard(
+        { key: 'p', metaKey: false, ctrlKey: false, target: body, isComposing: true },
+        100,
+        200,
+      ),
+    ).toEqual({ action: null, pendingSince: null });
+  });
+
+  it('cancels a pending sequence when another key is pressed', () => {
+    const interrupted = projectCreateSequenceFromKeyboard(
+      { key: 'x', metaKey: false, ctrlKey: false, target: body },
+      100,
+      200,
+    );
+    expect(interrupted.pendingSince).toBeNull();
+    expect(
+      projectCreateSequenceFromKeyboard(
+        { key: 'p', metaKey: false, ctrlKey: false, target: body },
+        interrupted.pendingSince,
+        300,
+      ).action,
     ).toBeNull();
   });
 });

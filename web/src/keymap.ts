@@ -78,6 +78,47 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return TYPING_TAGS.has(el.tagName ?? '');
 }
 
+const PROJECT_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
+
+export function projectCreateSequenceFromKeyboard(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    defaultPrevented?: boolean;
+    target: EventTarget | null;
+  },
+  pendingSince: number | null,
+  now: number,
+): { action: 'new-project' | null; pendingSince: number | null } {
+  const eligible =
+    !event.defaultPrevented &&
+    !event.isComposing &&
+    !event.repeat &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !isTypingTarget(event.target);
+  if (!eligible) return { action: null, pendingSince: null };
+
+  const key = event.key.toLowerCase();
+  if (key === 'n') return { action: null, pendingSince: now };
+  if (
+    key === 'p' &&
+    pendingSince !== null &&
+    now >= pendingSince &&
+    now - pendingSince <= PROJECT_CREATE_SEQUENCE_TIMEOUT_MS
+  ) {
+    return { action: 'new-project', pendingSince: null };
+  }
+  return { action: null, pendingSince: null };
+}
+
 export type IssueCopyShortcut =
   | 'copy-id'
   | 'copy-url'

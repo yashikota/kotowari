@@ -1335,6 +1335,8 @@
     "shortcutSendOrCreate": "テキスト欄から送信または作成",
     "shortcutInsertLine": "改行を挿入",
     "shortcutFindInList": "現在の一覧を検索",
+    "shortcutCreateProject": "プロジェクトを作成",
+    "shortcutProjectSequence": "N、続けてP",
     "shortcutMoveSelection": "選択項目を移動",
     "shortcutOpenIssue": "選択したイシューを開く",
     "shortcutSetStatus": "ステータスを設定",

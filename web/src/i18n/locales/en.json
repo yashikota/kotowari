@@ -1339,6 +1339,8 @@
     "shortcutSendOrCreate": "Send or create from a text field",
     "shortcutInsertLine": "Insert a line",
     "shortcutFindInList": "Find in the current list",
+    "shortcutCreateProject": "Create a project",
+    "shortcutProjectSequence": "N, then P",
     "shortcutMoveSelection": "Move selection",
     "shortcutOpenIssue": "Open selected issue",
     "shortcutSetStatus": "Set status",

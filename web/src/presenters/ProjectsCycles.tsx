@@ -9,7 +9,7 @@ import {
 import type * as React from 'react';
 import { useMemo, useState } from 'react';
 import { api, type IssueSearch } from '../api.ts';
-import { useIntent } from '../application/Root.tsx';
+import { useIntent, useRootMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
@@ -164,7 +164,7 @@ export function useProjectsPagePresenter() {
   const [dependencyDraftProjectSlug, setDependencyDraftProjectSlug] = useState('');
   const [dependencyDraftKind, setDependencyDraftKind] =
     useState<ProjectDependency['kind']>('blocks');
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useRootMachineFlag('project.create');
   const projectViews = useProjectViews();
   const navigate = useNavigate({ from: '/projects' });
 

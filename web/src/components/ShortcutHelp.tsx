@@ -17,6 +17,7 @@ export function ShortcutHelpView({
     { keys: 'Enter (text)', action: t('ui.shortcutInsertLine') },
     { keys: 'c', action: t('modal.createIssue') },
     { keys: 'p', action: t('modal.createAdr') },
+    { keys: t('ui.shortcutProjectSequence'), action: t('ui.shortcutCreateProject') },
     { keys: '/', action: t('ui.shortcutFindInList') },
     { keys: 'j / k', action: t('ui.shortcutMoveSelection') },
     { keys: 'Enter', action: t('ui.shortcutOpenIssue') },

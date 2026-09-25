@@ -124,7 +124,7 @@ export function ProjectsPageView({
                   type="button"
                   variant="default"
                   aria-label={t('projectList.newProject')}
-                  title={t('projectList.newProject')}
+                  title={`${t('projectList.newProject')} · ${t('ui.shortcutCreateProject')}`}
                   onClick={handlers.onOpenCreateProject}
                 >
                   <IconPlus size={16} stroke={1.7} aria-hidden="true" />
@@ -153,9 +153,14 @@ export function ProjectsPageView({
                 <Text c="dimmed" ta="center">
                   {t('projectList.empty')}
                 </Text>
-                <Button type="button" variant="default" onClick={handlers.onOpenCreateProject}>
-                  {t('projectList.newProject')}
-                </Button>
+                <Group gap="xs">
+                  <Button type="button" variant="default" onClick={handlers.onOpenCreateProject}>
+                    {t('projectList.newProject')}
+                  </Button>
+                  <Text size="xs" c="dimmed">
+                    {t('ui.shortcutProjectSequence')}
+                  </Text>
+                </Group>
               </Stack>
             ) : controls.view === 'board' ? (
               <ProjectBoardView
@@ -229,6 +234,7 @@ export function ProjectsPageView({
                     <TextInput
                       ref={projectNameRef}
                       autoFocus
+                      data-autofocus
                       required
                       maxLength={120}
                       style={{ flex: 1 }}
@@ -602,7 +608,7 @@ export function ProjectsPage() {
 function ProjectsPageBinding() {
   const model = useProjectsPagePresenter();
   const handlers = useActions(model.handlers);
-  const projectNameRef = useFocusWhen<HTMLInputElement>(true);
+  const projectNameRef = useFocusWhen<HTMLInputElement>(model.createOpen);
   return (
     <ProjectsPageView
       model={{ ...model, handlers } as typeof model}

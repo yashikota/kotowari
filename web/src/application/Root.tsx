@@ -14,7 +14,7 @@ import { Alert, Button, Group } from '@mantine/core';
 import { useLocaleSync } from './LocaleSync.tsx';
 import { EventScope, mediator } from './mediator.ts';
 import type { Overlay } from './mediator.ts';
-import { isSubmitShortcut } from '../keymap.ts';
+import { isSubmitShortcut, projectCreateSequenceFromKeyboard } from '../keymap.ts';
 
 const ScopeContext = createContext(mediator.root);
 
@@ -189,6 +189,10 @@ export function Root({
 }) {
   useLocaleSync();
   useIntentHandler('issues.find.open', () => mediator.setFlag('Root:issues.find', true));
+  useIntentHandler('project.create.open', () => {
+    mediator.setFlag('Root:project.create', true);
+    return navigate('/projects');
+  });
   const overlay = useSyncExternalStore(mediator.subscribe, mediator.getOverlay);
   const restore = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
@@ -207,12 +211,16 @@ export function Root({
     }
   }, [overlay]);
   useEffect(() => {
+    let projectCreatePendingSince: number | null = null;
     const focus = (event: FocusEvent) => {
       if (event.target instanceof HTMLElement && !event.target.closest('[role="dialog"]'))
         previousFocus = event.target;
     };
     const key = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.isComposing || event.keyCode === 229) return;
+      if (event.defaultPrevented || event.isComposing || event.keyCode === 229) {
+        projectCreatePendingSince = null;
+        return;
+      }
       if (isSubmitShortcut(event) && event.target instanceof HTMLElement) {
         const form = event.target.closest('form');
         if (form) {
@@ -221,7 +229,9 @@ export function Root({
           return;
         }
       }
-      const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]');
+      const dialog = [
+        ...document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]'),
+      ].find((candidate) => candidate.getClientRects().length > 0);
       if (dialog && event.key === 'Tab') {
         const items = [
           ...dialog.querySelectorAll<HTMLElement>(
@@ -246,8 +256,21 @@ export function Root({
         return;
       }
       if (dialog && event.key === 'Escape') {
+        projectCreatePendingSince = null;
         event.preventDefault();
         mediator.open('none');
+        return;
+      }
+      if (dialog) projectCreatePendingSince = null;
+      const projectCreate = projectCreateSequenceFromKeyboard(
+        event,
+        projectCreatePendingSince,
+        Date.now(),
+      );
+      projectCreatePendingSince = projectCreate.pendingSince;
+      if (projectCreate.action === 'new-project') {
+        event.preventDefault();
+        mediator.dispatch(mediator.root, 'project.create.open', undefined);
         return;
       }
       let scope =
