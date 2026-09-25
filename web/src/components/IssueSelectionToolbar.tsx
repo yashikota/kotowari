@@ -25,6 +25,9 @@ function IssueSelectionToolbarView({
     estimates,
     dueDateDraft,
     dueDatePresets,
+    projectQuery,
+    cycleQuery,
+    labelQuery,
     projects,
     cycles,
     labels,
@@ -73,14 +76,27 @@ function IssueSelectionToolbarView({
                 <Menu.Sub.Item>{t('ui.bulkProject')}</Menu.Sub.Item>
               </Menu.Sub.Target>
               <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                <TextInput
+                  aria-label={t('ui.searchProjects')}
+                  placeholder={t('ui.searchProjects')}
+                  value={projectQuery}
+                  onChange={(event) => handlers.onProjectQueryChange(event.currentTarget.value)}
+                  size="xs"
+                  mx="xs"
+                  mb="xs"
+                />
                 <Menu.Item onClick={() => handlers.onSetProject(null)}>
                   {t('field.noProject')}
                 </Menu.Item>
-                {projects.map((project) => (
-                  <Menu.Item key={project.id} onClick={() => handlers.onSetProject(project.id)}>
-                    {project.name}
-                  </Menu.Item>
-                ))}
+                {projects.length === 0 ? (
+                  <Menu.Item disabled>{t('issueProperties.noProjectsFound')}</Menu.Item>
+                ) : (
+                  projects.map((project) => (
+                    <Menu.Item key={project.id} onClick={() => handlers.onSetProject(project.id)}>
+                      {project.name}
+                    </Menu.Item>
+                  ))
+                )}
               </Menu.Sub.Dropdown>
             </Menu.Sub>
             <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
@@ -88,9 +104,20 @@ function IssueSelectionToolbarView({
                 <Menu.Sub.Item>{t('ui.bulkLabels')}</Menu.Sub.Item>
               </Menu.Sub.Target>
               <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                <TextInput
+                  aria-label={t('ui.searchLabels')}
+                  placeholder={t('ui.searchLabels')}
+                  value={labelQuery}
+                  onChange={(event) => handlers.onLabelQueryChange(event.currentTarget.value)}
+                  size="xs"
+                  mx="xs"
+                  mb="xs"
+                />
                 <Menu.Label>{t('ui.bulkAddLabel')}</Menu.Label>
                 {labels.length === 0 ? (
-                  <Menu.Item disabled>{t('issueProperties.noLabels')}</Menu.Item>
+                  <Menu.Item disabled>
+                    {labelQuery ? t('ui.noMatchingLabels') : t('issueProperties.noLabels')}
+                  </Menu.Item>
                 ) : (
                   labels.map((label) => (
                     <Menu.Item
@@ -105,7 +132,9 @@ function IssueSelectionToolbarView({
                 {labels.length > 0 ? <Menu.Divider /> : null}
                 <Menu.Label>{t('ui.bulkRemoveLabel')}</Menu.Label>
                 {labels.length === 0 ? (
-                  <Menu.Item disabled>{t('issueProperties.noLabels')}</Menu.Item>
+                  <Menu.Item disabled>
+                    {labelQuery ? t('ui.noMatchingLabels') : t('issueProperties.noLabels')}
+                  </Menu.Item>
                 ) : (
                   labels.map((label) => (
                     <Menu.Item
@@ -137,14 +166,27 @@ function IssueSelectionToolbarView({
                 <Menu.Sub.Item>{t('ui.bulkCycle')}</Menu.Sub.Item>
               </Menu.Sub.Target>
               <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                <TextInput
+                  aria-label={t('ui.searchCycles')}
+                  placeholder={t('ui.searchCycles')}
+                  value={cycleQuery}
+                  onChange={(event) => handlers.onCycleQueryChange(event.currentTarget.value)}
+                  size="xs"
+                  mx="xs"
+                  mb="xs"
+                />
                 <Menu.Item onClick={() => handlers.onSetCycle(null)}>
                   {t('field.noCycle')}
                 </Menu.Item>
-                {cycles.map((cycle) => (
-                  <Menu.Item key={cycle.id} onClick={() => handlers.onSetCycle(cycle.id)}>
-                    {cycle.name || t('field.cycleN', { number: cycle.number })}
-                  </Menu.Item>
-                ))}
+                {cycles.length === 0 ? (
+                  <Menu.Item disabled>{t('issueProperties.noCyclesFound')}</Menu.Item>
+                ) : (
+                  cycles.map((cycle) => (
+                    <Menu.Item key={cycle.id} onClick={() => handlers.onSetCycle(cycle.id)}>
+                      {cycle.name || t('field.cycleN', { number: cycle.number })}
+                    </Menu.Item>
+                  ))
+                )}
               </Menu.Sub.Dropdown>
             </Menu.Sub>
             <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>

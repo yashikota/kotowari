@@ -46,6 +46,9 @@ export function useIssueSelectionToolbarPresenter({
 }: Props) {
   const { statuses } = useIssueWorkflow();
   const [dueDateDraft, setDueDateDraft] = useState(localToday());
+  const [projectQuery, setProjectQuery] = useState('');
+  const [cycleQuery, setCycleQuery] = useState('');
+  const [labelQuery, setLabelQuery] = useState('');
   const offsetDate = (offset: number) => {
     const date = new Date();
     date.setDate(date.getDate() + offset);
@@ -69,10 +72,21 @@ export function useIssueSelectionToolbarPresenter({
       value: estimate,
       label: estimate == null ? '' : String(estimate),
     })),
-    projects: projects.map(({ id, name }) => ({ id, name })),
-    cycles: cycles.map(({ id, number, name }) => ({ id, number, name: name?.trim() })),
-    labels: labels.map(({ id, name }) => ({ id, name })),
+    projects: projects
+      .map(({ id, name }) => ({ id, name }))
+      .filter((project) => project.name.toLowerCase().includes(projectQuery.toLowerCase())),
+    cycles: cycles
+      .map(({ id, number, name }) => ({ id, number, name: name?.trim() }))
+      .filter((cycle) =>
+        (cycle.name ?? String(cycle.number)).toLowerCase().includes(cycleQuery.toLowerCase()),
+      ),
+    labels: labels
+      .map(({ id, name }) => ({ id, name }))
+      .filter((label) => label.name.toLowerCase().includes(labelQuery.toLowerCase())),
     dueDateDraft,
+    projectQuery,
+    cycleQuery,
+    labelQuery,
     dueDatePresets: [
       { key: 'today', value: offsetDate(0) },
       { key: 'tomorrow', value: offsetDate(1) },
@@ -91,6 +105,9 @@ export function useIssueSelectionToolbarPresenter({
       onAddLabel: (labelId: number) => onAddLabel(labelId),
       onRemoveLabel: (labelId: number) => onRemoveLabel(labelId),
       onCopyIssues: (kind: BulkCopyKind) => onCopyIssues(kind),
+      onProjectQueryChange: (query: string) => setProjectQuery(query),
+      onCycleQueryChange: (query: string) => setCycleQuery(query),
+      onLabelQueryChange: (query: string) => setLabelQuery(query),
       onClear,
     },
   };

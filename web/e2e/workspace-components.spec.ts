@@ -512,6 +512,7 @@ test('issue list applies bulk project, cycle, and label changes without replacin
 
   await selectAllRows();
   await openSubmenu('Add to project…');
+  await page.getByRole('textbox', { name: 'Find projects…' }).fill(projectName);
   await page.getByRole('menuitem', { name: projectName, exact: true }).click();
   await expect
     .poll(async () => (await selectedIssues()).map((issue) => issue.projectId))
@@ -519,6 +520,7 @@ test('issue list applies bulk project, cycle, and label changes without replacin
 
   await selectAllRows();
   await openSubmenu('Add to cycle…');
+  await page.getByRole('textbox', { name: 'Find cycles…' }).fill(String(cycle.number));
   await page.getByRole('menuitem', { name: `Cycle ${cycle.number}`, exact: true }).click();
   await expect
     .poll(async () => (await selectedIssues()).map((issue) => issue.cycleId))
@@ -536,6 +538,7 @@ test('issue list applies bulk project, cycle, and label changes without replacin
 
   await selectAllRows();
   await openSubmenu('Change or add labels…');
+  await page.getByRole('textbox', { name: 'Find labels…' }).fill(labelName);
   await page.getByRole('menuitem', { name: `Add label ${labelName}`, exact: true }).click();
   await expect
     .poll(async () =>
@@ -547,6 +550,7 @@ test('issue list applies bulk project, cycle, and label changes without replacin
 
   await selectAllRows();
   await openSubmenu('Change or add labels…');
+  await page.getByRole('textbox', { name: 'Find labels…' }).fill(labelName);
   await page.getByRole('menuitem', { name: `Remove label ${labelName}`, exact: true }).click();
   await expect
     .poll(async () =>
