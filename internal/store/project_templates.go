@@ -22,6 +22,7 @@ type ProjectTemplate struct {
 	Description    string                     `json:"description"`
 	Status         string                     `json:"status"`
 	WorkflowStatus string                     `json:"workflowStatus,omitempty"`
+	Lead           string                     `json:"lead,omitempty"`
 	Priority       int                        `json:"priority"`
 	Labels         []string                   `json:"labels"`
 	Milestones     []ProjectTemplateMilestone `json:"milestones"`
@@ -39,6 +40,7 @@ type projectTemplateFM struct {
 	IconColor      string                     `toml:"icon_color,omitempty"`
 	Status         string                     `toml:"status"`
 	WorkflowStatus string                     `toml:"workflow_status,omitempty"`
+	Lead           string                     `toml:"lead,omitempty"`
 	Priority       int                        `toml:"priority"`
 	Labels         []string                   `toml:"labels,omitempty"`
 	Milestones     []ProjectTemplateMilestone `toml:"milestones,omitempty"`
@@ -105,6 +107,7 @@ func (s *Store) CreateProjectTemplate(projectSlug, name string) (ProjectTemplate
 		Slug: slug, Name: name, Summary: project.Summary, Icon: project.Icon,
 		IconColor: project.IconColor, Description: project.Description,
 		Status: project.Status, WorkflowStatus: project.WorkflowStatus,
+		Lead:     project.Lead,
 		Priority: project.Priority, Labels: append([]string{}, project.Labels...),
 		Milestones: milestones,
 	}
@@ -140,7 +143,7 @@ func readProjectTemplate(path string) (ProjectTemplate, error) {
 	if err := toml.Unmarshal([]byte(block), &fm); err != nil {
 		return ProjectTemplate{}, err
 	}
-	if strings.TrimSpace(fm.Name) == "" || !domain.ValidProjectStatus(fm.Status) || !domain.ValidPriority(fm.Priority) ||
+	if strings.TrimSpace(fm.Name) == "" || !domain.ValidProjectStatus(fm.Status) || !domain.ValidPriority(fm.Priority) || !validProjectLead(fm.Lead) ||
 		!validProjectIcon(fm.Icon) || !validProjectIconColor(fm.IconColor) {
 		return ProjectTemplate{}, validationf("invalid project template")
 	}
@@ -152,13 +155,14 @@ func readProjectTemplate(path string) (ProjectTemplate, error) {
 	return ProjectTemplate{
 		Name: fm.Name, Summary: fm.Summary, Icon: fm.Icon, IconColor: fm.IconColor,
 		Description: body, Status: fm.Status, WorkflowStatus: fm.WorkflowStatus,
+		Lead:     fm.Lead,
 		Priority: fm.Priority, Labels: append([]string{}, fm.Labels...),
 		Milestones: append([]ProjectTemplateMilestone{}, fm.Milestones...),
 	}, nil
 }
 
 func writeProjectTemplate(path string, template ProjectTemplate) error {
-	if strings.TrimSpace(template.Name) == "" || !domain.ValidProjectStatus(template.Status) || !domain.ValidPriority(template.Priority) ||
+	if strings.TrimSpace(template.Name) == "" || !domain.ValidProjectStatus(template.Status) || !domain.ValidPriority(template.Priority) || !validProjectLead(template.Lead) ||
 		!validProjectIcon(template.Icon) || !validProjectIconColor(template.IconColor) {
 		return validationf("invalid project template")
 	}
@@ -170,7 +174,7 @@ func writeProjectTemplate(path string, template ProjectTemplate) error {
 	fm := projectTemplateFM{
 		Name: template.Name, Summary: template.Summary, Icon: template.Icon,
 		IconColor: template.IconColor, Status: template.Status,
-		WorkflowStatus: template.WorkflowStatus, Priority: template.Priority,
+		WorkflowStatus: template.WorkflowStatus, Lead: template.Lead, Priority: template.Priority,
 		Labels: template.Labels, Milestones: template.Milestones,
 	}
 	metadata, err := toml.Marshal(fm)

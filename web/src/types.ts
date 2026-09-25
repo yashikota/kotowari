@@ -119,6 +119,7 @@ export type Project = {
   description: string;
   status: string;
   workflowStatus?: string;
+  lead?: 'self' | '';
   templateSlug?: string;
   initiativeSlugs?: string[];
   health?: ProjectHealth | null;
@@ -160,6 +161,7 @@ export type ProjectTemplate = {
   description: string;
   status: string;
   workflowStatus?: string;
+  lead?: 'self' | '';
   priority: number;
   labels: string[];
   milestones: Array<{ name: string; description?: string }>;

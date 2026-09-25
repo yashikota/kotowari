@@ -333,7 +333,11 @@ function ProjectTimelineProjectLabel({
           {project.summary || project.description}
         </Text>
       ) : null}
-      {shows('status') || shows('priority') || shows('health') || shows('labels') ? (
+      {shows('status') ||
+      shows('priority') ||
+      shows('health') ||
+      shows('lead') ||
+      shows('labels') ? (
         <Group gap={4} wrap="wrap">
           {shows('status') ? (
             <Badge size="xs" variant="light" color={STATUS_COLORS[project.status] ?? 'gray'}>
@@ -360,6 +364,11 @@ function ProjectTimelineProjectLabel({
               }
             >
               {t(`projectHealth.status.${project.health || 'none'}`)}
+            </Badge>
+          ) : null}
+          {shows('lead') ? (
+            <Badge variant="outline" color="gray" size="xs">
+              {project.lead === 'self' ? t('projectList.leadYou') : t('projectList.leadUnassigned')}
             </Badge>
           ) : null}
           {shows('labels')

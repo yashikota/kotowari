@@ -96,6 +96,7 @@ export function ProjectsPageView({
         iconColor,
         description,
         status,
+        lead,
         priority,
         startDate,
         targetDate,
@@ -309,6 +310,16 @@ export function ProjectsPageView({
                         value: String(value),
                         label: priorityLabel(value),
                       }))}
+                    />
+                    <NativeSelect
+                      label={t('projectList.property.lead')}
+                      aria-label={t('projectList.property.lead')}
+                      value={lead}
+                      onChange={handlers.New_project_lead_onChange}
+                      data={[
+                        { value: '', label: t('projectList.leadUnassigned') },
+                        { value: 'self', label: t('projectList.leadYou') },
+                      ]}
                     />
                   </Group>
                   <MultiSelect
@@ -778,6 +789,16 @@ export function ProjectDetailPageView({
                   />
                 </Section>
                 <Group gap="md" wrap="wrap" align="flex-end">
+                  <NativeSelect
+                    aria-label={t('projectList.property.lead')}
+                    label={t('projectList.property.lead')}
+                    value={project.lead ?? ''}
+                    onChange={handlers.onProjectLeadChange}
+                    data={[
+                      { value: '', label: t('projectList.leadUnassigned') },
+                      { value: 'self', label: t('projectList.leadYou') },
+                    ]}
+                  />
                   <TextInput
                     type="date"
                     aria-label={t('ui.startDate')}

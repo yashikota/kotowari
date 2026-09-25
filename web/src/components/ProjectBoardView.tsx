@@ -165,7 +165,11 @@ function ProjectBoardCard({
               {project.name}
             </Text>
           </Group>
-          {shows('priority') || shows('status') || shows('health') || shows('labels') ? (
+          {shows('priority') ||
+          shows('status') ||
+          shows('health') ||
+          shows('lead') ||
+          shows('labels') ? (
             <Group gap={6} wrap="wrap">
               {shows('priority') ? (
                 <Badge size="xs" variant="light" color="gray">
@@ -196,6 +200,13 @@ function ProjectBoardCard({
                   }
                 >
                   {t(`projectHealth.status.${project.health || 'none'}`)}
+                </Badge>
+              ) : null}
+              {shows('lead') ? (
+                <Badge variant="outline" color="gray" size="xs">
+                  {project.lead === 'self'
+                    ? t('projectList.leadYou')
+                    : t('projectList.leadUnassigned')}
                 </Badge>
               ) : null}
               {shows('labels')

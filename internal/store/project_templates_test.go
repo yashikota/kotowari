@@ -20,7 +20,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 	project, err := s.CreateProjectWithWorkflowAndOptions(
 		"Launch", "launch", "A short summary", "rocket", "blue", "## Brief\nShip the new flow.",
 		"started", "started", 2, &startDate, &targetDate, []string{label.Name},
-		ProjectCreationOptions{Milestones: []MilestoneInput{{
+		ProjectCreationOptions{Lead: "self", Milestones: []MilestoneInput{{
 			Name: "Beta", Description: "Validate with users.", TargetDate: &targetDate,
 		}}},
 	)
@@ -35,7 +35,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 	if template.Slug != "launch-plan" || template.Name != "Launch plan" || template.Summary != project.Summary ||
 		template.Icon != project.Icon || template.IconColor != project.IconColor ||
 		template.Description != project.Description || template.Status != project.Status ||
-		template.WorkflowStatus != project.WorkflowStatus || template.Priority != project.Priority ||
+		template.WorkflowStatus != project.WorkflowStatus || template.Lead != project.Lead || template.Priority != project.Priority ||
 		len(template.Labels) != 1 || template.Labels[0] != label.Name || len(template.Milestones) != 1 ||
 		template.Milestones[0] != (ProjectTemplateMilestone{Name: "Beta", Description: "Validate with users."}) {
 		t.Fatalf("created template %#v", template)
@@ -43,12 +43,12 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 	fromTemplate, err := s.CreateProjectWithWorkflowAndOptions(
 		"Reused launch", "reused-launch", template.Summary, template.Icon, template.IconColor,
 		template.Description, template.Status, template.WorkflowStatus, template.Priority,
-		nil, nil, template.Labels, ProjectCreationOptions{TemplateSlug: template.Slug},
+		nil, nil, template.Labels, ProjectCreationOptions{TemplateSlug: template.Slug, Lead: template.Lead},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fromTemplate.TemplateSlug != template.Slug {
+	if fromTemplate.TemplateSlug != template.Slug || fromTemplate.Lead != "self" {
 		t.Fatalf("created project template origin %q, want %q", fromTemplate.TemplateSlug, template.Slug)
 	}
 	if _, err := s.CreateProjectWithWorkflowAndOptions(

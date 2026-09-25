@@ -38,3 +38,39 @@ func TestCreateProjectWithDependenciesUpdatesBothProjectsAtomically(t *testing.T
 		t.Fatalf("failed create left a partial project: %v", err)
 	}
 }
+
+func TestProjectLeadCanBeSetClearedAndValidated(t *testing.T) {
+	s := openTest(t)
+	created, err := s.CreateProjectWithWorkflowAndOptions(
+		"Lead project", "lead-project", "", "", "", "", "planned", "", 0, nil, nil, nil,
+		ProjectCreationOptions{Lead: "self"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.Lead != "self" {
+		t.Fatalf("created lead = %q, want self", created.Lead)
+	}
+	if _, err := s.CreateProjectWithWorkflowAndOptions(
+		"Invalid lead", "invalid-lead", "", "", "", "", "planned", "", 0, nil, nil, nil,
+		ProjectCreationOptions{Lead: "another-user"},
+	); err == nil {
+		t.Fatal("expected unsupported multi-user lead to be rejected")
+	}
+	cleared := ""
+	updated, err := s.UpdateProjectWithWorkflowInitiativesAndLead(
+		created.Slug, nil, nil, nil, nil, nil, nil, nil, nil, &cleared, nil, nil, nil, nil, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Lead != "" {
+		t.Fatalf("updated lead = %q, want unassigned", updated.Lead)
+	}
+	invalid := "another-user"
+	if _, err := s.UpdateProjectWithWorkflowInitiativesAndLead(
+		created.Slug, nil, nil, nil, nil, nil, nil, nil, nil, &invalid, nil, nil, nil, nil, nil,
+	); err == nil {
+		t.Fatal("expected unsupported multi-user lead update to be rejected")
+	}
+}

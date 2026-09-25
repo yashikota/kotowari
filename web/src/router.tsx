@@ -326,6 +326,7 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
       'priority',
       'status',
       'health',
+      'lead',
       'dependencies',
       'startDate',
       'targetDate',

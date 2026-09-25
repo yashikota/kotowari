@@ -18,6 +18,7 @@ test('a project can be saved as a template and reused without stale dates', asyn
       description: '## Launch\nShip a reliable release.',
       status: 'started',
       workflowStatus: 'started',
+      lead: 'self',
       priority: 2,
       startDate: '2026-10-01',
       targetDate: '2026-12-15',
@@ -38,6 +39,7 @@ test('a project can be saved as a template and reused without stale dates', asyn
     name: string;
     startDate?: string;
     targetDate?: string;
+    lead?: string;
     milestones: Array<{ name: string; description?: string; targetDate?: string }>;
   }[];
   const templateName = `Launch template ${stamp}`;
@@ -45,6 +47,7 @@ test('a project can be saved as a template and reused without stale dates', asyn
   expect(template).toBeDefined();
   expect(template?.startDate).toBeUndefined();
   expect(template?.targetDate).toBeUndefined();
+  expect(template?.lead).toBe('self');
   expect(template?.milestones).toEqual([{ name: 'Beta', description: 'Validate the flow.' }]);
 
   await page.goto('/projects');
@@ -58,6 +61,7 @@ test('a project can be saved as a template and reused without stale dates', asyn
   );
   await expect(createDialog.getByLabel('status')).toHaveValue('started');
   await expect(createDialog.getByLabel('priority')).toHaveValue('2');
+  await expect(createDialog.getByLabel('Lead')).toHaveValue('self');
   await expect(createDialog.getByText('Beta')).toBeVisible();
   await expect(createDialog.getByLabel('Target date')).toHaveValue('');
 
@@ -76,6 +80,7 @@ test('a project can be saved as a template and reused without stale dates', asyn
     description: '## Launch\nShip a reliable release.',
     status: 'started',
     priority: 2,
+    lead: 'self',
     templateSlug: template?.slug,
     startDate: null,
     targetDate: null,

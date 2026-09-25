@@ -99,6 +99,16 @@ export function ProjectListItem({
               {t(`projectHealth.status.${project.health || 'none'}`)}
             </Badge>
           ) : null}
+          {shows('lead') ? (
+            <Badge variant="outline" color="gray" size="sm">
+              {project.lead === 'self' ? t('projectList.leadYou') : t('projectList.leadUnassigned')}
+            </Badge>
+          ) : null}
+          {shows('lead') ? (
+            <Badge variant="outline" color="gray" size="sm">
+              {project.lead === 'self' ? t('projectList.leadYou') : t('projectList.leadUnassigned')}
+            </Badge>
+          ) : null}
           {shows('progress') ? (
             <Progress
               aria-label={t('ui.projectProgress', { progress })}

@@ -346,6 +346,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		Status         string                    `json:"status"`
 		WorkflowStatus string                    `json:"workflowStatus"`
 		TemplateSlug   string                    `json:"templateSlug"`
+		Lead           string                    `json:"lead"`
 		Priority       int                       `json:"priority"`
 		StartDate      *string                   `json:"startDate"`
 		TargetDate     *string                   `json:"targetDate"`
@@ -357,7 +358,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectWithWorkflowAndOptions(in.Name, in.Slug, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Priority, in.StartDate, in.TargetDate, in.Labels, store.ProjectCreationOptions{TemplateSlug: in.TemplateSlug, Milestones: in.Milestones, Dependencies: in.Dependencies})
+	out, err := s.store.CreateProjectWithWorkflowAndOptions(in.Name, in.Slug, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Priority, in.StartDate, in.TargetDate, in.Labels, store.ProjectCreationOptions{TemplateSlug: in.TemplateSlug, Lead: in.Lead, Milestones: in.Milestones, Dependencies: in.Dependencies})
 	if err != nil {
 		writeError(w, err)
 		return
@@ -383,6 +384,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		Description     *string   `json:"description"`
 		Status          *string   `json:"status"`
 		WorkflowStatus  *string   `json:"workflowStatus"`
+		Lead            *string   `json:"lead"`
 		Health          *string   `json:"health"`
 		Priority        *int      `json:"priority"`
 		StartDate       *string   `json:"startDate"`
@@ -409,7 +411,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateProjectWithWorkflowAndInitiatives(r.PathValue("slug"), in.Name, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Health, in.Priority, start, target, in.Labels, in.InitiativeSlugs)
+	out, err := s.store.UpdateProjectWithWorkflowInitiativesAndLead(r.PathValue("slug"), in.Name, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Health, in.Lead, in.Priority, start, target, in.Labels, in.InitiativeSlugs)
 	if err != nil {
 		writeError(w, err)
 		return

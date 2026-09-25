@@ -255,6 +255,7 @@ export const api = {
     description?: string;
     status?: string;
     workflowStatus?: string;
+    lead?: 'self' | '';
     templateSlug?: string;
     priority?: number;
     startDate?: string;

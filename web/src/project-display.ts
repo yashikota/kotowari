@@ -5,6 +5,7 @@ export const PROJECT_DISPLAY_PROPERTIES = [
   'priority',
   'status',
   'health',
+  'lead',
   'dependencies',
   'startDate',
   'targetDate',

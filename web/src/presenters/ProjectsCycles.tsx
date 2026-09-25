@@ -109,6 +109,11 @@ function describeProjectActivity(
         from: priorityLabel(Number(from)),
         to: priorityLabel(Number(to)),
       });
+    case 'lead_changed':
+      return i18n.t('projectActivity.events.leadChanged', {
+        from: i18n.t(from === 'self' ? 'projectList.leadYou' : 'projectList.leadUnassigned'),
+        to: i18n.t(to === 'self' ? 'projectList.leadYou' : 'projectList.leadUnassigned'),
+      });
     case 'dependency_added':
     case 'dependency_removed': {
       const projectSlug = payloadString(payload.projectSlug);
@@ -156,6 +161,7 @@ export function useProjectsPagePresenter() {
   const [iconColor, setIconColor] = useState('grey');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('planned');
+  const [lead, setLead] = useState<'' | 'self'>('');
   const [priority, setPriority] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [targetDate, setTargetDate] = useState('');
@@ -733,6 +739,7 @@ export function useProjectsPagePresenter() {
       description,
       status: projectWorkflowStatusCategory(status, projectWorkflowStatuses),
       workflowStatus: status,
+      lead,
       ...(selectedProjectTemplate ? { templateSlug: selectedProjectTemplate } : {}),
       priority,
       ...(startDate ? { startDate } : {}),
@@ -767,6 +774,7 @@ export function useProjectsPagePresenter() {
         ? templateStatus
         : template.status,
     );
+    setLead(template.lead ?? '');
     setPriority(template.priority);
     setSelectedLabels(
       template.labels.filter((label) => data.labels.some((available) => available.name === label)),
@@ -851,6 +859,7 @@ export function useProjectsPagePresenter() {
     iconColor,
     description,
     status,
+    lead,
     priority,
     startDate,
     targetDate,
@@ -893,6 +902,7 @@ export function useProjectsPagePresenter() {
         setIconColor('grey');
         setDescription('');
         setStatus('planned');
+        setLead('');
         setPriority(0);
         setStartDate('');
         setTargetDate('');
@@ -964,6 +974,9 @@ export function useProjectsPagePresenter() {
       New_project_priority_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setPriority(Number(e.target.value)),
+      New_project_lead_onChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
+      ) => setLead(e.target.value as '' | 'self'),
       New_project_start_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setStartDate(e.target.value),
@@ -1031,6 +1044,7 @@ export function useProjectDetailPagePresenter() {
         'description',
         'status',
         'workflowStatus',
+        'lead',
         'health',
         'priority',
         'startDate',
@@ -1121,6 +1135,8 @@ export function useProjectDetailPagePresenter() {
       Project_priority_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ priority: Number(e.target.value) }),
+      onProjectLeadChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+        save({ lead: e.target.value }),
       onProjectHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
         save({ health: e.target.value === 'none' ? '' : e.target.value }),
       onOpenProjectUpdate: () => {

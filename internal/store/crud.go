@@ -226,6 +226,9 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 	if options.TemplateSlug != "" && issueTemplateSlug(options.TemplateSlug) != options.TemplateSlug {
 		return Project{}, validationf("invalid project template identifier")
 	}
+	if !validProjectLead(options.Lead) {
+		return Project{}, validationf("invalid project lead")
+	}
 	if !validMilestoneDate(start) || !validMilestoneDate(target) {
 		return Project{}, validationf("project dates must use YYYY-MM-DD")
 	}
@@ -303,7 +306,7 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 		}
 		out = Project{
 			ID: projectID, Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor, Description: description, Status: resolvedStatus.Category, WorkflowStatus: resolvedStatus.ID,
-			TemplateSlug: options.TemplateSlug, Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
+			Lead: options.Lead, TemplateSlug: options.TemplateSlug, Health: "", CompletedAt: completedAt, Priority: priority, StartDate: start, TargetDate: target,
 			Labels: projectLabels, Dependencies: dependencies, Milestones: milestones, CreatedAt: now, UpdatedAt: now,
 		}
 		for i, dependency := range dependencies {
@@ -324,6 +327,10 @@ func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, i
 		return nil
 	})
 	return out, err
+}
+
+func validProjectLead(lead string) bool {
+	return lead == "" || lead == "self"
 }
 
 func validProjectIcon(icon string) bool {
@@ -694,6 +701,13 @@ func (s *Store) UpdateProjectWithWorkflow(slug string, name, summary, icon, icon
 }
 
 func (s *Store) UpdateProjectWithWorkflowAndInitiatives(slug string, name, summary, icon, iconColor, description, status, workflowStatus, health *string, priority *int, start, target **string, labels, initiativeSlugs *[]string) (Project, error) {
+	return s.UpdateProjectWithWorkflowInitiativesAndLead(slug, name, summary, icon, iconColor, description, status, workflowStatus, health, nil, priority, start, target, labels, initiativeSlugs)
+}
+
+func (s *Store) UpdateProjectWithWorkflowInitiativesAndLead(slug string, name, summary, icon, iconColor, description, status, workflowStatus, health, lead *string, priority *int, start, target **string, labels, initiativeSlugs *[]string) (Project, error) {
+	if lead != nil && !validProjectLead(*lead) {
+		return Project{}, validationf("invalid project lead")
+	}
 	var out Project
 	err := s.mutate(func(m *mem) error {
 		i := indexProject(m, slug)
@@ -708,6 +722,7 @@ func (s *Store) UpdateProjectWithWorkflowAndInitiatives(slug string, name, summa
 		}
 		previousHealth := p.Health
 		previousPriority := p.Priority
+		previousLead := p.Lead
 		if name != nil {
 			if strings.TrimSpace(*name) == "" {
 				return validationf("name required")
@@ -716,6 +731,9 @@ func (s *Store) UpdateProjectWithWorkflowAndInitiatives(slug string, name, summa
 		}
 		if description != nil {
 			p.Description = *description
+		}
+		if lead != nil {
+			p.Lead = *lead
 		}
 		if summary != nil {
 			p.Summary = *summary
@@ -833,6 +851,9 @@ func (s *Store) UpdateProjectWithWorkflowAndInitiatives(slug string, name, summa
 		}
 		if previousPriority != p.Priority {
 			addActivity(m, "project", p.ID, "priority_changed", map[string]any{"from": previousPriority, "to": p.Priority}, now)
+		}
+		if previousLead != p.Lead {
+			addActivity(m, "project", p.ID, "lead_changed", map[string]any{"from": previousLead, "to": p.Lead}, now)
 		}
 		m.bump(now)
 		p = normalizeProjectWorkflowStatus(p, m.Workspace)
