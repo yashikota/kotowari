@@ -287,7 +287,6 @@ export function useIssueFiltersPresenter({
     displayOpened,
     chips,
     handlers: {
-      onFilterToggle: () => setFilterOpened((current) => !current),
       onFilterOpenChange: (next: boolean) => setFilterOpened(next),
       onDisplayToggle: () => setDisplayOpened((current) => !current),
       onDisplayOpenChange: (next: boolean) => setDisplayOpened(next),

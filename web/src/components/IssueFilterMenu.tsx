@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   ActionIcon,
   Button,
   Divider,
   Group,
+  Menu,
   Popover,
   Select,
   Stack,
@@ -17,7 +19,6 @@ import {
   IconCalendarTime,
   IconChartBar,
   IconCheck,
-  IconChevronLeft,
   IconChevronRight,
   IconCircleDot,
   IconFileText,
@@ -39,6 +40,7 @@ import { LabelChip } from '../mantine-ui.tsx';
 import type { FilterChip } from '../presenters/IssueFilters.tsx';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
+import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 
 const FILTER_CATEGORIES = [
   { id: 'status', group: 'issue', chips: ['status'] },
@@ -79,7 +81,7 @@ const FILTER_CATEGORY_ICONS = {
 } satisfies Record<FilterCategory, typeof IconCircleDot>;
 
 type FilterCategory = (typeof FILTER_CATEGORIES)[number]['id'];
-type SelectOption = { value: string; label: string };
+type SelectOption = { value: string; label: string; icon?: ReactNode };
 
 function FilterSelect({
   label,
@@ -151,6 +153,7 @@ function FilterOptionList({
             <FilterOptionButton
               key={option.value}
               label={option.label}
+              icon={option.icon}
               selected={selectedValues?.includes(option.value) ?? value === option.value}
               onClick={() => onChange(option.value)}
             />
@@ -167,10 +170,12 @@ function FilterOptionList({
 
 function FilterOptionButton({
   label,
+  icon,
   selected,
   onClick,
 }: {
   label: string;
+  icon?: ReactNode;
   selected: boolean;
   onClick: () => void;
 }) {
@@ -181,12 +186,23 @@ function FilterOptionButton({
       color="gray"
       size="compact-sm"
       fullWidth
-      justify="space-between"
+      justify="flex-start"
       aria-pressed={selected}
       onClick={onClick}
-      rightSection={selected ? <IconCheck size={14} aria-hidden="true" /> : null}
+      styles={{
+        root: { minHeight: 30, height: 30, paddingInline: 8 },
+        label: { display: 'block', width: '100%', textAlign: 'left' },
+      }}
     >
-      {label}
+      <Group gap="xs" wrap="nowrap" justify="space-between" w="100%">
+        <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+          {icon}
+          <Text size="sm" truncate>
+            {label}
+          </Text>
+        </Group>
+        {selected ? <IconCheck size={14} aria-hidden="true" /> : null}
+      </Group>
     </Button>
   );
 }
@@ -253,7 +269,6 @@ export function IssueFilterMenu({
   selectedAddedToCycle,
   opened,
   chips,
-  onToggle,
   onOpenChange,
   onStatusChange,
   onProjectChange,
@@ -284,7 +299,6 @@ export function IssueFilterMenu({
   selectedAddedToCycle: string[];
   opened: boolean;
   chips: FilterChip[];
-  onToggle: () => void;
   onOpenChange: (next: boolean) => void;
   onStatusChange: (value: string) => void;
   onProjectChange: (value: string) => void;
@@ -309,8 +323,8 @@ export function IssueFilterMenu({
   const { t } = useTranslation();
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
-  const [category, setCategory] = useState<FilterCategory | null>(null);
   const [filterQuery, setFilterQuery] = useState('');
+  const [openCategory, setOpenCategory] = useState<FilterCategory | null>(null);
   const compact = useMediaQuery('(max-width: 640px)');
   const exactDueDate = search.dueDate?.startsWith('on:') ? search.dueDate.slice(3) : '';
   const dueDateValue =
@@ -365,27 +379,8 @@ export function IssueFilterMenu({
     );
   }
 
-  function clearCategory() {
-    const definition = FILTER_CATEGORIES.find(({ id }) => id === category);
-    if (!definition) return;
-    for (const chip of chips) {
-      if (
-        definition.chips.some((key) =>
-          key.endsWith(':') ? chip.key.startsWith(key) : chip.key === key,
-        )
-      ) {
-        onRemoveFilter(chip.key);
-      }
-    }
-  }
-
-  function selectCategory(next: FilterCategory) {
-    setCategory(next);
-    setFilterQuery('');
-  }
-
-  function renderCategoryEditor() {
-    switch (category) {
+  function renderCategoryEditor(filterCategory: FilterCategory) {
+    switch (filterCategory) {
       case 'status':
         return (
           <FilterOptionList
@@ -395,6 +390,7 @@ export function IssueFilterMenu({
             options={workflowStatuses.map((status) => ({
               value: status.id,
               label: workflowStatusLabel(status.id, workflowStatuses),
+              icon: <IssueStatusIcon status={status.category} />,
             }))}
             onChange={onStatusChange}
           />
@@ -407,6 +403,19 @@ export function IssueFilterMenu({
             options={[0, 1, 2, 3, 4].map((priority) => ({
               value: String(priority),
               label: priorityLabel(priority),
+              icon: (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    width: 14,
+                    height: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <IssuePriorityIcon priority={priority} />
+                </span>
+              ),
             }))}
             onChange={onPriorityChange}
           />
@@ -659,21 +668,22 @@ export function IssueFilterMenu({
 
   return (
     <>
-      <Popover
+      <Menu
         opened={opened}
         onChange={(next) => {
           onOpenChange(next);
           if (!next) {
-            setCategory(null);
             setFilterQuery('');
+            setOpenCategory(null);
           }
         }}
         position="bottom-start"
         shadow="md"
-        width={compact ? 320 : category ? 520 : 240}
         withinPortal
+        closeOnItemClick={false}
+        withInitialFocusPlaceholder={false}
       >
-        <Popover.Target>
+        <Menu.Target>
           <ActionIcon
             type="button"
             variant={chips.length > 0 ? 'light' : 'subtle'}
@@ -681,138 +691,148 @@ export function IssueFilterMenu({
             aria-label={t('filters.button')}
             title={t('filters.button')}
             aria-expanded={opened}
-            onClick={onToggle}
           >
             <IconFilter size={16} stroke={1.7} aria-hidden="true" />
           </ActionIcon>
-        </Popover.Target>
-        <Popover.Dropdown
+        </Menu.Target>
+        <Menu.Dropdown
+          aria-label={t('filters.button')}
           p={0}
-          mah="70vh"
-          style={{ maxWidth: 'calc(100vw - 16px)', overflow: 'hidden' }}
+          mah="80vh"
+          onKeyDownCapture={(event) => {
+            if (event.key === 'Escape' && openCategory) {
+              event.preventDefault();
+              event.stopPropagation();
+              setOpenCategory(null);
+            }
+          }}
+          style={{ width: 240, maxWidth: 'calc(100vw - 16px)', overflow: 'visible' }}
         >
-          <Group gap={0} align="stretch" wrap="nowrap">
-            <Stack
-              w={compact ? 320 : 240}
-              gap={0}
-              style={{ display: compact && category ? 'none' : undefined }}
-            >
-              <TextInput
-                aria-label={t('filters.searchFilters')}
-                placeholder={t('filters.searchPlaceholder')}
-                leftSection={<IconSearch size={15} aria-hidden="true" />}
-                value={filterQuery}
-                autoFocus
-                onChange={(event) => setFilterQuery(event.currentTarget.value)}
-                styles={{ input: { border: 0, borderRadius: 0 } }}
-              />
-              <Divider />
-              <Stack gap="xs" p="xs" mah="calc(70vh - 42px)" style={{ overflowY: 'auto' }}>
-                {visibleGroups.map(({ categories: groupCategories, group }, groupIndex) => {
-                  return (
-                    <Stack key={group} gap={2}>
-                      {groupIndex > 0 ? <Divider my={4} /> : null}
-                      {groupCategories.map(({ id }) => {
-                        const CategoryIcon = FILTER_CATEGORY_ICONS[id];
-                        return (
-                          <Button
-                            key={id}
-                            type="button"
-                            variant="subtle"
-                            color="gray"
-                            size="compact-sm"
-                            fullWidth
-                            justify="flex-start"
+          <Stack w="100%" gap={0}>
+            <TextInput
+              aria-label={t('filters.searchFilters')}
+              placeholder={t('filters.searchPlaceholder')}
+              leftSection={<IconSearch size={15} aria-hidden="true" />}
+              value={filterQuery}
+              autoFocus
+              onFocus={() => setOpenCategory(null)}
+              onChange={(event) => setFilterQuery(event.currentTarget.value)}
+              styles={{ input: { border: 0, borderRadius: 0 } }}
+            />
+            <Divider />
+            <Stack gap="xs" p="xs" mah="calc(80vh - 42px)" style={{ overflowY: 'auto' }}>
+              {visibleGroups.map(({ categories: groupCategories, group }, groupIndex) => (
+                <Stack key={group} gap={2}>
+                  {groupIndex > 0 ? <Divider my={4} /> : null}
+                  {groupCategories.map(({ id }) => {
+                    const CategoryIcon = FILTER_CATEGORY_ICONS[id];
+                    return (
+                      <Popover
+                        key={id}
+                        opened={openCategory === id}
+                        onChange={(next) => {
+                          if (!next) setOpenCategory(null);
+                        }}
+                        position={compact ? 'bottom-start' : 'right-start'}
+                        offset={4}
+                        withinPortal={false}
+                        closeOnClickOutside={false}
+                        shadow="md"
+                      >
+                        <Popover.Target popupType="menu">
+                          <Menu.Item
+                            leftSection={<CategoryIcon size={15} stroke={1.7} aria-hidden="true" />}
+                            rightSection={<IconChevronRight size={14} aria-hidden="true" />}
                             aria-pressed={isCategoryActive(id)}
-                            data-active={category === id || undefined}
-                            onClick={() => selectCategory(id)}
-                            styles={{
-                              root: { minHeight: 30, height: 30, paddingInline: 8 },
-                              label: {
-                                display: 'block',
-                                width: '100%',
-                                textAlign: 'left',
-                              },
+                            aria-expanded={openCategory === id}
+                            aria-haspopup="menu"
+                            closeMenuOnClick={false}
+                            onMouseEnter={() => setOpenCategory(id)}
+                            onClick={() => setOpenCategory(id)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'ArrowRight') {
+                                event.preventDefault();
+                                setOpenCategory(id);
+                              }
                             }}
                           >
-                            <Group gap="xs" wrap="nowrap" justify="space-between" w="100%">
-                              <CategoryIcon size={15} stroke={1.7} aria-hidden="true" />
-                              <Text size="sm" truncate style={{ flex: 1, textAlign: 'left' }}>
-                                {categoryLabels[id]}
-                              </Text>
-                              <IconChevronRight
-                                size={14}
-                                color="var(--mantine-color-dimmed)"
-                                aria-hidden="true"
-                              />
-                            </Group>
-                          </Button>
-                        );
-                      })}
-                    </Stack>
-                  );
-                })}
-                {filteredCategories.length === 0 ? (
-                  <Text size="sm" c="dimmed" px="xs" py="sm">
-                    {t('filters.noMatchingFilters')}
-                  </Text>
-                ) : null}
-                {chips.length > 0 ? (
-                  <>
-                    <Divider my={4} />
-                    <Button
-                      type="button"
-                      variant="subtle"
-                      color="gray"
-                      size="compact-sm"
-                      disabled={chips.length === 0}
-                      onClick={onClear}
-                    >
-                      {t('filters.clear')}
-                    </Button>
-                  </>
-                ) : null}
-              </Stack>
-            </Stack>
-            {category ? (
-              <>
-                {!compact ? <Divider orientation="vertical" /> : null}
-                <Stack w={compact ? 320 : 279} gap={0}>
-                  <Group gap="xs" px="sm" py="xs" wrap="nowrap">
-                    <ActionIcon
-                      type="button"
-                      size="sm"
-                      variant="subtle"
-                      color="gray"
-                      aria-label={t('filters.backToFilters')}
-                      onClick={() => setCategory(null)}
-                    >
-                      <IconChevronLeft size={16} aria-hidden="true" />
-                    </ActionIcon>
-                    <Text size="sm" fw={600} style={{ flex: 1 }}>
-                      {categoryLabels[category]}
-                    </Text>
-                    {isCategoryActive(category) ? (
-                      <Button
-                        type="button"
-                        size="compact-xs"
-                        variant="subtle"
-                        onClick={clearCategory}
-                      >
-                        {t('filters.clearFilter')}
-                      </Button>
-                    ) : null}
-                  </Group>
-                  <Divider />
-                  <Stack gap="sm" p="sm" mah="calc(70vh - 42px)" style={{ overflowY: 'auto' }}>
-                    {renderCategoryEditor()}
-                  </Stack>
+                            {categoryLabels[id]}
+                          </Menu.Item>
+                        </Popover.Target>
+                        <Popover.Dropdown
+                          role="menu"
+                          aria-label={categoryLabels[id]}
+                          p={0}
+                          style={{
+                            width: compact ? 320 : 220,
+                            maxWidth: 'calc(100vw - 16px)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <Stack
+                            gap="sm"
+                            p="sm"
+                            mah="min(80vh, 440px)"
+                            style={{ overflowY: 'auto' }}
+                          >
+                            {isCategoryActive(id) ? (
+                              <Button
+                                type="button"
+                                size="compact-xs"
+                                variant="subtle"
+                                onClick={() => {
+                                  const definition = FILTER_CATEGORIES.find(
+                                    (filter) => filter.id === id,
+                                  );
+                                  if (!definition) return;
+                                  for (const chip of chips) {
+                                    if (
+                                      definition.chips.some((key) =>
+                                        key.endsWith(':')
+                                          ? chip.key.startsWith(key)
+                                          : chip.key === key,
+                                      )
+                                    ) {
+                                      onRemoveFilter(chip.key);
+                                    }
+                                  }
+                                  setOpenCategory(null);
+                                }}
+                              >
+                                {t('filters.clearFilter')}
+                              </Button>
+                            ) : null}
+                            {renderCategoryEditor(id)}
+                          </Stack>
+                        </Popover.Dropdown>
+                      </Popover>
+                    );
+                  })}
                 </Stack>
-              </>
-            ) : null}
-          </Group>
-        </Popover.Dropdown>
-      </Popover>
+              ))}
+              {filteredCategories.length === 0 ? (
+                <Text size="sm" c="dimmed" px="xs" py="sm">
+                  {t('filters.noMatchingFilters')}
+                </Text>
+              ) : null}
+              {chips.length > 0 ? (
+                <>
+                  <Divider my={4} />
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    color="gray"
+                    size="compact-sm"
+                    onClick={onClear}
+                  >
+                    {t('filters.clear')}
+                  </Button>
+                </>
+              ) : null}
+            </Stack>
+          </Stack>
+        </Menu.Dropdown>
+      </Menu>
       {chips.length > 0 ? (
         <Group role="group" aria-label={t('filters.active')} gap={4} mt={6}>
           {chips.map((chip) => (
@@ -822,7 +842,10 @@ export function IssueFilterMenu({
               size="compact-xs"
               variant="light"
               aria-label={t('filters.remove', { label: chip.label })}
-              onClick={() => onRemoveFilter(chip.key)}
+              onClick={() => {
+                setOpenCategory(null);
+                onRemoveFilter(chip.key);
+              }}
             >
               {chip.label} ×
             </Button>

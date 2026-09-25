@@ -845,14 +845,8 @@
     "noMatchingFilters": "一致するフィルターはありません",
     "noOptions": "選択肢がありません",
     "chooseValue": "値を選択",
-    "backToFilters": "フィルター一覧に戻る",
     "clearFilter": "このフィルターを解除",
     "noLabels": "利用できるラベルはありません。",
-    "groups": {
-      "issue": "イシューのプロパティ",
-      "planning": "プロジェクトと計画",
-      "other": "その他"
-    },
     "categories": {
       "status": "ステータス",
       "priority": "優先度",

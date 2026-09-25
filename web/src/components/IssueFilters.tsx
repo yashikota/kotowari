@@ -72,7 +72,6 @@ export function IssueFiltersView({
               selectedAddedToCycle={selectedAddedToCycle}
               opened={filterOpened}
               chips={chips}
-              onToggle={handlers.onFilterToggle}
               onOpenChange={handlers.onFilterOpenChange}
               onStatusChange={handlers.onStatusChange}
               onProjectChange={handlers.onProjectChange}

@@ -9,19 +9,26 @@ export async function fillIssueSearch(page: Page, query: string) {
 }
 
 export async function openIssueFilterCategory(page: Page, category: string) {
-  const backButton = page.getByRole('button', { name: 'Back to filters', exact: true });
-  if (await backButton.isVisible().catch(() => false)) {
-    await backButton.click();
-  } else {
-    const addFilterButton = page.getByRole('button', { name: 'Add filter', exact: true });
-    if (!(await page.getByRole('textbox', { name: 'Search filters', exact: true }).count())) {
-      await addFilterButton.click();
-    }
+  const search = page.getByRole('textbox', { name: 'Search filters', exact: true });
+  const addFilterButton = page.getByRole('button', { name: 'Add filter', exact: true });
+  if ((await addFilterButton.getAttribute('aria-expanded')) !== 'true') {
+    await addFilterButton.click();
+    await search.waitFor({ state: 'visible' });
   }
 
-  const search = page.getByRole('textbox', { name: 'Search filters', exact: true });
+  const expandedCategory = page.locator('[role="menuitem"][aria-expanded="true"]');
+  if (
+    await expandedCategory
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await search.click();
+  } else {
+    await search.hover();
+  }
   await search.fill(category);
-  await page.getByRole('button', { name: category, exact: true }).click();
+  await page.getByRole('menuitem', { name: category, exact: true }).click();
 }
 
 export async function chooseIssueFilterOption(page: Page, label: string, option: string) {
@@ -32,10 +39,10 @@ export async function chooseIssueFilterOption(page: Page, label: string, option:
     return;
   }
 
-  await page
+  const optionButton = page
     .getByRole('group', { name: label, exact: true })
-    .getByRole('button', { name: option, exact: true })
-    .click();
+    .getByRole('button', { name: option, exact: true });
+  await optionButton.click();
 }
 
 export async function createIssueView(page: Page, name: string) {

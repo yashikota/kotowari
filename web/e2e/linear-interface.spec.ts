@@ -7,9 +7,9 @@ test('issue filters use a searchable category menu with a scoped editor', async 
   await page.getByRole('button', { name: 'Add filter', exact: true }).click();
   const searchFilters = page.getByRole('textbox', { name: 'Search filters' });
   await expect(searchFilters).toBeFocused();
-  const picker = page.getByRole('dialog', { name: 'Add filter' });
+  const picker = page.getByRole('menu', { name: 'Add filter' });
   await expect(picker.getByText('Issue properties', { exact: true })).toHaveCount(0);
-  const statusFilter = picker.getByRole('button', { name: 'Status', exact: true });
+  const statusFilter = picker.getByRole('menuitem', { name: 'Status', exact: true });
   await expect(statusFilter.locator('svg')).toHaveCount(2);
   const [buttonBounds, iconBounds, labelBounds, chevronBounds] = await Promise.all([
     statusFilter.boundingBox(),
@@ -24,43 +24,54 @@ test('issue filters use a searchable category menu with a scoped editor', async 
   expect(labelBounds!.x - iconBounds!.x - iconBounds!.width).toBeLessThan(40);
   expect(chevronBounds!.x).toBeGreaterThan(buttonBounds!.x + buttonBounds!.width * 0.75);
   await searchFilters.fill('prior');
-  await expect(page.getByRole('button', { name: 'Priority', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Status', exact: true })).toHaveCount(0);
+  await expect(picker.getByRole('menuitem', { name: 'Priority', exact: true })).toBeVisible();
+  await expect(picker.getByRole('menuitem', { name: 'Status', exact: true })).toHaveCount(0);
 
   await searchFilters.fill('no matching category');
   await expect(page.getByText('No matching filters')).toBeVisible();
 
   await searchFilters.fill('status');
-  await page.getByRole('button', { name: 'Status', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Status', exact: true }).click();
   await expect(page.getByRole('group', { name: 'Filter status' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Search filters' })).toBeVisible();
   const searchOptions = page.getByRole('textbox', { name: 'Search filter options' });
   await searchOptions.fill('in progress');
-  await expect(
-    page.getByRole('group', { name: 'Filter status' }).getByRole('button', { name: 'In Progress' }),
-  ).toBeVisible();
+  const inProgress = page
+    .getByRole('group', { name: 'Filter status' })
+    .getByRole('button', { name: 'In Progress' });
+  await expect(inProgress).toBeVisible();
+  await expect(inProgress.locator('svg')).toHaveCount(1);
   await expect(
     page.getByRole('group', { name: 'Filter status' }).getByRole('button', { name: 'Backlog' }),
   ).toHaveCount(0);
-  await page.getByRole('button', { name: 'Back to filters' }).click();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('textbox', { name: 'Search filters' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Status', exact: true })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Status', exact: true }).hover();
+  await expect(page.getByRole('group', { name: 'Filter status' })).toBeVisible();
+  await page.locator('body').click({ position: { x: 1000, y: 650 } });
+  await expect(page.getByRole('button', { name: 'Add filter' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
 });
 
 test('filter picker keeps its scoped editor inside a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/issues');
   await page.getByRole('button', { name: 'Add filter', exact: true }).click();
-  await page.getByRole('button', { name: 'Status', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Status', exact: true }).click();
 
-  const picker = page.getByRole('dialog', { name: 'Add filter' });
   await expect(page.getByRole('group', { name: 'Filter status' })).toBeVisible();
+  const picker = page.getByRole('menu').last();
   const bounds = await picker.boundingBox();
   expect(bounds).not.toBeNull();
   expect(bounds!.x).toBeGreaterThanOrEqual(0);
   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
 
-  await page.getByRole('button', { name: 'Back to filters' }).click();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('textbox', { name: 'Search filters' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Status', exact: true })).toBeVisible();
 });
 
 test('issue details facets show counts and filter the visible issue list', async ({

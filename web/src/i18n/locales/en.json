@@ -847,14 +847,8 @@
     "noMatchingFilters": "No matching filters",
     "noOptions": "No options found",
     "chooseValue": "Choose a value",
-    "backToFilters": "Back to filters",
     "clearFilter": "Clear filter",
     "noLabels": "No labels are available.",
-    "groups": {
-      "issue": "Issue properties",
-      "planning": "Project and planning",
-      "other": "Other"
-    },
     "categories": {
       "status": "Status",
       "priority": "Priority",
