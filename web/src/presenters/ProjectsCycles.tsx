@@ -1507,6 +1507,7 @@ export function useCycleDetailPagePresenter() {
     locationState.issueListSelectedId ?? null,
   );
   const [cycle, setCycle] = useState(data.cycle);
+  const [cycleDetailsOpen, setCycleDetailsOpen] = useState(true);
   const googleCalendarURL = cycleGoogleCalendarURL(cycle, cycleURL(cycle.number));
   const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
   const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
@@ -1728,6 +1729,7 @@ export function useCycleDetailPagePresenter() {
     search,
     selected: selectedId,
     cycle,
+    cycleDetailsOpen,
     googleCalendarURL,
     resources,
     progressTimeline,
@@ -1762,6 +1764,7 @@ export function useCycleDetailPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ status: e.target.value }),
       onClick1: () => sendIntent('issue.create', { cycleId: cycle.id }),
+      onToggleCycleDetails: () => setCycleDetailsOpen((open) => !open),
       onFilterChange: (next: IssueSearch) =>
         navigate({
           to: '/cycles/$number',

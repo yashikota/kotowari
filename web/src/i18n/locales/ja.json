@@ -175,6 +175,8 @@
     "rowLabel": "{{name}}",
     "openCycle": "サイクルを開く",
     "openCyclePlaceholder": "サイクルを検索…",
+    "closeDetails": "サイクルの詳細を閉じる",
+    "openDetails": "サイクルの詳細を開く",
     "nextCycle": "次のサイクル（今後）",
     "previousCycle": "前のサイクル（完了）",
     "noCyclesFound": "一致するサイクルがありません",

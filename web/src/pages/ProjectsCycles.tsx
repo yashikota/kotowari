@@ -17,6 +17,8 @@ import {
 import {
   IconExternalLink,
   IconFileText,
+  IconLayoutSidebarRightCollapse,
+  IconLayoutSidebarRightExpand,
   IconPlus,
   IconStack2,
   IconTrash,
@@ -1007,6 +1009,7 @@ export function CycleDetailPageView({
         search,
         selected,
         cycle,
+        cycleDetailsOpen,
         googleCalendarURL,
         resources,
         progressTimeline,
@@ -1042,7 +1045,7 @@ export function CycleDetailPageView({
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <Box style={{ flex: 1, minHeight: 0 }}>
             <SplitLayout>
-              <Pane variant="list">
+              <Pane variant="list" single={!cycleDetailsOpen}>
                 <Group
                   justify="space-between"
                   px="md"
@@ -1053,15 +1056,32 @@ export function CycleDetailPageView({
                   <Text size="sm" c="dimmed">
                     {t('cycle.issuesCount', { count: issues.length })}
                   </Text>
-                  <Button
-                    type="button"
-                    size="compact-sm"
-                    variant="subtle"
-                    leftSection={<IconPlus size={14} aria-hidden="true" />}
-                    onClick={handlers.onClick1}
-                  >
-                    {t('cycle.newIssue')}
-                  </Button>
+                  <Group gap="xs" wrap="nowrap">
+                    <ActionIcon
+                      type="button"
+                      variant="subtle"
+                      color="gray"
+                      aria-label={t(cycleDetailsOpen ? 'cycle.closeDetails' : 'cycle.openDetails')}
+                      title={t(cycleDetailsOpen ? 'cycle.closeDetails' : 'cycle.openDetails')}
+                      aria-expanded={cycleDetailsOpen}
+                      onClick={handlers.onToggleCycleDetails}
+                    >
+                      {cycleDetailsOpen ? (
+                        <IconLayoutSidebarRightCollapse size={16} aria-hidden="true" />
+                      ) : (
+                        <IconLayoutSidebarRightExpand size={16} aria-hidden="true" />
+                      )}
+                    </ActionIcon>
+                    <Button
+                      type="button"
+                      size="compact-sm"
+                      variant="subtle"
+                      leftSection={<IconPlus size={14} aria-hidden="true" />}
+                      onClick={handlers.onClick1}
+                    >
+                      {t('cycle.newIssue')}
+                    </Button>
+                  </Group>
                 </Group>
                 <IssueFilters
                   search={search}
@@ -1118,186 +1138,188 @@ export function CycleDetailPageView({
                   )}
                 </Box>
               </Pane>
-              <Pane variant="detail">
-                <Stack gap="lg">
-                  <Stack gap="xs">
-                    <Group justify="space-between" align="center" wrap="nowrap">
-                      <NativeSelect
-                        aria-label={t('field.status')}
-                        value={cycle.status}
-                        onChange={handlers.Cycle_status_onChange0}
-                        data={CYCLE_STATUSES.map((s) => ({
-                          value: s,
-                          label: t(`cycle.status.${s}`),
-                        }))}
-                        w={144}
-                      />
-                      <Text size="xs" c="dimmed">
-                        {t('cycle.dates')}
-                      </Text>
-                    </Group>
-                    <Group justify="space-between" align="center" wrap="nowrap">
-                      <Text size="sm">
-                        {formatCalendarDate(cycle.startsAt, locale)} —{' '}
-                        {formatCalendarDate(cycle.endsAt, locale)}
-                      </Text>
-                      <Button
-                        type="button"
-                        size="compact-xs"
-                        variant="subtle"
-                        onClick={handlers.onOpenDates}
-                      >
-                        {t('cycle.changeDates')}
-                      </Button>
-                    </Group>
-                    <Group justify="space-between" align="center" wrap="nowrap" pt="xs">
-                      <Text size="md" fw={550} truncate>
-                        {cycle.name || t('field.cycleN', { number: cycle.number })}
-                      </Text>
-                      <Group gap="xs" wrap="nowrap">
-                        <Switch
-                          aria-label={t('cycle.favorite')}
-                          checked={!!cycle.isFavorite}
-                          onChange={handlers.onToggleFavorite}
+              {cycleDetailsOpen ? (
+                <Pane variant="detail">
+                  <Stack gap="lg">
+                    <Stack gap="xs">
+                      <Group justify="space-between" align="center" wrap="nowrap">
+                        <NativeSelect
+                          aria-label={t('field.status')}
+                          value={cycle.status}
+                          onChange={handlers.Cycle_status_onChange0}
+                          data={CYCLE_STATUSES.map((s) => ({
+                            value: s,
+                            label: t(`cycle.status.${s}`),
+                          }))}
+                          w={144}
                         />
+                        <Text size="xs" c="dimmed">
+                          {t('cycle.dates')}
+                        </Text>
+                      </Group>
+                      <Group justify="space-between" align="center" wrap="nowrap">
+                        <Text size="sm">
+                          {formatCalendarDate(cycle.startsAt, locale)} —{' '}
+                          {formatCalendarDate(cycle.endsAt, locale)}
+                        </Text>
+                        <Button
+                          type="button"
+                          size="compact-xs"
+                          variant="subtle"
+                          onClick={handlers.onOpenDates}
+                        >
+                          {t('cycle.changeDates')}
+                        </Button>
+                      </Group>
+                      <Group justify="space-between" align="center" wrap="nowrap" pt="xs">
+                        <Text size="md" fw={550} truncate>
+                          {cycle.name || t('field.cycleN', { number: cycle.number })}
+                        </Text>
+                        <Group gap="xs" wrap="nowrap">
+                          <Switch
+                            aria-label={t('cycle.favorite')}
+                            checked={!!cycle.isFavorite}
+                            onChange={handlers.onToggleFavorite}
+                          />
+                          <Menu withinPortal shadow="md" position="bottom-end">
+                            <Menu.Target>
+                              <Button
+                                type="button"
+                                size="compact-sm"
+                                variant="subtle"
+                                aria-label={t('cycle.options')}
+                              >
+                                {t('cycle.options')}
+                              </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                              <Menu.Item onClick={handlers.onOpenMetadata}>
+                                {t('cycle.editNameAndDescription')}
+                              </Menu.Item>
+                              {cycle.status !== 'completed' ? (
+                                <Menu.Item onClick={handlers.onOpenDates}>
+                                  {t('cycle.changeDates')}
+                                </Menu.Item>
+                              ) : null}
+                              {cycle.status === 'upcoming' ? (
+                                <Menu.Item onClick={handlers.onStartCycleToday}>
+                                  {t('cycle.startToday')}
+                                </Menu.Item>
+                              ) : null}
+                              <Menu.Item onClick={handlers.onCopyLink}>
+                                {cycleLinkCopied ? t('cycle.linkCopied') : t('cycle.copyLink')}
+                              </Menu.Item>
+                              <Menu.Item onClick={handlers.onExportIssues}>
+                                {t('cycle.exportIssues')}
+                              </Menu.Item>
+                              <Menu.Sub>
+                                <Menu.Sub.Target>
+                                  <Menu.Sub.Item>{t('cycle.subscribeCalendar')}</Menu.Sub.Item>
+                                </Menu.Sub.Target>
+                                <Menu.Sub.Dropdown>
+                                  <Menu.Item
+                                    component="a"
+                                    href={googleCalendarURL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {t('cycle.addToGoogleCalendar')}
+                                  </Menu.Item>
+                                  <Menu.Item onClick={handlers.onExportCalendar}>
+                                    {t('cycle.exportCalendar')}
+                                  </Menu.Item>
+                                </Menu.Sub.Dropdown>
+                              </Menu.Sub>
+                            </Menu.Dropdown>
+                          </Menu>
+                        </Group>
+                      </Group>
+                    </Stack>
+                    <CycleProgressSummary
+                      scope={data.cycleIssues.length}
+                      started={started}
+                      startedPercent={startedPercent}
+                      completed={done}
+                      completionPercent={completionPercent}
+                    />
+                    <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
+                    {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
+                    <Stack
+                      component="section"
+                      aria-label={t('cycle.resourcesHeading')}
+                      gap="sm"
+                      pt="md"
+                      style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
+                    >
+                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+                        <Text size="sm" fw={550}>
+                          {t('cycle.resourcesHeading')}
+                        </Text>
                         <Menu withinPortal shadow="md" position="bottom-end">
                           <Menu.Target>
-                            <Button
-                              type="button"
-                              size="compact-sm"
-                              variant="subtle"
-                              aria-label={t('cycle.options')}
-                            >
-                              {t('cycle.options')}
+                            <Button type="button" size="compact-sm" variant="subtle">
+                              {t('cycle.addDocumentOrLink')}
                             </Button>
                           </Menu.Target>
                           <Menu.Dropdown>
-                            <Menu.Item onClick={handlers.onOpenMetadata}>
-                              {t('cycle.editNameAndDescription')}
+                            <Menu.Item onClick={handlers.onCreateDocument}>
+                              {t('cycle.createDocument')}
                             </Menu.Item>
-                            {cycle.status !== 'completed' ? (
-                              <Menu.Item onClick={handlers.onOpenDates}>
-                                {t('cycle.changeDates')}
-                              </Menu.Item>
-                            ) : null}
-                            {cycle.status === 'upcoming' ? (
-                              <Menu.Item onClick={handlers.onStartCycleToday}>
-                                {t('cycle.startToday')}
-                              </Menu.Item>
-                            ) : null}
-                            <Menu.Item onClick={handlers.onCopyLink}>
-                              {cycleLinkCopied ? t('cycle.linkCopied') : t('cycle.copyLink')}
+                            <Menu.Item onClick={handlers.onOpenResourceLink}>
+                              {t('cycle.addLink')}
                             </Menu.Item>
-                            <Menu.Item onClick={handlers.onExportIssues}>
-                              {t('cycle.exportIssues')}
-                            </Menu.Item>
-                            <Menu.Sub>
-                              <Menu.Sub.Target>
-                                <Menu.Sub.Item>{t('cycle.subscribeCalendar')}</Menu.Sub.Item>
-                              </Menu.Sub.Target>
-                              <Menu.Sub.Dropdown>
-                                <Menu.Item
-                                  component="a"
-                                  href={googleCalendarURL}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  {t('cycle.addToGoogleCalendar')}
-                                </Menu.Item>
-                                <Menu.Item onClick={handlers.onExportCalendar}>
-                                  {t('cycle.exportCalendar')}
-                                </Menu.Item>
-                              </Menu.Sub.Dropdown>
-                            </Menu.Sub>
                           </Menu.Dropdown>
                         </Menu>
                       </Group>
-                    </Group>
-                  </Stack>
-                  <CycleProgressSummary
-                    scope={data.cycleIssues.length}
-                    started={started}
-                    startedPercent={startedPercent}
-                    completed={done}
-                    completionPercent={completionPercent}
-                  />
-                  <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
-                  {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
-                  <Stack
-                    component="section"
-                    aria-label={t('cycle.resourcesHeading')}
-                    gap="sm"
-                    pt="md"
-                    style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
-                  >
-                    <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-                      <Text size="sm" fw={550}>
-                        {t('cycle.resourcesHeading')}
-                      </Text>
-                      <Menu withinPortal shadow="md" position="bottom-end">
-                        <Menu.Target>
-                          <Button type="button" size="compact-sm" variant="subtle">
-                            {t('cycle.addDocumentOrLink')}
-                          </Button>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item onClick={handlers.onCreateDocument}>
-                            {t('cycle.createDocument')}
-                          </Menu.Item>
-                          <Menu.Item onClick={handlers.onOpenResourceLink}>
-                            {t('cycle.addLink')}
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </Group>
-                    {resources.length === 0 ? (
-                      <Text size="sm" c="dimmed">
-                        {t('cycle.noResources')}
-                      </Text>
-                    ) : (
-                      <Stack gap="xs" role="list" aria-label={t('cycle.resourcesHeading')}>
-                        {resources.map((resource) => (
-                          <Group
-                            key={resource.id}
-                            justify="space-between"
-                            wrap="nowrap"
-                            role="listitem"
-                          >
-                            <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                              {resource.pageSlug ? (
-                                <IconFileText size={15} aria-hidden="true" />
-                              ) : (
-                                <IconExternalLink size={15} aria-hidden="true" />
-                              )}
-                              {resource.pageSlug ? (
-                                <Link to="/pages/$slug" params={{ slug: resource.pageSlug }}>
-                                  {resource.displayTitle}
-                                </Link>
-                              ) : (
-                                <a href={resource.url} target="_blank" rel="noreferrer">
-                                  {resource.displayTitle}
-                                </a>
-                              )}
-                              <MetaBadge>{t(`issueLinks.${resource.kind}`)}</MetaBadge>
-                            </Group>
-                            <ActionIcon
-                              type="button"
-                              variant="subtle"
-                              color="gray"
-                              aria-label={t('cycle.removeResource', {
-                                title: resource.displayTitle,
-                              })}
-                              onClick={() => handlers.onRemoveResource(resource.id)}
+                      {resources.length === 0 ? (
+                        <Text size="sm" c="dimmed">
+                          {t('cycle.noResources')}
+                        </Text>
+                      ) : (
+                        <Stack gap="xs" role="list" aria-label={t('cycle.resourcesHeading')}>
+                          {resources.map((resource) => (
+                            <Group
+                              key={resource.id}
+                              justify="space-between"
+                              wrap="nowrap"
+                              role="listitem"
                             >
-                              <IconTrash size={15} />
-                            </ActionIcon>
-                          </Group>
-                        ))}
-                      </Stack>
-                    )}
+                              <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                                {resource.pageSlug ? (
+                                  <IconFileText size={15} aria-hidden="true" />
+                                ) : (
+                                  <IconExternalLink size={15} aria-hidden="true" />
+                                )}
+                                {resource.pageSlug ? (
+                                  <Link to="/pages/$slug" params={{ slug: resource.pageSlug }}>
+                                    {resource.displayTitle}
+                                  </Link>
+                                ) : (
+                                  <a href={resource.url} target="_blank" rel="noreferrer">
+                                    {resource.displayTitle}
+                                  </a>
+                                )}
+                                <MetaBadge>{t(`issueLinks.${resource.kind}`)}</MetaBadge>
+                              </Group>
+                              <ActionIcon
+                                type="button"
+                                variant="subtle"
+                                color="gray"
+                                aria-label={t('cycle.removeResource', {
+                                  title: resource.displayTitle,
+                                })}
+                                onClick={() => handlers.onRemoveResource(resource.id)}
+                              >
+                                <IconTrash size={15} />
+                              </ActionIcon>
+                            </Group>
+                          ))}
+                        </Stack>
+                      )}
+                    </Stack>
                   </Stack>
-                </Stack>
-              </Pane>
+                </Pane>
+              ) : null}
             </SplitLayout>
           </Box>
           <Modal

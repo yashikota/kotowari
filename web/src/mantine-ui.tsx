@@ -181,17 +181,28 @@ export function Pane({
 }) {
   const variantStyle =
     variant === 'list'
-      ? {
-          flex: compact ? '0 0 320px' : '0 0 min(43%, 520px)',
-          maxWidth: compact ? 380 : 560,
-          minWidth: compact ? 280 : 320,
-          borderRight: '1px solid var(--mantine-color-default-border)',
-          padding: 0,
-          display: 'flex',
-          flexDirection: 'column' as const,
-          overflow: 'hidden',
-          backgroundColor: 'var(--mantine-color-body)',
-        }
+      ? single
+        ? {
+            flex: '1 1 100%',
+            minWidth: 0,
+            borderRight: 0,
+            padding: 0,
+            display: 'flex',
+            flexDirection: 'column' as const,
+            overflow: 'hidden',
+            backgroundColor: 'var(--mantine-color-body)',
+          }
+        : {
+            flex: compact ? '0 0 320px' : '0 0 min(43%, 520px)',
+            maxWidth: compact ? 380 : 560,
+            minWidth: compact ? 280 : 320,
+            borderRight: '1px solid var(--mantine-color-default-border)',
+            padding: 0,
+            display: 'flex',
+            flexDirection: 'column' as const,
+            overflow: 'hidden',
+            backgroundColor: 'var(--mantine-color-body)',
+          }
       : variant === 'detail'
         ? {
             flex: '1 1 0',

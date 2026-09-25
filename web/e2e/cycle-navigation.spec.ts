@@ -47,9 +47,22 @@ test('cycle header navigates to adjacent cycles by search and keyboard shortcuts
 
   await page.goto(`/cycles/${current.number}`);
   const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
-  await expect(breadcrumb.getByRole('button', { name: 'Open cycle' })).toBeVisible();
+  await expect(breadcrumb.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Cycle ${current.number}` })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Open cycle' }).click();
+  await expect(page.getByRole('button', { name: 'New issue' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Status' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cycle options' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close cycle details' }).click();
+  const openDetails = page.getByRole('button', { name: 'Open cycle details' });
+  await expect(openDetails).toHaveAttribute('aria-expanded', 'false');
+  await openDetails.click();
+  await expect(page.getByRole('button', { name: 'Close cycle details' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+
+  await page.getByRole('button', { name: 'Open cycle', exact: true }).click();
 
   const menu = page.getByRole('menu', { name: 'Open cycle' });
   const search = menu.getByRole('textbox', { name: 'Open cycle' });
@@ -76,12 +89,12 @@ test('cycle header navigates to adjacent cycles by search and keyboard shortcuts
   await expect(page).toHaveURL(new RegExp(`/cycles/${next.number}$`));
 
   await page.goto(`/cycles/${current.number}`);
-  await expect(page.getByRole('button', { name: 'Open cycle' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
   await page.keyboard.press('Alt+k');
   await expect(page).toHaveURL(new RegExp(`/cycles/${next.number}$`));
 
   await page.goto(`/cycles/${current.number}`);
-  await expect(page.getByRole('button', { name: 'Open cycle' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
   await page.keyboard.press('Alt+j');
   await expect(page).toHaveURL(new RegExp(`/cycles/${previous.number}$`));
 });

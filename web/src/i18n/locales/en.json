@@ -177,6 +177,8 @@
     "rowLabel": "{{name}}",
     "openCycle": "Open cycle",
     "openCyclePlaceholder": "Open cycle…",
+    "closeDetails": "Close cycle details",
+    "openDetails": "Open cycle details",
     "nextCycle": "Next cycle (upcoming)",
     "previousCycle": "Previous cycle (completed)",
     "noCyclesFound": "No matching cycles",
