@@ -452,6 +452,17 @@
     "remove": "マイルストーン {{name}} を削除",
     "removeConfirmation": "マイルストーン {{name}} を削除しますか？割り当て済みのイシューからも解除されます。"
   },
+  "projectTemplates": {
+    "chooseTemplate": "プロジェクトテンプレート",
+    "startBlank": "空の状態から作成",
+    "deleteSelected": "選択したプロジェクトテンプレートを削除",
+    "deleteConfirmation": "プロジェクトテンプレート「{{name}}」を削除しますか？",
+    "saveAsTemplate": "テンプレートとして保存",
+    "saveTitle": "プロジェクトテンプレートを保存",
+    "templateName": "テンプレート名",
+    "duplicateName": "同じ名前のプロジェクトテンプレートが既にあります。",
+    "saveFailed": "プロジェクトテンプレートを保存できませんでした。"
+  },
   "projectDependencies": {
     "heading": "依存関係",
     "addFromCreate": "依存関係を追加",

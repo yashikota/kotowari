@@ -16,6 +16,7 @@ import type {
   Project,
   ProjectHealth,
   ProjectMilestone,
+  ProjectTemplate,
   ProjectWorkflowStatus,
   RecurringIssue,
   SearchHit,
@@ -210,6 +211,14 @@ export const api = {
   },
   activities: (id: string) => req<Activity[]>(`/api/issues/${id}/activities`),
   projects: () => req<Project[]>('/api/projects'),
+  projectTemplates: () => req<ProjectTemplate[]>('/api/project-templates'),
+  createProjectTemplate: (slug: string, name: string) =>
+    req<ProjectTemplate>(`/api/projects/${encodeURIComponent(slug)}/templates`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  deleteProjectTemplate: (slug: string) =>
+    req<void>(`/api/project-templates/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
   project: (slug: string) => req<Project>(`/api/projects/${slug}`),
   projectActivities: (slug: string) => req<Activity[]>(`/api/projects/${slug}/activities`),
   postProjectUpdate: (slug: string, health: ProjectHealth, body: string) =>

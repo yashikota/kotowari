@@ -129,6 +129,20 @@ export type Project = {
   updatedAt: string;
 };
 
+export type ProjectTemplate = {
+  slug: string;
+  name: string;
+  summary?: string;
+  icon?: string;
+  iconColor?: string;
+  description: string;
+  status: string;
+  workflowStatus?: string;
+  priority: number;
+  labels: string[];
+  milestones: Array<{ name: string; description?: string }>;
+};
+
 export const PROJECT_HEALTH_STATUSES = ['on_track', 'at_risk', 'off_track'] as const;
 
 export type ProjectHealth = (typeof PROJECT_HEALTH_STATUSES)[number];

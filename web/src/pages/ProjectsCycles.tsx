@@ -8,6 +8,7 @@ import {
   Modal,
   MultiSelect,
   NativeSelect,
+  Select,
   Stack,
   Switch,
   Text,
@@ -87,6 +88,8 @@ export function ProjectsPageView({
         hasActiveSearch,
         controls,
         availableLabels,
+        projectTemplates,
+        selectedProjectTemplate,
         name,
         summary,
         icon,
@@ -224,6 +227,34 @@ export function ProjectsPageView({
             >
               <Box component="form" onSubmit={handlers.onSubmit0}>
                 <Stack>
+                  <Group align="flex-end" wrap="nowrap">
+                    <Select
+                      label={t('projectTemplates.chooseTemplate')}
+                      placeholder={t('projectTemplates.startBlank')}
+                      value={selectedProjectTemplate}
+                      onChange={handlers.onProjectTemplateChange}
+                      data={projectTemplates.map((template) => ({
+                        value: template.slug,
+                        label: template.name,
+                      }))}
+                      searchable
+                      clearable
+                      style={{ flex: 1 }}
+                      comboboxProps={{ withinPortal: false }}
+                    />
+                    {selectedProjectTemplate && (
+                      <ActionIcon
+                        type="button"
+                        variant="default"
+                        color="red"
+                        aria-label={t('projectTemplates.deleteSelected')}
+                        title={t('projectTemplates.deleteSelected')}
+                        onClick={handlers.onDeleteProjectTemplate}
+                      >
+                        <IconTrash size={15} stroke={1.7} aria-hidden="true" />
+                      </ActionIcon>
+                    )}
+                  </Group>
                   <Group align="flex-end" wrap="nowrap">
                     <ProjectIconPicker
                       icon={icon}
@@ -637,6 +668,9 @@ export function ProjectDetailPageView({
         projectUpdateOpen,
         projectUpdateHealth,
         projectUpdateBody,
+        projectTemplateOpen,
+        projectTemplateName,
+        projectTemplateError,
         milestoneName,
         milestoneDescription,
         milestoneTargetDate,
@@ -701,6 +735,9 @@ export function ProjectDetailPageView({
                     </Button>
                     <Button type="button" variant="default" onClick={handlers.onOpenProjectUpdate}>
                       {t('projectUpdates.postButton')}
+                    </Button>
+                    <Button type="button" variant="subtle" onClick={handlers.onOpenProjectTemplate}>
+                      {t('projectTemplates.saveAsTemplate')}
                     </Button>
                     <Button type="button" variant="subtle" color="red" onClick={handlers.onClick2}>
                       {t('ui.delete')}
@@ -1076,6 +1113,38 @@ export function ProjectDetailPageView({
                   </Button>
                   <Button type="submit" disabled={!projectUpdateBody.trim()}>
                     {t('projectUpdates.postButton')}
+                  </Button>
+                </Group>
+              </Stack>
+            </Box>
+          </Modal>
+          <Modal
+            opened={projectTemplateOpen}
+            onClose={handlers.onCloseProjectTemplate}
+            title={t('projectTemplates.saveTitle')}
+            centered
+          >
+            <Box component="form" onSubmit={handlers.onSubmitProjectTemplate}>
+              <Stack>
+                <TextInput
+                  required
+                  maxLength={100}
+                  label={t('projectTemplates.templateName')}
+                  value={projectTemplateName}
+                  onChange={handlers.onProjectTemplateNameChange}
+                  data-autofocus
+                />
+                {projectTemplateError && (
+                  <Text size="sm" c="red" role="alert">
+                    {projectTemplateError}
+                  </Text>
+                )}
+                <Group justify="flex-end">
+                  <Button type="button" variant="default" onClick={handlers.onCloseProjectTemplate}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button type="submit" disabled={!projectTemplateName.trim()}>
+                    {t('projectTemplates.saveAsTemplate')}
                   </Button>
                 </Group>
               </Stack>

@@ -44,6 +44,7 @@ import type {
   Project,
   ProjectDependency,
   ProjectHealth,
+  ProjectTemplate,
 } from '../types.ts';
 import {
   useProjectWorkflow,
@@ -140,10 +141,12 @@ export function useProjectsPagePresenter() {
     projects: Project[];
     labels: Label[];
     issues: Issue[];
+    projectTemplates: ProjectTemplate[];
   };
   const { projects } = data;
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const search = useSearch({ from: '/projects' });
+  const router = useRouter();
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
   const [icon, setIcon] = useState('');
@@ -154,6 +157,7 @@ export function useProjectsPagePresenter() {
   const [startDate, setStartDate] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [selectedProjectTemplate, setSelectedProjectTemplate] = useState<string | null>(null);
   const [initialMilestones, setInitialMilestones] = useState<ProjectMilestoneDraft[]>([]);
   const [milestoneDraftOpen, setMilestoneDraftOpen] = useState(false);
   const [milestoneDraftName, setMilestoneDraftName] = useState('');
@@ -693,6 +697,48 @@ export function useProjectsPagePresenter() {
     });
   }
 
+  function applyProjectTemplate(slug: string | null) {
+    setSelectedProjectTemplate(slug);
+    const template = data.projectTemplates.find((candidate) => candidate.slug === slug);
+    if (!template) return;
+    setSummary(template.summary ?? '');
+    setIcon(template.icon ?? '');
+    setIconColor(template.iconColor ?? 'grey');
+    setDescription(template.description);
+    const templateStatus = template.workflowStatus ?? template.status;
+    setStatus(
+      projectWorkflowStatuses.some((workflowStatus) => workflowStatus.id === templateStatus)
+        ? templateStatus
+        : template.status,
+    );
+    setPriority(template.priority);
+    setSelectedLabels(
+      template.labels.filter((label) => data.labels.some((available) => available.name === label)),
+    );
+    setInitialMilestones(
+      template.milestones.map((milestone) => ({
+        name: milestone.name,
+        description: milestone.description ?? '',
+        targetDate: '',
+      })),
+    );
+  }
+
+  async function deleteSelectedProjectTemplate() {
+    if (!selectedProjectTemplate) return;
+    const template = data.projectTemplates.find(
+      (candidate) => candidate.slug === selectedProjectTemplate,
+    );
+    if (
+      !template ||
+      !window.confirm(i18n.t('projectTemplates.deleteConfirmation', { name: template.name }))
+    )
+      return;
+    await api.deleteProjectTemplate(selectedProjectTemplate);
+    setSelectedProjectTemplate(null);
+    await router.invalidate();
+  }
+
   function addInitialMilestone() {
     const milestoneName = milestoneDraftName.trim();
     if (!milestoneName) return;
@@ -740,6 +786,8 @@ export function useProjectsPagePresenter() {
     hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,
     controls,
     availableLabels: data.labels,
+    projectTemplates: data.projectTemplates,
+    selectedProjectTemplate,
     projectWorkflowStatuses,
     name,
     summary,
@@ -782,6 +830,7 @@ export function useProjectsPagePresenter() {
         return createProject(e);
       },
       onOpenCreateProject: () => {
+        setSelectedProjectTemplate(null);
         setName('');
         setSummary('');
         setIcon('');
@@ -804,6 +853,8 @@ export function useProjectsPagePresenter() {
         setCreateOpen(true);
       },
       onCloseCreateProject: () => setCreateOpen(false),
+      onProjectTemplateChange: (value: string | null) => applyProjectTemplate(value),
+      onDeleteProjectTemplate: deleteSelectedProjectTemplate,
       onOpenMilestoneDraft: () => setMilestoneDraftOpen(true),
       onCancelMilestoneDraft: () => {
         setMilestoneDraftOpen(false);
@@ -897,6 +948,9 @@ export function useProjectDetailPagePresenter() {
     project.health ?? 'on_track',
   );
   const [projectUpdateBody, setProjectUpdateBody] = useState('');
+  const [projectTemplateOpen, setProjectTemplateOpen] = useState(false);
+  const [projectTemplateName, setProjectTemplateName] = useState('');
+  const [projectTemplateError, setProjectTemplateError] = useState('');
 
   if (project.slug !== data.project.slug) {
     setProject(data.project);
@@ -987,6 +1041,9 @@ export function useProjectDetailPagePresenter() {
     projectUpdateOpen,
     projectUpdateHealth,
     projectUpdateBody,
+    projectTemplateOpen,
+    projectTemplateName,
+    projectTemplateError,
     availableDependencyProjects: data.projects.filter(
       (candidate) =>
         candidate.slug !== slug &&
@@ -1026,6 +1083,34 @@ export function useProjectDetailPagePresenter() {
         setProjectUpdateOpen(false);
         setProjectUpdateBody('');
         await refreshProject();
+      },
+      onOpenProjectTemplate: () => {
+        setProjectTemplateName(project.name);
+        setProjectTemplateError('');
+        setProjectTemplateOpen(true);
+      },
+      onCloseProjectTemplate: () => setProjectTemplateOpen(false),
+      onProjectTemplateNameChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        setProjectTemplateName(e.target.value);
+        setProjectTemplateError('');
+      },
+      onSubmitProjectTemplate: async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const name = projectTemplateName.trim();
+        if (!name) return;
+        try {
+          await api.createProjectTemplate(slug, name);
+          setProjectTemplateOpen(false);
+          setProjectTemplateName('');
+          setProjectTemplateError('');
+          await router.invalidate();
+        } catch (error) {
+          setProjectTemplateError(
+            error instanceof Error && error.message.includes('already exists')
+              ? i18n.t('projectTemplates.duplicateName')
+              : i18n.t('projectTemplates.saveFailed'),
+          );
+        }
       },
       onProjectLabelToggle: (name: string) => {
         const current = project.labels ?? [];

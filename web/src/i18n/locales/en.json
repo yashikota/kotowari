@@ -454,6 +454,17 @@
     "remove": "Delete milestone {{name}}",
     "removeConfirmation": "Delete milestone {{name}}? Issues assigned to it will be unassigned."
   },
+  "projectTemplates": {
+    "chooseTemplate": "Project template",
+    "startBlank": "Start from scratch",
+    "deleteSelected": "Delete selected project template",
+    "deleteConfirmation": "Delete the project template “{{name}}”?",
+    "saveAsTemplate": "Save as template",
+    "saveTitle": "Save project template",
+    "templateName": "Template name",
+    "duplicateName": "A project template with this name already exists.",
+    "saveFailed": "Could not save the project template."
+  },
   "projectDependencies": {
     "heading": "Dependencies",
     "addFromCreate": "Add dependencies",

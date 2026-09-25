@@ -13,6 +13,7 @@ import type {
   Page,
   Project,
   ProjectDependency,
+  ProjectTemplate,
   RecurringIssue,
   View,
   Workspace,
@@ -228,6 +229,7 @@ let comments: Comment[] = [
 ];
 const issueAttachmentFiles = new Map<string, File>();
 let issueTemplates: IssueTemplate[] = [];
+let projectTemplates: ProjectTemplate[] = [];
 let recurringIssues: RecurringIssue[] = [];
 let revision = 1;
 
@@ -374,8 +376,51 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     processDemoRecurringIssues();
     return json({ revision: String(revision) });
   }
+  if (path === '/api/project-templates' && method === 'GET') return json(projectTemplates);
+  let match = path.match(/^\/api\/project-templates\/([^/]+)$/);
+  if (match && method === 'DELETE') {
+    const slug = decodeURIComponent(match[1]!);
+    if (!projectTemplates.some((template) => template.slug === slug)) return notFound();
+    projectTemplates = projectTemplates.filter((template) => template.slug !== slug);
+    revision += 1;
+    return json(null, 204);
+  }
+  match = path.match(/^\/api\/projects\/([^/]+)\/templates$/);
+  if (match && method === 'POST') {
+    const sourceSlug = decodeURIComponent(match[1]!);
+    const source = projects.find((project) => project.slug === sourceSlug);
+    if (!source) return notFound();
+    const name = text(body(init).name).trim();
+    const slug = name
+      .toLocaleLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 48);
+    if (!slug || name.length > 100) return json({ error: 'invalid template name' }, 400);
+    if (projectTemplates.some((template) => template.slug === slug))
+      return json({ error: 'template name already exists' }, 409);
+    const template: ProjectTemplate = {
+      slug,
+      name,
+      summary: source.summary,
+      icon: source.icon,
+      iconColor: source.iconColor,
+      description: source.description,
+      status: source.status,
+      workflowStatus: source.workflowStatus,
+      priority: source.priority,
+      labels: [...(source.labels ?? [])],
+      milestones: source.milestones.map(({ name: milestoneName, description }) => ({
+        name: milestoneName,
+        description,
+      })),
+    };
+    projectTemplates.push(template);
+    revision += 1;
+    return json(template, 201);
+  }
   if (path === '/api/issue-templates' && method === 'GET') return json(issueTemplates);
-  let match = path.match(/^\/api\/issue-templates\/([^/]+)$/);
+  match = path.match(/^\/api\/issue-templates\/([^/]+)$/);
   if (match && method === 'DELETE') {
     const slug = decodeURIComponent(match[1]!);
     const index = issueTemplates.findIndex((template) => template.slug === slug);
