@@ -792,6 +792,7 @@
     "issueLabel": "Related issue",
     "chooseIssue": "Choose an issue…",
     "add": "Add relation",
+    "addMenu": "Add relation…",
     "remove": "Remove relation to {{identifier}}",
     "related": "Related to",
     "blocks": "Blocks",

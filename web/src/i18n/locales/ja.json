@@ -790,6 +790,7 @@
     "issueLabel": "対象イシュー",
     "chooseIssue": "イシューを選択…",
     "add": "関連を追加",
+    "addMenu": "関連を追加…",
     "remove": "{{identifier}} との関連を削除",
     "related": "関連する",
     "blocks": "ブロックする",

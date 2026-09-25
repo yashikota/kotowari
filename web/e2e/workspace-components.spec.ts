@@ -1291,7 +1291,9 @@ test('issue relations stay reciprocal when added and removed', async ({ page, re
   const second = (await secondResponse.json()) as { identifier: string };
 
   await page.goto(`/issues/${first.identifier}`);
-  await page.getByRole('button', { name: 'Add relation' }).click();
+  await expect(page.getByRole('region', { name: 'Relations' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Issue options' }).click();
+  await page.getByRole('menuitem', { name: 'Add relation…' }).click();
   await page.getByRole('combobox', { name: 'Relation type' }).selectOption('blocks');
   await page.getByRole('combobox', { name: 'Related issue' }).selectOption(second.identifier);
   await page.getByRole('button', { name: 'Add relation' }).click();
@@ -1308,8 +1310,10 @@ test('issue relations stay reciprocal when added and removed', async ({ page, re
 
   await page.goto(`/issues/${first.identifier}`);
   await page.getByRole('button', { name: `Remove relation to ${second.identifier}` }).click();
-  await expect(page.getByRole('button', { name: 'Add relation' })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Relations' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Relations' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Issue options' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Add relation…' })).toBeVisible();
   const unlinked = await request.get(`/api/issues/${second.identifier}`);
   expect((await unlinked.json()).relations).toEqual([]);
 });
