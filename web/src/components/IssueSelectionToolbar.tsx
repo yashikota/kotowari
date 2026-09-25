@@ -242,11 +242,20 @@ function IssueSelectionToolbarView({
                 <Menu.Item onClick={() => handlers.onCopyIssues('titleLink')}>
                   {t('issueActions.copyTitleLink')}
                 </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('issueMarkdown')}>
+                  {t('issueActions.copyIssueMarkdown')}
+                </Menu.Item>
                 <Menu.Item onClick={() => handlers.onCopyIssues('markdown')}>
                   {t('issueActions.copyEverything')}
                 </Menu.Item>
                 <Menu.Item onClick={() => handlers.onCopyIssues('branch')}>
                   {t('issueActions.copyBranch')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('prompt')}>
+                  {t('issueActions.copyPrompt')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onCopyIssues('pullRequestUrls')}>
+                  {t('issueActions.copyPullRequestUrls')}
                 </Menu.Item>
               </Menu.Sub.Dropdown>
             </Menu.Sub>

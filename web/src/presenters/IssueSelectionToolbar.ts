@@ -4,8 +4,7 @@ import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import type { Cycle, Label, Project } from '../types.ts';
 import { localToday } from '../due.ts';
 import { useState } from 'react';
-
-type BulkCopyKind = 'id' | 'url' | 'title' | 'titleLink' | 'markdown' | 'branch';
+import type { IssueCopyKind } from '../issue-actions.ts';
 
 type Props = {
   selectedCount: number;
@@ -23,7 +22,7 @@ type Props = {
   onSetCycle: (cycleId: number | null) => void;
   onAddLabel: (labelId: number) => void;
   onRemoveLabel: (labelId: number) => void;
-  onCopyIssues: (kind: BulkCopyKind) => void;
+  onCopyIssues: (kind: IssueCopyKind) => void;
   onClear: () => void;
 };
 
@@ -109,7 +108,7 @@ export function useIssueSelectionToolbarPresenter({
       onSetCycle: (cycleId: number | null) => onSetCycle(cycleId),
       onAddLabel: (labelId: number) => onAddLabel(labelId),
       onRemoveLabel: (labelId: number) => onRemoveLabel(labelId),
-      onCopyIssues: (kind: BulkCopyKind) => onCopyIssues(kind),
+      onCopyIssues: (kind: IssueCopyKind) => onCopyIssues(kind),
       onProjectQueryChange: (query: string) => setProjectQuery(query),
       onCycleQueryChange: (query: string) => setCycleQuery(query),
       onLabelQueryChange: (query: string) => setLabelQuery(query),

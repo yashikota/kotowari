@@ -910,6 +910,7 @@
     "copyTitle": "Copy title",
     "copyTitleLink": "Copy title as link",
     "copyIssueMarkdown": "Copy issue as Markdown",
+    "copyPullRequestUrls": "Copy linked pull request URLs",
     "copyEverything": "Copy everything as Markdown",
     "copyBranch": "Copy git branch name",
     "copyPrompt": "Copy as prompt",

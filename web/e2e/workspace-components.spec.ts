@@ -362,6 +362,82 @@ test('issue list copies selected identifiers and URLs without clearing selection
   await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
 });
 
+test('issue list bulk copy supports issue Markdown, configured prompts, and linked pull request URLs', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const titles = [`Bulk prompt ${stamp} alpha`, `Bulk prompt ${stamp} beta`];
+  const descriptions = ['First issue details.', 'Second issue details.'];
+  const identifiers: string[] = [];
+  for (let index = 0; index < titles.length; index++) {
+    const response = await request.post('/api/issues', {
+      data: {
+        title: titles[index],
+        body: descriptions[index],
+        status: 'todo',
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    identifiers.push(((await response.json()) as { identifier: string }).identifier);
+  }
+
+  const pullRequestUrl = `https://github.com/example/repo/pull/${stamp}`;
+  const pullRequestResponse = await request.post(`/api/issues/${identifiers[0]}/links`, {
+    data: { url: pullRequestUrl, title: 'Review', kind: 'pullRequest' },
+  });
+  expect(pullRequestResponse.ok()).toBeTruthy();
+  const documentResponse = await request.post(`/api/issues/${identifiers[1]}/links`, {
+    data: { url: 'https://example.com/design', title: 'Design', kind: 'document' },
+  });
+  expect(documentResponse.ok()).toBeTruthy();
+
+  const promptTemplate = 'Review {{issue.identifier}} — {{issue.title}}\n{{context}}';
+  await page.addInitScript((template) => {
+    window.localStorage.setItem(
+      'kotowari.coding-tools.v1',
+      JSON.stringify({
+        promptTemplate: template,
+        customLinkEnabled: false,
+        customLinkName: 'Custom link',
+        customLinkURL: '',
+      }),
+    );
+  }, promptTemplate);
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  for (const identifier of identifiers) {
+    await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+  }
+
+  const readClipboard = () =>
+    page.evaluate(() => navigator.clipboard.readText()).then((text) => text.replace(/\r\n/g, '\n'));
+  const chooseCopyAction = async (label: string) => {
+    await page.getByRole('button', { name: 'Actions' }).click();
+    await page.getByRole('menuitem', { name: 'Copy', exact: true }).hover();
+    await page.getByRole('menuitem', { name: label, exact: true }).click();
+  };
+
+  await chooseCopyAction('Copy issue as Markdown');
+  await expect
+    .poll(readClipboard)
+    .toBe(
+      `# ${identifiers[0]} ${titles[0]}\n\n${descriptions[0]}\n\n---\n\n# ${identifiers[1]} ${titles[1]}\n\n${descriptions[1]}`,
+    );
+
+  await chooseCopyAction('Copy as prompt');
+  const prompts = await readClipboard();
+  expect(prompts).toContain(`Review ${identifiers[0]} — ${titles[0]}`);
+  expect(prompts).toContain(`Review ${identifiers[1]} — ${titles[1]}`);
+  expect(prompts).toContain(descriptions[0]);
+  expect(prompts).toContain(descriptions[1]);
+
+  await chooseCopyAction('Copy linked pull request URLs');
+  await expect.poll(readClipboard).toBe(pullRequestUrl);
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+});
+
 test('issue list applies bulk assignee, type, and estimate changes', async ({ page, request }) => {
   const stamp = Date.now();
   const identifiers: string[] = [];

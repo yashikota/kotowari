@@ -1,5 +1,16 @@
 import type { Issue } from './types.ts';
 
+export type IssueCopyKind =
+  | 'id'
+  | 'url'
+  | 'title'
+  | 'titleLink'
+  | 'issueMarkdown'
+  | 'markdown'
+  | 'branch'
+  | 'prompt'
+  | 'pullRequestUrls';
+
 export function issueBranchName(issue: Issue): string {
   const title = issue.title
     .toLowerCase()

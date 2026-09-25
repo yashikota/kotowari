@@ -908,6 +908,7 @@
     "copyTitle": "タイトルをコピー",
     "copyTitleLink": "タイトルをリンクとしてコピー",
     "copyIssueMarkdown": "イシューを Markdown でコピー",
+    "copyPullRequestUrls": "関連するプルリクエストURLをコピー",
     "copyEverything": "すべてを Markdown でコピー",
     "copyBranch": "Git ブランチ名をコピー",
     "copyPrompt": "プロンプトとしてコピー",

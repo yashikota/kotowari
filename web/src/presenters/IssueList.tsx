@@ -6,7 +6,9 @@ import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
-import { issueBranchName, issueMarkdown } from '../issue-actions.ts';
+import { issueBranchName, issueMarkdown, renderIssuePrompt } from '../issue-actions.ts';
+import type { IssueCopyKind } from '../issue-actions.ts';
+import { useCodingToolPreferences } from '../coding-tools.ts';
 import {
   buildIssueListRows,
   DEFAULT_DISPLAY_PROPERTIES,
@@ -42,8 +44,6 @@ type Props = {
   labels?: Label[];
 };
 
-type BulkCopyKind = 'id' | 'url' | 'title' | 'titleLink' | 'markdown' | 'branch';
-
 export function useIssueListPresenter({
   issues: initialIssues,
   selectedId,
@@ -63,6 +63,7 @@ export function useIssueListPresenter({
   labels = [],
 }: Props) {
   const sendIntent = useIntent();
+  const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const projectedIssues = useIssueProjection(initialIssues);
   const visibleIssues = showSubIssues
@@ -138,7 +139,7 @@ export function useIssueListPresenter({
     setBulkSelectedIds([]);
   }
 
-  async function copySelectedIssues(kind: BulkCopyKind) {
+  async function copySelectedIssues(kind: IssueCopyKind) {
     try {
       const selectedIssues = await Promise.all(
         bulkSelectedIds.map(async (identifier) => {
@@ -146,6 +147,19 @@ export function useIssueListPresenter({
           return visible?.issue ?? api.issue(identifier);
         }),
       );
+      if (kind === 'pullRequestUrls') {
+        const pullRequestUrls = Array.from(
+          new Set(
+            selectedIssues.flatMap((issue) =>
+              issue.externalLinks
+                .filter((link) => link.kind === 'pullRequest')
+                .map((link) => link.url),
+            ),
+          ),
+        );
+        await navigator.clipboard.writeText(pullRequestUrls.join('\n'));
+        return;
+      }
       const copies = selectedIssues.map((issue) => {
         const url = new URL(
           `/issues/${encodeURIComponent(issue.identifier)}`,
@@ -165,13 +179,19 @@ export function useIssueListPresenter({
               .replaceAll(']', '\\]');
             return `[${title}](${url})`;
           }
+          case 'issueMarkdown':
+            return issueMarkdown(issue, url).trimEnd();
           case 'markdown':
             return issueMarkdown(issue, url, true).trimEnd();
           case 'branch':
             return issueBranchName(issue);
+          case 'prompt':
+            return renderIssuePrompt(issue, codingToolPreferences.promptTemplate, url);
         }
       });
-      await navigator.clipboard.writeText(copies.join(kind === 'markdown' ? '\n\n---\n\n' : '\n'));
+      const separator =
+        kind === 'markdown' || kind === 'issueMarkdown' || kind === 'prompt' ? '\n\n---\n\n' : '\n';
+      await navigator.clipboard.writeText(copies.join(separator));
     } catch {
       // Clipboard permissions can be unavailable in an embedded or insecure context.
     }
@@ -278,7 +298,7 @@ export function useIssueListPresenter({
       onSetBulkCycle: (cycleId: number | null) => updateSelectedIssues({ cycleId }),
       onAddBulkLabel: (labelId: number) => updateSelectedLabels(labelId, true),
       onRemoveBulkLabel: (labelId: number) => updateSelectedLabels(labelId, false),
-      onCopyBulkIssues: (kind: BulkCopyKind) => copySelectedIssues(kind),
+      onCopyBulkIssues: (kind: IssueCopyKind) => copySelectedIssues(kind),
       onClearBulkSelection: () => setBulkSelectedIds([]),
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>
