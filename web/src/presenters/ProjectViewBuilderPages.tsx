@@ -7,7 +7,7 @@ import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
-import { useProjectViews } from '../project-views.ts';
+import { matchesProjectTitleSummary, useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type { Project, ViewIconName } from '../types.ts';
@@ -84,7 +84,7 @@ export function useProjectViewBuilderPresenter() {
   );
 
   const filteredProjects = useMemo(() => {
-    const query = (search.q ?? '').trim().toLocaleLowerCase();
+    const query = search.q ?? '';
     const statusFilters = search.status ?? [];
     const priorityFilters = search.priority ?? [];
     const healthFilters = search.health ?? [];
@@ -150,12 +150,7 @@ export function useProjectViewBuilderPresenter() {
       const closed = project.status === 'completed' || project.status === 'canceled';
       if (search.closed === 'open' && closed) return false;
       if (search.closed === 'closed' && !closed) return false;
-      return (
-        !query ||
-        `${project.name} ${project.summary || project.description} ${project.description}`
-          .toLocaleLowerCase()
-          .includes(query)
-      );
+      return matchesProjectTitleSummary(project, query, search.qOperator);
     });
     const originalOrder = new Map(data.projects.map((project, index) => [project.slug, index]));
     const statusOrder = new Map(statuses.map((status, index) => [status.id, index]));
@@ -352,12 +347,14 @@ export function useProjectViewBuilderPresenter() {
     labelFilters.length +
     milestoneFilters.length +
     relationFilters.length +
+    Number(Boolean(search.q?.trim())) +
     (search.dateField && (search.dateFrom || search.dateTo) ? 1 : 0) +
     (search.closed ? 1 : 0) +
     (search.specificProject ? 1 : 0);
 
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
+    searchOperator: search.qOperator ?? 'contains',
     statuses: statusFilters,
     priorities: priorityFilters,
     healths: healthFilters,
@@ -387,7 +384,15 @@ export function useProjectViewBuilderPresenter() {
     availableLabels: data.labels,
     filterCount,
     handlers: {
-      onSearchChange: (value) => void updateSearch({ q: value || undefined }),
+      onSearchChange: (value) =>
+        void updateSearch({
+          q: value || undefined,
+          qOperator: value ? search.qOperator : undefined,
+        }),
+      onSearchOperatorChange: (value) =>
+        void updateSearch({
+          qOperator: value === 'doesNotContain' ? 'doesNotContain' : undefined,
+        }),
       onStatusesChange: (value) => void updateSearch({ status: value.length ? value : undefined }),
       onPrioritiesChange: (value) =>
         void updateSearch({ priority: value.length ? value : undefined }),

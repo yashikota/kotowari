@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { ProjectHealth, ViewIconName } from './types.ts';
+import type { Project, ProjectHealth, ViewIconName } from './types.ts';
+
+export type ProjectSearchOperator = 'contains' | 'doesNotContain';
 
 export type ProjectViewSearch = {
   q?: string;
+  qOperator?: ProjectSearchOperator;
   specificProject?: string;
   status?: string[];
   priority?: string[];
@@ -35,6 +38,18 @@ export type ProjectViewSearch = {
   milestones?: string[];
   relations?: Array<'blocks' | 'blocked_by' | 'related'>;
 };
+
+export function matchesProjectTitleSummary(
+  project: Pick<Project, 'name' | 'summary'>,
+  query: string,
+  operator: ProjectSearchOperator = 'contains',
+) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (!normalizedQuery) return true;
+  const searchable = `${project.name} ${project.summary ?? ''}`.toLocaleLowerCase();
+  const containsQuery = searchable.includes(normalizedQuery);
+  return operator === 'doesNotContain' ? !containsQuery : containsQuery;
+}
 
 export type ProjectSavedView = {
   slug: string;

@@ -138,7 +138,15 @@ export function ProjectFilterPicker({
                         )?.label ??
                         model.specificProject ??
                         '');
-    return [{ key, label: labels[key], value }];
+    const label =
+      key === 'title'
+        ? `${labels.title} ${t(
+            model.searchOperator === 'doesNotContain'
+              ? 'projectList.searchDoesNotContain'
+              : 'projectList.searchContains',
+          )}`
+        : labels[key];
+    return [{ key, label, value }];
   });
   const visibleFilters = FILTERS.filter((key) =>
     labels[key].toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
@@ -304,12 +312,25 @@ export function ProjectFilterPicker({
         );
       case 'title':
         return (
-          <TextInput
-            aria-label={t('projectList.filterTitleSummary')}
-            placeholder={t('projectList.searchPlaceholder')}
-            value={model.search}
-            onChange={(event) => model.handlers.onSearchChange(event.currentTarget.value)}
-          />
+          <Stack gap="sm">
+            <Select
+              aria-label={t('projectList.searchOperator')}
+              value={model.searchOperator}
+              onChange={model.handlers.onSearchOperatorChange}
+              data={[
+                { value: 'contains', label: t('projectList.searchContains') },
+                { value: 'doesNotContain', label: t('projectList.searchDoesNotContain') },
+              ]}
+              allowDeselect={false}
+              comboboxProps={{ withinPortal: false }}
+            />
+            <TextInput
+              aria-label={t('projectList.filterTitleSummary')}
+              placeholder={t('projectList.filterTitleSummary')}
+              value={model.search}
+              onChange={(event) => model.handlers.onSearchChange(event.currentTarget.value)}
+            />
+          </Stack>
         );
       case 'specificProject':
         return (
@@ -344,16 +365,17 @@ export function ProjectFilterPicker({
         withinPortal
       >
         <Popover.Target>
-          <ActionIcon
+          <Button
             type="button"
             variant="default"
-            size={30}
+            size="sm"
             aria-label={t('projectList.addFilter')}
             title={t('projectList.addFilter')}
+            leftSection={<IconFilter size={15} stroke={1.7} aria-hidden="true" />}
             onClick={() => setOpened((current) => !current)}
           >
-            <IconFilter size={16} stroke={1.7} aria-hidden="true" />
-          </ActionIcon>
+            {t('projectList.addFilter')}
+          </Button>
         </Popover.Target>
         <Popover.Dropdown w={248} p={0}>
           {activeFilter ? (

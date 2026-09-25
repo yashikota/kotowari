@@ -31,7 +31,7 @@ import type { ProjectBoardModel } from '../components/ProjectBoardView.tsx';
 import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
-import { useProjectViews } from '../project-views.ts';
+import { matchesProjectTitleSummary, useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type {
@@ -176,6 +176,7 @@ export function useProjectsPagePresenter() {
   function projectViewSearch(): ProjectViewSearch {
     return {
       q: search.q,
+      qOperator: search.qOperator,
       specificProject: search.specificProject,
       status: search.status,
       priority: search.priority,
@@ -257,7 +258,7 @@ export function useProjectsPagePresenter() {
     return counts;
   }, [data.issues]);
   const filteredProjects = useMemo(() => {
-    const query = (search.q ?? '').trim().toLocaleLowerCase();
+    const query = search.q ?? '';
     const projectsToSort = projects.filter((project) => {
       if (search.specificProject && project.slug !== search.specificProject) return false;
       if (
@@ -315,14 +316,7 @@ export function useProjectsPagePresenter() {
       const closed = project.status === 'completed' || project.status === 'canceled';
       if (search.closed === 'open' && closed) return false;
       if (search.closed === 'closed' && !closed) return false;
-      if (
-        query &&
-        !`${project.name} ${project.summary || project.description} ${project.description}`
-          .toLocaleLowerCase()
-          .includes(query)
-      ) {
-        return false;
-      }
+      if (!matchesProjectTitleSummary(project, query, search.qOperator)) return false;
       return true;
     });
     const orderBy = search.orderBy ?? 'manual';
@@ -533,11 +527,13 @@ export function useProjectsPagePresenter() {
     labelFilters.length +
     milestoneFilters.length +
     relationFilters.length +
+    Number(Boolean(search.q?.trim())) +
     (search.dateField && (search.dateFrom || search.dateTo) ? 1 : 0) +
     (search.closed ? 1 : 0) +
     (search.specificProject ? 1 : 0);
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
+    searchOperator: search.qOperator ?? 'contains',
     statuses: statusFilters,
     priorities: priorityFilters,
     healths: healthFilters,
@@ -564,7 +560,15 @@ export function useProjectsPagePresenter() {
     availableLabels: data.labels,
     filterCount,
     handlers: {
-      onSearchChange: (value) => void updateProjectSearch({ q: value || undefined }),
+      onSearchChange: (value) =>
+        void updateProjectSearch({
+          q: value || undefined,
+          qOperator: value ? search.qOperator : undefined,
+        }),
+      onSearchOperatorChange: (value) =>
+        void updateProjectSearch({
+          qOperator: value === 'doesNotContain' ? 'doesNotContain' : undefined,
+        }),
       onStatusesChange: (value) =>
         void updateProjectSearch({ status: value.length ? value : undefined }),
       onPrioritiesChange: (value) =>

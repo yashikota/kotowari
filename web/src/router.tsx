@@ -211,6 +211,7 @@ function searchStringList(value: unknown): string[] {
 function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch {
   const result: ProjectListSearch = {};
   if (typeof raw.q === 'string' && raw.q.trim()) result.q = raw.q;
+  if (raw.qOperator === 'doesNotContain') result.qOperator = raw.qOperator;
   if (
     typeof raw.specificProject === 'string' &&
     /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(raw.specificProject)
