@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ProjectHealth } from './types.ts';
+import type { ProjectHealth, ViewIconName } from './types.ts';
 
 export type ProjectViewSearch = {
   q?: string;
@@ -39,6 +39,7 @@ export type ProjectSavedView = {
   slug: string;
   name: string;
   description: string;
+  icon?: ViewIconName;
   search: ProjectViewSearch;
   updatedAt: string;
 };

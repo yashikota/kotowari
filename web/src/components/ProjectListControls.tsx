@@ -1,4 +1,6 @@
 import {
+  ActionIcon,
+  Box,
   Button,
   Checkbox,
   Group,
@@ -11,7 +13,9 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
+import { IconAdjustments, IconFilter } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import type { ReactNode } from 'react';
 import type { Label } from '../types.ts';
 import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
@@ -68,57 +72,96 @@ export type ProjectListControlsModel = {
   };
 };
 
-export function ProjectListControls({ model }: { model: ProjectListControlsModel }) {
+export function ProjectListControls({
+  model,
+  compact = false,
+  leading,
+}: {
+  model: ProjectListControlsModel;
+  compact?: boolean;
+  leading?: ReactNode;
+}) {
   const { t } = useTranslation();
   const { statuses: projectStatuses } = useProjectWorkflow();
   const { handlers } = model;
   return (
-    <Group gap="xs" align="flex-end" wrap="wrap" mb="sm">
-      <TextInput
-        aria-label={t('projectList.search')}
-        placeholder={t('projectList.searchPlaceholder')}
-        value={model.search}
-        onChange={(event) => handlers.onSearchChange(event.currentTarget.value)}
-        w={240}
-      />
-      <Group gap={4} role="group" aria-label={t('projectList.view')}>
-        <Button
-          type="button"
-          size="sm"
-          variant={model.view === 'list' ? 'filled' : 'default'}
-          aria-pressed={model.view === 'list'}
-          onClick={() => handlers.onViewChange('list')}
-        >
-          {t('projectList.viewList')}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={model.view === 'board' ? 'filled' : 'default'}
-          aria-pressed={model.view === 'board'}
-          onClick={() => handlers.onViewChange('board')}
-        >
-          {t('projectList.viewBoard')}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={model.view === 'timeline' ? 'filled' : 'default'}
-          aria-pressed={model.view === 'timeline'}
-          onClick={() => handlers.onViewChange('timeline')}
-        >
-          {t('projectList.viewTimeline')}
-        </Button>
-      </Group>
+    <Group
+      gap={compact ? 4 : 'xs'}
+      align={compact ? 'center' : 'flex-end'}
+      wrap="wrap"
+      mb={compact ? 0 : 'sm'}
+    >
+      {compact && leading ? <Box style={{ marginRight: 'auto' }}>{leading}</Box> : leading}
+      {!compact ? (
+        <>
+          <TextInput
+            aria-label={t('projectList.search')}
+            placeholder={t('projectList.searchPlaceholder')}
+            value={model.search}
+            onChange={(event) => handlers.onSearchChange(event.currentTarget.value)}
+            w={240}
+          />
+          <Group gap={4} role="group" aria-label={t('projectList.view')}>
+            <Button
+              type="button"
+              size="sm"
+              variant={model.view === 'list' ? 'filled' : 'default'}
+              aria-pressed={model.view === 'list'}
+              onClick={() => handlers.onViewChange('list')}
+            >
+              {t('projectList.viewList')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={model.view === 'board' ? 'filled' : 'default'}
+              aria-pressed={model.view === 'board'}
+              onClick={() => handlers.onViewChange('board')}
+            >
+              {t('projectList.viewBoard')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={model.view === 'timeline' ? 'filled' : 'default'}
+              aria-pressed={model.view === 'timeline'}
+              onClick={() => handlers.onViewChange('timeline')}
+            >
+              {t('projectList.viewTimeline')}
+            </Button>
+          </Group>
+        </>
+      ) : null}
       <Popover position="bottom-start" shadow="md" withinPortal>
         <Popover.Target>
-          <Button type="button" variant="default" size="sm">
-            {t('projectList.addFilter')}
-            {model.filterCount > 0 ? ` · ${model.filterCount}` : ''}
-          </Button>
+          {compact ? (
+            <ActionIcon
+              type="button"
+              variant="default"
+              size={30}
+              aria-label={t('projectList.addFilter')}
+              title={t('projectList.addFilter')}
+            >
+              <IconFilter size={16} stroke={1.7} aria-hidden="true" />
+            </ActionIcon>
+          ) : (
+            <Button type="button" variant="default" size="sm">
+              {t('projectList.addFilter')}
+              {model.filterCount > 0 ? ` · ${model.filterCount}` : ''}
+            </Button>
+          )}
         </Popover.Target>
         <Popover.Dropdown w={300}>
           <Stack gap="sm">
+            {compact ? (
+              <TextInput
+                aria-label={t('projectList.search')}
+                label={t('projectList.search')}
+                placeholder={t('projectList.searchPlaceholder')}
+                value={model.search}
+                onChange={(event) => handlers.onSearchChange(event.currentTarget.value)}
+              />
+            ) : null}
             <MultiSelect
               aria-label={t('filters.projectStatus')}
               label={t('filters.projectStatus')}
@@ -233,12 +276,43 @@ export function ProjectListControls({ model }: { model: ProjectListControlsModel
       </Popover>
       <Popover position="bottom-start" shadow="md" withinPortal>
         <Popover.Target>
-          <Button type="button" variant="default" size="sm">
-            {t('projectList.displayOptions')}
-          </Button>
+          {compact ? (
+            <ActionIcon
+              type="button"
+              variant="default"
+              size={30}
+              aria-label={t('projectList.displayOptions')}
+              title={t('projectList.displayOptions')}
+            >
+              <IconAdjustments size={16} stroke={1.7} aria-hidden="true" />
+            </ActionIcon>
+          ) : (
+            <Button type="button" variant="default" size="sm">
+              {t('projectList.displayOptions')}
+            </Button>
+          )}
         </Popover.Target>
         <Popover.Dropdown w={280}>
           <Stack gap="sm">
+            {compact ? (
+              <Select
+                aria-label={t('projectList.view')}
+                label={t('projectList.view')}
+                value={model.view}
+                onChange={(value) => {
+                  if (value === 'list' || value === 'board' || value === 'timeline') {
+                    handlers.onViewChange(value);
+                  }
+                }}
+                data={[
+                  { value: 'list', label: t('projectList.viewList') },
+                  { value: 'board', label: t('projectList.viewBoard') },
+                  { value: 'timeline', label: t('projectList.viewTimeline') },
+                ]}
+                allowDeselect={false}
+                comboboxProps={{ withinPortal: false }}
+              />
+            ) : null}
             {model.view === 'list' || model.view === 'timeline' ? (
               <Select
                 aria-label={t('projectList.groupBy')}

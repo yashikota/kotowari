@@ -244,13 +244,44 @@ test('personal project views can be created, updated, reopened, and deleted', as
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Add new view' }).click();
+  await expect(page).toHaveURL(/\/views\/projects\/new/);
+  await expect(page.getByRole('tab', { name: 'Projects' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Display options' }).click();
+  const previewLayout = page.getByRole('combobox', { name: 'Project view' });
+  await previewLayout.click();
+  await page.getByRole('option', { name: 'Board', exact: true }).click();
+  await expect(
+    page.locator('[aria-hidden="true"] [role="grid"][aria-label="Project board"]'),
+  ).toBeVisible();
+  await previewLayout.click();
+  await page.getByRole('option', { name: 'Timeline', exact: true }).click();
+  await expect(
+    page.locator('[aria-hidden="true"] [role="region"][aria-label="Project timeline"]'),
+  ).toBeVisible();
+  await previewLayout.click();
+  await page.getByRole('option', { name: 'List', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('textbox', { name: 'View name' }).fill(`In progress ${stamp}`);
   await page.getByRole('textbox', { name: 'Description' }).fill('Projects currently being built');
-  await page.getByRole('button', { name: 'Create project view' }).click();
+  await page.getByRole('button', { name: 'Choose icon' }).click();
+  await page.getByRole('button', { name: 'Rocket icon' }).click();
+  await page.getByRole('button', { name: 'Create view' }).click();
 
   const savedView = page.getByRole('tab', { name: `In progress ${stamp}` });
   await expect(savedView).toHaveAttribute('aria-selected', 'true');
   await expect(page).toHaveURL(/projectView=in-progress-/);
+  const createdView = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('kotowari.project-views.v1') ?? '[]')[0],
+  );
+  expect(createdView).toMatchObject({
+    name: `In progress ${stamp}`,
+    description: 'Projects currently being built',
+    icon: 'rocket',
+  });
+  expect(createdView.search.status).toContain('started');
   await page.getByRole('tab', { name: 'All projects' }).click();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();

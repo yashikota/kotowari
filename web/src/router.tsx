@@ -393,6 +393,24 @@ const viewBuilderRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/ViewBuilderPages.tsx'), 'ViewBuilderPage'),
 });
 
+const projectViewBuilderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/views/projects/new',
+  validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
+  loader: async () => {
+    const [projects, labels, issues] = await Promise.all([
+      api.projects(),
+      api.labels(),
+      api.issues(),
+    ]);
+    return { projects, labels, issues };
+  },
+  component: lazyRouteComponent(
+    () => import('./pages/ProjectViewBuilderPages.tsx'),
+    'ProjectViewBuilderPage',
+  ),
+});
+
 const viewsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/views',
@@ -441,6 +459,7 @@ const routeTree = rootRoute.addChildren([
   cycleRoute,
   viewsRoute,
   viewBuilderRoute,
+  projectViewBuilderRoute,
   viewRoute,
   pagesRoute,
   pageRoute,

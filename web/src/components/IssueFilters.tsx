@@ -1,6 +1,7 @@
 import { ActionIcon, Box, Group, TextInput } from '@mantine/core';
 import { IconLayoutSidebarRight, IconSearch } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import type { ReactNode } from 'react';
 import { IssueDisplayOptions } from './IssueDisplayOptions.tsx';
 import { IssueFilterMenu } from './IssueFilterMenu.tsx';
 import { DEFAULT_DISPLAY_PROPERTIES } from '../issue-list.ts';
@@ -10,8 +11,10 @@ import { useIssueFiltersPresenter } from '../presenters/IssueFilters.tsx';
 
 export function IssueFiltersView({
   model,
+  leading,
 }: {
   model: ReturnType<typeof useIssueFiltersPresenter>;
+  leading?: ReactNode;
 }) {
   const { t } = useTranslation();
   switch (model._view) {
@@ -58,6 +61,7 @@ export function IssueFiltersView({
             wrap="nowrap"
             align="center"
           >
+            {leading}
             <IssueFilterMenu
               search={search}
               projects={projects}
@@ -164,16 +168,22 @@ export function IssueFiltersView({
   }
 }
 
-export function IssueFilters(props: Parameters<typeof useIssueFiltersPresenter>[0]) {
+export function IssueFilters({
+  leading,
+  ...props
+}: Parameters<typeof useIssueFiltersPresenter>[0] & { leading?: ReactNode }) {
   return (
     <PresenterScope name="IssueFilters">
-      <IssueFiltersBinding {...props} />
+      <IssueFiltersBinding {...props} leading={leading} />
     </PresenterScope>
   );
 }
 
-function IssueFiltersBinding(props: Parameters<typeof useIssueFiltersPresenter>[0]) {
-  const model = useIssueFiltersPresenter(props);
+function IssueFiltersBinding(
+  props: Parameters<typeof useIssueFiltersPresenter>[0] & { leading?: ReactNode },
+) {
+  const { leading, ...presenterProps } = props;
+  const model = useIssueFiltersPresenter(presenterProps);
   const handlers = useActions(model.handlers);
-  return <IssueFiltersView model={{ ...model, handlers } as typeof model} />;
+  return <IssueFiltersView model={{ ...model, handlers } as typeof model} leading={leading} />;
 }

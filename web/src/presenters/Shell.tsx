@@ -288,7 +288,8 @@ export function useShellPresenter() {
     if (pathname === '/cycles') return 'Cycles';
     if (pathname.startsWith('/cycles/')) return `Cycle ${pathname.slice('/cycles/'.length)}`;
     if (pathname === '/views') return t('nav.views');
-    if (pathname === '/views/new') return t('nav.newView');
+    if (pathname === '/views/new') return t('viewBuilder.issueParent');
+    if (pathname === '/views/projects/new') return t('viewBuilder.projectParent');
     if (pathname === '/pages') return 'Pages';
     if (pathname.startsWith('/pages/'))
       return pathname.slice('/pages/'.length).replaceAll('-', ' ');

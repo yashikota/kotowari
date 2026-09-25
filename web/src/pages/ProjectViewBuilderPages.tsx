@@ -1,20 +1,22 @@
-import { Box, Button, Group, Popover, SimpleGrid, Text, Textarea, TextInput } from '@mantine/core';
+import { Box, Button, Group, Popover, SimpleGrid, Stack, TextInput, Textarea } from '@mantine/core';
 import { IconChevronLeft } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
-import { IssueBoard, IssueList } from '../components/IssueList.tsx';
-import { IssueFilters } from '../components/IssueFilters.tsx';
+import { ProjectListControls } from '../components/ProjectListControls.tsx';
+import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
+import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
+import { ProjectListItem } from '../components/ProjectListItem.tsx';
 import { ViewIcon } from '../components/ViewIcon.tsx';
 import { ViewEntityTabs } from '../components/ViewEntityTabs.tsx';
-import { EmptyState } from '../mantine-ui.tsx';
+import { EmptyState, Section } from '../mantine-ui.tsx';
 import { useFocusWhen } from '../focus.ts';
-import { useViewBuilderPresenter } from '../presenters/ViewBuilderPages.tsx';
+import { useProjectViewBuilderPresenter } from '../presenters/ProjectViewBuilderPages.tsx';
 
-export function ViewBuilderPageView({
+export function ProjectViewBuilderPageView({
   model,
   nameRef,
 }: {
-  model: ReturnType<typeof useViewBuilderPresenter>;
+  model: ReturnType<typeof useProjectViewBuilderPresenter>;
   nameRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
   const { t } = useTranslation();
@@ -28,7 +30,8 @@ export function ViewBuilderPageView({
           <Group
             component="header"
             px="md"
-            py="xs"
+            py={6}
+            mt={20}
             gap="sm"
             wrap="nowrap"
             style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
@@ -78,7 +81,6 @@ export function ViewBuilderPageView({
               value={model.name}
               maxLength={100}
               onChange={model.handlers.onNameChange}
-              onKeyDown={model.handlers.onNameKeyDown}
               styles={{
                 input: {
                   height: 36,
@@ -95,12 +97,7 @@ export function ViewBuilderPageView({
               <IconChevronLeft size={14} aria-hidden="true" />
               {t('common.cancel')}
             </Button>
-            <Button
-              type="button"
-              onClick={model.handlers.onCreate}
-              loading={model.saving}
-              disabled={!model.name.trim()}
-            >
+            <Button type="button" onClick={model.handlers.onCreate} disabled={!model.name.trim()}>
               {t('viewBuilder.createView')}
             </Button>
           </Group>
@@ -114,82 +111,77 @@ export function ViewBuilderPageView({
             maxRows={3}
             onChange={model.handlers.onDescriptionChange}
             px="md"
-            py={6}
+            py={3}
             styles={{
               input: { borderColor: 'transparent', background: 'transparent', resize: 'none' },
             }}
           />
-          <IssueFilters
-            leading={<ViewEntityTabs active="issues" />}
-            search={model.search}
-            projects={model.data.projects}
-            cycles={model.data.cycles}
-            labels={model.data.labels}
-            onChange={model.handlers.onSearchChange}
-            groupBy={model.groupBy}
-            onGroupBy={model.handlers.onGroupByChange}
-            layout={model.display}
-            onLayout={model.handlers.onDisplayChange}
-            orderBy={model.orderBy}
-            onOrderBy={model.handlers.onOrderByChange}
-            subGroupBy={model.subGroupBy}
-            onSubGroupBy={model.handlers.onSubGroupByChange}
-            direction={model.direction}
-            onDirection={model.handlers.onDirectionChange}
-            completedIssues={model.completedIssues}
-            onCompletedIssues={model.handlers.onCompletedIssuesChange}
-            showSubIssues={model.showSubIssues}
-            onShowSubIssues={model.handlers.onShowSubIssuesChange}
-            nestedSubIssues={model.nestedSubIssues}
-            onNestedSubIssues={model.handlers.onNestedSubIssuesChange}
-            showEmptyGroups={model.showEmptyGroups}
-            onShowEmptyGroups={model.handlers.onShowEmptyGroupsChange}
-            displayProperties={model.displayProperties}
-            onDisplayPropertyToggle={model.handlers.onDisplayPropertyToggle}
-          />
-          {model.error ? (
-            <Text role="alert" c="red" size="sm" px="md" py={6}>
-              {model.error}
-            </Text>
-          ) : null}
+          <Box
+            px="md"
+            py={6}
+            style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+          >
+            <ProjectListControls
+              model={model.controls}
+              compact
+              leading={<ViewEntityTabs active="projects" />}
+            />
+          </Box>
           <Box
             aria-label={t('viewBuilder.preview')}
             aria-hidden="true"
             style={{
               flex: 1,
               minHeight: 0,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
+              overflow: 'auto',
               pointerEvents: 'none',
             }}
           >
-            {model.issues.length === 0 ? (
-              <EmptyState>{t('ui.noIssuesMatchView')}</EmptyState>
-            ) : model.display === 'board' ? (
-              <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-                <IssueBoard
-                  issues={model.issues}
-                  onOpen={() => undefined}
-                  onMove={() => undefined}
-                  orderBy={model.orderBy}
-                  direction={model.direction}
-                  showSubIssues={model.showSubIssues}
+            {model.filteredProjects.length === 0 ? (
+              <EmptyState>{t('ui.noProjectsMatchView')}</EmptyState>
+            ) : model.controls.view === 'board' ? (
+              <Box p="md">
+                <ProjectBoardView
+                  model={model.projectBoard}
+                  showRows={model.controls.rowsBy !== 'none'}
+                  displayProperties={model.displayProperties}
+                  issueCounts={model.projectIssueCounts}
+                />
+              </Box>
+            ) : model.controls.view === 'timeline' ? (
+              <Box p="md">
+                <ProjectTimelineView
+                  model={model.projectTimeline}
+                  showProjectList={model.controls.showProjectList}
+                  showWeekNumbers={model.controls.showWeekNumbers}
+                  focusToday={model.timelineFocusToday}
+                  displayProperties={model.displayProperties}
+                  issueCounts={model.projectIssueCounts}
+                  grouped={model.controls.groupBy !== 'none'}
+                  handlers={{
+                    onPrevious: () => undefined,
+                    onNext: () => undefined,
+                    onToday: () => undefined,
+                  }}
                 />
               </Box>
             ) : (
-              <IssueList
-                issues={model.issues}
-                selectedId={null}
-                onSelect={() => undefined}
-                groupBy={model.groupBy}
-                subGroupBy={model.subGroupBy}
-                orderBy={model.orderBy}
-                direction={model.direction}
-                showSubIssues={model.showSubIssues}
-                showEmptyGroups={model.showEmptyGroups}
-                displayProperties={model.displayProperties}
-              />
+              <Stack gap="md" p="md">
+                {model.groups.map((group) => (
+                  <Section key={group.key} title={group.label} ariaLabel={group.label || undefined}>
+                    <Stack gap={0}>
+                      {group.projects.map((project) => (
+                        <ProjectListItem
+                          key={project.slug}
+                          project={project}
+                          displayProperties={model.displayProperties}
+                          issueCount={model.projectIssueCounts[project.slug] ?? 0}
+                        />
+                      ))}
+                    </Stack>
+                  </Section>
+                ))}
+              </Stack>
             )}
           </Box>
         </Box>
@@ -197,17 +189,19 @@ export function ViewBuilderPageView({
   }
 }
 
-export function ViewBuilderPage() {
+export function ProjectViewBuilderPage() {
   return (
-    <PresenterScope name="ViewBuilderPage">
-      <ViewBuilderPageBinding />
+    <PresenterScope name="ProjectViewBuilderPage">
+      <ProjectViewBuilderPageBinding />
     </PresenterScope>
   );
 }
 
-function ViewBuilderPageBinding() {
-  const model = useViewBuilderPresenter();
+function ProjectViewBuilderPageBinding() {
+  const model = useProjectViewBuilderPresenter();
   const handlers = useActions(model.handlers);
   const nameRef = useFocusWhen<HTMLInputElement>(true, []);
-  return <ViewBuilderPageView model={{ ...model, handlers } as typeof model} nameRef={nameRef} />;
+  return (
+    <ProjectViewBuilderPageView model={{ ...model, handlers } as typeof model} nameRef={nameRef} />
+  );
 }

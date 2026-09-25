@@ -29,6 +29,7 @@ import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { ProjectUpdateFeed } from '../components/ProjectUpdateFeed.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
+import { ViewIcon } from '../components/ViewIcon.tsx';
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
 import { CYCLE_STATUSES } from '../types.ts';
@@ -72,9 +73,6 @@ export function ProjectsPageView({
         projectIssueCounts,
         projectViews,
         activeProjectView,
-        projectViewDialogOpen,
-        projectViewName,
-        projectViewDescription,
         visibleProjectCount,
         isGrouped,
         hasActiveSearch,
@@ -484,41 +482,6 @@ export function ProjectsPageView({
                 </Stack>
               </Box>
             </Modal>
-            <Modal
-              opened={projectViewDialogOpen}
-              onClose={handlers.onCloseProjectView}
-              title={t('projectViews.createTitle')}
-              centered
-              size="md"
-            >
-              <Box component="form" onSubmit={handlers.onSubmitProjectView}>
-                <Stack>
-                  <TextInput
-                    required
-                    maxLength={80}
-                    label={t('projectViews.name')}
-                    value={projectViewName}
-                    onChange={handlers.onProjectViewNameChange}
-                    autoFocus
-                  />
-                  <Textarea
-                    label={t('projectViews.description')}
-                    value={projectViewDescription}
-                    onChange={handlers.onProjectViewDescriptionChange}
-                    minRows={2}
-                    autosize
-                  />
-                  <Group justify="flex-end">
-                    <Button type="button" variant="default" onClick={handlers.onCloseProjectView}>
-                      {t('common.cancel')}
-                    </Button>
-                    <Button type="submit" disabled={!projectViewName.trim()}>
-                      {t('projectViews.createTitle')}
-                    </Button>
-                  </Group>
-                </Stack>
-              </Box>
-            </Modal>
           </Pane>
         </SplitLayout>
       );
@@ -559,7 +522,10 @@ function ProjectViewsBar({
           title={view.description || view.name}
           onClick={() => void handlers.onApplyProjectView(view)}
         >
-          {view.name}
+          <Group gap={4} wrap="nowrap">
+            <ViewIcon name={view.icon ?? 'list'} />
+            {view.name}
+          </Group>
         </Button>
       ))}
       <Button type="button" size="xs" variant="subtle" onClick={handlers.onOpenCreateProjectView}>
