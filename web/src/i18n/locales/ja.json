@@ -385,6 +385,8 @@
   "issueProperties": {
     "ariaLabel": "イシューのプロパティ",
     "heading": "プロパティ",
+    "addProperty": "プロパティを追加",
+    "optionalProperties": "追加できるプロパティ",
     "noType": "種別なし",
     "noEstimate": "見積もりなし",
     "noProject": "プロジェクトなし",

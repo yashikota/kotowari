@@ -387,6 +387,8 @@
   "issueProperties": {
     "ariaLabel": "Issue properties",
     "heading": "Properties",
+    "addProperty": "Add property",
+    "optionalProperties": "Optional properties",
     "noType": "No type",
     "noEstimate": "No estimate",
     "noProject": "No project",

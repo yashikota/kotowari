@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { chooseIssueProperty } from './issue-properties.ts';
+import { chooseIssueProperty, ensureIssuePropertyVisible } from './issue-properties.ts';
 import {
   chooseIssueFilterOption,
   createIssueView,
@@ -168,6 +168,7 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   await page.getByRole('option', { name: projectName, exact: true }).click();
   await chooseIssueProperty(page, 'Milestone', milestoneName);
   await chooseIssueProperty(page, 'Cycle', `Cycle ${cycle.number}`);
+  await ensureIssuePropertyVisible(page, 'Parent');
   const parentPicker = properties.getByRole('combobox', { name: 'Parent' });
   await parentPicker.click();
   await parentPicker.fill(parent.identifier);
@@ -177,6 +178,7 @@ test('issue list row opens a Linear-style full-width detail view with editable p
     .click();
 
   const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  await ensureIssuePropertyVisible(page, 'Due date');
   await properties.getByLabel('Due date').fill(dueDate);
 
   const labelName = `Property label ${stamp}`;

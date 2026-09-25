@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ensureIssuePropertyVisible } from './issue-properties.ts';
 import { chooseIssueProperty } from './issue-properties.ts';
 import {
   chooseIssueFilterOption,
@@ -96,6 +97,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
     .click();
   await expect(labels.getByRole('button', { name: 'Remove label Bug' })).toBeVisible();
 
+  await ensureIssuePropertyVisible(page, 'Due date');
   await page.getByLabel('Due date').fill('2026-09-01');
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
   await expect(page.getByRole('heading', { name: '目的' })).toBeVisible();

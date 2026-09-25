@@ -25,8 +25,11 @@ import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-wo
 import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts';
 
 const LABEL_COLORS = ['#d4725a', '#6b9bd1', '#c4a574', '#7a9e7e', '#d4a05a'];
+const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
 
 type RelatedIssueKind = 'issue' | 'subIssue' | 'parent' | 'blocked' | 'blocking';
+export type IssueOptionalProperty = 'dueDate' | 'milestone' | 'parent' | 'type';
+type OptionalPropertyOverrides = Record<string, Partial<Record<IssueOptionalProperty, boolean>>>;
 type MarkAsKind =
   | 'parentOf'
   | 'subIssueOf'
@@ -44,6 +47,19 @@ type Props = {
   issueListScrollTop?: number;
   issueListLayout?: 'list' | 'board';
 };
+
+function readOptionalPropertyOverrides(): OptionalPropertyOverrides {
+  if (typeof window === 'undefined') return {};
+  try {
+    const stored: unknown = JSON.parse(
+      window.localStorage.getItem(ISSUE_PROPERTY_VISIBILITY_KEY) ?? '{}',
+    );
+    if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) return {};
+    return stored as OptionalPropertyOverrides;
+  } catch {
+    return {};
+  }
+}
 
 export function useIssueDetailPresenter({
   identifier,
@@ -103,6 +119,8 @@ export function useIssueDetailPresenter({
   const [timeZone, setTimeZone] = useState('UTC');
   const [copied, setCopied] = useState(false);
   const [historyRequest, setHistoryRequest] = useState(0);
+  const [optionalPropertyOverrides, setOptionalPropertyOverrides] =
+    useState<OptionalPropertyOverrides>(readOptionalPropertyOverrides);
   const [customReminderOpen, setCustomReminderOpen] = useState(false);
   const [customReminderValue, setCustomReminderValue] = useState('');
   const [issueOptionsOpen, setIssueOptionsOpen] = useState(false);
@@ -235,6 +253,13 @@ export function useIssueDetailPresenter({
   }
 
   const due = issue.dueDate?.slice(0, 10) ?? '';
+  const propertyOverrides = optionalPropertyOverrides[identifier] ?? {};
+  const optionalIssuePropertyVisibility: Record<IssueOptionalProperty, boolean> = {
+    dueDate: propertyOverrides.dueDate ?? Boolean(due),
+    milestone: propertyOverrides.milestone ?? issue.milestoneId != null,
+    parent: propertyOverrides.parent ?? issue.parentId != null,
+    type: propertyOverrides.type ?? Boolean(issue.type),
+  };
   const selectedLabelIds = new Set(issue.labels.map((l) => l.id));
   const milestones = projects.find((project) => project.id === issue.projectId)?.milestones ?? [];
   const children = issues.filter((i) => i.parentId === issue.id);
@@ -696,6 +721,7 @@ export function useIssueDetailPresenter({
     navigationTotal: navigationIds.length,
     issueReturnTo,
     issue,
+    optionalIssuePropertyVisibility,
     issues,
     timeline,
     editingCommentId,
@@ -848,6 +874,17 @@ export function useIssueDetailPresenter({
       Due_date_onChange10: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => patch({ dueDate: e.target.value ? e.target.value : null }),
+      onToggleIssueOptionalProperty: (property: IssueOptionalProperty) => {
+        const nextOverrides = {
+          ...optionalPropertyOverrides,
+          [identifier]: {
+            ...propertyOverrides,
+            [property]: !optionalIssuePropertyVisibility[property],
+          },
+        };
+        setOptionalPropertyOverrides(nextOverrides);
+        window.localStorage.setItem(ISSUE_PROPERTY_VISIBILITY_KEY, JSON.stringify(nextOverrides));
+      },
       onClick11: (on: boolean, l: Label) => {
         const next = on
           ? issue.labels.filter((x) => x.id !== l.id).map((x) => x.id)

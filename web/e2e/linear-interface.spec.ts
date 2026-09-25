@@ -49,7 +49,9 @@ test('issue filters use a searchable category menu with a scoped editor', async 
   await expect(page.getByRole('menuitem', { name: 'Status', exact: true })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Status', exact: true }).hover();
   await expect(page.getByRole('group', { name: 'Filter status' })).toBeVisible();
-  await page.locator('body').click({ position: { x: 1000, y: 650 } });
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('group', { name: 'Filter status' })).toBeHidden();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Add filter' })).toHaveAttribute(
     'aria-expanded',
     'false',
