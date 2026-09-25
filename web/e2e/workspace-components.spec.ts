@@ -321,6 +321,79 @@ test('issue list selects multiple issues and applies bulk status changes', async
   await expect(rows).toHaveCount(2);
 });
 
+test('issue list applies bulk assignee, type, and estimate changes', async ({ page, request }) => {
+  const stamp = Date.now();
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Bulk properties ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    identifiers.push(((await response.json()) as { identifier: string }).identifier);
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  const selectAllRows = async () => {
+    for (const identifier of identifiers) {
+      await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+    }
+    await page.getByRole('button', { name: 'Actions' }).click();
+  };
+
+  await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Assign to me' }).click();
+  await expect
+    .poll(async () =>
+      Promise.all(
+        identifiers.map(async (identifier) => {
+          const response = await request.get(`/api/issues/${identifier}`);
+          return ((await response.json()) as { assignee?: string }).assignee ?? '';
+        }),
+      ),
+    )
+    .toEqual(['self', 'self']);
+
+  await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Unassign' }).click();
+  await expect
+    .poll(async () =>
+      Promise.all(
+        identifiers.map(async (identifier) => {
+          const response = await request.get(`/api/issues/${identifier}`);
+          return ((await response.json()) as { assignee?: string }).assignee ?? '';
+        }),
+      ),
+    )
+    .toEqual(['', '']);
+
+  await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Set type to Bug' }).click();
+  await expect
+    .poll(async () =>
+      Promise.all(
+        identifiers.map(async (identifier) => {
+          const response = await request.get(`/api/issues/${identifier}`);
+          return ((await response.json()) as { type?: string }).type;
+        }),
+      ),
+    )
+    .toEqual(['bug', 'bug']);
+
+  await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Set estimate to 8' }).click();
+  await expect
+    .poll(async () =>
+      Promise.all(
+        identifiers.map(async (identifier) => {
+          const response = await request.get(`/api/issues/${identifier}`);
+          return ((await response.json()) as { estimate?: number | null }).estimate;
+        }),
+      ),
+    )
+    .toEqual([8, 8]);
+});
+
 test('type and estimate filters survive saving a reusable view', async ({ page, request }) => {
   const stamp = Date.now();
   const matchingTitle = `Feature estimate ${stamp}`;

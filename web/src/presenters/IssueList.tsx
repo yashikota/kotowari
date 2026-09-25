@@ -196,6 +196,9 @@ export function useIssueListPresenter({
         ),
       onSetBulkStatus: (status: string) => updateSelectedIssues({ workflowStatus: status }),
       onSetBulkPriority: (priority: number) => updateSelectedIssues({ priority }),
+      onSetBulkAssignee: (assignee: 'self' | 'agent' | '') => updateSelectedIssues({ assignee }),
+      onSetBulkType: (type: Issue['type']) => updateSelectedIssues({ type }),
+      onSetBulkEstimate: (estimate: number | null) => updateSelectedIssues({ estimate }),
       onClearBulkSelection: () => setBulkSelectedIds([]),
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>

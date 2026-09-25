@@ -12,7 +12,7 @@ function IssueSelectionToolbarView({
   model: ReturnType<typeof useIssueSelectionToolbarPresenter>;
 }) {
   const { t } = useTranslation();
-  const { selectedCount, statuses, priorities, handlers } = model;
+  const { selectedCount, statuses, priorities, types, estimates, handlers } = model;
   return (
     <Paper
       className={styles.toolbar}
@@ -48,6 +48,34 @@ function IssueSelectionToolbarView({
                 onClick={() => handlers.onSetPriority(priority.value)}
               >
                 {t('ui.setSelectedIssuePriority', { priority: priority.label })}
+              </Menu.Item>
+            ))}
+            <Menu.Divider />
+            <Menu.Label>{t('field.assignee')}</Menu.Label>
+            <Menu.Item onClick={() => handlers.onSetAssignee('self')}>
+              {t('ui.assignSelectedIssuesToMe')}
+            </Menu.Item>
+            <Menu.Item onClick={() => handlers.onSetAssignee('')}>
+              {t('ui.unassignSelectedIssues')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('field.type')}</Menu.Label>
+            {types.map((type) => (
+              <Menu.Item key={type.value} onClick={() => handlers.onSetType(type.value)}>
+                {t('ui.setSelectedIssueType', { type: type.label })}
+              </Menu.Item>
+            ))}
+            <Menu.Divider />
+            <Menu.Label>{t('field.estimate')}</Menu.Label>
+            {estimates.map((estimate) => (
+              <Menu.Item
+                key={estimate.value ?? 'none'}
+                onClick={() => handlers.onSetEstimate(estimate.value)}
+              >
+                {t('ui.setSelectedIssueEstimate', {
+                  estimate:
+                    estimate.value == null ? t('issueProperties.noEstimate') : estimate.label,
+                })}
               </Menu.Item>
             ))}
           </Menu.Dropdown>

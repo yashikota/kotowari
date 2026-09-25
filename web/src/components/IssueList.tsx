@@ -90,6 +90,9 @@ export function IssueListView({
                 selectedCount={bulkSelectedIds.length}
                 onSetStatus={handlers.onSetBulkStatus}
                 onSetPriority={handlers.onSetBulkPriority}
+                onSetAssignee={handlers.onSetBulkAssignee}
+                onSetType={handlers.onSetBulkType}
+                onSetEstimate={handlers.onSetBulkEstimate}
                 onClear={handlers.onClearBulkSelection}
               />
             ) : null}
