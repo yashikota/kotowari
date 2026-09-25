@@ -967,8 +967,16 @@ func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 	updated, err := s.GetProject(project.Slug)
-	if err != nil || updated.Health != "at_risk" {
-		t.Fatalf("updated project health = %q, error %v", updated.Health, err)
+	if err != nil || updated.Health != "at_risk" || updated.HealthUpdatedAt == nil || *updated.HealthUpdatedAt != updated.UpdatedAt {
+		t.Fatalf("updated project health = %#v, error %v", updated, err)
+	}
+	healthUpdatedAt := *updated.HealthUpdatedAt
+	if _, err := s.UpdateProjectWithWorkflowAndInitiatives(project.Slug, stringPtr("Renamed"), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	updated, err = s.GetProject(project.Slug)
+	if err != nil || updated.HealthUpdatedAt == nil || *updated.HealthUpdatedAt != healthUpdatedAt {
+		t.Fatalf("unrelated project edit changed health update time = %#v, error %v", updated, err)
 	}
 	activities, err := s.ListProjectActivities(project.Slug)
 	if err != nil || len(activities) != 2 || activities[0].Action != "status_update_posted" {
@@ -1000,8 +1008,8 @@ func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	}
 	cleanupReopenedStore(t, reopened)
 	persisted, err := reopened.GetProject(project.Slug)
-	if err != nil || persisted.Health != "at_risk" {
-		t.Fatalf("persisted project health = %q, error %v", persisted.Health, err)
+	if err != nil || persisted.Health != "at_risk" || persisted.HealthUpdatedAt == nil || *persisted.HealthUpdatedAt != healthUpdatedAt {
+		t.Fatalf("persisted project health = %#v, error %v", persisted, err)
 	}
 	persistedActivities, err := reopened.ListProjectActivities(project.Slug)
 	if err != nil || len(persistedActivities) != 2 || persistedActivities[0].Action != "status_update_posted" {

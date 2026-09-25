@@ -691,6 +691,7 @@
     "orderName": "名前",
     "orderStatus": "ステータス",
     "orderPriority": "優先度",
+    "orderHealthUpdated": "ヘルス更新日",
     "orderStartDate": "開始日",
     "orderTargetDate": "目標日",
     "orderCreated": "作成日",

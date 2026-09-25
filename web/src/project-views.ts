@@ -27,11 +27,11 @@ export type ProjectViewSearch = {
     | 'name'
     | 'status'
     | 'priority'
+    | 'healthUpdated'
     | 'startDate'
     | 'targetDate'
     | 'created'
-    | 'updated'
-    | 'completed';
+    | 'updated';
   direction?: 'asc' | 'desc';
   closed?: 'all' | 'open' | 'closed';
   view?: 'list' | 'board' | 'timeline';

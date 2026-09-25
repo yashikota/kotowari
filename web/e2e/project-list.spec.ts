@@ -292,6 +292,12 @@ test('project list and saved-view previews group by labels, health, and dates', 
     request.patch(`/api/projects/${atRiskSlug}`, { data: { health: 'at_risk' } }),
   ]);
   expect(healthUpdates.every((response) => response.ok())).toBeTruthy();
+  const healthUpdateProjects = await Promise.all(
+    healthUpdates.map(
+      async (response) => (await response.json()) as { slug: string; healthUpdatedAt?: string },
+    ),
+  );
+  expect(healthUpdateProjects.every((project) => project.healthUpdatedAt)).toBeTruthy();
 
   await page.goto('/projects?groupBy=labels');
   await expect(page.getByRole('region', { name: 'Bug' })).toContainText(labeledName);
@@ -323,6 +329,36 @@ test('project list and saved-view previews group by labels, health, and dates', 
   );
   await expect(page.getByRole('region', { name: expectedTargetDate })).toContainText(labeledName);
   await expect(page.getByRole('region', { name: 'No date' })).toContainText(unassignedName);
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('combobox', { name: 'Ordering' }).click();
+  await page.getByRole('option', { name: 'Health updated', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page).toHaveURL(/orderBy=healthUpdated/);
+  const expectedHealthOrder = [
+    ...healthUpdateProjects.map((project) => ({ slug: project.slug, at: project.healthUpdatedAt })),
+    { slug: unassignedSlug, at: undefined },
+  ].sort((left, right) => {
+    if (!left.at || !right.at) {
+      if (left.at === right.at) return left.slug.localeCompare(right.slug);
+      return left.at ? -1 : 1;
+    }
+    return left.at.localeCompare(right.at) || left.slug.localeCompare(right.slug);
+  });
+  const orderedRows = page.locator(
+    `a[href="/projects/${labeledSlug}"], a[href="/projects/${atRiskSlug}"], a[href="/projects/${unassignedSlug}"]`,
+  );
+  await expect(orderedRows).toHaveCount(3);
+  for (const [index, project] of expectedHealthOrder.entries()) {
+    await expect(orderedRows.nth(index)).toHaveAttribute('href', `/projects/${project.slug}`);
+  }
+  await page.reload();
+  await expect(page).toHaveURL(/orderBy=healthUpdated/);
+  await expect(orderedRows.first()).toHaveAttribute(
+    'href',
+    `/projects/${expectedHealthOrder[0]!.slug}`,
+  );
 
   await page.goto('/views/projects/new?groupBy=health');
   await expect(page.getByText('On track', { exact: true })).toBeVisible();

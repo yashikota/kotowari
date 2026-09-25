@@ -204,6 +204,12 @@ export function useProjectViewBuilderPresenter() {
         result =
           (statusOrder.get(left.workflowStatus ?? left.status) ?? 0) -
           (statusOrder.get(right.workflowStatus ?? right.status) ?? 0);
+      } else if (orderBy === 'healthUpdated') {
+        const leftDate = left.healthUpdatedAt || '';
+        const rightDate = right.healthUpdatedAt || '';
+        if (!leftDate || !rightDate) {
+          if (leftDate !== rightDate) return leftDate ? -1 : 1;
+        } else result = leftDate.localeCompare(rightDate);
       } else {
         const field =
           orderBy === 'name'
@@ -214,9 +220,7 @@ export function useProjectViewBuilderPresenter() {
                 ? 'targetDate'
                 : orderBy === 'created'
                   ? 'createdAt'
-                  : orderBy === 'completed'
-                    ? 'completedAt'
-                    : 'updatedAt';
+                  : 'updatedAt';
         result = (left[field] ?? '').localeCompare(right[field] ?? '');
       }
       return (result || left.slug.localeCompare(right.slug)) * direction;

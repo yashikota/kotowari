@@ -244,11 +244,11 @@ export function ProjectListControls({
                 { value: 'name', label: t('projectList.orderName') },
                 { value: 'status', label: t('projectList.orderStatus') },
                 { value: 'priority', label: t('projectList.orderPriority') },
+                { value: 'healthUpdated', label: t('projectList.orderHealthUpdated') },
                 { value: 'startDate', label: t('projectList.orderStartDate') },
                 { value: 'targetDate', label: t('projectList.orderTargetDate') },
                 { value: 'created', label: t('projectList.orderCreated') },
                 { value: 'updated', label: t('projectList.orderUpdated') },
-                { value: 'completed', label: t('projectList.orderCompleted') },
               ]}
               allowDeselect={false}
               comboboxProps={{ withinPortal: false }}

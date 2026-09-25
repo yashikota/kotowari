@@ -119,6 +119,7 @@ export type Project = {
   templateSlug?: string;
   initiativeSlugs?: string[];
   health?: ProjectHealth | null;
+  healthUpdatedAt?: string | null;
   completedAt?: string | null;
   priority: number;
   startDate: string | null;

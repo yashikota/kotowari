@@ -19,6 +19,7 @@ import type {
   View,
   Workspace,
 } from './types.ts';
+import { PROJECT_HEALTH_STATUSES } from './types.ts';
 
 const now = '2026-09-23T09:00:00Z';
 const defaultIssueWorkflowStatuses: IssueWorkflowStatus[] = [
@@ -1700,10 +1701,27 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
             : initiative.projectSlugs.filter((projectSlug) => projectSlug !== project.slug);
         }
       }
-      if (kind === 'projects' && typeof value.workflowStatus === 'string') {
-        const state = projectWorkflowStatuses.find((status) => status.id === value.workflowStatus);
-        if (!state) return json({ error: 'invalid project workflow status' }, 400);
-        patch(item, { ...value, status: state.category });
+      if (kind === 'projects') {
+        const project = item as Project;
+        const changes = { ...value };
+        if ('health' in value) {
+          if (
+            value.health !== null &&
+            !PROJECT_HEALTH_STATUSES.includes(
+              value.health as (typeof PROJECT_HEALTH_STATUSES)[number],
+            )
+          ) {
+            return json({ error: 'invalid project health' }, 400);
+          }
+          if (value.health !== project.health) changes.healthUpdatedAt = new Date().toISOString();
+        }
+        if (typeof value.workflowStatus === 'string') {
+          const state = projectWorkflowStatuses.find(
+            (status) => status.id === value.workflowStatus,
+          );
+          if (!state) return json({ error: 'invalid project workflow status' }, 400);
+          patch(project, { ...changes, status: state.category });
+        } else patch(project, changes);
       } else patch(item, value);
     }
     if (action === 'publish') patch(item, { status: 'accepted' });

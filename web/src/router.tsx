@@ -290,11 +290,11 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     raw.orderBy === 'name' ||
     raw.orderBy === 'status' ||
     raw.orderBy === 'priority' ||
+    raw.orderBy === 'healthUpdated' ||
     raw.orderBy === 'startDate' ||
     raw.orderBy === 'targetDate' ||
     raw.orderBy === 'created' ||
-    raw.orderBy === 'updated' ||
-    raw.orderBy === 'completed'
+    raw.orderBy === 'updated'
   ) {
     result.orderBy = raw.orderBy;
   }

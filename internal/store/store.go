@@ -79,6 +79,7 @@ type Project struct {
 	TemplateSlug    string              `json:"templateSlug,omitempty" toml:"template_slug,omitempty"`
 	InitiativeSlugs []string            `json:"initiativeSlugs,omitempty" toml:"initiative_slugs,omitempty"`
 	Health          string              `json:"health,omitempty" toml:"health,omitempty"`
+	HealthUpdatedAt *string             `json:"healthUpdatedAt,omitempty" toml:"health_updated_at,omitempty"`
 	CompletedAt     *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
 	Priority        int                 `json:"priority" toml:"priority"`
 	StartDate       *string             `json:"startDate" toml:"startDate,omitempty"`

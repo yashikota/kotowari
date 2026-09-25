@@ -693,6 +693,7 @@
     "orderName": "Name",
     "orderStatus": "Status",
     "orderPriority": "Priority",
+    "orderHealthUpdated": "Health updated",
     "orderStartDate": "Start date",
     "orderTargetDate": "Target date",
     "orderCreated": "Created",

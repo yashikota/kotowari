@@ -828,6 +828,7 @@ func (s *Store) UpdateProjectWithWorkflowAndInitiatives(slug string, name, summa
 			addActivity(m, "project", p.ID, "status_changed", map[string]any{"from": previousWorkflowStatus, "to": p.WorkflowStatus}, now)
 		}
 		if previousHealth != p.Health {
+			p.HealthUpdatedAt = &now
 			addActivity(m, "project", p.ID, "health_changed", map[string]any{"from": previousHealth, "to": p.Health}, now)
 		}
 		if previousPriority != p.Priority {
@@ -860,6 +861,7 @@ func (s *Store) PostProjectUpdate(slug, health, body string) (Activity, error) {
 		}
 		project := m.Projects[i]
 		project.Health = health
+		project.HealthUpdatedAt = &now
 		project.UpdatedAt = now
 		m.Projects[i] = project
 		addActivity(m, "project", project.ID, "status_update_posted", map[string]any{
