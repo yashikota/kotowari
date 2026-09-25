@@ -5,6 +5,7 @@ import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueViewTabs } from '../components/IssueViewTabs.tsx';
+import { IssueListFacetPanel } from '../components/IssueListFacetPanel.tsx';
 import { EmptyState, PageHeader, Pane, Shortcut, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -40,6 +41,10 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         nestedSubIssues,
         showEmptyGroups,
         displayProperties,
+        detailsOpen,
+        facet,
+        facetOptions,
+        selectedFacetValues,
         handlers,
       } = model;
       return (
@@ -110,39 +115,68 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               onShowEmptyGroups={handlers.onShowEmptyGroups22}
               displayProperties={displayProperties}
               onDisplayPropertyToggle={handlers.onDisplayPropertyToggle23}
+              detailsOpen={detailsOpen}
+              onDetailsToggle={handlers.onDetailsToggle}
             />
-            {layout === 'list' ? (
-              <IssueList
-                issues={issues}
-                selectedId={selected}
-                onSelect={handlers.onSelect3}
-                find={find}
-                restoreScrollTop={restoreScrollTop}
-                groupBy={groupBy}
-                orderBy={orderBy}
-                subGroupBy={subGroupBy}
-                direction={direction}
-                showEmptyGroups={showEmptyGroups}
-                showSubIssues={showSubIssues}
-                displayProperties={displayProperties}
-              />
-            ) : (
-              <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-                {issues.length === 0 ? (
-                  <EmptyState>{t('ui.noIssuesMatchFilters')}</EmptyState>
-                ) : (
-                  <IssueBoard
+            <Group
+              align="stretch"
+              gap={0}
+              wrap="nowrap"
+              style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}
+            >
+              <Box
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
+                {layout === 'list' ? (
+                  <IssueList
                     issues={issues}
-                    onOpen={handlers.onBoardOpen8}
-                    onMove={handlers.onBoardMove9}
+                    selectedId={selected}
+                    onSelect={handlers.onSelect3}
                     find={find}
+                    restoreScrollTop={restoreScrollTop}
+                    groupBy={groupBy}
                     orderBy={orderBy}
+                    subGroupBy={subGroupBy}
                     direction={direction}
+                    showEmptyGroups={showEmptyGroups}
                     showSubIssues={showSubIssues}
+                    displayProperties={displayProperties}
                   />
+                ) : (
+                  <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                    {issues.length === 0 ? (
+                      <EmptyState>{t('ui.noIssuesMatchFilters')}</EmptyState>
+                    ) : (
+                      <IssueBoard
+                        issues={issues}
+                        onOpen={handlers.onBoardOpen8}
+                        onMove={handlers.onBoardMove9}
+                        find={find}
+                        orderBy={orderBy}
+                        direction={direction}
+                        showSubIssues={showSubIssues}
+                      />
+                    )}
+                  </Box>
                 )}
               </Box>
-            )}
+              {detailsOpen ? (
+                <IssueListFacetPanel
+                  facet={facet}
+                  options={facetOptions}
+                  selectedValues={selectedFacetValues}
+                  onFacetChange={handlers.onFacetChange}
+                  onToggle={handlers.onFacetFilterToggle}
+                />
+              ) : null}
+            </Group>
           </Box>
         </Box>
       );

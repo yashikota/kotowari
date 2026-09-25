@@ -47,6 +47,86 @@ test('filter picker keeps its scoped editor inside a narrow viewport', async ({ 
   await expect(page.getByRole('textbox', { name: 'Search filters' })).toBeVisible();
 });
 
+test('issue details facets show counts and filter the visible issue list', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const highTitle = `Facet high ${stamp}`;
+  const lowTitle = `Facet low ${stamp}`;
+  const projectName = `Facet project ${stamp}`;
+  const projectSlug = `facet-project-${stamp}`;
+  const projectResponse = await request.post('/api/projects', {
+    data: { name: projectName, slug: projectSlug },
+  });
+  expect(projectResponse.ok()).toBeTruthy();
+  const project = (await projectResponse.json()) as { id: number };
+  const labelName = `Facet label ${stamp}`;
+  const labelResponse = await request.post('/api/labels', {
+    data: { name: labelName, color: '#7c3aed' },
+  });
+  expect(labelResponse.ok()).toBeTruthy();
+  const label = (await labelResponse.json()) as { id: number };
+  for (const [title, priority] of [
+    [highTitle, 2],
+    [lowTitle, 4],
+  ] as const) {
+    const created = await request.post('/api/issues', {
+      data: {
+        title,
+        status: 'todo',
+        priority,
+        ...(title === highTitle ? { projectId: project.id, labelIds: [label.id] } : {}),
+      },
+    });
+    expect(created.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.getByRole('button', { name: 'Open details' }).click();
+
+  const details = page.getByRole('complementary', { name: 'Issue details' });
+  await expect(details).toBeVisible();
+  const panelBounds = await details.boundingBox();
+  expect(panelBounds).not.toBeNull();
+  expect(panelBounds!.width).toBeGreaterThanOrEqual(300);
+  expect(panelBounds!.width).toBeLessThanOrEqual(340);
+  const high = details.getByRole('button', { name: 'High, 1 issue' });
+  await expect(high).toBeVisible();
+  await expect(details.getByRole('button', { name: 'Low, 1 issue' })).toBeVisible();
+
+  await high.click();
+  await expect(page).toHaveURL(/priority=2/);
+  const issues = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issues.getByRole('option', { name: new RegExp(highTitle) })).toBeVisible();
+  await expect(issues.getByRole('option', { name: new RegExp(lowTitle) })).toHaveCount(0);
+  await expect(details.getByRole('button', { name: 'High, 1 issue' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  const detailBy = details.getByRole('combobox', { name: 'Details by' });
+  await detailBy.click();
+  await page.getByRole('option', { name: 'Labels' }).click();
+  const labelFacet = details.getByRole('button', { name: `${labelName}, 1 issue` });
+  await expect(labelFacet).toBeVisible();
+  await labelFacet.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('labels')).toBe(labelName);
+  await expect(issues.getByRole('option', { name: new RegExp(highTitle) })).toBeVisible();
+
+  await detailBy.click();
+  await page.getByRole('option', { name: 'Projects' }).click();
+  const projectFacet = details.getByRole('button', { name: `${projectName}, 1 issue` });
+  await expect(projectFacet).toBeVisible();
+  await projectFacet.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('project')).toBe(projectSlug);
+  await expect(issues.getByRole('option', { name: new RegExp(highTitle) })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close details' }).click();
+  await expect(details).toHaveCount(0);
+});
+
 test('Linear-style workspace shell and collapsible priority groups', async ({ page }) => {
   await page.goto('/issues');
 

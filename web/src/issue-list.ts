@@ -1,4 +1,4 @@
-import type { Cycle, Issue, IssueStatus, IssueWorkflowStatus } from './types.ts';
+import type { Cycle, Issue, IssueStatus, IssueWorkflowStatus, Project } from './types.ts';
 
 export type IssueListRow =
   | {
@@ -36,6 +36,8 @@ export type IssueOrderBy =
   | 'linkCount'
   | 'timeInStatus';
 export type IssueLayout = 'list' | 'board';
+export type IssueFacetType = 'labels' | 'priority' | 'projects';
+export type IssueFacetOption = { value: string; label: string; count: number; color?: string };
 export type IssueDisplayProperty =
   | 'id'
   | 'status'
@@ -77,6 +79,57 @@ export function formatIssueCreatedDate(value: string, locale: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(date);
+}
+
+export function buildIssueFacetOptions(
+  facet: IssueFacetType,
+  issues: Issue[],
+  projects: Project[],
+): IssueFacetOption[] {
+  if (facet === 'priority') {
+    const counts = new Map<number, number>();
+    for (const issue of issues) counts.set(issue.priority, (counts.get(issue.priority) ?? 0) + 1);
+    return [1, 2, 3, 4, 0]
+      .filter((priority) => (counts.get(priority) ?? 0) > 0)
+      .map((priority) => ({
+        value: String(priority),
+        label: String(priority),
+        count: counts.get(priority) ?? 0,
+      }));
+  }
+
+  if (facet === 'labels') {
+    const counts = new Map<number, { label: Issue['labels'][number]; count: number }>();
+    for (const issue of issues) {
+      const seen = new Set<number>();
+      for (const label of issue.labels) {
+        if (seen.has(label.id)) continue;
+        seen.add(label.id);
+        const current = counts.get(label.id);
+        counts.set(label.id, { label, count: (current?.count ?? 0) + 1 });
+      }
+    }
+    return [...counts.values()]
+      .sort(
+        (left, right) =>
+          right.count - left.count || left.label.name.localeCompare(right.label.name),
+      )
+      .map(({ label, count }) => ({
+        value: label.name,
+        label: label.name,
+        count,
+        color: label.color,
+      }));
+  }
+
+  const projectNames = new Map(projects.map((project) => [project.slug, project.name]));
+  const counts = new Map<string, number>();
+  for (const issue of issues) {
+    if (issue.projectSlug) counts.set(issue.projectSlug, (counts.get(issue.projectSlug) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([slug, count]) => ({ value: slug, label: projectNames.get(slug) ?? slug, count }));
 }
 
 const PRIORITY_ORDER = [1, 2, 3, 4, 0] as const;

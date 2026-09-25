@@ -10,11 +10,13 @@ import type * as React from 'react';
 import { useState } from 'react';
 import { api, parseIssueSearch, searchToFilter, type IssueSearch } from '../api.ts';
 import {
+  buildIssueFacetOptions,
   DEFAULT_DISPLAY_PROPERTIES,
   filterCompletedIssues,
   includeNestedIssueMatches,
   type CompletedIssuesFilter,
   type IssueDisplayProperty,
+  type IssueFacetType,
   type IssueGroupBy,
   type IssueLayout,
   type IssueOrderBy,
@@ -98,6 +100,8 @@ export function useIssuesPagePresenter() {
   const [displayProperties, setDisplayProperties] = useState<IssueDisplayProperty[]>([
     ...DEFAULT_DISPLAY_PROPERTIES,
   ]);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [facet, setFacet] = useState<IssueFacetType>('priority');
   const [selected, setSelected] = useState<string | null>(
     locationState.issueListSelectedId ?? null,
   );
@@ -185,6 +189,19 @@ export function useIssuesPagePresenter() {
     completedIssues,
     data.cycles,
   );
+  const selectedFacetValues =
+    facet === 'labels'
+      ? (search.labels ?? '')
+          .split(',')
+          .map((label) => label.trim())
+          .filter(Boolean)
+      : facet === 'priority'
+        ? search.priority === undefined
+          ? []
+          : [String(search.priority)]
+        : search.project
+          ? [search.project]
+          : [];
   const selectedId = selected && issues.some((i) => i.identifier === selected) ? selected : null;
 
   return {
@@ -210,6 +227,10 @@ export function useIssuesPagePresenter() {
     nestedSubIssues,
     showEmptyGroups,
     displayProperties,
+    detailsOpen,
+    facet,
+    facetOptions: buildIssueFacetOptions(facet, issues, data.projects),
+    selectedFacetValues,
     handlers: {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
@@ -270,6 +291,40 @@ export function useIssuesPagePresenter() {
             ? current.filter((item) => item !== property)
             : [...current, property],
         ),
+      onDetailsToggle: () => setDetailsOpen((current) => !current),
+      onFacetChange: (next: IssueFacetType) => setFacet(next),
+      onFacetFilterToggle: (value: string) => {
+        if (facet === 'priority') {
+          const priority = Number(value);
+          return navigate({
+            to: '/issues',
+            search: compactSearch({
+              ...search,
+              priority: search.priority === priority ? undefined : priority,
+            }),
+          });
+        }
+        if (facet === 'projects') {
+          return navigate({
+            to: '/issues',
+            search: compactSearch({
+              ...search,
+              project: search.project === value ? undefined : value,
+            }),
+          });
+        }
+        const current = (search.labels ?? '')
+          .split(',')
+          .map((label) => label.trim())
+          .filter(Boolean);
+        const next = current.includes(value)
+          ? current.filter((label) => label !== value)
+          : [...current, value];
+        return navigate({
+          to: '/issues',
+          search: compactSearch({ ...search, labels: next.join(',') }),
+        });
+      },
       onBoardOpen8: (id: string, state: IssueNavigationState) =>
         navigate({ to: '/issues/$identifier', params: { identifier: id }, state }),
       onBoardMove9: (id: string, status: string, sortOrder: number) =>

@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Group, TextInput } from '@mantine/core';
-import { IconSearch } from '@tabler/icons-react';
+import { IconLayoutSidebarRight, IconSearch } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { IssueDisplayOptions } from './IssueDisplayOptions.tsx';
 import { IssueFilterMenu } from './IssueFilterMenu.tsx';
@@ -41,6 +41,8 @@ export function IssueFiltersView({
         nestedSubIssues,
         showEmptyGroups,
         displayProperties,
+        detailsOpen,
+        onDetailsToggle,
         handlers,
       } = model;
       return (
@@ -141,6 +143,19 @@ export function IssueFiltersView({
                   onDisplayPropertyToggle={handlers.onDisplayPropertyToggle}
                 />
               </Group>
+            ) : null}
+            {onDetailsToggle ? (
+              <ActionIcon
+                type="button"
+                variant={detailsOpen ? 'light' : 'subtle'}
+                color="gray"
+                aria-label={t(detailsOpen ? 'ui.closeDetails' : 'ui.openDetails')}
+                title={t(detailsOpen ? 'ui.closeDetails' : 'ui.openDetails')}
+                aria-pressed={detailsOpen}
+                onClick={handlers.onDetailsToggle}
+              >
+                <IconLayoutSidebarRight size={16} stroke={1.7} aria-hidden="true" />
+              </ActionIcon>
             ) : null}
           </Group>
         </Box>

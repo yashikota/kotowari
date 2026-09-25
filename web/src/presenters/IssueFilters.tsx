@@ -83,6 +83,8 @@ type Props = {
   onShowEmptyGroups?: (show: boolean) => void;
   displayProperties?: string[];
   onDisplayPropertyToggle?: (property: IssueDisplayProperty) => void;
+  detailsOpen?: boolean;
+  onDetailsToggle?: () => void;
 };
 
 export function useIssueFiltersPresenter({
@@ -113,6 +115,8 @@ export function useIssueFiltersPresenter({
   onShowEmptyGroups,
   displayProperties,
   onDisplayPropertyToggle,
+  detailsOpen,
+  onDetailsToggle,
 }: Props) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
@@ -273,6 +277,8 @@ export function useIssueFiltersPresenter({
     nestedSubIssues,
     showEmptyGroups,
     displayProperties,
+    detailsOpen,
+    onDetailsToggle,
     findRef,
     selectedLabels,
     selectedProjectLabels,
@@ -361,6 +367,7 @@ export function useIssueFiltersPresenter({
       },
       onShowEmptyGroupsChange: (value: boolean) => onShowEmptyGroups?.(value),
       onDisplayPropertyToggle: (value: IssueDisplayProperty) => onDisplayPropertyToggle?.(value),
+      onDetailsToggle: () => onDetailsToggle?.(),
       onClearFilters: () => {
         set({
           status: undefined,

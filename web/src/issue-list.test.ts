@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   buildIssueListRows,
+  buildIssueFacetOptions,
   DEFAULT_DISPLAY_PROPERTIES,
   filterCompletedIssues,
   formatIssueCreatedDate,
   includeNestedIssueMatches,
   sortIssues,
 } from './issue-list.ts';
-import type { Cycle, Issue } from './types.ts';
+import type { Cycle, Issue, Project } from './types.ts';
 
 function issue(number: number, priority: number): Issue {
   return {
@@ -51,6 +52,37 @@ describe('issue list display defaults', () => {
     expect(formatIssueCreatedDate(value, 'ja-JP')).toBe(
       new Intl.DateTimeFormat('ja-JP', { month: 'short', day: 'numeric' }).format(new Date(value)),
     );
+  });
+});
+
+describe('issue list facets', () => {
+  it('counts unique labels, projects, and priorities in Linear order', () => {
+    const feature = { id: 1, name: 'Feature', color: '#7c3aed' };
+    const improvement = { id: 2, name: 'Improvement', color: '#2563eb' };
+    const issues = [
+      { ...issue(1, 2), projectSlug: 'core', labels: [feature, improvement] },
+      { ...issue(2, 2), projectSlug: 'core', labels: [feature] },
+      { ...issue(3, 4), projectSlug: 'docs', labels: [improvement] },
+      { ...issue(4, 0), projectSlug: null, labels: [] },
+    ];
+    const projects = [
+      { slug: 'core', name: 'Core' },
+      { slug: 'docs', name: 'Docs' },
+    ] as Project[];
+
+    expect(buildIssueFacetOptions('priority', issues, projects)).toEqual([
+      { value: '2', label: '2', count: 2 },
+      { value: '4', label: '4', count: 1 },
+      { value: '0', label: '0', count: 1 },
+    ]);
+    expect(buildIssueFacetOptions('labels', issues, projects)).toEqual([
+      { value: 'Feature', label: 'Feature', count: 2, color: '#7c3aed' },
+      { value: 'Improvement', label: 'Improvement', count: 2, color: '#2563eb' },
+    ]);
+    expect(buildIssueFacetOptions('projects', issues, projects)).toEqual([
+      { value: 'core', label: 'Core', count: 2 },
+      { value: 'docs', label: 'Docs', count: 1 },
+    ]);
   });
 });
 
