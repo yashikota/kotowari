@@ -13,10 +13,11 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { IconAdjustments, IconFilter } from '@tabler/icons-react';
+import { IconAdjustments } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import type { Label } from '../types.ts';
+import { ProjectFilterPicker } from './ProjectFilterPicker.tsx';
 import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
@@ -44,6 +45,8 @@ export type ProjectListControlsModel = {
   milestones: string[];
   relations: string[];
   availableMilestones: string[];
+  availableProjects?: { value: string; label: string }[];
+  specificProject?: string;
   availableLabels: Label[];
   filterCount: number;
   handlers: {
@@ -57,6 +60,7 @@ export type ProjectListControlsModel = {
     onDateToChange: (value: string) => void;
     onMilestonesChange: (value: string[]) => void;
     onRelationsChange: (value: string[]) => void;
+    onSpecificProjectChange: (value: string | null) => void;
     onGroupByChange: (value: string | null) => void;
     onOrderByChange: (value: string | null) => void;
     onDirectionChange: (value: string | null) => void;
@@ -132,148 +136,141 @@ export function ProjectListControls({
           </Group>
         </>
       ) : null}
-      <Popover position="bottom-start" shadow="md" withinPortal>
-        <Popover.Target>
-          {compact ? (
-            <ActionIcon
-              type="button"
-              variant="default"
-              size={30}
-              aria-label={t('projectList.addFilter')}
-              title={t('projectList.addFilter')}
-            >
-              <IconFilter size={16} stroke={1.7} aria-hidden="true" />
-            </ActionIcon>
-          ) : (
+      {compact ? (
+        <ProjectFilterPicker model={model} projectStatuses={projectStatuses} />
+      ) : (
+        <Popover position="bottom-start" shadow="md" withinPortal>
+          <Popover.Target>
             <Button type="button" variant="default" size="sm">
               {t('projectList.addFilter')}
               {model.filterCount > 0 ? ` · ${model.filterCount}` : ''}
             </Button>
-          )}
-        </Popover.Target>
-        <Popover.Dropdown w={300}>
-          <Stack gap="sm">
-            {compact ? (
-              <TextInput
-                aria-label={t('projectList.search')}
-                label={t('projectList.search')}
-                placeholder={t('projectList.searchPlaceholder')}
-                value={model.search}
-                onChange={(event) => handlers.onSearchChange(event.currentTarget.value)}
+          </Popover.Target>
+          <Popover.Dropdown w={300}>
+            <Stack gap="sm">
+              <MultiSelect
+                aria-label={t('filters.projectStatus')}
+                label={t('filters.projectStatus')}
+                value={model.statuses}
+                onChange={handlers.onStatusesChange}
+                data={projectStatuses.map((status) => ({
+                  value: status.id,
+                  label: projectWorkflowStatusLabel(status.id, projectStatuses, t),
+                }))}
+                searchable
+                comboboxProps={{ withinPortal: false }}
               />
-            ) : null}
-            <MultiSelect
-              aria-label={t('filters.projectStatus')}
-              label={t('filters.projectStatus')}
-              value={model.statuses}
-              onChange={handlers.onStatusesChange}
-              data={projectStatuses.map((status) => ({
-                value: status.id,
-                label: projectWorkflowStatusLabel(status.id, projectStatuses, t),
-              }))}
-              searchable
-              comboboxProps={{ withinPortal: false }}
-            />
-            <Select
-              aria-label={t('projectList.filterDateField')}
-              label={t('projectList.filterDates')}
-              placeholder={t('projectList.chooseDateField')}
-              value={model.dateField || null}
-              onChange={handlers.onDateFieldChange}
-              data={[
-                { value: 'startDate', label: t('projectList.orderStartDate') },
-                { value: 'targetDate', label: t('projectList.orderTargetDate') },
-                { value: 'created', label: t('projectList.orderCreated') },
-                { value: 'updated', label: t('projectList.orderUpdated') },
-                { value: 'completed', label: t('projectList.orderCompleted') },
-              ]}
-              clearable
-              comboboxProps={{ withinPortal: false }}
-            />
-            {model.dateField ? (
-              <Group grow>
-                <TextInput
-                  aria-label={t('projectList.dateFrom')}
-                  label={t('projectList.dateFrom')}
-                  type="date"
-                  value={model.dateFrom}
-                  onChange={(event) => handlers.onDateFromChange(event.currentTarget.value)}
-                />
-                <TextInput
-                  aria-label={t('projectList.dateTo')}
-                  label={t('projectList.dateTo')}
-                  type="date"
-                  value={model.dateTo}
-                  onChange={(event) => handlers.onDateToChange(event.currentTarget.value)}
-                />
-              </Group>
-            ) : null}
-            <MultiSelect
-              aria-label={t('projectList.filterMilestones')}
-              label={t('projectList.filterMilestones')}
-              value={model.milestones}
-              onChange={handlers.onMilestonesChange}
-              data={model.availableMilestones}
-              searchable
-              comboboxProps={{ withinPortal: false }}
-            />
-            <MultiSelect
-              aria-label={t('projectList.filterRelations')}
-              label={t('projectList.filterRelations')}
-              value={model.relations}
-              onChange={handlers.onRelationsChange}
-              data={[
-                { value: 'blocks', label: t('projectDependencies.kindOptions.blocks') },
-                { value: 'blocked_by', label: t('projectDependencies.kindOptions.blocked_by') },
-                { value: 'related', label: t('projectDependencies.kindOptions.related') },
-              ]}
-              searchable
-              comboboxProps={{ withinPortal: false }}
-            />
-            <MultiSelect
-              aria-label={t('filters.projectPriority')}
-              label={t('filters.projectPriority')}
-              value={model.priorities}
-              onChange={handlers.onPrioritiesChange}
-              data={[0, 1, 2, 3, 4].map((priority) => ({
-                value: String(priority),
-                label: t(`priority.${priority}`),
-              }))}
-              searchable
-              comboboxProps={{ withinPortal: false }}
-            />
-            <MultiSelect
-              aria-label={t('projectList.filterHealth')}
-              label={t('projectList.filterHealth')}
-              value={model.healths}
-              onChange={handlers.onHealthsChange}
-              data={['none', 'on_track', 'at_risk', 'off_track'].map((health) => ({
-                value: health,
-                label: t(`projectHealth.status.${health}`),
-              }))}
-              searchable
-              comboboxProps={{ withinPortal: false }}
-            />
-            <MultiSelect
-              aria-label={t('filters.projectLabels')}
-              label={t('filters.projectLabels')}
-              value={model.labels}
-              onChange={handlers.onLabelsChange}
-              data={model.availableLabels.map((label) => ({
-                value: label.name,
-                label: label.name,
-              }))}
-              searchable
-              comboboxProps={{ withinPortal: false }}
-            />
-            {model.filterCount > 0 ? (
-              <Button type="button" variant="subtle" size="xs" onClick={handlers.onReset}>
-                {t('projectList.clearFilters')}
-              </Button>
-            ) : null}
-          </Stack>
-        </Popover.Dropdown>
-      </Popover>
+              <Select
+                aria-label={t('projectList.filterSpecificProject')}
+                label={t('projectList.filterSpecificProject')}
+                value={model.specificProject || null}
+                onChange={handlers.onSpecificProjectChange}
+                data={model.availableProjects ?? []}
+                searchable
+                clearable
+                comboboxProps={{ withinPortal: false }}
+              />
+              <Select
+                aria-label={t('projectList.filterDateField')}
+                label={t('projectList.filterDates')}
+                placeholder={t('projectList.chooseDateField')}
+                value={model.dateField || null}
+                onChange={handlers.onDateFieldChange}
+                data={[
+                  { value: 'startDate', label: t('projectList.orderStartDate') },
+                  { value: 'targetDate', label: t('projectList.orderTargetDate') },
+                  { value: 'created', label: t('projectList.orderCreated') },
+                  { value: 'updated', label: t('projectList.orderUpdated') },
+                  { value: 'completed', label: t('projectList.orderCompleted') },
+                ]}
+                clearable
+                comboboxProps={{ withinPortal: false }}
+              />
+              {model.dateField ? (
+                <Group grow>
+                  <TextInput
+                    aria-label={t('projectList.dateFrom')}
+                    label={t('projectList.dateFrom')}
+                    type="date"
+                    value={model.dateFrom}
+                    onChange={(event) => handlers.onDateFromChange(event.currentTarget.value)}
+                  />
+                  <TextInput
+                    aria-label={t('projectList.dateTo')}
+                    label={t('projectList.dateTo')}
+                    type="date"
+                    value={model.dateTo}
+                    onChange={(event) => handlers.onDateToChange(event.currentTarget.value)}
+                  />
+                </Group>
+              ) : null}
+              <MultiSelect
+                aria-label={t('projectList.filterMilestones')}
+                label={t('projectList.filterMilestones')}
+                value={model.milestones}
+                onChange={handlers.onMilestonesChange}
+                data={model.availableMilestones}
+                searchable
+                comboboxProps={{ withinPortal: false }}
+              />
+              <MultiSelect
+                aria-label={t('projectList.filterRelations')}
+                label={t('projectList.filterRelations')}
+                value={model.relations}
+                onChange={handlers.onRelationsChange}
+                data={[
+                  { value: 'blocks', label: t('projectDependencies.kindOptions.blocks') },
+                  { value: 'blocked_by', label: t('projectDependencies.kindOptions.blocked_by') },
+                  { value: 'related', label: t('projectDependencies.kindOptions.related') },
+                ]}
+                searchable
+                comboboxProps={{ withinPortal: false }}
+              />
+              <MultiSelect
+                aria-label={t('filters.projectPriority')}
+                label={t('filters.projectPriority')}
+                value={model.priorities}
+                onChange={handlers.onPrioritiesChange}
+                data={[0, 1, 2, 3, 4].map((priority) => ({
+                  value: String(priority),
+                  label: t(`priority.${priority}`),
+                }))}
+                searchable
+                comboboxProps={{ withinPortal: false }}
+              />
+              <MultiSelect
+                aria-label={t('projectList.filterHealth')}
+                label={t('projectList.filterHealth')}
+                value={model.healths}
+                onChange={handlers.onHealthsChange}
+                data={['none', 'on_track', 'at_risk', 'off_track'].map((health) => ({
+                  value: health,
+                  label: t(`projectHealth.status.${health}`),
+                }))}
+                searchable
+                comboboxProps={{ withinPortal: false }}
+              />
+              <MultiSelect
+                aria-label={t('filters.projectLabels')}
+                label={t('filters.projectLabels')}
+                value={model.labels}
+                onChange={handlers.onLabelsChange}
+                data={model.availableLabels.map((label) => ({
+                  value: label.name,
+                  label: label.name,
+                }))}
+                searchable
+                comboboxProps={{ withinPortal: false }}
+              />
+              {model.filterCount > 0 ? (
+                <Button type="button" variant="subtle" size="xs" onClick={handlers.onReset}>
+                  {t('projectList.clearFilters')}
+                </Button>
+              ) : null}
+            </Stack>
+          </Popover.Dropdown>
+        </Popover>
+      )}
       <Popover position="bottom-start" shadow="md" withinPortal>
         <Popover.Target>
           {compact ? (

@@ -228,10 +228,10 @@ test('personal project views can be created, updated, reopened, and deleted', as
   const plannedName = `Planning ${stamp}`;
   const startedName = `Building ${stamp}`;
   const planned = await request.post('/api/projects', {
-    data: { name: plannedName, slug: `planning-${stamp}`, status: 'planned' },
+    data: { name: plannedName, slug: `planning-${stamp}`, status: 'planned', priority: 1 },
   });
   const started = await request.post('/api/projects', {
-    data: { name: startedName, slug: `building-${stamp}`, status: 'started' },
+    data: { name: startedName, slug: `building-${stamp}`, status: 'started', priority: 3 },
   });
   expect(planned.ok() && started.ok()).toBeTruthy();
 
@@ -249,6 +249,25 @@ test('personal project views can be created, updated, reopened, and deleted', as
     'aria-selected',
     'true',
   );
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('textbox', { name: 'Add Filter…' }).fill('Priority');
+  await page.getByRole('button', { name: 'Priority', exact: true }).click();
+  const builderPriorityFilter = page.getByRole('combobox', { name: 'Priority' });
+  await builderPriorityFilter.fill('Medium');
+  await page.getByRole('option', { name: 'Medium', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Priority: Medium' })).toBeVisible();
+  await page.getByRole('button', { name: 'All filters' }).click();
+  await page.getByRole('textbox', { name: 'Add Filter…' }).fill('Specific project');
+  await page.getByRole('button', { name: 'Specific project', exact: true }).click();
+  const specificProjectFilter = page.getByRole('combobox', { name: 'Specific project' });
+  await specificProjectFilter.fill(startedName);
+  await page.getByRole('option', { name: startedName, exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: `Specific project: ${startedName}` }),
+  ).toBeVisible();
+  const previewProjects = page.locator('[aria-hidden="true"] a[href^="/projects/"]');
+  await expect(previewProjects).toHaveCount(1);
+  await expect(previewProjects).toHaveAttribute('href', `/projects/building-${stamp}`);
   await page.getByRole('button', { name: 'Display options' }).click();
   const previewLayout = page.getByRole('combobox', { name: 'Project view' });
   await previewLayout.click();
@@ -282,6 +301,8 @@ test('personal project views can be created, updated, reopened, and deleted', as
     icon: 'rocket',
   });
   expect(createdView.search.status).toContain('started');
+  expect(createdView.search.priority).toContain('3');
+  expect(createdView.search.specificProject).toBe(`building-${stamp}`);
   await page.getByRole('tab', { name: 'All projects' }).click();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(startedName) })).toBeVisible();
@@ -311,6 +332,18 @@ test('personal project views can be created, updated, reopened, and deleted', as
     JSON.parse(localStorage.getItem('kotowari.project-views.v1') ?? '[]'),
   );
   expect(storedViews).toEqual([]);
+});
+
+test('project view filter menu stays within a narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 760, height: 800 });
+  await page.goto('/views/projects/new');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  const filterMenu = page.getByRole('dialog', { name: 'Add filter' });
+  await expect(filterMenu).toBeVisible();
+  const bounds = await filterMenu.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(760);
 });
 
 test('project health can be edited, filtered, and displayed in project views', async ({

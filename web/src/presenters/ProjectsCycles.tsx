@@ -176,6 +176,7 @@ export function useProjectsPagePresenter() {
   function projectViewSearch(): ProjectViewSearch {
     return {
       q: search.q,
+      specificProject: search.specificProject,
       status: search.status,
       priority: search.priority,
       health: search.health,
@@ -258,6 +259,7 @@ export function useProjectsPagePresenter() {
   const filteredProjects = useMemo(() => {
     const query = (search.q ?? '').trim().toLocaleLowerCase();
     const projectsToSort = projects.filter((project) => {
+      if (search.specificProject && project.slug !== search.specificProject) return false;
       if (
         statusFilters.length &&
         !statusFilters.includes(project.workflowStatus ?? project.status) &&
@@ -366,6 +368,7 @@ export function useProjectsPagePresenter() {
     search.direction,
     search.orderBy,
     search.q,
+    search.specificProject,
     statusFilters,
     priorityFilters,
     healthFilters,
@@ -531,7 +534,8 @@ export function useProjectsPagePresenter() {
     milestoneFilters.length +
     relationFilters.length +
     (search.dateField && (search.dateFrom || search.dateTo) ? 1 : 0) +
-    (search.closed ? 1 : 0);
+    (search.closed ? 1 : 0) +
+    (search.specificProject ? 1 : 0);
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
     statuses: statusFilters,
@@ -555,6 +559,8 @@ export function useProjectsPagePresenter() {
     milestones: milestoneFilters,
     relations: relationFilters,
     availableMilestones,
+    availableProjects: projects.map((project) => ({ value: project.slug, label: project.name })),
+    specificProject: search.specificProject ?? '',
     availableLabels: data.labels,
     filterCount,
     handlers: {
@@ -583,6 +589,8 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({
           relations: value.length ? (value as NonNullable<typeof search.relations>) : undefined,
         }),
+      onSpecificProjectChange: (value) =>
+        void updateProjectSearch({ specificProject: value || undefined }),
       onGroupByChange: (value) =>
         void updateProjectSearch({ groupBy: value as typeof search.groupBy }),
       onOrderByChange: (value) =>
@@ -612,6 +620,7 @@ export function useProjectsPagePresenter() {
       onReset: () =>
         void updateProjectSearch({
           q: undefined,
+          specificProject: undefined,
           status: undefined,
           priority: undefined,
           health: undefined,

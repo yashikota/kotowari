@@ -92,6 +92,7 @@ export function useProjectViewBuilderPresenter() {
     const milestoneFilters = search.milestones ?? [];
     const relationFilters = search.relations ?? [];
     const filtered = data.projects.filter((project) => {
+      if (search.specificProject && project.slug !== search.specificProject) return false;
       if (
         statusFilters.length &&
         !statusFilters.includes(project.workflowStatus ?? project.status) &&
@@ -352,7 +353,8 @@ export function useProjectViewBuilderPresenter() {
     milestoneFilters.length +
     relationFilters.length +
     (search.dateField && (search.dateFrom || search.dateTo) ? 1 : 0) +
-    (search.closed ? 1 : 0);
+    (search.closed ? 1 : 0) +
+    (search.specificProject ? 1 : 0);
 
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
@@ -377,6 +379,11 @@ export function useProjectViewBuilderPresenter() {
     milestones: milestoneFilters,
     relations: relationFilters,
     availableMilestones,
+    availableProjects: data.projects.map((project) => ({
+      value: project.slug,
+      label: project.name,
+    })),
+    specificProject: search.specificProject ?? '',
     availableLabels: data.labels,
     filterCount,
     handlers: {
@@ -403,6 +410,8 @@ export function useProjectViewBuilderPresenter() {
         void updateSearch({
           relations: value.length ? (value as ProjectViewSearch['relations']) : undefined,
         }),
+      onSpecificProjectChange: (value) =>
+        void updateSearch({ specificProject: value || undefined }),
       onGroupByChange: (value) =>
         void updateSearch({ groupBy: (value as ProjectViewSearch['groupBy']) || 'none' }),
       onOrderByChange: (value) =>

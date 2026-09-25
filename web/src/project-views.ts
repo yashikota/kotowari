@@ -3,6 +3,7 @@ import type { ProjectHealth, ViewIconName } from './types.ts';
 
 export type ProjectViewSearch = {
   q?: string;
+  specificProject?: string;
   status?: string[];
   priority?: string[];
   health?: Array<ProjectHealth | 'none'>;
