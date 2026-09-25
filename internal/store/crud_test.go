@@ -1272,6 +1272,24 @@ func TestSearchEmptyAndByIdentifier(t *testing.T) {
 	}
 }
 
+func TestSearchFindsIssueByCommentContent(t *testing.T) {
+	s := openTest(t)
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Unrelated issue title", Status: "todo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	const query = "comment-only-search-token"
+	if _, err := s.AddComment(issue.Identifier, "A note containing "+query+" for later reference."); err != nil {
+		t.Fatal(err)
+	}
+
+	hits, err := s.Search(query)
+	if err != nil || len(hits) != 1 || hits[0].ID != issue.Identifier ||
+		!strings.Contains(hits[0].Snippet, query) {
+		t.Fatalf("comment search %#v, err = %v", hits, err)
+	}
+}
+
 func TestUpdateWorkspaceRejectsEmptyName(t *testing.T) {
 	s := openTest(t)
 	empty := "  "

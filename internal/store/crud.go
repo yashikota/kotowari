@@ -3069,12 +3069,23 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 			return nil
 		}
 		for _, iss := range m.Issues {
-			if strings.Contains(strings.ToLower(iss.Title), q) || strings.Contains(strings.ToLower(iss.Identifier), q) || strings.Contains(strings.ToLower(iss.Body), q) {
+			commentSnippet := ""
+			for _, comment := range m.Comments[iss.Identifier] {
+				if strings.Contains(strings.ToLower(comment.Body), q) {
+					commentSnippet = searchSnippet(comment.Body, q)
+					break
+				}
+			}
+			if strings.Contains(strings.ToLower(iss.Title), q) || strings.Contains(strings.ToLower(iss.Identifier), q) || strings.Contains(strings.ToLower(iss.Body), q) || commentSnippet != "" {
+				snippet := searchSnippet(iss.Body, q)
+				if snippet == "" {
+					snippet = commentSnippet
+				}
 				hits = append(hits, SearchHit{
 					Kind: "issue", ID: iss.Identifier, Title: iss.Title, Status: iss.Status,
 					Archived:  iss.ArchivedAt != nil,
 					CreatedAt: iss.CreatedAt, UpdatedAt: iss.UpdatedAt,
-					Snippet: searchSnippet(iss.Body, q),
+					Snippet: snippet,
 				})
 			}
 		}

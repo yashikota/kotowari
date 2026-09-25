@@ -44,6 +44,15 @@ test('workspace search finds issues, projects and documents with shareable categ
       data: { title: `${query} guide`, slug: `search-${Date.now()}` },
     }),
   );
+  const commentIssue = await json<{ identifier: string }>(
+    await request.post('/api/issues', {
+      data: { title: 'Issue found from its comment', status: 'todo' },
+    }),
+  );
+  const commentOnlyQuery = `${query}-comment-only`;
+  await request.post(`/api/issues/${commentIssue.identifier}/comments`, {
+    data: { body: `Searchable note ${commentOnlyQuery}` },
+  });
 
   await page.goto('/issues');
   await page.getByRole('button', { name: 'Search' }).first().click();
@@ -180,6 +189,12 @@ test('workspace search finds issues, projects and documents with shareable categ
   await page.getByRole('button', { name: 'Clear search' }).click();
   await expect(search).toHaveValue('');
   await expect(page.getByText('Search your workspace')).toBeVisible();
+  await search.fill(commentOnlyQuery);
+  await search.press('Enter');
+  await expect(page).toHaveURL(new RegExp(`q=${commentOnlyQuery}`));
+  await expect(
+    results.getByRole('link', { name: new RegExp(commentIssue.identifier) }),
+  ).toContainText(commentOnlyQuery);
   expect(project.slug).toBeTruthy();
   expect(pageDocument.slug).toBeTruthy();
 });
