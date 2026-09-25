@@ -1117,13 +1117,22 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
       } = model;
       return (
         <SplitLayout single>
-          <Pane single>
+          <Pane single flush>
             <PageHeader
               title={t('nav.cycles')}
+              minHeight={62}
+              titleSize="md"
+              paddingX={19}
               actions={
-                <Button type="button" variant="subtle" onClick={handlers.onClick0}>
-                  {t('cycle.newCycle')}
-                </Button>
+                <ActionIcon
+                  type="button"
+                  variant="default"
+                  aria-label={t('cycle.newCycle')}
+                  title={t('cycle.newCycle')}
+                  onClick={handlers.onClick0}
+                >
+                  <IconPlus size={16} stroke={1.7} aria-hidden="true" />
+                </ActionIcon>
               }
             />
             {cycles.length === 0 ? (

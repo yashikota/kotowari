@@ -17,7 +17,7 @@
   display: none;
 }
 
-.projectIndexHeader {
+.pageOwnedHeader {
   display: none;
 }
 
@@ -39,11 +39,11 @@
     display: none;
   }
 
-  .projectIndexHeader {
+  .pageOwnedHeader {
     display: flex;
   }
 
-  .projectIndexBreadcrumb {
+  .pageOwnedBreadcrumb {
     display: none;
   }
 

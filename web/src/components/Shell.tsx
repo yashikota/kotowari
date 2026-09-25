@@ -136,7 +136,7 @@ export function ShellView({
         workspaceName,
         routeTitle,
         isIssueDetail,
-        isProjectsIndex,
+        isPageOwnedHeader,
         mobileNavigationOpen,
         moreLinksOpen,
         sidebarNavigation,
@@ -460,8 +460,8 @@ export function ShellView({
                 className={
                   isIssueDetail
                     ? styles.issueDetailHeader
-                    : isProjectsIndex
-                      ? styles.projectIndexHeader
+                    : isPageOwnedHeader
+                      ? styles.pageOwnedHeader
                       : undefined
                 }
                 style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
@@ -474,8 +474,8 @@ export function ShellView({
                   className={
                     isIssueDetail
                       ? styles.issueDetailBreadcrumb
-                      : isProjectsIndex
-                        ? styles.projectIndexBreadcrumb
+                      : isPageOwnedHeader
+                        ? styles.pageOwnedBreadcrumb
                         : undefined
                   }
                   style={{ minWidth: 0 }}

@@ -1896,6 +1896,7 @@ test('cycle navigation stays under the team and the list follows Linear chronolo
   const completedCycle = (await completedResponse.json()) as { number: number };
 
   await page.goto('/cycles');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeHidden();
   const main = page.getByRole('main');
   const upcomingRow = main.getByRole('region', { name: `Cycle ${upcomingCycle.number}` });
   const activeRow = main.getByRole('region', { name: `Cycle ${activeCycle.number}` });
