@@ -34,6 +34,7 @@ import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
 import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
 import { ProjectCreateDialog } from '../components/ProjectCreateDialog.tsx';
+import { ProjectsEmptyState } from '../components/ProjectsEmptyState.tsx';
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { ProjectUpdateFeed } from '../components/ProjectUpdateFeed.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
@@ -127,19 +128,7 @@ export function ProjectsPageView({
                 </Button>
               </Stack>
             ) : visibleProjectCount === 0 ? (
-              <Stack align="center" py="xl" gap="xs">
-                <Text c="dimmed" ta="center">
-                  {t('projectList.empty')}
-                </Text>
-                <Group gap="xs">
-                  <Button type="button" variant="default" onClick={handlers.onOpenCreateProject}>
-                    {t('projectList.newProject')}
-                  </Button>
-                  <Text size="xs" c="dimmed">
-                    {t('ui.shortcutProjectSequence')}
-                  </Text>
-                </Group>
-              </Stack>
+              <ProjectsEmptyState onCreateProject={handlers.onOpenCreateProject} />
             ) : controls.view === 'board' ? (
               <ProjectBoardView
                 model={projectBoard}
