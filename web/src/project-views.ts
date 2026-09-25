@@ -2,6 +2,14 @@ import { useEffect, useState } from 'react';
 import type { Project, ProjectHealth, ViewIconName } from './types.ts';
 
 export type ProjectSearchOperator = 'contains' | 'doesNotContain';
+export type ProjectGroupBy =
+  | 'none'
+  | 'status'
+  | 'priority'
+  | 'labels'
+  | 'health'
+  | 'startDate'
+  | 'targetDate';
 
 export type ProjectViewSearch = {
   q?: string;
@@ -13,7 +21,7 @@ export type ProjectViewSearch = {
   labels?: string[];
   templates?: string[];
   initiatives?: string[];
-  groupBy?: 'none' | 'status' | 'priority';
+  groupBy?: ProjectGroupBy;
   orderBy?:
     | 'manual'
     | 'name'

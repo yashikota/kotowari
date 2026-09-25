@@ -9,6 +9,7 @@ import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { matchesProjectTitleSummary, useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
+import { groupProjects } from '../project-grouping.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type { Initiative, Project, ProjectTemplate, ViewIconName } from '../types.ts';
 import { VIEW_ICON_NAMES } from '../components/ViewIcon.tsx';
@@ -224,32 +225,30 @@ export function useProjectViewBuilderPresenter() {
 
   const groups = useMemo(() => {
     const groupBy = search.groupBy ?? 'none';
-    if (groupBy === 'none') {
-      return filteredProjects.length ? [{ key: 'all', label: '', projects: filteredProjects }] : [];
-    }
-    const grouped = new Map<string, Project[]>();
-    for (const project of filteredProjects) {
-      const key =
-        groupBy === 'status'
-          ? (project.workflowStatus ?? project.status)
-          : String(project.priority);
-      const group = grouped.get(key) ?? [];
-      group.push(project);
-      grouped.set(key, group);
-    }
-    const keys =
-      groupBy === 'status'
-        ? statuses.map((status) => status.id).filter((key) => grouped.has(key))
-        : ['1', '2', '3', '4', '0'].filter((key) => grouped.has(key));
-    return keys.map((key) => ({
-      key,
-      label:
-        groupBy === 'status'
-          ? projectWorkflowStatusLabel(key, statuses, t)
-          : priorityLabel(Number(key)),
-      projects: grouped.get(key) ?? [],
-    }));
-  }, [filteredProjects, search.groupBy, statuses, t]);
+    return groupProjects(
+      filteredProjects,
+      groupBy,
+      statuses.map((status) => status.id),
+      (by, value) => {
+        if (value === null) {
+          if (by === 'labels') return t('projectList.groupNoLabel');
+          if (by === 'startDate' || by === 'targetDate') return t('projectList.groupNoDate');
+          if (by === 'health') return t('projectHealth.status.none');
+        }
+        if (by === 'status') return projectWorkflowStatusLabel(value ?? '', statuses, t);
+        if (by === 'priority') return priorityLabel(Number(value));
+        if (by === 'health') return t(`projectHealth.status.${value}`);
+        if (by === 'startDate' || by === 'targetDate') {
+          const [year, month, day] = (value ?? '').split('-').map(Number);
+          return new Intl.DateTimeFormat(i18n.language, {
+            dateStyle: 'medium',
+            timeZone: 'UTC',
+          }).format(new Date(Date.UTC(year, month - 1, day)));
+        }
+        return value ?? '';
+      },
+    );
+  }, [filteredProjects, search.groupBy, statuses, t, i18n.language]);
 
   const timelineStart =
     search.timelineStart ??

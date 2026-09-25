@@ -255,6 +255,84 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await expect(page).not.toHaveURL(/timelineStart=/);
 });
 
+test('project list and saved-view previews group by labels, health, and dates', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const labeledName = `Grouped project ${stamp}`;
+  const atRiskName = `At risk project ${stamp}`;
+  const unassignedName = `Unassigned project ${stamp}`;
+  const labeledSlug = `grouped-project-${stamp}`;
+  const atRiskSlug = `at-risk-project-${stamp}`;
+  const unassignedSlug = `unassigned-project-${stamp}`;
+  const labeled = await request.post('/api/projects', {
+    data: {
+      name: labeledName,
+      slug: labeledSlug,
+      labels: ['Bug', 'Feature'],
+      startDate: '2026-09-14',
+      targetDate: '2026-10-14',
+    },
+  });
+  const atRisk = await request.post('/api/projects', {
+    data: {
+      name: atRiskName,
+      slug: atRiskSlug,
+      labels: ['Feature'],
+      targetDate: '2026-11-14',
+    },
+  });
+  const unassigned = await request.post('/api/projects', {
+    data: { name: unassignedName, slug: unassignedSlug },
+  });
+  expect(labeled.ok() && atRisk.ok() && unassigned.ok()).toBeTruthy();
+  const healthUpdates = await Promise.all([
+    request.patch(`/api/projects/${labeledSlug}`, { data: { health: 'on_track' } }),
+    request.patch(`/api/projects/${atRiskSlug}`, { data: { health: 'at_risk' } }),
+  ]);
+  expect(healthUpdates.every((response) => response.ok())).toBeTruthy();
+
+  await page.goto('/projects?groupBy=labels');
+  await expect(page.getByRole('region', { name: 'Bug' })).toContainText(labeledName);
+  await expect(page.getByRole('region', { name: 'Feature' })).toContainText(labeledName);
+  await expect(page.getByRole('region', { name: 'Feature' })).toContainText(atRiskName);
+  await expect(page.getByRole('region', { name: 'No label' })).toContainText(unassignedName);
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Bug' })).toContainText(labeledName);
+
+  await page.goto('/projects?groupBy=health');
+  await expect(page.getByRole('region', { name: 'On track' })).toContainText(labeledName);
+  await expect(page.getByRole('region', { name: 'At risk' })).toContainText(atRiskName);
+  await expect(page.getByRole('region', { name: 'No update' })).toContainText(unassignedName);
+
+  await page.goto('/projects?groupBy=startDate');
+  const expectedStartDate = await page.evaluate(() =>
+    new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(
+      new Date('2026-09-14T00:00:00Z'),
+    ),
+  );
+  await expect(page.getByRole('region', { name: expectedStartDate })).toContainText(labeledName);
+  await expect(page.getByRole('region', { name: 'No date' })).toContainText(unassignedName);
+
+  await page.goto('/projects?groupBy=targetDate');
+  const expectedTargetDate = await page.evaluate(() =>
+    new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(
+      new Date('2026-10-14T00:00:00Z'),
+    ),
+  );
+  await expect(page.getByRole('region', { name: expectedTargetDate })).toContainText(labeledName);
+  await expect(page.getByRole('region', { name: 'No date' })).toContainText(unassignedName);
+
+  await page.goto('/views/projects/new?groupBy=health');
+  await expect(page.getByText('On track', { exact: true })).toBeVisible();
+  await expect(page.getByText('At risk', { exact: true })).toBeVisible();
+  await expect(page.getByText('No update', { exact: true })).toBeVisible();
+  await expect(page.getByText(labeledName)).toBeVisible();
+  await expect(page.getByText(atRiskName)).toBeVisible();
+  await expect(page.getByText(unassignedName)).toBeVisible();
+});
+
 test('personal project views can be created, updated, reopened, and deleted', async ({
   page,
   request,

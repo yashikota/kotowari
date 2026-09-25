@@ -19,6 +19,7 @@ import { ProjectFilterPicker } from './ProjectFilterPicker.tsx';
 import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
+import type { ProjectGroupBy } from '../project-views.ts';
 
 export type ProjectListControlsModel = {
   search: string;
@@ -29,7 +30,7 @@ export type ProjectListControlsModel = {
   labels: string[];
   templates: string[];
   initiatives: string[];
-  groupBy: string;
+  groupBy: ProjectGroupBy;
   orderBy: string;
   direction: string;
   closed: string;
@@ -67,7 +68,7 @@ export type ProjectListControlsModel = {
     onMilestonesChange: (value: string[]) => void;
     onRelationsChange: (value: string[]) => void;
     onSpecificProjectChange: (value: string | null) => void;
-    onGroupByChange: (value: string | null) => void;
+    onGroupByChange: (value: ProjectGroupBy | null) => void;
     onOrderByChange: (value: string | null) => void;
     onDirectionChange: (value: string | null) => void;
     onClosedChange: (value: string | null) => void;
@@ -155,6 +156,10 @@ export function ProjectListControls({
                   { value: 'none', label: t('projectList.groupNone') },
                   { value: 'status', label: t('projectList.groupStatus') },
                   { value: 'priority', label: t('projectList.groupPriority') },
+                  { value: 'labels', label: t('projectList.groupLabels') },
+                  { value: 'health', label: t('projectList.groupHealth') },
+                  { value: 'startDate', label: t('projectList.groupStartDate') },
+                  { value: 'targetDate', label: t('projectList.groupTargetDate') },
                 ]}
                 allowDeselect={false}
                 comboboxProps={{ withinPortal: false }}

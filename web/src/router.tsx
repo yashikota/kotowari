@@ -274,7 +274,17 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     /^initiative:(?:none|[\p{L}\p{N}-]+)$/u.test(value),
   );
   if (initiatives.length) result.initiatives = initiatives;
-  if (raw.groupBy === 'status' || raw.groupBy === 'priority') result.groupBy = raw.groupBy;
+  if (
+    raw.groupBy === 'none' ||
+    raw.groupBy === 'status' ||
+    raw.groupBy === 'priority' ||
+    raw.groupBy === 'labels' ||
+    raw.groupBy === 'health' ||
+    raw.groupBy === 'startDate' ||
+    raw.groupBy === 'targetDate'
+  ) {
+    result.groupBy = raw.groupBy;
+  }
   if (
     raw.orderBy === 'manual' ||
     raw.orderBy === 'name' ||
