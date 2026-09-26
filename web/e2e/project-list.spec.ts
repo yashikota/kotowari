@@ -57,6 +57,7 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
       slug: plannedSlug,
       status: 'planned',
       priority: 4,
+      lead: 'self',
       labels: ['Bug'],
       summary: `Summary for ${plannedName}`,
       description: `Detailed plan for ${plannedName}`,
@@ -198,10 +199,15 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
 
   await page.getByRole('button', { name: 'Display options' }).click();
   const summaryProperty = page.getByRole('checkbox', { name: 'Summary' });
+  const leadProperty = page.getByRole('checkbox', { name: 'Lead' });
   await summaryProperty.check();
+  await leadProperty.check();
   await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toContainText(
     `Summary for ${plannedName}`,
   );
+  await expect(
+    page.getByRole('link', { name: new RegExp(plannedName) }).getByText('You', { exact: true }),
+  ).toHaveCount(1);
   await expect(page).toHaveURL(/displayProperties=/);
   await page.reload();
   await page.getByRole('button', { name: 'Display options' }).click();
