@@ -343,13 +343,7 @@ export function IssuePropertiesPanel({
               </Group>
             </PropertyRow>
           </Box>
-        </Box>
 
-        <Box
-          role="group"
-          aria-label={t('issueProperties.cycleAndOptionalProperties')}
-          className={styles.cycleProperties}
-        >
           <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
             <PropertySelect
               compactChars={12}
@@ -371,7 +365,13 @@ export function IssuePropertiesPanel({
               nothingFoundMessage={t('issueProperties.noCyclesFound')}
             />
           </PropertyRow>
+        </Box>
 
+        <Box
+          role="group"
+          aria-label={t('issueProperties.optionalProperties')}
+          className={styles.optionalProperties}
+        >
           {optionalIssuePropertyVisibility.type ? (
             <PropertyRow label={t('field.type')} icon={<IconTag size={14} stroke={1.7} />}>
               <PropertySelect

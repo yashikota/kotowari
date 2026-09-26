@@ -18,7 +18,7 @@
   gap: 4px;
 }
 
-.cycleProperties {
+.optionalProperties {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
