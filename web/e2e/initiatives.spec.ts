@@ -79,20 +79,45 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
 
   await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('combobox', { name: 'Projects' }).selectOption('withProjects');
+  const filterDialog = page.getByRole('dialog');
+  await filterDialog.getByRole('button', { name: 'Projects' }).click();
+  await filterDialog.getByRole('combobox', { name: 'Projects' }).selectOption('withProjects');
   await expect(page.getByRole('link', { name: activeName })).toBeVisible();
   await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(
+    page.getByRole('group', { name: 'Active filters' }).getByRole('button', {
+      name: 'Projects: With projects',
+    }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Add another filter' }).click();
+  await filterDialog.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
   await page.getByRole('button', { name: 'Add filter' }).click();
-  const filterDialog = page.getByRole('dialog', { name: 'Add filter' });
+  await filterDialog.getByRole('button', { name: 'Labels' }).click();
   await filterDialog.getByRole('checkbox', { name: label, exact: true }).click();
+  await expect(
+    page.getByRole('group', { name: 'Active filters' }).getByRole('button', {
+      name: `Labels: ${label}`,
+    }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Add another filter' }).click();
+  await filterDialog.getByRole('button', { name: 'Priority' }).click();
   await filterDialog.getByRole('checkbox', { name: 'High', exact: true }).click();
+  await page.getByRole('button', { name: 'Add another filter' }).click();
+  await filterDialog.getByRole('button', { name: 'Health' }).click();
   await filterDialog.getByRole('checkbox', { name: 'On track', exact: true }).click();
   const activeFilters = new URL(page.url()).searchParams;
   expect(activeFilters.has('priorityFilter')).toBeTruthy();
   expect(activeFilters.has('healthFilter')).toBeTruthy();
   expect(activeFilters.has('labelFilter')).toBeTruthy();
+  const activeFilterGroup = page.getByRole('group', { name: 'Active filters' });
+  await expect(activeFilterGroup.getByRole('button', { name: 'Priority: High' })).toBeVisible();
+  await expect(activeFilterGroup.getByRole('button', { name: 'Health: On track' })).toBeVisible();
+  await activeFilterGroup.getByRole('button', { name: 'Remove Health filter' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.has('healthFilter')).toBeFalsy();
+  await page.getByRole('button', { name: 'Add another filter' }).click();
+  await filterDialog.getByRole('button', { name: 'Health' }).click();
+  await filterDialog.getByRole('checkbox', { name: 'On track', exact: true }).click();
   await expect(page.getByRole('link', { name: activeName })).toBeVisible();
   await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
   await page.goto('/initiatives?scope=all');
