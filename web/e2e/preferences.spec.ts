@@ -205,3 +205,24 @@ test('first day of the week preference is persisted and used by project date pic
     expect.stringMatching(/^Monday/),
   );
 });
+
+test('default home view supports Linear inbox, My issues, and current cycle destinations', async ({
+  page,
+}) => {
+  await page.goto('/config');
+  await choose(page, 'Default home view', 'Inbox');
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(page.getByRole('heading', { name: 'Inbox' })).toBeVisible();
+
+  await page.goto('/config');
+  await choose(page, 'Default home view', 'My issues');
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/issues\?assignee=self$/);
+  await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
+
+  await page.goto('/config');
+  await choose(page, 'Default home view', 'Current cycle');
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/cycles\?scope=current$/);
+});

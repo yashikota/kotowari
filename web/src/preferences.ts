@@ -11,7 +11,15 @@ export const FIRST_DAYS_OF_WEEK = [
   'saturday',
 ] as const;
 export type FirstDayOfWeek = (typeof FIRST_DAYS_OF_WEEK)[number];
-export type DefaultHome = 'home' | 'issues' | 'projects' | 'cycles' | 'agent';
+export type DefaultHome =
+  | 'home'
+  | 'inbox'
+  | 'myIssues'
+  | 'issues'
+  | 'currentCycle'
+  | 'projects'
+  | 'cycles'
+  | 'agent';
 export type CommentSubmitShortcut = 'modEnter' | 'enter';
 export type SidebarItem =
   | '/'
@@ -96,7 +104,16 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
 export const PERSONAL_PREFERENCES_KEY = 'kotowari.preferences.v1';
 export const PERSONAL_PREFERENCES_EVENT = 'kotowari:preferences-changed';
 
-const DEFAULT_HOMES: DefaultHome[] = ['home', 'issues', 'projects', 'cycles', 'agent'];
+const DEFAULT_HOMES: DefaultHome[] = [
+  'home',
+  'inbox',
+  'myIssues',
+  'issues',
+  'currentCycle',
+  'projects',
+  'cycles',
+  'agent',
+];
 const FONT_SIZES: FontSize[] = ['small', 'default', 'large'];
 const COMMENT_SHORTCUTS: CommentSubmitShortcut[] = ['modEnter', 'enter'];
 const SIDEBAR_LOCATIONS: SidebarLocation[] = ['primary', 'more', 'hidden'];
@@ -224,8 +241,14 @@ export function usePersonalPreferences() {
 
 export function defaultHomeHref(home: DefaultHome): string {
   switch (home) {
+    case 'inbox':
+      return '/inbox';
+    case 'myIssues':
+      return '/issues?assignee=self';
     case 'issues':
       return '/issues';
+    case 'currentCycle':
+      return '/cycles?scope=current';
     case 'projects':
       return '/projects';
     case 'cycles':

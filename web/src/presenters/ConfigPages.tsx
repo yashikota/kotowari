@@ -159,7 +159,10 @@ export function useConfigPagePresenter() {
       onDefaultHomeChange: (value: string | null) => {
         if (
           value === 'home' ||
+          value === 'inbox' ||
+          value === 'myIssues' ||
           value === 'issues' ||
+          value === 'currentCycle' ||
           value === 'projects' ||
           value === 'cycles' ||
           value === 'agent'

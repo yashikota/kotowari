@@ -272,7 +272,10 @@
     "autoAssignOnStartDescription": "When you move an unassigned issue into a started status, assign it to yourself.",
     "home": {
       "home": "Home",
+      "inbox": "Inbox",
+      "myIssues": "My issues",
       "issues": "Issues",
+      "currentCycle": "Current cycle",
       "projects": "Projects",
       "cycles": "Cycles",
       "agent": "Agent"

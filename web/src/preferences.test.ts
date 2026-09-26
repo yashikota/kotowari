@@ -78,8 +78,11 @@ describe('personal preferences', () => {
       commentSubmitShortcut: 'enter',
     });
     expect(defaultHomeHref('home')).toBe('/');
+    expect(defaultHomeHref('inbox')).toBe('/inbox');
+    expect(defaultHomeHref('myIssues')).toBe('/issues?assignee=self');
     expect(defaultHomeHref('agent')).toBe('/agent');
     expect(defaultHomeHref('issues')).toBe('/issues');
+    expect(defaultHomeHref('currentCycle')).toBe('/cycles?scope=current');
   });
 
   it('moves sidebar entries between primary and More and preserves their order', () => {
