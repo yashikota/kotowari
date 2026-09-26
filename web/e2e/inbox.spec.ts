@@ -309,11 +309,12 @@ test('H snoozes a focused notification and keeps it hidden after reload', async 
     )
     .toBeGreaterThan(Date.now());
   await page.reload();
+  await expect(notification).toHaveCount(0);
   await expect(
     page
       .getByRole('region', { name: 'Notifications' })
-      .getByRole('button', { name: new RegExp(`${issue.identifier}: ${title}`) }),
-  ).toHaveCount(0);
+      .getByRole('button', { name: new RegExp(`${issue.identifier}: ${title}\\. Created`) }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('menuitem', { name: 'Show snoozed' }).click();
   await expect(notification).toBeVisible();
