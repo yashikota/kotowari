@@ -430,13 +430,17 @@ export function useProjectsPagePresenter() {
         : rowsBy === 'status'
           ? projectWorkflowStatuses
               .map((status) => status.id)
-              .filter((key) =>
-                filteredProjects.some(
-                  (project) => (project.workflowStatus ?? project.status) === key,
-                ),
+              .filter(
+                (key) =>
+                  showEmptyColumns ||
+                  filteredProjects.some(
+                    (project) => (project.workflowStatus ?? project.status) === key,
+                  ),
               )
-          : ['1', '2', '3', '4', '0'].filter((key) =>
-              filteredProjects.some((project) => String(project.priority) === key),
+          : ['1', '2', '3', '4', '0'].filter(
+              (key) =>
+                showEmptyColumns ||
+                filteredProjects.some((project) => String(project.priority) === key),
             );
     const keyFor = (project: Project, by: 'status' | 'priority') =>
       by === 'status' ? (project.workflowStatus ?? project.status) : String(project.priority);
@@ -569,6 +573,32 @@ export function useProjectsPagePresenter() {
     void updateProjectSearch({ manualOrder: currentOrder });
   }
 
+  async function moveProjectOnBoard(projectSlug: string, columnKey: string, rowKey: string) {
+    if (rowsBy !== 'none' && rowsBy === columnsBy) return;
+    const project = projects.find((item) => item.slug === projectSlug);
+    if (!project) return;
+    const workflowStatus =
+      columnsBy === 'status'
+        ? columnKey
+        : rowsBy === 'status' && rowKey !== 'all'
+          ? rowKey
+          : undefined;
+    const priority =
+      columnsBy === 'priority'
+        ? Number(columnKey)
+        : rowsBy === 'priority' && rowKey !== 'all'
+          ? Number(rowKey)
+          : undefined;
+    const changes: Record<string, unknown> = {};
+    if (workflowStatus && workflowStatus !== (project.workflowStatus ?? project.status)) {
+      changes.workflowStatus = workflowStatus;
+    }
+    if (priority !== undefined && priority !== project.priority) changes.priority = priority;
+    if (!Object.keys(changes).length) return;
+    await api.patchProject(projectSlug, changes);
+    await router.invalidate();
+  }
+
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
     searchOperator: search.qOperator ?? 'contains',
@@ -670,8 +700,13 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ closed: value as typeof search.closed }),
       onViewChange: (value) =>
         void updateProjectSearch({ view: value === 'list' ? undefined : value }),
-      onColumnsByChange: (value) =>
-        void updateProjectSearch({ columnsBy: value as typeof search.columnsBy }),
+      onColumnsByChange: (value) => {
+        const nextColumnsBy = value as typeof search.columnsBy;
+        void updateProjectSearch({
+          columnsBy: nextColumnsBy,
+          ...(nextColumnsBy === rowsBy ? { rowsBy: 'none' } : {}),
+        });
+      },
       onRowsByChange: (value) =>
         void updateProjectSearch({ rowsBy: value as typeof search.rowsBy }),
       onShowEmptyColumnsChange: (value) =>
@@ -899,6 +934,7 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ timelineStart: shiftMonthKey(timelineStart, 4) }),
       onTimelineToday: () => void updateProjectSearch({ timelineStart: undefined }),
       onReorderProject: reorderProject,
+      onMoveProjectOnBoard: moveProjectOnBoard,
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
         return createProject(e);
       },

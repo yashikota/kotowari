@@ -319,6 +319,7 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (raw.view === 'timeline') result.view = 'timeline';
   if (raw.columnsBy === 'status' || raw.columnsBy === 'priority') result.columnsBy = raw.columnsBy;
   if (raw.rowsBy === 'status' || raw.rowsBy === 'priority') result.rowsBy = raw.rowsBy;
+  if (result.rowsBy === (result.columnsBy ?? 'status')) result.rowsBy = 'none';
   if (raw.showEmptyColumns === false || raw.showEmptyColumns === 'false') {
     result.showEmptyColumns = false;
   } else if (raw.showEmptyColumns === true || raw.showEmptyColumns === 'true') {

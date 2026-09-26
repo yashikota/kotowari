@@ -788,6 +788,7 @@
     "orderManual": "手動",
     "moveProject": "プロジェクト {{project}} を移動",
     "moveProjectHint": "ドラッグで並べ替え · Alt + ↑ / ↓ で移動",
+    "moveProjectOnBoardHint": "別の列へドラッグ · Alt + 矢印キーで移動",
     "orderName": "名前",
     "orderStatus": "ステータス",
     "orderPriority": "優先度",

@@ -813,6 +813,92 @@ test('manual project order can be rearranged accessibly and survives reload', as
   await expect(projectRows.nth(2)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
 });
 
+test('project board cards move across status and priority columns by drag and keyboard', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const statusProject = {
+    name: `Board status ${stamp}`,
+    slug: `board-status-${stamp}`,
+    status: 'planned',
+    priority: 3,
+  };
+  const priorityProject = {
+    name: `Board priority ${stamp}`,
+    slug: `board-priority-${stamp}`,
+    status: 'planned',
+    priority: 3,
+  };
+  for (const project of [statusProject, priorityProject]) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects?view=board&columnsBy=status');
+  const statusCard = page.locator(`a[href="/projects/${statusProject.slug}"]`);
+  await statusCard.dragTo(page.getByRole('gridcell', { name: 'In progress' }));
+  await expect
+    .poll(
+      async () =>
+        (
+          (await (await request.get(`/api/projects/${statusProject.slug}`)).json()) as {
+            workflowStatus: string;
+          }
+        ).workflowStatus,
+    )
+    .toBe('started');
+  await expect(page.getByRole('gridcell', { name: 'In progress' })).toContainText(
+    statusProject.name,
+  );
+
+  await statusCard.focus();
+  await page.keyboard.press('Alt+ArrowLeft');
+  await expect
+    .poll(
+      async () =>
+        (
+          (await (await request.get(`/api/projects/${statusProject.slug}`)).json()) as {
+            workflowStatus: string;
+          }
+        ).workflowStatus,
+    )
+    .toBe('planned');
+
+  await page.goto('/projects?view=board&columnsBy=priority');
+  const priorityCard = page.locator(`a[href="/projects/${priorityProject.slug}"]`);
+  await priorityCard.dragTo(page.getByRole('gridcell', { name: 'Urgent' }));
+  await expect
+    .poll(
+      async () =>
+        (
+          (await (await request.get(`/api/projects/${priorityProject.slug}`)).json()) as {
+            priority: number;
+          }
+        ).priority,
+    )
+    .toBe(1);
+  await expect(page.getByRole('gridcell', { name: 'Urgent' })).toContainText(priorityProject.name);
+
+  await page.goto('/projects?view=board&columnsBy=priority&rowsBy=status');
+  await page
+    .locator(`a[href="/projects/${statusProject.slug}"]`)
+    .dragTo(page.getByRole('gridcell', { name: 'Medium · In progress' }));
+  await expect
+    .poll(
+      async () =>
+        (
+          (await (await request.get(`/api/projects/${statusProject.slug}`)).json()) as {
+            workflowStatus: string;
+          }
+        ).workflowStatus,
+    )
+    .toBe('started');
+  await expect(page.getByRole('gridcell', { name: 'Medium · In progress' })).toContainText(
+    statusProject.name,
+  );
+});
+
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 800 });
   await page.goto('/views/projects/new');

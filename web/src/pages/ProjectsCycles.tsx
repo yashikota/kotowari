@@ -138,6 +138,7 @@ export function ProjectsPageView({
                 showRows={controls.rowsBy !== 'none'}
                 displayProperties={displayProperties}
                 issueCounts={projectIssueCounts}
+                onMoveProject={handlers.onMoveProjectOnBoard}
               />
             ) : controls.view === 'timeline' ? (
               <ProjectTimelineView

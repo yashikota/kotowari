@@ -190,8 +190,12 @@ export function ProjectListControls({
                   onChange={handlers.onRowsByChange}
                   data={[
                     { value: 'none', label: t('projectList.rowsNone') },
-                    { value: 'status', label: t('projectList.groupStatus') },
-                    { value: 'priority', label: t('projectList.groupPriority') },
+                    ...(model.columnsBy === 'status'
+                      ? []
+                      : [{ value: 'status', label: t('projectList.groupStatus') }]),
+                    ...(model.columnsBy === 'priority'
+                      ? []
+                      : [{ value: 'priority', label: t('projectList.groupPriority') }]),
                   ]}
                   allowDeselect={false}
                   comboboxProps={{ withinPortal: false }}

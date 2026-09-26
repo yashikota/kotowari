@@ -18,11 +18,13 @@ export function ProjectBoardView({
   showRows,
   displayProperties,
   issueCounts,
+  onMoveProject,
 }: {
   model: ProjectBoardModel;
   showRows: boolean;
   displayProperties: ProjectDisplayProperty[];
   issueCounts: Record<string, number>;
+  onMoveProject?: (projectSlug: string, columnKey: string, rowKey: string) => void;
 }) {
   const { t } = useTranslation();
   const rowHeaderWidth = showRows ? 144 : 0;
@@ -102,6 +104,21 @@ export function ProjectBoardView({
                     gap="xs"
                     p={8}
                     mih={112}
+                    onDragOver={(event) => {
+                      if (
+                        onMoveProject &&
+                        Array.from(event.dataTransfer.types).includes('text/plain')
+                      ) {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'move';
+                      }
+                    }}
+                    onDrop={(event) => {
+                      const projectSlug = event.dataTransfer.getData('text/plain');
+                      if (!projectSlug || !onMoveProject) return;
+                      event.preventDefault();
+                      onMoveProject(projectSlug, column.key, row.key);
+                    }}
                     style={{
                       borderRadius: 'var(--mantine-radius-md)',
                       background: 'var(--mantine-color-default-hover)',
@@ -113,6 +130,11 @@ export function ProjectBoardView({
                         project={project}
                         displayProperties={displayProperties}
                         issueCount={issueCounts[project.slug] ?? 0}
+                        columns={model.columns}
+                        rows={model.rows}
+                        columnKey={column.key}
+                        rowKey={row.key}
+                        onMoveProject={onMoveProject}
                       />
                     ))}
                   </Stack>
@@ -130,10 +152,20 @@ function ProjectBoardCard({
   project,
   displayProperties,
   issueCount,
+  columns,
+  rows,
+  columnKey,
+  rowKey,
+  onMoveProject,
 }: {
   project: Project;
   displayProperties: ProjectDisplayProperty[];
   issueCount: number;
+  columns: ProjectBoardModel['columns'];
+  rows: ProjectBoardModel['rows'];
+  columnKey: string;
+  rowKey: string;
+  onMoveProject?: (projectSlug: string, columnKey: string, rowKey: string) => void;
 }) {
   const { t, i18n } = useTranslation();
   const { statuses } = useProjectWorkflow();
@@ -143,7 +175,37 @@ function ProjectBoardCard({
     <Link
       to="/projects/$slug"
       params={{ slug: project.slug }}
-      style={{ color: 'inherit', textDecoration: 'none' }}
+      aria-label={project.name}
+      aria-keyshortcuts={
+        onMoveProject ? 'Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown' : undefined
+      }
+      title={onMoveProject ? t('projectList.moveProjectOnBoardHint') : undefined}
+      draggable={Boolean(onMoveProject)}
+      onDragStart={(event) => {
+        event.dataTransfer.setData('text/plain', project.slug);
+        event.dataTransfer.effectAllowed = 'move';
+      }}
+      onKeyDown={(event) => {
+        if (!event.altKey) return;
+        if (!onMoveProject) return;
+        let targetColumn = columnKey;
+        let targetRow = rowKey;
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          const index = columns.findIndex((column) => column.key === columnKey);
+          const target = columns[index + (event.key === 'ArrowLeft' ? -1 : 1)];
+          if (target) targetColumn = target.key;
+        } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+          const index = rows.findIndex((row) => row.key === rowKey);
+          const target = rows[index + (event.key === 'ArrowUp' ? -1 : 1)];
+          if (target) targetRow = target.key;
+        } else {
+          return;
+        }
+        if (targetColumn === columnKey && targetRow === rowKey) return;
+        event.preventDefault();
+        onMoveProject(project.slug, targetColumn, targetRow);
+      }}
+      style={{ color: 'inherit', textDecoration: 'none', cursor: 'grab' }}
     >
       <Card
         component="article"
