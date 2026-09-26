@@ -72,6 +72,7 @@ export type ProjectViewSearch = {
     | 'created'
     | 'updated';
   direction?: 'asc' | 'desc';
+  manualOrder?: string[];
   closed?: 'all' | 'open' | 'closed';
   view?: 'list' | 'board' | 'timeline';
   columnsBy?: 'status' | 'priority';

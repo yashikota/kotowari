@@ -246,6 +246,7 @@ export function useProjectsPagePresenter() {
       dateTo: search.dateTo,
       milestones: search.milestones,
       relations: search.relations,
+      manualOrder: search.manualOrder,
     };
   }
 
@@ -330,11 +331,20 @@ export function useProjectsPagePresenter() {
     const orderBy = search.orderBy ?? 'manual';
     const direction = search.direction === 'desc' ? -1 : 1;
     const originalOrder = new Map(projects.map((project, index) => [project.slug, index]));
+    const manualOrder = new Map((search.manualOrder ?? []).map((slug, index) => [slug, index]));
     const statusOrder = new Map(projectWorkflowStatuses.map((item, index) => [item.id, index]));
     projectsToSort.sort((left, right) => {
       let result = 0;
       if (orderBy === 'manual') {
-        result = (originalOrder.get(left.slug) ?? 0) - (originalOrder.get(right.slug) ?? 0);
+        const leftIndex = manualOrder.get(left.slug);
+        const rightIndex = manualOrder.get(right.slug);
+        if (leftIndex !== undefined || rightIndex !== undefined) {
+          if (leftIndex === undefined) return 1;
+          if (rightIndex === undefined) return -1;
+          result = leftIndex - rightIndex;
+        } else {
+          result = (originalOrder.get(left.slug) ?? 0) - (originalOrder.get(right.slug) ?? 0);
+        }
       } else if (orderBy === 'priority') {
         const rank = (value: number) => (value === 0 ? 5 : value);
         result = rank(left.priority) - rank(right.priority);
@@ -535,6 +545,30 @@ export function useProjectsPagePresenter() {
     (search.dateField && (search.dateFrom || search.dateTo) ? 1 : 0) +
     (search.closed ? 1 : 0) +
     (search.specificProject ? 1 : 0);
+  function reorderProject(source: string, target: string, direction: -1 | 1) {
+    if ((search.orderBy ?? 'manual') !== 'manual' || source === target) return;
+    const originalOrder = new Map(projects.map((project, index) => [project.slug, index]));
+    const currentOrder = projects
+      .map((project) => project.slug)
+      .sort((left, right) => {
+        const leftIndex = search.manualOrder?.indexOf(left) ?? -1;
+        const rightIndex = search.manualOrder?.indexOf(right) ?? -1;
+        if (leftIndex >= 0 || rightIndex >= 0) {
+          if (leftIndex < 0) return 1;
+          if (rightIndex < 0) return -1;
+          return leftIndex - rightIndex;
+        }
+        return (originalOrder.get(left) ?? 0) - (originalOrder.get(right) ?? 0);
+      });
+    const sourceIndex = currentOrder.indexOf(source);
+    const targetIndex = currentOrder.indexOf(target);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    currentOrder.splice(sourceIndex, 1);
+    const insertion = currentOrder.indexOf(target) + (direction > 0 ? 1 : 0);
+    currentOrder.splice(insertion, 0, source);
+    void updateProjectSearch({ manualOrder: currentOrder });
+  }
+
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
     searchOperator: search.qOperator ?? 'contains',
@@ -673,6 +707,7 @@ export function useProjectsPagePresenter() {
           relations: undefined,
           groupBy: undefined,
           orderBy: undefined,
+          manualOrder: undefined,
           direction: undefined,
           closed: undefined,
           view: undefined,
@@ -863,6 +898,7 @@ export function useProjectsPagePresenter() {
       onTimelineNext: () =>
         void updateProjectSearch({ timelineStart: shiftMonthKey(timelineStart, 4) }),
       onTimelineToday: () => void updateProjectSearch({ timelineStart: undefined }),
+      onReorderProject: reorderProject,
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
         return createProject(e);
       },

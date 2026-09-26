@@ -788,6 +788,8 @@
     "targetDate": "Target date",
     "orderBy": "Ordering",
     "orderManual": "Manual",
+    "moveProject": "Move project {{project}}",
+    "moveProjectHint": "Drag to reorder · Alt + ↑ / ↓ to move",
     "orderName": "Name",
     "orderStatus": "Status",
     "orderPriority": "Priority",

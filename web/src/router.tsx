@@ -310,6 +310,10 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     result.orderBy = raw.orderBy;
   }
   if (raw.direction === 'asc' || raw.direction === 'desc') result.direction = raw.direction;
+  const manualOrder = searchStringList(raw.manualOrder)
+    .filter((value) => /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(value))
+    .slice(0, 2000);
+  if (manualOrder.length) result.manualOrder = manualOrder;
   if (raw.closed === 'open' || raw.closed === 'closed') result.closed = raw.closed;
   if (raw.view === 'board') result.view = 'board';
   if (raw.view === 'timeline') result.view = 'timeline';

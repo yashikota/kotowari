@@ -771,6 +771,48 @@ test('advanced project latest-update filters match recent updates and never-upda
   await expect(page.getByRole('link', { name: new RegExp(neverName) })).toBeVisible();
 });
 
+test('manual project order can be rearranged accessibly and survives reload', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projects = [
+    { name: `Manual first ${stamp}`, slug: `manual-first-${stamp}` },
+    { name: `Manual second ${stamp}`, slug: `manual-second-${stamp}` },
+    { name: `Manual third ${stamp}`, slug: `manual-third-${stamp}` },
+  ];
+  for (const project of projects) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto(
+    `/projects?manualOrder=${projects.map((project) => project.slug).join('&manualOrder=')}`,
+  );
+  const firstMoveHandle = page.getByRole('button', {
+    name: `Move project ${projects[0]!.name}`,
+  });
+  await firstMoveHandle.focus();
+  await page.keyboard.press('Alt+ArrowDown');
+
+  const projectRows = page.locator(
+    `a[href="/projects/${projects[0]!.slug}"], a[href="/projects/${projects[1]!.slug}"], a[href="/projects/${projects[2]!.slug}"]`,
+  );
+  await expect(projectRows.nth(0)).toHaveAttribute('href', `/projects/${projects[1]!.slug}`);
+  await expect(projectRows.nth(1)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
+  await page
+    .getByRole('button', { name: `Move project ${projects[2]!.name}` })
+    .dragTo(page.locator(`[data-project-list-row="${projects[1]!.slug}"]`));
+  await expect(projectRows.nth(0)).toHaveAttribute('href', `/projects/${projects[2]!.slug}`);
+  await expect(projectRows.nth(1)).toHaveAttribute('href', `/projects/${projects[1]!.slug}`);
+  await expect(projectRows.nth(2)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
+  await expect(page).toHaveURL(/manualOrder=/);
+  await page.reload();
+  await expect(projectRows.nth(0)).toHaveAttribute('href', `/projects/${projects[2]!.slug}`);
+  await expect(projectRows.nth(1)).toHaveAttribute('href', `/projects/${projects[1]!.slug}`);
+  await expect(projectRows.nth(2)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
+});
+
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 800 });
   await page.goto('/views/projects/new');

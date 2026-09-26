@@ -166,6 +166,22 @@ export function ProjectsPageView({
                             project={project}
                             displayProperties={displayProperties}
                             issueCount={projectIssueCounts[project.slug] ?? 0}
+                            reorderTargets={
+                              controls.orderBy === 'manual' &&
+                              controls.view === 'list' &&
+                              !isGrouped
+                                ? projectGroups.flatMap((item) =>
+                                    item.projects.map((entry) => entry.slug),
+                                  )
+                                : []
+                            }
+                            onReorder={
+                              controls.orderBy === 'manual' &&
+                              controls.view === 'list' &&
+                              !isGrouped
+                                ? handlers.onReorderProject
+                                : undefined
+                            }
                           />
                         ))}
                       </Stack>
@@ -178,6 +194,18 @@ export function ProjectsPageView({
                           project={project}
                           displayProperties={displayProperties}
                           issueCount={projectIssueCounts[project.slug] ?? 0}
+                          reorderTargets={
+                            controls.orderBy === 'manual' && controls.view === 'list' && !isGrouped
+                              ? projectGroups.flatMap((item) =>
+                                  item.projects.map((entry) => entry.slug),
+                                )
+                              : []
+                          }
+                          onReorder={
+                            controls.orderBy === 'manual' && controls.view === 'list' && !isGrouped
+                              ? handlers.onReorderProject
+                              : undefined
+                          }
                         />
                       ))}
                     </Stack>
