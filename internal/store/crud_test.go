@@ -306,6 +306,39 @@ func TestIssueReminderRoundTripAndValidation(t *testing.T) {
 	}
 }
 
+func TestListRecentIssueActivitiesEnrichesAndLimits(t *testing.T) {
+	s := openTest(t)
+	first, err := s.CreateIssue(CreateIssueInput{Title: "first inbox issue"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := s.CreateIssue(CreateIssueInput{Title: "second inbox issue"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddComment(first.Identifier, "review this change"); err != nil {
+		t.Fatal(err)
+	}
+
+	items, err := s.ListRecentIssueActivities(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("recent activity count = %d, want 2", len(items))
+	}
+	if items[0].Action != "commented" || items[0].Identifier != first.Identifier || items[0].Title != first.Title {
+		t.Fatalf("latest activity lacks issue context: %#v", items[0])
+	}
+	if items[1].Action != "created" || items[1].Identifier != second.Identifier {
+		t.Fatalf("activity order = %#v", items)
+	}
+	allItems, err := s.ListRecentIssueActivities(0)
+	if err != nil || len(allItems) != 3 {
+		t.Fatalf("default limit activities = %#v, err = %v", allItems, err)
+	}
+}
+
 func TestIssueExternalLinksPersistAndValidate(t *testing.T) {
 	s := openTest(t)
 	created, err := s.CreateIssue(CreateIssueInput{Title: "linked issue"})

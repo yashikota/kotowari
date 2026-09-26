@@ -10,7 +10,8 @@ describe('personal preferences', () => {
       commentSubmitShortcut: 'modEnter',
       sidebarLocations: {
         '/': 'primary',
-        '/reminders': 'primary',
+        '/inbox': 'primary',
+        '/reminders': 'more',
         '/my-issues': 'primary',
         '/agent': 'primary',
         '/issues': 'primary',
@@ -25,6 +26,7 @@ describe('personal preferences', () => {
       },
       sidebarOrder: [
         '/',
+        '/inbox',
         '/reminders',
         '/my-issues',
         '/agent',

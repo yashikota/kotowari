@@ -751,6 +751,40 @@ func TestIssueTypeAndEstimateAPI(t *testing.T) {
 	}
 }
 
+func TestInboxActivitiesAPI(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"inbox issue"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create issue %d %s", created.Code, created.Body.String())
+	}
+	var issue struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &issue); err != nil {
+		t.Fatal(err)
+	}
+	comment := doJSON(t, s, http.MethodPost, "/api/issues/"+issue.Identifier+"/comments", `{"body":"agent update"}`)
+	if comment.Code != http.StatusCreated {
+		t.Fatalf("add comment %d %s", comment.Code, comment.Body.String())
+	}
+
+	rec := doJSON(t, s, http.MethodGet, "/api/inbox/activities", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("list inbox activities %d %s", rec.Code, rec.Body.String())
+	}
+	var items []struct {
+		Action     string `json:"action"`
+		Identifier string `json:"identifier"`
+		Title      string `json:"title"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &items); err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 2 || items[0].Action != "commented" || items[0].Identifier != issue.Identifier || items[0].Title != "inbox issue" {
+		t.Fatalf("inbox activities: %#v", items)
+	}
+}
+
 func TestIssueReminderAPI(t *testing.T) {
 	s := testAPI(t)
 	rec := doJSON(t, s, "POST", "/api/issues", `{"title":"reminded"}`)

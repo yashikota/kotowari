@@ -101,7 +101,10 @@ export function useShellPresenter() {
   const isIssueDetail = pathname.startsWith('/issues/');
   const isCycleDetail = pathname.startsWith('/cycles/');
   const isPageOwnedHeader =
-    pathname === '/projects' || pathname === '/cycles' || pathname === '/initiatives';
+    pathname === '/inbox' ||
+    pathname === '/projects' ||
+    pathname === '/cycles' ||
+    pathname === '/initiatives';
   const [cycleNavigationOpen, setCycleNavigationOpen] = useState(false);
   const [cycleNavigationQuery, setCycleNavigationQuery] = useState('');
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -280,6 +283,7 @@ export function useShellPresenter() {
       : focusedIssue;
   const routeTitle = (() => {
     if (pathname === '/') return 'Home';
+    if (pathname === '/inbox') return t('nav.inbox');
     if (pathname === '/search') return t('nav.search');
     if (pathname === '/reminders') return 'Reminders';
     if (pathname === '/templates') return 'Templates';
@@ -384,6 +388,9 @@ export function useShellPresenter() {
           return;
         case 'goto-search':
           await navigate({ to: '/search', search: {} });
+          return;
+        case 'goto-inbox':
+          await navigate({ to: '/inbox' });
           return;
         case 'goto-board':
           await navigate({ to: '/board', search: {} });

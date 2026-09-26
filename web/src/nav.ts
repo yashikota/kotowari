@@ -1,6 +1,21 @@
 import type { LinkProps } from '@tanstack/react-router';
 
-type NavKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'a' | 'i' | 'm' | 'r' | 't';
+type NavKey =
+  | '0'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | 'a'
+  | 'b'
+  | 'i'
+  | 'm'
+  | 'r'
+  | 't';
 
 export type NavTarget = {
   id?: string;
@@ -13,7 +28,7 @@ export type NavTarget = {
 };
 
 export const HOME_NAV: NavTarget[] = [
-  { key: '8', labelKey: 'nav.reminders', to: '/reminders', fuzzy: false },
+  { key: 'b', labelKey: 'nav.inbox', to: '/inbox', fuzzy: false },
   {
     key: 'm',
     id: '/my-issues',
@@ -34,6 +49,7 @@ export const TEAM_NAV: NavTarget[] = [
 ];
 
 export const MORE_NAV: NavTarget[] = [
+  { key: '8', labelKey: 'nav.reminders', to: '/reminders', fuzzy: false },
   { key: '3', labelKey: 'nav.board', to: '/board', search: {} },
   { key: '4', labelKey: 'nav.adrs', to: '/adrs' },
   { key: '7', labelKey: 'nav.pages', to: '/pages' },

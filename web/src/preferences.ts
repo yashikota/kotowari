@@ -5,6 +5,7 @@ export type DefaultHome = 'home' | 'issues' | 'projects' | 'cycles' | 'agent';
 export type CommentSubmitShortcut = 'modEnter' | 'enter';
 export type SidebarItem =
   | '/'
+  | '/inbox'
   | '/reminders'
   | '/agent'
   | '/my-issues'
@@ -19,6 +20,7 @@ export type SidebarItem =
   | '/recurring';
 export const SIDEBAR_ITEM_IDS = [
   '/',
+  '/inbox',
   '/reminders',
   '/my-issues',
   '/agent',
@@ -52,7 +54,8 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
   commentSubmitShortcut: 'modEnter',
   sidebarLocations: {
     '/': 'primary',
-    '/reminders': 'primary',
+    '/inbox': 'primary',
+    '/reminders': 'more',
     '/my-issues': 'primary',
     '/agent': 'primary',
     '/issues': 'primary',

@@ -10,6 +10,7 @@ import type {
   IssueRelation,
   IssueTemplate,
   IssueWorkflowStatus,
+  InboxActivity,
   Initiative,
   Label,
   Page,
@@ -212,6 +213,7 @@ export const api = {
     return req<Comment>(`/api/issues/${id}/comments`, { method: 'POST', body: form });
   },
   activities: (id: string) => req<Activity[]>(`/api/issues/${id}/activities`),
+  inboxActivities: () => req<InboxActivity[]>('/api/inbox/activities'),
   projects: () => req<Project[]>('/api/projects'),
   initiatives: () => req<Initiative[]>('/api/initiatives'),
   initiative: (slug: string) => req<Initiative>(`/api/initiatives/${encodeURIComponent(slug)}`),

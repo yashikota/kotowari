@@ -319,6 +319,11 @@ export type Activity = {
   createdAt: string;
 };
 
+export type InboxActivity = Activity & {
+  identifier: string;
+  title: string;
+};
+
 export type Workspace = {
   name: string;
   timezone: string;

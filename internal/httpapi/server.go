@@ -120,6 +120,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("PATCH /api/views/{slug}", s.patchView)
 	s.mux.HandleFunc("DELETE /api/views/{slug}", s.deleteView)
 	s.mux.HandleFunc("GET /api/issues", s.listIssues)
+	s.mux.HandleFunc("GET /api/inbox/activities", s.listInboxActivities)
 	s.mux.HandleFunc("POST /api/issues", s.createIssue)
 	s.mux.HandleFunc("GET /api/issue-templates", s.listIssueTemplates)
 	s.mux.HandleFunc("POST /api/issues/{id}/templates", s.createIssueTemplate)
@@ -1074,6 +1075,15 @@ func (s *Server) toggleCommentReaction(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) listActivities(w http.ResponseWriter, r *http.Request) {
 	out, err := s.store.ListActivities(r.PathValue("id"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) listInboxActivities(w http.ResponseWriter, r *http.Request) {
+	out, err := s.store.ListRecentIssueActivities(200)
 	if err != nil {
 		writeError(w, err)
 		return

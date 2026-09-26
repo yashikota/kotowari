@@ -2361,6 +2361,57 @@ func (s *Store) ListActivities(identifier string) ([]Activity, error) {
 	return out, err
 }
 
+// InboxActivity is an issue activity enriched with the issue identity needed
+// by the workspace inbox. It intentionally contains no user or team data: the
+// application is a single-user workspace.
+type InboxActivity struct {
+	ID         int64           `json:"id"`
+	EntityType string          `json:"entityType"`
+	EntityID   int64           `json:"entityId"`
+	Action     string          `json:"action"`
+	Payload    json.RawMessage `json:"payload"`
+	CreatedAt  string          `json:"createdAt"`
+	Identifier string          `json:"identifier"`
+	Title      string          `json:"title"`
+}
+
+// ListRecentIssueActivities returns the newest issue changes with enough
+// context to render a single-user activity inbox without an N+1 API request
+// for each issue.
+func (s *Store) ListRecentIssueActivities(limit int) ([]InboxActivity, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	var out []InboxActivity
+	err := s.snapshot(func(m *mem) error {
+		issuesByID := make(map[int64]Issue, len(m.Issues))
+		for _, issue := range m.Issues {
+			issuesByID[issue.ID] = issue
+		}
+		out = make([]InboxActivity, 0, limit)
+		for i := len(m.Activities) - 1; i >= 0 && len(out) < limit; i-- {
+			activity := m.Activities[i]
+			if activity.EntityType != "issue" {
+				continue
+			}
+			issue, ok := issuesByID[activity.EntityID]
+			if !ok {
+				continue
+			}
+			out = append(out, InboxActivity{
+				ID: activity.ID, EntityType: activity.EntityType, EntityID: activity.EntityID,
+				Action: activity.Action, Payload: activity.Payload, CreatedAt: activity.CreatedAt,
+				Identifier: issue.Identifier, Title: issue.Title,
+			})
+		}
+		return nil
+	})
+	return out, err
+}
+
 // ListCycleActivities returns status history for the issues currently assigned
 // to a cycle, newest first. The cycle progress view uses this to reconstruct
 // how work moved through the cycle without loading one activity feed per issue.

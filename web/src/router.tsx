@@ -130,6 +130,13 @@ const remindersRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/RemindersPages.tsx'), 'RemindersPage'),
 });
 
+const inboxRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/inbox',
+  loader: () => api.inboxActivities(),
+  component: lazyRouteComponent(() => import('./pages/InboxPages.tsx'), 'InboxPage'),
+});
+
 const agentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/agent',
@@ -515,6 +522,7 @@ const routeTree = rootRoute.addChildren([
   searchRoute,
   issuesRoute,
   remindersRoute,
+  inboxRoute,
   agentRoute,
   templatesRoute,
   recurringIssuesRoute,
