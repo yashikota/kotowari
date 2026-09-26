@@ -9,7 +9,7 @@ test('new projects can be created with described, dated milestones', async ({ pa
   await page.getByRole('button', { name: 'New project' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'New project' });
   await dialog.getByLabel('Project name').fill(projectName);
-  const milestones = dialog.getByRole('button', { name: 'Milestones' });
+  const milestones = dialog.getByRole('button', { name: 'Milestones', exact: true });
   await expect(milestones).toHaveAttribute('aria-expanded', 'false');
   await milestones.click();
   await expect(milestones).toHaveAttribute('aria-expanded', 'true');
