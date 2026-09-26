@@ -2461,6 +2461,12 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
   const cycle = (await created.json()) as { number: number; name: string };
 
   await page.goto(`/cycles/${cycle.number}`);
+  const datesButton = page.getByRole('button', { name: 'Dates' });
+  await expect(datesButton).toContainText('Feb 1');
+  await datesButton.click();
+  await expect(page.getByRole('dialog', { name: 'Change cycle dates' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+
   await page.evaluate(() => {
     const target = window as Window & { copiedCycleLink?: string };
     Object.defineProperty(navigator, 'clipboard', {
@@ -2494,10 +2500,11 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
   await dates.getByLabel('End date').fill('2030-02-21');
   await dates.getByRole('button', { name: 'Save' }).click();
 
-  const favoriteSwitch = page.getByRole('switch', { name: 'Add to favorites' });
-  await favoriteSwitch.focus();
-  await favoriteSwitch.press('Space');
-  await expect(favoriteSwitch).toBeChecked();
+  const favoriteButton = page.getByRole('button', { name: 'Add to favorites' });
+  await favoriteButton.focus();
+  await favoriteButton.press('Space');
+  const removeFavoriteButton = page.getByRole('button', { name: 'Remove from favorites' });
+  await expect(removeFavoriteButton).toHaveAttribute('aria-pressed', 'true');
   const favoriteLink = page
     .getByRole('navigation', { name: 'Favorites' })
     .getByRole('link', { name: 'Release planning' });
@@ -2549,7 +2556,17 @@ test('cycle details summarize scope, started, and completed work', async ({ page
 
   await page.goto(`/cycles/${cycle.number}`);
   const progress = page.getByRole('region', { name: 'Progress', exact: true });
+  const resources = page.getByRole('region', { name: 'Documents and links', exact: true });
+  await expect(resources).toBeVisible();
   await expect(progress).toBeVisible();
+  const resourcesBeforeProgress = await resources.evaluate((element) => {
+    const progressSection = document.querySelector('[aria-label="Progress"]');
+    return (
+      !!progressSection &&
+      !!(element.compareDocumentPosition(progressSection) & Node.DOCUMENT_POSITION_FOLLOWING)
+    );
+  });
+  expect(resourcesBeforeProgress).toBe(true);
   await expect(progress.getByText('Scope', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('Started', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('Completed', { exact: true }).first()).toBeVisible();
@@ -2643,7 +2660,8 @@ test('cycle details add, open, and remove documents and links', async ({ page, r
   });
 
   await page.getByRole('button', { name: 'Remove Planning notes' }).click();
-  await expect(page.getByText('No documents or links yet.')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Documents and links' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Add document or link…' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Add document or link…' }).click();
   const pageResponsePromise = page.waitForResponse((response) => {

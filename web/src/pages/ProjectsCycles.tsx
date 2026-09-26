@@ -9,18 +9,19 @@ import {
   MultiSelect,
   NativeSelect,
   Stack,
-  Switch,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
 import {
   IconExternalLink,
+  IconDotsVertical,
   IconFileText,
   IconLayoutSidebarRightCollapse,
   IconLayoutSidebarRightExpand,
   IconPlus,
   IconStack2,
+  IconStar,
   IconTrash,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -1147,8 +1148,8 @@ export function CycleDetailPageView({
               {cycleDetailsOpen ? (
                 <Pane variant="detail">
                   <Stack gap="lg">
-                    <Stack gap="xs">
-                      <Group justify="space-between" align="center" wrap="nowrap">
+                    <Stack gap="sm">
+                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
                         <NativeSelect
                           aria-label={t('field.status')}
                           value={cycle.status}
@@ -1157,46 +1158,55 @@ export function CycleDetailPageView({
                             value: s,
                             label: t(`cycle.status.${s}`),
                           }))}
-                          w={144}
+                          w={132}
                         />
-                        <Text size="xs" c="dimmed">
-                          {t('cycle.dates')}
-                        </Text>
-                      </Group>
-                      <Group justify="space-between" align="center" wrap="nowrap">
-                        <Text size="sm">
-                          {formatCalendarDate(cycle.startsAt, locale)} —{' '}
-                          {formatCalendarDate(cycle.endsAt, locale)}
-                        </Text>
                         <Button
                           type="button"
                           size="compact-xs"
-                          variant="subtle"
+                          variant="default"
+                          aria-label={t('cycle.dates')}
+                          title={t('cycle.changeDates')}
                           onClick={handlers.onOpenDates}
                         >
-                          {t('cycle.changeDates')}
+                          <Text size="xs" span>
+                            {formatCalendarDate(cycle.startsAt, locale)} —{' '}
+                            {formatCalendarDate(cycle.endsAt, locale)}
+                          </Text>
                         </Button>
                       </Group>
-                      <Group justify="space-between" align="center" wrap="nowrap" pt="xs">
-                        <Text size="md" fw={550} truncate>
+                      <Group justify="space-between" align="center" wrap="nowrap">
+                        <Text size="md" fw={600} truncate>
                           {cycle.name || t('field.cycleN', { number: cycle.number })}
                         </Text>
-                        <Group gap="xs" wrap="nowrap">
-                          <Switch
-                            aria-label={t('cycle.favorite')}
-                            checked={!!cycle.isFavorite}
-                            onChange={handlers.onToggleFavorite}
-                          />
+                        <Group gap={4} wrap="nowrap">
+                          <ActionIcon
+                            type="button"
+                            variant="subtle"
+                            color={cycle.isFavorite ? 'yellow' : 'gray'}
+                            aria-label={t(
+                              cycle.isFavorite ? 'cycle.removeFavorite' : 'cycle.favorite',
+                            )}
+                            aria-pressed={!!cycle.isFavorite}
+                            title={t(cycle.isFavorite ? 'cycle.removeFavorite' : 'cycle.favorite')}
+                            onClick={handlers.onToggleFavorite}
+                          >
+                            <IconStar
+                              size={15}
+                              stroke={1.7}
+                              fill={cycle.isFavorite ? 'currentColor' : 'none'}
+                              aria-hidden="true"
+                            />
+                          </ActionIcon>
                           <Menu withinPortal shadow="md" position="bottom-end">
                             <Menu.Target>
-                              <Button
+                              <ActionIcon
                                 type="button"
-                                size="compact-sm"
                                 variant="subtle"
                                 aria-label={t('cycle.options')}
+                                title={t('cycle.options')}
                               >
-                                {t('cycle.options')}
-                              </Button>
+                                <IconDotsVertical size={16} aria-hidden="true" />
+                              </ActionIcon>
                             </Menu.Target>
                             <Menu.Dropdown>
                               <Menu.Item onClick={handlers.onOpenMetadata}>
@@ -1241,26 +1251,8 @@ export function CycleDetailPageView({
                         </Group>
                       </Group>
                     </Stack>
-                    <CycleProgressSummary
-                      scope={data.cycleIssues.length}
-                      started={started}
-                      startedPercent={startedPercent}
-                      completed={done}
-                      completionPercent={completionPercent}
-                    />
-                    <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
-                    {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
-                    <Stack
-                      component="section"
-                      aria-label={t('cycle.resourcesHeading')}
-                      gap="sm"
-                      pt="md"
-                      style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
-                    >
+                    <Stack component="section" aria-label={t('cycle.resourcesHeading')} gap="sm">
                       <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-                        <Text size="sm" fw={550}>
-                          {t('cycle.resourcesHeading')}
-                        </Text>
                         <Menu withinPortal shadow="md" position="bottom-end">
                           <Menu.Target>
                             <Button type="button" size="compact-sm" variant="subtle">
@@ -1277,11 +1269,7 @@ export function CycleDetailPageView({
                           </Menu.Dropdown>
                         </Menu>
                       </Group>
-                      {resources.length === 0 ? (
-                        <Text size="sm" c="dimmed">
-                          {t('cycle.noResources')}
-                        </Text>
-                      ) : (
+                      {resources.length > 0 ? (
                         <Stack gap="xs" role="list" aria-label={t('cycle.resourcesHeading')}>
                           {resources.map((resource) => (
                             <Group
@@ -1321,8 +1309,17 @@ export function CycleDetailPageView({
                             </Group>
                           ))}
                         </Stack>
-                      )}
+                      ) : null}
                     </Stack>
+                    <CycleProgressSummary
+                      scope={data.cycleIssues.length}
+                      started={started}
+                      startedPercent={startedPercent}
+                      completed={done}
+                      completionPercent={completionPercent}
+                    />
+                    <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
+                    {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
                   </Stack>
                 </Pane>
               ) : null}
