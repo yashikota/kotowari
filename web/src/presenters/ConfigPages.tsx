@@ -20,6 +20,7 @@ import type {
 import { isWebCodingToolURLTemplate, useCodingToolPreferences } from '../coding-tools.ts';
 import type { CodingToolPreferences } from '../coding-tools.ts';
 import {
+  FIRST_DAYS_OF_WEEK,
   usePersonalPreferences,
   type CommentSubmitShortcut,
   type DefaultHome,
@@ -164,6 +165,10 @@ export function useConfigPagePresenter() {
           value === 'agent'
         )
           updatePreferences({ defaultHome: value as DefaultHome });
+      },
+      onFirstDayOfWeekChange: (value: string | null) => {
+        if (FIRST_DAYS_OF_WEEK.includes(value as (typeof FIRST_DAYS_OF_WEEK)[number]))
+          updatePreferences({ firstDayOfWeek: value as (typeof FIRST_DAYS_OF_WEEK)[number] });
       },
       onAutoAssignToSelfChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

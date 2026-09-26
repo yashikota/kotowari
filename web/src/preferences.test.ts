@@ -6,6 +6,7 @@ describe('personal preferences', () => {
   it('falls back safely when stored settings are missing, malformed, or outdated', () => {
     expect(parsePersonalPreferences(null)).toEqual({
       defaultHome: 'home',
+      firstDayOfWeek: 'sunday',
       autoAssignToSelf: true,
       autoAssignOnStart: false,
       fontSize: 'default',
@@ -61,6 +62,7 @@ describe('personal preferences', () => {
       parsePersonalPreferences(
         JSON.stringify({
           defaultHome: 'cycles',
+          firstDayOfWeek: 'monday',
           autoAssignToSelf: false,
           autoAssignOnStart: true,
           fontSize: 'large',
@@ -69,6 +71,7 @@ describe('personal preferences', () => {
       ),
     ).toMatchObject({
       defaultHome: 'cycles',
+      firstDayOfWeek: 'monday',
       autoAssignToSelf: false,
       autoAssignOnStart: true,
       fontSize: 'large',

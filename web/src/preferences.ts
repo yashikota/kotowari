@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export type FontSize = 'small' | 'default' | 'large';
+export const FIRST_DAYS_OF_WEEK = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+] as const;
+export type FirstDayOfWeek = (typeof FIRST_DAYS_OF_WEEK)[number];
 export type DefaultHome = 'home' | 'issues' | 'projects' | 'cycles' | 'agent';
 export type CommentSubmitShortcut = 'modEnter' | 'enter';
 export type SidebarItem =
@@ -41,6 +51,7 @@ export type SidebarLocation = 'primary' | 'more' | 'hidden';
 
 export type PersonalPreferences = {
   defaultHome: DefaultHome;
+  firstDayOfWeek: FirstDayOfWeek;
   autoAssignToSelf: boolean;
   autoAssignOnStart: boolean;
   fontSize: FontSize;
@@ -54,6 +65,7 @@ export type PersonalPreferences = {
 
 export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
   defaultHome: 'home',
+  firstDayOfWeek: 'sunday',
   autoAssignToSelf: true,
   autoAssignOnStart: false,
   fontSize: 'default',
@@ -101,6 +113,9 @@ export function parsePersonalPreferences(value: string | null): PersonalPreferen
       defaultHome: DEFAULT_HOMES.includes(parsed.defaultHome as DefaultHome)
         ? (parsed.defaultHome as DefaultHome)
         : DEFAULT_PERSONAL_PREFERENCES.defaultHome,
+      firstDayOfWeek: FIRST_DAYS_OF_WEEK.includes(parsed.firstDayOfWeek as FirstDayOfWeek)
+        ? (parsed.firstDayOfWeek as FirstDayOfWeek)
+        : DEFAULT_PERSONAL_PREFERENCES.firstDayOfWeek,
       autoAssignToSelf:
         typeof parsed.autoAssignToSelf === 'boolean'
           ? parsed.autoAssignToSelf

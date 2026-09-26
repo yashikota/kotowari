@@ -13,6 +13,7 @@ import { IconCalendarEvent, IconChevronLeft, IconChevronRight } from '@tabler/ic
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '../time.ts';
+import { FIRST_DAYS_OF_WEEK, usePersonalPreferences } from '../preferences.ts';
 import {
   parseProjectDate,
   parseStoredProjectDate,
@@ -57,6 +58,7 @@ export function ProjectDateProperty({
   onChange: (value: string) => void;
 }) {
   const { t, i18n } = useTranslation();
+  const { preferences } = usePersonalPreferences();
   const locale = i18n.resolvedLanguage || i18n.language;
   const [opened, setOpened] = useState(false);
   const [precision, setPrecision] = useState<DatePrecision>('day');
@@ -69,11 +71,12 @@ export function ProjectDateProperty({
   const year = cursorDate.getUTCFullYear();
   const month = cursorDate.getUTCMonth();
   const yearPageStart = Math.floor(year / 10) * 10;
-  const monthGrid = projectDateMonthGrid(year, month);
+  const firstDayIndex = FIRST_DAYS_OF_WEEK.indexOf(preferences.firstDayOfWeek);
+  const monthGrid = projectDateMonthGrid(year, month, firstDayIndex);
   const monthChoices = Array.from({ length: 12 }, (_, index) => index);
   const weekDays = Array.from({ length: 7 }, (_, index) =>
     new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(
-      new Date(Date.UTC(2024, 0, 7 + index)),
+      new Date(Date.UTC(2024, 0, 7 + firstDayIndex + index)),
     ),
   );
 

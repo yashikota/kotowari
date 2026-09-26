@@ -32,4 +32,14 @@ describe('project date input', () => {
     expect(dates[0]?.toISOString()).toBe('2026-08-30T00:00:00.000Z');
     expect(dates[27]?.toISOString()).toBe('2026-09-26T00:00:00.000Z');
   });
+
+  it('starts the calendar grid on the selected weekday', () => {
+    const mondayFirst = projectDateMonthGrid(2026, 8, 1);
+    expect(mondayFirst).toHaveLength(42);
+    expect(mondayFirst[0]?.toISOString()).toBe('2026-08-31T00:00:00.000Z');
+    expect(mondayFirst[6]?.getUTCDay()).toBe(0);
+
+    const saturdayFirst = projectDateMonthGrid(2026, 8, 6);
+    expect(saturdayFirst[0]?.getUTCDay()).toBe(6);
+  });
 });

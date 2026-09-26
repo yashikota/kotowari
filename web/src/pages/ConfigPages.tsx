@@ -17,6 +17,7 @@ import {
 import { IconChevronDown, IconChevronUp, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { IssueStatus, ProjectStatus } from '../types.ts';
+import { FIRST_DAYS_OF_WEEK } from '../preferences.ts';
 import { IssueStatusIcon } from '../components/issue-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -127,6 +128,16 @@ export function ConfigPageView({
                       { value: 'cycles', label: t('config.home.cycles') },
                       { value: 'agent', label: t('config.home.agent') },
                     ]}
+                  />
+                  <Select
+                    label={t('config.firstDayOfWeek')}
+                    aria-label={t('config.firstDayOfWeek')}
+                    value={preferences.firstDayOfWeek}
+                    onChange={handlers.onFirstDayOfWeekChange}
+                    data={FIRST_DAYS_OF_WEEK.map((day) => ({
+                      value: day,
+                      label: t(`config.weekday.${day}`),
+                    }))}
                   />
                   <Checkbox
                     label={t('config.autoAssignToSelf')}

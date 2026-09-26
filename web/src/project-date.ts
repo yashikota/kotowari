@@ -77,9 +77,10 @@ export function parseProjectDate(input: string, now = new Date()): string | null
   return null;
 }
 
-export function projectDateMonthGrid(year: number, monthIndex: number): Date[] {
+export function projectDateMonthGrid(year: number, monthIndex: number, firstDayOfWeek = 0): Date[] {
   const first = new Date(Date.UTC(year, monthIndex, 1));
-  const start = new Date(Date.UTC(year, monthIndex, 1 - first.getUTCDay()));
+  const weekdayOffset = (first.getUTCDay() - firstDayOfWeek + 7) % 7;
+  const start = new Date(Date.UTC(year, monthIndex, 1 - weekdayOffset));
   return Array.from(
     { length: 42 },
     (_, index) =>

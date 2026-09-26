@@ -175,3 +175,33 @@ test('moving an unassigned issue to Started can automatically assign it to yours
     })
     .toBe('self');
 });
+
+test('first day of the week preference is persisted and used by project date pickers', async ({
+  page,
+}) => {
+  await page.goto('/config');
+  const firstDay = page.getByRole('combobox', { name: 'First day of the week' });
+  await expect(firstDay).toHaveValue('Sunday');
+  await choose(page, 'First day of the week', 'Monday');
+  await page.reload();
+  await expect(firstDay).toHaveValue('Monday');
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+  const projectDialog = page.getByRole('dialog', { name: 'New project' });
+  await projectDialog.getByRole('button', { name: 'Change Start date' }).click();
+  const datePicker = page.getByRole('dialog', { name: 'Change Start date' });
+  await expect(datePicker.getByRole('columnheader')).toHaveText([
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ]);
+  await expect(datePicker.getByRole('grid').getByRole('button').first()).toHaveAttribute(
+    'aria-label',
+    expect.stringMatching(/^Monday/),
+  );
+});
