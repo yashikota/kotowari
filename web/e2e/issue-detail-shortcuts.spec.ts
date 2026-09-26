@@ -61,3 +61,46 @@ test('issue shortcuts create a sub-issue, toggle resources, and open the link fo
   await page.keyboard.press('ControlOrMeta+Alt+l');
   await expect(page.getByRole('dialog').getByRole('textbox', { name: 'URL' })).toBeVisible();
 });
+
+test('issue property shortcuts open focused status, priority, label, and estimate controls', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/issues', {
+    data: { title: `Issue property shortcuts ${Date.now()}`, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  await page.goto(`/issues/${issue.identifier}`);
+
+  const issueOptions = page.getByRole('button', { name: 'Issue options' });
+  const status = page.getByRole('combobox', { name: 'Status' });
+  await issueOptions.focus();
+  await page.keyboard.press('s');
+  await expect(status).toHaveAttribute('aria-expanded', 'true');
+  await expect(status).toBeFocused();
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(status).toHaveAttribute('aria-expanded', 'false');
+
+  const priority = page.getByRole('combobox', { name: 'Priority' });
+  await issueOptions.focus();
+  await page.keyboard.press('p');
+  await expect(priority).toHaveAttribute('aria-expanded', 'true');
+  await expect(priority).toBeFocused();
+  await page.getByRole('option', { name: 'Urgent' }).click();
+  await expect(priority).toHaveValue('Urgent');
+
+  const estimate = page.getByRole('combobox', { name: 'Estimate' });
+  await issueOptions.focus();
+  await page.keyboard.press('Shift+e');
+  await expect(estimate).toHaveAttribute('aria-expanded', 'true');
+  await expect(estimate).toBeFocused();
+  await page.keyboard.press('Escape');
+
+  await issueOptions.focus();
+  await page.keyboard.press('l');
+  const labelSearch = page.getByRole('textbox', { name: 'New label' });
+  await expect(labelSearch).toBeVisible();
+  await expect(labelSearch).toBeFocused();
+});

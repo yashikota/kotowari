@@ -228,6 +228,10 @@ export function globalNavigationSequenceFromKeyboard(
 
 export type IssueDetailShortcut =
   | 'assign-self'
+  | 'open-status'
+  | 'open-priority'
+  | 'open-labels'
+  | 'open-estimate'
   | 'toggle-favorite'
   | 'rename'
   | 'open-due-date'
@@ -261,9 +265,13 @@ export function issueDetailShortcutFromKeyboard(event: {
   if (event.shiftKey) {
     if (key === 'd') return 'open-due-date';
     if (key === 'r') return 'rename';
+    if (key === 'e') return 'open-estimate';
     return null;
   }
   if (key === 'i') return 'assign-self';
+  if (key === 's') return 'open-status';
+  if (key === 'p') return 'open-priority';
+  if (key === 'l') return 'open-labels';
   return null;
 }
 

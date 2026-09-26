@@ -26,7 +26,7 @@ import {
   IconUser,
   IconX,
 } from '@tabler/icons-react';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { priorityLabel } from '../i18n/labels.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
@@ -42,6 +42,7 @@ export function IssuePropertiesPanel({
   model: Pick<
     IssueDetailModel,
     | 'issue'
+    | 'keyboardPropertyMenu'
     | 'optionalIssuePropertyVisibility'
     | 'projects'
     | 'milestones'
@@ -58,6 +59,7 @@ export function IssuePropertiesPanel({
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const {
     issue,
+    keyboardPropertyMenu,
     optionalIssuePropertyVisibility,
     projects,
     milestones,
@@ -127,6 +129,9 @@ export function IssuePropertiesPanel({
             compactChars={12}
             compactLabel={statusLabel}
             aria-label={t('field.status')}
+            dropdownOpened={keyboardPropertyMenu === 'status'}
+            onDropdownOpen={() => handlers.onOpenIssuePropertyMenu('status')}
+            onDropdownClose={handlers.onCloseIssuePropertyMenu}
             value={issue.workflowStatus ?? issue.status}
             onChange={handlers.Status_onChange5}
             data={workflowStatuses.map((status) => ({
@@ -153,6 +158,9 @@ export function IssuePropertiesPanel({
             compactChars={12}
             compactLabel={priorityValueLabel}
             aria-label={t('field.priority')}
+            dropdownOpened={keyboardPropertyMenu === 'priority'}
+            onDropdownOpen={() => handlers.onOpenIssuePropertyMenu('priority')}
+            onDropdownClose={handlers.onCloseIssuePropertyMenu}
             value={String(issue.priority)}
             onChange={handlers.Priority_onChange6}
             data={[0, 1, 2, 3, 4].map((priority) => ({
@@ -207,6 +215,9 @@ export function IssuePropertiesPanel({
             compactChars={12}
             compactLabel={estimateValueLabel}
             aria-label={t('field.estimate')}
+            dropdownOpened={keyboardPropertyMenu === 'estimate'}
+            onDropdownOpen={() => handlers.onOpenIssuePropertyMenu('estimate')}
+            onDropdownClose={handlers.onCloseIssuePropertyMenu}
             value={issue.estimate == null ? 'none' : String(issue.estimate)}
             onChange={handlers.Estimate_onChange15}
             data={[
@@ -245,7 +256,14 @@ export function IssuePropertiesPanel({
                 </UnstyledButton>
               ))}
 
-              <Popover position="bottom-end" shadow="md" width={264} withinPortal>
+              <Popover
+                position="bottom-end"
+                shadow="md"
+                width={264}
+                withinPortal
+                opened={keyboardPropertyMenu === 'labels'}
+                onChange={(opened) => handlers.onOpenIssuePropertyMenu(opened ? 'labels' : null)}
+              >
                 <Popover.Target>
                   <ActionIcon
                     aria-label={t('issueProperties.addLabels')}
@@ -261,6 +279,7 @@ export function IssuePropertiesPanel({
                   <TextInput
                     aria-label={t('issueProperties.newLabel')}
                     placeholder={t('issueProperties.findOrCreateLabel')}
+                    autoFocus={keyboardPropertyMenu === 'labels'}
                     value={labelName}
                     onChange={handlers.New_label_onChange12}
                     onKeyDown={handlers.New_label_onKeyDown13}
@@ -495,6 +514,10 @@ function PropertySelect({
   compactLabel,
   ...props
 }: SelectProps<string> & { compactChars?: number; compactLabel?: string }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (props.dropdownOpened) inputRef.current?.focus();
+  }, [props.dropdownOpened]);
   const labelWidth = Array.from(compactLabel ?? props.value ?? '').reduce(
     (width, character) => width + ((character.codePointAt(0) ?? 0) <= 0xff ? 1 : 2),
     0,
@@ -503,6 +526,7 @@ function PropertySelect({
   return (
     <Select
       {...props}
+      ref={inputRef}
       size="sm"
       className={styles.select}
       classNames={{ input: styles.input, option: styles.option, dropdown: styles.dropdown }}

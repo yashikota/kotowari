@@ -478,6 +478,10 @@ describe('issue detail keyboard shortcuts', () => {
 
   it.each([
     ['i', {}, 'assign-self'],
+    ['s', {}, 'open-status'],
+    ['p', {}, 'open-priority'],
+    ['l', {}, 'open-labels'],
+    ['E', { shiftKey: true }, 'open-estimate'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['D', { shiftKey: true }, 'open-due-date'],
     ['R', { shiftKey: true }, 'rename'],

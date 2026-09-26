@@ -1631,6 +1631,18 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'assign-self':
           void sendIntent('Assignee_onChange', ['self']);
           break;
+        case 'open-status':
+          void sendIntent('onOpenIssuePropertyMenu', ['status']);
+          break;
+        case 'open-priority':
+          void sendIntent('onOpenIssuePropertyMenu', ['priority']);
+          break;
+        case 'open-labels':
+          void sendIntent('onOpenIssuePropertyMenu', ['labels']);
+          break;
+        case 'open-estimate':
+          void sendIntent('onOpenIssuePropertyMenu', ['estimate']);
+          break;
         case 'toggle-favorite':
           void sendIntent('Favorite_onClick29', []);
           break;

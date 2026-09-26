@@ -29,6 +29,7 @@ const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
 
 type RelatedIssueKind = 'issue' | 'subIssue' | 'parent' | 'blocked' | 'blocking';
 export type IssueOptionalProperty = 'dueDate' | 'milestone' | 'parent' | 'type';
+export type IssuePropertyMenu = 'status' | 'priority' | 'labels' | 'estimate' | null;
 type OptionalPropertyOverrides = Record<string, Partial<Record<IssueOptionalProperty, boolean>>>;
 type MarkAsKind =
   | 'parentOf'
@@ -124,6 +125,7 @@ export function useIssueDetailPresenter({
   const [customReminderOpen, setCustomReminderOpen] = useState(false);
   const [customReminderValue, setCustomReminderValue] = useState('');
   const [issueOptionsOpen, setIssueOptionsOpen] = useState(false);
+  const [keyboardPropertyMenu, setKeyboardPropertyMenu] = useState<IssuePropertyMenu>(null);
   const [relatedIssueKind, setRelatedIssueKind] = useState<RelatedIssueKind | null>(null);
   const [relatedIssueTitle, setRelatedIssueTitle] = useState('');
   const [markAsKind, setMarkAsKind] = useState<MarkAsKind | null>(null);
@@ -748,6 +750,7 @@ export function useIssueDetailPresenter({
     navigationTotal: navigationIds.length,
     issueReturnTo,
     issue,
+    keyboardPropertyMenu,
     optionalIssuePropertyVisibility,
     issues,
     timeline,
@@ -882,6 +885,8 @@ export function useIssueDetailPresenter({
       Issue_title_onBlur4: () => patch({ title: issue.title }),
       Status_onChange5: (value: string | null) =>
         value ? patch({ workflowStatus: value }) : undefined,
+      onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setKeyboardPropertyMenu(property),
+      onCloseIssuePropertyMenu: () => setKeyboardPropertyMenu(null),
       Assignee_onChange: (value: string | null) =>
         patch({ assignee: value === 'self' || value === 'agent' ? value : null }),
       Type_onChange14: (value: string | null) =>
