@@ -914,7 +914,9 @@ test('project board cards move across status and priority columns by drag and ke
     )
     .toBe('planned');
 
-  await page.goto('/projects?view=board&columnsBy=priority&rowsBy=status');
+  await page.goto(
+    `/projects?view=board&columnsBy=priority&rowsBy=status&q=${encodeURIComponent(statusProject.name)}`,
+  );
   await page
     .locator(`a[href="/projects/${statusProject.slug}"]`)
     .dragTo(page.locator('[data-project-board-cell="3:started"]'), {

@@ -31,7 +31,30 @@ export function ProjectBoardView({
   const templateColumns = `${showRows ? `${rowHeaderWidth}px ` : ''}repeat(${model.columns.length}, minmax(248px, 1fr))`;
 
   return (
-    <Box role="grid" aria-label={t('projectList.projectBoard')} style={{ overflowX: 'auto' }}>
+    <Box
+      role="grid"
+      aria-label={t('projectList.projectBoard')}
+      style={{ overflowX: 'auto' }}
+      onDragOverCapture={(event) => {
+        if (!onMoveProject) return;
+        const target = event.target;
+        if (!(target instanceof Element) || !target.closest('[data-project-board-cell]')) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
+      onDropCapture={(event) => {
+        if (!onMoveProject) return;
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const cell = target.closest<HTMLElement>('[data-project-board-cell]');
+        const projectSlug = event.dataTransfer.getData('text/plain');
+        const [columnKey, rowKey] = cell?.dataset.projectBoardCell?.split(':') ?? [];
+        if (!cell || !projectSlug || !columnKey || !rowKey) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onMoveProject(projectSlug, columnKey, rowKey);
+      }}
+    >
       <Box style={{ minWidth: `${rowHeaderWidth + model.columns.length * 256}px` }}>
         <Box
           role="row"
@@ -105,21 +128,6 @@ export function ProjectBoardView({
                     gap="xs"
                     p={8}
                     mih={112}
-                    onDragOver={(event) => {
-                      if (
-                        onMoveProject &&
-                        Array.from(event.dataTransfer.types).includes('text/plain')
-                      ) {
-                        event.preventDefault();
-                        event.dataTransfer.dropEffect = 'move';
-                      }
-                    }}
-                    onDrop={(event) => {
-                      const projectSlug = event.dataTransfer.getData('text/plain');
-                      if (!projectSlug || !onMoveProject) return;
-                      event.preventDefault();
-                      onMoveProject(projectSlug, column.key, row.key);
-                    }}
                     style={{
                       borderRadius: 'var(--mantine-radius-md)',
                       background: 'var(--mantine-color-default-hover)',
@@ -185,19 +193,6 @@ function ProjectBoardCard({
       onDragStart={(event) => {
         event.dataTransfer.setData('text/plain', project.slug);
         event.dataTransfer.effectAllowed = 'move';
-      }}
-      onDragOver={(event) => {
-        if (!onMoveProject || !Array.from(event.dataTransfer.types).includes('text/plain')) return;
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-      }}
-      onDrop={(event) => {
-        if (!onMoveProject) return;
-        const sourceSlug = event.dataTransfer.getData('text/plain');
-        if (!sourceSlug || sourceSlug === project.slug) return;
-        event.preventDefault();
-        event.stopPropagation();
-        onMoveProject(sourceSlug, columnKey, rowKey);
       }}
       onKeyDown={(event) => {
         if (!event.altKey) return;
