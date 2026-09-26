@@ -16,20 +16,27 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   expect(bounds!.height).toBeGreaterThan(750);
 
   const name = dialog.getByRole('textbox', { name: 'Project name' });
+  const template = dialog.getByRole('combobox', { name: 'Project template' });
   const summary = dialog.getByRole('textbox', { name: 'Summary' });
   const status = dialog.getByLabel('Status');
   const description = dialog.getByRole('textbox', { name: 'Description' });
-  const [nameBounds, summaryBounds, statusBounds, descriptionBounds] = await Promise.all([
-    name.boundingBox(),
-    summary.boundingBox(),
-    status.boundingBox(),
-    description.boundingBox(),
-  ]);
+  const [nameBounds, templateBounds, summaryBounds, statusBounds, descriptionBounds] =
+    await Promise.all([
+      name.boundingBox(),
+      template.boundingBox(),
+      summary.boundingBox(),
+      status.boundingBox(),
+      description.boundingBox(),
+    ]);
 
   expect(nameBounds).not.toBeNull();
+  expect(templateBounds).not.toBeNull();
   expect(summaryBounds).not.toBeNull();
   expect(statusBounds).not.toBeNull();
   expect(descriptionBounds).not.toBeNull();
+  expect(
+    Math.abs(nameBounds!.y + nameBounds!.height - (templateBounds!.y + templateBounds!.height)),
+  ).toBeLessThan(4);
   expect(nameBounds!.y).toBeLessThan(summaryBounds!.y);
   expect(summaryBounds!.y).toBeLessThan(statusBounds!.y);
   expect(statusBounds!.y).toBeLessThan(descriptionBounds!.y);
@@ -48,7 +55,16 @@ test('project creation wraps controls on a narrow viewport', async ({ page }) =>
   expect(bounds!.width).toBeGreaterThan(340);
   expect(bounds!.width).toBeLessThanOrEqual(390);
   await expect(dialog.getByRole('textbox', { name: 'Project name' })).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: 'Project template' })).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Create project' })).toBeInViewport();
+
+  const [nameBounds, templateBounds] = await Promise.all([
+    dialog.getByRole('textbox', { name: 'Project name' }).boundingBox(),
+    dialog.getByRole('combobox', { name: 'Project template' }).boundingBox(),
+  ]);
+  expect(nameBounds).not.toBeNull();
+  expect(templateBounds).not.toBeNull();
+  expect(templateBounds!.y).toBeGreaterThan(nameBounds!.y);
 
   const formFits = await dialog.getByRole('textbox', { name: 'Project name' }).evaluate((name) => {
     const form = name.closest('form');

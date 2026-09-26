@@ -82,56 +82,64 @@ export function ProjectCreateDialog({
       >
         <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <Stack p="lg" gap="md">
-            <Group align="flex-end" wrap="nowrap">
-              <Select
-                label={t('projectTemplates.chooseTemplate')}
-                placeholder={t('projectTemplates.startBlank')}
-                value={selectedProjectTemplate}
-                onChange={handlers.onProjectTemplateChange}
-                data={projectTemplates.map((template) => ({
-                  value: template.slug,
-                  label: template.name,
-                }))}
-                searchable
-                clearable
-                style={{ flex: 1 }}
-                comboboxProps={{ withinPortal: false }}
-              />
-              {selectedProjectTemplate && (
-                <ActionIcon
-                  type="button"
-                  variant="default"
-                  color="red"
-                  aria-label={t('projectTemplates.deleteSelected')}
-                  title={t('projectTemplates.deleteSelected')}
-                  onClick={handlers.onDeleteProjectTemplate}
-                >
-                  <IconTrash size={15} stroke={1.7} aria-hidden="true" />
-                </ActionIcon>
-              )}
-            </Group>
-            <Group align="flex-end" wrap="nowrap">
-              <ProjectIconPicker
-                icon={icon}
-                color={iconColor}
-                onChange={handlers.onProjectIconChange}
-                onColorChange={handlers.onProjectIconColorChange}
-              />
-              <TextInput
-                ref={projectNameRef}
-                autoFocus
-                data-autofocus
-                required
-                maxLength={120}
-                style={{ flex: 1 }}
-                aria-label={t('modal.projectName')}
-                placeholder={t('modal.projectName')}
-                value={name}
-                onChange={handlers.New_project_name_onChange1}
-                size="xl"
-                variant="unstyled"
-                styles={{ input: { fontSize: 28, fontWeight: 600, lineHeight: 1.2 } }}
-              />
+            <Group align="flex-end" gap="sm" wrap="wrap">
+              <Group align="flex-end" wrap="nowrap" style={{ flex: '1 1 360px', minWidth: 0 }}>
+                <ProjectIconPicker
+                  icon={icon}
+                  color={iconColor}
+                  onChange={handlers.onProjectIconChange}
+                  onColorChange={handlers.onProjectIconColorChange}
+                />
+                <TextInput
+                  ref={projectNameRef}
+                  autoFocus
+                  data-autofocus
+                  required
+                  maxLength={120}
+                  style={{ flex: 1, minWidth: 0 }}
+                  aria-label={t('modal.projectName')}
+                  placeholder={t('modal.projectName')}
+                  value={name}
+                  onChange={handlers.New_project_name_onChange1}
+                  size="xl"
+                  variant="unstyled"
+                  styles={{ input: { fontSize: 28, fontWeight: 600, lineHeight: 1.2 } }}
+                />
+              </Group>
+              <Group
+                align="flex-end"
+                gap="xs"
+                wrap="nowrap"
+                style={{ flex: '0 1 240px', minWidth: 0 }}
+              >
+                <Select
+                  aria-label={t('projectTemplates.chooseTemplate')}
+                  placeholder={t('projectTemplates.startBlank')}
+                  value={selectedProjectTemplate}
+                  onChange={handlers.onProjectTemplateChange}
+                  data={projectTemplates.map((template) => ({
+                    value: template.slug,
+                    label: template.name,
+                  }))}
+                  searchable
+                  clearable
+                  size="xs"
+                  style={{ flex: 1, minWidth: 0 }}
+                  comboboxProps={{ withinPortal: false }}
+                />
+                {selectedProjectTemplate && (
+                  <ActionIcon
+                    type="button"
+                    variant="default"
+                    color="red"
+                    aria-label={t('projectTemplates.deleteSelected')}
+                    title={t('projectTemplates.deleteSelected')}
+                    onClick={handlers.onDeleteProjectTemplate}
+                  >
+                    <IconTrash size={15} stroke={1.7} aria-hidden="true" />
+                  </ActionIcon>
+                )}
+              </Group>
             </Group>
             <TextInput
               aria-label={t('modal.projectSummary')}
