@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   DEFAULT_INBOX_STATE,
+  INBOX_PRIORITY_TYPES,
+  inboxPriorityType,
   inboxSnoozeUntil,
   parseInboxState,
   sortInboxActivities,
@@ -36,11 +38,58 @@ describe('personal inbox state', () => {
       snoozedUntil: { 8: 1_800_000_000_000 },
       density: 'compact',
       groupByDate: false,
+      unreadGrouping: 'none',
       showSnoozed: true,
       showUnreadFirst: true,
       ordering: 'oldest',
+      priorityInboxEnabled: false,
+      priorityTypes: [...INBOX_PRIORITY_TYPES],
+      badgeCount: 'all',
+      priorityView: 'priority',
     });
     expect(parseInboxState(serializeInboxState(parsed))).toEqual(parsed);
+  });
+
+  it('normalizes priority inbox settings without accepting unknown categories', () => {
+    const parsed = parseInboxState(
+      JSON.stringify({
+        priorityInboxEnabled: true,
+        priorityTypes: ['replies', 'replies', 'unknown', 'issueActivity'],
+        badgeCount: 'priority',
+        priorityView: 'other',
+        unreadGrouping: 'focus',
+      }),
+    );
+    expect(parsed).toMatchObject({
+      priorityInboxEnabled: true,
+      priorityTypes: ['replies', 'issueActivity'],
+      badgeCount: 'priority',
+      priorityView: 'other',
+      unreadGrouping: 'focus',
+    });
+    expect(parseInboxState(serializeInboxState(parsed))).toEqual(parsed);
+  });
+
+  it('classifies personal issue activity into the supported priority inbox categories', () => {
+    expect(
+      inboxPriorityType({
+        entityType: 'issue',
+        action: 'assignee_changed',
+        payload: { to: 'self' },
+      }),
+    ).toBe('assignedToYou');
+    expect(inboxPriorityType({ entityType: 'issue', action: 'commented', payload: {} })).toBe(
+      'replies',
+    );
+    expect(inboxPriorityType({ entityType: 'issue', action: 'status_changed', payload: {} })).toBe(
+      'issueActivity',
+    );
+    expect(
+      inboxPriorityType({ entityType: 'project', action: 'status_update_posted', payload: {} }),
+    ).toBe('projectUpdates');
+    expect(inboxPriorityType({ entityType: 'page', action: 'created', payload: {} })).toBe(
+      'documentActivity',
+    );
   });
 
   it('calculates one-hour, later-today, tomorrow, and next-week snoozes in local time', () => {

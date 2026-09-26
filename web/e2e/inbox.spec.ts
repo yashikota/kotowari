@@ -168,6 +168,103 @@ test('inbox display options show unread first and persist ordering', async ({ pa
   await expect(issueNotifications.first()).toHaveAttribute('aria-label', /Created/);
 });
 
+test('priority inbox splits activity by type and Focus groups unread notifications', async ({
+  page,
+  request,
+}) => {
+  const title = `Inbox priority ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  const comment = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body: 'A reply that can be moved to Other.' },
+  });
+  expect(comment.ok()).toBeTruthy();
+  const activitiesResponse = await request.get('/api/inbox/activities');
+  expect(activitiesResponse.ok()).toBeTruthy();
+  const activities = (await activitiesResponse.json()) as { action: string }[];
+  const repliesCount = activities.filter((activity) =>
+    activity.action.startsWith('comment'),
+  ).length;
+  const priorityCount = activities.length;
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('kotowari.inbox.v1'));
+  await page.goto('/inbox');
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  const issueNotifications = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}`),
+  });
+  await expect(issueNotifications).toHaveCount(2);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Enable priority inbox' }).click();
+  await page.keyboard.press('Escape');
+  const priorityTab = page.getByRole('tab', { name: /Priority/ });
+  const otherTab = page.getByRole('tab', { name: /Other/ });
+  await expect(priorityTab).toContainText(String(priorityCount));
+  await expect(otherTab).toContainText('0');
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Badge count' }).hover();
+  await page.getByRole('menuitem', { name: 'None', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await expect(priorityTab).toHaveText('Priority');
+  await expect(otherTab).toHaveText('Other');
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Badge count' }).hover();
+  await page.getByRole('menuitem', { name: 'Priority & Other' }).click();
+  await page.keyboard.press('Escape');
+  await expect(priorityTab).toContainText(String(priorityCount));
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Include in priority inbox' }).hover();
+  await page.getByRole('menuitem', { name: 'Replies' }).click();
+  await page.keyboard.press('Escape');
+  await expect(priorityTab).toContainText(String(priorityCount - repliesCount));
+  await expect(otherTab).toContainText(String(repliesCount));
+  await otherTab.click();
+  await expect(issueNotifications).toHaveCount(1);
+  await expect(issueNotifications.first()).toHaveAttribute('aria-label', /Added a note/);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Include in priority inbox' }).hover();
+  await page.getByRole('menuitem', { name: 'All', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await priorityTab.click();
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Group unreads by' }).hover();
+  await page.getByRole('menuitem', { name: 'Focus' }).click();
+  await page.keyboard.press('Escape');
+  const unreadGroup = notifications.getByRole('region', { name: 'Unread' });
+  const unreadToggle = unreadGroup.getByRole('button', { name: 'Unread' });
+  await expect(unreadToggle).toHaveAttribute('aria-expanded', 'true');
+  await unreadToggle.click();
+  await expect(unreadGroup.locator('[data-inbox-activity-id]')).toHaveCount(0);
+  await unreadToggle.click();
+  await expect(unreadGroup.locator('[data-inbox-activity-id]')).toHaveCount(priorityCount);
+  const currentIssueNotifications = unreadGroup.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}`),
+  });
+  await expect(currentIssueNotifications).toHaveCount(2);
+  await currentIssueNotifications.first().click();
+  await expect(unreadGroup.locator('[data-inbox-activity-id]')).toHaveCount(priorityCount - 1);
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kotowari.inbox.v1') ?? '{}')))
+    .toMatchObject({
+      priorityInboxEnabled: true,
+      priorityTypes: expect.arrayContaining(['replies']),
+      priorityView: 'priority',
+      unreadGrouping: 'focus',
+    });
+
+  await page.reload();
+  await expect(unreadGroup.locator('[data-inbox-activity-id]')).toHaveCount(priorityCount - 1);
+});
+
 test('H snoozes a focused notification and keeps it hidden after reload', async ({
   page,
   request,

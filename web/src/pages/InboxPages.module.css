@@ -15,6 +15,11 @@
   white-space: nowrap;
 }
 
+.priorityTabs {
+  flex: 0 0 38px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
 .layout {
   display: grid;
   flex: 1 1 auto;

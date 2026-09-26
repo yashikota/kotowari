@@ -8,8 +8,10 @@ import {
   inboxSnoozeUntil,
   INBOX_STATE_KEY,
   parseInboxState,
+  splitPriorityInboxActivities,
   sortInboxActivities,
   serializeInboxState,
+  type InboxPriorityType,
   type InboxSnoozePreset,
   type InboxState,
 } from '../inbox-state.ts';
@@ -39,6 +41,7 @@ export function useInboxPresenter() {
   const activities = useLoaderData({ from: '/inbox' }) as InboxActivity[];
   const [inboxState, setInboxState] = useState(readInboxState);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [focusUnreadCollapsed, setFocusUnreadCollapsed] = useState(false);
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [filter, setFilter] = useState<InboxFilter>('all');
   const [commentPreview, setCommentPreview] = useState('');
@@ -53,7 +56,7 @@ export function useInboxPresenter() {
     });
   }
 
-  const visibleActivities = useMemo(
+  const filteredActivities = useMemo(
     () =>
       sortInboxActivities(
         activities.filter(
@@ -77,6 +80,20 @@ export function useInboxPresenter() {
       onlyUnread,
     ],
   );
+  const priorityActivities = useMemo(
+    () => splitPriorityInboxActivities(filteredActivities, inboxState.priorityTypes),
+    [filteredActivities, inboxState.priorityTypes],
+  );
+  const visibleActivities = inboxState.priorityInboxEnabled
+    ? priorityActivities[inboxState.priorityView]
+    : filteredActivities;
+  const unreadActivities = activities.filter(
+    (activity) =>
+      !inboxState.readIds.includes(activity.id) &&
+      !inboxState.archivedIds.includes(activity.id) &&
+      !(inboxState.snoozedUntil[activity.id] > Date.now()),
+  );
+  const unreadBuckets = splitPriorityInboxActivities(unreadActivities, inboxState.priorityTypes);
   const selectedActivity = activities.find((activity) => activity.id === selectedId) ?? null;
   useEffect(() => {
     let active = true;
@@ -105,12 +122,7 @@ export function useInboxPresenter() {
       active = false;
     };
   }, [selectedActivity]);
-  const unreadCount = activities.filter(
-    (activity) =>
-      !inboxState.readIds.includes(activity.id) &&
-      !inboxState.archivedIds.includes(activity.id) &&
-      !(inboxState.snoozedUntil[activity.id] > Date.now()),
-  ).length;
+  const unreadCount = unreadActivities.length;
 
   useEffect(() => {
     const deadlines = Object.values(inboxState.snoozedUntil);
@@ -183,6 +195,32 @@ export function useInboxPresenter() {
       updateInboxState((current) => ({ ...current, ordering })),
     onToggleGrouping: () =>
       updateInboxState((current) => ({ ...current, groupByDate: !current.groupByDate })),
+    onSetUnreadGrouping: (unreadGrouping: InboxState['unreadGrouping']) =>
+      updateInboxState((current) => ({ ...current, unreadGrouping })),
+    onToggleFocusUnreadGroup: () => setFocusUnreadCollapsed((collapsed) => !collapsed),
+    onTogglePriorityInbox: () =>
+      updateInboxState((current) => ({
+        ...current,
+        priorityInboxEnabled: !current.priorityInboxEnabled,
+      })),
+    onSetPriorityView: (priorityView: InboxState['priorityView']) => {
+      setSelectedId(null);
+      updateInboxState((current) => ({ ...current, priorityView }));
+    },
+    onTogglePriorityType: (priorityType: InboxPriorityType) =>
+      updateInboxState((current) => ({
+        ...current,
+        priorityTypes: current.priorityTypes.includes(priorityType)
+          ? current.priorityTypes.filter((type) => type !== priorityType)
+          : [...current.priorityTypes, priorityType],
+      })),
+    onSetAllPriorityTypes: (included: boolean) =>
+      updateInboxState((current) => ({
+        ...current,
+        priorityTypes: included ? [...DEFAULT_INBOX_STATE.priorityTypes] : [],
+      })),
+    onSetBadgeCount: (badgeCount: InboxState['badgeCount']) =>
+      updateInboxState((current) => ({ ...current, badgeCount })),
     onMarkSelectedRead: () => {
       if (selectedId !== null) markRead([selectedId], !inboxState.readIds.includes(selectedId));
     },
@@ -256,6 +294,14 @@ export function useInboxPresenter() {
     showUnreadFirst: inboxState.showUnreadFirst,
     ordering: inboxState.ordering,
     groupByDate: inboxState.groupByDate,
+    unreadGrouping: inboxState.unreadGrouping,
+    focusUnreadCollapsed,
+    priorityInboxEnabled: inboxState.priorityInboxEnabled,
+    priorityTypes: inboxState.priorityTypes,
+    priorityView: inboxState.priorityView,
+    badgeCount: inboxState.badgeCount,
+    priorityUnreadCount: unreadBuckets.priority.length,
+    otherUnreadCount: unreadBuckets.other.length,
     snoozeMenuOpen,
     unreadCount,
     handlers,
