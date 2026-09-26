@@ -23,6 +23,7 @@ import {
   IconPaperclip,
   IconAdjustments,
   IconFilter,
+  IconTrash,
 } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -128,17 +129,17 @@ function InboxPageView({ model }: { model: InboxModel }) {
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Item
-                leftSection={<IconCheck size={14} />}
-                onClick={model.handlers.onMarkAllRead}
-                disabled={model.unreadCount === 0}
+                leftSection={<IconTrash size={14} />}
+                onClick={model.handlers.onDeleteAllRead}
               >
-                {t('inbox.markAllRead')}
+                {t('inbox.deleteAllRead')}
               </Menu.Item>
-              <Menu.Item
-                leftSection={<IconArchive size={14} />}
-                onClick={model.handlers.onArchiveRead}
-              >
-                {t('inbox.archiveRead')}
+              <Menu.Item leftSection={<IconTrash size={14} />} onClick={model.handlers.onDeleteAll}>
+                {t('inbox.deleteAll')}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item component={Link} to="/config">
+                {t('inbox.goToSettings')}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>

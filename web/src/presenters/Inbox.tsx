@@ -175,15 +175,20 @@ export function useInboxPresenter() {
       setSelectedId(null);
       setSnoozeMenuOpen(false);
     },
-    onMarkAllRead: () =>
-      markRead(
-        activities.map((activity) => activity.id),
-        true,
-      ),
-    onArchiveRead: () =>
+    onDeleteAllRead: () =>
       archive(
         activities
-          .filter((activity) => inboxState.readIds.includes(activity.id))
+          .filter(
+            (activity) =>
+              inboxState.readIds.includes(activity.id) &&
+              !inboxState.archivedIds.includes(activity.id),
+          )
+          .map((activity) => activity.id),
+      ),
+    onDeleteAll: () =>
+      archive(
+        activities
+          .filter((activity) => !inboxState.archivedIds.includes(activity.id))
           .map((activity) => activity.id),
       ),
   });
