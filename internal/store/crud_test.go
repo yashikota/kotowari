@@ -810,8 +810,10 @@ func TestListIssuesByDateFieldAndTimeframe(t *testing.T) {
 				m.Issues[i].CreatedAt = oldDate
 				m.Issues[i].StatusChangedAt = oldDate
 			case started.Identifier:
+				m.Issues[i].CreatedAt = recentDate
 				m.Issues[i].StartedAt = &startedDate
 			case completed.Identifier:
+				m.Issues[i].CreatedAt = recentDate
 				m.Issues[i].CompletedAt = &completedDate
 			}
 		}
