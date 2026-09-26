@@ -694,6 +694,23 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ groupBy: value as typeof search.groupBy }),
       onOrderByChange: (value) =>
         void updateProjectSearch({ orderBy: value as typeof search.orderBy }),
+      onSortProperty: (property) => {
+        const orderBy =
+          property === 'name'
+            ? 'name'
+            : property === 'priority' ||
+                property === 'status' ||
+                property === 'startDate' ||
+                property === 'targetDate' ||
+                property === 'created' ||
+                property === 'updated'
+              ? property
+              : undefined;
+        if (!orderBy) return;
+        const direction =
+          (search.orderBy ?? 'manual') === orderBy && search.direction !== 'desc' ? 'desc' : 'asc';
+        void updateProjectSearch({ orderBy, direction });
+      },
       onDirectionChange: (value) =>
         void updateProjectSearch({ direction: value as typeof search.direction }),
       onClosedChange: (value) =>

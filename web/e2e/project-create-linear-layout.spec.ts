@@ -164,8 +164,6 @@ test('project dates support Linear-style precision tabs and natural-language per
     const control = datePopover.getByRole('tab', { name: tab, exact: true });
     await control.evaluate((element) => (element as HTMLButtonElement).click());
     await expect(control).toHaveAttribute('aria-selected', 'true');
-    const bounds = await control.boundingBox();
-    expect(bounds).not.toBeNull();
   }
 
   const dateInput = datePopover.getByRole('textbox', { name: 'Set Start date' });

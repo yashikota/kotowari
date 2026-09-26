@@ -739,6 +739,8 @@
     "updatedDate": "更新 {{date}}",
     "completedDate": "完了 {{date}}",
     "displayProperties": "表示プロパティ",
+    "projectName": "プロジェクト",
+    "sortByProperty": "{{property}}で並べ替え",
     "property": {
       "id": "ID",
       "milestones": "マイルストーン",

@@ -1,0 +1,160 @@
+.tableViewport {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: var(--mantine-font-size-xs);
+}
+
+.table th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-dimmed);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th:nth-child(1) {
+  width: 280px;
+}
+
+.table th:not(:first-child) {
+  min-width: 110px;
+  max-width: 220px;
+}
+
+.table td {
+  height: 42px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  vertical-align: middle;
+}
+
+.projectRow {
+  background: var(--mantine-color-body);
+  transition: background-color 100ms ease;
+}
+
+.projectRow:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.projectRow td:first-child,
+.table th:nth-child(1) {
+  position: sticky;
+  z-index: 1;
+  left: 0;
+  background: inherit;
+}
+
+.table thead th:first-child {
+  z-index: 3;
+  background: var(--mantine-color-body);
+}
+
+.nameCell {
+  width: 280px;
+}
+
+.nameContent {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+}
+
+.projectLink {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.projectTitle {
+  display: block;
+  min-width: 0;
+}
+
+.progressCell {
+  min-width: 108px;
+}
+
+.progressCell > div:first-child {
+  width: 70px;
+}
+
+.labelsCell {
+  max-width: 190px;
+  overflow: hidden;
+}
+
+.groupRow th {
+  position: sticky;
+  z-index: 1;
+  top: 34px;
+  height: 32px;
+  color: var(--mantine-color-text);
+  background: var(--mantine-color-body);
+}
+
+.groupCount {
+  margin-left: 8px;
+  color: var(--mantine-color-dimmed);
+  font-weight: 400;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 3px 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sortButton:hover,
+.sortButton:focus-visible {
+  color: var(--mantine-color-text);
+}
+
+.sortIndicator {
+  display: inline-flex;
+  opacity: 0;
+}
+
+.sortButton:hover .sortIndicator,
+.sortButton:focus-visible .sortIndicator,
+.table th[aria-sort='ascending'] .sortIndicator,
+.table th[aria-sort='descending'] .sortIndicator {
+  opacity: 1;
+}
+
+.groupRow th:first-child {
+  border-left: 0;
+}
+
+@media (max-width: 720px) {
+  .table th:nth-child(1),
+  .nameCell {
+    width: 220px;
+  }
+}

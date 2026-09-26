@@ -32,7 +32,7 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { CycleListItem } from '../components/CycleListItem.tsx';
 import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { CycleProgressChart } from '../components/CycleProgressChart.tsx';
-import { ProjectListItem } from '../components/ProjectListItem.tsx';
+import { ProjectListView } from '../components/ProjectListView.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
 import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
@@ -156,63 +156,20 @@ export function ProjectsPageView({
                 }}
               />
             ) : (
-              <Stack gap="md">
-                {projectGroups.map((group) =>
-                  isGrouped ? (
-                    <Section key={group.key} title={group.label} ariaLabel={group.label}>
-                      <Stack gap={0}>
-                        {group.projects.map((project) => (
-                          <ProjectListItem
-                            key={project.slug}
-                            project={project}
-                            displayProperties={displayProperties}
-                            issueCount={projectIssueCounts[project.slug] ?? 0}
-                            reorderTargets={
-                              controls.orderBy === 'manual' &&
-                              controls.view === 'list' &&
-                              !isGrouped
-                                ? projectGroups.flatMap((item) =>
-                                    item.projects.map((entry) => entry.slug),
-                                  )
-                                : []
-                            }
-                            onReorder={
-                              controls.orderBy === 'manual' &&
-                              controls.view === 'list' &&
-                              !isGrouped
-                                ? handlers.onReorderProject
-                                : undefined
-                            }
-                          />
-                        ))}
-                      </Stack>
-                    </Section>
-                  ) : (
-                    <Stack key={group.key} gap={0}>
-                      {group.projects.map((project) => (
-                        <ProjectListItem
-                          key={project.slug}
-                          project={project}
-                          displayProperties={displayProperties}
-                          issueCount={projectIssueCounts[project.slug] ?? 0}
-                          reorderTargets={
-                            controls.orderBy === 'manual' && controls.view === 'list' && !isGrouped
-                              ? projectGroups.flatMap((item) =>
-                                  item.projects.map((entry) => entry.slug),
-                                )
-                              : []
-                          }
-                          onReorder={
-                            controls.orderBy === 'manual' && controls.view === 'list' && !isGrouped
-                              ? handlers.onReorderProject
-                              : undefined
-                          }
-                        />
-                      ))}
-                    </Stack>
-                  ),
-                )}
-              </Stack>
+              <ProjectListView
+                groups={projectGroups}
+                grouped={isGrouped}
+                displayProperties={displayProperties}
+                issueCounts={projectIssueCounts}
+                orderBy={controls.orderBy}
+                direction={controls.direction}
+                onSort={controls.handlers.onSortProperty}
+                onReorder={
+                  controls.orderBy === 'manual' && !isGrouped
+                    ? handlers.onReorderProject
+                    : undefined
+                }
+              />
             )}
             <ProjectCreateDialog model={model} projectNameRef={projectNameRef} />
           </Pane>

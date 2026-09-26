@@ -26,7 +26,7 @@ test('projects can be assigned a single-user lead and edited later', async ({ pa
   await page.goto('/projects');
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('checkbox', { name: 'Lead' }).check();
-  await expect(page.getByRole('link').filter({ hasText: projectName })).toContainText('You');
+  await expect(page.locator(`[data-project-list-row="${slug}"]`)).toContainText('You');
 
   await page.goto(`/projects/${slug}`);
   await projectLead.selectOption('');

@@ -19,7 +19,7 @@ import { ProjectFilterPicker } from './ProjectFilterPicker.tsx';
 import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
-import type { ProjectFilterGroup, ProjectGroupBy } from '../project-views.ts';
+import type { ProjectFilterGroup, ProjectGroupBy, ProjectViewSearch } from '../project-views.ts';
 
 export type ProjectListControlsModel = {
   search: string;
@@ -34,8 +34,8 @@ export type ProjectListControlsModel = {
   templates: string[];
   initiatives: string[];
   groupBy: ProjectGroupBy;
-  orderBy: string;
-  direction: string;
+  orderBy: NonNullable<ProjectViewSearch['orderBy']>;
+  direction: NonNullable<ProjectViewSearch['direction']>;
   closed: string;
   view: string;
   columnsBy: string;
@@ -75,6 +75,7 @@ export type ProjectListControlsModel = {
     onSpecificProjectChange: (value: string | null) => void;
     onGroupByChange: (value: ProjectGroupBy | null) => void;
     onOrderByChange: (value: string | null) => void;
+    onSortProperty: (property: ProjectDisplayProperty | 'name') => void;
     onDirectionChange: (value: string | null) => void;
     onClosedChange: (value: string | null) => void;
     onViewChange: (value: 'list' | 'board' | 'timeline') => void;

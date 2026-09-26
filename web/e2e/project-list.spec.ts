@@ -183,9 +183,17 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await page.getByRole('option', { name: 'All', exact: true }).click();
   await page.getByRole('combobox', { name: 'Grouping' }).click();
   await page.getByRole('option', { name: 'Status', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'In progress' })).toContainText(startedName);
-  await expect(page.getByRole('region', { name: 'Planned' })).toContainText(plannedName);
-  await expect(page.getByRole('region', { name: 'Completed' })).toContainText(completedName);
+  await expect(
+    page
+      .getByRole('rowgroup')
+      .filter({ has: page.getByRole('rowheader', { name: 'In progress' }) }),
+  ).toContainText(startedName);
+  await expect(
+    page.getByRole('rowgroup').filter({ has: page.getByRole('rowheader', { name: 'Planned' }) }),
+  ).toContainText(plannedName);
+  await expect(
+    page.getByRole('rowgroup').filter({ has: page.getByRole('rowheader', { name: 'Completed' }) }),
+  ).toContainText(completedName);
 
   await page.getByRole('combobox', { name: 'Grouping' }).click();
   await page.getByRole('option', { name: 'No grouping' }).click();
@@ -202,12 +210,9 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   const leadProperty = page.getByRole('checkbox', { name: 'Lead' });
   await summaryProperty.check();
   await leadProperty.check();
-  await expect(page.getByRole('link', { name: new RegExp(plannedName) })).toContainText(
-    `Summary for ${plannedName}`,
-  );
-  await expect(
-    page.getByRole('link', { name: new RegExp(plannedName) }).getByText('You', { exact: true }),
-  ).toHaveCount(1);
+  const plannedRow = page.locator(`[data-project-list-row="${plannedSlug}"]`);
+  await expect(plannedRow).toContainText(`Summary for ${plannedName}`);
+  await expect(plannedRow.getByText('You', { exact: true })).toHaveCount(1);
   await expect(page).toHaveURL(/displayProperties=/);
   await page.reload();
   await page.getByRole('button', { name: 'Display options' }).click();
@@ -306,17 +311,19 @@ test('project list and saved-view previews group by labels, health, and dates', 
   expect(healthUpdateProjects.every((project) => project.healthUpdatedAt)).toBeTruthy();
 
   await page.goto('/projects?groupBy=labels');
-  await expect(page.getByRole('region', { name: 'Bug' })).toContainText(labeledName);
-  await expect(page.getByRole('region', { name: 'Feature' })).toContainText(labeledName);
-  await expect(page.getByRole('region', { name: 'Feature' })).toContainText(atRiskName);
-  await expect(page.getByRole('region', { name: 'No label' })).toContainText(unassignedName);
+  const groupByName = (name: string) =>
+    page.getByRole('rowgroup').filter({ has: page.getByRole('rowheader', { name }) });
+  await expect(groupByName('Bug')).toContainText(labeledName);
+  await expect(groupByName('Feature')).toContainText(labeledName);
+  await expect(groupByName('Feature')).toContainText(atRiskName);
+  await expect(groupByName('No label')).toContainText(unassignedName);
   await page.reload();
-  await expect(page.getByRole('region', { name: 'Bug' })).toContainText(labeledName);
+  await expect(groupByName('Bug')).toContainText(labeledName);
 
   await page.goto('/projects?groupBy=health');
-  await expect(page.getByRole('region', { name: 'On track' })).toContainText(labeledName);
-  await expect(page.getByRole('region', { name: 'At risk' })).toContainText(atRiskName);
-  await expect(page.getByRole('region', { name: 'No update' })).toContainText(unassignedName);
+  await expect(groupByName('On track')).toContainText(labeledName);
+  await expect(groupByName('At risk')).toContainText(atRiskName);
+  await expect(groupByName('No update')).toContainText(unassignedName);
 
   await page.goto('/projects?groupBy=startDate');
   const expectedStartDate = await page.evaluate(() =>
@@ -324,8 +331,8 @@ test('project list and saved-view previews group by labels, health, and dates', 
       new Date('2026-09-14T00:00:00Z'),
     ),
   );
-  await expect(page.getByRole('region', { name: expectedStartDate })).toContainText(labeledName);
-  await expect(page.getByRole('region', { name: 'No date' })).toContainText(unassignedName);
+  await expect(groupByName(expectedStartDate)).toContainText(labeledName);
+  await expect(groupByName('No date')).toContainText(unassignedName);
 
   await page.goto('/projects?groupBy=targetDate');
   const expectedTargetDate = await page.evaluate(() =>
@@ -333,8 +340,8 @@ test('project list and saved-view previews group by labels, health, and dates', 
       new Date('2026-10-14T00:00:00Z'),
     ),
   );
-  await expect(page.getByRole('region', { name: expectedTargetDate })).toContainText(labeledName);
-  await expect(page.getByRole('region', { name: 'No date' })).toContainText(unassignedName);
+  await expect(groupByName(expectedTargetDate)).toContainText(labeledName);
+  await expect(groupByName('No date')).toContainText(unassignedName);
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'Display options' }).click();
@@ -813,6 +820,54 @@ test('manual project order can be rearranged accessibly and survives reload', as
   await expect(projectRows.nth(2)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
 });
 
+test('project list exposes selected properties as sortable columns and persists column order', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projects = [
+    { name: `Table sort alpha ${stamp}`, slug: `table-sort-alpha-${stamp}`, priority: 4 },
+    { name: `Table sort beta ${stamp}`, slug: `table-sort-beta-${stamp}`, priority: 1 },
+  ];
+  for (const project of projects) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects?displayProperties=priority&displayProperties=targetDate');
+  const table = page.getByRole('table', { name: 'Projects' });
+  await expect(table.getByRole('columnheader', { name: 'Sort by Project' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: 'Sort by Priority' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: 'Sort by Target date' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: 'Summary' })).toHaveCount(0);
+  await expect(
+    page.locator(
+      `[data-project-list-row="${projects[0]!.slug}"] [data-project-property="priority"]`,
+    ),
+  ).toContainText('Low');
+
+  const projectLinks = page.locator(
+    `a[href="/projects/${projects[0]!.slug}"], a[href="/projects/${projects[1]!.slug}"]`,
+  );
+  const priorityColumn = table.getByRole('columnheader', { name: 'Sort by Priority' });
+  await priorityColumn.getByRole('button', { name: 'Sort by Priority' }).click();
+  await expect(page).toHaveURL(/orderBy=priority/);
+  await expect(priorityColumn).toHaveAttribute('aria-sort', 'ascending');
+  await expect(projectLinks.nth(0)).toHaveAttribute('href', `/projects/${projects[1]!.slug}`);
+
+  await priorityColumn.getByRole('button', { name: 'Sort by Priority' }).click();
+  await expect(page).toHaveURL(/direction=desc/);
+  await expect(priorityColumn).toHaveAttribute('aria-sort', 'descending');
+  await expect(projectLinks.nth(0)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
+  await page.reload();
+  await expect(
+    page
+      .getByRole('table', { name: 'Projects' })
+      .getByRole('columnheader', { name: 'Sort by Priority' }),
+  ).toHaveAttribute('aria-sort', 'descending');
+  await expect(projectLinks.nth(0)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
+});
+
 test('project board cards move across status and priority columns by drag and keyboard', async ({
   page,
   request,
@@ -824,20 +879,14 @@ test('project board cards move across status and priority columns by drag and ke
     status: 'planned',
     priority: 3,
   };
-  const priorityProject = {
-    name: `Board priority ${stamp}`,
-    slug: `board-priority-${stamp}`,
-    status: 'planned',
-    priority: 3,
-  };
-  for (const project of [statusProject, priorityProject]) {
-    const response = await request.post('/api/projects', { data: project });
-    expect(response.ok()).toBeTruthy();
-  }
+  const response = await request.post('/api/projects', { data: statusProject });
+  expect(response.ok()).toBeTruthy();
 
   await page.goto('/projects?view=board&columnsBy=status');
   const statusCard = page.locator(`a[href="/projects/${statusProject.slug}"]`);
-  await statusCard.dragTo(page.getByRole('gridcell', { name: 'In progress' }));
+  await statusCard.dragTo(page.locator('[data-project-board-cell="started:all"]'), {
+    targetPosition: { x: 4, y: 4 },
+  });
   await expect
     .poll(
       async () =>
@@ -865,25 +914,12 @@ test('project board cards move across status and priority columns by drag and ke
     )
     .toBe('planned');
 
-  await page.goto('/projects?view=board&columnsBy=priority');
-  const priorityCard = page.locator(`a[href="/projects/${priorityProject.slug}"]`);
-  await priorityCard.dragTo(page.getByRole('gridcell', { name: 'Urgent' }));
-  await expect
-    .poll(
-      async () =>
-        (
-          (await (await request.get(`/api/projects/${priorityProject.slug}`)).json()) as {
-            priority: number;
-          }
-        ).priority,
-    )
-    .toBe(1);
-  await expect(page.getByRole('gridcell', { name: 'Urgent' })).toContainText(priorityProject.name);
-
   await page.goto('/projects?view=board&columnsBy=priority&rowsBy=status');
   await page
     .locator(`a[href="/projects/${statusProject.slug}"]`)
-    .dragTo(page.getByRole('gridcell', { name: 'Medium · In progress' }));
+    .dragTo(page.locator('[data-project-board-cell="3:started"]'), {
+      targetPosition: { x: 4, y: 4 },
+    });
   await expect
     .poll(
       async () =>
@@ -897,6 +933,37 @@ test('project board cards move across status and priority columns by drag and ke
   await expect(page.getByRole('gridcell', { name: 'Medium · In progress' })).toContainText(
     statusProject.name,
   );
+});
+
+test('project priority can be changed by dropping a board card in the destination column', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const project = {
+    name: `Board priority ${stamp}`,
+    slug: `board-priority-${stamp}`,
+    status: 'planned',
+    priority: 3,
+  };
+  const response = await request.post('/api/projects', { data: project });
+  expect(response.ok()).toBeTruthy();
+
+  await page.goto('/projects?view=board&columnsBy=priority');
+  const projectCard = page.locator(`a[href="/projects/${project.slug}"]`);
+  const destination = page.locator('[data-project-board-cell="1:all"]');
+  await projectCard.dragTo(destination, { targetPosition: { x: 4, y: 4 } });
+  await expect
+    .poll(
+      async () =>
+        (
+          (await (await request.get(`/api/projects/${project.slug}`)).json()) as {
+            priority: number;
+          }
+        ).priority,
+    )
+    .toBe(1);
+  await expect(page.getByRole('gridcell', { name: 'Urgent' })).toContainText(project.name);
 });
 
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
@@ -944,10 +1011,10 @@ test('project health can be edited, filtered, and displayed in project views', a
   await clearProjectFilters(page);
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('checkbox', { name: 'Health' }).check();
-  await expect(page.getByRole('link', { name: new RegExp(projects[0].name) })).toContainText(
+  await expect(page.locator(`[data-project-list-row="${projects[0].slug}"]`)).toContainText(
     'On track',
   );
-  await expect(page.getByRole('link', { name: new RegExp(projects[1].name) })).toContainText(
+  await expect(page.locator(`[data-project-list-row="${projects[1].slug}"]`)).toContainText(
     'At risk',
   );
   await page.getByRole('button', { name: 'Display options' }).click();
@@ -997,7 +1064,7 @@ test('completion dates are recorded, displayed, and filterable', async ({ page, 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('checkbox', { name: 'Completed', exact: true }).check();
-  await expect(page.getByRole('link', { name: new RegExp(completedName) })).toContainText(
+  await expect(page.locator(`[data-project-list-row="shipped-${stamp}"]`)).toContainText(
     'Completed',
   );
   await page.getByRole('button', { name: 'Display options' }).click();

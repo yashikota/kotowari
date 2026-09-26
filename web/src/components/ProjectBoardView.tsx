@@ -101,6 +101,7 @@ export function ProjectBoardView({
                     key={column.key}
                     role="gridcell"
                     aria-label={showRows ? `${column.label} · ${row.label}` : column.label}
+                    data-project-board-cell={`${column.key}:${row.key}`}
                     gap="xs"
                     p={8}
                     mih={112}
@@ -184,6 +185,19 @@ function ProjectBoardCard({
       onDragStart={(event) => {
         event.dataTransfer.setData('text/plain', project.slug);
         event.dataTransfer.effectAllowed = 'move';
+      }}
+      onDragOver={(event) => {
+        if (!onMoveProject || !Array.from(event.dataTransfer.types).includes('text/plain')) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
+      onDrop={(event) => {
+        if (!onMoveProject) return;
+        const sourceSlug = event.dataTransfer.getData('text/plain');
+        if (!sourceSlug || sourceSlug === project.slug) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onMoveProject(sourceSlug, columnKey, rowKey);
       }}
       onKeyDown={(event) => {
         if (!event.altKey) return;

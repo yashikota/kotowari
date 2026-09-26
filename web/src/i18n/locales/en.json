@@ -741,6 +741,8 @@
     "updatedDate": "Updated {{date}}",
     "completedDate": "Completed {{date}}",
     "displayProperties": "Display properties",
+    "projectName": "Project",
+    "sortByProperty": "Sort by {{property}}",
     "property": {
       "id": "ID",
       "milestones": "Milestones",

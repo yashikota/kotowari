@@ -409,6 +409,23 @@ export function useProjectViewBuilderPresenter() {
         void updateSearch({ groupBy: (value as ProjectViewSearch['groupBy']) || 'none' }),
       onOrderByChange: (value) =>
         void updateSearch({ orderBy: (value as ProjectViewSearch['orderBy']) || 'manual' }),
+      onSortProperty: (property) => {
+        const orderBy =
+          property === 'name'
+            ? 'name'
+            : property === 'priority' ||
+                property === 'status' ||
+                property === 'startDate' ||
+                property === 'targetDate' ||
+                property === 'created' ||
+                property === 'updated'
+              ? property
+              : undefined;
+        if (!orderBy) return;
+        const direction =
+          (search.orderBy ?? 'manual') === orderBy && search.direction !== 'desc' ? 'desc' : 'asc';
+        void updateSearch({ orderBy, direction });
+      },
       onDirectionChange: (value) =>
         void updateSearch({ direction: (value as ProjectViewSearch['direction']) || 'asc' }),
       onClosedChange: (value) =>
