@@ -2,6 +2,7 @@ import { isCommentSubmitShortcut, isSubmitShortcut } from './keymap.ts';
 import { describe, expect, it } from 'vite-plus/test';
 import {
   actionFromKeyboard,
+  issueLinkedCodeSequenceFromKeyboard,
   isTypingTarget,
   issueCopyShortcutFromKeyboard,
   projectCreateSequenceFromKeyboard,
@@ -343,6 +344,48 @@ describe('project create keyboard sequence', () => {
         300,
       ).action,
     ).toBeNull();
+  });
+});
+
+describe('open linked code keyboard sequence', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    pendingSince: number | null = null,
+    now = 100,
+    overrides: Partial<Parameters<typeof issueLinkedCodeSequenceFromKeyboard>[0]> = {},
+  ) =>
+    issueLinkedCodeSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      pendingSince,
+      now,
+    );
+
+  it('recognizes O, then G and consumes the sequence', () => {
+    const started = key('o');
+    expect(started).toEqual({ action: null, pendingSince: 100 });
+    expect(key('g', started.pendingSince, 250)).toEqual({
+      action: 'open-linked-code',
+      pendingSince: null,
+    });
+  });
+
+  it('expires the sequence and ignores typing or modified keys', () => {
+    expect(key('g', 100, 1101)).toEqual({ action: null, pendingSince: null });
+    expect(key('g', 100, 200, { target: el('INPUT') })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+    expect(key('g', 100, 200, { shiftKey: true })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
   });
 });
 

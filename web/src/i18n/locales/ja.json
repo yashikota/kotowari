@@ -1527,6 +1527,8 @@
     "shortcutFindInList": "現在の一覧を検索",
     "shortcutCreateProject": "プロジェクトを作成",
     "shortcutProjectSequence": "N、続けてP",
+    "shortcutOpenLinkedCodeKeys": "O、続けてG",
+    "shortcutOpenLinkedCode": "リンクされた GitHub の課題またはプルリクエストを開く",
     "shortcutMoveSelection": "選択項目を移動",
     "shortcutOpenIssue": "選択したイシューを開く",
     "shortcutSetStatus": "ステータスを設定",

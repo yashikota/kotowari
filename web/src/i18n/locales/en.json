@@ -1531,6 +1531,8 @@
     "shortcutFindInList": "Find in the current list",
     "shortcutCreateProject": "Create a project",
     "shortcutProjectSequence": "N, then P",
+    "shortcutOpenLinkedCodeKeys": "O, then G",
+    "shortcutOpenLinkedCode": "Open a linked GitHub issue or pull request",
     "shortcutMoveSelection": "Move selection",
     "shortcutOpenIssue": "Open selected issue",
     "shortcutSetStatus": "Set status",

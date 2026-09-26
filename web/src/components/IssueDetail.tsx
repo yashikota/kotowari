@@ -35,6 +35,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import { useRef } from 'react';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { formatActivity } from '../activity.ts';
 import { MarkdownContent, MetaBadge, Section } from '../mantine-ui.tsx';
@@ -50,7 +51,7 @@ import { formatAttachmentSize, IssueAttachmentList } from './IssueAttachmentList
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
 
 import { PresenterScope, useActions, useIntent, useKeyboard } from '../application/Root.tsx';
-import { issueCopyShortcutFromKeyboard } from '../keymap.ts';
+import { issueCopyShortcutFromKeyboard, issueLinkedCodeSequenceFromKeyboard } from '../keymap.ts';
 import type { IssueCopyShortcut } from '../keymap.ts';
 import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
 
@@ -1597,9 +1598,32 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
   const model = useIssueDetailPresenter(props);
   const handlers = useActions(model.handlers);
   const sendIntent = useIntent();
+  const linkedCodeSequenceSince = useRef<number | null>(null);
   useKeyboard((event) => {
+    if (model._view !== 2) {
+      linkedCodeSequenceSince.current = null;
+      return false;
+    }
+    if (
+      event.target instanceof Element &&
+      event.target.closest('[role="menu"], [role="listbox"], [role="dialog"]')
+    ) {
+      linkedCodeSequenceSince.current = null;
+      return false;
+    }
+    const linkedCodeSequence = issueLinkedCodeSequenceFromKeyboard(
+      event,
+      linkedCodeSequenceSince.current,
+      Date.now(),
+    );
+    linkedCodeSequenceSince.current = linkedCodeSequence.pendingSince;
+    if (linkedCodeSequence.action === 'open-linked-code') {
+      event.preventDefault();
+      void sendIntent('Open_linked_code_onClick', []);
+      return true;
+    }
     const shortcut = issueCopyShortcutFromKeyboard(event);
-    if (model._view !== 2 || !shortcut) return false;
+    if (!shortcut) return false;
     event.preventDefault();
     void sendIntent(ISSUE_COPY_SHORTCUT_INTENTS[shortcut], []);
     return true;

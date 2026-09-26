@@ -79,6 +79,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 const PROJECT_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
+const ISSUE_LINK_SEQUENCE_TIMEOUT_MS = 1000;
 
 export function projectCreateSequenceFromKeyboard(
   event: {
@@ -115,6 +116,45 @@ export function projectCreateSequenceFromKeyboard(
     now - pendingSince <= PROJECT_CREATE_SEQUENCE_TIMEOUT_MS
   ) {
     return { action: 'new-project', pendingSince: null };
+  }
+  return { action: null, pendingSince: null };
+}
+
+export function issueLinkedCodeSequenceFromKeyboard(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    defaultPrevented?: boolean;
+    target: EventTarget | null;
+  },
+  pendingSince: number | null,
+  now: number,
+): { action: 'open-linked-code' | null; pendingSince: number | null } {
+  const eligible =
+    !event.defaultPrevented &&
+    !event.isComposing &&
+    !event.repeat &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !isTypingTarget(event.target);
+  if (!eligible) return { action: null, pendingSince: null };
+
+  const key = event.key.toLowerCase();
+  if (key === 'o') return { action: null, pendingSince: now };
+  if (
+    key === 'g' &&
+    pendingSince !== null &&
+    now >= pendingSince &&
+    now - pendingSince <= ISSUE_LINK_SEQUENCE_TIMEOUT_MS
+  ) {
+    return { action: 'open-linked-code', pendingSince: null };
   }
   return { action: null, pendingSince: null };
 }

@@ -386,6 +386,33 @@ export function useIssueDetailPresenter({
     setExternalLinkOpen(true);
   }
 
+  function openLinkedCode() {
+    if (!issue) return;
+    const pullRequest = issue.externalLinks.find((link) => link.kind === 'pullRequest');
+    const githubIssue = issue.externalLinks.find((link) => {
+      if (link.kind !== 'link') return false;
+      try {
+        const url = new URL(link.url);
+        return (
+          url.protocol === 'https:' &&
+          url.hostname.toLowerCase() === 'github.com' &&
+          /^\/[^/]+\/[^/]+\/issues\/\d+(?:\/|$)/i.test(url.pathname)
+        );
+      } catch {
+        return false;
+      }
+    });
+    const candidate = pullRequest ?? githubIssue;
+    if (!candidate) return;
+    try {
+      const url = new URL(candidate.url);
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
+      window.open(url.href, '_blank', 'noopener,noreferrer');
+    } catch {
+      // Ignore malformed links rather than turning a keyboard shortcut into navigation.
+    }
+  }
+
   function openDueDate() {
     setIssueOptionsOpen(false);
     setDueDateValue(issue?.dueDate ?? '');
@@ -933,6 +960,7 @@ export function useIssueDetailPresenter({
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setExternalLinkKind(e.target.value as IssueLink['kind']),
       onOpenExternalLink: (kind: IssueLink['kind']) => openExternalLink(kind),
+      Open_linked_code_onClick: () => openLinkedCode(),
       onCloseExternalLink: () => setExternalLinkOpen(false),
       onToggleResources: () => setResourcesCollapsed((current) => !current),
       External_link_onSubmit27: (
