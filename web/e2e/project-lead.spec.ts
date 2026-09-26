@@ -14,7 +14,8 @@ test('projects can be assigned a single-user lead and edited later', async ({ pa
   await expect(page).toHaveURL(/\/projects\/[^/]+$/);
   const slug = new URL(page.url()).pathname.split('/').pop();
   if (!slug) throw new Error('expected created project route');
-  await expect(page.getByLabel('Lead')).toHaveValue('self');
+  const projectLead = page.locator('select[aria-label="Lead"]');
+  await expect(projectLead).toHaveValue('self');
   await expect
     .poll(async () => {
       const response = await request.get(`/api/projects/${slug}`);
@@ -25,15 +26,15 @@ test('projects can be assigned a single-user lead and edited later', async ({ pa
   await page.goto('/projects');
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('checkbox', { name: 'Lead' }).check();
-  await expect(page.getByRole('link', { name: /Lead project/ })).toContainText('You');
+  await expect(page.getByRole('link').filter({ hasText: projectName })).toContainText('You');
 
   await page.goto(`/projects/${slug}`);
-  await page.getByLabel('Lead').selectOption('');
+  await projectLead.selectOption('');
   await expect
     .poll(async () => {
       const response = await request.get(`/api/projects/${slug}`);
       return (await response.json()).lead ?? '';
     })
     .toBe('');
-  await expect(page.getByLabel('Lead')).toHaveValue('');
+  await expect(projectLead).toHaveValue('');
 });
