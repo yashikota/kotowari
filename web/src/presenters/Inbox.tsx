@@ -165,7 +165,7 @@ export function useInboxPresenter() {
     if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
   }
 
-  function deleteReadNotifications() {
+  function archiveReadNotifications() {
     archive(
       activities
         .filter(
@@ -174,6 +174,15 @@ export function useInboxPresenter() {
             !inboxState.archivedIds.includes(activity.id),
         )
         .map((activity) => activity.id),
+    );
+  }
+
+  function markAllNotificationsRead() {
+    markRead(
+      activities
+        .filter((activity) => !inboxState.archivedIds.includes(activity.id))
+        .map((activity) => activity.id),
+      true,
     );
   }
 
@@ -238,20 +247,15 @@ export function useInboxPresenter() {
       setSelectedId(null);
       setSnoozeMenuOpen(false);
     },
-    onDeleteAllRead: () => deleteReadNotifications(),
-    onDeleteAll: () =>
-      archive(
-        activities
-          .filter((activity) => !inboxState.archivedIds.includes(activity.id))
-          .map((activity) => activity.id),
-      ),
+    onMarkAllRead: () => markAllNotificationsRead(),
+    onArchiveReadActivities: () => archiveReadNotifications(),
   });
 
   useKeyboard((event) => {
     const shortcut = inboxShortcutFromKeyboard(event);
-    if (shortcut === 'delete-read-notifications') {
+    if (shortcut === 'archive-read-notifications') {
       event.preventDefault();
-      deleteReadNotifications();
+      archiveReadNotifications();
       return true;
     }
     if (shortcut !== 'snooze-notification') return false;

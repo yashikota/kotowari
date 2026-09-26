@@ -48,7 +48,7 @@ export function ShortcutHelpView({
     { keys: 'l', action: t('ui.shortcutOpenLabelsMenu') },
     { keys: 'Shift+E', action: t('ui.shortcutOpenEstimateMenu') },
     { keys: 'h', action: t('ui.shortcutSnoozeNotification') },
-    { keys: 'Shift+Backspace', action: t('ui.shortcutDeleteReadInbox') },
+    { keys: 'Shift+Backspace', action: t('ui.shortcutArchiveReadInbox') },
     { keys: 'Enter', action: t('ui.shortcutOpenIssue') },
     { keys: '1–7', action: t('ui.shortcutSwitchNavigation') },
     { keys: '0', action: t('config.title') },

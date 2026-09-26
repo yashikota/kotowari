@@ -236,7 +236,7 @@ export function inboxShortcutFromKeyboard(event: {
   isComposing?: boolean;
   defaultPrevented?: boolean;
   target: EventTarget | null;
-}): 'snooze-notification' | 'delete-read-notifications' | null {
+}): 'snooze-notification' | 'archive-read-notifications' | null {
   if (
     event.defaultPrevented ||
     event.isComposing ||
@@ -248,7 +248,7 @@ export function inboxShortcutFromKeyboard(event: {
   )
     return null;
   if (event.shiftKey)
-    return event.key.toLowerCase() === 'backspace' ? 'delete-read-notifications' : null;
+    return event.key.toLowerCase() === 'backspace' ? 'archive-read-notifications' : null;
   return event.key.toLowerCase() === 'h' ? 'snooze-notification' : null;
 }
 

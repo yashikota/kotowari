@@ -482,7 +482,7 @@ describe('inbox keyboard shortcuts', () => {
   });
 
   it('deletes read notifications with Shift+Backspace', () => {
-    expect(key('Backspace', { shiftKey: true })).toBe('delete-read-notifications');
+    expect(key('Backspace', { shiftKey: true })).toBe('archive-read-notifications');
     expect(key('Backspace')).toBeNull();
     expect(key('Backspace', { shiftKey: true, metaKey: true })).toBeNull();
   });
