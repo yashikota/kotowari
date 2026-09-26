@@ -165,6 +165,9 @@ export function useConfigPagePresenter() {
         )
           updatePreferences({ defaultHome: value as DefaultHome });
       },
+      onAutoAssignToSelfChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => updatePreferences({ autoAssignToSelf: e.currentTarget.checked }),
       onColorSchemeChange: (value: string | null) => {
         if (value === 'light' || value === 'dark' || value === 'auto') setColorScheme(value);
       },

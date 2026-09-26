@@ -6,6 +6,7 @@ describe('personal preferences', () => {
   it('falls back safely when stored settings are missing, malformed, or outdated', () => {
     expect(parsePersonalPreferences(null)).toEqual({
       defaultHome: 'home',
+      autoAssignToSelf: true,
       fontSize: 'default',
       commentSubmitShortcut: 'modEnter',
       sidebarLocations: {
@@ -59,11 +60,17 @@ describe('personal preferences', () => {
       parsePersonalPreferences(
         JSON.stringify({
           defaultHome: 'cycles',
+          autoAssignToSelf: false,
           fontSize: 'large',
           commentSubmitShortcut: 'enter',
         }),
       ),
-    ).toMatchObject({ defaultHome: 'cycles', fontSize: 'large', commentSubmitShortcut: 'enter' });
+    ).toMatchObject({
+      defaultHome: 'cycles',
+      autoAssignToSelf: false,
+      fontSize: 'large',
+      commentSubmitShortcut: 'enter',
+    });
     expect(defaultHomeHref('home')).toBe('/');
     expect(defaultHomeHref('agent')).toBe('/agent');
     expect(defaultHomeHref('issues')).toBe('/issues');

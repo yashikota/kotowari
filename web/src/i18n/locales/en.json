@@ -256,6 +256,8 @@
     "personalPreferences": "Personal preferences",
     "preferencesSavedLocally": "These preferences are saved on this device.",
     "defaultHome": "Default home view",
+    "autoAssignToSelf": "Auto-assign new issues to yourself",
+    "autoAssignToSelfDescription": "New issues start assigned to you unless a template specifies another assignee.",
     "home": {
       "home": "Home",
       "issues": "Issues",

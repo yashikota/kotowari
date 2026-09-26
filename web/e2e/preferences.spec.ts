@@ -125,3 +125,22 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
       .getByRole('link', { name: 'Issues', exact: true }),
   ).toBeVisible({ timeout: 15_000 });
 });
+
+test('auto-assign preference controls the new issue default and persists', async ({ page }) => {
+  await page.goto('/config');
+  const preference = page.getByRole('checkbox', { name: 'Auto-assign new issues to yourself' });
+  await expect(preference).toBeChecked();
+  await preference.uncheck();
+  await page.reload();
+  await expect(preference).not.toBeChecked();
+
+  await page.getByRole('button', { name: 'Create issue' }).click();
+  const assignee = page.getByRole('combobox', { name: 'Assignee' });
+  await expect(assignee).toHaveValue('');
+  await page.keyboard.press('Escape');
+
+  await page.goto('/config');
+  await preference.check();
+  await page.getByRole('button', { name: 'Create issue' }).click();
+  await expect(page.getByRole('combobox', { name: 'Assignee' })).toHaveValue('self');
+});

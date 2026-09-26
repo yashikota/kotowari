@@ -41,6 +41,7 @@ export type SidebarLocation = 'primary' | 'more' | 'hidden';
 
 export type PersonalPreferences = {
   defaultHome: DefaultHome;
+  autoAssignToSelf: boolean;
   fontSize: FontSize;
   commentSubmitShortcut: CommentSubmitShortcut;
   sidebarLocations: Record<SidebarItemId, SidebarLocation>;
@@ -52,6 +53,7 @@ export type PersonalPreferences = {
 
 export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
   defaultHome: 'home',
+  autoAssignToSelf: true,
   fontSize: 'default',
   commentSubmitShortcut: 'modEnter',
   sidebarLocations: {
@@ -97,6 +99,10 @@ export function parsePersonalPreferences(value: string | null): PersonalPreferen
       defaultHome: DEFAULT_HOMES.includes(parsed.defaultHome as DefaultHome)
         ? (parsed.defaultHome as DefaultHome)
         : DEFAULT_PERSONAL_PREFERENCES.defaultHome,
+      autoAssignToSelf:
+        typeof parsed.autoAssignToSelf === 'boolean'
+          ? parsed.autoAssignToSelf
+          : DEFAULT_PERSONAL_PREFERENCES.autoAssignToSelf,
       fontSize: FONT_SIZES.includes(parsed.fontSize as FontSize)
         ? (parsed.fontSize as FontSize)
         : DEFAULT_PERSONAL_PREFERENCES.fontSize,

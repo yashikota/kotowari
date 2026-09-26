@@ -128,6 +128,12 @@ export function ConfigPageView({
                       { value: 'agent', label: t('config.home.agent') },
                     ]}
                   />
+                  <Checkbox
+                    label={t('config.autoAssignToSelf')}
+                    description={t('config.autoAssignToSelfDescription')}
+                    checked={preferences.autoAssignToSelf}
+                    onChange={handlers.onAutoAssignToSelfChange}
+                  />
                   <Select
                     label={t('config.colorScheme')}
                     aria-label={t('config.colorScheme')}

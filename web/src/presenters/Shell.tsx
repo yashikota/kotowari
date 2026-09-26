@@ -58,6 +58,7 @@ export function useShellPresenter() {
   const navigate = useNavigate();
   const router = useRouter();
   const { preferences } = usePersonalPreferences();
+  const defaultIssueAssignee: '' | 'self' = preferences.autoAssignToSelf ? 'self' : '';
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   useEffect(() => {
     let revision = '';
@@ -157,7 +158,7 @@ export function useShellPresenter() {
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
-  const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>('self');
+  const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>(defaultIssueAssignee);
   const helpOpen = overlay === 'help';
   const setHelpOpen = setOverlay('help');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -247,7 +248,7 @@ export function useShellPresenter() {
     setIssueProjectId(detail.projectId ? String(detail.projectId) : '');
     setIssueCycleId(detail.cycleId ? String(detail.cycleId) : '');
     setIssuePriority(detail.priority ?? 0);
-    setCreateIssue(true);
+    openCreateIssue();
   });
   useIntentHandler('adr.create', (value) => {
     const detail = (value ?? {}) as { issueNumber?: number };
@@ -359,13 +360,18 @@ export function useShellPresenter() {
     void navigate({ to: '/cycles/$number', params: { number: String(number) } });
   }
 
+  function openCreateIssue() {
+    setIssueAssignee(defaultIssueAssignee);
+    setCreateIssue(true);
+  }
+
   const runCommand = useCallback(
     async (id: string) => {
       setPaletteOpen(false);
       setQuery('');
       switch (id) {
         case 'new-issue':
-          setCreateIssue(true);
+          openCreateIssue();
           return;
         case 'new-adr':
           setAdrLinkIssue(
@@ -491,7 +497,7 @@ export function useShellPresenter() {
         });
       }
     },
-    [currentIdentifier, cycles, navigate, router, pathname],
+    [currentIdentifier, cycles, navigate, router, pathname, defaultIssueAssignee],
   );
 
   useKeyboard((e) => {
@@ -539,7 +545,7 @@ export function useShellPresenter() {
     }
     if (action === 'new-issue') {
       e.preventDefault();
-      setCreateIssue(true);
+      openCreateIssue();
     }
     if (action === 'new-adr') {
       e.preventDefault();
@@ -669,7 +675,7 @@ export function useShellPresenter() {
     setIssueTemplateSlug('');
     setIssueProjectId('');
     setIssueCycleId('');
-    setIssueAssignee('self');
+    setIssueAssignee(defaultIssueAssignee);
     setCreateIssue(false);
     if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
     await router.invalidate();
@@ -816,7 +822,7 @@ export function useShellPresenter() {
         setPaletteOpen(true);
       },
       onOpenSearch: () => navigate({ to: '/search', search: {} }),
-      onCreateIssue: () => setCreateIssue(true),
+      onCreateIssue: openCreateIssue,
       onDismissError: () => setError(''),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onToggleWorkspaceNavigation: () => setWorkspaceNavigationOpen((open) => !open),
@@ -870,7 +876,7 @@ export function useShellPresenter() {
           setIssueBody('');
           setIssueStatus('todo');
           setIssuePriority(0);
-          setIssueAssignee('self');
+          setIssueAssignee(defaultIssueAssignee);
           setIssueType('');
           setIssueEstimate('');
           setIssueLabelNames([]);

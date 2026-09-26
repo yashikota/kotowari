@@ -254,6 +254,8 @@
     "personalPreferences": "個人設定",
     "preferencesSavedLocally": "設定はこのデバイスに保存されます。",
     "defaultHome": "既定のホーム画面",
+    "autoAssignToSelf": "新しいイシューを自分に割り当てる",
+    "autoAssignToSelfDescription": "テンプレートで別の担当者が指定されていない場合、新しいイシューを自分に割り当てます。",
     "home": {
       "home": "ホーム",
       "issues": "イシュー",
