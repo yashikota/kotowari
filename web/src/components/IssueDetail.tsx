@@ -137,6 +137,7 @@ export function IssueDetailView({
         customReminderOpen,
         customReminderValue,
         issueOptionsOpen,
+        reminderMenuOpen,
         subIssueEditorOpen,
         relatedIssueKind,
         relatedIssueTitle,
@@ -517,7 +518,7 @@ export function IssueDetailView({
                     <Menu.Item onClick={handlers.Make_copy_onClick42}>
                       {t('issueActions.makeCopy')}
                     </Menu.Item>
-                    <Menu.Sub>
+                    <Menu.Sub opened={reminderMenuOpen} onChange={handlers.onReminderMenuChange}>
                       <Menu.Sub.Target>
                         <Menu.Sub.Item>{t('issueActions.remindMe')}</Menu.Sub.Item>
                       </Menu.Sub.Target>
@@ -1659,6 +1660,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
           break;
         case 'open-due-date':
           void sendIntent('onOpenDueDate', []);
+          break;
+        case 'open-reminder':
+          void sendIntent('onOpenIssueReminderMenu', []);
           break;
         case 'open-sub-issue':
           void sendIntent('onOpenSubIssueEditor', []);

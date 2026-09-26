@@ -516,6 +516,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['I', { metaKey: true, shiftKey: true }, 'focus-description'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['D', { shiftKey: true }, 'open-due-date'],
+    ['H', { shiftKey: true }, 'open-reminder'],
     ['R', { shiftKey: true }, 'rename'],
     ['O', { ctrlKey: true, shiftKey: true }, 'open-sub-issue'],
     ['L', { metaKey: true, shiftKey: true }, 'toggle-resources'],

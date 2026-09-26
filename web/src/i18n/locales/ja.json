@@ -1553,6 +1553,7 @@
     "shortcutAssignIssueToSelf": "自分をイシューに割り当て",
     "shortcutToggleIssueFavorite": "イシューのお気に入りを切り替え",
     "shortcutSetIssueDueDate": "イシューの期限を設定",
+    "shortcutSetIssueReminder": "イシューのリマインダーを設定",
     "shortcutFocusIssueDescription": "イシューの説明にフォーカス",
     "shortcutCreateSubIssue": "サブイシューを作成",
     "shortcutToggleIssueResources": "イシューのリソース欄を折りたたむ／展開",

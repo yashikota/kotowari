@@ -39,6 +39,7 @@ export function ShortcutHelpView({
     { keys: 'i', action: t('ui.shortcutAssignIssueToSelf') },
     { keys: 'Alt+F', action: t('ui.shortcutToggleIssueFavorite') },
     { keys: 'Shift+D', action: t('ui.shortcutSetIssueDueDate') },
+    { keys: 'Shift+H', action: t('ui.shortcutSetIssueReminder') },
     { keys: 'Ctrl/⌘+Shift+I', action: t('ui.shortcutFocusIssueDescription') },
     { keys: 'Ctrl/⌘+Shift+O', action: t('ui.shortcutCreateSubIssue') },
     { keys: 'Ctrl/⌘+Shift+L', action: t('ui.shortcutToggleIssueResources') },

@@ -262,6 +262,7 @@ export type IssueDetailShortcut =
   | 'toggle-favorite'
   | 'rename'
   | 'open-due-date'
+  | 'open-reminder'
   | 'open-sub-issue'
   | 'toggle-resources'
   | 'add-link';
@@ -292,6 +293,7 @@ export function issueDetailShortcutFromKeyboard(event: {
   if (modifier || event.altKey) return null;
   if (event.shiftKey) {
     if (key === 'd') return 'open-due-date';
+    if (key === 'h') return 'open-reminder';
     if (key === 'r') return 'rename';
     if (key === 'e') return 'open-estimate';
     if (key === 'p') return 'create-linked-adr';

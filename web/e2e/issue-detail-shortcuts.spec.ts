@@ -37,6 +37,24 @@ test('issue shortcuts assign to me, toggle favorite, and open the due-date picke
   expect(resetFavorite.ok()).toBeTruthy();
 });
 
+test('Shift+H opens the issue reminder submenu', async ({ page, request }) => {
+  const created = await request.post('/api/issues', {
+    data: { title: `Issue reminder shortcut ${Date.now()}` },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  await page.goto(`/issues/${issue.identifier}`);
+
+  await page.getByRole('button', { name: 'Issue options' }).focus();
+  await page.keyboard.press('Shift+h');
+
+  const reminderMenu = page.getByRole('menu', { name: 'Issue options' });
+  await expect(reminderMenu).toBeVisible();
+  await expect(reminderMenu.getByRole('menuitem', { name: 'An hour from now' })).toBeVisible();
+  await expect(reminderMenu.getByRole('menuitem', { name: 'Tomorrow' })).toBeVisible();
+  await expect(reminderMenu.getByRole('menuitem', { name: 'Custom…' })).toBeVisible();
+});
+
 test('issue shortcuts create a sub-issue, toggle resources, and open the link form', async ({
   page,
   request,
@@ -153,6 +171,7 @@ test('shortcut help documents issue detail actions in the active locale', async 
   await expect(help).toContainText('Assign the issue to yourself');
   await expect(help).toContainText('Toggle the issue favorite');
   await expect(help).toContainText('Set the issue due date');
+  await expect(help).toContainText('Set a reminder for the issue');
   await expect(help).toContainText('Focus the issue description');
   await expect(help).toContainText('Create a sub-issue');
   await expect(help).toContainText('Collapse or expand issue resources');

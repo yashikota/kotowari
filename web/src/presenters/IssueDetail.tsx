@@ -128,6 +128,7 @@ export function useIssueDetailPresenter({
   const [customReminderOpen, setCustomReminderOpen] = useState(false);
   const [customReminderValue, setCustomReminderValue] = useState('');
   const [issueOptionsOpen, setIssueOptionsOpen] = useState(false);
+  const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
   const [issuePropertyMenu, setIssuePropertyMenu] = useState<IssuePropertyMenu>(null);
   const [relatedIssueKind, setRelatedIssueKind] = useState<RelatedIssueKind | null>(null);
   const [relatedIssueTitle, setRelatedIssueTitle] = useState('');
@@ -803,6 +804,7 @@ export function useIssueDetailPresenter({
     customReminderOpen,
     customReminderValue,
     issueOptionsOpen,
+    reminderMenuOpen,
     relatedIssueKind,
     relatedIssueTitle,
     markAsKind,
@@ -1158,7 +1160,15 @@ export function useIssueDetailPresenter({
         setIssueOptionsOpen(false);
       },
       onCloseCustomReminder: () => setCustomReminderOpen(false),
-      onIssueOptionsChange: (opened: boolean) => setIssueOptionsOpen(opened),
+      onOpenIssueReminderMenu: () => {
+        setIssueOptionsOpen(true);
+        setReminderMenuOpen(true);
+      },
+      onReminderMenuChange: (opened: boolean) => setReminderMenuOpen(opened),
+      onIssueOptionsChange: (opened: boolean) => {
+        setIssueOptionsOpen(opened);
+        if (!opened) setReminderMenuOpen(false);
+      },
       onCustomReminderChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setCustomReminderValue(e.target.value),
