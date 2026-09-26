@@ -6,14 +6,20 @@ import {
   MultiSelect,
   Select,
   Stack,
+  Table,
+  Tabs,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconArrowLeft, IconTarget, IconTrash } from '@tabler/icons-react';
+import { Link } from '@tanstack/react-router';
+import { IconArrowLeft, IconSearch, IconTarget, IconTrash } from '@tabler/icons-react';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 import type { Initiative, InitiativeStatus } from '../types.ts';
+import { formatCalendarDate } from '../time.ts';
+import { InitiativeListControls } from '../components/InitiativeListControls.tsx';
+import type { InitiativeDisplayProperty } from '../initiative-list.ts';
 import {
   useInitiativeDetailPresenter,
   useInitiativesPagePresenter,
@@ -31,6 +37,21 @@ export function InitiativesPageView({
   const { t } = useTranslation();
   const {
     initiatives,
+    groups,
+    scope,
+    query,
+    statusFilter,
+    projectsFilter,
+    targetDateFrom,
+    targetDateTo,
+    groupBy,
+    orderBy,
+    direction,
+    displayProperties,
+    filterOpened,
+    optionsOpened,
+    hasFilters,
+    onActiveProjectCount,
     createOpen,
     name,
     description,
@@ -58,50 +79,111 @@ export function InitiativesPageView({
             </Button>
           }
         />
-        {initiatives.length === 0 ? (
-          <EmptyState>
-            <Stack align="center" gap="sm">
-              <IconTarget size={24} stroke={1.5} aria-hidden />
-              <Text fw={600}>{t('initiatives.empty')}</Text>
-              <Text c="dimmed" ta="center" maw={380}>
-                {t('initiatives.emptyDescription')}
-              </Text>
-              <Button type="button" onClick={handlers.onOpenCreate}>
-                {t('initiatives.new')}
-              </Button>
+        <Stack gap="sm" p="md" style={{ overflow: 'auto', minHeight: 0 }}>
+          <Group justify="space-between" align="center" wrap="wrap">
+            <Tabs value={scope} onChange={handlers.onScopeChange} variant="default">
+              <Tabs.List>
+                <Tabs.Tab value="active">{t('initiativeList.active')}</Tabs.Tab>
+                <Tabs.Tab value="planned">{t('initiativeList.planned')}</Tabs.Tab>
+                <Tabs.Tab value="all">{t('initiativeList.all')}</Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
+            <Group gap="xs" wrap="nowrap">
+              <TextInput
+                aria-label={t('initiativeList.search')}
+                placeholder={t('initiativeList.search')}
+                leftSection={<IconSearch size={15} aria-hidden />}
+                value={query}
+                onChange={handlers.onQueryChange}
+                w={220}
+              />
+              <InitiativeListControls
+                filterOpened={filterOpened}
+                optionsOpened={optionsOpened}
+                statusFilter={statusFilter}
+                projectsFilter={projectsFilter}
+                targetDateFrom={targetDateFrom}
+                targetDateTo={targetDateTo}
+                groupBy={groupBy}
+                orderBy={orderBy}
+                direction={direction}
+                displayProperties={displayProperties}
+                hasFilters={hasFilters}
+                handlers={handlers}
+              />
+            </Group>
+          </Group>
+          {initiatives.length === 0 ? (
+            <EmptyState>
+              <Stack align="center" gap="sm">
+                <IconTarget size={24} stroke={1.5} aria-hidden />
+                <Text fw={600}>{t('initiatives.empty')}</Text>
+                <Text c="dimmed" ta="center" maw={380}>
+                  {t('initiatives.emptyDescription')}
+                </Text>
+                <Button type="button" onClick={handlers.onOpenCreate}>
+                  {t('initiatives.new')}
+                </Button>
+              </Stack>
+            </EmptyState>
+          ) : groups.every((group) => group.initiatives.length === 0) ? (
+            <EmptyState>
+              <Stack align="center" gap="sm">
+                <Text fw={600}>{t('initiativeList.noMatches')}</Text>
+                <Text c="dimmed" ta="center" maw={380}>
+                  {t('initiativeList.noMatchesDescription')}
+                </Text>
+                <Button type="button" variant="default" onClick={handlers.onClearFilters}>
+                  {t('initiativeList.clearFilters')}
+                </Button>
+              </Stack>
+            </EmptyState>
+          ) : (
+            <Stack gap="lg">
+              {groups.map((group) =>
+                group.initiatives.length === 0 ? null : (
+                  <Stack key={group.key} gap="xs">
+                    {group.status ? (
+                      <Group gap="xs" px="xs">
+                        <Text size="sm" fw={600}>
+                          {handlers.onStatusLabel(group.status)}
+                        </Text>
+                        <Badge size="sm" variant="light" color="gray">
+                          {group.initiatives.length}
+                        </Badge>
+                      </Group>
+                    ) : null}
+                    <Table.ScrollContainer minWidth={640}>
+                      <Table highlightOnHover verticalSpacing="xs" horizontalSpacing="sm">
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>{t('initiativeList.name')}</Table.Th>
+                            {displayProperties.map((property) => (
+                              <Table.Th key={property}>
+                                {t(`initiativeList.property.${property}`)}
+                              </Table.Th>
+                            ))}
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {group.initiatives.map((initiative: Initiative) => (
+                            <InitiativeListRow
+                              key={initiative.slug}
+                              initiative={initiative}
+                              displayProperties={displayProperties}
+                              activeProjects={onActiveProjectCount(initiative)}
+                              statusLabel={handlers.onStatusLabel(initiative.status)}
+                            />
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </Table.ScrollContainer>
+                  </Stack>
+                ),
+              )}
             </Stack>
-          </EmptyState>
-        ) : (
-          <Stack gap={4} p="md" style={{ overflow: 'auto', minHeight: 0 }}>
-            {initiatives.map((initiative: Initiative) => (
-              <Button
-                key={initiative.slug}
-                type="button"
-                variant="subtle"
-                color="gray"
-                justify="space-between"
-                h="auto"
-                p="sm"
-                onClick={() => handlers.onOpenInitiative(initiative)}
-              >
-                <Group wrap="nowrap" gap="sm" style={{ minWidth: 0 }}>
-                  <IconTarget size={17} color={initiative.color} aria-hidden />
-                  <Text size="sm" fw={550} truncate>
-                    {initiative.name}
-                  </Text>
-                </Group>
-                <Group gap="xs" wrap="nowrap">
-                  <Badge variant="light" color="gray">
-                    {handlers.onStatusLabel(initiative.status)}
-                  </Badge>
-                  <Text size="xs" c="dimmed">
-                    {t('initiatives.projectCount', { count: initiative.projectSlugs.length })}
-                  </Text>
-                </Group>
-              </Button>
-            ))}
-          </Stack>
-        )}
+          )}
+        </Stack>
         <Modal opened={createOpen} onClose={handlers.onCloseCreate} title={t('initiatives.new')}>
           <form onSubmit={handlers.onSubmitCreate}>
             <Stack>
@@ -166,6 +248,81 @@ export function InitiativesPageView({
         </Modal>
       </Pane>
     </SplitLayout>
+  );
+}
+
+function InitiativeListRow({
+  initiative,
+  displayProperties,
+  activeProjects,
+  statusLabel,
+}: {
+  initiative: Initiative;
+  displayProperties: InitiativeDisplayProperty[];
+  activeProjects: number;
+  statusLabel: string;
+}) {
+  const { t, i18n } = useTranslation();
+  const date = (value: string) => formatCalendarDate(value, i18n.language);
+  return (
+    <Table.Tr>
+      <Table.Td>
+        <Group gap="xs" wrap="nowrap" miw={180}>
+          <IconTarget size={17} color={initiative.color} aria-hidden />
+          <Link
+            to="/initiatives/$slug"
+            params={{ slug: initiative.slug }}
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            <Text size="sm" fw={550} truncate>
+              {initiative.name}
+            </Text>
+          </Link>
+        </Group>
+      </Table.Td>
+      {displayProperties.map((property) => (
+        <Table.Td key={property}>
+          {property === 'id' ? (
+            <Text size="xs" c="dimmed">
+              #{initiative.id}
+            </Text>
+          ) : property === 'description' ? (
+            <Text
+              size="xs"
+              c={initiative.description ? undefined : 'dimmed'}
+              lineClamp={1}
+              maw={300}
+            >
+              {initiative.description || '—'}
+            </Text>
+          ) : property === 'status' ? (
+            <Badge size="sm" variant="light" color="gray">
+              {statusLabel}
+            </Badge>
+          ) : property === 'projects' ? (
+            <Text size="xs" c="dimmed">
+              {t('initiatives.projectCount', { count: initiative.projectSlugs.length })}
+            </Text>
+          ) : property === 'activeProjects' ? (
+            <Text size="xs" c="dimmed">
+              {t('initiativeList.activeProjectCount', { count: activeProjects })}
+            </Text>
+          ) : property === 'targetDate' ? (
+            <Text size="xs" c={initiative.targetDate ? undefined : 'dimmed'}>
+              {initiative.targetDate ? date(initiative.targetDate) : '—'}
+            </Text>
+          ) : property === 'created' ? (
+            <Text size="xs" c="dimmed">
+              {date(initiative.createdAt)}
+            </Text>
+          ) : property === 'updated' ? (
+            <Text size="xs" c="dimmed">
+              {date(initiative.updatedAt)}
+            </Text>
+          ) : null}
+        </Table.Td>
+      ))}
+    </Table.Tr>
   );
 }
 

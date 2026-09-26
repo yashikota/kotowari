@@ -13,6 +13,7 @@ import { EmptyState } from './mantine-ui.tsx';
 import { PresenterScope } from './application/Root.tsx';
 import { defaultHomeHref, getPersonalPreferences } from './preferences.ts';
 import { parseProjectFilterGroup, type ProjectViewSearch } from './project-views.ts';
+import { parseInitiativeListSearch } from './initiative-list.ts';
 import { parseSearchPageSearch } from './search.ts';
 
 function NotFoundPage() {
@@ -210,6 +211,7 @@ const projectsRoute = createRoute({
 const initiativesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/initiatives',
+  validateSearch: parseInitiativeListSearch,
   loader: async () => {
     const [initiatives, projects] = await Promise.all([api.initiatives(), api.projects()]);
     return { initiatives, projects };

@@ -1,9 +1,16 @@
-import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router';
+import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
 import { queryCache } from '../application/cache.ts';
+import {
+  buildInitiativeList,
+  DEFAULT_INITIATIVE_DISPLAY_PROPERTIES,
+  initiativeActiveProjectCount,
+} from '../initiative-list.ts';
+import type { InitiativeDisplayProperty, InitiativeListSearch } from '../initiative-list.ts';
+import { useProjectWorkflow } from '../project-workflow.tsx';
 import type { Initiative, InitiativeStatus } from '../types.ts';
 
 function initiativeSlug(name: string, existing: Initiative[]): string {
@@ -21,8 +28,10 @@ function initiativeSlug(name: string, existing: Initiative[]): string {
 
 export function useInitiativesPagePresenter() {
   const { initiatives, projects } = useLoaderData({ from: '/initiatives' });
+  const search = useSearch({ from: '/initiatives' });
+  const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: '/initiatives' });
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');
@@ -33,6 +42,30 @@ export function useInitiativesPagePresenter() {
   const [targetDate, setTargetDate] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [filterOpened, setFilterOpened] = useState(false);
+  const [optionsOpened, setOptionsOpened] = useState(false);
+
+  const groups = useMemo(
+    () => buildInitiativeList({ initiatives, projects, search }),
+    [initiatives, projects, search],
+  );
+  const displayProperties = search.displayProperties ?? DEFAULT_INITIATIVE_DISPLAY_PROPERTIES;
+  const projectsFilter = search.projects ?? 'all';
+  const scope = search.scope ?? 'all';
+  const hasFilters = Boolean(
+    search.q ||
+    search.statusFilter?.length ||
+    search.projects ||
+    search.targetDateFrom ||
+    search.targetDateTo,
+  );
+  const updateListSearch = (patch: Partial<InitiativeListSearch>) => {
+    void navigate({
+      to: '/initiatives',
+      search: (previous) => ({ ...previous, ...patch }),
+      replace: true,
+    });
+  };
 
   async function createInitiative(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,6 +96,22 @@ export function useInitiativesPagePresenter() {
     _view: 0 as const,
     initiatives,
     projects,
+    groups,
+    scope,
+    query: search.q ?? '',
+    statusFilter: search.statusFilter ?? [],
+    projectsFilter,
+    targetDateFrom: search.targetDateFrom ?? '',
+    targetDateTo: search.targetDateTo ?? '',
+    groupBy: search.groupBy ?? 'none',
+    orderBy: search.orderBy ?? 'manual',
+    direction: search.direction ?? 'asc',
+    displayProperties,
+    filterOpened,
+    optionsOpened,
+    hasFilters,
+    onActiveProjectCount: (initiative: Initiative) =>
+      initiativeActiveProjectCount(initiative, projects, projectWorkflowStatuses),
     createOpen,
     name,
     description,
@@ -97,6 +146,40 @@ export function useInitiativesPagePresenter() {
         void navigate({ to: '/initiatives/$slug', params: { slug: initiative.slug } }),
       onProjectOpen: (slug: string) => void navigate({ to: '/projects/$slug', params: { slug } }),
       onStatusLabel: (value: InitiativeStatus) => t(`initiatives.${value}`),
+      onScopeChange: (value: string | null) =>
+        updateListSearch({ scope: (value ?? 'all') as InitiativeListSearch['scope'] }),
+      onQueryChange: (event: ChangeEvent<HTMLInputElement>) =>
+        updateListSearch({ q: event.target.value || undefined }),
+      onFilterOpenedChange: setFilterOpened,
+      onOptionsOpenedChange: setOptionsOpened,
+      onStatusFilterChange: (value: string[]) =>
+        updateListSearch({
+          statusFilter: value.length ? (value as InitiativeStatus[]) : undefined,
+        }),
+      onProjectsFilterChange: (value: string) =>
+        updateListSearch({
+          projects: value === 'all' ? undefined : (value as InitiativeListSearch['projects']),
+        }),
+      onTargetDateFromChange: (value: string) =>
+        updateListSearch({ targetDateFrom: value || undefined }),
+      onTargetDateToChange: (value: string) =>
+        updateListSearch({ targetDateTo: value || undefined }),
+      onGroupByChange: (value: string) =>
+        updateListSearch({ groupBy: value as InitiativeListSearch['groupBy'] }),
+      onOrderByChange: (value: string) =>
+        updateListSearch({ orderBy: value as InitiativeListSearch['orderBy'] }),
+      onDirectionChange: (value: string) =>
+        updateListSearch({ direction: value as InitiativeListSearch['direction'] }),
+      onDisplayPropertiesChange: (values: InitiativeDisplayProperty[]) =>
+        updateListSearch({ displayProperties: values.length ? values : undefined }),
+      onClearFilters: () =>
+        updateListSearch({
+          q: undefined,
+          statusFilter: undefined,
+          projects: undefined,
+          targetDateFrom: undefined,
+          targetDateTo: undefined,
+        }),
     },
   };
 }

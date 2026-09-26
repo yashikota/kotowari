@@ -1,5 +1,80 @@
 import { expect, test } from '@playwright/test';
 
+test('initiative list matches Linear views, filters, grouping, ordering, and display options', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const activeName = `Active initiative ${stamp}`;
+  const plannedName = `Planned initiative ${stamp}`;
+  const projectSlug = `initiative-list-project-${stamp}`;
+  const projectResponse = await request.post('/api/projects', {
+    data: {
+      name: `Active initiative project ${stamp}`,
+      slug: projectSlug,
+      status: 'started',
+      description: '',
+    },
+  });
+  expect(projectResponse.ok(), await projectResponse.text()).toBeTruthy();
+
+  const activeResponse = await request.post('/api/initiatives', {
+    data: {
+      name: activeName,
+      slug: `active-initiative-${stamp}`,
+      status: 'active',
+      description: 'Ship the next version',
+      targetDate: '2026-11-20',
+      projectSlugs: [projectSlug],
+    },
+  });
+  expect(activeResponse.ok(), await activeResponse.text()).toBeTruthy();
+  const active = (await activeResponse.json()) as { id: number };
+  const plannedResponse = await request.post('/api/initiatives', {
+    data: {
+      name: plannedName,
+      slug: `planned-initiative-${stamp}`,
+      status: 'planned',
+      targetDate: '2026-12-10',
+    },
+  });
+  expect(plannedResponse.ok(), await plannedResponse.text()).toBeTruthy();
+
+  await page.goto('/initiatives?scope=active');
+  await expect(page.getByRole('link', { name: activeName })).toBeVisible();
+  await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
+  await page.getByRole('tab', { name: 'All initiatives' }).click();
+  await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('combobox', { name: 'Projects' }).selectOption('withProjects');
+  await expect(page.getByRole('link', { name: activeName })).toBeVisible();
+  await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('combobox', { name: 'Grouping' }).selectOption('status');
+  await page.getByRole('combobox', { name: 'Ordering' }).selectOption('targetDate');
+  await page.getByRole('checkbox', { name: 'ID' }).check();
+  await page.getByRole('checkbox', { name: 'Description' }).check();
+  await page.getByRole('checkbox', { name: 'Active projects' }).check();
+  await expect(page.getByRole('columnheader', { name: 'ID' }).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Description' }).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Active projects' }).first()).toBeVisible();
+  await expect(page.getByText('In progress', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(`#${active.id}`, { exact: true })).toBeVisible();
+  await expect(page.getByText('1 active project', { exact: true })).toBeVisible();
+
+  await page.getByRole('textbox', { name: 'Search initiatives' }).fill('next version');
+  await expect(page.getByRole('link', { name: activeName })).toBeVisible();
+  await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('link', { name: activeName })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Description' }).first()).toBeVisible();
+  await expect(page.getByText('1 active project', { exact: true })).toBeVisible();
+});
+
 test('initiatives link projects in both directions and filter project lists', async ({
   page,
   request,
