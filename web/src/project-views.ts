@@ -14,6 +14,8 @@ export type ProjectGroupBy =
 export type ProjectViewSearch = {
   q?: string;
   qOperator?: ProjectSearchOperator;
+  advancedFilter?: boolean;
+  filterOperator?: 'and' | 'or';
   specificProject?: string;
   status?: string[];
   priority?: string[];

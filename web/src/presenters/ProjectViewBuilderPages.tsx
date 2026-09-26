@@ -7,8 +7,9 @@ import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
-import { matchesProjectTitleSummary, useProjectViews } from '../project-views.ts';
+import { useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
+import { matchesProjectViewSearch } from '../project-view-filtering.ts';
 import { groupProjects } from '../project-grouping.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type { Initiative, Project, ProjectTemplate, ViewIconName } from '../types.ts';
@@ -105,90 +106,7 @@ export function useProjectViewBuilderPresenter() {
   );
 
   const filteredProjects = useMemo(() => {
-    const query = search.q ?? '';
-    const statusFilters = search.status ?? [];
-    const priorityFilters = search.priority ?? [];
-    const healthFilters = search.health ?? [];
-    const labelFilters = search.labels ?? [];
-    const templateFilters = search.templates ?? [];
-    const initiativeFilters = search.initiatives ?? [];
-    const milestoneFilters = search.milestones ?? [];
-    const relationFilters = search.relations ?? [];
-    const filtered = data.projects.filter((project) => {
-      if (search.specificProject && project.slug !== search.specificProject) return false;
-      if (
-        templateFilters.length &&
-        !templateFilters.includes(`template:${project.templateSlug ?? ''}`)
-      )
-        return false;
-      if (
-        initiativeFilters.length &&
-        !initiativeFilters.some((value) =>
-          value === 'initiative:none'
-            ? !project.initiativeSlugs?.length
-            : (project.initiativeSlugs ?? []).includes(value.slice('initiative:'.length)),
-        )
-      )
-        return false;
-      if (
-        statusFilters.length &&
-        !statusFilters.includes(project.workflowStatus ?? project.status) &&
-        !statusFilters.includes(project.status)
-      ) {
-        return false;
-      }
-      if (priorityFilters.length && !priorityFilters.includes(String(project.priority)))
-        return false;
-      if (healthFilters.length && !healthFilters.includes(project.health || 'none')) return false;
-      if (
-        labelFilters.length &&
-        !labelFilters.some((label) => (project.labels ?? []).includes(label))
-      ) {
-        return false;
-      }
-      if (
-        milestoneFilters.length &&
-        !milestoneFilters.some((milestone) =>
-          project.milestones.some((item) => item.name === milestone),
-        )
-      ) {
-        return false;
-      }
-      if (
-        relationFilters.length &&
-        !relationFilters.some((kind) =>
-          project.dependencies?.some((dependency) => dependency.kind === kind),
-        )
-      ) {
-        return false;
-      }
-      if (search.dateField && (search.dateFrom || search.dateTo)) {
-        const value =
-          search.dateField === 'startDate'
-            ? project.startDate
-            : search.dateField === 'targetDate'
-              ? project.targetDate
-              : search.dateField === 'created'
-                ? project.createdAt
-                : search.dateField === 'updated'
-                  ? project.updatedAt
-                  : search.dateField === 'completed'
-                    ? project.completedAt
-                    : null;
-        const date = value?.slice(0, 10);
-        if (
-          !date ||
-          (search.dateFrom && date < search.dateFrom) ||
-          (search.dateTo && date > search.dateTo)
-        ) {
-          return false;
-        }
-      }
-      const closed = project.status === 'completed' || project.status === 'canceled';
-      if (search.closed === 'open' && closed) return false;
-      if (search.closed === 'closed' && !closed) return false;
-      return matchesProjectTitleSummary(project, query, search.qOperator);
-    });
+    const filtered = data.projects.filter((project) => matchesProjectViewSearch(project, search));
     const originalOrder = new Map(data.projects.map((project, index) => [project.slug, index]));
     const statusOrder = new Map(statuses.map((status, index) => [status.id, index]));
     const direction = search.direction === 'desc' ? -1 : 1;
@@ -398,6 +316,8 @@ export function useProjectViewBuilderPresenter() {
   const controls: ProjectListControlsModel = {
     search: search.q ?? '',
     searchOperator: search.qOperator ?? 'contains',
+    advancedFilter: search.advancedFilter ?? false,
+    filterOperator: search.filterOperator ?? 'and',
     statuses: statusFilters,
     priorities: priorityFilters,
     healths: healthFilters,
@@ -431,6 +351,14 @@ export function useProjectViewBuilderPresenter() {
     availableLabels: data.labels,
     filterCount,
     handlers: {
+      onAdvancedFilterToggle: () =>
+        void updateSearch(
+          search.advancedFilter
+            ? { advancedFilter: undefined, filterOperator: undefined }
+            : { advancedFilter: true, filterOperator: 'or' },
+        ),
+      onFilterOperatorChange: (value) =>
+        void updateSearch({ filterOperator: value === 'or' ? 'or' : undefined }),
       onSearchChange: (value) =>
         void updateSearch({
           q: value || undefined,

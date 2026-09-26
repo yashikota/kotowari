@@ -2754,7 +2754,7 @@ test('upcoming cycles can be started today from cycle options', async ({ page, r
     const date = new Date();
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T00:00:00Z`;
   });
-  await expect(page.getByRole('combobox', { name: 'Status' })).toHaveValue('active');
+  await expect(page.getByRole('main').getByText('Current', { exact: true })).toBeVisible();
   const saved = await request.get(`/api/cycles/${cycle.number}`);
   expect(await saved.json()).toMatchObject({ status: 'active', startsAt: expectedStart });
 });

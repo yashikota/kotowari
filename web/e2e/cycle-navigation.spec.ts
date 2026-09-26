@@ -50,7 +50,8 @@ test('cycle header navigates to adjacent cycles by search and keyboard shortcuts
   await expect(breadcrumb.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Cycle ${current.number}` })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'New issue' })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: 'Status' })).toBeVisible();
+  await expect(page.getByRole('main').getByText('Current', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change End date' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cycle options' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Close cycle details' }).click();

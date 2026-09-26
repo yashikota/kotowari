@@ -498,6 +498,43 @@ test('personal project views can be created, updated, reopened, and deleted', as
   expect(storedViews).toEqual([]);
 });
 
+test('advanced project filters can match any selected facet and survive reload', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const statusOnlyName = `Advanced status ${stamp}`;
+  const priorityOnlyName = `Advanced priority ${stamp}`;
+  const noMatchName = `Advanced no match ${stamp}`;
+  const projects = [
+    { name: statusOnlyName, slug: `advanced-status-${stamp}`, status: 'started', priority: 4 },
+    { name: priorityOnlyName, slug: `advanced-priority-${stamp}`, status: 'planned', priority: 0 },
+    { name: noMatchName, slug: `advanced-none-${stamp}`, status: 'planned', priority: 4 },
+  ];
+  for (const project of projects) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects?status=started&priority=%5B%220%22%5D');
+  await expect(page.getByRole('link', { name: new RegExp(statusOnlyName) })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: new RegExp(priorityOnlyName) })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: new RegExp(noMatchName) })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Advanced filter', exact: true }).click();
+
+  await expect(page.getByRole('link', { name: new RegExp(statusOnlyName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(priorityOnlyName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noMatchName) })).toHaveCount(0);
+  await expect.poll(() => new URL(page.url()).searchParams.get('filterOperator')).toBe('or');
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(statusOnlyName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(priorityOnlyName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noMatchName) })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: 'Any' })).toBeChecked();
+});
+
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 800 });
   await page.goto('/views/projects/new');

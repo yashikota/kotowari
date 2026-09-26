@@ -24,6 +24,8 @@ import type { ProjectGroupBy } from '../project-views.ts';
 export type ProjectListControlsModel = {
   search: string;
   searchOperator: 'contains' | 'doesNotContain';
+  advancedFilter: boolean;
+  filterOperator: 'and' | 'or';
   statuses: string[];
   priorities: string[];
   healths: string[];
@@ -54,6 +56,8 @@ export type ProjectListControlsModel = {
   availableLabels: Label[];
   filterCount: number;
   handlers: {
+    onAdvancedFilterToggle: () => void;
+    onFilterOperatorChange: (value: 'and' | 'or') => void;
     onSearchChange: (value: string) => void;
     onSearchOperatorChange: (value: string | null) => void;
     onStatusesChange: (value: string[]) => void;

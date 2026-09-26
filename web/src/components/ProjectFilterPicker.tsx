@@ -6,6 +6,7 @@ import {
   Group,
   MultiSelect,
   Popover,
+  SegmentedControl,
   Select,
   Stack,
   Text,
@@ -25,6 +26,7 @@ import {
   IconStack2,
   IconTag,
   IconTarget,
+  IconX,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -497,6 +499,25 @@ export function ProjectFilterPicker({
                 leftSection={<IconSearch size={15} stroke={1.7} aria-hidden="true" />}
                 styles={{ input: { border: 0, borderRadius: 0 } }}
               />
+              <Button
+                type="button"
+                variant={model.advancedFilter ? 'light' : 'subtle'}
+                color="gray"
+                size="compact-sm"
+                fullWidth
+                justify="flex-start"
+                leftSection={<IconFilter size={14} stroke={1.7} aria-hidden="true" />}
+                onClick={() => {
+                  model.handlers.onAdvancedFilterToggle();
+                  setOpened(false);
+                }}
+              >
+                {t(
+                  model.advancedFilter
+                    ? 'projectList.hideAdvancedFilter'
+                    : 'projectList.advancedFilter',
+                )}
+              </Button>
               <Divider />
               <Stack gap={0} mah="min(62vh, 440px)" p="xs" style={{ overflowY: 'auto' }}>
                 {visibleFilterGroups.map((group, index) => (
@@ -567,6 +588,33 @@ export function ProjectFilterPicker({
           {label}: {value}
         </Button>
       ))}
+      {model.advancedFilter ? (
+        <Group gap={4} wrap="nowrap" aria-label={t('projectList.matchFilters')}>
+          <SegmentedControl
+            size="xs"
+            aria-label={t('projectList.matchFilters')}
+            value={model.filterOperator}
+            data={[
+              { label: t('projectList.matchAll'), value: 'and' },
+              { label: t('projectList.matchAny'), value: 'or' },
+            ]}
+            onChange={(value) =>
+              model.handlers.onFilterOperatorChange(value === 'or' ? 'or' : 'and')
+            }
+          />
+          <ActionIcon
+            type="button"
+            size="sm"
+            variant="subtle"
+            color="gray"
+            aria-label={t('projectList.removeAdvancedFilter')}
+            title={t('projectList.removeAdvancedFilter')}
+            onClick={model.handlers.onAdvancedFilterToggle}
+          >
+            <IconX size={14} aria-hidden="true" />
+          </ActionIcon>
+        </Group>
+      ) : null}
     </Group>
   );
 }
