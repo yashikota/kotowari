@@ -1570,6 +1570,7 @@
     "shortcutOpenLabelsMenu": "Open the issue labels menu",
     "shortcutOpenEstimateMenu": "Open the issue estimate menu",
     "shortcutSnoozeNotification": "Snooze the selected inbox notification",
+    "shortcutDeleteReadInbox": "Delete all read inbox notifications",
     "shortcutSwitchNavigation": "Switch sidebar section",
     "shortcutSetPriority": "Set priority",
     "shortcutCloseDialogs": "Close dialogs or clear selection",

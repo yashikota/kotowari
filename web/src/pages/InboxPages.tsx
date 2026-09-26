@@ -29,7 +29,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope } from '../application/Root.tsx';
 import { formatActivity } from '../activity.ts';
-import { EmptyState } from '../mantine-ui.tsx';
+import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 import { useInboxPresenter, type InboxFilter } from '../presenters/Inbox.tsx';
 import type { InboxActivity } from '../types.ts';
 import styles from './InboxPages.module.css';
@@ -131,6 +131,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
               <Menu.Item
                 leftSection={<IconTrash size={14} />}
                 onClick={model.handlers.onDeleteAllRead}
+                rightSection={<Shortcut>Shift+⌫</Shortcut>}
               >
                 {t('inbox.deleteAllRead')}
               </Menu.Item>

@@ -146,6 +146,18 @@ export function useInboxPresenter() {
     if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
   }
 
+  function deleteReadNotifications() {
+    archive(
+      activities
+        .filter(
+          (activity) =>
+            inboxState.readIds.includes(activity.id) &&
+            !inboxState.archivedIds.includes(activity.id),
+        )
+        .map((activity) => activity.id),
+    );
+  }
+
   const handlers = useActions({
     onSelect: (id: number) => {
       setSelectedId(id);
@@ -175,16 +187,7 @@ export function useInboxPresenter() {
       setSelectedId(null);
       setSnoozeMenuOpen(false);
     },
-    onDeleteAllRead: () =>
-      archive(
-        activities
-          .filter(
-            (activity) =>
-              inboxState.readIds.includes(activity.id) &&
-              !inboxState.archivedIds.includes(activity.id),
-          )
-          .map((activity) => activity.id),
-      ),
+    onDeleteAllRead: () => deleteReadNotifications(),
     onDeleteAll: () =>
       archive(
         activities
@@ -194,7 +197,13 @@ export function useInboxPresenter() {
   });
 
   useKeyboard((event) => {
-    if (inboxShortcutFromKeyboard(event) !== 'snooze-notification') return false;
+    const shortcut = inboxShortcutFromKeyboard(event);
+    if (shortcut === 'delete-read-notifications') {
+      event.preventDefault();
+      deleteReadNotifications();
+      return true;
+    }
+    if (shortcut !== 'snooze-notification') return false;
     const focusedRow =
       event.target instanceof Element
         ? event.target.closest<HTMLElement>('[data-inbox-activity-id]')

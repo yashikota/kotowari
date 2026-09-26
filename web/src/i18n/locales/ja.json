@@ -1566,6 +1566,7 @@
     "shortcutOpenLabelsMenu": "イシューのラベルメニューを開く",
     "shortcutOpenEstimateMenu": "イシューの見積もりメニューを開く",
     "shortcutSnoozeNotification": "選択中の受信通知をスヌーズ",
+    "shortcutDeleteReadInbox": "既読の受信通知をすべて削除",
     "shortcutSwitchNavigation": "サイドバーのセクションを切り替え",
     "shortcutSetPriority": "優先度を設定",
     "shortcutCloseDialogs": "ダイアログを閉じる、または選択を解除",

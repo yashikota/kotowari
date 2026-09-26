@@ -99,6 +99,10 @@ test('inbox bulk actions remove read notifications or clear the personal inbox',
   await page.getByRole('menuitem', { name: 'Delete all read' }).click();
   await expect(issueNotifications).toHaveCount(1);
 
+  await issueNotifications.click();
+  await page.keyboard.press('Shift+Backspace');
+  await expect(issueNotifications).toHaveCount(0);
+
   await page.getByRole('button', { name: 'Notification actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete all', exact: true }).click();
   await expect(notifications.getByRole('button')).toHaveCount(0);

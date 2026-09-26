@@ -481,6 +481,12 @@ describe('inbox keyboard shortcuts', () => {
     expect(key('H')).toBe('snooze-notification');
   });
 
+  it('deletes read notifications with Shift+Backspace', () => {
+    expect(key('Backspace', { shiftKey: true })).toBe('delete-read-notifications');
+    expect(key('Backspace')).toBeNull();
+    expect(key('Backspace', { shiftKey: true, metaKey: true })).toBeNull();
+  });
+
   it('does not intercept typing, composition, repeats, or modified shortcuts', () => {
     expect(key('h', { target: el('INPUT') })).toBeNull();
     expect(key('h', { target: el('TEXTAREA') })).toBeNull();
