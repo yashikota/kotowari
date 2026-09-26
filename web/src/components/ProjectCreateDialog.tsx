@@ -150,13 +150,15 @@ export function ProjectCreateDialog({
               size="lg"
             />
             <Group gap="xs" wrap="wrap" align="center">
-              <NativeSelect
+              <Select
                 aria-label={t('field.status')}
                 value={status}
                 onChange={handlers.New_project_status_onChange}
                 size="xs"
                 style={{ width: 150 }}
                 styles={{ input: { borderRadius: 999 } }}
+                searchable
+                comboboxProps={{ withinPortal: false }}
                 data={model.projectWorkflowStatuses.map((workflowStatus) => ({
                   value: workflowStatus.id,
                   label: projectWorkflowStatusLabel(
@@ -166,29 +168,32 @@ export function ProjectCreateDialog({
                   ),
                 }))}
               />
-              <NativeSelect
+              <Select
                 aria-label={t('field.priority')}
                 value={String(priority)}
                 onChange={handlers.New_project_priority_onChange}
                 size="xs"
                 style={{ width: 140 }}
                 styles={{ input: { borderRadius: 999 } }}
+                searchable
+                comboboxProps={{ withinPortal: false }}
                 data={[0, 1, 2, 3, 4].map((value) => ({
                   value: String(value),
                   label: priorityLabel(value),
                 }))}
               />
-              <NativeSelect
+              <Select
                 aria-label={t('projectList.property.lead')}
-                value={lead}
+                value={lead || null}
                 onChange={handlers.New_project_lead_onChange}
+                placeholder={t('projectList.leadUnassigned')}
                 size="xs"
                 style={{ width: 140 }}
                 styles={{ input: { borderRadius: 999 } }}
-                data={[
-                  { value: '', label: t('projectList.leadUnassigned') },
-                  { value: 'self', label: t('projectList.leadYou') },
-                ]}
+                searchable
+                clearable
+                comboboxProps={{ withinPortal: false }}
+                data={[{ value: 'self', label: t('projectList.leadYou') }]}
               />
               <TextInput
                 type="date"

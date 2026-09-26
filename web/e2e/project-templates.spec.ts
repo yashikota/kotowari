@@ -59,9 +59,9 @@ test('a project can be saved as a template and reused without stale dates', asyn
   await expect(createDialog.getByLabel('Description')).toHaveValue(
     '## Launch\nShip a reliable release.',
   );
-  await expect(createDialog.getByLabel('status')).toHaveValue('started');
-  await expect(createDialog.getByLabel('priority')).toHaveValue('2');
-  await expect(createDialog.getByLabel('Lead')).toHaveValue('self');
+  await expect(createDialog.getByRole('combobox', { name: 'Status' })).toHaveValue('In progress');
+  await expect(createDialog.getByRole('combobox', { name: 'Priority' })).toHaveValue('High');
+  await expect(createDialog.getByRole('combobox', { name: 'Lead' })).toHaveValue('You');
   await expect(createDialog.getByText('Beta')).toBeVisible();
   await expect(createDialog.getByLabel('Target date')).toHaveValue('');
 

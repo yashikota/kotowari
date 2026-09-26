@@ -18,7 +18,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   const name = dialog.getByRole('textbox', { name: 'Project name' });
   const template = dialog.getByRole('combobox', { name: 'Project template' });
   const summary = dialog.getByRole('textbox', { name: 'Summary' });
-  const status = dialog.getByLabel('Status');
+  const status = dialog.getByRole('combobox', { name: 'Status' });
   const description = dialog.getByRole('textbox', { name: 'Description' });
   const [nameBounds, templateBounds, summaryBounds, statusBounds, descriptionBounds] =
     await Promise.all([

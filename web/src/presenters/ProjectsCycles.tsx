@@ -969,15 +969,10 @@ export function useProjectsPagePresenter() {
       New_project_description_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setDescription(e.target.value),
-      New_project_status_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setStatus(e.target.value),
-      New_project_priority_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setPriority(Number(e.target.value)),
-      New_project_lead_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setLead(e.target.value as '' | 'self'),
+      New_project_status_onChange: (value: string | null) => value && setStatus(value),
+      New_project_priority_onChange: (value: string | null) =>
+        value !== null && setPriority(Number(value)),
+      New_project_lead_onChange: (value: string | null) => setLead(value === 'self' ? 'self' : ''),
       New_project_start_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setStartDate(e.target.value),

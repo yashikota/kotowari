@@ -249,8 +249,10 @@ test('create issue, comment, and page', async ({ page, request }) => {
   const projectDialog = page.getByRole('dialog', { name: 'New project' });
   await projectDialog.getByLabel('Project name').fill(projectName);
   await projectDialog.getByLabel('Description').fill('A user-created project');
-  await projectDialog.getByLabel('Status').selectOption('started');
-  await projectDialog.getByLabel('Priority').selectOption('2');
+  await projectDialog.getByRole('combobox', { name: 'Status' }).click();
+  await page.getByRole('option', { name: 'In progress', exact: true }).click();
+  await projectDialog.getByRole('combobox', { name: 'Priority' }).click();
+  await page.getByRole('option', { name: 'High', exact: true }).click();
   const projectLabels = projectDialog.getByRole('combobox', { name: 'Project labels' });
   await projectLabels.fill('Bug');
   await page.getByRole('option', { name: 'Bug', exact: true }).click();

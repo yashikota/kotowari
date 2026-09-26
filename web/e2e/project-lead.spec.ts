@@ -7,7 +7,8 @@ test('projects can be assigned a single-user lead and edited later', async ({ pa
   await page.getByRole('button', { name: 'New project' }).first().click();
   const createDialog = page.getByRole('dialog', { name: 'New project' });
   await createDialog.getByLabel('Project name').fill(projectName);
-  await createDialog.getByLabel('Lead').selectOption('self');
+  await createDialog.getByRole('combobox', { name: 'Lead' }).click();
+  await page.getByRole('option', { name: 'You', exact: true }).click();
   await createDialog.getByRole('button', { name: 'Create project' }).click();
 
   await expect(page).toHaveURL(/\/projects\/[^/]+$/);
