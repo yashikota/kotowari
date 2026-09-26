@@ -1602,6 +1602,15 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
   const model = useIssueDetailPresenter(props);
   const handlers = useActions(model.handlers);
   const sendIntent = useIntent();
+  const autofocusTitle = useAutofocusTarget('title');
+  const identifier = model._view === 2 ? model.identifier : '';
+  const focusSub = model._view === 2 ? model.focusSub : 0;
+  const focusNote = model._view === 2 ? model.focusNote : 0;
+  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle && model._view === 2, [
+    identifier,
+  ]);
+  const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);
+  const noteRef = useFocusWhen<HTMLTextAreaElement>(focusNote > 0, [focusNote]);
   const linkedCodeSequenceSince = useRef<number | null>(null);
   useKeyboard((event) => {
     if (model._view !== 2) {
@@ -1624,6 +1633,10 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
           break;
         case 'toggle-favorite':
           void sendIntent('Favorite_onClick29', []);
+          break;
+        case 'rename':
+          titleRef.current?.focus();
+          titleRef.current?.select();
           break;
         case 'open-due-date':
           void sendIntent('onOpenDueDate', []);
@@ -1658,15 +1671,6 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
     void sendIntent(ISSUE_COPY_SHORTCUT_INTENTS[shortcut], []);
     return true;
   });
-  const autofocusTitle = useAutofocusTarget('title');
-  const identifier = model._view === 2 ? model.identifier : '';
-  const focusSub = model._view === 2 ? model.focusSub : 0;
-  const focusNote = model._view === 2 ? model.focusNote : 0;
-  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle && model._view === 2, [
-    identifier,
-  ]);
-  const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);
-  const noteRef = useFocusWhen<HTMLTextAreaElement>(focusNote > 0, [focusNote]);
   return (
     <IssueDetailView
       model={{ ...model, handlers } as typeof model}

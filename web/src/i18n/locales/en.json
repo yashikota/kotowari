@@ -1547,6 +1547,7 @@
     "shortcutMoveSelection": "Move selection",
     "shortcutSelectIssue": "Select or deselect the focused issue",
     "shortcutSelectAllIssues": "Select all issues in the current list",
+    "shortcutRenameIssue": "Focus and select the issue title",
     "shortcutOpenIssue": "Open selected issue",
     "shortcutSetStatus": "Set status",
     "shortcutSwitchNavigation": "Switch sidebar section",

@@ -1543,6 +1543,7 @@
     "shortcutMoveSelection": "選択項目を移動",
     "shortcutSelectIssue": "フォーカス中のイシューを選択／解除",
     "shortcutSelectAllIssues": "現在の一覧のイシューをすべて選択",
+    "shortcutRenameIssue": "イシューのタイトルにフォーカスして選択",
     "shortcutOpenIssue": "選択したイシューを開く",
     "shortcutSetStatus": "ステータスを設定",
     "shortcutSwitchNavigation": "サイドバーのセクションを切り替え",

@@ -34,6 +34,7 @@ export function ShortcutHelpView({
     { keys: 'j / k', action: t('ui.shortcutMoveSelection') },
     { keys: 'x', action: t('ui.shortcutSelectIssue') },
     { keys: 'Mod+A', action: t('ui.shortcutSelectAllIssues') },
+    { keys: 'Shift+R', action: t('ui.shortcutRenameIssue') },
     { keys: 'Enter', action: t('ui.shortcutOpenIssue') },
     { keys: 's', action: t('ui.shortcutSetStatus') },
     { keys: '1–7', action: t('ui.shortcutSwitchNavigation') },

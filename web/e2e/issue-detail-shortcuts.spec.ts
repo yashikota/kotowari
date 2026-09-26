@@ -13,6 +13,11 @@ test('issue shortcuts assign to me, toggle favorite, and open the due-date picke
 
   const issueOptions = page.getByRole('button', { name: 'Issue options' });
   await issueOptions.focus();
+  await page.keyboard.press('Shift+r');
+  const issueTitle = page.getByRole('textbox', { name: 'Issue title' });
+  await expect(issueTitle).toBeFocused();
+
+  await issueOptions.focus();
   await page.keyboard.press('i');
   await expect(page.getByRole('combobox', { name: 'Assignee' })).toHaveValue('You');
 

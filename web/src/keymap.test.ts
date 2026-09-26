@@ -480,6 +480,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['i', {}, 'assign-self'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['D', { shiftKey: true }, 'open-due-date'],
+    ['R', { shiftKey: true }, 'rename'],
     ['O', { ctrlKey: true, shiftKey: true }, 'open-sub-issue'],
     ['L', { metaKey: true, shiftKey: true }, 'toggle-resources'],
     ['l', { ctrlKey: true, altKey: true }, 'add-link'],

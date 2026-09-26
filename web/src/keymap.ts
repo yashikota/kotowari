@@ -229,6 +229,7 @@ export function globalNavigationSequenceFromKeyboard(
 export type IssueDetailShortcut =
   | 'assign-self'
   | 'toggle-favorite'
+  | 'rename'
   | 'open-due-date'
   | 'open-sub-issue'
   | 'toggle-resources'
@@ -257,7 +258,11 @@ export function issueDetailShortcutFromKeyboard(event: {
   }
   if (modifier && event.altKey && !event.shiftKey && key === 'l') return 'add-link';
   if (modifier || event.altKey) return null;
-  if (event.shiftKey) return key === 'd' ? 'open-due-date' : null;
+  if (event.shiftKey) {
+    if (key === 'd') return 'open-due-date';
+    if (key === 'r') return 'rename';
+    return null;
+  }
   if (key === 'i') return 'assign-self';
   return null;
 }
