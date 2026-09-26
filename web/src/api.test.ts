@@ -31,6 +31,12 @@ describe('issuesQuery', () => {
     expect(searchToFilter({ assignee: 'agent' })).toMatchObject({ assignee: 'agent' });
   });
 
+  it('preserves validated My Issues tabs in browser search but not API filters', () => {
+    expect(parseIssueSearch({ myIssuesTab: 'subscribed' })).toEqual({ myIssuesTab: 'subscribed' });
+    expect(parseIssueSearch({ myIssuesTab: 'unsupported' })).toEqual({});
+    expect(searchToFilter({ myIssuesTab: 'activity' })).toEqual(searchToFilter({}));
+  });
+
   it('encodes issue type and estimate filters including zero estimates', () => {
     expect(issuesQuery({ type: 'feature', estimate: 0 })).toBe('?type=feature&estimate=0');
   });

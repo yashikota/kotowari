@@ -6,6 +6,8 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueViewTabs } from '../components/IssueViewTabs.tsx';
 import { IssueListFacetPanel } from '../components/IssueListFacetPanel.tsx';
+import { MyIssuesTabs } from '../components/MyIssuesTabs.tsx';
+import { MyIssuesActivity } from '../components/MyIssuesActivity.tsx';
 import { EmptyState, PageHeader, Pane, Shortcut, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -22,6 +24,7 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
       const {
         data,
         search,
+        myIssuesTab,
         find,
         issues,
         restoreScrollTop,
@@ -43,16 +46,32 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         selectedFacetValues,
         handlers,
       } = model;
+      if (myIssuesTab === 'activity') {
+        return (
+          <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <VisuallyHidden>
+              <h2>{t('nav.myIssues')}</h2>
+            </VisuallyHidden>
+            <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
+            <MyIssuesActivity items={data.activityItems ?? []} />
+          </Box>
+        );
+      }
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <VisuallyHidden>
-            <h2>{t('nav.issues')}</h2>
+            <h2>{myIssuesTab ? t('nav.myIssues') : t('nav.issues')}</h2>
           </VisuallyHidden>
-          <IssueViewTabs
-            value={view}
-            onChange={handlers.onView4}
-            onAddNewView={handlers.onNewViewOpen}
-          />
+          {myIssuesTab ? (
+            <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
+          ) : null}
+          {myIssuesTab ? null : (
+            <IssueViewTabs
+              value={view}
+              onChange={handlers.onView4}
+              onAddNewView={handlers.onNewViewOpen}
+            />
+          )}
           <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
             <IssueFilters
               search={search}
@@ -101,7 +120,9 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
                   overflow: 'hidden',
                 }}
               >
-                {layout === 'list' ? (
+                {myIssuesTab === 'subscribed' && issues.length === 0 ? (
+                  <EmptyState>{t('myIssues.emptySubscribed')}</EmptyState>
+                ) : layout === 'list' ? (
                   <IssueList
                     issues={issues}
                     selectedId={selected}

@@ -218,7 +218,7 @@ test('default home view supports Linear inbox, My issues, and current cycle dest
   await page.goto('/config');
   await choose(page, 'Default home view', 'My issues');
   await page.goto('/');
-  await expect(page).toHaveURL(/\/issues\?assignee=self$/);
+  await expect(page).toHaveURL(/\/issues\?assignee=self&myIssuesTab=assigned$/);
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
 
   await page.goto('/config');

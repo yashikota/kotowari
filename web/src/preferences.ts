@@ -253,7 +253,7 @@ export function defaultHomeHref(home: DefaultHome): string {
     case 'reviews':
       return '/reviews';
     case 'myIssues':
-      return '/issues?assignee=self';
+      return '/issues?assignee=self&myIssuesTab=assigned';
     case 'activeIssues':
       return '/issues?view=active';
     case 'issues':

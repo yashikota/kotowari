@@ -61,8 +61,27 @@ function ErrorView({ title, message }: { title: string; message: string }) {
 }
 
 async function loadFilteredIssues(search: IssueSearch) {
+  const personalTab = search.myIssuesTab;
+  if (personalTab === 'activity') {
+    const activities = await api.inboxActivities();
+    return {
+      issues: [],
+      projects: [],
+      cycles: [],
+      labels: [],
+      activityItems: activities.map(({ identifier, title, ...activity }) => ({
+        identifier,
+        title,
+        activity,
+      })),
+    };
+  }
+  const issueSearch =
+    personalTab && personalTab !== 'assigned'
+      ? { ...search, assignee: undefined, view: undefined, archived: false }
+      : search;
   const [issues, projects, cycles, labels] = await Promise.all([
-    api.issues(issuesQuery(searchToFilter(search))),
+    api.issues(issuesQuery(searchToFilter(issueSearch))),
     api.projects(),
     api.cycles(),
     api.labels(),

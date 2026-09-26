@@ -39,9 +39,32 @@ test('self assignment works across issue details, My issues, and list grouping',
     .toBe('self');
 
   await page.getByRole('link', { name: 'My issues', exact: true }).click();
-  await expect(page).toHaveURL(/\/issues\?assignee=self$/);
+  await expect(page).toHaveURL(/\/issues\?(?=.*assignee=self)(?=.*myIssuesTab=assigned)/);
   const assignedRow = page.getByRole('option', { name: new RegExp(issue.identifier) });
   await expect(assignedRow).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Issue views' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByLabel('Grouping', { exact: true })).toHaveValue('cycle');
+  await page.getByRole('button', { name: 'Display options' }).click();
+
+  await page.getByRole('tab', { name: 'Created', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\?myIssuesTab=created$/);
+  await expect(page.getByRole('option', { name: new RegExp(issue.identifier) })).toBeVisible();
+
+  await page.goto(`/issues/${issue.identifier}`);
+  await page.getByRole('button', { name: 'Subscribe to issue' }).click();
+  await expect(page.getByRole('button', { name: 'Unsubscribe from issue' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByRole('link', { name: 'My issues', exact: true }).click();
+  await page.getByRole('tab', { name: 'Subscribed', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\?myIssuesTab=subscribed$/);
+  await expect(page.getByRole('option', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('tab', { name: 'Activity', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\?myIssuesTab=activity$/);
+  await page.getByRole('tab', { name: 'Assigned', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\?(?=.*assignee=self)(?=.*myIssuesTab=assigned)/);
 
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByLabel('Grouping', { exact: true }).selectOption('assignee');
@@ -56,7 +79,7 @@ test('self assignment works across issue details, My issues, and list grouping',
     })
     .toBe('');
 
-  await page.goto('/issues?assignee=self');
+  await page.goto('/issues?assignee=self&myIssuesTab=assigned');
   await expect(page.getByRole('option', { name: new RegExp(issue.identifier) })).toHaveCount(0);
 });
 

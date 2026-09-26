@@ -7,7 +7,7 @@ import {
   useSearch,
 } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import { api, parseIssueSearch, type IssueSearch } from '../api.ts';
 import {
   buildIssueFacetOptions,
@@ -30,18 +30,22 @@ import type { Cycle, Issue, Label, Project } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import { issueSubscriptions } from '../issue-subscriptions.ts';
+import type { Activity } from '../types.ts';
 
 type IssueListData = {
   issues: Issue[];
   projects: Project[];
   cycles: Cycle[];
   labels: Label[];
+  activityItems?: { identifier: string; title: string; activity: Activity }[];
 };
 
 function compactSearch(next: IssueSearch): IssueSearch {
   return parseIssueSearch({
     archived: next.archived,
     view: next.view ?? '',
+    myIssuesTab: next.myIssuesTab ?? '',
     assignee: next.assignee ?? '',
     status: next.status ?? '',
     project: next.project ?? '',
@@ -81,8 +85,15 @@ export function useIssuesPagePresenter() {
   const router = useRouter();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const { preferences } = usePersonalPreferences();
+  const subscriptionSnapshot = useSyncExternalStore(
+    issueSubscriptions.subscribe,
+    () => issueSubscriptions.list().sort().join('\0'),
+    () => '',
+  );
+  const myIssuesTab = search.myIssuesTab ?? (search.assignee === 'self' ? 'assigned' : undefined);
   const [find, setFind] = useState(locationState.issueListFind ?? '');
-  const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
+  const [groupByOverride, setGroupByOverride] = useState<IssueGroupBy | null>(null);
+  const groupBy = groupByOverride ?? (myIssuesTab ? 'cycle' : 'priority');
   const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
@@ -120,7 +131,15 @@ export function useIssuesPagePresenter() {
     setLayout((current) => (current === 'list' ? 'board' : 'list'));
     return true;
   });
+  const subscribedIds = new Set(subscriptionSnapshot.split('\0').filter(Boolean));
   const matchingIssues = (data.issues ?? [])
+    .filter((issue) =>
+      myIssuesTab === 'assigned'
+        ? issue.assignee === 'self'
+        : myIssuesTab === 'subscribed'
+          ? subscribedIds.has(issue.identifier)
+          : true,
+    )
     .filter((i) => matchesFind(i, find))
     .filter((i) =>
       activeView === 'active'
@@ -153,6 +172,7 @@ export function useIssuesPagePresenter() {
     _view: 0 as const,
     data,
     search,
+    myIssuesTab,
     find,
     issues,
     selected: selectedId,
@@ -223,7 +243,25 @@ export function useIssuesPagePresenter() {
           });
         }
       },
-      onGroupBy5: (next: IssueGroupBy) => setGroupBy(next),
+      onMyIssuesTabChange: (next: string | null) => {
+        if (
+          next !== 'assigned' &&
+          next !== 'created' &&
+          next !== 'subscribed' &&
+          next !== 'activity'
+        )
+          return;
+        const nextSearch = compactSearch({
+          ...latestSearch.current,
+          assignee: next === 'assigned' ? 'self' : undefined,
+          myIssuesTab: next,
+          view: undefined,
+          archived: false,
+        });
+        latestSearch.current = nextSearch;
+        return navigate({ to: '/issues', search: nextSearch });
+      },
+      onGroupBy5: (next: IssueGroupBy) => setGroupByOverride(next),
       onLayout6: (next: IssueLayout) => setLayout(next),
       onOrderBy7: (next: IssueOrderBy) => setOrderBy(next),
       onSubGroupBy17: (next: IssueGroupBy) => setSubGroupBy(next),

@@ -1,7 +1,7 @@
 import { isCommentSubmitShortcut, isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import { issueBranchName, issueMarkdown, renderIssuePrompt } from '../issue-actions.ts';
 import { buildCodingToolURL, useCodingToolPreferences } from '../coding-tools.ts';
@@ -25,6 +25,7 @@ import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-wo
 import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import { issueSubscriptions } from '../issue-subscriptions.ts';
 
 const LABEL_COLORS = ['#d4725a', '#6b9bd1', '#c4a574', '#7a9e7e', '#d4a05a'];
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
@@ -81,6 +82,11 @@ export function useIssueDetailPresenter({
   const navigate = useNavigate();
   const router = useRouter();
   const navigationIndex = navigationIds.indexOf(identifier);
+  const isSubscribed = useSyncExternalStore(
+    issueSubscriptions.subscribe,
+    () => issueSubscriptions.has(identifier),
+    () => false,
+  );
   const [storedIssue, setIssue] = useState<Issue | null>(() => cachedIssue(identifier));
   const issue = useIssueProjection(storedIssue ? [storedIssue] : [])[0] ?? null;
   const generation = useRef(0);
@@ -765,6 +771,7 @@ export function useIssueDetailPresenter({
     navigationTotal: navigationIds.length,
     issueReturnTo,
     issue,
+    isSubscribed,
     issuePropertyMenu,
     optionalIssuePropertyVisibility,
     issues,
@@ -1014,6 +1021,7 @@ export function useIssueDetailPresenter({
         await patch({ isFavorite: !issue.isFavorite });
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },
+      Subscription_onClick: () => issueSubscriptions.toggle(identifier),
       Relation_target_onChange30: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setRelationTarget(e.target.value),

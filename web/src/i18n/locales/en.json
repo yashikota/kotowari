@@ -490,6 +490,18 @@
     "add": "Add to favorites",
     "remove": "Remove from favorites"
   },
+  "issueSubscription": {
+    "subscribe": "Subscribe to issue",
+    "unsubscribe": "Unsubscribe from issue"
+  },
+  "myIssues": {
+    "assigned": "Assigned",
+    "created": "Created",
+    "subscribed": "Subscribed",
+    "activity": "Activity",
+    "emptySubscribed": "No subscribed issues. Open an issue and subscribe to follow it here.",
+    "emptyActivity": "No issues with activity from you"
+  },
   "issueADRs": {
     "choose": "Link an ADR",
     "unlink": "Unlink {{identifier}}",

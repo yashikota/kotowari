@@ -38,7 +38,7 @@ export const HOME_NAV: NavTarget[] = [
     id: '/my-issues',
     labelKey: 'nav.myIssues',
     to: '/issues',
-    search: { assignee: 'self' },
+    search: { assignee: 'self', myIssuesTab: 'assigned' },
     fuzzy: false,
   },
   { key: 'a', labelKey: 'nav.agent', to: '/agent', fuzzy: false },

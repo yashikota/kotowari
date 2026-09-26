@@ -488,6 +488,18 @@
     "add": "お気に入りに追加",
     "remove": "お気に入りから削除"
   },
+  "issueSubscription": {
+    "subscribe": "イシューを購読",
+    "unsubscribe": "イシューの購読を解除"
+  },
+  "myIssues": {
+    "assigned": "担当中",
+    "created": "作成済み",
+    "subscribed": "購読中",
+    "activity": "アクティビティ",
+    "emptySubscribed": "購読中のイシューはありません。イシューを開いて購読すると、ここに表示されます。",
+    "emptyActivity": "自分のアクティビティがあるイシューはありません"
+  },
   "issueADRs": {
     "choose": "ADR をリンク",
     "unlink": "{{identifier}} のリンクを解除",

@@ -27,7 +27,7 @@ const GLOBAL_NAVIGATION_HREF: Record<GlobalNavigationAction, string> = {
   inbox: '/inbox',
   reviews: '/reviews',
   agent: '/agent',
-  'my-issues': '/issues?assignee=self',
+  'my-issues': '/issues?assignee=self&myIssuesTab=assigned',
   backlog: '/issues?status=backlog',
   'all-issues': '/issues',
   cycles: '/cycles',
