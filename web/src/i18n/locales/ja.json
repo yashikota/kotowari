@@ -397,6 +397,8 @@
   "issueProperties": {
     "ariaLabel": "イシューのプロパティ",
     "heading": "プロパティ",
+    "coreProperties": "基本プロパティ",
+    "cycleAndOptionalProperties": "サイクルと任意プロパティ",
     "addProperty": "プロパティを追加",
     "optionalProperties": "追加できるプロパティ",
     "noType": "種別なし",

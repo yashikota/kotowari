@@ -399,6 +399,8 @@
   "issueProperties": {
     "ariaLabel": "Issue properties",
     "heading": "Properties",
+    "coreProperties": "Core properties",
+    "cycleAndOptionalProperties": "Cycle and optional properties",
     "addProperty": "Add property",
     "optionalProperties": "Optional properties",
     "noType": "No type",
