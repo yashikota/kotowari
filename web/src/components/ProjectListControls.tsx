@@ -19,13 +19,14 @@ import { ProjectFilterPicker } from './ProjectFilterPicker.tsx';
 import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
-import type { ProjectGroupBy } from '../project-views.ts';
+import type { ProjectFilterGroup, ProjectGroupBy } from '../project-views.ts';
 
 export type ProjectListControlsModel = {
   search: string;
   searchOperator: 'contains' | 'doesNotContain';
   advancedFilter: boolean;
   filterOperator: 'and' | 'or';
+  advancedFilterGroup?: ProjectFilterGroup;
   statuses: string[];
   priorities: string[];
   healths: string[];
@@ -57,7 +58,7 @@ export type ProjectListControlsModel = {
   filterCount: number;
   handlers: {
     onAdvancedFilterToggle: () => void;
-    onFilterOperatorChange: (value: 'and' | 'or') => void;
+    onAdvancedFilterGroupChange: (value: ProjectFilterGroup) => void;
     onSearchChange: (value: string) => void;
     onSearchOperatorChange: (value: string | null) => void;
     onStatusesChange: (value: string[]) => void;

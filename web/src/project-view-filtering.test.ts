@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 import type { Project } from './types.ts';
+import { parseProjectFilterGroup } from './project-views.ts';
 import { matchesProjectViewSearch } from './project-view-filtering.ts';
 
 function project(overrides: Partial<Project> = {}): Project {
@@ -47,5 +48,59 @@ describe('matchesProjectViewSearch', () => {
         filterOperator: 'and',
       }),
     ).toBe(true);
+  });
+
+  it('evaluates nested advanced filter groups using their own operators', () => {
+    const group = {
+      kind: 'group' as const,
+      operator: 'or' as const,
+      children: [
+        { kind: 'condition' as const, field: 'status' as const, value: 'started' },
+        {
+          kind: 'group' as const,
+          operator: 'and' as const,
+          children: [
+            { kind: 'condition' as const, field: 'priority' as const, value: '0' },
+            {
+              kind: 'condition' as const,
+              field: 'title' as const,
+              operator: 'contains' as const,
+              value: 'dashboard',
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(
+      matchesProjectViewSearch(project({ workflowStatus: 'started' }), {
+        advancedFilterGroup: group,
+      }),
+    ).toBe(true);
+    expect(matchesProjectViewSearch(project({ priority: 0 }), { advancedFilterGroup: group })).toBe(
+      true,
+    );
+    expect(
+      matchesProjectViewSearch(project({ slug: 'no-match' }), { advancedFilterGroup: group }),
+    ).toBe(false);
+  });
+
+  it('parses a bounded advanced filter group from shared-view search state', () => {
+    const group = {
+      kind: 'group',
+      operator: 'and',
+      children: [
+        { kind: 'condition', field: 'status', operator: 'is', value: 'started' },
+        {
+          kind: 'group',
+          operator: 'or',
+          children: [{ kind: 'condition', field: 'priority', operator: 'isNot', value: '4' }],
+        },
+      ],
+    };
+    expect(parseProjectFilterGroup(JSON.stringify(group))).toEqual(group);
+    expect(
+      parseProjectFilterGroup({ kind: 'group', operator: 'xor', children: [] }),
+    ).toBeUndefined();
   });
 });

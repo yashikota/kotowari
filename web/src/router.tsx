@@ -12,7 +12,7 @@ import { api, issuesQuery, parseIssueSearch, searchToFilter, type IssueSearch } 
 import { EmptyState } from './mantine-ui.tsx';
 import { PresenterScope } from './application/Root.tsx';
 import { defaultHomeHref, getPersonalPreferences } from './preferences.ts';
-import type { ProjectViewSearch } from './project-views.ts';
+import { parseProjectFilterGroup, type ProjectViewSearch } from './project-views.ts';
 import { parseSearchPageSearch } from './search.ts';
 
 function NotFoundPage() {
@@ -256,6 +256,8 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (raw.qOperator === 'doesNotContain') result.qOperator = raw.qOperator;
   if (raw.advancedFilter === true || raw.advancedFilter === 'true') result.advancedFilter = true;
   if (raw.filterOperator === 'or') result.filterOperator = 'or';
+  const advancedFilterGroup = parseProjectFilterGroup(raw.advancedFilterGroup);
+  if (advancedFilterGroup) result.advancedFilterGroup = advancedFilterGroup;
   if (
     typeof raw.specificProject === 'string' &&
     /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(raw.specificProject)

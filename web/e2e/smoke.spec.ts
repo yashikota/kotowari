@@ -180,7 +180,10 @@ test('create issue, comment, and page', async ({ page, request }) => {
     mimeType: 'text/plain',
     buffer: Buffer.from('local attachment contents'),
   });
-  await page.getByRole('button', { name: 'Submit comment' }).click();
+  await expect(page.getByText('release-note.txt', { exact: true })).toBeVisible();
+  const submitComment = page.getByRole('button', { name: 'Submit comment' });
+  await expect(submitComment).toBeEnabled();
+  await submitComment.click();
   const attachmentLink = page.getByRole('link', { name: 'release-note.txt' });
   await expect(attachmentLink).toBeVisible();
   await page.getByRole('button', { name: 'Add reaction' }).last().click();

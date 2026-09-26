@@ -6,7 +6,6 @@ import {
   Group,
   MultiSelect,
   Popover,
-  SegmentedControl,
   Select,
   Stack,
   Text,
@@ -31,6 +30,7 @@ import {
 import type { TablerIcon } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ProjectListControlsModel } from './ProjectListControls.tsx';
+import { AdvancedProjectFilterBuilder } from './AdvancedProjectFilterBuilder.tsx';
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import type { ProjectWorkflowStatus } from '../types.ts';
 
@@ -191,6 +191,41 @@ export function ProjectFilterPicker({
   const visibleFilterGroups = FILTER_GROUPS.map((group) =>
     group.filter((key) => visibleFilters.includes(key)),
   ).filter((group) => group.length > 0);
+  const advancedFilterGroup = model.advancedFilterGroup ?? {
+    kind: 'group' as const,
+    operator: model.filterOperator,
+    children: [],
+  };
+  const advancedFilterChoices = {
+    status: projectStatuses.map((status) => ({
+      value: status.id,
+      label: projectWorkflowStatusLabel(status.id, projectStatuses, t),
+    })),
+    priority: [0, 1, 2, 3, 4].map((priority) => ({
+      value: String(priority),
+      label: t(`priority.${priority}`),
+    })),
+    health: ['none', 'on_track', 'at_risk', 'off_track'].map((health) => ({
+      value: health,
+      label: t(`projectHealth.status.${health}`),
+    })),
+    label: model.availableLabels.map((label) => ({ value: label.name, label: label.name })),
+    milestone: model.availableMilestones.map((name) => ({ value: name, label: name })),
+    relation: [
+      { value: 'blocks', label: t('projectDependencies.kindOptions.blocks') },
+      { value: 'blocked_by', label: t('projectDependencies.kindOptions.blocked_by') },
+      { value: 'related', label: t('projectDependencies.kindOptions.related') },
+    ],
+    initiative: [
+      { value: 'initiative:none', label: t('projectList.filterNoInitiatives') },
+      ...model.availableInitiatives,
+    ],
+    template: [
+      { value: 'template:', label: t('projectList.filterNoTemplate') },
+      ...model.availableTemplates,
+    ],
+    project: model.availableProjects ?? [],
+  };
 
   function openFilter(key: FilterKey) {
     setActiveFilter(key);
@@ -589,19 +624,32 @@ export function ProjectFilterPicker({
         </Button>
       ))}
       {model.advancedFilter ? (
-        <Group gap={4} wrap="nowrap" aria-label={t('projectList.matchFilters')}>
-          <SegmentedControl
-            size="xs"
-            aria-label={t('projectList.matchFilters')}
-            value={model.filterOperator}
-            data={[
-              { label: t('projectList.matchAll'), value: 'and' },
-              { label: t('projectList.matchAny'), value: 'or' },
-            ]}
-            onChange={(value) =>
-              model.handlers.onFilterOperatorChange(value === 'or' ? 'or' : 'and')
-            }
-          />
+        <Group gap={4} wrap="nowrap">
+          <Popover position={position} shadow="md" withinPortal>
+            <Popover.Target>
+              <Button
+                type="button"
+                variant="light"
+                color="gray"
+                size="compact-xs"
+                aria-label={t('projectList.openAdvancedFilter')}
+                title={t('projectList.openAdvancedFilter')}
+              >
+                {t('projectList.advancedFilter')}
+              </Button>
+            </Popover.Target>
+            <Popover.Dropdown
+              aria-label={t('projectList.advancedFilter')}
+              w="min(420px, calc(100vw - 32px))"
+              p="xs"
+            >
+              <AdvancedProjectFilterBuilder
+                group={advancedFilterGroup}
+                choices={advancedFilterChoices}
+                onChange={model.handlers.onAdvancedFilterGroupChange}
+              />
+            </Popover.Dropdown>
+          </Popover>
           <ActionIcon
             type="button"
             size="sm"

@@ -221,6 +221,7 @@ export function useProjectsPagePresenter() {
       qOperator: search.qOperator,
       advancedFilter: search.advancedFilter,
       filterOperator: search.filterOperator,
+      advancedFilterGroup: search.advancedFilterGroup,
       specificProject: search.specificProject,
       status: search.status,
       priority: search.priority,
@@ -539,6 +540,7 @@ export function useProjectsPagePresenter() {
     searchOperator: search.qOperator ?? 'contains',
     advancedFilter: search.advancedFilter ?? false,
     filterOperator: search.filterOperator ?? 'and',
+    advancedFilterGroup: search.advancedFilterGroup,
     statuses: statusFilters,
     priorities: priorityFilters,
     healths: healthFilters,
@@ -572,11 +574,19 @@ export function useProjectsPagePresenter() {
       onAdvancedFilterToggle: () =>
         void updateProjectSearch(
           search.advancedFilter
-            ? { advancedFilter: undefined, filterOperator: undefined }
-            : { advancedFilter: true, filterOperator: 'or' },
+            ? {
+                advancedFilter: undefined,
+                filterOperator: undefined,
+                advancedFilterGroup: undefined,
+              }
+            : {
+                advancedFilter: true,
+                filterOperator: 'or',
+                advancedFilterGroup: { kind: 'group', operator: 'or', children: [] },
+              },
         ),
-      onFilterOperatorChange: (value) =>
-        void updateProjectSearch({ filterOperator: value === 'or' ? 'or' : undefined }),
+      onAdvancedFilterGroupChange: (value) =>
+        void updateProjectSearch({ advancedFilterGroup: value, filterOperator: value.operator }),
       onSearchChange: (value) =>
         void updateProjectSearch({
           q: value || undefined,
@@ -645,6 +655,10 @@ export function useProjectsPagePresenter() {
       onReset: () =>
         void updateProjectSearch({
           q: undefined,
+          qOperator: undefined,
+          advancedFilter: undefined,
+          filterOperator: undefined,
+          advancedFilterGroup: undefined,
           specificProject: undefined,
           status: undefined,
           priority: undefined,

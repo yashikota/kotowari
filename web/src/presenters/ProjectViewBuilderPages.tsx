@@ -318,6 +318,7 @@ export function useProjectViewBuilderPresenter() {
     searchOperator: search.qOperator ?? 'contains',
     advancedFilter: search.advancedFilter ?? false,
     filterOperator: search.filterOperator ?? 'and',
+    advancedFilterGroup: search.advancedFilterGroup,
     statuses: statusFilters,
     priorities: priorityFilters,
     healths: healthFilters,
@@ -354,11 +355,19 @@ export function useProjectViewBuilderPresenter() {
       onAdvancedFilterToggle: () =>
         void updateSearch(
           search.advancedFilter
-            ? { advancedFilter: undefined, filterOperator: undefined }
-            : { advancedFilter: true, filterOperator: 'or' },
+            ? {
+                advancedFilter: undefined,
+                filterOperator: undefined,
+                advancedFilterGroup: undefined,
+              }
+            : {
+                advancedFilter: true,
+                filterOperator: 'or',
+                advancedFilterGroup: { kind: 'group', operator: 'or', children: [] },
+              },
         ),
-      onFilterOperatorChange: (value) =>
-        void updateSearch({ filterOperator: value === 'or' ? 'or' : undefined }),
+      onAdvancedFilterGroupChange: (value) =>
+        void updateSearch({ advancedFilterGroup: value, filterOperator: value.operator }),
       onSearchChange: (value) =>
         void updateSearch({
           q: value || undefined,

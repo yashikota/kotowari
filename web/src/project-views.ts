@@ -11,11 +11,39 @@ export type ProjectGroupBy =
   | 'startDate'
   | 'targetDate';
 
+export type ProjectFilterField =
+  | 'status'
+  | 'priority'
+  | 'health'
+  | 'label'
+  | 'milestone'
+  | 'relation'
+  | 'initiative'
+  | 'template'
+  | 'project'
+  | 'title';
+
+export type ProjectFilterCondition = {
+  kind: 'condition';
+  field?: ProjectFilterField;
+  operator?: 'is' | 'isNot' | 'contains' | 'doesNotContain';
+  value?: string;
+};
+
+export type ProjectFilterGroup = {
+  kind: 'group';
+  operator: 'and' | 'or';
+  children: ProjectFilterNode[];
+};
+
+export type ProjectFilterNode = ProjectFilterCondition | ProjectFilterGroup;
+
 export type ProjectViewSearch = {
   q?: string;
   qOperator?: ProjectSearchOperator;
   advancedFilter?: boolean;
   filterOperator?: 'and' | 'or';
+  advancedFilterGroup?: ProjectFilterGroup;
   specificProject?: string;
   status?: string[];
   priority?: string[];
@@ -50,6 +78,64 @@ export type ProjectViewSearch = {
   milestones?: string[];
   relations?: Array<'blocks' | 'blocked_by' | 'related'>;
 };
+
+const PROJECT_FILTER_FIELDS = new Set<ProjectFilterField>([
+  'status',
+  'priority',
+  'health',
+  'label',
+  'milestone',
+  'relation',
+  'initiative',
+  'template',
+  'project',
+  'title',
+]);
+
+export function parseProjectFilterGroup(value: unknown): ProjectFilterGroup | undefined {
+  let parsed = value;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return undefined;
+    }
+  }
+
+  let visited = 0;
+  function parseNode(node: unknown, depth: number): ProjectFilterNode | undefined {
+    visited += 1;
+    if (visited > 80 || depth > 6 || !node || typeof node !== 'object') return undefined;
+    const candidate = node as Record<string, unknown>;
+    if (candidate.kind === 'group') {
+      if (candidate.operator !== 'and' && candidate.operator !== 'or') return undefined;
+      if (!Array.isArray(candidate.children) || candidate.children.length > 40) return undefined;
+      const children = candidate.children
+        .map((child) => parseNode(child, depth + 1))
+        .filter((child): child is ProjectFilterNode => child !== undefined);
+      return { kind: 'group', operator: candidate.operator, children };
+    }
+    if (candidate.kind !== 'condition') return undefined;
+    const field = PROJECT_FILTER_FIELDS.has(candidate.field as ProjectFilterField)
+      ? (candidate.field as ProjectFilterField)
+      : undefined;
+    const operator =
+      candidate.operator === 'is' ||
+      candidate.operator === 'isNot' ||
+      candidate.operator === 'contains' ||
+      candidate.operator === 'doesNotContain'
+        ? candidate.operator
+        : undefined;
+    const ruleValue =
+      typeof candidate.value === 'string' && candidate.value.length <= 240
+        ? candidate.value
+        : undefined;
+    return { kind: 'condition', field, operator, value: ruleValue };
+  }
+
+  const result = parseNode(parsed, 0);
+  return result?.kind === 'group' ? result : undefined;
+}
 
 export function matchesProjectTitleSummary(
   project: Pick<Project, 'name' | 'summary'>,

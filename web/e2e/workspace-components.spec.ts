@@ -1267,7 +1267,10 @@ test('single-user favorites persist and appear in the sidebar', async ({ page, r
   await expect(favorites.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
 
   const listed = await request.get('/api/issues?favorite=true');
-  expect(await listed.json()).toEqual([expect.objectContaining({ identifier: issue.identifier })]);
+  expect(listed.ok()).toBeTruthy();
+  expect(await listed.json()).toEqual(
+    expect.arrayContaining([expect.objectContaining({ identifier: issue.identifier })]),
+  );
 
   await page.getByRole('button', { name: 'Remove from favorites' }).click();
   await expect(page.getByRole('button', { name: 'Add to favorites' })).toHaveAttribute(

@@ -532,7 +532,59 @@ test('advanced project filters can match any selected facet and survive reload',
   await expect(page.getByRole('link', { name: new RegExp(statusOnlyName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(priorityOnlyName) })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(noMatchName) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
   await expect(page.getByRole('radio', { name: 'Any' })).toBeChecked();
+});
+
+test('advanced project filter groups combine nested status and priority rules', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const statusName = `Grouped status ${stamp}`;
+  const priorityName = `Grouped priority ${stamp}`;
+  const noMatchName = `Grouped no match ${stamp}`;
+  for (const project of [
+    { name: statusName, slug: `grouped-status-${stamp}`, status: 'started', priority: 4 },
+    { name: priorityName, slug: `grouped-priority-${stamp}`, status: 'planned', priority: 0 },
+    { name: noMatchName, slug: `grouped-none-${stamp}`, status: 'planned', priority: 4 },
+  ]) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Advanced filter', exact: true }).click();
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
+
+  const builder = page.locator('[aria-label="Advanced filter"]');
+  const rootGroup = builder.locator('[aria-label="Filter group 1"]');
+  await rootGroup.getByText('Any', { exact: true }).click();
+  await rootGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await rootGroup.getByRole('option', { name: 'Status', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await rootGroup.getByRole('option', { name: 'In progress', exact: true }).click();
+
+  await rootGroup.getByRole('button', { name: 'Add filter group' }).click();
+  const nestedGroup = builder.locator('[aria-label="Filter group 1.2"]');
+  await nestedGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await nestedGroup.getByRole('combobox', { name: 'Group 1.2 condition 1 field' }).click();
+  await nestedGroup.getByRole('option', { name: 'Priority', exact: true }).click();
+  await nestedGroup.getByRole('combobox', { name: 'Group 1.2 condition 1 value' }).click();
+  await nestedGroup.getByRole('option', { name: 'No priority', exact: true }).click();
+
+  await expect(page.getByRole('link', { name: new RegExp(statusName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(priorityName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noMatchName) })).toHaveCount(0);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('advancedFilterGroup'))
+    .not.toBeNull();
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(statusName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(priorityName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noMatchName) })).toHaveCount(0);
 });
 
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {

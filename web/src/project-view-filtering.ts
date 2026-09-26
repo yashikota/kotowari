@@ -2,6 +2,55 @@ import type { Project } from './types.ts';
 import { matchesProjectTitleSummary } from './project-views.ts';
 import type { ProjectViewSearch } from './project-views.ts';
 
+function matchesAdvancedFilterGroup(
+  project: Project,
+  group: NonNullable<ProjectViewSearch['advancedFilterGroup']>,
+): boolean {
+  if (group.children.length === 0) return true;
+  const matches = group.children.map((child) => {
+    if (child.kind === 'group') return matchesAdvancedFilterGroup(project, child);
+    if (!child.field || !child.value) return true;
+
+    const value = child.value;
+    const values = (() => {
+      switch (child.field) {
+        case 'status':
+          return [project.workflowStatus ?? project.status, project.status];
+        case 'priority':
+          return [String(project.priority)];
+        case 'health':
+          return [project.health || 'none'];
+        case 'label':
+          return project.labels ?? [];
+        case 'milestone':
+          return project.milestones.map((milestone) => milestone.name);
+        case 'relation':
+          return (project.dependencies ?? []).map((dependency) => dependency.kind);
+        case 'initiative':
+          return project.initiativeSlugs?.length
+            ? project.initiativeSlugs.map((slug) => `initiative:${slug}`)
+            : ['initiative:none'];
+        case 'template':
+          return [`template:${project.templateSlug ?? ''}`];
+        case 'project':
+          return [project.slug];
+        case 'title':
+          return [`${project.name} ${project.summary ?? ''}`.toLocaleLowerCase()];
+      }
+    })();
+
+    const operator = child.operator ?? 'is';
+    const found =
+      operator === 'contains' || operator === 'doesNotContain'
+        ? values.some((candidate) =>
+            candidate.toLocaleLowerCase().includes(value.toLocaleLowerCase()),
+          )
+        : values.includes(value);
+    return operator === 'isNot' || operator === 'doesNotContain' ? !found : found;
+  });
+  return group.operator === 'or' ? matches.some(Boolean) : matches.every(Boolean);
+}
+
 export function matchesProjectViewSearch(project: Project, search: ProjectViewSearch): boolean {
   const conditions: boolean[] = [];
   const status = search.status ?? [];
@@ -76,9 +125,14 @@ export function matchesProjectViewSearch(project: Project, search: ProjectViewSe
     conditions.push(matchesProjectTitleSummary(project, search.q, search.qOperator));
   }
 
-  if (conditions.length === 0) return true;
-  if (search.advancedFilter && search.filterOperator === 'or') {
-    return conditions.some(Boolean);
-  }
-  return conditions.every(Boolean);
+  const matchesFacets =
+    conditions.length === 0
+      ? true
+      : search.advancedFilter && search.filterOperator === 'or'
+        ? conditions.some(Boolean)
+        : conditions.every(Boolean);
+  return (
+    matchesFacets &&
+    (!search.advancedFilterGroup || matchesAdvancedFilterGroup(project, search.advancedFilterGroup))
+  );
 }
