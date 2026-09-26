@@ -868,6 +868,53 @@ test('project list exposes selected properties as sortable columns and persists 
   await expect(projectLinks.nth(0)).toHaveAttribute('href', `/projects/${projects[0]!.slug}`);
 });
 
+test('project board groups can be reordered, hidden, and saved in the view preview', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const response = await request.post('/api/projects', {
+    data: {
+      name: `Group order ${stamp}`,
+      slug: `group-order-${stamp}`,
+      status: 'planned',
+    },
+  });
+  expect(response.ok()).toBeTruthy();
+
+  await page.goto('/projects?view=board&columnsBy=status');
+  const board = page.getByRole('grid', { name: 'Project board' });
+  const columns = () => board.getByRole('columnheader');
+  await expect(columns().nth(0)).toHaveAccessibleName('Backlog');
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  const columnControls = page.getByTestId('project-board-column-controls');
+  await expect(columnControls.getByRole('combobox', { name: 'Columns' })).toBeVisible();
+  await expect(columnControls.getByRole('button', { name: 'Group ordering' })).toBeVisible();
+  await page.getByRole('button', { name: 'Group ordering' }).click();
+  await page.getByRole('button', { name: 'Move Backlog down' }).click();
+  await expect(page).toHaveURL(/statusColumnOrder=/);
+  await expect(columns().nth(0)).toHaveAccessibleName('Planned');
+  await expect(columns().nth(1)).toHaveAccessibleName('Backlog');
+
+  await page.getByRole('button', { name: 'Hide Backlog' }).click();
+  await expect(page).toHaveURL(/hiddenStatusColumns=/);
+  await expect(board.getByRole('columnheader', { name: 'Backlog' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Show Backlog' }).click();
+  await expect(board.getByRole('columnheader', { name: 'Backlog' })).toBeVisible();
+
+  await page.reload();
+  await expect(columns().nth(0)).toHaveAccessibleName('Planned');
+  await expect(columns().nth(1)).toHaveAccessibleName('Backlog');
+
+  await page.goto(
+    '/views/projects/new?view=board&columnsBy=status&statusColumnOrder=planned,backlog,started,completed,canceled&hiddenStatusColumns=completed',
+  );
+  const preview = page.locator('[role="grid"]');
+  await expect(preview.locator('[role="columnheader"]').nth(0)).toContainText('Planned');
+  await expect(preview.locator('[role="columnheader"]', { hasText: 'Completed' })).toHaveCount(0);
+});
+
 test('project board cards move across status and priority columns by drag and keyboard', async ({
   page,
   request,

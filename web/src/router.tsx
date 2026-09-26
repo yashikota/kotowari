@@ -320,6 +320,18 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (raw.columnsBy === 'status' || raw.columnsBy === 'priority') result.columnsBy = raw.columnsBy;
   if (raw.rowsBy === 'status' || raw.rowsBy === 'priority') result.rowsBy = raw.rowsBy;
   if (result.rowsBy === (result.columnsBy ?? 'status')) result.rowsBy = 'none';
+  const boardGroupKey = /^[a-z0-9_-]{1,48}$/i;
+  for (const key of [
+    'statusColumnOrder',
+    'priorityColumnOrder',
+    'hiddenStatusColumns',
+    'hiddenPriorityColumns',
+  ] as const) {
+    const groups = searchStringList(raw[key])
+      .filter((value) => boardGroupKey.test(value))
+      .slice(0, 60);
+    if (groups.length) result[key] = groups;
+  }
   if (raw.showEmptyColumns === false || raw.showEmptyColumns === 'false') {
     result.showEmptyColumns = false;
   } else if (raw.showEmptyColumns === true || raw.showEmptyColumns === 'true') {

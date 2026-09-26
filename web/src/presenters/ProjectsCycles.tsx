@@ -35,6 +35,7 @@ import { useProjectViews } from '../project-views.ts';
 import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
 import { matchesProjectViewSearch } from '../project-view-filtering.ts';
 import { groupProjects } from '../project-grouping.ts';
+import { moveProjectBoardGroup, orderProjectBoardGroups } from '../project-board.ts';
 import { isTypingTarget } from '../keymap.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type {
@@ -419,11 +420,37 @@ export function useProjectsPagePresenter() {
   const columnsBy = search.columnsBy ?? 'status';
   const rowsBy = search.rowsBy ?? 'none';
   const showEmptyColumns = search.showEmptyColumns ?? true;
-  const projectBoard = useMemo<ProjectBoardModel>(() => {
-    const columnKeys =
+  const boardGroupOrder =
+    columnsBy === 'status' ? search.statusColumnOrder : search.priorityColumnOrder;
+  const hiddenBoardGroupKeys =
+    columnsBy === 'status' ? search.hiddenStatusColumns : search.hiddenPriorityColumns;
+  const projectBoardGroups = useMemo(() => {
+    const keys =
       columnsBy === 'status'
         ? projectWorkflowStatuses.map((status) => status.id)
         : ['1', '2', '3', '4', '0'];
+    const groups = keys.map((key) => ({
+      key,
+      label:
+        columnsBy === 'status'
+          ? projectWorkflowStatusLabel(key, projectWorkflowStatuses, i18n.t)
+          : priorityLabel(Number(key)),
+      visible: !hiddenBoardGroupKeys?.includes(key),
+    }));
+    return orderProjectBoardGroups(groups, boardGroupOrder);
+  }, [boardGroupOrder, columnsBy, hiddenBoardGroupKeys, projectWorkflowStatuses]);
+  const projectBoard = useMemo<ProjectBoardModel>(() => {
+    const columnGroups = projectBoardGroups
+      .filter((group) => group.visible)
+      .filter(
+        (group) =>
+          showEmptyColumns ||
+          filteredProjects.some((project) =>
+            columnsBy === 'status'
+              ? (project.workflowStatus ?? project.status) === group.key
+              : String(project.priority) === group.key,
+          ),
+      );
     const rowKeys =
       rowsBy === 'none'
         ? ['all']
@@ -444,19 +471,7 @@ export function useProjectsPagePresenter() {
             );
     const keyFor = (project: Project, by: 'status' | 'priority') =>
       by === 'status' ? (project.workflowStatus ?? project.status) : String(project.priority);
-    const columns = columnKeys
-      .map((key) => ({
-        key,
-        label:
-          columnsBy === 'status'
-            ? projectWorkflowStatusLabel(key, projectWorkflowStatuses, i18n.t)
-            : priorityLabel(Number(key)),
-      }))
-      .filter(
-        (column) =>
-          showEmptyColumns ||
-          filteredProjects.some((project) => keyFor(project, columnsBy) === column.key),
-      );
+    const columns = columnGroups.map(({ key, label }) => ({ key, label }));
     return {
       columns,
       rows: rowKeys.map((rowKey) => ({
@@ -479,7 +494,7 @@ export function useProjectsPagePresenter() {
         ),
       })),
     };
-  }, [columnsBy, filteredProjects, projectWorkflowStatuses, rowsBy, showEmptyColumns]);
+  }, [columnsBy, filteredProjects, projectBoardGroups, rowsBy, showEmptyColumns]);
 
   const timelineStart =
     search.timelineStart ??
@@ -619,6 +634,7 @@ export function useProjectsPagePresenter() {
     columnsBy,
     rowsBy,
     showEmptyColumns,
+    boardGroups: projectBoardGroups,
     showProjectList: search.showProjectList ?? true,
     showWeekNumbers: search.showWeekNumbers ?? false,
     displayProperties,
@@ -728,6 +744,24 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({ rowsBy: value as typeof search.rowsBy }),
       onShowEmptyColumnsChange: (value) =>
         void updateProjectSearch({ showEmptyColumns: value ? undefined : false }),
+      onMoveBoardGroup: (key, destinationIndex) => {
+        const order = moveProjectBoardGroup(
+          projectBoardGroups.map((group) => group.key),
+          key,
+          destinationIndex,
+        );
+        if (columnsBy === 'status') void updateProjectSearch({ statusColumnOrder: order });
+        else void updateProjectSearch({ priorityColumnOrder: order });
+      },
+      onBoardGroupVisibilityChange: (key, visible) => {
+        if (!visible && projectBoardGroups.filter((group) => group.visible).length <= 1) return;
+        const hidden = new Set(hiddenBoardGroupKeys ?? []);
+        if (visible) hidden.delete(key);
+        else hidden.add(key);
+        const value = hidden.size ? [...hidden] : undefined;
+        if (columnsBy === 'status') void updateProjectSearch({ hiddenStatusColumns: value });
+        else void updateProjectSearch({ hiddenPriorityColumns: value });
+      },
       onShowProjectListChange: (value) =>
         void updateProjectSearch({ showProjectList: value ? undefined : false }),
       onShowWeekNumbersChange: (value) =>
@@ -765,6 +799,10 @@ export function useProjectsPagePresenter() {
           view: undefined,
           columnsBy: undefined,
           rowsBy: undefined,
+          statusColumnOrder: undefined,
+          priorityColumnOrder: undefined,
+          hiddenStatusColumns: undefined,
+          hiddenPriorityColumns: undefined,
           showEmptyColumns: undefined,
           showProjectList: undefined,
           showWeekNumbers: undefined,

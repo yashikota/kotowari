@@ -355,10 +355,13 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await page.getByRole('option', { name: 'Create page' }).click();
   const pageTitle = page.getByPlaceholder('Page title');
   await expect(pageTitle).toBeFocused();
-  await pageTitle.fill('ADR 1');
+  const pageTitleText = `ADR ${Date.now()}`;
+  await pageTitle.fill(pageTitleText);
   await pageTitle.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/pages\//);
-  await expect(page.getByRole('textbox', { name: 'Page title' }).first()).toHaveValue('ADR 1');
+  await expect(page.getByRole('textbox', { name: 'Page title' }).first()).toHaveValue(
+    pageTitleText,
+  );
   await page.getByLabel('Project').selectOption({ label: projectName });
   await expect(page.getByLabel('Project')).not.toHaveValue('');
 });

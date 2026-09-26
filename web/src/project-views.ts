@@ -77,6 +77,10 @@ export type ProjectViewSearch = {
   view?: 'list' | 'board' | 'timeline';
   columnsBy?: 'status' | 'priority';
   rowsBy?: 'none' | 'status' | 'priority';
+  statusColumnOrder?: string[];
+  priorityColumnOrder?: string[];
+  hiddenStatusColumns?: string[];
+  hiddenPriorityColumns?: string[];
   showEmptyColumns?: boolean;
   showProjectList?: boolean;
   showWeekNumbers?: boolean;
