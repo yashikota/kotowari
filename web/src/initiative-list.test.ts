@@ -147,6 +147,85 @@ describe('initiative list search', () => {
     }
   });
 
+  it('parses and evaluates nested advanced filters with AND and OR groups', () => {
+    const advancedFilterGroup = {
+      kind: 'group',
+      operator: 'and',
+      children: [
+        { kind: 'condition', field: 'status', operator: 'is', value: 'active' },
+        {
+          kind: 'group',
+          operator: 'or',
+          children: [
+            { kind: 'condition', field: 'health', operator: 'is', value: 'none' },
+            { kind: 'condition', field: 'priority', operator: 'is', value: '2' },
+          ],
+        },
+        { kind: 'condition', field: 'label', operator: 'is', value: 'launch' },
+      ],
+    };
+    const parsed = parseInitiativeListSearch({
+      advancedFilter: true,
+      advancedFilterGroup: JSON.stringify(advancedFilterGroup),
+    });
+    expect(parsed.advancedFilter).toBe(true);
+    expect(parsed.advancedFilterGroup).toEqual(advancedFilterGroup);
+    const initiatives = [
+      initiative('matches', 'active', {
+        health: 'on_track',
+        priority: 2,
+        labels: ['launch'],
+      }),
+      initiative('wrong-health-and-priority', 'active', {
+        health: 'on_track',
+        priority: 3,
+        labels: ['launch'],
+      }),
+      initiative('wrong-status', 'planned', {
+        priority: 2,
+        labels: ['launch'],
+      }),
+    ];
+    const groups = buildInitiativeList({ initiatives, projects: [], search: parsed });
+    expect(groups[0]?.initiatives.map((item) => item.slug)).toEqual(['matches']);
+  });
+
+  it('filters advanced date conditions and keeps empty advanced groups neutral', () => {
+    const initiatives = [
+      initiative('dated', 'active', { targetDate: '2026-04-10' }),
+      initiative('undated', 'active'),
+    ];
+    const targetDateGroup = {
+      kind: 'group' as const,
+      operator: 'and' as const,
+      children: [
+        {
+          kind: 'condition' as const,
+          field: 'targetDate' as const,
+          operator: 'is' as const,
+          value: 'custom',
+          dateFrom: '2026-04-01',
+          dateTo: '2026-04-30',
+        },
+      ],
+    };
+    const filtered = buildInitiativeList({
+      initiatives,
+      projects: [],
+      search: { advancedFilter: true, advancedFilterGroup: targetDateGroup },
+    });
+    expect(filtered[0]?.initiatives.map((item) => item.slug)).toEqual(['dated']);
+    const neutral = buildInitiativeList({
+      initiatives,
+      projects: [],
+      search: {
+        advancedFilter: true,
+        advancedFilterGroup: { kind: 'group', operator: 'and', children: [] },
+      },
+    });
+    expect(neutral[0]?.initiatives).toHaveLength(2);
+  });
+
   it('orders and groups initiatives by status while leaving null target dates last', () => {
     const initiatives = [
       initiative('undated', 'active'),

@@ -55,6 +55,8 @@ export function InitiativesPageView({
     dateFilters,
     labels,
     projectsFilter,
+    advancedFilter,
+    advancedFilterGroup,
     groupBy,
     orderBy,
     direction,
@@ -118,6 +120,8 @@ export function InitiativesPageView({
                 dateFilters={dateFilters}
                 labels={labels}
                 projectsFilter={projectsFilter}
+                advancedFilter={advancedFilter}
+                advancedFilterGroup={advancedFilterGroup}
                 groupBy={groupBy}
                 orderBy={orderBy}
                 direction={direction}

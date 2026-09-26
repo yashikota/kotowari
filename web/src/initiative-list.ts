@@ -11,6 +11,9 @@ import {
   serializeSearchDateFilter,
   type SearchDateFilter,
 } from './search.ts';
+import { parseProjectFilterGroup } from './project-views.ts';
+import type { ProjectFilterCondition, ProjectFilterGroup } from './project-views.ts';
+import type { ProjectFilterField } from './project-views.ts';
 
 export type InitiativeScope = 'active' | 'planned' | 'all';
 export type InitiativeGrouping = 'none' | 'status';
@@ -61,6 +64,8 @@ export type InitiativeListSearch = {
   updatedDate?: string;
   completedDate?: string;
   latestUpdateDate?: string;
+  advancedFilter?: boolean;
+  advancedFilterGroup?: ProjectFilterGroup;
   groupBy?: InitiativeGrouping;
   orderBy?: InitiativeOrderBy;
   direction?: 'asc' | 'desc';
@@ -96,6 +101,19 @@ const INITIATIVE_STATUSES: InitiativeStatus[] = [
   'active',
   'completed',
   'canceled',
+];
+const INITIATIVE_ADVANCED_FILTER_FIELDS: ProjectFilterField[] = [
+  'status',
+  'priority',
+  'health',
+  'label',
+  'project',
+  'title',
+  'createdDate',
+  'updatedDate',
+  'targetDate',
+  'completedDate',
+  'latestUpdateDate',
 ];
 
 export function parseInitiativeListSearch(raw: Record<string, unknown>): InitiativeListSearch {
@@ -169,6 +187,12 @@ export function parseInitiativeListSearch(raw: Record<string, unknown>): Initiat
       }
     }
   }
+  const advancedFilterGroup = parseProjectFilterGroup(
+    raw.advancedFilterGroup,
+    INITIATIVE_ADVANCED_FILTER_FIELDS,
+  );
+  if (raw.advancedFilter === true || advancedFilterGroup) search.advancedFilter = true;
+  if (advancedFilterGroup) search.advancedFilterGroup = advancedFilterGroup;
   if (raw.groupBy === 'status' || raw.groupBy === 'none') search.groupBy = raw.groupBy;
   if (
     raw.orderBy === 'manual' ||
@@ -196,6 +220,115 @@ export function parseInitiativeListSearch(raw: Record<string, unknown>): Initiat
   );
   if (displayProperties.length) search.displayProperties = [...new Set(displayProperties)];
   return search;
+}
+
+function utcDateString(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function matchesAdvancedDate(
+  dateValue: string | null | undefined,
+  condition: ProjectFilterCondition,
+  now: Date,
+): boolean {
+  const value = condition.value;
+  if (!value) return true;
+  const date = dateValue?.slice(0, 10);
+  if (value === 'no-date' || value === 'never') return !date;
+  if (!date) return false;
+  if (value === 'custom') {
+    return (
+      (!condition.dateFrom || date >= condition.dateFrom) &&
+      (!condition.dateTo || date <= condition.dateTo)
+    );
+  }
+  const today = utcDateString(now);
+  if (value === 'overdue') return date < today;
+  const within = /^within:(\d+)([dwmy])$/.exec(value);
+  if (within) {
+    const end = new Date(now);
+    const amount = Number(within[1]);
+    if (within[2] === 'd') end.setUTCDate(end.getUTCDate() + amount);
+    if (within[2] === 'w') end.setUTCDate(end.getUTCDate() + amount * 7);
+    if (within[2] === 'm') end.setUTCMonth(end.getUTCMonth() + amount);
+    if (within[2] === 'y') end.setUTCFullYear(end.getUTCFullYear() + amount);
+    return date >= today && date <= utcDateString(end);
+  }
+  const last = /^last:(\d+)([dwmy])$/.exec(value);
+  if (last) {
+    const start = new Date(now);
+    const amount = Number(last[1]);
+    if (last[2] === 'd') start.setUTCDate(start.getUTCDate() - amount);
+    if (last[2] === 'w') start.setUTCDate(start.getUTCDate() - amount * 7);
+    if (last[2] === 'm') start.setUTCMonth(start.getUTCMonth() - amount);
+    if (last[2] === 'y') start.setUTCFullYear(start.getUTCFullYear() - amount);
+    return date >= utcDateString(start) && date <= today;
+  }
+  return date === value;
+}
+
+function matchesAdvancedFilterGroup(
+  initiative: Initiative,
+  projects: ReadonlyMap<string, Project>,
+  group: ProjectFilterGroup,
+  now: Date,
+): boolean {
+  if (group.children.length === 0) return true;
+  const matches = group.children.map((child) => {
+    if (child.kind === 'group') return matchesAdvancedFilterGroup(initiative, projects, child, now);
+    if (!child.field || !child.value) return true;
+    const operator = child.operator ?? 'is';
+    if (
+      child.field === 'createdDate' ||
+      child.field === 'updatedDate' ||
+      child.field === 'targetDate' ||
+      child.field === 'completedDate' ||
+      child.field === 'latestUpdateDate'
+    ) {
+      const dateValue =
+        child.field === 'createdDate'
+          ? initiative.createdAt
+          : child.field === 'updatedDate'
+            ? initiative.updatedAt
+            : child.field === 'targetDate'
+              ? initiative.targetDate
+              : child.field === 'completedDate'
+                ? initiative.completedAt
+                : initiative.healthUpdatedAt;
+      const found = matchesAdvancedDate(dateValue, child, now);
+      return operator === 'isNot' ? !found : found;
+    }
+    const values = (() => {
+      switch (child.field) {
+        case 'status':
+          return [initiative.status];
+        case 'priority':
+          return [String(initiative.priority ?? 0)];
+        case 'health':
+          return [initiative.health ?? 'none'];
+        case 'label':
+          return initiative.labels ?? [];
+        case 'title':
+          return [`${initiative.name} ${initiative.description}`.toLocaleLowerCase()];
+        case 'project':
+          return [
+            initiative.projectSlugs.some((slug) => projects.has(slug))
+              ? 'withProjects'
+              : 'withoutProjects',
+          ];
+        default:
+          return [];
+      }
+    })();
+    const found =
+      operator === 'contains' || operator === 'doesNotContain'
+        ? values.some((candidate) =>
+            candidate.toLocaleLowerCase().includes(child.value!.toLocaleLowerCase()),
+          )
+        : values.includes(child.value);
+    return operator === 'isNot' || operator === 'doesNotContain' ? !found : found;
+  });
+  return group.operator === 'or' ? matches.some(Boolean) : matches.every(Boolean);
 }
 
 export type InitiativeListGroup = {
@@ -226,6 +359,17 @@ export function buildInitiativeList({
       return false;
     }
     if (search.statusFilter?.length && !search.statusFilter.includes(initiative.status))
+      return false;
+    if (
+      search.advancedFilter &&
+      search.advancedFilterGroup &&
+      !matchesAdvancedFilterGroup(
+        initiative,
+        projectsBySlug,
+        search.advancedFilterGroup,
+        new Date(now),
+      )
+    )
       return false;
     const dateValue: Record<InitiativeDateField, string | null | undefined> = {
       created: initiative.createdAt,

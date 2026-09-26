@@ -16,6 +16,7 @@ import type {
   InitiativeDisplayProperty,
   InitiativeListSearch,
 } from '../initiative-list.ts';
+import type { ProjectFilterGroup } from '../project-views.ts';
 import {
   parseSearchDateFilter,
   serializeSearchDateFilter,
@@ -93,6 +94,7 @@ export function useInitiativesPagePresenter() {
     search.healthFilter?.length ||
     search.labelFilter?.length ||
     search.projects ||
+    search.advancedFilter ||
     search.targetDateFrom ||
     search.targetDateTo ||
     Object.keys(dateFilters).length > 0,
@@ -145,6 +147,8 @@ export function useInitiativesPagePresenter() {
     dateFilters,
     labels,
     projectsFilter,
+    advancedFilter: search.advancedFilter ?? false,
+    advancedFilterGroup: search.advancedFilterGroup,
     targetDateFrom: search.targetDateFrom ?? '',
     targetDateTo: search.targetDateTo ?? '',
     groupBy: search.groupBy ?? 'none',
@@ -214,6 +218,13 @@ export function useInitiativesPagePresenter() {
         updateListSearch({
           projects: value === 'all' ? undefined : (value as InitiativeListSearch['projects']),
         }),
+      onAdvancedFilterChange: (enabled: boolean) =>
+        updateListSearch({
+          advancedFilter: enabled || undefined,
+          advancedFilterGroup: enabled ? search.advancedFilterGroup : undefined,
+        }),
+      onAdvancedFilterGroupChange: (group: ProjectFilterGroup) =>
+        updateListSearch({ advancedFilter: true, advancedFilterGroup: group }),
       onDateFilterChange: (field: InitiativeDateField, filter: SearchDateFilter | undefined) => {
         const searchKey = INITIATIVE_DATE_SEARCH_KEYS[field];
         updateListSearch({ [searchKey]: filter ? serializeSearchDateFilter(filter) : undefined });
@@ -240,6 +251,8 @@ export function useInitiativesPagePresenter() {
           updatedDate: undefined,
           completedDate: undefined,
           latestUpdateDate: undefined,
+          advancedFilter: undefined,
+          advancedFilterGroup: undefined,
         }),
     },
   };

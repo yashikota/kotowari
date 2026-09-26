@@ -320,6 +320,67 @@ test('initiatives link projects in both directions and filter project lists', as
   await expect(page.getByRole('link', { name: unassignedName })).toBeVisible();
 });
 
+test('initiative advanced filters persist nested AND and OR conditions', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const bothName = `Advanced both ${stamp}`;
+  const statusName = `Advanced status ${stamp}`;
+  const priorityName = `Advanced priority ${stamp}`;
+  const neitherName = `Advanced neither ${stamp}`;
+  for (const [name, slug, status, priority] of [
+    [bothName, `initiative-advanced-both-${stamp}`, 'active', 2],
+    [statusName, `initiative-advanced-status-${stamp}`, 'active', 4],
+    [priorityName, `initiative-advanced-priority-${stamp}`, 'planned', 2],
+    [neitherName, `initiative-advanced-neither-${stamp}`, 'planned', 4],
+  ] as const) {
+    const response = await request.post('/api/initiatives', {
+      data: { name, slug, status, priority },
+    });
+    expect(response.ok(), await response.text()).toBeTruthy();
+  }
+
+  await page.goto('/initiatives?scope=all');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  const filterDialog = page.getByRole('dialog', { name: 'Add filter' });
+  await filterDialog.getByRole('button', { name: 'Advanced filter', exact: true }).click();
+  const rootGroup = page.locator('[aria-label="Filter group 1"]');
+  await rootGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await rootGroup.getByRole('option', { name: 'Status', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await page.getByRole('option', { name: 'In progress', exact: true }).click();
+  await rootGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 2 field' }).click();
+  await rootGroup.getByRole('option', { name: 'Priority', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 2 value' }).click();
+  await page.getByRole('option', { name: 'High', exact: true }).click();
+
+  await expect(page.getByRole('link', { name: bothName })).toBeVisible();
+  await expect(page.getByRole('link', { name: statusName })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: priorityName })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: neitherName })).toHaveCount(0);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('advancedFilterGroup'))
+    .not.toBeNull();
+
+  await rootGroup.getByText('Any', { exact: true }).click();
+  await expect(page.getByRole('link', { name: bothName })).toBeVisible();
+  await expect(page.getByRole('link', { name: statusName })).toBeVisible();
+  await expect(page.getByRole('link', { name: priorityName })).toBeVisible();
+  await expect(page.getByRole('link', { name: neitherName })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('link', { name: statusName })).toBeVisible();
+  await expect(page.getByRole('link', { name: priorityName })).toBeVisible();
+  await expect(page.getByRole('link', { name: neitherName })).toHaveCount(0);
+  await page
+    .getByRole('group', { name: 'Active filters' })
+    .getByRole('button', { name: 'Remove advanced filter' })
+    .click();
+  await expect(page.getByRole('link', { name: neitherName })).toBeVisible();
+});
+
 test('deleting an initiative preserves projects and removes their initiative property', async ({
   page,
   request,

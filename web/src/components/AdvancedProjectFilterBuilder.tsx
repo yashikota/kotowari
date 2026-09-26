@@ -64,10 +64,12 @@ function removeNode(
 export function AdvancedProjectFilterBuilder({
   group,
   choices,
+  fields,
   onChange,
 }: {
   group: ProjectFilterGroup;
   choices: FilterChoices;
+  fields?: FilterChoice[];
   onChange: (group: ProjectFilterGroup) => void;
 }) {
   const { t } = useTranslation();
@@ -135,7 +137,7 @@ export function AdvancedProjectFilterBuilder({
             group: groupNumber,
             number: index + 1,
           });
-          const fieldChoices: FilterChoice[] = [
+          const defaultFieldChoices: FilterChoice[] = [
             { value: 'status', label: t('projectList.filterStatus') },
             { value: 'priority', label: t('projectList.filterPriority') },
             { value: 'lead', label: t('projectList.property.lead') },
@@ -154,6 +156,7 @@ export function AdvancedProjectFilterBuilder({
             { value: 'completedDate', label: t('projectList.filterCompletedDate') },
             { value: 'latestUpdateDate', label: t('projectList.filterLatestUpdateDate') },
           ];
+          const fieldChoices = fields ?? defaultFieldChoices;
           const valueChoices = child.field ? (choices[child.field] ?? []) : [];
           const rule = child as ProjectFilterCondition;
           const isDateField = Boolean(child.field?.endsWith('Date'));

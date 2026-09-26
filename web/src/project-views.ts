@@ -130,7 +130,10 @@ function parseDateBound(value: unknown): string | undefined {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
 }
 
-export function parseProjectFilterGroup(value: unknown): ProjectFilterGroup | undefined {
+export function parseProjectFilterGroup(
+  value: unknown,
+  allowedFields?: readonly ProjectFilterField[],
+): ProjectFilterGroup | undefined {
   let parsed = value;
   if (typeof parsed === 'string') {
     try {
@@ -154,7 +157,11 @@ export function parseProjectFilterGroup(value: unknown): ProjectFilterGroup | un
       return { kind: 'group', operator: candidate.operator, children };
     }
     if (candidate.kind !== 'condition') return undefined;
-    const field = PROJECT_FILTER_FIELDS.has(candidate.field as ProjectFilterField)
+    const field = (
+      allowedFields
+        ? allowedFields.includes(candidate.field as ProjectFilterField)
+        : PROJECT_FILTER_FIELDS.has(candidate.field as ProjectFilterField)
+    )
       ? (candidate.field as ProjectFilterField)
       : undefined;
     const operator =

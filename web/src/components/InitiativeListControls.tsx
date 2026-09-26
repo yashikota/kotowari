@@ -11,6 +11,7 @@ import type {
 import type { InitiativeFilterHandlers } from './InitiativeFilterPicker.tsx';
 import { InitiativeFilterPicker } from './InitiativeFilterPicker.tsx';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
+import type { ProjectFilterGroup } from '../project-views.ts';
 
 const DISPLAY_PROPERTIES: InitiativeDisplayProperty[] = [
   'id',
@@ -45,6 +46,8 @@ export function InitiativeListControls({
   dateFilters,
   labels,
   projectsFilter,
+  advancedFilter,
+  advancedFilterGroup,
   groupBy,
   orderBy,
   direction,
@@ -61,6 +64,8 @@ export function InitiativeListControls({
   dateFilters: InitiativeDateFilters;
   labels: string[];
   projectsFilter: InitiativeProjectFilter;
+  advancedFilter: boolean;
+  advancedFilterGroup?: ProjectFilterGroup;
   groupBy: InitiativeGrouping;
   orderBy: InitiativeOrderBy;
   direction: 'asc' | 'desc';
@@ -81,6 +86,8 @@ export function InitiativeListControls({
         dateFilters={dateFilters}
         labels={labels}
         projectsFilter={projectsFilter}
+        advancedFilter={advancedFilter}
+        advancedFilterGroup={advancedFilterGroup}
         hasFilters={hasFilters}
         handlers={handlers}
       />

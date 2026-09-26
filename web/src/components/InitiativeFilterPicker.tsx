@@ -33,6 +33,7 @@ import type {
   InitiativeDateFilters,
   InitiativeProjectFilter,
 } from '../initiative-list.ts';
+import type { ProjectFilterField, ProjectFilterGroup } from '../project-views.ts';
 import {
   SEARCH_DATE_WINDOWS,
   type SearchDateFilter,
@@ -41,12 +42,28 @@ import {
 } from '../search.ts';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
 import { SearchDateTimeframeDialog } from './SearchDateTimeframeDialog.tsx';
+import { AdvancedProjectFilterBuilder } from './AdvancedProjectFilterBuilder.tsx';
 
 const STATUSES: InitiativeStatus[] = ['proposed', 'planned', 'active', 'completed', 'canceled'];
 const HEALTH_STATUSES: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
 const PRIORITIES = [0, 1, 2, 3, 4];
 const DATE_FIELDS: InitiativeDateField[] = ['created', 'updated', 'completed', 'latestUpdate'];
-const FILTERS = ['status', 'priority', 'labels', 'health', 'dates', 'projects'] as const;
+const FILTERS = [
+  'status',
+  'priority',
+  'labels',
+  'health',
+  'dates',
+  'projects',
+  'advanced',
+] as const;
+
+function advancedDateWindow(
+  value: (typeof SEARCH_DATE_WINDOWS)[number],
+  operator: 'last' | 'within',
+) {
+  return `${operator}:${value.slice(1).toLocaleLowerCase()}`;
+}
 
 type FilterKey = (typeof FILTERS)[number];
 type ActiveFilterChip = {
@@ -64,6 +81,7 @@ const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
   health: IconChartBar,
   dates: IconCalendar,
   projects: IconStack2,
+  advanced: IconFilter,
 };
 
 export type InitiativeFilterHandlers = {
@@ -74,6 +92,8 @@ export type InitiativeFilterHandlers = {
   onLabelFilterChange: (value: string[]) => void;
   onDateFilterChange: (field: InitiativeDateField, filter: SearchDateFilter | undefined) => void;
   onProjectsFilterChange: (value: string) => void;
+  onAdvancedFilterChange: (enabled: boolean) => void;
+  onAdvancedFilterGroupChange: (group: ProjectFilterGroup) => void;
   onClearFilters: () => void;
 };
 
@@ -86,6 +106,8 @@ export function InitiativeFilterPicker({
   dateFilters,
   labels,
   projectsFilter,
+  advancedFilter,
+  advancedFilterGroup,
   hasFilters,
   handlers,
 }: {
@@ -97,6 +119,8 @@ export function InitiativeFilterPicker({
   dateFilters: InitiativeDateFilters;
   labels: string[];
   projectsFilter: InitiativeProjectFilter;
+  advancedFilter: boolean;
+  advancedFilterGroup?: ProjectFilterGroup;
   hasFilters: boolean;
   handlers: InitiativeFilterHandlers;
 }) {
@@ -121,6 +145,7 @@ export function InitiativeFilterPicker({
     health: t('initiativeList.health'),
     dates: t('initiativeList.dates'),
     projects: t('initiativeList.projects'),
+    advanced: t('initiativeList.advancedFilter'),
   };
   const filterCounts: Record<FilterKey, number> = {
     status: statusFilter.length,
@@ -129,6 +154,7 @@ export function InitiativeFilterPicker({
     health: healthFilter.length,
     dates: DATE_FIELDS.filter((field) => dateFilters[field]).length,
     projects: Number(projectsFilter !== 'all'),
+    advanced: Number(advancedFilter),
   };
   const visibleFilters = FILTERS.filter((filter) =>
     filterLabels[filter].toLocaleLowerCase().includes(filterQuery.trim().toLocaleLowerCase()),
@@ -184,6 +210,9 @@ export function InitiativeFilterPicker({
             : 'initiativeList.withoutProjects',
         );
         break;
+      case 'advanced':
+        value = '';
+        break;
       default:
         continue;
     }
@@ -226,6 +255,9 @@ export function InitiativeFilterPicker({
         break;
       case 'projects':
         handlers.onProjectsFilterChange('all');
+        break;
+      case 'advanced':
+        handlers.onAdvancedFilterChange(false);
         break;
       default:
         break;
@@ -290,7 +322,10 @@ export function InitiativeFilterPicker({
             role="dialog"
             aria-label={t('initiativeList.addFilter')}
             p={0}
-            style={{ width: 252, maxWidth: 'calc(100vw - 16px)' }}
+            style={{
+              width: activeFilter === 'advanced' ? 448 : 252,
+              maxWidth: 'calc(100vw - 16px)',
+            }}
           >
             {activeFilter ? (
               <Stack gap="sm" p="sm">
@@ -423,6 +458,97 @@ export function InitiativeFilterPicker({
                       ]}
                     />
                   ) : null}
+                  {activeFilter === 'advanced' ? (
+                    <AdvancedProjectFilterBuilder
+                      group={
+                        advancedFilterGroup ?? { kind: 'group', operator: 'and', children: [] }
+                      }
+                      onChange={handlers.onAdvancedFilterGroupChange}
+                      fields={[
+                        { value: 'status', label: filterLabels.status },
+                        { value: 'priority', label: filterLabels.priority },
+                        { value: 'health', label: filterLabels.health },
+                        { value: 'label', label: filterLabels.labels },
+                        { value: 'project', label: filterLabels.projects },
+                        { value: 'title', label: t('initiativeList.name') },
+                        { value: 'createdDate', label: dateFieldLabels.created },
+                        { value: 'updatedDate', label: dateFieldLabels.updated },
+                        { value: 'targetDate', label: t('initiativeList.targetDate') },
+                        { value: 'completedDate', label: dateFieldLabels.completed },
+                        { value: 'latestUpdateDate', label: dateFieldLabels.latestUpdate },
+                      ]}
+                      choices={
+                        {
+                          status: STATUSES.map((value) => ({
+                            value,
+                            label: t(`initiatives.${value}`),
+                          })),
+                          priority: PRIORITIES.map((value) => ({
+                            value: String(value),
+                            label: t(`initiativeList.priorityValue.${value}`),
+                          })),
+                          health: [
+                            { value: 'none', label: t('initiativeList.noHealth') },
+                            ...HEALTH_STATUSES.map((value) => ({
+                              value,
+                              label: t(`initiativeList.healthValue.${value}`),
+                            })),
+                          ],
+                          label: labels.map((value) => ({ value, label: value })),
+                          project: [
+                            { value: 'withProjects', label: t('initiativeList.withProjects') },
+                            {
+                              value: 'withoutProjects',
+                              label: t('initiativeList.withoutProjects'),
+                            },
+                          ],
+                          createdDate: [
+                            { value: 'no-date', label: t('initiativeList.noDate') },
+                            ...SEARCH_DATE_WINDOWS.map((window) => ({
+                              value: advancedDateWindow(window, 'last'),
+                              label: t(`searchPage.filters.dateWindows.${window}`),
+                            })),
+                            { value: 'custom', label: t('searchPage.filters.customTimeframe') },
+                          ],
+                          updatedDate: [
+                            { value: 'no-date', label: t('initiativeList.noDate') },
+                            ...SEARCH_DATE_WINDOWS.map((window) => ({
+                              value: advancedDateWindow(window, 'last'),
+                              label: t(`searchPage.filters.dateWindows.${window}`),
+                            })),
+                            { value: 'custom', label: t('searchPage.filters.customTimeframe') },
+                          ],
+                          targetDate: [
+                            { value: 'no-date', label: t('initiativeList.noDate') },
+                            { value: 'overdue', label: t('initiativeList.overdue') },
+                            ...SEARCH_DATE_WINDOWS.map((window) => ({
+                              value: advancedDateWindow(window, 'within'),
+                              label: t(`searchPage.filters.dateWindows.${window}`),
+                            })),
+                            { value: 'custom', label: t('searchPage.filters.customTimeframe') },
+                          ],
+                          completedDate: [
+                            { value: 'no-date', label: t('initiativeList.noDate') },
+                            ...SEARCH_DATE_WINDOWS.map((window) => ({
+                              value: advancedDateWindow(window, 'last'),
+                              label: t(`searchPage.filters.dateWindows.${window}`),
+                            })),
+                            { value: 'custom', label: t('searchPage.filters.customTimeframe') },
+                          ],
+                          latestUpdateDate: [
+                            { value: 'never', label: t('initiativeList.noHealth') },
+                            ...SEARCH_DATE_WINDOWS.map((window) => ({
+                              value: advancedDateWindow(window, 'last'),
+                              label: t(`searchPage.filters.dateWindows.${window}`),
+                            })),
+                            { value: 'custom', label: t('searchPage.filters.customTimeframe') },
+                          ],
+                        } satisfies Partial<
+                          Record<ProjectFilterField, { value: string; label: string }[]>
+                        >
+                      }
+                    />
+                  ) : null}
                   {activeFilter === 'dates' && !activeDateField ? (
                     <Stack gap={2}>
                       {DATE_FIELDS.map((field) => (
@@ -538,6 +664,7 @@ export function InitiativeFilterPicker({
                           onClick={() => {
                             setActiveFilter(filter);
                             setActiveDateField(null);
+                            if (filter === 'advanced') handlers.onAdvancedFilterChange(true);
                           }}
                           leftSection={<FilterIcon size={15} stroke={1.7} aria-hidden="true" />}
                           rightSection={
@@ -601,7 +728,7 @@ export function InitiativeFilterPicker({
                 color="gray"
                 size="compact-xs"
                 radius="xl"
-                aria-label={`${label}: ${value}`}
+                aria-label={value ? `${label}: ${value}` : label}
                 styles={{ root: { borderTopRightRadius: 0, borderBottomRightRadius: 0 } }}
                 onClick={() => {
                   setActiveFilter(filter);
@@ -609,7 +736,7 @@ export function InitiativeFilterPicker({
                   handlers.onFilterOpenedChange(true);
                 }}
               >
-                {label}: {value}
+                {value ? `${label}: ${value}` : label}
               </Button>
               <ActionIcon
                 type="button"
@@ -617,7 +744,11 @@ export function InitiativeFilterPicker({
                 color="gray"
                 size="xs"
                 radius="xl"
-                aria-label={t('initiativeList.removeFilter', { filter: label })}
+                aria-label={
+                  filter === 'advanced'
+                    ? t('projectList.removeAdvancedFilter')
+                    : t('initiativeList.removeFilter', { filter: label })
+                }
                 styles={{ root: { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 } }}
                 onClick={() => (dateField ? clearDateFilter(dateField) : clearFilter(filter))}
               >
