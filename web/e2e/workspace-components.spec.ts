@@ -121,9 +121,9 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   expect(titleBounds!.y).toBeLessThan(propertiesBounds!.y);
   expect(propertiesBounds!.y).toBeLessThan(editorBounds!.y);
   expect(Math.abs(statusBounds!.y - priorityBounds!.y)).toBeLessThan(2);
-  expect(Math.abs(statusBounds!.y - cycleBounds!.y)).toBeLessThan(2);
   expect(labelsBounds).not.toBeNull();
-  expect(cycleBounds!.x).toBeGreaterThan(labelsBounds!.x);
+  expect(Math.abs(statusBounds!.y - labelsBounds!.y)).toBeLessThanOrEqual(2);
+  expect(cycleBounds!.y).toBeGreaterThan(labelsBounds!.y);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();

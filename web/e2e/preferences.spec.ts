@@ -79,7 +79,8 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
   await expect(moreLinks.nth(0)).toHaveText('Reminders');
   await expect(moreLinks.nth(1)).toHaveText('Board');
   await expect(moreLinks.nth(2)).toHaveText('Issues');
-  await expect(moreLinks.nth(3)).toHaveText('ADRs');
+  await expect(moreLinks.nth(3)).toHaveText('Initiatives');
+  await expect(moreLinks.nth(4)).toHaveText('ADRs');
   await expect(
     page
       .getByRole('navigation', { name: 'Team navigation' })
@@ -92,7 +93,8 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
   await expect(reloadedMoreLinks.nth(0)).toHaveText('Reminders');
   await expect(reloadedMoreLinks.nth(1)).toHaveText('Board');
   await expect(reloadedMoreLinks.nth(2)).toHaveText('Issues');
-  await expect(reloadedMoreLinks.nth(3)).toHaveText('ADRs');
+  await expect(reloadedMoreLinks.nth(3)).toHaveText('Initiatives');
+  await expect(reloadedMoreLinks.nth(4)).toHaveText('ADRs');
 
   await page.getByRole('button', { name: 'Customize sidebar' }).click();
   await choose(page, 'Where to show Issues', "Don't show");
