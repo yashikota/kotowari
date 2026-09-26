@@ -4,6 +4,7 @@ import {
   actionFromKeyboard,
   globalNavigationSequenceFromKeyboard,
   inboxShortcutFromKeyboard,
+  initiativeCreateSequenceFromKeyboard,
   issueLinkedCodeSequenceFromKeyboard,
   issueDetailShortcutFromKeyboard,
   isTypingTarget,
@@ -366,6 +367,49 @@ describe('project create keyboard sequence', () => {
         300,
       ).action,
     ).toBeNull();
+  });
+});
+
+describe('initiative create keyboard sequence', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    pendingSince: number | null = null,
+    now = 100,
+    overrides: Partial<Parameters<typeof initiativeCreateSequenceFromKeyboard>[0]> = {},
+  ) =>
+    initiativeCreateSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      pendingSince,
+      now,
+    );
+
+  it('recognizes N, then I and clears the pending sequence', () => {
+    const started = key('n');
+    expect(started).toEqual({ action: null, pendingSince: 100 });
+    expect(key('i', started.pendingSince, 500)).toEqual({
+      action: 'new-initiative',
+      pendingSince: null,
+    });
+  });
+
+  it('expires the sequence and ignores typing or modified keys', () => {
+    expect(key('i', 100, 1101).action).toBeNull();
+    expect(key('n', null, 100, { target: el('INPUT') }).pendingSince).toBeNull();
+    expect(key('n', null, 100, { isComposing: true }).pendingSince).toBeNull();
+    expect(key('n', null, 100, { metaKey: true }).pendingSince).toBeNull();
+  });
+
+  it('cancels the pending sequence when another key is pressed', () => {
+    const interrupted = key('x', 100, 200);
+    expect(interrupted).toEqual({ action: null, pendingSince: null });
+    expect(key('i', interrupted.pendingSince, 300).action).toBeNull();
   });
 });
 

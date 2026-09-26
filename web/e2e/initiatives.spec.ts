@@ -4,6 +4,23 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   page,
   request,
 }) => {
+  await page.goto('/initiatives');
+  await expect(
+    page.getByText(
+      'Initiatives are larger, strategic product efforts that set the direction of your company. They bring together projects aligned with a shared goal so you can monitor progress at scale.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Documentation' })).toHaveAttribute(
+    'href',
+    'https://linear.app/docs/initiatives',
+  );
+  await page.keyboard.press('n');
+  await page.keyboard.press('i');
+  const shortcutCreateDialog = page.getByRole('dialog', { name: 'New initiative' });
+  await expect(shortcutCreateDialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(shortcutCreateDialog).toBeHidden();
+
   const stamp = Date.now();
   const activeName = `Active initiative ${stamp}`;
   const plannedName = `Planned initiative ${stamp}`;
@@ -69,10 +86,13 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
   await page.getByRole('button', { name: 'Add filter' }).click();
   const filterDialog = page.getByRole('dialog', { name: 'Add filter' });
+  await filterDialog.getByRole('checkbox', { name: label, exact: true }).click();
   await filterDialog.getByRole('checkbox', { name: 'High', exact: true }).click();
   await filterDialog.getByRole('checkbox', { name: 'On track', exact: true }).click();
-  await filterDialog.getByRole('checkbox', { name: label, exact: true }).click();
-  await expect(page).toHaveURL(/priorityFilter=.*healthFilter=.*labelFilter=/);
+  const activeFilters = new URL(page.url()).searchParams;
+  expect(activeFilters.has('priorityFilter')).toBeTruthy();
+  expect(activeFilters.has('healthFilter')).toBeTruthy();
+  expect(activeFilters.has('labelFilter')).toBeTruthy();
   await expect(page.getByRole('link', { name: activeName })).toBeVisible();
   await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
   await page.goto('/initiatives?scope=all');

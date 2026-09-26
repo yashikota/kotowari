@@ -16,6 +16,7 @@ import { EventScope, mediator } from './mediator.ts';
 import type { Overlay } from './mediator.ts';
 import {
   globalNavigationSequenceFromKeyboard,
+  initiativeCreateSequenceFromKeyboard,
   isSubmitShortcut,
   projectCreateSequenceFromKeyboard,
 } from '../keymap.ts';
@@ -211,6 +212,10 @@ export function Root({
     mediator.setFlag('Root:project.create', true);
     return navigate('/projects');
   });
+  useIntentHandler('initiative.create.open', () => {
+    mediator.setFlag('Root:initiative.create', true);
+    return navigate('/initiatives');
+  });
   const overlay = useSyncExternalStore(mediator.subscribe, mediator.getOverlay);
   const restore = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
@@ -230,6 +235,7 @@ export function Root({
   }, [overlay]);
   useEffect(() => {
     let projectCreatePendingSince: number | null = null;
+    let initiativeCreatePendingSince: number | null = null;
     let globalNavigationPendingSince: number | null = null;
     const focus = (event: FocusEvent) => {
       if (event.target instanceof HTMLElement && !event.target.closest('[role="dialog"]'))
@@ -238,6 +244,7 @@ export function Root({
     const key = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || event.keyCode === 229) {
         projectCreatePendingSince = null;
+        initiativeCreatePendingSince = null;
         globalNavigationPendingSince = null;
         return;
       }
@@ -277,6 +284,7 @@ export function Root({
       }
       if (dialog && event.key === 'Escape') {
         projectCreatePendingSince = null;
+        initiativeCreatePendingSince = null;
         globalNavigationPendingSince = null;
         event.preventDefault();
         mediator.open('none');
@@ -284,6 +292,7 @@ export function Root({
       }
       if (dialog) {
         projectCreatePendingSince = null;
+        initiativeCreatePendingSince = null;
         globalNavigationPendingSince = null;
       }
       const projectCreate = projectCreateSequenceFromKeyboard(
@@ -295,6 +304,17 @@ export function Root({
       if (projectCreate.action === 'new-project') {
         event.preventDefault();
         mediator.dispatch(mediator.root, 'project.create.open', undefined);
+        return;
+      }
+      const initiativeCreate = initiativeCreateSequenceFromKeyboard(
+        event,
+        initiativeCreatePendingSince,
+        Date.now(),
+      );
+      initiativeCreatePendingSince = initiativeCreate.pendingSince;
+      if (initiativeCreate.action === 'new-initiative') {
+        event.preventDefault();
+        mediator.dispatch(mediator.root, 'initiative.create.open', undefined);
         return;
       }
       const globalNavigation = globalNavigationSequenceFromKeyboard(

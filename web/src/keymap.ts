@@ -80,6 +80,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 const PROJECT_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
+const INITIATIVE_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
 const ISSUE_LINK_SEQUENCE_TIMEOUT_MS = 1000;
 const GLOBAL_NAVIGATION_SEQUENCE_TIMEOUT_MS = 1000;
 
@@ -118,6 +119,45 @@ export function projectCreateSequenceFromKeyboard(
     now - pendingSince <= PROJECT_CREATE_SEQUENCE_TIMEOUT_MS
   ) {
     return { action: 'new-project', pendingSince: null };
+  }
+  return { action: null, pendingSince: null };
+}
+
+export function initiativeCreateSequenceFromKeyboard(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    defaultPrevented?: boolean;
+    target: EventTarget | null;
+  },
+  pendingSince: number | null,
+  now: number,
+): { action: 'new-initiative' | null; pendingSince: number | null } {
+  const eligible =
+    !event.defaultPrevented &&
+    !event.isComposing &&
+    !event.repeat &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !isTypingTarget(event.target);
+  if (!eligible) return { action: null, pendingSince: null };
+
+  const key = event.key.toLowerCase();
+  if (key === 'n') return { action: null, pendingSince: now };
+  if (
+    key === 'i' &&
+    pendingSince !== null &&
+    now >= pendingSince &&
+    now - pendingSince <= INITIATIVE_CREATE_SEQUENCE_TIMEOUT_MS
+  ) {
+    return { action: 'new-initiative', pendingSince: null };
   }
   return { action: null, pendingSince: null };
 }

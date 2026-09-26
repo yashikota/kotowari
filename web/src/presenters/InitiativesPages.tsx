@@ -12,6 +12,7 @@ import {
 import type { InitiativeDisplayProperty, InitiativeListSearch } from '../initiative-list.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
 import type { Initiative, InitiativeStatus } from '../types.ts';
+import { useRootMachineFlag } from '../application/Root.tsx';
 
 function initiativeSlug(name: string, existing: Initiative[]): string {
   const base = name
@@ -37,7 +38,7 @@ export function useInitiativesPagePresenter() {
   const { t } = useTranslation();
   const navigate = useNavigate({ from: '/initiatives' });
   const router = useRouter();
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useRootMachineFlag('initiative.create');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<InitiativeStatus>('planned');
@@ -95,6 +96,7 @@ export function useInitiativesPagePresenter() {
       });
       queryCache.invalidate();
       await router.invalidate();
+      setCreateOpen(false);
       await navigate({ to: '/initiatives/$slug', params: { slug: created.slug } });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.error'));

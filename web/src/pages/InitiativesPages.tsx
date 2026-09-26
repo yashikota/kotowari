@@ -1,4 +1,5 @@
 import {
+  Anchor,
   Badge,
   Button,
   Group,
@@ -131,8 +132,14 @@ export function InitiativesPageView({
                   {t('initiatives.emptyDescription')}
                 </Text>
                 <Button type="button" onClick={handlers.onOpenCreate}>
-                  {t('initiatives.new')}
+                  {t('initiatives.emptyCreate')}
                 </Button>
+                <Text size="xs" c="dimmed">
+                  {t('initiatives.shortcutCreate')}
+                </Text>
+                <Anchor href="https://linear.app/docs/initiatives" target="_blank" rel="noreferrer">
+                  {t('initiatives.emptyDocumentation')}
+                </Anchor>
               </Stack>
             </EmptyState>
           ) : groups.every((group) => group.initiatives.length === 0) ? (

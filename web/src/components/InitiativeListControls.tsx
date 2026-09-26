@@ -115,6 +115,19 @@ export function InitiativeListControls({
         <Popover.Dropdown>
           <ScrollArea.Autosize mah={420} type="auto">
             <Stack gap="sm" pr="xs">
+              {labels.length > 0 ? (
+                <Checkbox.Group
+                  label={t('initiativeList.labels')}
+                  value={labelFilter}
+                  onChange={handlers.onLabelFilterChange}
+                >
+                  <Stack gap={6} mt="xs">
+                    {labels.map((label) => (
+                      <Checkbox key={label} value={label} label={label} />
+                    ))}
+                  </Stack>
+                </Checkbox.Group>
+              ) : null}
               <Checkbox.Group
                 label={t('initiativeList.status')}
                 value={statusFilter}
@@ -156,19 +169,6 @@ export function InitiativeListControls({
                   ))}
                 </Stack>
               </Checkbox.Group>
-              {labels.length > 0 ? (
-                <Checkbox.Group
-                  label={t('initiativeList.labels')}
-                  value={labelFilter}
-                  onChange={handlers.onLabelFilterChange}
-                >
-                  <Stack gap={6} mt="xs">
-                    {labels.map((label) => (
-                      <Checkbox key={label} value={label} label={label} />
-                    ))}
-                  </Stack>
-                </Checkbox.Group>
-              ) : null}
               <NativeSelect
                 label={t('initiativeList.projects')}
                 value={projectsFilter}
