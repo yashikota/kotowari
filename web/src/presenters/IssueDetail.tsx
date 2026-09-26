@@ -120,6 +120,9 @@ export function useIssueDetailPresenter({
   const [timeZone, setTimeZone] = useState('UTC');
   const [copied, setCopied] = useState(false);
   const [historyRequest, setHistoryRequest] = useState(0);
+  const [descriptionFocus, setDescriptionFocus] = useState({ identifier, request: 0 });
+  const descriptionFocusRequest =
+    descriptionFocus.identifier === identifier ? descriptionFocus.request : 0;
   const [optionalPropertyOverrides, setOptionalPropertyOverrides] =
     useState<OptionalPropertyOverrides>(readOptionalPropertyOverrides);
   const [customReminderOpen, setCustomReminderOpen] = useState(false);
@@ -796,6 +799,7 @@ export function useIssueDetailPresenter({
     timeZone,
     copied,
     historyRequest,
+    descriptionFocusRequest,
     customReminderOpen,
     customReminderValue,
     issueOptionsOpen,
@@ -887,6 +891,11 @@ export function useIssueDetailPresenter({
         value ? patch({ workflowStatus: value }) : undefined,
       onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setKeyboardPropertyMenu(property),
       onCloseIssuePropertyMenu: () => setKeyboardPropertyMenu(null),
+      onFocusDescription: () =>
+        setDescriptionFocus((current) => ({
+          identifier,
+          request: current.identifier === identifier ? current.request + 1 : 1,
+        })),
       Assignee_onChange: (value: string | null) =>
         patch({ assignee: value === 'self' || value === 'agent' ? value : null }),
       Type_onChange14: (value: string | null) =>

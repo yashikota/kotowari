@@ -18,12 +18,14 @@ export function useDocumentEditorPresenter({
   assetBase = '',
   inline = false,
   historyRequest = 0,
+  focusRequest = 0,
   showHistoryButton = true,
 }: {
   documentKey: string;
   assetBase?: string;
   inline?: boolean;
   historyRequest?: number;
+  focusRequest?: number;
   showHistoryButton?: boolean;
 }) {
   return {
@@ -32,6 +34,7 @@ export function useDocumentEditorPresenter({
     assetBase,
     inline,
     historyRequest,
+    focusRequest,
     showHistoryButton,
     handlers: {},
   };
@@ -42,12 +45,14 @@ export function useEditorPresenter({
   assetBase,
   inline = false,
   historyRequest = 0,
+  focusRequest = 0,
   showHistoryButton = true,
 }: {
   documentKey: string;
   assetBase: string;
   inline?: boolean;
   historyRequest?: number;
+  focusRequest?: number;
   showHistoryButton?: boolean;
 }) {
   const path = `/api/documents/${documentKey}`;
@@ -57,6 +62,9 @@ export function useEditorPresenter({
   const [draft, setDraft] = useState('');
   const [base, setBase] = useState('');
   const [mode, setMode] = useState<'preview' | 'edit' | 'compare'>('preview');
+  useEffect(() => {
+    if (focusRequest > 0) setMode('edit');
+  }, [focusRequest]);
   const [status, setStatus] = useState('Loading…');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -201,6 +209,7 @@ export function useEditorPresenter({
     _view: 0 as const,
     inline,
     showHistoryButton,
+    focusRequest,
     server,
     draft,
     base,

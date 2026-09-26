@@ -1544,6 +1544,7 @@
     "shortcutSelectIssue": "フォーカス中のイシューを選択／解除",
     "shortcutSelectAllIssues": "現在の一覧のイシューをすべて選択",
     "shortcutRenameIssue": "イシューのタイトルにフォーカスして選択",
+    "shortcutFocusIssueDescription": "イシューの説明にフォーカス",
     "shortcutOpenIssue": "選択したイシューを開く",
     "shortcutSetStatus": "イシューのステータスメニューを開く",
     "shortcutPriorityOrAdr": "イシューの優先度を設定／ADRを作成",

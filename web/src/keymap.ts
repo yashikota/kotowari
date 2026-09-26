@@ -232,6 +232,7 @@ export type IssueDetailShortcut =
   | 'open-priority'
   | 'open-labels'
   | 'open-estimate'
+  | 'focus-description'
   | 'toggle-favorite'
   | 'rename'
   | 'open-due-date'
@@ -259,6 +260,7 @@ export function issueDetailShortcutFromKeyboard(event: {
   if (modifier && event.shiftKey) {
     if (key === 'o') return 'open-sub-issue';
     if (key === 'l') return 'toggle-resources';
+    if (key === 'i') return 'focus-description';
   }
   if (modifier && event.altKey && !event.shiftKey && key === 'l') return 'add-link';
   if (modifier || event.altKey) return null;

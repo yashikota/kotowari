@@ -1548,6 +1548,7 @@
     "shortcutSelectIssue": "Select or deselect the focused issue",
     "shortcutSelectAllIssues": "Select all issues in the current list",
     "shortcutRenameIssue": "Focus and select the issue title",
+    "shortcutFocusIssueDescription": "Focus the issue description",
     "shortcutOpenIssue": "Open selected issue",
     "shortcutSetStatus": "Open the issue status menu",
     "shortcutPriorityOrAdr": "Set issue priority / create an ADR",

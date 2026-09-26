@@ -104,3 +104,32 @@ test('issue property shortcuts open focused status, priority, label, and estimat
   await expect(labelSearch).toBeVisible();
   await expect(labelSearch).toBeFocused();
 });
+
+test('issue description shortcut enters edit mode and focuses the markdown editor', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/issues', {
+    data: { title: `Issue description shortcut ${Date.now()}`, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  await page.goto(`/issues/${issue.identifier}`);
+
+  await page.getByRole('button', { name: 'Issue options' }).focus();
+  await page.keyboard.press('ControlOrMeta+Shift+i');
+
+  const description = page.getByRole('textbox', { name: 'Markdown body' });
+  await expect(description).toBeVisible();
+  await expect(description).toBeFocused();
+  await description.fill('Focused from the issue shortcut.');
+  await expect(description).toHaveValue('Focused from the issue shortcut.');
+
+  const anotherCreated = await request.post('/api/issues', {
+    data: { title: `Issue after description shortcut ${Date.now()}`, status: 'todo' },
+  });
+  expect(anotherCreated.ok()).toBeTruthy();
+  const anotherIssue = (await anotherCreated.json()) as { identifier: string };
+  await page.goto(`/issues/${anotherIssue.identifier}`);
+  await expect(page.getByRole('textbox', { name: 'Markdown body' })).toHaveCount(0);
+});

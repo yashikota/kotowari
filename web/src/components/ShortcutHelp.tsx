@@ -35,6 +35,7 @@ export function ShortcutHelpView({
     { keys: 'x', action: t('ui.shortcutSelectIssue') },
     { keys: 'Mod+A', action: t('ui.shortcutSelectAllIssues') },
     { keys: 'Shift+R', action: t('ui.shortcutRenameIssue') },
+    { keys: 'Ctrl/⌘+Shift+I', action: t('ui.shortcutFocusIssueDescription') },
     { keys: 's', action: t('ui.shortcutSetStatus') },
     { keys: 'l', action: t('ui.shortcutOpenLabelsMenu') },
     { keys: 'Shift+E', action: t('ui.shortcutOpenEstimateMenu') },

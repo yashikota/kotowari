@@ -664,6 +664,7 @@ export function IssueDetailView({
                   documentKey={`issues/${identifier}/body`}
                   inline
                   historyRequest={historyRequest}
+                  focusRequest={model.descriptionFocusRequest}
                   showHistoryButton={false}
                 />
                 <input
@@ -1642,6 +1643,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
           break;
         case 'open-estimate':
           void sendIntent('onOpenIssuePropertyMenu', ['estimate']);
+          break;
+        case 'focus-description':
+          void sendIntent('onFocusDescription', []);
           break;
         case 'toggle-favorite':
           void sendIntent('Favorite_onClick29', []);

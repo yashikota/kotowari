@@ -31,7 +31,8 @@ export function DocumentEditorView({
 }) {
   switch (model._view) {
     case 0: {
-      const { documentKey, assetBase, inline, historyRequest, showHistoryButton } = model;
+      const { documentKey, assetBase, inline, historyRequest, focusRequest, showHistoryButton } =
+        model;
       return (
         <Editor
           key={documentKey}
@@ -39,6 +40,7 @@ export function DocumentEditorView({
           assetBase={assetBase}
           inline={inline}
           historyRequest={historyRequest}
+          focusRequest={focusRequest}
           showHistoryButton={showHistoryButton}
         />
       );
@@ -316,6 +318,9 @@ export function Editor(props: Parameters<typeof useEditorPresenter>[0]) {
 function EditorBinding(props: Parameters<typeof useEditorPresenter>[0]) {
   const model = useEditorPresenter(props);
   const handlers = useActions(model.handlers);
-  const editRef = useFocusWhen<HTMLTextAreaElement>(model.mode === 'edit', [model.mode]);
+  const editRef = useFocusWhen<HTMLTextAreaElement>(model.mode === 'edit', [
+    model.mode,
+    model.focusRequest,
+  ]);
   return <EditorView model={{ ...model, handlers } as typeof model} editRef={editRef} />;
 }
