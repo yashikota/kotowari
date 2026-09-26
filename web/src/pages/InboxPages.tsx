@@ -181,6 +181,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
           <InboxFilterMenu
             filters={model.filters}
             projects={model.projectOptions}
+            menu={model.filterMenu}
             handlers={model.handlers}
           />
           <Menu position="bottom-end" withinPortal>

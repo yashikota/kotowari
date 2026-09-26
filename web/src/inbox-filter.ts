@@ -11,6 +11,20 @@ export type InboxFilters = {
   statuses: IssueStatus[];
 };
 
+export type InboxFilterFacet = 'activityTypes' | 'projectIds' | 'priorities' | 'statuses';
+
+export type InboxFilterMenuState = {
+  open: boolean;
+  query: string;
+  facet: InboxFilterFacet | null;
+};
+
+export const CLOSED_INBOX_FILTER_MENU: InboxFilterMenuState = {
+  open: false,
+  query: '',
+  facet: null,
+};
+
 export const EMPTY_INBOX_FILTERS: InboxFilters = {
   activityTypes: [],
   projectIds: [],

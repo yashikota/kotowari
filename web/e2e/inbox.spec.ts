@@ -38,7 +38,12 @@ test('personal inbox reviews, filters, reads, and archives recent issue activity
   await unreadToggle.click();
   await expect(unreadToggle).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('menuitem', { name: 'Notification type' }).hover();
+  const filterSearch = page.getByRole('textbox', { name: 'Add Filter…' });
+  await filterSearch.fill('notification');
+  await expect(page.getByRole('menuitem', { name: 'Notification type' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Project' })).toHaveCount(0);
+  await filterSearch.fill('');
+  await page.getByRole('menuitem', { name: 'Notification type' }).click();
   await page.getByRole('menuitem', { name: 'Comments' }).click();
   await expect(
     notifications.getByRole('button', { name: new RegExp(issue.identifier) }),
@@ -104,14 +109,16 @@ test('inbox combines project, issue priority, and status filters', async ({ page
   await expect(otherRows).toHaveCount(1);
 
   await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('menuitem', { name: 'Project' }).hover();
+  await page.getByRole('menuitem', { name: 'Project' }).click();
   await page.getByRole('menuitem', { name: projectName, exact: true }).click();
   await expect(primaryRows).toHaveCount(1);
   await expect(otherRows).toHaveCount(0);
 
-  await page.getByRole('menuitem', { name: 'Issue priority' }).hover();
+  await page.getByRole('menuitem', { name: 'All filters' }).click();
+  await page.getByRole('menuitem', { name: 'Issue priority' }).click();
   await page.getByRole('menuitem', { name: 'High', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Issue status type' }).hover();
+  await page.getByRole('menuitem', { name: 'All filters' }).click();
+  await page.getByRole('menuitem', { name: 'Issue status type' }).click();
   await page.getByRole('menuitem', { name: 'In Progress', exact: true }).click();
   await expect(primaryRows).toHaveCount(1);
   await expect(otherRows).toHaveCount(0);

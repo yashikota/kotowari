@@ -1,9 +1,17 @@
-import { Button, Group, Menu } from '@mantine/core';
-import { IconCheck, IconFilter, IconX } from '@tabler/icons-react';
+import { Button, Group, Menu, TextInput } from '@mantine/core';
+import {
+  IconCheck,
+  IconChevronLeft,
+  IconChevronRight,
+  IconFilter,
+  IconX,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import {
   INBOX_ACTIVITY_FILTERS,
   type InboxActivityFilter,
+  type InboxFilterFacet,
+  type InboxFilterMenuState,
   type InboxFilters,
 } from '../inbox-filter.ts';
 import type { IssueStatus } from '../types.ts';
@@ -17,6 +25,13 @@ export type InboxFilterHandlers = {
   onTogglePriorityFilter: (value: number) => void;
   onToggleStatusFilter: (value: IssueStatus) => void;
   onClearFilters: () => void;
+};
+
+export type InboxFilterMenuHandlers = InboxFilterHandlers & {
+  onSetFilterMenuOpen: (open: boolean) => void;
+  onSetFilterMenuQuery: (query: string) => void;
+  onSelectFilterFacet: (facet: InboxFilterFacet) => void;
+  onBackToFilterFacets: () => void;
 };
 
 type InboxFilterProps = {
@@ -36,14 +51,73 @@ function filterLabels(
   };
 }
 
-export function InboxFilterMenu({ filters, projects, handlers }: InboxFilterProps) {
+type FilterOption = {
+  key: string;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+};
+
+type InboxFilterMenuProps = InboxFilterProps & {
+  menu: InboxFilterMenuState;
+  handlers: InboxFilterMenuHandlers;
+};
+
+export function InboxFilterMenu({ filters, projects, menu, handlers }: InboxFilterMenuProps) {
   const { t } = useTranslation();
   const labels = filterLabels(t);
   const priorities = [0, 1, 2, 3, 4];
   const statuses: IssueStatus[] = ['backlog', 'todo', 'in_progress', 'done', 'canceled'];
+  const query = menu.query.trim().toLocaleLowerCase();
+  const facets: Array<{ id: InboxFilterFacet; label: string }> = [
+    { id: 'activityTypes', label: t('inbox.filterNotificationType') },
+    { id: 'projectIds', label: t('inbox.filterProject') },
+    { id: 'priorities', label: t('inbox.filterIssuePriority') },
+    { id: 'statuses', label: t('inbox.filterIssueStatusType') },
+  ];
+  const options: FilterOption[] =
+    menu.facet === 'activityTypes'
+      ? INBOX_ACTIVITY_FILTERS.map((filter) => ({
+          key: filter,
+          label: labels[filter],
+          selected: filters.activityTypes.includes(filter),
+          onSelect: () => handlers.onToggleActivityFilter(filter),
+        }))
+      : menu.facet === 'projectIds'
+        ? projects.map((project) => ({
+            key: String(project.id ?? 'none'),
+            label: project.name,
+            selected: filters.projectIds.includes(project.id),
+            onSelect: () => handlers.onToggleProjectFilter(project.id),
+          }))
+        : menu.facet === 'priorities'
+          ? priorities.map((priority) => ({
+              key: String(priority),
+              label: t(`priority.${priority}`),
+              selected: filters.priorities.includes(priority),
+              onSelect: () => handlers.onTogglePriorityFilter(priority),
+            }))
+          : menu.facet === 'statuses'
+            ? statuses.map((status) => ({
+                key: status,
+                label: t(`issueStatus.${status}`),
+                selected: filters.statuses.includes(status),
+                onSelect: () => handlers.onToggleStatusFilter(status),
+              }))
+            : [];
+  const visibleFacets = facets.filter((facet) => facet.label.toLocaleLowerCase().includes(query));
+  const visibleOptions = options.filter((option) =>
+    option.label.toLocaleLowerCase().includes(query),
+  );
 
   return (
-    <Menu position="bottom-end" withinPortal>
+    <Menu
+      opened={menu.open}
+      onChange={handlers.onSetFilterMenuOpen}
+      position="bottom-start"
+      width={280}
+      withinPortal
+    >
       <Menu.Target>
         <Button
           type="button"
@@ -56,81 +130,55 @@ export function InboxFilterMenu({ filters, projects, handlers }: InboxFilterProp
           {t('inbox.addFilter')}
         </Button>
       </Menu.Target>
-      <Menu.Dropdown>
-        <Menu.Sub>
-          <Menu.Sub.Target>
-            <Menu.Sub.Item>{t('inbox.filterNotificationType')}</Menu.Sub.Item>
-          </Menu.Sub.Target>
-          <Menu.Sub.Dropdown>
-            {INBOX_ACTIVITY_FILTERS.map((filter) => (
-              <Menu.Item
-                key={filter}
-                closeMenuOnClick={false}
-                rightSection={
-                  filters.activityTypes.includes(filter) ? <IconCheck size={14} /> : null
-                }
-                onClick={() => handlers.onToggleActivityFilter(filter)}
-              >
-                {labels[filter]}
-              </Menu.Item>
-            ))}
-          </Menu.Sub.Dropdown>
-        </Menu.Sub>
-        <Menu.Sub>
-          <Menu.Sub.Target>
-            <Menu.Sub.Item>{t('inbox.filterProject')}</Menu.Sub.Item>
-          </Menu.Sub.Target>
-          <Menu.Sub.Dropdown>
-            {projects.map((project) => (
-              <Menu.Item
-                key={project.id ?? 'none'}
-                closeMenuOnClick={false}
-                rightSection={
-                  filters.projectIds.includes(project.id) ? <IconCheck size={14} /> : null
-                }
-                onClick={() => handlers.onToggleProjectFilter(project.id)}
-              >
-                {project.name}
-              </Menu.Item>
-            ))}
-          </Menu.Sub.Dropdown>
-        </Menu.Sub>
-        <Menu.Sub>
-          <Menu.Sub.Target>
-            <Menu.Sub.Item>{t('inbox.filterIssuePriority')}</Menu.Sub.Item>
-          </Menu.Sub.Target>
-          <Menu.Sub.Dropdown>
-            {priorities.map((priority) => (
-              <Menu.Item
-                key={priority}
-                closeMenuOnClick={false}
-                rightSection={
-                  filters.priorities.includes(priority) ? <IconCheck size={14} /> : null
-                }
-                onClick={() => handlers.onTogglePriorityFilter(priority)}
-              >
-                {t(`priority.${priority}`)}
-              </Menu.Item>
-            ))}
-          </Menu.Sub.Dropdown>
-        </Menu.Sub>
-        <Menu.Sub>
-          <Menu.Sub.Target>
-            <Menu.Sub.Item>{t('inbox.filterIssueStatusType')}</Menu.Sub.Item>
-          </Menu.Sub.Target>
-          <Menu.Sub.Dropdown>
-            {statuses.map((status) => (
-              <Menu.Item
-                key={status}
-                closeMenuOnClick={false}
-                rightSection={filters.statuses.includes(status) ? <IconCheck size={14} /> : null}
-                onClick={() => handlers.onToggleStatusFilter(status)}
-              >
-                {t(`issueStatus.${status}`)}
-              </Menu.Item>
-            ))}
-          </Menu.Sub.Dropdown>
-        </Menu.Sub>
+      <Menu.Dropdown aria-label={t('inbox.addFilter')}>
+        <TextInput
+          autoFocus
+          size="xs"
+          value={menu.query}
+          placeholder={t('inbox.filterSearch')}
+          aria-label={t('inbox.filterSearch')}
+          onChange={(event) => handlers.onSetFilterMenuQuery(event.currentTarget.value)}
+        />
+        <Menu.Divider />
+        {menu.facet ? (
+          <>
+            <Menu.Item
+              closeMenuOnClick={false}
+              leftSection={<IconChevronLeft size={14} />}
+              onClick={handlers.onBackToFilterFacets}
+            >
+              {t('inbox.backToFilters')}
+            </Menu.Item>
+            <Menu.Divider />
+            {visibleOptions.length > 0 ? (
+              visibleOptions.map((option) => (
+                <Menu.Item
+                  key={option.key}
+                  closeMenuOnClick={false}
+                  rightSection={option.selected ? <IconCheck size={14} /> : null}
+                  onClick={option.onSelect}
+                >
+                  {option.label}
+                </Menu.Item>
+              ))
+            ) : (
+              <Menu.Item disabled>{t('inbox.noFilterResults')}</Menu.Item>
+            )}
+          </>
+        ) : visibleFacets.length > 0 ? (
+          visibleFacets.map((facet) => (
+            <Menu.Item
+              key={facet.id}
+              closeMenuOnClick={false}
+              rightSection={<IconChevronRight size={14} />}
+              onClick={() => handlers.onSelectFilterFacet(facet.id)}
+            >
+              {facet.label}
+            </Menu.Item>
+          ))
+        ) : (
+          <Menu.Item disabled>{t('inbox.noFilterResults')}</Menu.Item>
+        )}
       </Menu.Dropdown>
     </Menu>
   );

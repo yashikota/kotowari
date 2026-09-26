@@ -17,10 +17,13 @@ import {
 } from '../inbox-state.ts';
 import {
   EMPTY_INBOX_FILTERS,
+  CLOSED_INBOX_FILTER_MENU,
   matchesInboxFilters,
   toggleInboxFilterValue,
   type InboxActivityFilter,
+  type InboxFilterFacet,
   type InboxFilters,
+  type InboxFilterMenuState,
 } from '../inbox-filter.ts';
 import { inboxShortcutFromKeyboard } from '../keymap.ts';
 import type { InboxActivity, IssueStatus } from '../types.ts';
@@ -42,6 +45,7 @@ export function useInboxPresenter() {
     priorities: [],
     statuses: [],
   }));
+  const [filterMenu, setFilterMenu] = useState<InboxFilterMenuState>(CLOSED_INBOX_FILTER_MENU);
   const [commentPreview, setCommentPreview] = useState('');
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
   const { t, i18n } = useTranslation();
@@ -222,6 +226,13 @@ export function useInboxPresenter() {
         statuses: toggleInboxFilterValue(current.statuses, value),
       })),
     onClearFilters: () => setFilters(EMPTY_INBOX_FILTERS),
+    onSetFilterMenuOpen: (open: boolean) =>
+      setFilterMenu(open ? (current) => ({ ...current, open: true }) : CLOSED_INBOX_FILTER_MENU),
+    onSetFilterMenuQuery: (query: string) => setFilterMenu((current) => ({ ...current, query })),
+    onSelectFilterFacet: (facet: InboxFilterFacet) =>
+      setFilterMenu((current) => ({ ...current, facet, query: '' })),
+    onBackToFilterFacets: () =>
+      setFilterMenu((current) => ({ ...current, facet: null, query: '' })),
     onSetDensity: (density: InboxState['density']) =>
       updateInboxState((current) => ({ ...current, density })),
     onToggleShowSnoozed: () =>
@@ -321,6 +332,7 @@ export function useInboxPresenter() {
     selectedId,
     onlyUnread,
     filters,
+    filterMenu,
     projectOptions,
     density: inboxState.density,
     showSnoozed: inboxState.showSnoozed,
