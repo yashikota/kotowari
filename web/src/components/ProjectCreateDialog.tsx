@@ -112,7 +112,7 @@ export function ProjectCreateDialog({
             </Group>
           ) : null}
           <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <Stack p="lg" pt="xs" gap="xs">
+            <Stack p="lg" pt={4} gap={4}>
               <Group justify="space-between" align="center" gap="sm" wrap="nowrap">
                 <ProjectIconPicker
                   icon={icon}
@@ -170,11 +170,11 @@ export function ProjectCreateDialog({
                 variant="unstyled"
                 styles={{
                   input: {
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: 600,
                     lineHeight: 1.2,
-                    height: 36,
-                    minHeight: 36,
+                    height: 32,
+                    minHeight: 32,
                     paddingInline: 0,
                   },
                 }}
