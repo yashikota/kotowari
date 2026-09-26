@@ -157,4 +157,5 @@ test('shortcut help documents issue detail actions in the active locale', async 
   await expect(help).toContainText('Create a sub-issue');
   await expect(help).toContainText('Collapse or expand issue resources');
   await expect(help).toContainText('Add a link to the issue');
+  await expect(help).toContainText('Create an ADR linked to this issue');
 });

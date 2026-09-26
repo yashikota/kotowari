@@ -128,7 +128,7 @@ export function useIssueDetailPresenter({
   const [customReminderOpen, setCustomReminderOpen] = useState(false);
   const [customReminderValue, setCustomReminderValue] = useState('');
   const [issueOptionsOpen, setIssueOptionsOpen] = useState(false);
-  const [keyboardPropertyMenu, setKeyboardPropertyMenu] = useState<IssuePropertyMenu>(null);
+  const [issuePropertyMenu, setIssuePropertyMenu] = useState<IssuePropertyMenu>(null);
   const [relatedIssueKind, setRelatedIssueKind] = useState<RelatedIssueKind | null>(null);
   const [relatedIssueTitle, setRelatedIssueTitle] = useState('');
   const [markAsKind, setMarkAsKind] = useState<MarkAsKind | null>(null);
@@ -753,7 +753,7 @@ export function useIssueDetailPresenter({
     navigationTotal: navigationIds.length,
     issueReturnTo,
     issue,
-    keyboardPropertyMenu,
+    issuePropertyMenu,
     optionalIssuePropertyVisibility,
     issues,
     timeline,
@@ -889,8 +889,10 @@ export function useIssueDetailPresenter({
       Issue_title_onBlur4: () => patch({ title: issue.title }),
       Status_onChange5: (value: string | null) =>
         value ? patch({ workflowStatus: value }) : undefined,
-      onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setKeyboardPropertyMenu(property),
-      onCloseIssuePropertyMenu: () => setKeyboardPropertyMenu(null),
+      onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setIssuePropertyMenu(property),
+      onCloseIssuePropertyMenu: () => setIssuePropertyMenu(null),
+      onToggleIssuePropertyMenu: (property: Exclude<IssuePropertyMenu, null>) =>
+        setIssuePropertyMenu((current) => (current === property ? null : property)),
       onFocusDescription: () =>
         setDescriptionFocus((current) => ({
           identifier,

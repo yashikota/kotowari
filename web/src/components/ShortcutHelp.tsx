@@ -35,6 +35,7 @@ export function ShortcutHelpView({
     { keys: 'x', action: t('ui.shortcutSelectIssue') },
     { keys: 'Mod+A', action: t('ui.shortcutSelectAllIssues') },
     { keys: 'Shift+R', action: t('ui.shortcutRenameIssue') },
+    { keys: 'Shift+P', action: t('ui.shortcutCreateLinkedADR') },
     { keys: 'i', action: t('ui.shortcutAssignIssueToSelf') },
     { keys: 'Alt+F', action: t('ui.shortcutToggleIssueFavorite') },
     { keys: 'Shift+D', action: t('ui.shortcutSetIssueDueDate') },

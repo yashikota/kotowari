@@ -230,7 +230,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
   expect(deletedAttachment.status()).toBe(404);
 
   await page.getByRole('button', { name: 'Copy identifier' }).click();
-  await page.keyboard.press('p');
+  await page.keyboard.press('Shift+p');
   const adrTitle = page.getByPlaceholder('ADR title');
   await expect(adrTitle).toBeFocused();
   await adrTitle.fill('local cache');

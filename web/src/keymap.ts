@@ -232,6 +232,7 @@ export type IssueDetailShortcut =
   | 'open-priority'
   | 'open-labels'
   | 'open-estimate'
+  | 'create-linked-adr'
   | 'focus-description'
   | 'toggle-favorite'
   | 'rename'
@@ -268,6 +269,7 @@ export function issueDetailShortcutFromKeyboard(event: {
     if (key === 'd') return 'open-due-date';
     if (key === 'r') return 'rename';
     if (key === 'e') return 'open-estimate';
+    if (key === 'p') return 'create-linked-adr';
     return null;
   }
   if (key === 'i') return 'assign-self';

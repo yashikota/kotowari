@@ -1644,6 +1644,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'open-estimate':
           void sendIntent('onOpenIssuePropertyMenu', ['estimate']);
           break;
+        case 'create-linked-adr':
+          void sendIntent('adr.create', { issueNumber: model.issue.number });
+          break;
         case 'focus-description':
           void sendIntent('onFocusDescription', []);
           break;

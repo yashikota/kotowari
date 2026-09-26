@@ -42,7 +42,7 @@ export function IssuePropertiesPanel({
   model: Pick<
     IssueDetailModel,
     | 'issue'
-    | 'keyboardPropertyMenu'
+    | 'issuePropertyMenu'
     | 'optionalIssuePropertyVisibility'
     | 'projects'
     | 'milestones'
@@ -59,7 +59,7 @@ export function IssuePropertiesPanel({
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const {
     issue,
-    keyboardPropertyMenu,
+    issuePropertyMenu,
     optionalIssuePropertyVisibility,
     projects,
     milestones,
@@ -129,7 +129,7 @@ export function IssuePropertiesPanel({
             compactChars={12}
             compactLabel={statusLabel}
             aria-label={t('field.status')}
-            dropdownOpened={keyboardPropertyMenu === 'status'}
+            dropdownOpened={issuePropertyMenu === 'status'}
             onDropdownOpen={() => handlers.onOpenIssuePropertyMenu('status')}
             onDropdownClose={handlers.onCloseIssuePropertyMenu}
             value={issue.workflowStatus ?? issue.status}
@@ -158,7 +158,7 @@ export function IssuePropertiesPanel({
             compactChars={12}
             compactLabel={priorityValueLabel}
             aria-label={t('field.priority')}
-            dropdownOpened={keyboardPropertyMenu === 'priority'}
+            dropdownOpened={issuePropertyMenu === 'priority'}
             onDropdownOpen={() => handlers.onOpenIssuePropertyMenu('priority')}
             onDropdownClose={handlers.onCloseIssuePropertyMenu}
             value={String(issue.priority)}
@@ -215,7 +215,7 @@ export function IssuePropertiesPanel({
             compactChars={12}
             compactLabel={estimateValueLabel}
             aria-label={t('field.estimate')}
-            dropdownOpened={keyboardPropertyMenu === 'estimate'}
+            dropdownOpened={issuePropertyMenu === 'estimate'}
             onDropdownOpen={() => handlers.onOpenIssuePropertyMenu('estimate')}
             onDropdownClose={handlers.onCloseIssuePropertyMenu}
             value={issue.estimate == null ? 'none' : String(issue.estimate)}
@@ -261,7 +261,7 @@ export function IssuePropertiesPanel({
                 shadow="md"
                 width={264}
                 withinPortal
-                opened={keyboardPropertyMenu === 'labels'}
+                opened={issuePropertyMenu === 'labels'}
                 onChange={(opened) => handlers.onOpenIssuePropertyMenu(opened ? 'labels' : null)}
               >
                 <Popover.Target>
@@ -271,6 +271,7 @@ export function IssuePropertiesPanel({
                     color="gray"
                     size="sm"
                     className={styles.addLabelButton}
+                    onClick={() => handlers.onToggleIssuePropertyMenu('labels')}
                   >
                     <IconPlus size={14} stroke={1.8} />
                   </ActionIcon>
@@ -279,7 +280,7 @@ export function IssuePropertiesPanel({
                   <TextInput
                     aria-label={t('issueProperties.newLabel')}
                     placeholder={t('issueProperties.findOrCreateLabel')}
-                    autoFocus={keyboardPropertyMenu === 'labels'}
+                    autoFocus={issuePropertyMenu === 'labels'}
                     value={labelName}
                     onChange={handlers.New_label_onChange12}
                     onKeyDown={handlers.New_label_onKeyDown13}

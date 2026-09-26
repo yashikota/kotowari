@@ -482,6 +482,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['p', {}, 'open-priority'],
     ['l', {}, 'open-labels'],
     ['E', { shiftKey: true }, 'open-estimate'],
+    ['P', { shiftKey: true }, 'create-linked-adr'],
     ['I', { metaKey: true, shiftKey: true }, 'focus-description'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['D', { shiftKey: true }, 'open-due-date'],
