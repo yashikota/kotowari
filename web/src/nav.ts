@@ -10,8 +10,10 @@ type NavKey =
   | '6'
   | '7'
   | '8'
+  | '9'
   | 'a'
   | 'b'
+  | 'c'
   | 'i'
   | 'm'
   | 'r'
@@ -30,6 +32,7 @@ export type NavTarget = {
 
 export const HOME_NAV: NavTarget[] = [
   { key: 'b', labelKey: 'nav.inbox', to: '/inbox', fuzzy: false },
+  { key: 'r', labelKey: 'nav.reviews', to: '/reviews', fuzzy: false },
   {
     key: 'm',
     id: '/my-issues',
@@ -56,7 +59,7 @@ export const MORE_NAV: NavTarget[] = [
   { key: 'i', labelKey: 'nav.initiatives', to: '/initiatives' },
   { key: '7', labelKey: 'nav.pages', to: '/pages' },
   { key: 't', labelKey: 'nav.templates', to: '/templates' },
-  { key: 'r', labelKey: 'nav.recurringIssues', to: '/recurring' },
+  { key: '9', labelKey: 'nav.recurringIssues', to: '/recurring' },
 ];
 
 export const CONFIG_NAV: NavTarget = { key: '0', labelKey: 'nav.config', to: '/config' };

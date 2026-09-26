@@ -14,6 +14,7 @@ export type FirstDayOfWeek = (typeof FIRST_DAYS_OF_WEEK)[number];
 export type DefaultHome =
   | 'home'
   | 'inbox'
+  | 'reviews'
   | 'myIssues'
   | 'activeIssues'
   | 'issues'
@@ -25,6 +26,7 @@ export type CommentSubmitShortcut = 'modEnter' | 'enter';
 export type SidebarItem =
   | '/'
   | '/inbox'
+  | '/reviews'
   | '/reminders'
   | '/agent'
   | '/my-issues'
@@ -41,6 +43,7 @@ export type SidebarItem =
 export const SIDEBAR_ITEM_IDS = [
   '/',
   '/inbox',
+  '/reviews',
   '/reminders',
   '/my-issues',
   '/agent',
@@ -82,6 +85,7 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
   sidebarLocations: {
     '/': 'primary',
     '/inbox': 'primary',
+    '/reviews': 'primary',
     '/reminders': 'more',
     '/my-issues': 'primary',
     '/agent': 'primary',
@@ -108,6 +112,7 @@ export const PERSONAL_PREFERENCES_EVENT = 'kotowari:preferences-changed';
 const DEFAULT_HOMES: DefaultHome[] = [
   'home',
   'inbox',
+  'reviews',
   'myIssues',
   'activeIssues',
   'issues',
@@ -245,6 +250,8 @@ export function defaultHomeHref(home: DefaultHome): string {
   switch (home) {
     case 'inbox':
       return '/inbox';
+    case 'reviews':
+      return '/reviews';
     case 'myIssues':
       return '/issues?assignee=self';
     case 'activeIssues':

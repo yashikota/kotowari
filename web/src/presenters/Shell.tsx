@@ -286,6 +286,7 @@ export function useShellPresenter() {
   const routeTitle = (() => {
     if (pathname === '/') return 'Home';
     if (pathname === '/inbox') return t('nav.inbox');
+    if (pathname === '/reviews') return t('nav.reviews');
     if (pathname === '/search') return t('nav.search');
     if (pathname === '/reminders') return 'Reminders';
     if (pathname === '/templates') return 'Templates';

@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "inbox": "Inbox",
+    "reviews": "Reviews",
     "reminders": "Reminders",
     "myIssues": "My issues",
     "agent": "Agent",
@@ -39,6 +40,11 @@
   },
   "workspace": {
     "defaultName": "workspace"
+  },
+  "reviews": {
+    "empty": "No pull requests are linked to issues yet.",
+    "emptyAction": "Browse issues",
+    "pullRequestCount": "{{count}} pull requests"
   },
   "searchPage": {
     "heading": "Search",
@@ -273,6 +279,7 @@
     "home": {
       "home": "Home",
       "inbox": "Inbox",
+      "reviews": "Reviews",
       "myIssues": "My issues",
       "activeIssues": "Active issues",
       "issues": "Issues",
@@ -1766,6 +1773,7 @@
     "shortcutCreateProject": "Create a project",
     "shortcutProjectSequence": "N, then P",
     "shortcutGoInboxKeys": "G, then I",
+    "shortcutGoReviewsKeys": "G, then R",
     "shortcutGoAgentKeys": "G, then J",
     "shortcutGoMyIssuesKeys": "G, then M",
     "shortcutGoBacklogKeys": "G, then B",

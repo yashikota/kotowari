@@ -25,6 +25,7 @@ import type { GlobalNavigationAction } from '../keymap.ts';
 const ScopeContext = createContext(mediator.root);
 const GLOBAL_NAVIGATION_HREF: Record<GlobalNavigationAction, string> = {
   inbox: '/inbox',
+  reviews: '/reviews',
   agent: '/agent',
   'my-issues': '/issues?assignee=self',
   backlog: '/issues?status=backlog',

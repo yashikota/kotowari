@@ -7,6 +7,7 @@ test('Linear-style G sequences navigate to supported personal and workspace view
 
   const destinations = [
     ['i', /\/inbox(?:$|[?#])/],
+    ['r', /\/reviews(?:$|[?#])/],
     ['j', /\/agent(?:$|[?#])/],
     ['m', /\/issues\?assignee=self(?:$|&)/],
     ['b', /\/issues\?status=backlog(?:$|&)/],

@@ -14,6 +14,7 @@ describe('personal preferences', () => {
       sidebarLocations: {
         '/': 'primary',
         '/inbox': 'primary',
+        '/reviews': 'primary',
         '/reminders': 'more',
         '/my-issues': 'primary',
         '/agent': 'primary',
@@ -31,6 +32,7 @@ describe('personal preferences', () => {
       sidebarOrder: [
         '/',
         '/inbox',
+        '/reviews',
         '/reminders',
         '/my-issues',
         '/agent',
@@ -79,6 +81,7 @@ describe('personal preferences', () => {
     });
     expect(defaultHomeHref('home')).toBe('/');
     expect(defaultHomeHref('inbox')).toBe('/inbox');
+    expect(defaultHomeHref('reviews')).toBe('/reviews');
     expect(defaultHomeHref('myIssues')).toBe('/issues?assignee=self');
     expect(defaultHomeHref('activeIssues')).toBe('/issues?view=active');
     expect(defaultHomeHref('agent')).toBe('/agent');

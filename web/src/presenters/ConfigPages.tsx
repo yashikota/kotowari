@@ -160,6 +160,7 @@ export function useConfigPagePresenter() {
         if (
           value === 'home' ||
           value === 'inbox' ||
+          value === 'reviews' ||
           value === 'myIssues' ||
           value === 'activeIssues' ||
           value === 'issues' ||

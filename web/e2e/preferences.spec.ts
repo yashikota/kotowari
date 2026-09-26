@@ -222,6 +222,12 @@ test('default home view supports Linear inbox, My issues, and current cycle dest
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
 
   await page.goto('/config');
+  await choose(page, 'Default home view', 'Reviews');
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/reviews$/);
+  await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+
+  await page.goto('/config');
   await choose(page, 'Default home view', 'Active issues');
   await page.goto('/');
   await expect(page).toHaveURL(/\/issues\?view=active$/);
@@ -234,6 +240,32 @@ test('default home view supports Linear inbox, My issues, and current cycle dest
   await choose(page, 'Default home view', 'Current cycle');
   await page.goto('/');
   await expect(page).toHaveURL(/\/cycles\?scope=current$/);
+});
+
+test('Reviews lists linked pull requests with their issue context', async ({ page, request }) => {
+  const title = `Review queue issue ${Date.now()}`;
+  const issueResponse = await request.post('/api/issues', {
+    data: { title, status: 'in_progress' },
+  });
+  expect(issueResponse.ok()).toBeTruthy();
+  const issue = (await issueResponse.json()) as { identifier: string };
+  const pullRequestUrl = `https://github.com/example/repo/pull/${Date.now()}`;
+  const linkResponse = await request.post(`/api/issues/${issue.identifier}/links`, {
+    data: { url: pullRequestUrl, title: 'Review queue change', kind: 'pullRequest' },
+  });
+  expect(linkResponse.ok()).toBeTruthy();
+
+  await page.goto('/reviews');
+  await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Review queue change' })).toHaveAttribute(
+    'href',
+    pullRequestUrl,
+  );
+  await expect(page.getByRole('link', { name: issue.identifier, exact: true })).toHaveAttribute(
+    'href',
+    `/issues/${issue.identifier}`,
+  );
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
 });
 
 test('issue list tabs are addressable and retain their Linear-style status scopes', async ({

@@ -203,6 +203,7 @@ export function issueLinkedCodeSequenceFromKeyboard(
 
 export type GlobalNavigationAction =
   | 'inbox'
+  | 'reviews'
   | 'agent'
   | 'my-issues'
   | 'backlog'
@@ -216,6 +217,7 @@ export type GlobalNavigationAction =
 
 const GLOBAL_NAVIGATION_KEYS: Record<string, GlobalNavigationAction> = {
   i: 'inbox',
+  r: 'reviews',
   j: 'agent',
   m: 'my-issues',
   b: 'backlog',

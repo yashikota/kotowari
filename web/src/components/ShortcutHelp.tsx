@@ -19,6 +19,7 @@ export function ShortcutHelpView({
     { keys: 'p', action: t('ui.shortcutPriorityOrAdr') },
     { keys: t('ui.shortcutProjectSequence'), action: t('ui.shortcutCreateProject') },
     { keys: t('ui.shortcutGoInboxKeys'), action: t('nav.inbox') },
+    { keys: t('ui.shortcutGoReviewsKeys'), action: t('nav.reviews') },
     { keys: t('ui.shortcutGoAgentKeys'), action: t('nav.agent') },
     { keys: t('ui.shortcutGoMyIssuesKeys'), action: t('nav.myIssues') },
     { keys: t('ui.shortcutGoBacklogKeys'), action: t('issueStatus.backlog') },

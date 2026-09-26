@@ -138,6 +138,13 @@ const inboxRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/InboxPages.tsx'), 'InboxPage'),
 });
 
+const reviewsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reviews',
+  loader: () => api.issues(),
+  component: lazyRouteComponent(() => import('./pages/ReviewsPages.tsx'), 'ReviewsPage'),
+});
+
 const agentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/agent',
@@ -579,6 +586,7 @@ const routeTree = rootRoute.addChildren([
   issuesRoute,
   remindersRoute,
   inboxRoute,
+  reviewsRoute,
   agentRoute,
   templatesRoute,
   recurringIssuesRoute,

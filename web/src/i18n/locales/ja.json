@@ -2,6 +2,7 @@
   "nav": {
     "home": "ホーム",
     "inbox": "受信トレイ",
+    "reviews": "レビュー",
     "reminders": "リマインダー",
     "myIssues": "自分のイシュー",
     "agent": "AI エージェント",
@@ -39,6 +40,11 @@
   },
   "workspace": {
     "defaultName": "ワークスペース"
+  },
+  "reviews": {
+    "empty": "イシューに紐づくプルリクエストはまだありません。",
+    "emptyAction": "イシューを見る",
+    "pullRequestCount": "{{count}} 件のプルリクエスト"
   },
   "searchPage": {
     "heading": "検索",
@@ -271,6 +277,7 @@
     "home": {
       "home": "ホーム",
       "inbox": "受信トレイ",
+      "reviews": "レビュー",
       "myIssues": "自分のイシュー",
       "activeIssues": "アクティブなイシュー",
       "issues": "イシュー",
@@ -1760,6 +1767,7 @@
     "shortcutCreateProject": "プロジェクトを作成",
     "shortcutProjectSequence": "N、続けてP",
     "shortcutGoInboxKeys": "G、続けてI",
+    "shortcutGoReviewsKeys": "G、続けてR",
     "shortcutGoAgentKeys": "G、続けてJ",
     "shortcutGoMyIssuesKeys": "G、続けてM",
     "shortcutGoBacklogKeys": "G、続けてB",

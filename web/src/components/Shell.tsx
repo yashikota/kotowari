@@ -28,6 +28,7 @@ import {
   IconCircleDot,
   IconDots,
   IconFilter,
+  IconGitPullRequest,
   IconHome,
   IconInbox,
   IconLayoutKanban,
@@ -66,6 +67,7 @@ import { useShellPresenter } from '../presenters/Shell.tsx';
 const NAV_ICONS: Record<string, ReactNode> = {
   '/': <IconHome size={14} aria-hidden />,
   '/inbox': <IconInbox size={14} aria-hidden />,
+  '/reviews': <IconGitPullRequest size={14} aria-hidden />,
   '/reminders': <IconBell size={14} aria-hidden />,
   '/agent': <IconSparkles size={14} aria-hidden />,
   '/issues': <IconListCheck size={14} aria-hidden />,

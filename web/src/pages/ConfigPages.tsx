@@ -124,6 +124,7 @@ export function ConfigPageView({
                     data={[
                       { value: 'home', label: t('config.home.home') },
                       { value: 'inbox', label: t('config.home.inbox') },
+                      { value: 'reviews', label: t('config.home.reviews') },
                       { value: 'myIssues', label: t('config.home.myIssues') },
                       { value: 'activeIssues', label: t('config.home.activeIssues') },
                       { value: 'issues', label: t('config.home.issues') },
