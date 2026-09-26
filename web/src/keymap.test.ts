@@ -2,6 +2,7 @@ import { isCommentSubmitShortcut, isSubmitShortcut } from './keymap.ts';
 import { describe, expect, it } from 'vite-plus/test';
 import {
   actionFromKeyboard,
+  globalNavigationSequenceFromKeyboard,
   issueLinkedCodeSequenceFromKeyboard,
   isTypingTarget,
   issueCopyShortcutFromKeyboard,
@@ -383,6 +384,58 @@ describe('open linked code keyboard sequence', () => {
       pendingSince: null,
     });
     expect(key('g', 100, 200, { shiftKey: true })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+  });
+});
+
+describe('global navigation keyboard sequence', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    pendingSince: number | null = null,
+    now = 100,
+    overrides: Partial<Parameters<typeof globalNavigationSequenceFromKeyboard>[0]> = {},
+  ) =>
+    globalNavigationSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      pendingSince,
+      now,
+    );
+
+  it.each([
+    ['i', 'inbox'],
+    ['j', 'agent'],
+    ['m', 'my-issues'],
+    ['b', 'backlog'],
+    ['e', 'all-issues'],
+    ['c', 'cycles'],
+    ['v', 'current-cycle'],
+    ['w', 'upcoming-cycle'],
+    ['p', 'projects'],
+    ['n', 'initiatives'],
+    ['s', 'settings'],
+  ])('maps G, then %s to %s', (secondKey, action) => {
+    const started = key('g');
+    expect(started).toEqual({ action: null, pendingSince: 100 });
+    expect(key(secondKey, started.pendingSince, 250)).toEqual({ action, pendingSince: null });
+  });
+
+  it('expires, cancels, and ignores typing or modified keys', () => {
+    expect(key('i', 100, 1101)).toEqual({ action: null, pendingSince: null });
+    expect(key('x', 100, 200)).toEqual({ action: null, pendingSince: null });
+    expect(key('i', 100, 200, { target: el('INPUT') })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+    expect(key('i', 100, 200, { shiftKey: true })).toEqual({
       action: null,
       pendingSince: null,
     });

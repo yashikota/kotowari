@@ -14,9 +14,27 @@ import { Alert, Button, Group } from '@mantine/core';
 import { useLocaleSync } from './LocaleSync.tsx';
 import { EventScope, mediator } from './mediator.ts';
 import type { Overlay } from './mediator.ts';
-import { isSubmitShortcut, projectCreateSequenceFromKeyboard } from '../keymap.ts';
+import {
+  globalNavigationSequenceFromKeyboard,
+  isSubmitShortcut,
+  projectCreateSequenceFromKeyboard,
+} from '../keymap.ts';
+import type { GlobalNavigationAction } from '../keymap.ts';
 
 const ScopeContext = createContext(mediator.root);
+const GLOBAL_NAVIGATION_HREF: Record<GlobalNavigationAction, string> = {
+  inbox: '/inbox',
+  agent: '/agent',
+  'my-issues': '/issues?assignee=self',
+  backlog: '/issues?status=backlog',
+  'all-issues': '/issues',
+  cycles: '/cycles',
+  'current-cycle': '/cycles?scope=current',
+  'upcoming-cycle': '/cycles?scope=upcoming',
+  projects: '/projects',
+  initiatives: '/initiatives',
+  settings: '/config',
+};
 
 export function PresenterScope({ name, children }: { name: string; children: ReactNode }) {
   const parent = useContext(ScopeContext);
@@ -212,6 +230,7 @@ export function Root({
   }, [overlay]);
   useEffect(() => {
     let projectCreatePendingSince: number | null = null;
+    let globalNavigationPendingSince: number | null = null;
     const focus = (event: FocusEvent) => {
       if (event.target instanceof HTMLElement && !event.target.closest('[role="dialog"]'))
         previousFocus = event.target;
@@ -219,6 +238,7 @@ export function Root({
     const key = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || event.keyCode === 229) {
         projectCreatePendingSince = null;
+        globalNavigationPendingSince = null;
         return;
       }
       if (isSubmitShortcut(event) && event.target instanceof HTMLElement) {
@@ -257,11 +277,15 @@ export function Root({
       }
       if (dialog && event.key === 'Escape') {
         projectCreatePendingSince = null;
+        globalNavigationPendingSince = null;
         event.preventDefault();
         mediator.open('none');
         return;
       }
-      if (dialog) projectCreatePendingSince = null;
+      if (dialog) {
+        projectCreatePendingSince = null;
+        globalNavigationPendingSince = null;
+      }
       const projectCreate = projectCreateSequenceFromKeyboard(
         event,
         projectCreatePendingSince,
@@ -271,6 +295,22 @@ export function Root({
       if (projectCreate.action === 'new-project') {
         event.preventDefault();
         mediator.dispatch(mediator.root, 'project.create.open', undefined);
+        return;
+      }
+      const globalNavigation = globalNavigationSequenceFromKeyboard(
+        event,
+        globalNavigationPendingSince,
+        Date.now(),
+      );
+      globalNavigationPendingSince = globalNavigation.pendingSince;
+      if (globalNavigation.action) {
+        event.preventDefault();
+        globalNavigationPendingSince = null;
+        mediator.dispatch(
+          mediator.root,
+          'navigate',
+          GLOBAL_NAVIGATION_HREF[globalNavigation.action],
+        );
         return;
       }
       let scope =
@@ -286,7 +326,7 @@ export function Root({
         scope = [...mediator.scopes.values()].find((s) => s.handlers.has('list')) ?? scope;
       }
       scope ??= [...mediator.scopes.values()].find((s) => s.id.startsWith('Shell:'));
-      if (scope) mediator.keyboard(scope, event);
+      if (scope && mediator.keyboard(scope, event)) globalNavigationPendingSince = null;
     };
     document.addEventListener('keydown', key);
     document.addEventListener('focusin', focus);
