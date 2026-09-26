@@ -768,6 +768,7 @@
     "groupStatus": "Status",
     "groupPriority": "Priority",
     "groupLabels": "Label",
+    "groupLead": "Lead",
     "groupHealth": "Health",
     "groupStartDate": "Start date",
     "groupTargetDate": "Target date",

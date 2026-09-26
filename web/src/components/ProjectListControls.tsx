@@ -26,7 +26,13 @@ import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import type { ProjectBoardGroup } from '../project-board.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
-import type { ProjectFilterGroup, ProjectGroupBy, ProjectViewSearch } from '../project-views.ts';
+import type {
+  ProjectBoardGrouping,
+  ProjectFilterGroup,
+  ProjectGroupBy,
+  ProjectViewSearch,
+} from '../project-views.ts';
+import { PROJECT_BOARD_GROUPINGS } from '../project-board.ts';
 
 export type ProjectListControlsModel = {
   search: string;
@@ -45,8 +51,8 @@ export type ProjectListControlsModel = {
   direction: NonNullable<ProjectViewSearch['direction']>;
   closed: string;
   view: string;
-  columnsBy: string;
-  rowsBy: string;
+  columnsBy: ProjectBoardGrouping;
+  rowsBy: 'none' | ProjectBoardGrouping;
   showEmptyColumns: boolean;
   boardGroups: ProjectBoardGroup[];
   showProjectList: boolean;
@@ -182,6 +188,7 @@ export function ProjectListControls({
                     { value: 'status', label: t('projectList.groupStatus') },
                     { value: 'priority', label: t('projectList.groupPriority') },
                     { value: 'labels', label: t('projectList.groupLabels') },
+                    { value: 'lead', label: t('projectList.groupLead') },
                     { value: 'health', label: t('projectList.groupHealth') },
                     { value: 'startDate', label: t('projectList.groupStartDate') },
                     { value: 'targetDate', label: t('projectList.groupTargetDate') },
@@ -202,10 +209,12 @@ export function ProjectListControls({
                       label={t('projectList.columnsBy')}
                       value={model.columnsBy}
                       onChange={handlers.onColumnsByChange}
-                      data={[
-                        { value: 'status', label: t('projectList.groupStatus') },
-                        { value: 'priority', label: t('projectList.groupPriority') },
-                      ]}
+                      data={PROJECT_BOARD_GROUPINGS.map((groupBy) => ({
+                        value: groupBy,
+                        label: t(
+                          `projectList.group${groupBy[0]?.toUpperCase()}${groupBy.slice(1)}`,
+                        ),
+                      }))}
                       allowDeselect={false}
                       comboboxProps={{ withinPortal: false }}
                       style={{ flex: 1 }}
@@ -226,12 +235,14 @@ export function ProjectListControls({
                     onChange={handlers.onRowsByChange}
                     data={[
                       { value: 'none', label: t('projectList.rowsNone') },
-                      ...(model.columnsBy === 'status'
-                        ? []
-                        : [{ value: 'status', label: t('projectList.groupStatus') }]),
-                      ...(model.columnsBy === 'priority'
-                        ? []
-                        : [{ value: 'priority', label: t('projectList.groupPriority') }]),
+                      ...PROJECT_BOARD_GROUPINGS.filter(
+                        (groupBy) => groupBy !== model.columnsBy,
+                      ).map((groupBy) => ({
+                        value: groupBy,
+                        label: t(
+                          `projectList.group${groupBy[0]?.toUpperCase()}${groupBy.slice(1)}`,
+                        ),
+                      })),
                     ]}
                     allowDeselect={false}
                     comboboxProps={{ withinPortal: false }}

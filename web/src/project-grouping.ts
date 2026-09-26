@@ -4,16 +4,17 @@ import type { Project } from './types.ts';
 export type ProjectGroup = {
   key: string;
   label: string;
+  value?: ProjectGroupValue;
   projects: Project[];
 };
 
-type GroupValue = string | null;
+export type ProjectGroupValue = string | null;
 
 function compareText(left: string, right: string) {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-function valuesForProject(project: Project, groupBy: ProjectGroupBy): GroupValue[] {
+export function projectGroupValues(project: Project, groupBy: ProjectGroupBy): ProjectGroupValue[] {
   switch (groupBy) {
     case 'status':
       return [project.workflowStatus ?? project.status];
@@ -21,6 +22,8 @@ function valuesForProject(project: Project, groupBy: ProjectGroupBy): GroupValue
       return [String(project.priority)];
     case 'labels':
       return project.labels?.length ? [...new Set(project.labels)] : [null];
+    case 'lead':
+      return project.lead === 'self' ? ['self'] : [null];
     case 'health':
       return [project.health ?? null];
     case 'startDate':
@@ -32,9 +35,9 @@ function valuesForProject(project: Project, groupBy: ProjectGroupBy): GroupValue
   }
 }
 
-function compareGroupValues(
-  left: GroupValue,
-  right: GroupValue,
+export function compareProjectGroupValues(
+  left: ProjectGroupValue,
+  right: ProjectGroupValue,
   groupBy: ProjectGroupBy,
   statusOrder: readonly string[],
 ) {
@@ -76,15 +79,15 @@ export function groupProjects(
   projects: Project[],
   groupBy: ProjectGroupBy,
   statusOrder: readonly string[],
-  labelFor: (groupBy: ProjectGroupBy, value: GroupValue) => string,
+  labelFor: (groupBy: ProjectGroupBy, value: ProjectGroupValue) => string,
 ): ProjectGroup[] {
   if (groupBy === 'none') {
     return projects.length ? [{ key: 'all', label: '', projects }] : [];
   }
 
-  const grouped = new Map<string, { value: GroupValue; projects: Project[] }>();
+  const grouped = new Map<string, { value: ProjectGroupValue; projects: Project[] }>();
   for (const project of projects) {
-    const values = new Set(valuesForProject(project, groupBy));
+    const values = new Set(projectGroupValues(project, groupBy));
     for (const value of values) {
       const identity = JSON.stringify(value);
       const group = grouped.get(identity) ?? { value, projects: [] };
@@ -95,11 +98,12 @@ export function groupProjects(
 
   return [...grouped.entries()]
     .sort(([, left], [, right]) =>
-      compareGroupValues(left.value, right.value, groupBy, statusOrder),
+      compareProjectGroupValues(left.value, right.value, groupBy, statusOrder),
     )
     .map(([identity, group]) => ({
       key: `${groupBy}:${identity}`,
       label: labelFor(groupBy, group.value),
+      value: group.value,
       projects: group.projects,
     }));
 }

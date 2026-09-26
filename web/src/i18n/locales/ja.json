@@ -766,6 +766,7 @@
     "groupStatus": "ステータス",
     "groupPriority": "優先度",
     "groupLabels": "ラベル",
+    "groupLead": "担当者",
     "groupHealth": "ヘルス",
     "groupStartDate": "開始日",
     "groupTargetDate": "目標日",

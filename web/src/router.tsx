@@ -290,6 +290,7 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     raw.groupBy === 'status' ||
     raw.groupBy === 'priority' ||
     raw.groupBy === 'labels' ||
+    raw.groupBy === 'lead' ||
     raw.groupBy === 'health' ||
     raw.groupBy === 'startDate' ||
     raw.groupBy === 'targetDate'
@@ -317,15 +318,38 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
   if (raw.closed === 'open' || raw.closed === 'closed') result.closed = raw.closed;
   if (raw.view === 'board') result.view = 'board';
   if (raw.view === 'timeline') result.view = 'timeline';
-  if (raw.columnsBy === 'status' || raw.columnsBy === 'priority') result.columnsBy = raw.columnsBy;
-  if (raw.rowsBy === 'status' || raw.rowsBy === 'priority') result.rowsBy = raw.rowsBy;
+  const boardGroupings = [
+    'lead',
+    'status',
+    'priority',
+    'labels',
+    'health',
+    'startDate',
+    'targetDate',
+  ] as const;
+  if (boardGroupings.some((value) => value === raw.columnsBy)) {
+    result.columnsBy = raw.columnsBy as ProjectListSearch['columnsBy'];
+  }
+  if (boardGroupings.some((value) => value === raw.rowsBy)) {
+    result.rowsBy = raw.rowsBy as ProjectListSearch['rowsBy'];
+  }
   if (result.rowsBy === (result.columnsBy ?? 'status')) result.rowsBy = 'none';
   const boardGroupKey = /^[a-z0-9_-]{1,48}$/i;
   for (const key of [
     'statusColumnOrder',
     'priorityColumnOrder',
+    'labelsColumnOrder',
+    'leadColumnOrder',
+    'healthColumnOrder',
+    'startDateColumnOrder',
+    'targetDateColumnOrder',
     'hiddenStatusColumns',
     'hiddenPriorityColumns',
+    'hiddenLabelsColumns',
+    'hiddenLeadColumns',
+    'hiddenHealthColumns',
+    'hiddenStartDateColumns',
+    'hiddenTargetDateColumns',
   ] as const) {
     const groups = searchStringList(raw[key])
       .filter((value) => boardGroupKey.test(value))

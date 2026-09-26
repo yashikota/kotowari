@@ -1726,17 +1726,23 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       }
       if (kind === 'projects') {
         const project = item as Project;
-        const changes = { ...value };
-        if ('health' in value) {
+        const { clearStartDate, clearTargetDate, ...changes } = value;
+        if (clearStartDate) changes.startDate = null;
+        if (clearTargetDate) changes.targetDate = null;
+        if ('health' in changes) {
           if (
-            value.health !== null &&
+            changes.health !== null &&
+            changes.health !== '' &&
             !PROJECT_HEALTH_STATUSES.includes(
-              value.health as (typeof PROJECT_HEALTH_STATUSES)[number],
+              changes.health as (typeof PROJECT_HEALTH_STATUSES)[number],
             )
           ) {
             return json({ error: 'invalid project health' }, 400);
           }
-          if (value.health !== project.health) changes.healthUpdatedAt = new Date().toISOString();
+          if (changes.health === '' || changes.health !== project.health) {
+            changes.healthUpdatedAt = new Date().toISOString();
+          }
+          if (changes.health === '') changes.health = null;
         }
         if (typeof value.workflowStatus === 'string') {
           const state = projectWorkflowStatuses.find(

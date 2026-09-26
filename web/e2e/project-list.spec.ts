@@ -1029,6 +1029,118 @@ test('project priority can be changed by dropping a board card in the destinatio
   await expect(page.getByRole('gridcell', { name: 'Urgent' })).toContainText(project.name);
 });
 
+test('project board groups by personal lead, health, labels, and project dates', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const project = {
+    name: `Board properties ${stamp}`,
+    slug: `board-properties-${stamp}`,
+    lead: 'self',
+    labels: ['Bug'],
+    startDate: '2026-09-14',
+    targetDate: '2026-10-14',
+  };
+  const response = await request.post('/api/projects', { data: project });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  const healthResponse = await request.patch(`/api/projects/${project.slug}`, {
+    data: { health: 'at_risk' },
+  });
+  expect(healthResponse.ok(), await healthResponse.text()).toBeTruthy();
+
+  const board = page.getByRole('grid', { name: 'Project board' });
+  const openDisplayOptions = async () => {
+    await page.getByRole('button', { name: 'Display options' }).click();
+  };
+  const chooseGroup = async (control: 'Columns' | 'Rows', option: string) => {
+    await page.getByRole('combobox', { name: control }).click();
+    await page.getByRole('option', { name: option, exact: true }).click();
+  };
+
+  await page.goto(`/projects?view=board&columnsBy=lead&q=${encodeURIComponent(project.name)}`);
+  await expect(board.getByRole('columnheader', { name: 'You' })).toBeVisible();
+  await expect(board.getByRole('gridcell', { name: 'You' })).toContainText(project.name);
+  await page
+    .locator(`a[href="/projects/${project.slug}"]`)
+    .dragTo(board.getByRole('gridcell', { name: 'Unassigned' }), {
+      targetPosition: { x: 4, y: 4 },
+    });
+  await expect
+    .poll(async () => {
+      const current = (await (await request.get(`/api/projects/${project.slug}`)).json()) as {
+        lead?: string;
+      };
+      return current.lead ?? '';
+    })
+    .toBe('');
+
+  await openDisplayOptions();
+  await chooseGroup('Columns', 'Label');
+  await chooseGroup('Rows', 'Start date');
+  await expect(board.getByRole('columnheader', { name: 'Bug' })).toBeVisible();
+  await expect(board.getByRole('rowheader', { name: 'Sep 14, 2026' })).toBeVisible();
+  await expect(board.getByRole('gridcell', { name: 'Bug · Sep 14, 2026' })).toContainText(
+    project.name,
+  );
+
+  await chooseGroup('Columns', 'Health');
+  await chooseGroup('Rows', 'Target date');
+  await expect(board.getByRole('columnheader', { name: 'At risk' })).toBeVisible();
+  await expect(board.getByRole('rowheader', { name: 'Oct 14, 2026' })).toBeVisible();
+  await expect(board.getByRole('gridcell', { name: 'At risk · Oct 14, 2026' })).toContainText(
+    project.name,
+  );
+
+  await chooseGroup('Columns', 'Target date');
+  await chooseGroup('Rows', 'Lead');
+  await expect(board.getByRole('columnheader', { name: 'Oct 14, 2026' })).toBeVisible();
+  await expect(board.getByRole('rowheader', { name: 'Unassigned' })).toBeVisible();
+  await expect(board.getByRole('gridcell', { name: 'Oct 14, 2026 · Unassigned' })).toContainText(
+    project.name,
+  );
+
+  const card = page.locator(`a[href="/projects/${project.slug}"]`);
+  await card.dragTo(board.getByRole('gridcell', { name: 'No date · Unassigned' }), {
+    targetPosition: { x: 4, y: 4 },
+  });
+  await expect
+    .poll(async () => {
+      const current = (await (await request.get(`/api/projects/${project.slug}`)).json()) as {
+        targetDate?: string | null;
+      };
+      return current.targetDate ?? null;
+    })
+    .toBeNull();
+});
+
+test('project board clears health when a card moves to No update', async ({ page, request }) => {
+  const stamp = Date.now();
+  const project = { name: `Clear health ${stamp}`, slug: `clear-health-${stamp}` };
+  const created = await request.post('/api/projects', { data: project });
+  expect(created.ok()).toBeTruthy();
+  const updated = await request.patch(`/api/projects/${project.slug}`, {
+    data: { health: 'at_risk' },
+  });
+  expect(updated.ok()).toBeTruthy();
+
+  await page.goto(`/projects?view=board&columnsBy=health&q=${encodeURIComponent(project.name)}`);
+  const board = page.getByRole('grid', { name: 'Project board' });
+  const card = page.locator(`a[href="/projects/${project.slug}"]`);
+  await expect(board.getByRole('gridcell', { name: 'At risk' })).toContainText(project.name);
+  await card.dragTo(board.locator('[data-project-board-cell="none:all"]'), {
+    targetPosition: { x: 4, y: 4 },
+  });
+  await expect
+    .poll(async () => {
+      const current = (await (await request.get(`/api/projects/${project.slug}`)).json()) as {
+        health?: string | null;
+      };
+      return current.health ?? '';
+    })
+    .toBe('');
+});
+
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 800 });
   await page.goto('/views/projects/new');

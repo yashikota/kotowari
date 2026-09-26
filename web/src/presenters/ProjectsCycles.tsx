@@ -27,15 +27,25 @@ import {
   type IssueOrderBy,
 } from '../issue-list.ts';
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
-import type { ProjectBoardModel } from '../components/ProjectBoardView.tsx';
 import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectViews } from '../project-views.ts';
-import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
+import type {
+  ProjectBoardGrouping,
+  ProjectSavedView,
+  ProjectViewSearch,
+} from '../project-views.ts';
 import { matchesProjectViewSearch } from '../project-view-filtering.ts';
 import { groupProjects } from '../project-grouping.ts';
-import { moveProjectBoardGroup, orderProjectBoardGroups } from '../project-board.ts';
+import {
+  buildProjectBoardLayout,
+  moveProjectBoardGroup,
+  projectBoardHiddenPatch,
+  projectBoardOrderPatch,
+  projectBoardSearchHidden,
+  projectBoardSearchOrder,
+} from '../project-board.ts';
 import { isTypingTarget } from '../keymap.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type {
@@ -237,6 +247,20 @@ export function useProjectsPagePresenter() {
       view: search.view ?? 'list',
       columnsBy,
       rowsBy,
+      statusColumnOrder: search.statusColumnOrder,
+      priorityColumnOrder: search.priorityColumnOrder,
+      labelsColumnOrder: search.labelsColumnOrder,
+      leadColumnOrder: search.leadColumnOrder,
+      healthColumnOrder: search.healthColumnOrder,
+      startDateColumnOrder: search.startDateColumnOrder,
+      targetDateColumnOrder: search.targetDateColumnOrder,
+      hiddenStatusColumns: search.hiddenStatusColumns,
+      hiddenPriorityColumns: search.hiddenPriorityColumns,
+      hiddenLabelsColumns: search.hiddenLabelsColumns,
+      hiddenLeadColumns: search.hiddenLeadColumns,
+      hiddenHealthColumns: search.hiddenHealthColumns,
+      hiddenStartDateColumns: search.hiddenStartDateColumns,
+      hiddenTargetDateColumns: search.hiddenTargetDateColumns,
       showEmptyColumns,
       showProjectList: search.showProjectList ?? true,
       showWeekNumbers: search.showWeekNumbers ?? false,
@@ -397,12 +421,14 @@ export function useProjectsPagePresenter() {
       (by, value) => {
         if (value === null) {
           if (by === 'labels') return i18n.t('projectList.groupNoLabel');
+          if (by === 'lead') return i18n.t('projectList.leadUnassigned');
           if (by === 'startDate' || by === 'targetDate') return i18n.t('projectList.groupNoDate');
           if (by === 'health') return i18n.t('projectHealth.status.none');
         }
         if (by === 'status')
           return projectWorkflowStatusLabel(value ?? '', projectWorkflowStatuses, i18n.t);
         if (by === 'priority') return priorityLabel(Number(value));
+        if (by === 'lead') return i18n.t('projectList.leadYou');
         if (by === 'health') return i18n.t(`projectHealth.status.${value}`);
         if (by === 'startDate' || by === 'targetDate') {
           const [year, month, day] = (value ?? '').split('-').map(Number);
@@ -417,84 +443,56 @@ export function useProjectsPagePresenter() {
   }, [filteredProjects, groupBy, projectWorkflowStatuses, i18n.language]);
 
   const view = search.view ?? 'list';
-  const columnsBy = search.columnsBy ?? 'status';
+  const columnsBy: ProjectBoardGrouping = search.columnsBy ?? 'status';
   const rowsBy = search.rowsBy ?? 'none';
   const showEmptyColumns = search.showEmptyColumns ?? true;
-  const boardGroupOrder =
-    columnsBy === 'status' ? search.statusColumnOrder : search.priorityColumnOrder;
-  const hiddenBoardGroupKeys =
-    columnsBy === 'status' ? search.hiddenStatusColumns : search.hiddenPriorityColumns;
-  const projectBoardGroups = useMemo(() => {
-    const keys =
-      columnsBy === 'status'
-        ? projectWorkflowStatuses.map((status) => status.id)
-        : ['1', '2', '3', '4', '0'];
-    const groups = keys.map((key) => ({
-      key,
-      label:
-        columnsBy === 'status'
-          ? projectWorkflowStatusLabel(key, projectWorkflowStatuses, i18n.t)
-          : priorityLabel(Number(key)),
-      visible: !hiddenBoardGroupKeys?.includes(key),
-    }));
-    return orderProjectBoardGroups(groups, boardGroupOrder);
-  }, [boardGroupOrder, columnsBy, hiddenBoardGroupKeys, projectWorkflowStatuses]);
-  const projectBoard = useMemo<ProjectBoardModel>(() => {
-    const columnGroups = projectBoardGroups
-      .filter((group) => group.visible)
-      .filter(
-        (group) =>
-          showEmptyColumns ||
-          filteredProjects.some((project) =>
-            columnsBy === 'status'
-              ? (project.workflowStatus ?? project.status) === group.key
-              : String(project.priority) === group.key,
-          ),
-      );
-    const rowKeys =
-      rowsBy === 'none'
-        ? ['all']
-        : rowsBy === 'status'
-          ? projectWorkflowStatuses
-              .map((status) => status.id)
-              .filter(
-                (key) =>
-                  showEmptyColumns ||
-                  filteredProjects.some(
-                    (project) => (project.workflowStatus ?? project.status) === key,
-                  ),
-              )
-          : ['1', '2', '3', '4', '0'].filter(
-              (key) =>
-                showEmptyColumns ||
-                filteredProjects.some((project) => String(project.priority) === key),
-            );
-    const keyFor = (project: Project, by: 'status' | 'priority') =>
-      by === 'status' ? (project.workflowStatus ?? project.status) : String(project.priority);
-    const columns = columnGroups.map(({ key, label }) => ({ key, label }));
-    return {
-      columns,
-      rows: rowKeys.map((rowKey) => ({
-        key: rowKey,
-        label:
-          rowKey === 'all'
-            ? ''
-            : rowsBy === 'status'
-              ? projectWorkflowStatusLabel(rowKey, projectWorkflowStatuses, i18n.t)
-              : priorityLabel(Number(rowKey)),
-        cells: Object.fromEntries(
-          columns.map((column) => [
-            column.key,
-            filteredProjects.filter(
-              (project) =>
-                (rowKey === 'all' || keyFor(project, rowsBy as 'status' | 'priority') === rowKey) &&
-                keyFor(project, columnsBy) === column.key,
-            ),
-          ]),
-        ),
-      })),
-    };
-  }, [columnsBy, filteredProjects, projectBoardGroups, rowsBy, showEmptyColumns]);
+  const hiddenBoardGroupKeys = projectBoardSearchHidden(search, columnsBy);
+  const boardLayout = useMemo(
+    () =>
+      buildProjectBoardLayout({
+        projects: filteredProjects,
+        columnsBy,
+        rowsBy,
+        statuses: projectWorkflowStatuses.map((status) => status.id),
+        labels: data.labels.map((label) => label.name),
+        showEmpty: showEmptyColumns,
+        preferredOrder: projectBoardSearchOrder(search, columnsBy),
+        hiddenKeys: projectBoardSearchHidden(search, columnsBy),
+        labelFor: (by, value) => {
+          if (value === null) {
+            if (by === 'labels') return i18n.t('projectList.groupNoLabel');
+            if (by === 'lead') return i18n.t('projectList.leadUnassigned');
+            if (by === 'startDate' || by === 'targetDate') return i18n.t('projectList.groupNoDate');
+            if (by === 'health') return i18n.t('projectHealth.status.none');
+          }
+          if (by === 'status')
+            return projectWorkflowStatusLabel(value ?? '', projectWorkflowStatuses, i18n.t);
+          if (by === 'priority') return priorityLabel(Number(value));
+          if (by === 'lead') return i18n.t('projectList.leadYou');
+          if (by === 'health') return i18n.t(`projectHealth.status.${value}`);
+          if (by === 'startDate' || by === 'targetDate') {
+            const [year, month, day] = (value ?? '').split('-').map(Number);
+            return new Intl.DateTimeFormat(i18n.language, {
+              dateStyle: 'medium',
+              timeZone: 'UTC',
+            }).format(new Date(Date.UTC(year, month - 1, day)));
+          }
+          return value ?? '';
+        },
+      }),
+    [
+      columnsBy,
+      data.labels,
+      filteredProjects,
+      projectWorkflowStatuses,
+      rowsBy,
+      search,
+      showEmptyColumns,
+      i18n.language,
+    ],
+  );
+  const projectBoardGroups = boardLayout.groups;
+  const projectBoard = boardLayout.model;
 
   const timelineStart =
     search.timelineStart ??
@@ -592,23 +590,52 @@ export function useProjectsPagePresenter() {
     if (rowsBy !== 'none' && rowsBy === columnsBy) return;
     const project = projects.find((item) => item.slug === projectSlug);
     if (!project) return;
-    const workflowStatus =
-      columnsBy === 'status'
-        ? columnKey
-        : rowsBy === 'status' && rowKey !== 'all'
-          ? rowKey
-          : undefined;
-    const priority =
-      columnsBy === 'priority'
-        ? Number(columnKey)
-        : rowsBy === 'priority' && rowKey !== 'all'
-          ? Number(rowKey)
-          : undefined;
+    const column = projectBoard.columns.find((item) => item.key === columnKey);
+    const row =
+      rowsBy === 'none' ? undefined : projectBoard.rows.find((item) => item.key === rowKey);
+    if (!column) return;
     const changes: Record<string, unknown> = {};
-    if (workflowStatus && workflowStatus !== (project.workflowStatus ?? project.status)) {
-      changes.workflowStatus = workflowStatus;
+    const updates = [
+      { groupBy: column.groupBy, value: column.value },
+      ...(row ? [{ groupBy: row.groupBy, value: row.value }] : []),
+    ];
+    for (const update of updates) {
+      if (!update.groupBy) continue;
+      if (
+        update.groupBy === 'status' &&
+        typeof update.value === 'string' &&
+        update.value !== (project.workflowStatus ?? project.status)
+      ) {
+        changes.workflowStatus = update.value;
+      } else if (
+        update.groupBy === 'priority' &&
+        typeof update.value === 'string' &&
+        Number(update.value) !== project.priority
+      ) {
+        changes.priority = Number(update.value);
+      } else if (update.groupBy === 'lead' && project.lead !== (update.value ?? '')) {
+        changes.lead = update.value ?? '';
+      } else if (update.groupBy === 'labels') {
+        const nextLabels = update.value ? [update.value] : [];
+        if (JSON.stringify(project.labels ?? []) !== JSON.stringify(nextLabels)) {
+          changes.labels = nextLabels;
+        }
+      } else if (update.groupBy === 'health' && (project.health ?? '') !== (update.value ?? '')) {
+        changes.health = update.value ?? '';
+      } else if (
+        update.groupBy === 'startDate' &&
+        (project.startDate ?? null) !== (update.value ?? null)
+      ) {
+        if (update.value === null) changes.clearStartDate = true;
+        else changes.startDate = update.value;
+      } else if (
+        update.groupBy === 'targetDate' &&
+        (project.targetDate ?? null) !== (update.value ?? null)
+      ) {
+        if (update.value === null) changes.clearTargetDate = true;
+        else changes.targetDate = update.value;
+      }
     }
-    if (priority !== undefined && priority !== project.priority) changes.priority = priority;
     if (!Object.keys(changes).length) return;
     await api.patchProject(projectSlug, changes);
     await router.invalidate();
@@ -750,8 +777,7 @@ export function useProjectsPagePresenter() {
           key,
           destinationIndex,
         );
-        if (columnsBy === 'status') void updateProjectSearch({ statusColumnOrder: order });
-        else void updateProjectSearch({ priorityColumnOrder: order });
+        void updateProjectSearch(projectBoardOrderPatch(columnsBy, order));
       },
       onBoardGroupVisibilityChange: (key, visible) => {
         if (!visible && projectBoardGroups.filter((group) => group.visible).length <= 1) return;
@@ -759,8 +785,7 @@ export function useProjectsPagePresenter() {
         if (visible) hidden.delete(key);
         else hidden.add(key);
         const value = hidden.size ? [...hidden] : undefined;
-        if (columnsBy === 'status') void updateProjectSearch({ hiddenStatusColumns: value });
-        else void updateProjectSearch({ hiddenPriorityColumns: value });
+        void updateProjectSearch(projectBoardHiddenPatch(columnsBy, value));
       },
       onShowProjectListChange: (value) =>
         void updateProjectSearch({ showProjectList: value ? undefined : false }),
@@ -801,8 +826,18 @@ export function useProjectsPagePresenter() {
           rowsBy: undefined,
           statusColumnOrder: undefined,
           priorityColumnOrder: undefined,
+          labelsColumnOrder: undefined,
+          leadColumnOrder: undefined,
+          healthColumnOrder: undefined,
+          startDateColumnOrder: undefined,
+          targetDateColumnOrder: undefined,
           hiddenStatusColumns: undefined,
           hiddenPriorityColumns: undefined,
+          hiddenLabelsColumns: undefined,
+          hiddenLeadColumns: undefined,
+          hiddenHealthColumns: undefined,
+          hiddenStartDateColumns: undefined,
+          hiddenTargetDateColumns: undefined,
           showEmptyColumns: undefined,
           showProjectList: undefined,
           showWeekNumbers: undefined,

@@ -173,6 +173,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await comment.fill('looks good');
   await comment.press('ControlOrMeta+Enter');
   await expect(page.getByText('looks good')).toBeVisible();
+  await expect(comment).toHaveValue('');
 
   await comment.fill('with a file');
   await page.getByLabel('Choose files to attach', { exact: true }).setInputFiles({

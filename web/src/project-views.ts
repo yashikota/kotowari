@@ -7,9 +7,12 @@ export type ProjectGroupBy =
   | 'status'
   | 'priority'
   | 'labels'
+  | 'lead'
   | 'health'
   | 'startDate'
   | 'targetDate';
+
+export type ProjectBoardGrouping = Exclude<ProjectGroupBy, 'none'>;
 
 export type ProjectFilterField =
   | 'status'
@@ -75,12 +78,22 @@ export type ProjectViewSearch = {
   manualOrder?: string[];
   closed?: 'all' | 'open' | 'closed';
   view?: 'list' | 'board' | 'timeline';
-  columnsBy?: 'status' | 'priority';
-  rowsBy?: 'none' | 'status' | 'priority';
+  columnsBy?: ProjectBoardGrouping;
+  rowsBy?: 'none' | ProjectBoardGrouping;
   statusColumnOrder?: string[];
   priorityColumnOrder?: string[];
+  labelsColumnOrder?: string[];
+  leadColumnOrder?: string[];
+  healthColumnOrder?: string[];
+  startDateColumnOrder?: string[];
+  targetDateColumnOrder?: string[];
   hiddenStatusColumns?: string[];
   hiddenPriorityColumns?: string[];
+  hiddenLabelsColumns?: string[];
+  hiddenLeadColumns?: string[];
+  hiddenHealthColumns?: string[];
+  hiddenStartDateColumns?: string[];
+  hiddenTargetDateColumns?: string[];
   showEmptyColumns?: boolean;
   showProjectList?: boolean;
   showWeekNumbers?: boolean;

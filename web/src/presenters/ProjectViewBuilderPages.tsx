@@ -2,16 +2,26 @@ import { useMemo, useState } from 'react';
 import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
-import type { ProjectBoardModel } from '../components/ProjectBoardView.tsx';
 import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectViews } from '../project-views.ts';
-import type { ProjectSavedView, ProjectViewSearch } from '../project-views.ts';
+import type {
+  ProjectBoardGrouping,
+  ProjectSavedView,
+  ProjectViewSearch,
+} from '../project-views.ts';
 import { matchesProjectViewSearch } from '../project-view-filtering.ts';
 import { groupProjects } from '../project-grouping.ts';
-import { moveProjectBoardGroup, orderProjectBoardGroups } from '../project-board.ts';
+import {
+  buildProjectBoardLayout,
+  moveProjectBoardGroup,
+  projectBoardHiddenPatch,
+  projectBoardOrderPatch,
+  projectBoardSearchHidden,
+  projectBoardSearchOrder,
+} from '../project-board.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import type { Initiative, Project, ProjectTemplate, ViewIconName } from '../types.ts';
 import { VIEW_ICON_NAMES } from '../components/ViewIcon.tsx';
@@ -155,11 +165,13 @@ export function useProjectViewBuilderPresenter() {
       (by, value) => {
         if (value === null) {
           if (by === 'labels') return t('projectList.groupNoLabel');
+          if (by === 'lead') return t('projectList.leadUnassigned');
           if (by === 'startDate' || by === 'targetDate') return t('projectList.groupNoDate');
           if (by === 'health') return t('projectHealth.status.none');
         }
         if (by === 'status') return projectWorkflowStatusLabel(value ?? '', statuses, t);
         if (by === 'priority') return priorityLabel(Number(value));
+        if (by === 'lead') return t('projectList.leadYou');
         if (by === 'health') return t(`projectHealth.status.${value}`);
         if (by === 'startDate' || by === 'targetDate') {
           const [year, month, day] = (value ?? '').split('-').map(Number);
@@ -229,69 +241,45 @@ export function useProjectViewBuilderPresenter() {
     };
   }, [groups, i18n.language, timelineStart]);
 
-  const columnsBy = search.columnsBy ?? 'status';
-  const boardGroupOrder =
-    columnsBy === 'status' ? search.statusColumnOrder : search.priorityColumnOrder;
-  const hiddenBoardGroupKeys =
-    columnsBy === 'status' ? search.hiddenStatusColumns : search.hiddenPriorityColumns;
-  const boardGroups = useMemo(() => {
-    const keys =
-      columnsBy === 'status' ? statuses.map((status) => status.id) : ['1', '2', '3', '4', '0'];
-    const groups = keys.map((key) => ({
-      key,
-      label:
-        columnsBy === 'status'
-          ? projectWorkflowStatusLabel(key, statuses, t)
-          : priorityLabel(Number(key)),
-      visible: !hiddenBoardGroupKeys?.includes(key),
-    }));
-    return orderProjectBoardGroups(groups, boardGroupOrder);
-  }, [boardGroupOrder, columnsBy, hiddenBoardGroupKeys, statuses, t]);
-  const projectBoard = useMemo<ProjectBoardModel>(() => {
-    const rowsBy = search.rowsBy ?? 'none';
-    const keyFor = (project: Project, field: 'status' | 'priority') =>
-      field === 'status' ? (project.workflowStatus ?? project.status) : String(project.priority);
-    const columns = boardGroups
-      .filter((group) => group.visible)
-      .filter(
-        (group) =>
-          search.showEmptyColumns !== false ||
-          filteredProjects.some((project) => keyFor(project, columnsBy) === group.key),
-      )
-      .map(({ key, label }) => ({ key, label }));
-    const rowKeys =
-      rowsBy === 'none'
-        ? ['all']
-        : rowsBy === 'status'
-          ? statuses
-              .map((status) => status.id)
-              .filter((key) => filteredProjects.some((p) => keyFor(p, 'status') === key))
-          : ['1', '2', '3', '4', '0'].filter((key) =>
-              filteredProjects.some((project) => keyFor(project, 'priority') === key),
-            );
-    return {
-      columns,
-      rows: rowKeys.map((rowKey) => ({
-        key: rowKey,
-        label:
-          rowKey === 'all'
-            ? ''
-            : rowsBy === 'status'
-              ? projectWorkflowStatusLabel(rowKey, statuses, t)
-              : priorityLabel(Number(rowKey)),
-        cells: Object.fromEntries(
-          columns.map((column) => [
-            column.key,
-            filteredProjects.filter(
-              (project) =>
-                (rowKey === 'all' || keyFor(project, rowsBy as 'status' | 'priority') === rowKey) &&
-                keyFor(project, columnsBy) === column.key,
-            ),
-          ]),
-        ),
-      })),
-    };
-  }, [boardGroups, columnsBy, filteredProjects, search.rowsBy, search.showEmptyColumns]);
+  const columnsBy: ProjectBoardGrouping = search.columnsBy ?? 'status';
+  const rowsBy = search.rowsBy ?? 'none';
+  const hiddenBoardGroupKeys = projectBoardSearchHidden(search, columnsBy);
+  const boardLayout = useMemo(
+    () =>
+      buildProjectBoardLayout({
+        projects: filteredProjects,
+        columnsBy,
+        rowsBy,
+        statuses: statuses.map((status) => status.id),
+        labels: data.labels.map((label) => label.name),
+        showEmpty: search.showEmptyColumns !== false,
+        preferredOrder: projectBoardSearchOrder(search, columnsBy),
+        hiddenKeys: projectBoardSearchHidden(search, columnsBy),
+        labelFor: (by, value) => {
+          if (value === null) {
+            if (by === 'labels') return t('projectList.groupNoLabel');
+            if (by === 'lead') return t('projectList.leadUnassigned');
+            if (by === 'startDate' || by === 'targetDate') return t('projectList.groupNoDate');
+            if (by === 'health') return t('projectHealth.status.none');
+          }
+          if (by === 'status') return projectWorkflowStatusLabel(value ?? '', statuses, t);
+          if (by === 'priority') return priorityLabel(Number(value));
+          if (by === 'lead') return t('projectList.leadYou');
+          if (by === 'health') return t(`projectHealth.status.${value}`);
+          if (by === 'startDate' || by === 'targetDate') {
+            const [year, month, day] = (value ?? '').split('-').map(Number);
+            return new Intl.DateTimeFormat(i18n.language, {
+              dateStyle: 'medium',
+              timeZone: 'UTC',
+            }).format(new Date(Date.UTC(year, month - 1, day)));
+          }
+          return value ?? '';
+        },
+      }),
+    [columnsBy, data.labels, filteredProjects, rowsBy, search, statuses, t, i18n.language],
+  );
+  const boardGroups = boardLayout.groups;
+  const projectBoard = boardLayout.model;
 
   function updateSearch(patch: Partial<ProjectViewSearch>) {
     return navigate({
@@ -443,8 +431,13 @@ export function useProjectViewBuilderPresenter() {
       onClosedChange: (value) =>
         void updateSearch({ closed: (value as ProjectViewSearch['closed']) || 'all' }),
       onViewChange: (value) => void updateSearch({ view: value === 'list' ? undefined : value }),
-      onColumnsByChange: (value) =>
-        void updateSearch({ columnsBy: (value as ProjectViewSearch['columnsBy']) || 'status' }),
+      onColumnsByChange: (value) => {
+        const nextColumnsBy = (value as ProjectViewSearch['columnsBy']) || 'status';
+        void updateSearch({
+          columnsBy: nextColumnsBy,
+          ...(nextColumnsBy === rowsBy ? { rowsBy: 'none' } : {}),
+        });
+      },
       onRowsByChange: (value) =>
         void updateSearch({ rowsBy: (value as ProjectViewSearch['rowsBy']) || 'none' }),
       onShowEmptyColumnsChange: (value) =>
@@ -455,8 +448,7 @@ export function useProjectViewBuilderPresenter() {
           key,
           destinationIndex,
         );
-        if (columnsBy === 'status') void updateSearch({ statusColumnOrder: order });
-        else void updateSearch({ priorityColumnOrder: order });
+        void updateSearch(projectBoardOrderPatch(columnsBy, order));
       },
       onBoardGroupVisibilityChange: (key, visible) => {
         if (!visible && boardGroups.filter((group) => group.visible).length <= 1) return;
@@ -464,8 +456,7 @@ export function useProjectViewBuilderPresenter() {
         if (visible) hidden.delete(key);
         else hidden.add(key);
         const value = hidden.size ? [...hidden] : undefined;
-        if (columnsBy === 'status') void updateSearch({ hiddenStatusColumns: value });
-        else void updateSearch({ hiddenPriorityColumns: value });
+        void updateSearch(projectBoardHiddenPatch(columnsBy, value));
       },
       onShowProjectListChange: (value) =>
         void updateSearch({ showProjectList: value ? undefined : false }),

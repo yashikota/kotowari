@@ -9,8 +9,19 @@ import { ProjectIconMark } from './ProjectIcon.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 export type ProjectBoardModel = {
-  columns: { key: string; label: string }[];
-  rows: { key: string; label: string; cells: Record<string, Project[]> }[];
+  columns: {
+    key: string;
+    label: string;
+    groupBy?: import('../project-views.ts').ProjectBoardGrouping;
+    value?: string | null;
+  }[];
+  rows: {
+    key: string;
+    label: string;
+    groupBy?: import('../project-views.ts').ProjectBoardGrouping;
+    value?: string | null;
+    cells: Record<string, Project[]>;
+  }[];
 };
 
 export function ProjectBoardView({
