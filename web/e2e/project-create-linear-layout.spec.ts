@@ -21,6 +21,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   const status = dialog.getByRole('combobox', { name: 'Status' });
   const addDependencies = dialog.getByRole('button', { name: 'Add dependencies' });
   const description = dialog.getByRole('textbox', { name: 'Description' });
+  const milestones = dialog.getByText('Milestones', { exact: true });
   const [
     nameBounds,
     templateBounds,
@@ -28,6 +29,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
     statusBounds,
     dependenciesBounds,
     descriptionBounds,
+    milestonesBounds,
   ] = await Promise.all([
     name.boundingBox(),
     template.boundingBox(),
@@ -35,6 +37,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
     status.boundingBox(),
     addDependencies.boundingBox(),
     description.boundingBox(),
+    milestones.boundingBox(),
   ]);
 
   expect(nameBounds).not.toBeNull();
@@ -43,6 +46,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   expect(statusBounds).not.toBeNull();
   expect(dependenciesBounds).not.toBeNull();
   expect(descriptionBounds).not.toBeNull();
+  expect(milestonesBounds).not.toBeNull();
   expect(
     Math.abs(nameBounds!.y + nameBounds!.height - (templateBounds!.y + templateBounds!.height)),
   ).toBeLessThan(4);
@@ -50,6 +54,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   expect(summaryBounds!.y).toBeLessThan(statusBounds!.y);
   expect(Math.abs(statusBounds!.y - dependenciesBounds!.y)).toBeLessThan(4);
   expect(dependenciesBounds!.y).toBeLessThan(descriptionBounds!.y);
+  expect(milestonesBounds!.y - descriptionBounds!.y).toBeGreaterThan(340);
   await expect(dialog.getByRole('heading', { name: 'Dependencies' })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Create project' })).toBeInViewport();
 });

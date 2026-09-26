@@ -231,7 +231,7 @@ export function ProjectCreateDialog({
               placeholder={t('modal.projectDescription')}
               value={description}
               onChange={handlers.New_project_description_onChange}
-              minRows={8}
+              minRows={16}
               autosize
               variant="unstyled"
               styles={{ input: { borderTop: '1px solid var(--mantine-color-default-border)' } }}
