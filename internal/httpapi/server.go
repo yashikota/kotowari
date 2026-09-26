@@ -92,6 +92,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/initiatives", s.listInitiatives)
 	s.mux.HandleFunc("POST /api/initiatives", s.createInitiative)
 	s.mux.HandleFunc("GET /api/initiatives/{slug}", s.getInitiative)
+	s.mux.HandleFunc("GET /api/initiatives/{slug}/activities", s.listInitiativeActivities)
+	s.mux.HandleFunc("POST /api/initiatives/{slug}/updates", s.postInitiativeUpdate)
 	s.mux.HandleFunc("PATCH /api/initiatives/{slug}", s.patchInitiative)
 	s.mux.HandleFunc("DELETE /api/initiatives/{slug}", s.deleteInitiative)
 	s.mux.HandleFunc("GET /api/project-templates", s.listProjectTemplates)

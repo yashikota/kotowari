@@ -39,7 +39,8 @@ import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
 import { ProjectCreateDialog } from '../components/ProjectCreateDialog.tsx';
 import { ProjectsEmptyState } from '../components/ProjectsEmptyState.tsx';
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
-import { ProjectUpdateFeed } from '../components/ProjectUpdateFeed.tsx';
+import { HealthUpdateFeed } from '../components/HealthUpdateFeed.tsx';
+import { HealthUpdateComposer } from '../components/HealthUpdateComposer.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
 import { CycleDateRangeControl } from '../components/CycleDateRangeControl.tsx';
 import { ViewIcon } from '../components/ViewIcon.tsx';
@@ -405,7 +406,7 @@ export function ProjectDetailPageView({
                   title={t('projectUpdates.heading')}
                   ariaLabel={t('projectUpdates.heading')}
                 >
-                  <ProjectUpdateFeed
+                  <HealthUpdateFeed
                     updates={projectUpdates}
                     emptyLabel={t('projectUpdates.empty')}
                   />
@@ -741,44 +742,25 @@ export function ProjectDetailPageView({
               </Stack>
             </Pane>
           </SplitLayout>
-          <Modal
+          <HealthUpdateComposer
             opened={projectUpdateOpen}
             onClose={handlers.onCloseProjectUpdate}
             title={t('projectUpdates.modalTitle')}
-            centered
-          >
-            <Box component="form" onSubmit={handlers.onSubmitProjectUpdate}>
-              <Stack>
-                <NativeSelect
-                  label={t('projectUpdates.health')}
-                  value={projectUpdateHealth}
-                  onChange={handlers.onProjectUpdateHealthChange}
-                  data={(['on_track', 'at_risk', 'off_track'] as const).map((health) => ({
-                    value: health,
-                    label: t(`projectHealth.status.${health}`),
-                  }))}
-                />
-                <Textarea
-                  required
-                  maxLength={10000}
-                  minRows={5}
-                  autosize
-                  label={t('projectUpdates.body')}
-                  placeholder={t('projectUpdates.bodyPlaceholder')}
-                  value={projectUpdateBody}
-                  onChange={handlers.onProjectUpdateBodyChange}
-                />
-                <Group justify="flex-end">
-                  <Button type="button" variant="default" onClick={handlers.onCloseProjectUpdate}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={!projectUpdateBody.trim()}>
-                    {t('projectUpdates.postButton')}
-                  </Button>
-                </Group>
-              </Stack>
-            </Box>
-          </Modal>
+            onSubmit={handlers.onSubmitProjectUpdate}
+            healthLabel={t('projectUpdates.health')}
+            health={projectUpdateHealth}
+            healthOptions={(['on_track', 'at_risk', 'off_track'] as const).map((health) => ({
+              value: health,
+              label: t(`projectHealth.status.${health}`),
+            }))}
+            onHealthChange={handlers.onProjectUpdateHealthChange}
+            bodyLabel={t('projectUpdates.body')}
+            bodyPlaceholder={t('projectUpdates.bodyPlaceholder')}
+            body={projectUpdateBody}
+            onBodyChange={handlers.onProjectUpdateBodyChange}
+            cancelLabel={t('common.cancel')}
+            submitLabel={t('projectUpdates.postButton')}
+          />
           <Modal
             opened={projectTemplateOpen}
             onClose={handlers.onCloseProjectTemplate}

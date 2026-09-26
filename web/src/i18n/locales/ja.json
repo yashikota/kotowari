@@ -553,6 +553,15 @@
     "body": "更新内容",
     "bodyPlaceholder": "進捗、リスク、次のステップを共有…"
   },
+  "initiativeUpdates": {
+    "heading": "状況更新",
+    "empty": "状況更新はまだありません。",
+    "postButton": "更新を投稿",
+    "modalTitle": "イニシアチブの状況を更新",
+    "health": "イニシアチブの状況",
+    "body": "更新内容",
+    "bodyPlaceholder": "進捗、リスク、次のステップを共有…"
+  },
   "projectIcons": {
     "choose": "プロジェクトアイコンを選択",
     "iconsTab": "アイコン",

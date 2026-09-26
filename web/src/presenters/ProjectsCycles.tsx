@@ -1279,8 +1279,8 @@ export function useProjectDetailPagePresenter() {
         setProjectUpdateOpen(true);
       },
       onCloseProjectUpdate: () => setProjectUpdateOpen(false),
-      onProjectUpdateHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
-        setProjectUpdateHealth(e.target.value as ProjectHealth),
+      onProjectUpdateHealthChange: (value: string | null) =>
+        setProjectUpdateHealth((value ?? 'on_track') as ProjectHealth),
       onProjectUpdateBodyChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
         setProjectUpdateBody(e.target.value),
       onSubmitProjectUpdate: async (e: React.FormEvent<HTMLFormElement>) => {

@@ -196,10 +196,9 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   await expect(page.getByText('1 active project', { exact: true })).toBeVisible();
 
   await page.getByRole('link', { name: activeName }).click();
+  await expect(page.getByLabel('Health', { exact: true }).getByText('On track')).toBeVisible();
   await page.getByRole('combobox', { name: 'Priority' }).click();
   await page.getByRole('option', { name: 'Urgent', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Health' }).click();
-  await page.getByRole('option', { name: 'Off track', exact: true }).click();
   await page.getByRole('combobox', { name: 'Labels' }).click();
   await page.getByRole('option', { name: detailLabel, exact: true }).click();
   await page.getByRole('combobox', { name: 'Status' }).click();
@@ -219,7 +218,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
     .toMatchObject({
       status: 'completed',
       priority: 1,
-      health: 'off_track',
+      health: 'on_track',
       labels: [label, detailLabel],
     });
   await expect
@@ -379,6 +378,49 @@ test('initiative advanced filters persist nested AND and OR conditions', async (
     .getByRole('button', { name: 'Remove advanced filter' })
     .click();
   await expect(page.getByRole('link', { name: neitherName })).toBeVisible();
+});
+
+test('initiative health updates post to a durable, newest-first history', async ({
+  page,
+  request,
+}) => {
+  const slug = `initiative-updates-${Date.now()}`;
+  const created = await request.post('/api/initiatives', {
+    data: { name: 'Health update history', slug, status: 'active' },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+
+  await page.goto(`/initiatives/${slug}`);
+  await page.getByRole('button', { name: 'Post update' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Post an initiative update' });
+  await dialog.getByRole('combobox', { name: 'Initiative health' }).click();
+  await page.getByRole('option', { name: 'Off track', exact: true }).click();
+  await dialog
+    .getByRole('textbox', { name: 'Update' })
+    .fill('Integration is blocked; mitigation is underway.');
+  await dialog.getByRole('button', { name: 'Post update' }).click();
+
+  await expect(page.getByText('Integration is blocked; mitigation is underway.')).toBeVisible();
+  await expect(page.getByRole('listitem').getByText('Off track', { exact: true })).toBeVisible();
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/initiatives/${slug}`);
+      return (await response.json()) as { health: string; healthUpdatedAt: string };
+    })
+    .toMatchObject({ health: 'off_track' });
+  const historyResponse = await request.get(`/api/initiatives/${slug}/activities`);
+  expect(historyResponse.ok()).toBeTruthy();
+  expect(await historyResponse.json()).toMatchObject([
+    {
+      action: 'status_update_posted',
+      payload: { body: 'Integration is blocked; mitigation is underway.' },
+    },
+    { action: 'created' },
+  ]);
+
+  await page.reload();
+  await expect(page.getByText('Integration is blocked; mitigation is underway.')).toBeVisible();
+  await expect(page.getByLabel('Health', { exact: true }).getByText('Off track')).toBeVisible();
 });
 
 test('deleting an initiative preserves projects and removes their initiative property', async ({

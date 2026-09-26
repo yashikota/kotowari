@@ -55,6 +55,58 @@ func (s *Store) GetInitiative(slug string) (Initiative, error) {
 	return out, err
 }
 
+func (s *Store) ListInitiativeActivities(slug string) ([]Activity, error) {
+	var out []Activity
+	err := s.snapshot(func(m *mem) error {
+		index := initiativeIndex(m, slug)
+		if index < 0 {
+			return ErrNotFound
+		}
+		initiativeID := m.Initiatives[index].ID
+		out = []Activity{}
+		for index := len(m.Activities) - 1; index >= 0; index-- {
+			activity := m.Activities[index]
+			if activity.EntityType == "initiative" && activity.EntityID == initiativeID {
+				out = append(out, activity)
+			}
+		}
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) PostInitiativeUpdate(slug, health, body string) (Activity, error) {
+	health = strings.TrimSpace(health)
+	body = strings.TrimSpace(body)
+	if !domain.ValidProjectHealth(health) || health == "" {
+		return Activity{}, validationf("invalid initiative health")
+	}
+	if body == "" || utf8.RuneCountInString(body) > 10000 {
+		return Activity{}, validationf("initiative update body must contain 1 to 10000 characters")
+	}
+	now := domain.Now()
+	var out Activity
+	err := s.mutate(func(m *mem) error {
+		index := initiativeIndex(m, slug)
+		if index < 0 {
+			return ErrNotFound
+		}
+		initiative := m.Initiatives[index]
+		initiative.Health = health
+		initiative.HealthUpdatedAt = cloneString(&now)
+		initiative.UpdatedAt = now
+		m.Initiatives[index] = initiative
+		addActivity(m, "initiative", initiative.ID, "status_update_posted", map[string]any{
+			"health": health,
+			"body":   body,
+		}, now)
+		out = m.Activities[len(m.Activities)-1]
+		m.bump(now)
+		return nil
+	})
+	return out, err
+}
+
 func (s *Store) CreateInitiative(name, slug, description, status, color string, start, target *string) (Initiative, error) {
 	return s.CreateInitiativeWithProjects(name, slug, description, status, color, start, target, nil)
 }

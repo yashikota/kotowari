@@ -227,12 +227,13 @@ const initiativeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/initiatives/$slug',
   loader: async ({ params }) => {
-    const [initiative, projects, labels] = await Promise.all([
+    const [initiative, projects, labels, activities] = await Promise.all([
       api.initiative(params.slug),
       api.projects(),
       api.labels(),
+      api.initiativeActivities(params.slug),
     ]);
-    return { initiative, projects, labels };
+    return { initiative, projects, labels, activities };
   },
   component: lazyRouteComponent(
     () => import('./pages/InitiativesPages.tsx'),

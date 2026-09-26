@@ -24,6 +24,32 @@ func (s *Server) getInitiative(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+func (s *Server) listInitiativeActivities(w http.ResponseWriter, r *http.Request) {
+	out, err := s.store.ListInitiativeActivities(r.PathValue("slug"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) postInitiativeUpdate(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Health string `json:"health"`
+		Body   string `json:"body"`
+	}
+	if err := decodeJSON(r, &in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	out, err := s.store.PostInitiativeUpdate(r.PathValue("slug"), in.Health, in.Body)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
+}
+
 func (s *Server) createInitiative(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Name         string   `json:"name"`

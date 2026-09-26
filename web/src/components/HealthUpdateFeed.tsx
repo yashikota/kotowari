@@ -5,18 +5,18 @@ import { MarkdownContent } from '../mantine-ui.tsx';
 import { renderMarkdown } from '../markdown.ts';
 import type { ProjectHealth } from '../types.ts';
 
-export type ProjectUpdateItem = {
+export type HealthUpdateItem = {
   id: number;
   health: ProjectHealth;
   body: string;
   createdAt: string;
 };
 
-export function ProjectUpdateFeed({
+export function HealthUpdateFeed({
   updates,
   emptyLabel,
 }: {
-  updates: ProjectUpdateItem[];
+  updates: HealthUpdateItem[];
   emptyLabel: string;
 }) {
   const { t, i18n } = useTranslation();

@@ -23,7 +23,8 @@ import {
   type SearchDateFilter,
 } from '../search.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
-import type { Initiative, InitiativeStatus } from '../types.ts';
+import type { Initiative, InitiativeStatus, ProjectHealth } from '../types.ts';
+import type { HealthUpdateItem } from '../components/HealthUpdateFeed.tsx';
 import { useRootMachineFlag } from '../application/Root.tsx';
 
 function initiativeSlug(name: string, existing: Initiative[]): string {
@@ -263,6 +264,7 @@ export function useInitiativeDetailPresenter() {
     initiative,
     projects,
     labels: workspaceLabels,
+    activities,
   } = useLoaderData({
     from: '/initiatives/$slug',
   });
@@ -276,11 +278,38 @@ export function useInitiativeDetailPresenter() {
   const [startDate, setStartDate] = useState(initiative.startDate ?? '');
   const [targetDate, setTargetDate] = useState(initiative.targetDate ?? '');
   const [priority, setPriority] = useState(initiative.priority ?? 0);
-  const [health, setHealth] = useState(initiative.health ?? '');
+  const health = initiative.health ?? '';
   const [labels, setLabels] = useState(initiative.labels ?? []);
   const [projectSlugs, setProjectSlugs] = useState(initiative.projectSlugs);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [updateHealth, setUpdateHealth] = useState<ProjectHealth>(initiative.health ?? 'on_track');
+  const [updateBody, setUpdateBody] = useState('');
+  const [updateError, setUpdateError] = useState('');
+  const [updating, setUpdating] = useState(false);
+
+  const updates: HealthUpdateItem[] = activities.flatMap((activity) => {
+    if (activity.action !== 'status_update_posted') return [];
+    const activityHealth = activity.payload.health;
+    const body = activity.payload.body;
+    if (
+      (activityHealth !== 'on_track' &&
+        activityHealth !== 'at_risk' &&
+        activityHealth !== 'off_track') ||
+      typeof body !== 'string'
+    ) {
+      return [];
+    }
+    return [
+      {
+        id: activity.id,
+        health: activityHealth,
+        body,
+        createdAt: activity.createdAt,
+      },
+    ];
+  });
 
   async function saveInitiative(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -294,7 +323,6 @@ export function useInitiativeDetailPresenter() {
         status,
         color,
         priority,
-        health,
         labels,
         ...(startDate ? { startDate } : { clearStartDate: true }),
         ...(targetDate ? { targetDate } : { clearTargetDate: true }),
@@ -306,6 +334,25 @@ export function useInitiativeDetailPresenter() {
       setError(cause instanceof Error ? cause.message : t('common.error'));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function postUpdate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const body = updateBody.trim();
+    if (updating || !body) return;
+    setUpdating(true);
+    setUpdateError('');
+    try {
+      await api.postInitiativeUpdate(initiative.slug, updateHealth, body);
+      queryCache.invalidate();
+      await router.invalidate();
+      setUpdateOpen(false);
+      setUpdateBody('');
+    } catch (cause) {
+      setUpdateError(cause instanceof Error ? cause.message : t('common.error'));
+    } finally {
+      setUpdating(false);
     }
   }
 
@@ -335,6 +382,7 @@ export function useInitiativeDetailPresenter() {
     targetDate,
     priority,
     health,
+    updates,
     labels,
     availableLabels: workspaceLabels.map((label) => label.name).sort((a, b) => a.localeCompare(b)),
     projectSlugs,
@@ -342,6 +390,11 @@ export function useInitiativeDetailPresenter() {
     linkedProjects: projects.filter((project) => projectSlugs.includes(project.slug)),
     error,
     saving,
+    updateOpen,
+    updateHealth,
+    updateBody,
+    updateError,
+    updating,
     handlers: {
       onNameChange: (event: ChangeEvent<HTMLInputElement>) => setName(event.target.value),
       onDescriptionChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
@@ -352,12 +405,23 @@ export function useInitiativeDetailPresenter() {
       onTargetDateChange: (event: ChangeEvent<HTMLInputElement>) =>
         setTargetDate(event.target.value),
       onPriorityChange: (value: string | null) => setPriority(Number(value ?? 0)),
-      onHealthChange: (value: string | null) => setHealth(value ?? ''),
       onLabelsChange: setLabels,
       onProjectSlugsChange: setProjectSlugs,
       onSubmit: saveInitiative,
       onDelete: deleteInitiative,
       onBack: () => void navigate({ to: '/initiatives' }),
+      onOpenUpdate: () => {
+        setUpdateHealth(health || 'on_track');
+        setUpdateBody('');
+        setUpdateError('');
+        setUpdateOpen(true);
+      },
+      onCloseUpdate: () => setUpdateOpen(false),
+      onUpdateHealthChange: (value: string | null) =>
+        setUpdateHealth((value ?? 'on_track') as ProjectHealth),
+      onUpdateBodyChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
+        setUpdateBody(event.currentTarget.value),
+      onSubmitUpdate: postUpdate,
       onProjectOpen: (slug: string) => void navigate({ to: '/projects/$slug', params: { slug } }),
       onStatusLabel: (value: InitiativeStatus) => t(`initiatives.${value}`),
     },

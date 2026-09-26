@@ -143,6 +143,51 @@ func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
 	}
 }
 
+func TestInitiativeUpdatesPersistHealthAndActivityHistory(t *testing.T) {
+	s := openTest(t)
+	initiative, err := s.CreateInitiative("Platform", "platform", "", "active", "purple", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := s.PostInitiativeUpdate(initiative.Slug, "on_track", "The launch is on schedule.")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := s.PostInitiativeUpdate(initiative.Slug, "at_risk", "The integration needs attention.")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Action != "status_update_posted" || second.Action != "status_update_posted" {
+		t.Fatalf("update activities %#v %#v", first, second)
+	}
+	activities, err := s.ListInitiativeActivities(initiative.Slug)
+	if err != nil || len(activities) != 3 || activities[0].ID != second.ID || activities[1].ID != first.ID || activities[2].Action != "created" {
+		t.Fatalf("initiative activities %#v (%v)", activities, err)
+	}
+	updated, err := s.GetInitiative(initiative.Slug)
+	if err != nil || updated.Health != "at_risk" || updated.HealthUpdatedAt == nil || *updated.HealthUpdatedAt == "" {
+		t.Fatalf("latest initiative health %#v (%v)", updated, err)
+	}
+	if _, err := s.PostInitiativeUpdate(initiative.Slug, "unknown", "Bad health"); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid health error %v", err)
+	}
+	if _, err := s.PostInitiativeUpdate(initiative.Slug, "on_track", "  "); !errors.Is(err, ErrValidation) {
+		t.Fatalf("empty body error %v", err)
+	}
+	if _, err := s.PostInitiativeUpdate("missing", "on_track", "Update"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing initiative error %v", err)
+	}
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = reopened.Close() })
+	persisted, err := reopened.ListInitiativeActivities(initiative.Slug)
+	if err != nil || len(persisted) != 3 || persisted[0].Action != "status_update_posted" {
+		t.Fatalf("initiative activity history did not persist: %#v (%v)", persisted, err)
+	}
+}
+
 func TestProjectInitiativePropertyUpdatesBothSides(t *testing.T) {
 	s := openTest(t)
 	project, err := s.CreateProject("Roadmap", "roadmap", "", "started", nil, nil)

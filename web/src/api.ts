@@ -241,6 +241,13 @@ export const api = {
   projects: () => req<Project[]>('/api/projects'),
   initiatives: () => req<Initiative[]>('/api/initiatives'),
   initiative: (slug: string) => req<Initiative>(`/api/initiatives/${encodeURIComponent(slug)}`),
+  initiativeActivities: (slug: string) =>
+    req<Activity[]>(`/api/initiatives/${encodeURIComponent(slug)}/activities`),
+  postInitiativeUpdate: (slug: string, health: ProjectHealth, body: string) =>
+    req<Activity>(`/api/initiatives/${encodeURIComponent(slug)}/updates`, {
+      method: 'POST',
+      body: JSON.stringify({ health, body }),
+    }),
   createInitiative: (body: {
     name: string;
     slug: string;

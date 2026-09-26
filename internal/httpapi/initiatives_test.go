@@ -95,3 +95,40 @@ func TestInitiativeAPIRejectsInvalidStatusAndDateRange(t *testing.T) {
 		t.Fatalf("invalid health %d %s", invalid.Code, invalid.Body.String())
 	}
 }
+
+func TestInitiativeUpdateAPIStoresAndListsHealthUpdates(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/initiatives", `{"name":"Platform","slug":"platform","status":"active"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create initiative %d %s", created.Code, created.Body.String())
+	}
+	posted := doJSON(t, s, http.MethodPost, "/api/initiatives/platform/updates", `{"health":"off_track","body":"The launch date is at risk."}`)
+	if posted.Code != http.StatusCreated || !strings.Contains(posted.Body.String(), `"action":"status_update_posted"`) {
+		t.Fatalf("post initiative update %d %s", posted.Code, posted.Body.String())
+	}
+	var activity struct {
+		Action  string         `json:"action"`
+		Payload map[string]any `json:"payload"`
+	}
+	if err := json.Unmarshal(posted.Body.Bytes(), &activity); err != nil {
+		t.Fatal(err)
+	}
+	if activity.Action != "status_update_posted" || activity.Payload["health"] != "off_track" || activity.Payload["body"] != "The launch date is at risk." {
+		t.Fatalf("initiative update payload %#v", activity)
+	}
+	listed := doJSON(t, s, http.MethodGet, "/api/initiatives/platform/activities", "")
+	if listed.Code != http.StatusOK || !strings.Contains(listed.Body.String(), `"health":"off_track"`) {
+		t.Fatalf("list initiative updates %d %s", listed.Code, listed.Body.String())
+	}
+	updated := doJSON(t, s, http.MethodGet, "/api/initiatives/platform", "")
+	if updated.Code != http.StatusOK || !strings.Contains(updated.Body.String(), `"health":"off_track"`) || !strings.Contains(updated.Body.String(), `"healthUpdatedAt":`) {
+		t.Fatalf("initiative health was not updated %d %s", updated.Code, updated.Body.String())
+	}
+	invalid := doJSON(t, s, http.MethodPost, "/api/initiatives/platform/updates", `{"health":"unknown","body":"Update"}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid initiative health %d %s", invalid.Code, invalid.Body.String())
+	}
+	if missing := doJSON(t, s, http.MethodGet, "/api/initiatives/missing/activities", ""); missing.Code != http.StatusNotFound {
+		t.Fatalf("missing initiative activity list %d %s", missing.Code, missing.Body.String())
+	}
+}

@@ -20,6 +20,8 @@ import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 import type { Initiative, InitiativeStatus, ProjectHealth } from '../types.ts';
 import { formatCalendarDate } from '../time.ts';
 import { InitiativeListControls } from '../components/InitiativeListControls.tsx';
+import { HealthUpdateFeed } from '../components/HealthUpdateFeed.tsx';
+import { HealthUpdateComposer } from '../components/HealthUpdateComposer.tsx';
 import type { InitiativeDisplayProperty } from '../initiative-list.ts';
 import {
   useInitiativeDetailPresenter,
@@ -410,11 +412,17 @@ export function InitiativeDetailPageView({
     targetDate,
     priority,
     health,
+    updates,
     labels,
     availableLabels,
     projectSlugs,
     error,
     saving,
+    updateOpen,
+    updateHealth,
+    updateBody,
+    updateError,
+    updating,
     handlers,
   } = model;
   return (
@@ -501,16 +509,25 @@ export function InitiativeDetailPageView({
                   label: t(`initiativeList.priorityValue.${value}`),
                 }))}
               />
-              <Select
-                label={t('initiativeList.health')}
-                value={health || null}
-                onChange={handlers.onHealthChange}
-                data={INITIATIVE_HEALTH.map((value) => ({
-                  value,
-                  label: t(`initiativeList.healthValue.${value}`),
-                }))}
-                clearable
-              />
+              <Stack gap={4}>
+                <Text size="sm" fw={500}>
+                  {t('initiativeList.health')}
+                </Text>
+                <Group gap="xs" wrap="nowrap">
+                  <Badge
+                    variant="light"
+                    color={health ? 'green' : 'gray'}
+                    aria-label={t('initiativeList.health')}
+                  >
+                    {health
+                      ? t(`initiativeList.healthValue.${health}`)
+                      : t('initiativeList.noHealth')}
+                  </Badge>
+                  <Button type="button" size="compact-sm" onClick={handlers.onOpenUpdate}>
+                    {t('initiativeUpdates.postButton')}
+                  </Button>
+                </Group>
+              </Stack>
               <MultiSelect
                 label={t('initiativeList.labels')}
                 value={labels}
@@ -566,6 +583,38 @@ export function InitiativeDetailPageView({
             </Group>
           </Stack>
         </form>
+        <Stack p="md" pt={0} maw={900} gap="sm" style={{ overflow: 'auto', minHeight: 0 }}>
+          <Group justify="space-between" align="center">
+            <Text size="lg" fw={600}>
+              {t('initiativeUpdates.heading')}
+            </Text>
+            <Button type="button" variant="subtle" onClick={handlers.onOpenUpdate}>
+              {t('initiativeUpdates.postButton')}
+            </Button>
+          </Group>
+          <HealthUpdateFeed updates={updates} emptyLabel={t('initiativeUpdates.empty')} />
+        </Stack>
+        <HealthUpdateComposer
+          opened={updateOpen}
+          onClose={handlers.onCloseUpdate}
+          title={t('initiativeUpdates.modalTitle')}
+          onSubmit={handlers.onSubmitUpdate}
+          healthLabel={t('initiativeUpdates.health')}
+          health={updateHealth}
+          healthOptions={INITIATIVE_HEALTH.map((value) => ({
+            value,
+            label: t(`initiativeList.healthValue.${value}`),
+          }))}
+          onHealthChange={handlers.onUpdateHealthChange}
+          bodyLabel={t('initiativeUpdates.body')}
+          bodyPlaceholder={t('initiativeUpdates.bodyPlaceholder')}
+          body={updateBody}
+          onBodyChange={handlers.onUpdateBodyChange}
+          cancelLabel={t('common.cancel')}
+          submitLabel={t('initiativeUpdates.postButton')}
+          error={updateError}
+          submitting={updating}
+        />
       </Pane>
     </SplitLayout>
   );

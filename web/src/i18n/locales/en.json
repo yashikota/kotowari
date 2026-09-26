@@ -555,6 +555,15 @@
     "body": "Update",
     "bodyPlaceholder": "Share progress, risks, and next steps…"
   },
+  "initiativeUpdates": {
+    "heading": "Updates",
+    "empty": "No updates yet.",
+    "postButton": "Post update",
+    "modalTitle": "Post an initiative update",
+    "health": "Initiative health",
+    "body": "Update",
+    "bodyPlaceholder": "Share progress, risks, and next steps…"
+  },
   "projectIcons": {
     "choose": "Choose project icon",
     "iconsTab": "Icons",

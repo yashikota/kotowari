@@ -16,7 +16,8 @@ test('project status updates publish markdown and persist in project history', a
   await page.goto(`/projects/${slug}`);
   await page.getByRole('button', { name: 'Post update' }).click();
   const dialog = page.getByRole('dialog', { name: 'Post a project update' });
-  await dialog.getByLabel('Project health').selectOption('at_risk');
+  await dialog.getByRole('combobox', { name: 'Project health' }).click();
+  await page.getByRole('listbox').getByRole('option', { name: 'At risk', exact: true }).click();
   await dialog.getByLabel('Update').fill(body);
   await dialog.getByRole('button', { name: 'Post update' }).click();
 
