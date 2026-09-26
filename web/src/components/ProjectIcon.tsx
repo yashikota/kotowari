@@ -164,11 +164,13 @@ export function ProjectIconPicker({
   color,
   onChange,
   onColorChange,
+  size = 38,
 }: {
   icon?: string;
   color?: string;
   onChange: (icon: string) => void;
   onColorChange: (color: string) => void;
+  size?: number;
 }) {
   const { t } = useTranslation();
   const [opened, setOpened] = useState(false);
@@ -210,7 +212,7 @@ export function ProjectIconPicker({
         <ActionIcon
           type="button"
           variant="default"
-          size={38}
+          size={size}
           aria-label={t('projectIcons.choose')}
           onClick={() => setOpened((current) => !current)}
         >

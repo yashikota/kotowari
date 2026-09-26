@@ -486,6 +486,24 @@
     "duplicateName": "A project template with this name already exists.",
     "saveFailed": "Could not save the project template."
   },
+  "projectAssistant": {
+    "title": "Project creation assistant",
+    "heading": "Draft a new project",
+    "description": "Plan a clear outcome, scope, and milestones before creating the project.",
+    "hide": "Hide assistant",
+    "show": "Show assistant",
+    "promptPlaceholder": "Draft your project with Kotowari…",
+    "outlineScope": "Outline the scope",
+    "research": "Research related issues",
+    "planTimeline": "Plan timeline",
+    "suggestMilestones": "Suggest milestones",
+    "prompt": {
+      "outlineScope": "Help draft the scope for a new project with its objective, outcomes, and non-goals. Only suggest text; do not create or modify workspace data.",
+      "research": "Review existing issues and projects that may be related to a new project. Summarize candidates without changing workspace data.",
+      "planTimeline": "Suggest a phased timeline for a new project. Keep it as a draft and do not modify workspace data.",
+      "suggestMilestones": "Suggest a small set of milestones with names and outcomes for a new project. Only draft suggestions; do not modify workspace data."
+    }
+  },
   "projectDependencies": {
     "heading": "Dependencies",
     "addFromCreate": "Add dependencies",
@@ -1322,6 +1340,7 @@
     "requestDetails": "Request details",
     "message": "Message",
     "messageToAi": "Message to AI",
+    "quickPrompts": "Quick prompts",
     "enterToInsertLine": "Enter to insert a line ·",
     "toSend": "to send",
     "send": "Send",

@@ -45,7 +45,20 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
   const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { id, standalone, open, state, prompt, error, sending, messages, handlers } = model;
+      const {
+        id,
+        standalone,
+        open,
+        state,
+        prompt,
+        error,
+        sending,
+        messages,
+        starterPrompts,
+        promptPlaceholder,
+        hidePromptLabel,
+        handlers,
+      } = model;
       return (
         <Stack
           gap="md"
@@ -71,6 +84,23 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
                   {t('ui.conversationFor')} {id}. {t('ui.savedDocumentIncluded')}
                 </Text>
               )}
+
+              {standalone && messages.length === 0 && starterPrompts.length > 0 ? (
+                <Stack component="nav" aria-label={t('ui.quickPrompts')} gap="xs">
+                  {starterPrompts.map((suggestion) => (
+                    <Button
+                      key={suggestion.label}
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      justify="flex-start"
+                      onClick={() => handlers.onClick7(suggestion.prompt)}
+                    >
+                      {suggestion.label}
+                    </Button>
+                  ))}
+                </Stack>
+              ) : null}
 
               <Stack gap="md">
                 {messages.map((m, i) => (
@@ -140,8 +170,9 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
               <Box component="form" onSubmit={handlers.onSubmit3}>
                 <Stack gap="sm">
                   <Textarea
-                    label={t('ui.message')}
+                    label={hidePromptLabel ? undefined : t('ui.message')}
                     aria-label={t('ui.messageToAi')}
+                    placeholder={promptPlaceholder}
                     value={prompt}
                     onChange={handlers.Message_to_AI_onChange4}
                     required

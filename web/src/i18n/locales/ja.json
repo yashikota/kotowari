@@ -484,6 +484,24 @@
     "duplicateName": "同じ名前のプロジェクトテンプレートが既にあります。",
     "saveFailed": "プロジェクトテンプレートを保存できませんでした。"
   },
+  "projectAssistant": {
+    "title": "プロジェクト作成アシスタント",
+    "heading": "新しいプロジェクトを下書き",
+    "description": "作成前に、目的・範囲・マイルストーンを整理します。",
+    "hide": "アシスタントを隠す",
+    "show": "アシスタントを表示",
+    "promptPlaceholder": "Kotowari とプロジェクト案を作成…",
+    "outlineScope": "作業範囲を整理",
+    "research": "関連するイシューを調査",
+    "planTimeline": "タイムラインを計画",
+    "suggestMilestones": "マイルストーンを提案",
+    "prompt": {
+      "outlineScope": "新しいプロジェクトの目的、成果、対象外の範囲を含む作業範囲の案を作ってください。文章の提案だけを行い、ワークスペースのデータは作成・変更しないでください。",
+      "research": "新しいプロジェクトに関連しそうな既存のイシューやプロジェクトを調査し、ワークスペースを変更せずに候補を要約してください。",
+      "planTimeline": "新しいプロジェクトの段階的なタイムライン案を作ってください。下書きに留め、ワークスペースのデータは変更しないでください。",
+      "suggestMilestones": "新しいプロジェクトのマイルストーン名と成果を少数提案してください。案の作成だけを行い、ワークスペースのデータは変更しないでください。"
+    }
+  },
   "projectDependencies": {
     "heading": "依存関係",
     "addFromCreate": "依存関係を追加",
@@ -1319,6 +1337,7 @@
     "requestDetails": "リクエストの詳細",
     "message": "メッセージ",
     "messageToAi": "AI へのメッセージ",
+    "quickPrompts": "クイックプロンプト",
     "enterToInsertLine": "Enter で改行 ·",
     "toSend": "で送信",
     "send": "送信",

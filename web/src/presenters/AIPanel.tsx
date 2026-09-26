@@ -31,11 +31,17 @@ export function usePanelPresenter({
   id,
   standalone = false,
   onPromptSubmitted,
+  starterPrompts = [],
+  promptPlaceholder,
+  hidePromptLabel = false,
 }: {
   kind: string;
   id: string;
   standalone?: boolean;
   onPromptSubmitted?: (prompt: string) => void;
+  starterPrompts?: { label: string; prompt: string }[];
+  promptPlaceholder?: string;
+  hidePromptLabel?: boolean;
 }) {
   const [open, setOpen] = useState(standalone);
   const [state, setState] = useState<State | null>(null);
@@ -120,6 +126,9 @@ export function usePanelPresenter({
     error,
     sending,
     messages,
+    starterPrompts,
+    promptPlaceholder,
+    hidePromptLabel,
     handlers: {
       onClick0: () => setOpen(!open),
       onClick1: (a: { id: string; name: string }) => action({ action: 'authenticate', auth: a.id }),
@@ -143,6 +152,7 @@ export function usePanelPresenter({
         if (window.confirm(i18n.t('ui.startNewConversationConfirmation')))
           return action({ action: 'reset' });
       },
+      onClick7: (suggestion: string) => setPrompt(suggestion),
     },
   };
 }

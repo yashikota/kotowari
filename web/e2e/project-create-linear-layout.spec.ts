@@ -17,24 +17,36 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
 
   const name = dialog.getByRole('textbox', { name: 'Project name' });
   const template = dialog.getByRole('combobox', { name: 'Project template' });
+  const icon = dialog.getByRole('button', { name: 'Choose project icon' });
   const summary = dialog.getByRole('textbox', { name: 'Summary' });
   const status = dialog.getByRole('combobox', { name: 'Status' });
+  const startDate = dialog.getByRole('button', { name: 'Change Start date' });
+  const targetDate = dialog.getByRole('button', { name: 'Change Target date' });
+  const labels = dialog.getByRole('combobox', { name: 'Project labels' });
   const addDependencies = dialog.getByRole('button', { name: 'Add dependencies' });
   const description = dialog.getByRole('textbox', { name: 'Description' });
   const milestones = dialog.getByText('Milestones', { exact: true });
   const [
     nameBounds,
     templateBounds,
+    iconBounds,
     summaryBounds,
     statusBounds,
+    startDateBounds,
+    targetDateBounds,
+    labelsBounds,
     dependenciesBounds,
     descriptionBounds,
     milestonesBounds,
   ] = await Promise.all([
     name.boundingBox(),
     template.boundingBox(),
+    icon.boundingBox(),
     summary.boundingBox(),
     status.boundingBox(),
+    startDate.boundingBox(),
+    targetDate.boundingBox(),
+    labels.boundingBox(),
     addDependencies.boundingBox(),
     description.boundingBox(),
     milestones.boundingBox(),
@@ -42,17 +54,23 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
 
   expect(nameBounds).not.toBeNull();
   expect(templateBounds).not.toBeNull();
+  expect(iconBounds).not.toBeNull();
   expect(summaryBounds).not.toBeNull();
   expect(statusBounds).not.toBeNull();
+  expect(startDateBounds).not.toBeNull();
+  expect(targetDateBounds).not.toBeNull();
+  expect(labelsBounds).not.toBeNull();
   expect(dependenciesBounds).not.toBeNull();
   expect(descriptionBounds).not.toBeNull();
   expect(milestonesBounds).not.toBeNull();
-  expect(
-    Math.abs(nameBounds!.y + nameBounds!.height - (templateBounds!.y + templateBounds!.height)),
-  ).toBeLessThan(4);
+  expect(Math.abs(iconBounds!.y - templateBounds!.y)).toBeLessThanOrEqual(4);
+  expect(nameBounds!.y).toBeGreaterThan(iconBounds!.y);
   expect(nameBounds!.y).toBeLessThan(summaryBounds!.y);
   expect(summaryBounds!.y).toBeLessThan(statusBounds!.y);
-  // Property chips may wrap onto another line at this width, like Linear's.
+  expect(Math.abs(statusBounds!.y - startDateBounds!.y)).toBeLessThanOrEqual(4);
+  expect(Math.abs(statusBounds!.y - targetDateBounds!.y)).toBeLessThanOrEqual(4);
+  expect(Math.abs(labelsBounds!.y - dependenciesBounds!.y)).toBeLessThanOrEqual(8);
+  expect(labelsBounds!.y).toBeGreaterThan(statusBounds!.y);
   expect(dependenciesBounds!.y).toBeGreaterThanOrEqual(statusBounds!.y);
   expect(dependenciesBounds!.y).toBeLessThan(descriptionBounds!.y);
   expect(descriptionBounds!.height).toBeGreaterThan(240);
@@ -76,6 +94,7 @@ test('project creation wraps controls on a narrow viewport', async ({ page }) =>
   expect(bounds!.width).toBeLessThanOrEqual(390);
   await expect(dialog.getByRole('textbox', { name: 'Project name' })).toBeVisible();
   await expect(dialog.getByRole('combobox', { name: 'Project template' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Choose project icon' })).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Create project' })).toBeInViewport();
 
   const [nameBounds, templateBounds] = await Promise.all([
@@ -84,7 +103,7 @@ test('project creation wraps controls on a narrow viewport', async ({ page }) =>
   ]);
   expect(nameBounds).not.toBeNull();
   expect(templateBounds).not.toBeNull();
-  expect(templateBounds!.y).toBeGreaterThan(nameBounds!.y);
+  expect(templateBounds!.y).toBeLessThan(nameBounds!.y);
 
   const formFits = await dialog.getByRole('textbox', { name: 'Project name' }).evaluate((name) => {
     const form = name.closest('form');
@@ -120,7 +139,6 @@ test('project dates use a compact picker and can be cleared', async ({ page }) =
   await dialog.getByRole('button', { name: 'Change Target date' }).click();
   await expect(startDate).not.toHaveText('Start date');
 
-  await page.keyboard.press('Escape');
   await startDate.click();
   await datePopover.getByRole('button', { name: 'Clear date' }).click();
   await expect(startDate).toHaveText('Start date');

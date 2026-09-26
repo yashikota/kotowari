@@ -180,6 +180,8 @@ export function useProjectsPagePresenter() {
   const [dependencyDraftKind, setDependencyDraftKind] =
     useState<ProjectDependency['kind']>('blocks');
   const [createOpen, setCreateOpen] = useRootMachineFlag('project.create');
+  const [projectAssistantOpen, setProjectAssistantOpen] = useState(true);
+  const [projectAssistantId, setProjectAssistantId] = useState('');
   const projectViews = useProjectViews();
   const navigate = useNavigate({ from: '/projects' });
 
@@ -880,6 +882,8 @@ export function useProjectsPagePresenter() {
     availableDependencyProjects,
     projectNameBySlug: Object.fromEntries(projects.map((project) => [project.slug, project.name])),
     createOpen,
+    projectAssistantOpen,
+    projectAssistantId,
     handlers: {
       onOpenCreateProjectView: () =>
         navigate({
@@ -899,6 +903,8 @@ export function useProjectsPagePresenter() {
         return createProject(e);
       },
       onOpenCreateProject: () => {
+        setProjectAssistantOpen(true);
+        setProjectAssistantId(`project-draft-${crypto.randomUUID()}`);
         setSelectedProjectTemplate(null);
         setName('');
         setSummary('');
@@ -924,6 +930,7 @@ export function useProjectsPagePresenter() {
         setCreateOpen(true);
       },
       onCloseCreateProject: () => setCreateOpen(false),
+      onToggleProjectAssistant: () => setProjectAssistantOpen((current) => !current),
       onProjectTemplateChange: (value: string | null) => applyProjectTemplate(value),
       onDeleteProjectTemplate: deleteSelectedProjectTemplate,
       onToggleMilestones: () => setMilestonesExpanded((current) => !current),
