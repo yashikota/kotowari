@@ -1287,7 +1287,28 @@
   "projectDate": {
     "change": "Change {{field}}",
     "set": "Set {{field}}",
-    "clear": "Clear date"
+    "clear": "Clear date",
+    "try": "Try: May 2027, Q4, 2027/05/20",
+    "invalid": "Enter a date such as May 2027, Q4, or 2027/05/20.",
+    "precision": "Date precision",
+    "day": "Day",
+    "month": "Month",
+    "quarterTab": "Quarter",
+    "halfYear": "Half-year",
+    "year": "Year",
+    "period": {
+      "day": "month",
+      "month": "year",
+      "quarter": "year",
+      "half-year": "year",
+      "year": "decade"
+    },
+    "previous": "Previous {{period}}",
+    "next": "Next {{period}}",
+    "monthOfYear": "{{month}} {{year}}",
+    "quarterLabel": "Q{{number}}",
+    "firstHalf": "First half",
+    "secondHalf": "Second half"
   },
   "ui": {
     "aiAssistant": "AI assistant",

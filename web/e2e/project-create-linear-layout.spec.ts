@@ -117,9 +117,37 @@ test('project dates use a compact picker and can be cleared', async ({ page }) =
   await startDate.click();
   const datePopover = page.getByRole('dialog', { name: 'Change Start date' });
   await datePopover.getByRole('textbox', { name: 'Set Start date' }).fill('2026-09-26');
+  await datePopover.getByRole('textbox', { name: 'Set Start date' }).press('Enter');
   await expect(startDate).not.toHaveText('Start date');
 
   await startDate.click();
   await datePopover.getByRole('button', { name: 'Clear date' }).click();
   await expect(startDate).toHaveText('Start date');
+});
+
+test('project dates support Linear-style precision tabs and natural-language periods', async ({
+  page,
+}) => {
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+
+  const dialog = page.getByRole('dialog', { name: 'New project' });
+  const startDate = dialog.getByRole('button', { name: 'Change Start date' });
+  await startDate.click();
+  const datePopover = page.getByRole('dialog', { name: 'Change Start date' });
+  const tabRows: number[] = [];
+  for (const tab of ['Day', 'Month', 'Quarter', 'Half-year', 'Year']) {
+    const control = datePopover.getByRole('tab', { name: tab, exact: true });
+    await control.click();
+    await expect(control).toHaveAttribute('aria-selected', 'true');
+    const bounds = await control.boundingBox();
+    expect(bounds).not.toBeNull();
+    tabRows.push(bounds!.y);
+  }
+  expect(Math.max(...tabRows) - Math.min(...tabRows)).toBeLessThan(2);
+
+  const dateInput = datePopover.getByRole('textbox', { name: 'Set Start date' });
+  await dateInput.fill('Q4 2027');
+  await dateInput.press('Enter');
+  await expect(startDate).toHaveText('Oct 1');
 });

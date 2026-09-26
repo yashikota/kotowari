@@ -1284,7 +1284,28 @@
   "projectDate": {
     "change": "{{field}}を変更",
     "set": "{{field}}を設定",
-    "clear": "日付をクリア"
+    "clear": "日付をクリア",
+    "try": "例: 2027年5月, Q4, 2027/05/20",
+    "invalid": "2027年5月、Q4、2027/05/20 のような日付を入力してください。",
+    "precision": "日付の単位",
+    "day": "日",
+    "month": "月",
+    "quarterTab": "四半期",
+    "halfYear": "半期",
+    "year": "年",
+    "period": {
+      "day": "月",
+      "month": "年",
+      "quarter": "年",
+      "half-year": "年",
+      "year": "10年"
+    },
+    "previous": "前の{{period}}",
+    "next": "次の{{period}}",
+    "monthOfYear": "{{year}}年{{month}}",
+    "quarterLabel": "第{{number}}四半期",
+    "firstHalf": "上半期",
+    "secondHalf": "下半期"
   },
   "ui": {
     "aiAssistant": "AI アシスタント",
