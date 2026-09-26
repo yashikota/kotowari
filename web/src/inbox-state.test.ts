@@ -3,6 +3,7 @@ import {
   DEFAULT_INBOX_STATE,
   inboxSnoozeUntil,
   parseInboxState,
+  sortInboxActivities,
   serializeInboxState,
 } from './inbox-state.ts';
 
@@ -24,6 +25,9 @@ describe('personal inbox state', () => {
         snoozedUntil: { 8: 1_800_000_000_000, 0: 1_800_000_000_000, bad: 'later' },
         density: 'compact',
         groupByDate: false,
+        showSnoozed: true,
+        showUnreadFirst: true,
+        ordering: 'oldest',
       }),
     );
     expect(parsed).toEqual({
@@ -32,6 +36,9 @@ describe('personal inbox state', () => {
       snoozedUntil: { 8: 1_800_000_000_000 },
       density: 'compact',
       groupByDate: false,
+      showSnoozed: true,
+      showUnreadFirst: true,
+      ordering: 'oldest',
     });
     expect(parseInboxState(serializeInboxState(parsed))).toEqual(parsed);
   });
@@ -45,5 +52,27 @@ describe('personal inbox state', () => {
     expect(inboxSnoozeUntil('later-today', new Date(2026, 8, 28, 18).getTime())).toBe(
       new Date(2026, 8, 29, 9).getTime(),
     );
+  });
+
+  it('orders inbox activities by read state and then by creation time', () => {
+    const activities = [
+      { id: 1, createdAt: '2026-09-25T12:00:00Z' },
+      { id: 2, createdAt: '2026-09-26T12:00:00Z' },
+      { id: 3, createdAt: '2026-09-26T12:00:00Z' },
+    ];
+    const defaults = { readIds: [], showUnreadFirst: false };
+    expect(
+      sortInboxActivities(activities, { ...defaults, ordering: 'newest' }).map((item) => item.id),
+    ).toEqual([3, 2, 1]);
+    expect(
+      sortInboxActivities(activities, { ...defaults, ordering: 'oldest' }).map((item) => item.id),
+    ).toEqual([1, 2, 3]);
+    expect(
+      sortInboxActivities(activities, {
+        readIds: [3],
+        showUnreadFirst: true,
+        ordering: 'newest',
+      }).map((item) => item.id),
+    ).toEqual([2, 1, 3]);
   });
 });

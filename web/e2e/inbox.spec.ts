@@ -114,6 +114,60 @@ test('inbox bulk actions remove read notifications or clear the personal inbox',
   await expect(page).toHaveURL(/\/config$/);
 });
 
+test('inbox display options show unread first and persist ordering', async ({ page, request }) => {
+  const title = `Inbox ordering ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  const comment = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body: 'Newest activity in this inbox.' },
+  });
+  expect(comment.ok()).toBeTruthy();
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('kotowari.inbox.v1'));
+  await page.goto('/inbox');
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  const issueNotifications = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}`),
+  });
+  await expect(issueNotifications).toHaveCount(2);
+  await expect(issueNotifications.first()).toHaveAttribute('aria-label', /Added a note/);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Ordering' }).hover();
+  await page.getByRole('menuitem', { name: 'Oldest' }).click();
+  await expect(issueNotifications.first()).toHaveAttribute('aria-label', /Created/);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Ordering' }).hover();
+  await page.getByRole('menuitem', { name: 'Newest' }).click();
+  const newestActivity = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}\\. Added a note`),
+  });
+  await newestActivity.click();
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Show unread first' }).click();
+  await expect(issueNotifications.first()).toHaveAttribute('aria-label', /Created/);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = JSON.parse(localStorage.getItem('kotowari.inbox.v1') ?? '{}') as {
+          ordering?: string;
+          showUnreadFirst?: boolean;
+        };
+        return state;
+      }),
+    )
+    .toMatchObject({ ordering: 'newest', showUnreadFirst: true });
+
+  await page.reload();
+  await expect(issueNotifications.first()).toHaveAttribute('aria-label', /Created/);
+});
+
 test('H snoozes a focused notification and keeps it hidden after reload', async ({
   page,
   request,
@@ -163,4 +217,8 @@ test('H snoozes a focused notification and keeps it hidden after reload', async 
       .getByRole('region', { name: 'Notifications' })
       .getByRole('button', { name: new RegExp(`${issue.identifier}: ${title}`) }),
   ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('menuitem', { name: 'Show snoozed' }).click();
+  await expect(notification).toBeVisible();
+  await expect(notification.getByText('Snoozed')).toBeVisible();
 });

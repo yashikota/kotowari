@@ -8,6 +8,7 @@ import {
   inboxSnoozeUntil,
   INBOX_STATE_KEY,
   parseInboxState,
+  sortInboxActivities,
   serializeInboxState,
   type InboxSnoozePreset,
   type InboxState,
@@ -54,12 +55,15 @@ export function useInboxPresenter() {
 
   const visibleActivities = useMemo(
     () =>
-      activities.filter(
-        (activity) =>
-          !inboxState.archivedIds.includes(activity.id) &&
-          !(inboxState.snoozedUntil[activity.id] > Date.now()) &&
-          (!onlyUnread || !inboxState.readIds.includes(activity.id)) &&
-          actionMatchesFilter(activity.action, filter),
+      sortInboxActivities(
+        activities.filter(
+          (activity) =>
+            !inboxState.archivedIds.includes(activity.id) &&
+            (inboxState.showSnoozed || !(inboxState.snoozedUntil[activity.id] > Date.now())) &&
+            (!onlyUnread || !inboxState.readIds.includes(activity.id)) &&
+            actionMatchesFilter(activity.action, filter),
+        ),
+        inboxState,
       ),
     [
       activities,
@@ -67,6 +71,9 @@ export function useInboxPresenter() {
       inboxState.archivedIds,
       inboxState.readIds,
       inboxState.snoozedUntil,
+      inboxState.showSnoozed,
+      inboxState.showUnreadFirst,
+      inboxState.ordering,
       onlyUnread,
     ],
   );
@@ -168,6 +175,12 @@ export function useInboxPresenter() {
     onSetFilter: (value: InboxFilter) => setFilter(value),
     onSetDensity: (density: InboxState['density']) =>
       updateInboxState((current) => ({ ...current, density })),
+    onToggleShowSnoozed: () =>
+      updateInboxState((current) => ({ ...current, showSnoozed: !current.showSnoozed })),
+    onToggleShowUnreadFirst: () =>
+      updateInboxState((current) => ({ ...current, showUnreadFirst: !current.showUnreadFirst })),
+    onSetOrdering: (ordering: InboxState['ordering']) =>
+      updateInboxState((current) => ({ ...current, ordering })),
     onToggleGrouping: () =>
       updateInboxState((current) => ({ ...current, groupByDate: !current.groupByDate })),
     onMarkSelectedRead: () => {
@@ -230,6 +243,7 @@ export function useInboxPresenter() {
     activities: visibleActivities.map((activity) => ({
       ...activity,
       isRead: inboxState.readIds.includes(activity.id),
+      snoozedUntil: inboxState.snoozedUntil[activity.id] ?? null,
     })),
     selectedActivity,
     selectedIsRead: selectedId === null || inboxState.readIds.includes(selectedId),
@@ -238,6 +252,9 @@ export function useInboxPresenter() {
     onlyUnread,
     filter,
     density: inboxState.density,
+    showSnoozed: inboxState.showSnoozed,
+    showUnreadFirst: inboxState.showUnreadFirst,
+    ordering: inboxState.ordering,
     groupByDate: inboxState.groupByDate,
     snoozeMenuOpen,
     unreadCount,

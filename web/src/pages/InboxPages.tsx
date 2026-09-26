@@ -218,6 +218,38 @@ function InboxPageView({ model }: { model: InboxModel }) {
               >
                 {t('inbox.groupByDate')}
               </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                rightSection={model.showSnoozed ? <IconCheck size={14} /> : null}
+                onClick={model.handlers.onToggleShowSnoozed}
+              >
+                {t('inbox.showSnoozed')}
+              </Menu.Item>
+              <Menu.Item
+                rightSection={model.showUnreadFirst ? <IconCheck size={14} /> : null}
+                onClick={model.handlers.onToggleShowUnreadFirst}
+              >
+                {t('inbox.showUnreadFirst')}
+              </Menu.Item>
+              <Menu.Sub>
+                <Menu.Sub.Target>
+                  <Menu.Sub.Item>{t('inbox.ordering')}</Menu.Sub.Item>
+                </Menu.Sub.Target>
+                <Menu.Sub.Dropdown>
+                  <Menu.Item
+                    rightSection={model.ordering === 'newest' ? <IconCheck size={14} /> : null}
+                    onClick={() => model.handlers.onSetOrdering('newest')}
+                  >
+                    {t('inbox.newest')}
+                  </Menu.Item>
+                  <Menu.Item
+                    rightSection={model.ordering === 'oldest' ? <IconCheck size={14} /> : null}
+                    onClick={() => model.handlers.onSetOrdering('oldest')}
+                  >
+                    {t('inbox.oldest')}
+                  </Menu.Item>
+                </Menu.Sub.Dropdown>
+              </Menu.Sub>
             </Menu.Dropdown>
           </Menu>
         </Group>
@@ -262,6 +294,11 @@ function InboxPageView({ model }: { model: InboxModel }) {
                             </span>
                             <span className={styles.issueTitle}>{activity.title}</span>
                             <span className={styles.description}>{description}</span>
+                            {activity.snoozedUntil && activity.snoozedUntil > Date.now() ? (
+                              <Text size="xs" c="dimmed">
+                                {t('inbox.snoozed')}
+                              </Text>
+                            ) : null}
                           </span>
                           {!activity.isRead ? (
                             <span className={styles.unreadDot} aria-label={t('inbox.unread')} />

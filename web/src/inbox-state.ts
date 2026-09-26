@@ -4,6 +4,9 @@ export type InboxState = {
   snoozedUntil: Record<number, number>;
   density: 'comfortable' | 'compact';
   groupByDate: boolean;
+  showSnoozed: boolean;
+  showUnreadFirst: boolean;
+  ordering: 'newest' | 'oldest';
 };
 
 export const INBOX_STATE_KEY = 'kotowari.inbox.v1';
@@ -14,9 +17,33 @@ export const DEFAULT_INBOX_STATE: InboxState = {
   snoozedUntil: {},
   density: 'comfortable',
   groupByDate: true,
+  showSnoozed: false,
+  showUnreadFirst: false,
+  ordering: 'newest',
 };
 
 export type InboxSnoozePreset = 'one-hour' | 'later-today' | 'tomorrow' | 'next-week';
+
+export function sortInboxActivities<T extends { id: number; createdAt: string }>(
+  activities: T[],
+  options: Pick<InboxState, 'readIds' | 'showUnreadFirst' | 'ordering'>,
+): T[] {
+  const readIds = new Set(options.readIds);
+  return [...activities].sort((left, right) => {
+    if (options.showUnreadFirst) {
+      const readOrder = Number(readIds.has(left.id)) - Number(readIds.has(right.id));
+      if (readOrder !== 0) return readOrder;
+    }
+    const timeOrder = left.createdAt.localeCompare(right.createdAt);
+    return options.ordering === 'newest'
+      ? timeOrder === 0
+        ? right.id - left.id
+        : -timeOrder
+      : timeOrder === 0
+        ? left.id - right.id
+        : timeOrder;
+  });
+}
 
 export function inboxSnoozeUntil(preset: InboxSnoozePreset, now = Date.now()): number {
   if (preset === 'one-hour') return now + 60 * 60 * 1000;
@@ -67,6 +94,15 @@ export function parseInboxState(value: string | null): InboxState {
         typeof parsed.groupByDate === 'boolean'
           ? parsed.groupByDate
           : DEFAULT_INBOX_STATE.groupByDate,
+      showSnoozed:
+        typeof parsed.showSnoozed === 'boolean'
+          ? parsed.showSnoozed
+          : DEFAULT_INBOX_STATE.showSnoozed,
+      showUnreadFirst:
+        typeof parsed.showUnreadFirst === 'boolean'
+          ? parsed.showUnreadFirst
+          : DEFAULT_INBOX_STATE.showUnreadFirst,
+      ordering: parsed.ordering === 'oldest' ? 'oldest' : DEFAULT_INBOX_STATE.ordering,
     };
   } catch {
     return { ...DEFAULT_INBOX_STATE };
@@ -80,5 +116,8 @@ export function serializeInboxState(value: InboxState): string {
     snoozedUntil: validSnoozes(value.snoozedUntil),
     density: value.density === 'compact' ? 'compact' : 'comfortable',
     groupByDate: value.groupByDate,
+    showSnoozed: value.showSnoozed,
+    showUnreadFirst: value.showUnreadFirst,
+    ordering: value.ordering,
   });
 }
