@@ -312,6 +312,10 @@ test('create issue, comment, and page', async ({ page, request }) => {
     name: 'Collapse progress section',
   });
   await collapseProgress.click();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('kotowari.cycle-progress-open.v1')))
+    .toBe('false');
+  await page.reload();
   const expandProgress = cycleProgress.getByRole('button', {
     name: 'Expand progress section',
   });
@@ -324,6 +328,9 @@ test('create issue, comment, and page', async ({ page, request }) => {
   });
   await expect(expandedProgress).toHaveAttribute('aria-expanded', 'true');
   await expect(cycleProgressChart).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('kotowari.cycle-progress-open.v1')))
+    .toBe('true');
 
   await page.goto(`/issues/${identifier}`);
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');

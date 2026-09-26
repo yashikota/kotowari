@@ -55,6 +55,26 @@ import {
   projectWorkflowStatusLabel,
 } from '../project-workflow.tsx';
 
+const CYCLE_PROGRESS_OPEN_KEY = 'kotowari.cycle-progress-open.v1';
+
+function readCycleProgressOpen(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    return window.localStorage.getItem(CYCLE_PROGRESS_OPEN_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+function writeCycleProgressOpen(open: boolean) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(CYCLE_PROGRESS_OPEN_KEY, String(open));
+  } catch {
+    // Keep the view usable when browser storage is unavailable.
+  }
+}
+
 const DAY_MS = 86_400_000;
 
 type ProjectMilestoneDraft = { name: string; description: string; targetDate: string };
@@ -1515,7 +1535,7 @@ export function useCycleDetailPagePresenter() {
   );
   const [cycle, setCycle] = useState(data.cycle);
   const [cycleDetailsOpen, setCycleDetailsOpen] = useState(true);
-  const [cycleProgressOpen, setCycleProgressOpen] = useState(true);
+  const [cycleProgressOpen, setCycleProgressOpen] = useState(readCycleProgressOpen);
   const googleCalendarURL = cycleGoogleCalendarURL(cycle, cycleURL(cycle.number));
   const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
   const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
@@ -1774,7 +1794,12 @@ export function useCycleDetailPagePresenter() {
       ) => save({ status: e.target.value }),
       onClick1: () => sendIntent('issue.create', { cycleId: cycle.id }),
       onToggleCycleDetails: () => setCycleDetailsOpen((open) => !open),
-      onToggleCycleProgress: () => setCycleProgressOpen((open) => !open),
+      onToggleCycleProgress: () =>
+        setCycleProgressOpen((open) => {
+          const next = !open;
+          writeCycleProgressOpen(next);
+          return next;
+        }),
       onFilterChange: (next: IssueSearch) =>
         navigate({
           to: '/cycles/$number',
