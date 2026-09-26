@@ -973,12 +973,8 @@ export function useProjectsPagePresenter() {
       New_project_priority_onChange: (value: string | null) =>
         value !== null && setPriority(Number(value)),
       New_project_lead_onChange: (value: string | null) => setLead(value === 'self' ? 'self' : ''),
-      New_project_start_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setStartDate(e.target.value),
-      New_project_target_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setTargetDate(e.target.value),
+      onProjectStartDateChange: (value: string) => setStartDate(value),
+      onProjectTargetDateChange: (value: string) => setTargetDate(value),
       New_project_labels_onChange: (value: string[]) => setSelectedLabels(value),
     },
   };

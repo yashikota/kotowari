@@ -18,6 +18,7 @@ import {
   ProjectCreateDependencyQuickAdd,
   ProjectCreateDependencySummary,
 } from './ProjectCreateDependencies.tsx';
+import { ProjectDateProperty } from './ProjectDateProperty.tsx';
 import { ProjectIconPicker } from './ProjectIcon.tsx';
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
@@ -193,23 +194,15 @@ export function ProjectCreateDialog({
                 comboboxProps={{ withinPortal: false }}
                 data={[{ value: 'self', label: t('projectList.leadYou') }]}
               />
-              <TextInput
-                type="date"
-                aria-label={t('modal.projectStartDate')}
+              <ProjectDateProperty
+                label={t('modal.projectStartDate')}
                 value={startDate}
-                onChange={handlers.New_project_start_onChange}
-                size="xs"
-                style={{ width: 150 }}
-                styles={{ input: { borderRadius: 999 } }}
+                onChange={handlers.onProjectStartDateChange}
               />
-              <TextInput
-                type="date"
-                aria-label={t('modal.projectTargetDate')}
+              <ProjectDateProperty
+                label={t('modal.projectTargetDate')}
                 value={targetDate}
-                onChange={handlers.New_project_target_onChange}
-                size="xs"
-                style={{ width: 150 }}
-                styles={{ input: { borderRadius: 999 } }}
+                onChange={handlers.onProjectTargetDateChange}
               />
               <MultiSelect
                 aria-label={t('filters.projectLabels')}

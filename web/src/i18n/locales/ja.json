@@ -1281,6 +1281,11 @@
     "save": "保存",
     "saveFailed": "保存に失敗しました"
   },
+  "projectDate": {
+    "change": "{{field}}を変更",
+    "set": "{{field}}を設定",
+    "clear": "日付をクリア"
+  },
   "ui": {
     "aiAssistant": "AI アシスタント",
     "askAiAbout": "AI に質問：",

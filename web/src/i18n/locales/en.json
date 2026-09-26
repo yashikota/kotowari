@@ -1284,6 +1284,11 @@
     "save": "Save",
     "saveFailed": "save failed"
   },
+  "projectDate": {
+    "change": "Change {{field}}",
+    "set": "Set {{field}}",
+    "clear": "Clear date"
+  },
   "ui": {
     "aiAssistant": "AI assistant",
     "askAiAbout": "Ask AI about",

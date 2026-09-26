@@ -63,7 +63,9 @@ test('a project can be saved as a template and reused without stale dates', asyn
   await expect(createDialog.getByRole('combobox', { name: 'Priority' })).toHaveValue('High');
   await expect(createDialog.getByRole('combobox', { name: 'Lead' })).toHaveValue('You');
   await expect(createDialog.getByText('Beta')).toBeVisible();
-  await expect(createDialog.getByLabel('Target date')).toHaveValue('');
+  await expect(createDialog.getByRole('button', { name: 'Change Target date' })).toHaveText(
+    'Target date',
+  );
 
   const newName = `Created from template ${stamp}`;
   await createDialog.getByLabel('Project name').fill(newName);

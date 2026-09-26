@@ -256,8 +256,16 @@ test('create issue, comment, and page', async ({ page, request }) => {
   const projectLabels = projectDialog.getByRole('combobox', { name: 'Project labels' });
   await projectLabels.fill('Bug');
   await page.getByRole('option', { name: 'Bug', exact: true }).click();
-  await projectDialog.getByLabel('Start date').fill('2026-09-01');
-  await projectDialog.getByLabel('Target date').fill('2026-10-01');
+  await projectDialog.getByRole('button', { name: 'Change Start date' }).click();
+  await page
+    .getByRole('dialog', { name: 'Change Start date' })
+    .getByRole('textbox', { name: 'Set Start date' })
+    .fill('2026-09-01');
+  await projectDialog.getByRole('button', { name: 'Change Target date' }).click();
+  await page
+    .getByRole('dialog', { name: 'Change Target date' })
+    .getByRole('textbox', { name: 'Set Target date' })
+    .fill('2026-10-01');
   await projectDialog.getByRole('button', { name: 'Create project' }).click();
   await expect(page).toHaveURL(new RegExp(`/projects/${projectSlug}`));
   await expect(page.getByRole('heading', { name: projectName })).toBeVisible();

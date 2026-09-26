@@ -48,7 +48,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   ).toBeLessThan(4);
   expect(nameBounds!.y).toBeLessThan(summaryBounds!.y);
   expect(summaryBounds!.y).toBeLessThan(statusBounds!.y);
-  expect(statusBounds!.y).toBeLessThan(dependenciesBounds!.y);
+  expect(Math.abs(statusBounds!.y - dependenciesBounds!.y)).toBeLessThan(4);
   expect(dependenciesBounds!.y).toBeLessThan(descriptionBounds!.y);
   await expect(dialog.getByRole('heading', { name: 'Dependencies' })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Create project' })).toBeInViewport();
@@ -97,4 +97,20 @@ test('project creation uses Linear-sized side gutters on a desktop viewport', as
   expect(bounds!.x).toBeLessThanOrEqual(20);
   expect(bounds!.width).toBeGreaterThan(890);
   expect(bounds!.x + bounds!.width).toBeGreaterThanOrEqual(910);
+});
+
+test('project dates use a compact picker and can be cleared', async ({ page }) => {
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+
+  const dialog = page.getByRole('dialog', { name: 'New project' });
+  const startDate = dialog.getByRole('button', { name: 'Change Start date' });
+  await startDate.click();
+  const datePopover = page.getByRole('dialog', { name: 'Change Start date' });
+  await datePopover.getByRole('textbox', { name: 'Set Start date' }).fill('2026-09-26');
+  await expect(startDate).not.toHaveText('Start date');
+
+  await startDate.click();
+  await datePopover.getByRole('button', { name: 'Clear date' }).click();
+  await expect(startDate).toHaveText('Start date');
 });
