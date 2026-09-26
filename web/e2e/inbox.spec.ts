@@ -38,14 +38,14 @@ test('personal inbox reviews, filters, reads, and archives recent issue activity
   await unreadToggle.click();
   await expect(unreadToggle).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Notification type' }).hover();
   await page.getByRole('menuitem', { name: 'Comments' }).click();
   await expect(
     notifications.getByRole('button', { name: new RegExp(issue.identifier) }),
   ).toHaveCount(1);
 
   await unreadToggle.click();
-  await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('menuitem', { name: 'All activity' }).click();
+  await page.getByRole('button', { name: 'Remove filter: Notification type: Comments' }).click();
   await expect(
     notifications.getByRole('button', { name: new RegExp(issue.identifier) }),
   ).toHaveCount(2);
@@ -69,6 +69,61 @@ test('personal inbox reviews, filters, reads, and archives recent issue activity
   await expect(details).toBeVisible();
   await details.getByRole('button', { name: 'Back to inbox' }).click();
   await expect(notifications).toBeVisible();
+});
+
+test('inbox combines project, issue priority, and status filters', async ({ page, request }) => {
+  const stamp = Date.now();
+  const projectName = `Inbox filter project ${stamp}`;
+  const project = await request.post('/api/projects', {
+    data: { name: projectName, slug: `inbox-filter-${stamp}`, status: 'planned', description: '' },
+  });
+  expect(project.ok()).toBeTruthy();
+  const projectData = (await project.json()) as { id: number };
+  const title = `Inbox facets ${stamp}`;
+  const primaryResponse = await request.post('/api/issues', {
+    data: { title, status: 'in_progress', priority: 2, projectId: projectData.id },
+  });
+  expect(primaryResponse.ok()).toBeTruthy();
+  const primary = (await primaryResponse.json()) as { identifier: string };
+  const otherTitle = `Inbox other facets ${stamp}`;
+  const otherResponse = await request.post('/api/issues', {
+    data: { title: otherTitle, status: 'todo', priority: 4 },
+  });
+  expect(otherResponse.ok()).toBeTruthy();
+  const other = (await otherResponse.json()) as { identifier: string };
+
+  await page.goto('/inbox');
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  const primaryRows = notifications.getByRole('button', {
+    name: new RegExp(`${primary.identifier}: ${title}`),
+  });
+  const otherRows = notifications.getByRole('button', {
+    name: new RegExp(`${other.identifier}: ${otherTitle}`),
+  });
+  await expect(primaryRows).toHaveCount(1);
+  await expect(otherRows).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Project' }).hover();
+  await page.getByRole('menuitem', { name: projectName, exact: true }).click();
+  await expect(primaryRows).toHaveCount(1);
+  await expect(otherRows).toHaveCount(0);
+
+  await page.getByRole('menuitem', { name: 'Issue priority' }).hover();
+  await page.getByRole('menuitem', { name: 'High', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Issue status type' }).hover();
+  await page.getByRole('menuitem', { name: 'In Progress', exact: true }).click();
+  await expect(primaryRows).toHaveCount(1);
+  await expect(otherRows).toHaveCount(0);
+
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Remove filter: Project: ' + projectName }).click();
+  await expect(primaryRows).toHaveCount(1);
+  await expect(otherRows).toHaveCount(0);
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(primaryRows).toHaveCount(1);
+  await expect(otherRows).toHaveCount(1);
 });
 
 test('inbox bulk actions mark all as read and archive read activities', async ({

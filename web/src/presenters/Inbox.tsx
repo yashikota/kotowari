@@ -15,26 +15,19 @@ import {
   type InboxSnoozePreset,
   type InboxState,
 } from '../inbox-state.ts';
+import {
+  EMPTY_INBOX_FILTERS,
+  matchesInboxFilters,
+  toggleInboxFilterValue,
+  type InboxActivityFilter,
+  type InboxFilters,
+} from '../inbox-filter.ts';
 import { inboxShortcutFromKeyboard } from '../keymap.ts';
-import type { InboxActivity } from '../types.ts';
-
-export type InboxFilter = 'all' | 'changes' | 'comments' | 'reactions' | 'attachments';
+import type { InboxActivity, IssueStatus } from '../types.ts';
 
 function readInboxState(): InboxState {
   if (typeof window === 'undefined') return { ...DEFAULT_INBOX_STATE };
   return parseInboxState(window.localStorage.getItem(INBOX_STATE_KEY));
-}
-
-function actionMatchesFilter(action: string, filter: InboxFilter): boolean {
-  if (filter === 'all') return true;
-  if (filter === 'comments') return action.startsWith('comment') || action === 'commented';
-  if (filter === 'reactions') return action.includes('reaction');
-  if (filter === 'attachments') return action.startsWith('attachment_');
-  return (
-    !action.startsWith('comment') &&
-    !action.includes('reaction') &&
-    !action.startsWith('attachment_')
-  );
 }
 
 export function useInboxPresenter() {
@@ -43,10 +36,15 @@ export function useInboxPresenter() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [focusUnreadCollapsed, setFocusUnreadCollapsed] = useState(false);
   const [onlyUnread, setOnlyUnread] = useState(false);
-  const [filter, setFilter] = useState<InboxFilter>('all');
+  const [filters, setFilters] = useState<InboxFilters>(() => ({
+    activityTypes: [],
+    projectIds: [],
+    priorities: [],
+    statuses: [],
+  }));
   const [commentPreview, setCommentPreview] = useState('');
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   function updateInboxState(update: (current: InboxState) => InboxState) {
     setInboxState((current) => {
@@ -64,13 +62,13 @@ export function useInboxPresenter() {
             !inboxState.archivedIds.includes(activity.id) &&
             (inboxState.showSnoozed || !(inboxState.snoozedUntil[activity.id] > Date.now())) &&
             (!onlyUnread || !inboxState.readIds.includes(activity.id)) &&
-            actionMatchesFilter(activity.action, filter),
+            matchesInboxFilters(activity, filters),
         ),
         inboxState,
       ),
     [
       activities,
-      filter,
+      filters,
       inboxState.archivedIds,
       inboxState.readIds,
       inboxState.snoozedUntil,
@@ -80,6 +78,16 @@ export function useInboxPresenter() {
       onlyUnread,
     ],
   );
+  const projectOptions = useMemo(() => {
+    const names = new Map<number | null, string>();
+    for (const activity of activities) {
+      if (activity.projectId === null) names.set(null, t('issueProperties.noProject'));
+      else if (activity.projectName) names.set(activity.projectId, activity.projectName);
+    }
+    return [...names]
+      .map(([id, name]) => ({ id, name }))
+      .sort((left, right) => left.name.localeCompare(right.name, i18n.language));
+  }, [activities, i18n.language, t]);
   const priorityActivities = useMemo(
     () => splitPriorityInboxActivities(filteredActivities, inboxState.priorityTypes),
     [filteredActivities, inboxState.priorityTypes],
@@ -193,7 +201,27 @@ export function useInboxPresenter() {
     },
     onCloseSelected: () => setSelectedId(null),
     onToggleUnread: () => setOnlyUnread((current) => !current),
-    onSetFilter: (value: InboxFilter) => setFilter(value),
+    onToggleActivityFilter: (value: InboxActivityFilter) =>
+      setFilters((current) => ({
+        ...current,
+        activityTypes: toggleInboxFilterValue(current.activityTypes, value),
+      })),
+    onToggleProjectFilter: (value: number | null) =>
+      setFilters((current) => ({
+        ...current,
+        projectIds: toggleInboxFilterValue(current.projectIds, value),
+      })),
+    onTogglePriorityFilter: (value: number) =>
+      setFilters((current) => ({
+        ...current,
+        priorities: toggleInboxFilterValue(current.priorities, value),
+      })),
+    onToggleStatusFilter: (value: IssueStatus) =>
+      setFilters((current) => ({
+        ...current,
+        statuses: toggleInboxFilterValue(current.statuses, value),
+      })),
+    onClearFilters: () => setFilters(EMPTY_INBOX_FILTERS),
     onSetDensity: (density: InboxState['density']) =>
       updateInboxState((current) => ({ ...current, density })),
     onToggleShowSnoozed: () =>
@@ -292,7 +320,8 @@ export function useInboxPresenter() {
     commentPreview,
     selectedId,
     onlyUnread,
-    filter,
+    filters,
+    projectOptions,
     density: inboxState.density,
     showSnoozed: inboxState.showSnoozed,
     showUnreadFirst: inboxState.showUnreadFirst,

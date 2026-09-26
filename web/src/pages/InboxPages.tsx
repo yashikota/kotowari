@@ -24,14 +24,14 @@ import {
   IconMessage,
   IconPaperclip,
   IconAdjustments,
-  IconFilter,
 } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope } from '../application/Root.tsx';
 import { formatActivity } from '../activity.ts';
+import { InboxFilterChips, InboxFilterMenu } from '../components/InboxFilterControls.tsx';
 import { EmptyState, Shortcut } from '../mantine-ui.tsx';
-import { useInboxPresenter, type InboxFilter } from '../presenters/Inbox.tsx';
+import { useInboxPresenter } from '../presenters/Inbox.tsx';
 import type { InboxActivity } from '../types.ts';
 import { INBOX_PRIORITY_TYPES, type InboxPriorityType } from '../inbox-state.ts';
 import styles from './InboxPages.module.css';
@@ -105,13 +105,6 @@ function InboxPageView({ model }: { model: InboxModel }) {
     ];
   }, [model.activities, model.groupByDate, model.unreadGrouping]);
 
-  const filterLabels: Record<InboxFilter, string> = {
-    all: t('inbox.filterAll'),
-    changes: t('inbox.filterChanges'),
-    comments: t('inbox.filterComments'),
-    reactions: t('inbox.filterReactions'),
-    attachments: t('inbox.filterAttachments'),
-  };
   const priorityTypeLabels: Record<InboxPriorityType, string> = {
     assignedToYou: t('inbox.priorityAssignedToYou'),
     documentActivity: t('inbox.priorityDocumentActivity'),
@@ -125,8 +118,8 @@ function InboxPageView({ model }: { model: InboxModel }) {
     updateReminders: t('inbox.priorityUpdateReminders'),
   };
   const selected = model.selectedActivity;
-  const emptyMessage =
-    model.onlyUnread || model.filter !== 'all' ? t('inbox.emptyFiltered') : t('inbox.empty');
+  const hasFilters = Object.values(model.filters).some((values) => values.length > 0);
+  const emptyMessage = model.onlyUnread || hasFilters ? t('inbox.emptyFiltered') : t('inbox.empty');
 
   return (
     <Stack gap={0} className={styles.root}>
@@ -185,31 +178,11 @@ function InboxPageView({ model }: { model: InboxModel }) {
               </Text>
             ) : null}
           </Button>
-          <Menu position="bottom-end" withinPortal>
-            <Menu.Target>
-              <Button
-                type="button"
-                variant="subtle"
-                color="gray"
-                size="compact-sm"
-                leftSection={<IconFilter size={14} />}
-                aria-label={t('inbox.addFilter')}
-              >
-                {filterLabels[model.filter]}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {(Object.keys(filterLabels) as InboxFilter[]).map((filter) => (
-                <Menu.Item
-                  key={filter}
-                  rightSection={model.filter === filter ? <IconCheck size={14} /> : null}
-                  onClick={() => model.handlers.onSetFilter(filter)}
-                >
-                  {filterLabels[filter]}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
+          <InboxFilterMenu
+            filters={model.filters}
+            projects={model.projectOptions}
+            handlers={model.handlers}
+          />
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
               <ActionIcon
@@ -390,6 +363,11 @@ function InboxPageView({ model }: { model: InboxModel }) {
         </Group>
       </Group>
 
+      <InboxFilterChips
+        filters={model.filters}
+        projects={model.projectOptions}
+        handlers={model.handlers}
+      />
       {model.priorityInboxEnabled ? (
         <Group
           component="nav"

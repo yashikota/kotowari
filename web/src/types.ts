@@ -322,6 +322,10 @@ export type Activity = {
 export type InboxActivity = Activity & {
   identifier: string;
   title: string;
+  status: IssueStatus | null;
+  priority: number | null;
+  projectId: number | null;
+  projectName: string | null;
 };
 
 export type Workspace = {
