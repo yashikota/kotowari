@@ -15,6 +15,7 @@ export type DefaultHome =
   | 'home'
   | 'inbox'
   | 'myIssues'
+  | 'activeIssues'
   | 'issues'
   | 'currentCycle'
   | 'projects'
@@ -108,6 +109,7 @@ const DEFAULT_HOMES: DefaultHome[] = [
   'home',
   'inbox',
   'myIssues',
+  'activeIssues',
   'issues',
   'currentCycle',
   'projects',
@@ -245,6 +247,8 @@ export function defaultHomeHref(home: DefaultHome): string {
       return '/inbox';
     case 'myIssues':
       return '/issues?assignee=self';
+    case 'activeIssues':
+      return '/issues?view=active';
     case 'issues':
       return '/issues';
     case 'currentCycle':

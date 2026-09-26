@@ -100,6 +100,13 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ archived: 'yes' })).toEqual({});
   });
 
+  it('parses the active, backlog, and all issue-list tabs from the URL', () => {
+    expect(parseIssueSearch({ view: 'active' })).toEqual({ view: 'active' });
+    expect(parseIssueSearch({ view: 'backlog' })).toEqual({ view: 'backlog' });
+    expect(parseIssueSearch({ view: 'all' })).toEqual({ view: 'all' });
+    expect(parseIssueSearch({ view: 'archived' })).toEqual({});
+  });
+
   it('accepts numeric cycle and priority zero', () => {
     expect(parseIssueSearch({ cycle: 3, priority: 0 })).toEqual({ cycle: 3, priority: 0 });
   });

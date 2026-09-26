@@ -125,6 +125,7 @@ export function ConfigPageView({
                       { value: 'home', label: t('config.home.home') },
                       { value: 'inbox', label: t('config.home.inbox') },
                       { value: 'myIssues', label: t('config.home.myIssues') },
+                      { value: 'activeIssues', label: t('config.home.activeIssues') },
                       { value: 'issues', label: t('config.home.issues') },
                       { value: 'currentCycle', label: t('config.home.currentCycle') },
                       { value: 'projects', label: t('config.home.projects') },

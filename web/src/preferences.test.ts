@@ -80,6 +80,7 @@ describe('personal preferences', () => {
     expect(defaultHomeHref('home')).toBe('/');
     expect(defaultHomeHref('inbox')).toBe('/inbox');
     expect(defaultHomeHref('myIssues')).toBe('/issues?assignee=self');
+    expect(defaultHomeHref('activeIssues')).toBe('/issues?view=active');
     expect(defaultHomeHref('agent')).toBe('/agent');
     expect(defaultHomeHref('issues')).toBe('/issues');
     expect(defaultHomeHref('currentCycle')).toBe('/cycles?scope=current');

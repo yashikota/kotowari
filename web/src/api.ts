@@ -504,6 +504,7 @@ export function issuesQuery(filter: {
 
 export type IssueSearch = {
   archived?: boolean;
+  view?: 'active' | 'backlog' | 'all';
   assignee?: 'self' | 'agent' | 'none';
   status?: string;
   project?: string;
@@ -551,6 +552,9 @@ function localDateValue(date: Date): string {
 export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   const out: IssueSearch = {};
   if (raw.archived === true || raw.archived === 'true') out.archived = true;
+  if (raw.view === 'active' || raw.view === 'backlog' || raw.view === 'all') {
+    out.view = raw.view;
+  }
   if (raw.assignee === 'self' || raw.assignee === 'agent' || raw.assignee === 'none') {
     out.assignee = raw.assignee;
   }

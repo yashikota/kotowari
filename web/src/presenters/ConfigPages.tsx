@@ -161,6 +161,7 @@ export function useConfigPagePresenter() {
           value === 'home' ||
           value === 'inbox' ||
           value === 'myIssues' ||
+          value === 'activeIssues' ||
           value === 'issues' ||
           value === 'currentCycle' ||
           value === 'projects' ||

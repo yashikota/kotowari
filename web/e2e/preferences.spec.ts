@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expandMoreNavigation } from './issue-list-controls.ts';
+import { expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
 async function choose(page: import('@playwright/test').Page, label: string, option: string) {
   await page.getByRole('combobox', { name: label }).click();
@@ -222,7 +222,62 @@ test('default home view supports Linear inbox, My issues, and current cycle dest
   await expect(page.getByRole('heading', { name: 'Issues' })).toBeVisible();
 
   await page.goto('/config');
+  await choose(page, 'Default home view', 'Active issues');
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/issues\?view=active$/);
+  await expect(page.getByRole('tab', { name: 'Active', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+
+  await page.goto('/config');
   await choose(page, 'Default home view', 'Current cycle');
   await page.goto('/');
   await expect(page).toHaveURL(/\/cycles\?scope=current$/);
+});
+
+test('issue list tabs are addressable and retain their Linear-style status scopes', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const fixtures = [
+    { title: `Active view todo ${stamp}`, status: 'todo' },
+    { title: `Active view started ${stamp}`, status: 'in_progress' },
+    { title: `Backlog view ${stamp}`, status: 'backlog' },
+  ];
+  for (const fixture of fixtures) {
+    const response = await request.post('/api/issues', { data: fixture });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  const issueTitle = (title: string) => page.getByText(title, { exact: true });
+  await page.goto('/issues?view=active');
+  const activeTab = page.getByRole('tab', { name: 'Active', exact: true });
+  await expect(activeTab).toHaveAttribute('aria-selected', 'true');
+  await fillIssueSearch(page, fixtures[0]!.title);
+  await expect(issueTitle(fixtures[0]!.title)).toBeVisible();
+  await fillIssueSearch(page, fixtures[1]!.title);
+  await expect(issueTitle(fixtures[1]!.title)).toBeVisible();
+  await fillIssueSearch(page, fixtures[2]!.title);
+  await expect(issueTitle(fixtures[2]!.title)).toHaveCount(0);
+  await fillIssueSearch(page, '');
+
+  await page.reload();
+  await expect(activeTab).toHaveAttribute('aria-selected', 'true');
+
+  await page.getByRole('tab', { name: 'Backlog', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\?view=backlog$/);
+  await fillIssueSearch(page, fixtures[2]!.title);
+  await expect(issueTitle(fixtures[2]!.title)).toBeVisible();
+  await fillIssueSearch(page, fixtures[0]!.title);
+  await expect(issueTitle(fixtures[0]!.title)).toHaveCount(0);
+  await fillIssueSearch(page, '');
+
+  await page.getByRole('tab', { name: 'All issues', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\?view=all$/);
+  for (const fixture of fixtures) {
+    await fillIssueSearch(page, fixture.title);
+    await expect(issueTitle(fixture.title)).toBeVisible();
+  }
 });

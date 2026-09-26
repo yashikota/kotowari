@@ -41,6 +41,7 @@ type IssueListData = {
 function compactSearch(next: IssueSearch): IssueSearch {
   return parseIssueSearch({
     archived: next.archived,
+    view: next.view ?? '',
     assignee: next.assignee ?? '',
     status: next.status ?? '',
     project: next.project ?? '',
@@ -81,7 +82,6 @@ export function useIssuesPagePresenter() {
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const { preferences } = usePersonalPreferences();
   const [find, setFind] = useState(locationState.issueListFind ?? '');
-  const [view, setView] = useState<'active' | 'backlog' | 'all'>('all');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
   const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
@@ -102,7 +102,9 @@ export function useIssuesPagePresenter() {
     locationState.issueListSelectedId ?? null,
   );
   const restoreScrollTop = locationState.issueListScrollTop ?? 0;
-  const activeView: 'active' | 'backlog' | 'all' | 'archived' = search.archived ? 'archived' : view;
+  const activeView: 'active' | 'backlog' | 'all' | 'archived' = search.archived
+    ? 'archived'
+    : (search.view ?? 'all');
 
   useKeyboard((event) => {
     if (
@@ -215,13 +217,10 @@ export function useIssuesPagePresenter() {
           return navigate({ to: '/issues', search: compactSearch({ ...search, archived: true }) });
         }
         if (next === 'active' || next === 'backlog' || next === 'all') {
-          setView(next);
-          if (search.archived) {
-            return navigate({
-              to: '/issues',
-              search: compactSearch({ ...search, archived: false }),
-            });
-          }
+          return navigate({
+            to: '/issues',
+            search: compactSearch({ ...search, archived: false, view: next }),
+          });
         }
       },
       onGroupBy5: (next: IssueGroupBy) => setGroupBy(next),
