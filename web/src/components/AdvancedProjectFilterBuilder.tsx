@@ -146,9 +146,15 @@ export function AdvancedProjectFilterBuilder({
             { value: 'template', label: t('projectList.filterTemplate') },
             { value: 'project', label: t('projectList.filterSpecificProject') },
             { value: 'title', label: t('projectList.filterTitleSummary') },
+            { value: 'createdDate', label: t('projectList.filterCreatedDate') },
+            { value: 'updatedDate', label: t('projectList.filterUpdatedDate') },
+            { value: 'startDate', label: t('projectList.orderStartDate') },
+            { value: 'targetDate', label: t('projectList.orderTargetDate') },
+            { value: 'completedDate', label: t('projectList.filterCompletedDate') },
           ];
           const valueChoices = child.field ? (choices[child.field] ?? []) : [];
           const rule = child as ProjectFilterCondition;
+          const isDateField = Boolean(child.field?.endsWith('Date'));
           const operators =
             child.field === 'title'
               ? [
@@ -160,104 +166,144 @@ export function AdvancedProjectFilterBuilder({
                   { value: 'isNot', label: t('projectList.filterIsNot') },
                 ];
           return (
-            <Group key={childPath.join('-')} gap={4} wrap="nowrap" align="center">
-              <Select
-                aria-label={fieldLabel}
-                placeholder={t('projectList.advancedChooseField')}
-                value={child.field ?? null}
-                onChange={(value) =>
-                  onChange(
-                    updateNodeAtPath(group, childPath, (node) =>
-                      node.kind === 'condition'
-                        ? {
-                            ...node,
-                            field: (value as ProjectFilterField | null) ?? undefined,
-                            operator: 'is',
-                            value: undefined,
-                          }
-                        : node,
-                    ),
-                  )
-                }
-                data={fieldChoices}
-                searchable
-                size="xs"
-                w={142}
-                comboboxProps={{ withinPortal: false }}
-              />
-              {child.field ? (
-                <>
-                  <Select
-                    aria-label={operatorLabel}
-                    value={rule.operator ?? operators[0]?.value ?? 'is'}
-                    onChange={(value) =>
-                      onChange(
-                        updateNodeAtPath(group, childPath, (node) =>
-                          node.kind === 'condition'
-                            ? {
-                                ...node,
-                                operator: (value as ProjectFilterCondition['operator']) ?? 'is',
-                              }
-                            : node,
-                        ),
-                      )
-                    }
-                    data={operators}
-                    size="xs"
-                    w={92}
-                    allowDeselect={false}
-                    comboboxProps={{ withinPortal: false }}
-                  />
-                  {child.field === 'title' ? (
-                    <TextInput
-                      aria-label={valueLabel}
-                      value={rule.value ?? ''}
-                      onChange={(event) =>
-                        onChange(
-                          updateNodeAtPath(group, childPath, (node) =>
-                            node.kind === 'condition'
-                              ? { ...node, value: event.currentTarget.value }
-                              : node,
-                          ),
-                        )
-                      }
-                      size="xs"
-                      style={{ flex: 1 }}
-                    />
-                  ) : (
+            <Stack key={childPath.join('-')} gap={4}>
+              <Group gap={4} wrap="nowrap" align="center">
+                <Select
+                  aria-label={fieldLabel}
+                  placeholder={t('projectList.advancedChooseField')}
+                  value={child.field ?? null}
+                  onChange={(value) =>
+                    onChange(
+                      updateNodeAtPath(group, childPath, (node) =>
+                        node.kind === 'condition'
+                          ? {
+                              ...node,
+                              field: (value as ProjectFilterField | null) ?? undefined,
+                              operator: 'is',
+                              value: undefined,
+                              dateFrom: undefined,
+                              dateTo: undefined,
+                            }
+                          : node,
+                      ),
+                    )
+                  }
+                  data={fieldChoices}
+                  searchable
+                  size="xs"
+                  w={142}
+                  comboboxProps={{ withinPortal: false }}
+                />
+                {child.field ? (
+                  <>
                     <Select
-                      aria-label={valueLabel}
-                      value={rule.value ?? null}
+                      aria-label={operatorLabel}
+                      value={rule.operator ?? operators[0]?.value ?? 'is'}
                       onChange={(value) =>
                         onChange(
                           updateNodeAtPath(group, childPath, (node) =>
                             node.kind === 'condition'
-                              ? { ...node, value: value ?? undefined }
+                              ? {
+                                  ...node,
+                                  operator: (value as ProjectFilterCondition['operator']) ?? 'is',
+                                }
                               : node,
                           ),
                         )
                       }
-                      data={valueChoices}
-                      searchable
+                      data={operators}
                       size="xs"
-                      style={{ flex: 1 }}
+                      w={92}
+                      allowDeselect={false}
                       comboboxProps={{ withinPortal: false }}
                     />
-                  )}
-                </>
+                    {child.field === 'title' ? (
+                      <TextInput
+                        aria-label={valueLabel}
+                        value={rule.value ?? ''}
+                        onChange={(event) =>
+                          onChange(
+                            updateNodeAtPath(group, childPath, (node) =>
+                              node.kind === 'condition'
+                                ? { ...node, value: event.currentTarget.value }
+                                : node,
+                            ),
+                          )
+                        }
+                        size="xs"
+                        style={{ flex: 1 }}
+                      />
+                    ) : (
+                      <Select
+                        aria-label={valueLabel}
+                        value={rule.value ?? null}
+                        onChange={(value) =>
+                          onChange(
+                            updateNodeAtPath(group, childPath, (node) =>
+                              node.kind === 'condition'
+                                ? { ...node, value: value ?? undefined }
+                                : node,
+                            ),
+                          )
+                        }
+                        data={valueChoices}
+                        searchable
+                        size="xs"
+                        style={{ flex: 1 }}
+                        comboboxProps={{ withinPortal: false }}
+                      />
+                    )}
+                  </>
+                ) : null}
+                <ActionIcon
+                  type="button"
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={t('projectList.removeAdvancedFilterRule')}
+                  title={t('projectList.removeAdvancedFilterRule')}
+                  onClick={() => onChange(removeNode(group, path, index))}
+                >
+                  <IconX size={14} aria-hidden="true" />
+                </ActionIcon>
+              </Group>
+              {isDateField && rule.value === 'custom' ? (
+                <Group gap={4} wrap="nowrap" pl={4}>
+                  <TextInput
+                    aria-label={t('projectList.dateFrom')}
+                    type="date"
+                    value={rule.dateFrom ?? ''}
+                    onChange={(event) =>
+                      onChange(
+                        updateNodeAtPath(group, childPath, (node) =>
+                          node.kind === 'condition'
+                            ? { ...node, dateFrom: event.currentTarget.value || undefined }
+                            : node,
+                        ),
+                      )
+                    }
+                    size="xs"
+                    style={{ flex: 1 }}
+                  />
+                  <TextInput
+                    aria-label={t('projectList.dateTo')}
+                    type="date"
+                    value={rule.dateTo ?? ''}
+                    onChange={(event) =>
+                      onChange(
+                        updateNodeAtPath(group, childPath, (node) =>
+                          node.kind === 'condition'
+                            ? { ...node, dateTo: event.currentTarget.value || undefined }
+                            : node,
+                        ),
+                      )
+                    }
+                    size="xs"
+                    style={{ flex: 1 }}
+                  />
+                </Group>
               ) : null}
-              <ActionIcon
-                type="button"
-                size="sm"
-                variant="subtle"
-                color="gray"
-                aria-label={t('projectList.removeAdvancedFilterRule')}
-                title={t('projectList.removeAdvancedFilterRule')}
-                onClick={() => onChange(removeNode(group, path, index))}
-              >
-                <IconX size={14} aria-hidden="true" />
-              </ActionIcon>
-            </Group>
+            </Stack>
           );
         })}
         <Group gap="xs" wrap="wrap">

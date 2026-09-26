@@ -196,6 +196,17 @@ export function ProjectFilterPicker({
     operator: model.filterOperator,
     children: [],
   };
+  const relativeDateChoices = [
+    { value: 'overdue', label: t('projectList.dateOverdue') },
+    { value: 'within:1d', label: t('projectList.dateWithin1Day') },
+    { value: 'within:3d', label: t('projectList.dateWithin3Days') },
+    { value: 'within:1w', label: t('projectList.dateWithin1Week') },
+    { value: 'within:1m', label: t('projectList.dateWithin1Month') },
+    { value: 'within:3m', label: t('projectList.dateWithin3Months') },
+    { value: 'within:6m', label: t('projectList.dateWithin6Months') },
+    { value: 'within:1y', label: t('projectList.dateWithin1Year') },
+    { value: 'custom', label: t('projectList.customDateTimeframe') },
+  ];
   const advancedFilterChoices = {
     status: projectStatuses.map((status) => ({
       value: status.id,
@@ -225,6 +236,17 @@ export function ProjectFilterPicker({
       ...model.availableTemplates,
     ],
     project: model.availableProjects ?? [],
+    createdDate: relativeDateChoices,
+    updatedDate: relativeDateChoices,
+    startDate: [...relativeDateChoices, { value: 'no-date', label: t('projectList.noStartDate') }],
+    targetDate: [
+      ...relativeDateChoices,
+      { value: 'no-date', label: t('projectList.noTargetDate') },
+    ],
+    completedDate: [
+      ...relativeDateChoices,
+      { value: 'no-date', label: t('projectList.noCompletedDate') },
+    ],
   };
 
   function openFilter(key: FilterKey) {

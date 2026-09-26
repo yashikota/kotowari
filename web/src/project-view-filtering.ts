@@ -1,6 +1,65 @@
 import type { Project } from './types.ts';
 import { matchesProjectTitleSummary } from './project-views.ts';
+import type { ProjectFilterCondition } from './project-views.ts';
 import type { ProjectViewSearch } from './project-views.ts';
+
+function localDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function dateAfterPeriod(today: Date, period: string): string | undefined {
+  const match = /^within:(\d+)([dmy])$/.exec(period);
+  if (!match) return undefined;
+  const amount = Number(match[1]);
+  const result = new Date(today);
+  if (match[2] === 'd') result.setDate(result.getDate() + amount);
+  if (match[2] === 'm') {
+    const day = result.getDate();
+    result.setDate(1);
+    result.setMonth(result.getMonth() + amount);
+    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+    result.setDate(Math.min(day, lastDay));
+  }
+  if (match[2] === 'y') result.setFullYear(result.getFullYear() + amount);
+  return localDateString(result);
+}
+
+function matchesDateValue(project: Project, field: ProjectFilterCondition): boolean {
+  const dateValue = (() => {
+    switch (field.field) {
+      case 'createdDate':
+        return project.createdAt;
+      case 'updatedDate':
+        return project.updatedAt;
+      case 'startDate':
+        return project.startDate;
+      case 'targetDate':
+        return project.targetDate;
+      case 'completedDate':
+        return project.completedAt;
+      default:
+        return undefined;
+    }
+  })();
+  const value = field.value;
+  if (!value) return true;
+  const date = dateValue?.slice(0, 10);
+  if (value === 'no-date') return !date;
+  if (!date) return false;
+  if (value === 'overdue') {
+    const now = new Date();
+    const today = localDateString(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+    return date < today;
+  }
+  if (value === 'custom') {
+    return (!field.dateFrom || date >= field.dateFrom) && (!field.dateTo || date <= field.dateTo);
+  }
+  const periodEnd = dateAfterPeriod(new Date(), value);
+  return periodEnd ? date <= periodEnd : false;
+}
 
 function matchesAdvancedFilterGroup(
   project: Project,
@@ -12,6 +71,19 @@ function matchesAdvancedFilterGroup(
     if (!child.field || !child.value) return true;
 
     const value = child.value;
+    const operator = child.operator ?? 'is';
+    if (
+      child.field === 'createdDate' ||
+      child.field === 'updatedDate' ||
+      child.field === 'startDate' ||
+      child.field === 'targetDate' ||
+      child.field === 'completedDate'
+    ) {
+      if (value === 'custom' && !child.dateFrom && !child.dateTo) return true;
+      const found = matchesDateValue(project, child);
+      return operator === 'isNot' ? !found : found;
+    }
+
     const values = (() => {
       switch (child.field) {
         case 'status':
@@ -36,10 +108,11 @@ function matchesAdvancedFilterGroup(
           return [project.slug];
         case 'title':
           return [`${project.name} ${project.summary ?? ''}`.toLocaleLowerCase()];
+        default:
+          return [];
       }
     })();
 
-    const operator = child.operator ?? 'is';
     const found =
       operator === 'contains' || operator === 'doesNotContain'
         ? values.some((candidate) =>

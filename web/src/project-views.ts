@@ -21,13 +21,20 @@ export type ProjectFilterField =
   | 'initiative'
   | 'template'
   | 'project'
-  | 'title';
+  | 'title'
+  | 'createdDate'
+  | 'updatedDate'
+  | 'startDate'
+  | 'targetDate'
+  | 'completedDate';
 
 export type ProjectFilterCondition = {
   kind: 'condition';
   field?: ProjectFilterField;
   operator?: 'is' | 'isNot' | 'contains' | 'doesNotContain';
   value?: string;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type ProjectFilterGroup = {
@@ -90,7 +97,16 @@ const PROJECT_FILTER_FIELDS = new Set<ProjectFilterField>([
   'template',
   'project',
   'title',
+  'createdDate',
+  'updatedDate',
+  'startDate',
+  'targetDate',
+  'completedDate',
 ]);
+
+function parseDateBound(value: unknown): string | undefined {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+}
 
 export function parseProjectFilterGroup(value: unknown): ProjectFilterGroup | undefined {
   let parsed = value;
@@ -130,7 +146,16 @@ export function parseProjectFilterGroup(value: unknown): ProjectFilterGroup | un
       typeof candidate.value === 'string' && candidate.value.length <= 240
         ? candidate.value
         : undefined;
-    return { kind: 'condition', field, operator, value: ruleValue };
+    const dateFrom = parseDateBound(candidate.dateFrom);
+    const dateTo = parseDateBound(candidate.dateTo);
+    return {
+      kind: 'condition',
+      field,
+      operator,
+      value: ruleValue,
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo ? { dateTo } : {}),
+    };
   }
 
   const result = parseNode(parsed, 0);

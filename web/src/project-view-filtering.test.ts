@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import type { Project } from './types.ts';
 import { parseProjectFilterGroup } from './project-views.ts';
 import { matchesProjectViewSearch } from './project-view-filtering.ts';
@@ -83,6 +83,67 @@ describe('matchesProjectViewSearch', () => {
     expect(
       matchesProjectViewSearch(project({ slug: 'no-match' }), { advancedFilterGroup: group }),
     ).toBe(false);
+  });
+
+  it('matches date presets, missing dates, and custom ranges', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2030, 0, 15, 12));
+    try {
+      const matchesDate = (
+        target: Partial<Project>,
+        value: string,
+        condition: {
+          field: 'targetDate';
+          operator?: 'is' | 'isNot';
+          dateFrom?: string;
+          dateTo?: string;
+        } = {
+          field: 'targetDate',
+        },
+      ) =>
+        matchesProjectViewSearch(project(target), {
+          advancedFilterGroup: {
+            kind: 'group',
+            operator: 'and',
+            children: [{ kind: 'condition', ...condition, value }],
+          },
+        });
+
+      expect(matchesDate({ targetDate: '2030-01-14' }, 'overdue')).toBe(true);
+      expect(matchesDate({ targetDate: '2030-01-15' }, 'overdue')).toBe(false);
+      expect(matchesDate({ targetDate: '2030-01-16' }, 'within:1d')).toBe(true);
+      expect(matchesDate({ targetDate: '2030-01-17' }, 'within:1d')).toBe(false);
+      expect(matchesDate({ targetDate: null }, 'no-date')).toBe(true);
+      expect(
+        matchesDate({ targetDate: '2030-01-16' }, 'no-date', {
+          field: 'targetDate',
+          operator: 'isNot',
+        }),
+      ).toBe(true);
+      expect(
+        matchesDate({ targetDate: '2030-01-16' }, 'custom', {
+          field: 'targetDate',
+          dateFrom: '2030-01-16',
+          dateTo: '2030-01-17',
+        }),
+      ).toBe(true);
+      expect(
+        matchesDate({ targetDate: '2030-01-18' }, 'custom', {
+          field: 'targetDate',
+          dateFrom: '2030-01-16',
+          dateTo: '2030-01-17',
+        }),
+      ).toBe(false);
+      expect(matchesDate({ targetDate: null }, 'custom')).toBe(true);
+      expect(
+        matchesDate({ targetDate: null }, 'custom', {
+          field: 'targetDate',
+          operator: 'isNot',
+        }),
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('parses a bounded advanced filter group from shared-view search state', () => {

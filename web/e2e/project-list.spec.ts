@@ -587,6 +587,100 @@ test('advanced project filter groups combine nested status and priority rules', 
   await expect(page.getByRole('link', { name: new RegExp(noMatchName) })).toHaveCount(0);
 });
 
+test('advanced project date filters match missing dates and invert the condition', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const noTargetDateName = `No target date ${stamp}`;
+  const hasTargetDateName = `Target date set ${stamp}`;
+  for (const project of [
+    {
+      name: noTargetDateName,
+      slug: `no-target-date-${stamp}`,
+      status: 'planned',
+      targetDate: null,
+    },
+    {
+      name: hasTargetDateName,
+      slug: `target-date-set-${stamp}`,
+      status: 'planned',
+      targetDate: '2099-01-15',
+    },
+  ]) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Advanced filter', exact: true }).click();
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
+
+  const rootGroup = page.locator('[aria-label="Filter group 1"]');
+  await rootGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await rootGroup.getByRole('option', { name: 'Target date', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await rootGroup.getByRole('option', { name: 'No target date', exact: true }).click();
+
+  await expect(page.getByRole('link', { name: new RegExp(noTargetDateName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(hasTargetDateName) })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(noTargetDateName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(hasTargetDateName) })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
+  const persistedGroup = page.locator('[aria-label="Filter group 1"]');
+  await persistedGroup.getByRole('combobox', { name: 'Group 1 condition 1 operator' }).click();
+  await persistedGroup.getByRole('option', { name: 'is not', exact: true }).click();
+  await expect(page.getByRole('link', { name: new RegExp(noTargetDateName) })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: new RegExp(hasTargetDateName) })).toBeVisible();
+});
+
+test('advanced project date filters support custom date ranges', async ({ page, request }) => {
+  const stamp = Date.now();
+  const inRangeName = `Date range match ${stamp}`;
+  const outOfRangeName = `Date range miss ${stamp}`;
+  for (const project of [
+    {
+      name: inRangeName,
+      slug: `date-range-match-${stamp}`,
+      status: 'planned',
+      targetDate: '2099-03-15',
+    },
+    {
+      name: outOfRangeName,
+      slug: `date-range-miss-${stamp}`,
+      status: 'planned',
+      targetDate: '2099-04-01',
+    },
+  ]) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Advanced filter', exact: true }).click();
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
+
+  const rootGroup = page.locator('[aria-label="Filter group 1"]');
+  await rootGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await rootGroup.getByRole('option', { name: 'Target date', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await rootGroup.getByRole('option', { name: 'Custom date or timeframe…', exact: true }).click();
+  await rootGroup.getByLabel('Date from').fill('2099-03-01');
+  await rootGroup.getByLabel('Date to').fill('2099-03-31');
+
+  await expect(page.getByRole('link', { name: new RegExp(inRangeName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(outOfRangeName) })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(inRangeName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(outOfRangeName) })).toHaveCount(0);
+});
+
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 800 });
   await page.goto('/views/projects/new');
