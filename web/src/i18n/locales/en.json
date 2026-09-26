@@ -865,6 +865,13 @@
     "status": "Status",
     "priority": "Priority",
     "health": "Health",
+    "dates": "Dates",
+    "dateField": {
+      "created": "Created date",
+      "updated": "Updated date",
+      "completed": "Completed date",
+      "latestUpdate": "Latest update date"
+    },
     "noHealth": "No update",
     "labels": "Labels",
     "created": "Created",

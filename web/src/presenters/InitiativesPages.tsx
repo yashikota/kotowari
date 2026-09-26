@@ -7,9 +7,20 @@ import { queryCache } from '../application/cache.ts';
 import {
   buildInitiativeList,
   DEFAULT_INITIATIVE_DISPLAY_PROPERTIES,
+  INITIATIVE_DATE_SEARCH_KEYS,
   initiativeActiveProjectCount,
 } from '../initiative-list.ts';
-import type { InitiativeDisplayProperty, InitiativeListSearch } from '../initiative-list.ts';
+import type {
+  InitiativeDateField,
+  InitiativeDateFilters,
+  InitiativeDisplayProperty,
+  InitiativeListSearch,
+} from '../initiative-list.ts';
+import {
+  parseSearchDateFilter,
+  serializeSearchDateFilter,
+  type SearchDateFilter,
+} from '../search.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
 import type { Initiative, InitiativeStatus } from '../types.ts';
 import { useRootMachineFlag } from '../application/Root.tsx';
@@ -59,6 +70,20 @@ export function useInitiativesPagePresenter() {
   const priorityFilter = search.priorityFilter ?? [];
   const healthFilter = search.healthFilter ?? [];
   const labelFilter = search.labelFilter ?? [];
+  const dateFilters: InitiativeDateFilters = {
+    ...(parseSearchDateFilter(search.createdDate)
+      ? { created: parseSearchDateFilter(search.createdDate) }
+      : {}),
+    ...(parseSearchDateFilter(search.updatedDate)
+      ? { updated: parseSearchDateFilter(search.updatedDate) }
+      : {}),
+    ...(parseSearchDateFilter(search.completedDate)
+      ? { completed: parseSearchDateFilter(search.completedDate) }
+      : {}),
+    ...(parseSearchDateFilter(search.latestUpdateDate)
+      ? { latestUpdate: parseSearchDateFilter(search.latestUpdateDate) }
+      : {}),
+  };
   const labels = workspaceLabels.map((label) => label.name).sort((a, b) => a.localeCompare(b));
   const scope = search.scope ?? 'all';
   const hasFilters = Boolean(
@@ -69,7 +94,8 @@ export function useInitiativesPagePresenter() {
     search.labelFilter?.length ||
     search.projects ||
     search.targetDateFrom ||
-    search.targetDateTo,
+    search.targetDateTo ||
+    Object.keys(dateFilters).length > 0,
   );
   const updateListSearch = (patch: Partial<InitiativeListSearch>) => {
     void navigate({
@@ -116,6 +142,7 @@ export function useInitiativesPagePresenter() {
     priorityFilter,
     healthFilter,
     labelFilter,
+    dateFilters,
     labels,
     projectsFilter,
     targetDateFrom: search.targetDateFrom ?? '',
@@ -187,10 +214,10 @@ export function useInitiativesPagePresenter() {
         updateListSearch({
           projects: value === 'all' ? undefined : (value as InitiativeListSearch['projects']),
         }),
-      onTargetDateFromChange: (value: string) =>
-        updateListSearch({ targetDateFrom: value || undefined }),
-      onTargetDateToChange: (value: string) =>
-        updateListSearch({ targetDateTo: value || undefined }),
+      onDateFilterChange: (field: InitiativeDateField, filter: SearchDateFilter | undefined) => {
+        const searchKey = INITIATIVE_DATE_SEARCH_KEYS[field];
+        updateListSearch({ [searchKey]: filter ? serializeSearchDateFilter(filter) : undefined });
+      },
       onGroupByChange: (value: string) =>
         updateListSearch({ groupBy: value as InitiativeListSearch['groupBy'] }),
       onOrderByChange: (value: string) =>
@@ -209,6 +236,10 @@ export function useInitiativesPagePresenter() {
           projects: undefined,
           targetDateFrom: undefined,
           targetDateTo: undefined,
+          createdDate: undefined,
+          updatedDate: undefined,
+          completedDate: undefined,
+          latestUpdateDate: undefined,
         }),
     },
   };

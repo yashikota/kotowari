@@ -110,6 +110,9 @@ func (s *Store) CreateInitiativeWithOptions(name, slug, description, status, col
 			StartDate: cloneString(start), TargetDate: cloneString(target),
 			CreatedAt: now, UpdatedAt: now, ProjectSlugs: []string{},
 		}
+		if health != "" {
+			out.HealthUpdatedAt = cloneString(&now)
+		}
 		if status == "completed" {
 			out.CompletedAt = cloneString(&now)
 		}
@@ -155,10 +158,12 @@ func (s *Store) UpdateInitiative(slug string, in UpdateInitiativeInput) (Initiat
 			}
 			initiative.Status = *in.Status
 		}
+		healthChanged := false
 		if in.Health != nil {
 			if !domain.ValidProjectHealth(*in.Health) {
 				return validationf("invalid initiative health")
 			}
+			healthChanged = initiative.Health != *in.Health
 			initiative.Health = *in.Health
 		}
 		if in.Priority != nil {
@@ -195,6 +200,13 @@ func (s *Store) UpdateInitiative(slug string, in UpdateInitiativeInput) (Initiat
 			}
 		}
 		now := domain.Now()
+		if healthChanged {
+			if initiative.Health == "" {
+				initiative.HealthUpdatedAt = nil
+			} else {
+				initiative.HealthUpdatedAt = cloneString(&now)
+			}
+		}
 		if initiative.Status == "completed" && initiative.CompletedAt == nil {
 			initiative.CompletedAt = cloneString(&now)
 		} else if initiative.Status != "completed" {

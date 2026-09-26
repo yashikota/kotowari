@@ -52,10 +52,9 @@ export function InitiativesPageView({
     priorityFilter,
     healthFilter,
     labelFilter,
+    dateFilters,
     labels,
     projectsFilter,
-    targetDateFrom,
-    targetDateTo,
     groupBy,
     orderBy,
     direction,
@@ -116,10 +115,9 @@ export function InitiativesPageView({
                 priorityFilter={priorityFilter}
                 healthFilter={healthFilter}
                 labelFilter={labelFilter}
+                dateFilters={dateFilters}
                 labels={labels}
                 projectsFilter={projectsFilter}
-                targetDateFrom={targetDateFrom}
-                targetDateTo={targetDateTo}
                 groupBy={groupBy}
                 orderBy={orderBy}
                 direction={direction}

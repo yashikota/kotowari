@@ -2,6 +2,7 @@ import { ActionIcon, Checkbox, Group, NativeSelect, Popover, Stack } from '@mant
 import { IconAdjustments } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type {
+  InitiativeDateFilters,
   InitiativeDisplayProperty,
   InitiativeGrouping,
   InitiativeOrderBy,
@@ -41,10 +42,9 @@ export function InitiativeListControls({
   priorityFilter,
   healthFilter,
   labelFilter,
+  dateFilters,
   labels,
   projectsFilter,
-  targetDateFrom,
-  targetDateTo,
   groupBy,
   orderBy,
   direction,
@@ -58,10 +58,9 @@ export function InitiativeListControls({
   priorityFilter: number[];
   healthFilter: ProjectHealth[];
   labelFilter: string[];
+  dateFilters: InitiativeDateFilters;
   labels: string[];
   projectsFilter: InitiativeProjectFilter;
-  targetDateFrom: string;
-  targetDateTo: string;
   groupBy: InitiativeGrouping;
   orderBy: InitiativeOrderBy;
   direction: 'asc' | 'desc';
@@ -79,10 +78,9 @@ export function InitiativeListControls({
         priorityFilter={priorityFilter}
         healthFilter={healthFilter}
         labelFilter={labelFilter}
+        dateFilters={dateFilters}
         labels={labels}
         projectsFilter={projectsFilter}
-        targetDateFrom={targetDateFrom}
-        targetDateTo={targetDateTo}
         hasFilters={hasFilters}
         handlers={handlers}
       />

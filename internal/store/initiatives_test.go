@@ -114,7 +114,7 @@ func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if initiative.Health != "on_track" || initiative.Priority != 2 || len(initiative.Labels) != 1 || initiative.Labels[0] != label.Name || initiative.CompletedAt != nil {
+	if initiative.Health != "on_track" || initiative.HealthUpdatedAt == nil || *initiative.HealthUpdatedAt == "" || initiative.Priority != 2 || len(initiative.Labels) != 1 || initiative.Labels[0] != label.Name || initiative.CompletedAt != nil {
 		t.Fatalf("initiative properties %#v", initiative)
 	}
 	completed, err := s.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{Status: stringPointer("completed")})
@@ -130,12 +130,16 @@ func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = reopened.Close() })
 	reloaded, err := reopened.GetInitiative(initiative.Slug)
-	if err != nil || reloaded.Priority != 2 || reloaded.Health != "on_track" || reloaded.CompletedAt == nil || len(reloaded.Labels) != 1 || reloaded.Labels[0] != label.Name {
+	if err != nil || reloaded.Priority != 2 || reloaded.Health != "on_track" || reloaded.HealthUpdatedAt == nil || reloaded.CompletedAt == nil || len(reloaded.Labels) != 1 || reloaded.Labels[0] != label.Name {
 		t.Fatalf("initiative properties did not persist: %#v (%v)", reloaded, err)
 	}
 	active, err := reopened.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{Status: stringPointer("active")})
 	if err != nil || active.CompletedAt != nil {
 		t.Fatalf("reopened initiative retained completion date: %#v (%v)", active, err)
+	}
+	cleared, err := reopened.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{Health: stringPointer("")})
+	if err != nil || cleared.HealthUpdatedAt != nil {
+		t.Fatalf("cleared initiative health retained an update date: %#v (%v)", cleared, err)
 	}
 }
 

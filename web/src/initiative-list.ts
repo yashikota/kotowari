@@ -5,6 +5,12 @@ import type {
   ProjectHealth,
   ProjectWorkflowStatus,
 } from './types.ts';
+import {
+  matchesSearchDateFilter,
+  parseSearchDateFilter,
+  serializeSearchDateFilter,
+  type SearchDateFilter,
+} from './search.ts';
 
 export type InitiativeScope = 'active' | 'planned' | 'all';
 export type InitiativeGrouping = 'none' | 'status';
@@ -19,6 +25,14 @@ export type InitiativeOrderBy =
   | 'updated'
   | 'completed';
 export type InitiativeProjectFilter = 'all' | 'withProjects' | 'withoutProjects';
+export type InitiativeDateField = 'created' | 'updated' | 'completed' | 'latestUpdate';
+export type InitiativeDateFilters = Partial<Record<InitiativeDateField, SearchDateFilter>>;
+export const INITIATIVE_DATE_SEARCH_KEYS = {
+  created: 'createdDate',
+  updated: 'updatedDate',
+  completed: 'completedDate',
+  latestUpdate: 'latestUpdateDate',
+} as const satisfies Record<InitiativeDateField, string>;
 export type InitiativeDisplayProperty =
   | 'id'
   | 'description'
@@ -43,6 +57,10 @@ export type InitiativeListSearch = {
   projects?: InitiativeProjectFilter;
   targetDateFrom?: string;
   targetDateTo?: string;
+  createdDate?: string;
+  updatedDate?: string;
+  completedDate?: string;
+  latestUpdateDate?: string;
   groupBy?: InitiativeGrouping;
   orderBy?: InitiativeOrderBy;
   direction?: 'asc' | 'desc';
@@ -132,6 +150,25 @@ export function parseInitiativeListSearch(raw: Record<string, unknown>): Initiat
       search[field] = raw[field];
     }
   }
+  for (const field of Object.values(INITIATIVE_DATE_SEARCH_KEYS)) {
+    const filter = parseSearchDateFilter(raw[field]);
+    if (filter) {
+      switch (field) {
+        case 'createdDate':
+          search.createdDate = serializeSearchDateFilter(filter);
+          break;
+        case 'updatedDate':
+          search.updatedDate = serializeSearchDateFilter(filter);
+          break;
+        case 'completedDate':
+          search.completedDate = serializeSearchDateFilter(filter);
+          break;
+        case 'latestUpdateDate':
+          search.latestUpdateDate = serializeSearchDateFilter(filter);
+          break;
+      }
+    }
+  }
   if (raw.groupBy === 'status' || raw.groupBy === 'none') search.groupBy = raw.groupBy;
   if (
     raw.orderBy === 'manual' ||
@@ -178,6 +215,7 @@ export function buildInitiativeList({
 }): InitiativeListGroup[] {
   const projectsBySlug = new Map(projects.map((project) => [project.slug, project]));
   const query = search.q?.trim().toLocaleLowerCase();
+  const now = Date.now();
   const filtered = initiatives.filter((initiative) => {
     if (search.scope === 'active' && initiative.status !== 'active') return false;
     if (
@@ -189,6 +227,21 @@ export function buildInitiativeList({
     }
     if (search.statusFilter?.length && !search.statusFilter.includes(initiative.status))
       return false;
+    const dateValue: Record<InitiativeDateField, string | null | undefined> = {
+      created: initiative.createdAt,
+      updated: initiative.updatedAt,
+      completed: initiative.completedAt,
+      latestUpdate: initiative.healthUpdatedAt,
+    };
+    for (const [field, searchKey] of Object.entries(INITIATIVE_DATE_SEARCH_KEYS) as [
+      InitiativeDateField,
+      (typeof INITIATIVE_DATE_SEARCH_KEYS)[InitiativeDateField],
+    ][]) {
+      const dateFilter = parseSearchDateFilter(search[searchKey]);
+      if (dateFilter && !matchesSearchDateFilter(dateValue[field] ?? undefined, dateFilter, now)) {
+        return false;
+      }
+    }
     if (search.priorityFilter?.length && !search.priorityFilter.includes(initiative.priority ?? 0))
       return false;
     if (

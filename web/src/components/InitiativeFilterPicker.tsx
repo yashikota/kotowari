@@ -28,15 +28,34 @@ import {
 import type { TablerIcon } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { InitiativeProjectFilter } from '../initiative-list.ts';
+import type {
+  InitiativeDateField,
+  InitiativeDateFilters,
+  InitiativeProjectFilter,
+} from '../initiative-list.ts';
+import {
+  SEARCH_DATE_WINDOWS,
+  type SearchDateFilter,
+  type SearchDateGranularity,
+  type SearchDateRange,
+} from '../search.ts';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
+import { SearchDateTimeframeDialog } from './SearchDateTimeframeDialog.tsx';
 
 const STATUSES: InitiativeStatus[] = ['proposed', 'planned', 'active', 'completed', 'canceled'];
 const HEALTH_STATUSES: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
 const PRIORITIES = [0, 1, 2, 3, 4];
+const DATE_FIELDS: InitiativeDateField[] = ['created', 'updated', 'completed', 'latestUpdate'];
 const FILTERS = ['status', 'priority', 'labels', 'health', 'dates', 'projects'] as const;
 
 type FilterKey = (typeof FILTERS)[number];
+type ActiveFilterChip = {
+  filter: FilterKey;
+  key: string;
+  label: string;
+  value: string;
+  dateField: InitiativeDateField | null;
+};
 
 const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
   status: IconCircleDot,
@@ -53,9 +72,8 @@ export type InitiativeFilterHandlers = {
   onPriorityFilterChange: (value: string[]) => void;
   onHealthFilterChange: (value: string[]) => void;
   onLabelFilterChange: (value: string[]) => void;
+  onDateFilterChange: (field: InitiativeDateField, filter: SearchDateFilter | undefined) => void;
   onProjectsFilterChange: (value: string) => void;
-  onTargetDateFromChange: (value: string) => void;
-  onTargetDateToChange: (value: string) => void;
   onClearFilters: () => void;
 };
 
@@ -65,10 +83,9 @@ export function InitiativeFilterPicker({
   priorityFilter,
   healthFilter,
   labelFilter,
+  dateFilters,
   labels,
   projectsFilter,
-  targetDateFrom,
-  targetDateTo,
   hasFilters,
   handlers,
 }: {
@@ -77,22 +94,32 @@ export function InitiativeFilterPicker({
   priorityFilter: number[];
   healthFilter: ProjectHealth[];
   labelFilter: string[];
+  dateFilters: InitiativeDateFilters;
   labels: string[];
   projectsFilter: InitiativeProjectFilter;
-  targetDateFrom: string;
-  targetDateTo: string;
   hasFilters: boolean;
   handlers: InitiativeFilterHandlers;
 }) {
   const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
+  const [activeDateField, setActiveDateField] = useState<InitiativeDateField | null>(null);
+  const [customDateField, setCustomDateField] = useState<InitiativeDateField | null>(null);
+  const [customDateInput, setCustomDateInput] = useState('');
+  const [customDateGranularity, setCustomDateGranularity] =
+    useState<SearchDateGranularity>('quarter');
   const [filterQuery, setFilterQuery] = useState('');
+  const dateFieldLabels: Record<InitiativeDateField, string> = {
+    created: t('initiativeList.dateField.created'),
+    updated: t('initiativeList.dateField.updated'),
+    completed: t('initiativeList.dateField.completed'),
+    latestUpdate: t('initiativeList.dateField.latestUpdate'),
+  };
   const filterLabels: Record<FilterKey, string> = {
     status: t('initiativeList.status'),
     priority: t('initiativeList.priority'),
     labels: t('initiativeList.labels'),
     health: t('initiativeList.health'),
-    dates: t('initiativeList.targetDate'),
+    dates: t('initiativeList.dates'),
     projects: t('initiativeList.projects'),
   };
   const filterCounts: Record<FilterKey, number> = {
@@ -100,40 +127,84 @@ export function InitiativeFilterPicker({
     priority: priorityFilter.length,
     labels: labelFilter.length,
     health: healthFilter.length,
-    dates: Number(Boolean(targetDateFrom || targetDateTo)),
+    dates: DATE_FIELDS.filter((field) => dateFilters[field]).length,
     projects: Number(projectsFilter !== 'all'),
   };
   const visibleFilters = FILTERS.filter((filter) =>
     filterLabels[filter].toLocaleLowerCase().includes(filterQuery.trim().toLocaleLowerCase()),
   );
 
-  const activeFilterChips = FILTERS.flatMap((filter) => {
-    if (!filterCounts[filter]) return [];
-    const value =
-      filter === 'status'
-        ? statusFilter.map((status) => t(`initiatives.${status}`)).join(', ')
-        : filter === 'priority'
-          ? priorityFilter
-              .map((priority) => t(`initiativeList.priorityValue.${priority}`))
-              .join(', ')
-          : filter === 'labels'
-            ? labelFilter.join(', ')
-            : filter === 'health'
-              ? healthFilter.map((health) => t(`initiativeList.healthValue.${health}`)).join(', ')
-              : filter === 'projects'
-                ? t(
-                    projectsFilter === 'withProjects'
-                      ? 'initiativeList.withProjects'
-                      : 'initiativeList.withoutProjects',
-                  )
-                : `${targetDateFrom || '…'} – ${targetDateTo || '…'}`;
-    return [{ filter, label: filterLabels[filter], value }];
-  });
+  function formatDateFilter(filter: SearchDateFilter) {
+    if (filter.value.kind === 'relative') {
+      return `${t('searchPage.filters.operators.after')} ${t(`searchPage.filters.dateWindows.${filter.value.window}`)}`;
+    }
+    return filter.value.start === filter.value.end
+      ? filter.value.start
+      : `${filter.value.start} – ${filter.value.end}`;
+  }
+
+  const activeFilterChips: ActiveFilterChip[] = [];
+  for (const filter of FILTERS) {
+    if (filter === 'dates') {
+      for (const field of DATE_FIELDS) {
+        const dateFilter = dateFilters[field];
+        if (dateFilter) {
+          activeFilterChips.push({
+            filter,
+            key: `${filter}-${field}`,
+            label: dateFieldLabels[field],
+            value: formatDateFilter(dateFilter),
+            dateField: field,
+          });
+        }
+      }
+      continue;
+    }
+    if (!filterCounts[filter]) continue;
+    let value: string;
+    switch (filter) {
+      case 'status':
+        value = statusFilter.map((status) => t(`initiatives.${status}`)).join(', ');
+        break;
+      case 'priority':
+        value = priorityFilter
+          .map((priority) => t(`initiativeList.priorityValue.${priority}`))
+          .join(', ');
+        break;
+      case 'labels':
+        value = labelFilter.join(', ');
+        break;
+      case 'health':
+        value = healthFilter.map((health) => t(`initiativeList.healthValue.${health}`)).join(', ');
+        break;
+      case 'projects':
+        value = t(
+          projectsFilter === 'withProjects'
+            ? 'initiativeList.withProjects'
+            : 'initiativeList.withoutProjects',
+        );
+        break;
+      default:
+        continue;
+    }
+    activeFilterChips.push({
+      filter,
+      key: filter,
+      label: filterLabels[filter],
+      value,
+      dateField: null,
+    });
+  }
 
   function closeFilterPicker() {
     handlers.onFilterOpenedChange(false);
     setActiveFilter(null);
+    setActiveDateField(null);
     setFilterQuery('');
+  }
+
+  function clearDateFilter(field: InitiativeDateField) {
+    handlers.onDateFilterChange(field, undefined);
   }
 
   function clearFilter(filter: FilterKey) {
@@ -151,8 +222,7 @@ export function InitiativeFilterPicker({
         handlers.onHealthFilterChange([]);
         break;
       case 'dates':
-        handlers.onTargetDateFromChange('');
-        handlers.onTargetDateToChange('');
+        DATE_FIELDS.forEach(clearDateFilter);
         break;
       case 'projects':
         handlers.onProjectsFilterChange('all');
@@ -165,6 +235,18 @@ export function InitiativeFilterPicker({
   function applyFilterChange(update: () => void) {
     update();
     closeFilterPicker();
+  }
+
+  function applyCustomDate(range: SearchDateRange) {
+    if (!customDateField) return;
+    const field = customDateField;
+    setCustomDateField(null);
+    applyFilterChange(() =>
+      handlers.onDateFilterChange(field, {
+        operator: 'in',
+        value: { kind: 'range', ...range },
+      }),
+    );
   }
 
   return (
@@ -218,19 +300,33 @@ export function InitiativeFilterPicker({
                     variant="subtle"
                     size="sm"
                     aria-label={t('initiativeList.allFilters')}
-                    onClick={() => setActiveFilter(null)}
+                    onClick={() => {
+                      if (activeFilter === 'dates' && activeDateField) {
+                        setActiveDateField(null);
+                      } else {
+                        setActiveFilter(null);
+                      }
+                    }}
                   >
                     <IconChevronLeft size={16} aria-hidden="true" />
                   </ActionIcon>
                   <Text size="sm" fw={600} style={{ flex: 1 }}>
-                    {filterLabels[activeFilter]}
+                    {activeFilter === 'dates' && activeDateField
+                      ? dateFieldLabels[activeDateField]
+                      : filterLabels[activeFilter]}
                   </Text>
                   {filterCounts[activeFilter] > 0 ? (
                     <Button
                       type="button"
                       variant="subtle"
                       size="compact-xs"
-                      onClick={() => clearFilter(activeFilter)}
+                      onClick={() => {
+                        if (activeFilter === 'dates' && activeDateField) {
+                          clearDateFilter(activeDateField);
+                        } else {
+                          clearFilter(activeFilter);
+                        }
+                      }}
                     >
                       {t('initiativeList.clearThisFilter')}
                     </Button>
@@ -327,24 +423,89 @@ export function InitiativeFilterPicker({
                       ]}
                     />
                   ) : null}
-                  {activeFilter === 'dates' ? (
-                    <Stack gap="xs">
-                      <TextInput
-                        type="date"
-                        aria-label={t('initiativeList.targetDateFrom')}
-                        value={targetDateFrom}
-                        onChange={(event) =>
-                          handlers.onTargetDateFromChange(event.currentTarget.value)
-                        }
-                      />
-                      <TextInput
-                        type="date"
-                        aria-label={t('initiativeList.targetDateTo')}
-                        value={targetDateTo}
-                        onChange={(event) =>
-                          handlers.onTargetDateToChange(event.currentTarget.value)
-                        }
-                      />
+                  {activeFilter === 'dates' && !activeDateField ? (
+                    <Stack gap={2}>
+                      {DATE_FIELDS.map((field) => (
+                        <Button
+                          key={field}
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          size="compact-sm"
+                          fullWidth
+                          justify="space-between"
+                          aria-pressed={Boolean(dateFilters[field])}
+                          onClick={() => setActiveDateField(field)}
+                          rightSection={
+                            <Group gap={6} wrap="nowrap">
+                              {dateFilters[field] ? (
+                                <Badge size="xs" variant="light">
+                                  1
+                                </Badge>
+                              ) : null}
+                              <IconChevronRight size={14} aria-hidden="true" />
+                            </Group>
+                          }
+                        >
+                          {dateFieldLabels[field]}
+                        </Button>
+                      ))}
+                    </Stack>
+                  ) : null}
+                  {activeFilter === 'dates' && activeDateField ? (
+                    <Stack gap={2}>
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        color="gray"
+                        size="compact-sm"
+                        fullWidth
+                        justify="flex-start"
+                        onClick={() => applyFilterChange(() => clearDateFilter(activeDateField))}
+                      >
+                        {t('searchPage.filters.anyTime')}
+                      </Button>
+                      {SEARCH_DATE_WINDOWS.map((window) => (
+                        <Button
+                          key={window}
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          size="compact-sm"
+                          fullWidth
+                          justify="flex-start"
+                          aria-pressed={
+                            dateFilters[activeDateField]?.value.kind === 'relative' &&
+                            dateFilters[activeDateField]?.value.window === window
+                          }
+                          onClick={() =>
+                            applyFilterChange(() =>
+                              handlers.onDateFilterChange(activeDateField, {
+                                operator: 'after',
+                                value: { kind: 'relative', window },
+                              }),
+                            )
+                          }
+                        >
+                          {t(`searchPage.filters.dateWindows.${window}`)}
+                        </Button>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        color="gray"
+                        size="compact-sm"
+                        fullWidth
+                        justify="space-between"
+                        rightSection={<IconChevronRight size={14} aria-hidden="true" />}
+                        onClick={() => {
+                          setCustomDateInput('');
+                          setCustomDateGranularity('quarter');
+                          setCustomDateField(activeDateField);
+                        }}
+                      >
+                        {t('searchPage.filters.customTimeframe')}
+                      </Button>
                     </Stack>
                   ) : null}
                 </ScrollArea.Autosize>
@@ -374,7 +535,10 @@ export function InitiativeFilterPicker({
                           fullWidth
                           justify="space-between"
                           aria-pressed={filterCounts[filter] > 0}
-                          onClick={() => setActiveFilter(filter)}
+                          onClick={() => {
+                            setActiveFilter(filter);
+                            setActiveDateField(null);
+                          }}
                           leftSection={<FilterIcon size={15} stroke={1.7} aria-hidden="true" />}
                           rightSection={
                             <Group gap={6} wrap="nowrap">
@@ -416,10 +580,21 @@ export function InitiativeFilterPicker({
           </Popover.Dropdown>
         </Popover>
       </Group>
+      <SearchDateTimeframeDialog
+        field={null}
+        opened={customDateField !== null}
+        title={customDateField ? dateFieldLabels[customDateField] : undefined}
+        value={customDateInput}
+        granularity={customDateGranularity}
+        onValueChange={setCustomDateInput}
+        onGranularityChange={setCustomDateGranularity}
+        onCancel={() => setCustomDateField(null)}
+        onApply={applyCustomDate}
+      />
       {activeFilterChips.length > 0 ? (
         <Group role="group" aria-label={t('initiativeList.activeFilters')} gap={4} wrap="wrap">
-          {activeFilterChips.map(({ filter, label, value }) => (
-            <Group key={filter} gap={0} wrap="nowrap">
+          {activeFilterChips.map(({ filter, key, label, value, dateField }) => (
+            <Group key={key} gap={0} wrap="nowrap">
               <Button
                 type="button"
                 variant="default"
@@ -430,6 +605,7 @@ export function InitiativeFilterPicker({
                 styles={{ root: { borderTopRightRadius: 0, borderBottomRightRadius: 0 } }}
                 onClick={() => {
                   setActiveFilter(filter);
+                  setActiveDateField(dateField ?? null);
                   handlers.onFilterOpenedChange(true);
                 }}
               >
@@ -443,7 +619,7 @@ export function InitiativeFilterPicker({
                 radius="xl"
                 aria-label={t('initiativeList.removeFilter', { filter: label })}
                 styles={{ root: { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 } }}
-                onClick={() => clearFilter(filter)}
+                onClick={() => (dateField ? clearDateFilter(dateField) : clearFilter(filter))}
               >
                 <IconX size={12} aria-hidden="true" />
               </ActionIcon>

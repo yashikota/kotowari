@@ -53,6 +53,9 @@ describe('initiative list search', () => {
         projects: 'withProjects',
         targetDateFrom: '2026-03-01',
         targetDateTo: 'not-a-date',
+        createdDate: 'P1D',
+        completedDate: 'in:2026-01-01..2026-01-31',
+        latestUpdateDate: 'invalid',
         orderBy: 'targetDate',
         direction: 'desc',
         displayProperties: ['id', 'teams', 'id'],
@@ -65,6 +68,8 @@ describe('initiative list search', () => {
       labelFilter: ['Launch'],
       projects: 'withProjects',
       targetDateFrom: '2026-03-01',
+      createdDate: 'P1D',
+      completedDate: 'in:2026-01-01..2026-01-31',
       orderBy: 'targetDate',
       direction: 'desc',
       displayProperties: ['id'],
@@ -111,6 +116,35 @@ describe('initiative list search', () => {
       'proposal',
       'planned',
     ]);
+  });
+
+  it('filters created, updated, completed, and latest-update dates independently', () => {
+    const initiatives = [
+      initiative('inside', 'completed', {
+        createdAt: '2026-01-10T12:00:00Z',
+        updatedAt: '2026-02-10T12:00:00Z',
+        completedAt: '2026-03-10T12:00:00Z',
+        healthUpdatedAt: '2026-04-10T12:00:00Z',
+      }),
+      initiative('outside', 'active', {
+        createdAt: '2025-12-31T12:00:00Z',
+        updatedAt: '2025-12-31T12:00:00Z',
+        completedAt: '2025-12-31T12:00:00Z',
+        healthUpdatedAt: '2025-12-31T12:00:00Z',
+      }),
+    ];
+    const ranges = [
+      { createdDate: 'in:2026-01-01..2026-01-31' },
+      { updatedDate: 'in:2026-02-01..2026-02-28' },
+      { completedDate: 'in:2026-03-01..2026-03-31' },
+      { latestUpdateDate: 'in:2026-04-01..2026-04-30' },
+    ];
+    for (const search of ranges) {
+      const groups = buildInitiativeList({ initiatives, projects: [], search });
+      expect(groups.flatMap((group) => group.initiatives.map((item) => item.slug))).toEqual([
+        'inside',
+      ]);
+    }
   });
 
   it('orders and groups initiatives by status while leaving null target dates last', () => {

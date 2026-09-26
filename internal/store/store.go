@@ -95,21 +95,22 @@ type Project struct {
 
 // Initiative groups projects around a single strategic outcome.
 type Initiative struct {
-	ID           int64    `json:"id" toml:"id"`
-	Name         string   `json:"name" toml:"name"`
-	Slug         string   `json:"slug" toml:"slug"`
-	Description  string   `json:"description" toml:"description,omitempty"`
-	Status       string   `json:"status" toml:"status"`
-	Color        string   `json:"color,omitempty" toml:"color,omitempty"`
-	Health       string   `json:"health,omitempty" toml:"health,omitempty"`
-	Priority     int      `json:"priority" toml:"priority"`
-	Labels       []string `json:"labels,omitempty" toml:"labels,omitempty"`
-	StartDate    *string  `json:"startDate" toml:"start_date,omitempty"`
-	TargetDate   *string  `json:"targetDate" toml:"target_date,omitempty"`
-	CompletedAt  *string  `json:"completedAt,omitempty" toml:"completed_at,omitempty"`
-	ProjectSlugs []string `json:"projectSlugs" toml:"-"`
-	CreatedAt    string   `json:"createdAt" toml:"created_at"`
-	UpdatedAt    string   `json:"updatedAt" toml:"updated_at"`
+	ID              int64    `json:"id" toml:"id"`
+	Name            string   `json:"name" toml:"name"`
+	Slug            string   `json:"slug" toml:"slug"`
+	Description     string   `json:"description" toml:"description,omitempty"`
+	Status          string   `json:"status" toml:"status"`
+	Color           string   `json:"color,omitempty" toml:"color,omitempty"`
+	Health          string   `json:"health,omitempty" toml:"health,omitempty"`
+	HealthUpdatedAt *string  `json:"healthUpdatedAt,omitempty" toml:"health_updated_at,omitempty"`
+	Priority        int      `json:"priority" toml:"priority"`
+	Labels          []string `json:"labels,omitempty" toml:"labels,omitempty"`
+	StartDate       *string  `json:"startDate" toml:"start_date,omitempty"`
+	TargetDate      *string  `json:"targetDate" toml:"target_date,omitempty"`
+	CompletedAt     *string  `json:"completedAt,omitempty" toml:"completed_at,omitempty"`
+	ProjectSlugs    []string `json:"projectSlugs" toml:"-"`
+	CreatedAt       string   `json:"createdAt" toml:"created_at"`
+	UpdatedAt       string   `json:"updatedAt" toml:"updated_at"`
 }
 
 type UpdateInitiativeInput struct {

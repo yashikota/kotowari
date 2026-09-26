@@ -146,6 +146,7 @@ export type Initiative = {
   status: InitiativeStatus;
   color?: string;
   health?: ProjectHealth;
+  healthUpdatedAt?: string | null;
   priority?: number;
   labels?: string[];
   startDate?: string | null;

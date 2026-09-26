@@ -862,6 +862,13 @@
     "status": "ステータス",
     "priority": "優先度",
     "health": "ヘルス",
+    "dates": "日付",
+    "dateField": {
+      "created": "作成日",
+      "updated": "更新日",
+      "completed": "完了日",
+      "latestUpdate": "最新の更新日"
+    },
     "noHealth": "更新なし",
     "labels": "ラベル",
     "created": "作成日",

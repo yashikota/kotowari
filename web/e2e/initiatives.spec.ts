@@ -100,6 +100,29 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
     .click();
 
   await page.getByRole('button', { name: 'Add filter' }).click();
+  await filterDialog.getByRole('button', { name: 'Dates' }).click();
+  await filterDialog.getByRole('button', { name: 'Created date' }).click();
+  await filterDialog.getByRole('button', { name: '1 day ago', exact: true }).click();
+  expect(new URL(page.url()).searchParams.get('createdDate')).toBe('P1D');
+  await page
+    .getByRole('group', { name: 'Active filters' })
+    .getByRole('button', { name: 'Remove Created date filter' })
+    .click();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await filterDialog.getByRole('button', { name: 'Dates' }).click();
+  await filterDialog.getByRole('button', { name: 'Created date' }).click();
+  await filterDialog.getByRole('button', { name: 'Custom date or timeframe…' }).click();
+  const today = new Date().toISOString().slice(0, 10);
+  await page.getByRole('textbox', { name: 'Date or timeframe' }).fill(today);
+  await page.getByRole('button', { name: 'Apply' }).click();
+  expect(new URL(page.url()).searchParams.get('createdDate')).toBe(`in:${today}..${today}`);
+  await page
+    .getByRole('group', { name: 'Active filters' })
+    .getByRole('button', { name: 'Remove Created date filter' })
+    .click();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
   await filterDialog.getByRole('button', { name: 'Projects' }).click();
   await filterDialog.getByRole('combobox', { name: 'Projects' }).selectOption('withProjects');
   await expect(page.getByRole('link', { name: activeName })).toBeVisible();

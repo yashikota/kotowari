@@ -258,7 +258,7 @@ export function filterSearchHits(
   );
 }
 
-function matchesSearchDateFilter(
+export function matchesSearchDateFilter(
   timestamp: string | undefined,
   filter: SearchDateFilter,
   now: number,

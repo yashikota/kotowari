@@ -11,6 +11,8 @@ const GRANULARITIES: SearchDateGranularity[] = ['day', 'month', 'quarter', 'half
 
 export function SearchDateTimeframeDialog({
   field,
+  opened,
+  title,
   value,
   granularity,
   onValueChange,
@@ -19,6 +21,8 @@ export function SearchDateTimeframeDialog({
   onApply,
 }: {
   field: SearchDateField | null;
+  opened?: boolean;
+  title?: string;
   value: string;
   granularity: SearchDateGranularity;
   onValueChange: (value: string) => void;
@@ -37,9 +41,9 @@ export function SearchDateTimeframeDialog({
 
   return (
     <Modal
-      opened={field !== null}
+      opened={opened ?? field !== null}
       onClose={onCancel}
-      title={field ? t(`searchPage.filters.${field}Date`) : undefined}
+      title={title ?? (field ? t(`searchPage.filters.${field}Date`) : undefined)}
       centered
       size="lg"
       aria-label={t('searchPage.filters.timeframeDialog')}
