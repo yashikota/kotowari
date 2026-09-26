@@ -4,6 +4,7 @@ import {
   actionFromKeyboard,
   globalNavigationSequenceFromKeyboard,
   issueLinkedCodeSequenceFromKeyboard,
+  issueDetailShortcutFromKeyboard,
   isTypingTarget,
   issueCopyShortcutFromKeyboard,
   projectCreateSequenceFromKeyboard,
@@ -439,6 +440,40 @@ describe('global navigation keyboard sequence', () => {
       action: null,
       pendingSince: null,
     });
+  });
+});
+
+describe('issue detail keyboard shortcuts', () => {
+  const body = el('BODY');
+  const shortcut = (
+    key: string,
+    overrides: Partial<Parameters<typeof issueDetailShortcutFromKeyboard>[0]> = {},
+  ) =>
+    issueDetailShortcutFromKeyboard({
+      key,
+      metaKey: false,
+      ctrlKey: false,
+      target: body,
+      ...overrides,
+    });
+
+  it.each([
+    ['i', {}, 'assign-self'],
+    ['f', { altKey: true }, 'toggle-favorite'],
+    ['D', { shiftKey: true }, 'open-due-date'],
+    ['O', { ctrlKey: true, shiftKey: true }, 'open-sub-issue'],
+    ['L', { metaKey: true, shiftKey: true }, 'toggle-resources'],
+    ['l', { ctrlKey: true, altKey: true }, 'add-link'],
+  ])('maps %s with its modifiers', (key, modifiers, action) => {
+    expect(shortcut(key, modifiers)).toBe(action);
+  });
+
+  it('does not fire while typing or with unrelated modifier combinations', () => {
+    expect(shortcut('i', { target: el('TEXTAREA') })).toBeNull();
+    expect(shortcut('i', { repeat: true })).toBeNull();
+    expect(shortcut('i', { ctrlKey: true })).toBeNull();
+    expect(shortcut('f', { altKey: true, shiftKey: true })).toBeNull();
+    expect(shortcut('d', { shiftKey: true, metaKey: true })).toBeNull();
   });
 });
 

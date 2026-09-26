@@ -225,6 +225,42 @@ export function globalNavigationSequenceFromKeyboard(
   return { action: null, pendingSince: null };
 }
 
+export type IssueDetailShortcut =
+  | 'assign-self'
+  | 'toggle-favorite'
+  | 'open-due-date'
+  | 'open-sub-issue'
+  | 'toggle-resources'
+  | 'add-link';
+
+export function issueDetailShortcutFromKeyboard(event: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  repeat?: boolean;
+  isComposing?: boolean;
+  defaultPrevented?: boolean;
+  target: EventTarget | null;
+}): IssueDetailShortcut | null {
+  if (event.defaultPrevented || event.isComposing || event.repeat || isTypingTarget(event.target))
+    return null;
+
+  const key = event.key.toLowerCase();
+  const modifier = event.metaKey || event.ctrlKey;
+  if (event.altKey && !event.shiftKey && !modifier && key === 'f') return 'toggle-favorite';
+  if (modifier && event.shiftKey) {
+    if (key === 'o') return 'open-sub-issue';
+    if (key === 'l') return 'toggle-resources';
+  }
+  if (modifier && event.altKey && !event.shiftKey && key === 'l') return 'add-link';
+  if (modifier || event.altKey) return null;
+  if (event.shiftKey) return key === 'd' ? 'open-due-date' : null;
+  if (key === 'i') return 'assign-self';
+  return null;
+}
+
 export type IssueCopyShortcut =
   | 'copy-id'
   | 'copy-url'

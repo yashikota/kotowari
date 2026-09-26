@@ -51,7 +51,11 @@ import { formatAttachmentSize, IssueAttachmentList } from './IssueAttachmentList
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
 
 import { PresenterScope, useActions, useIntent, useKeyboard } from '../application/Root.tsx';
-import { issueCopyShortcutFromKeyboard, issueLinkedCodeSequenceFromKeyboard } from '../keymap.ts';
+import {
+  issueCopyShortcutFromKeyboard,
+  issueDetailShortcutFromKeyboard,
+  issueLinkedCodeSequenceFromKeyboard,
+} from '../keymap.ts';
 import type { IssueCopyShortcut } from '../keymap.ts';
 import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
 
@@ -1610,6 +1614,32 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
     ) {
       linkedCodeSequenceSince.current = null;
       return false;
+    }
+    const issueShortcut = issueDetailShortcutFromKeyboard(event);
+    if (issueShortcut) {
+      event.preventDefault();
+      switch (issueShortcut) {
+        case 'assign-self':
+          void sendIntent('Assignee_onChange', ['self']);
+          break;
+        case 'toggle-favorite':
+          void sendIntent('Favorite_onClick29', []);
+          break;
+        case 'open-due-date':
+          void sendIntent('onOpenDueDate', []);
+          break;
+        case 'open-sub-issue':
+          void sendIntent('onOpenSubIssueEditor', []);
+          break;
+        case 'toggle-resources':
+          void sendIntent('onToggleResources', []);
+          break;
+        case 'add-link':
+          void sendIntent('onOpenExternalLink', ['link']);
+          break;
+      }
+      linkedCodeSequenceSince.current = null;
+      return true;
     }
     const linkedCodeSequence = issueLinkedCodeSequenceFromKeyboard(
       event,
