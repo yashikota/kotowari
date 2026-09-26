@@ -26,6 +26,10 @@ test('issue shortcuts assign to me, toggle favorite, and open the due-date picke
 
   await page.keyboard.press('Shift+d');
   await expect(page.getByRole('dialog', { name: 'Set due date' })).toBeVisible();
+  const resetFavorite = await request.patch(`/api/issues/${issue.identifier}`, {
+    data: { isFavorite: false },
+  });
+  expect(resetFavorite.ok()).toBeTruthy();
 });
 
 test('issue shortcuts create a sub-issue, toggle resources, and open the link form', async ({

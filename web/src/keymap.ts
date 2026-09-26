@@ -7,6 +7,7 @@ export type KeyAction =
   | 'new-adr'
   | 'move-down'
   | 'move-up'
+  | 'select'
   | 'open'
   | 'escape'
   | 'status'
@@ -371,6 +372,9 @@ export function actionFromKeyboard(event: {
       return 'move-up';
     case 'Enter':
       return 'open';
+    case 'x':
+    case 'X':
+      return 'select';
     case 's':
       return 'status';
     case '?':

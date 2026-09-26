@@ -20,7 +20,7 @@ import {
 } from '../issue-list.ts';
 import type { IssueBoardColumnProps } from '../components/IssueBoardColumn.tsx';
 import { localToday } from '../due.ts';
-import { actionFromKeyboard } from '../keymap.ts';
+import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
@@ -198,14 +198,40 @@ export function useIssueListPresenter({
   }
 
   useKeyboard((e) => {
-    const action = actionFromKeyboard(e);
-    if (action !== 'move-down' && action !== 'move-up' && action !== 'open') {
-      return false;
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      !e.altKey &&
+      !e.shiftKey &&
+      !e.repeat &&
+      !e.isComposing &&
+      !isTypingTarget(e.target) &&
+      e.key.toLowerCase() === 'a'
+    ) {
+      if (ids.length === 0) return false;
+      e.preventDefault();
+      setBulkSelectedIds(ids);
+      return true;
     }
+    const action = actionFromKeyboard(e);
+    if (action === 'escape' && bulkSelectedIds.length > 0) {
+      e.preventDefault();
+      setBulkSelectedIds([]);
+      return true;
+    }
+    if (action !== 'move-down' && action !== 'move-up' && action !== 'select' && action !== 'open')
+      return false;
     if (ids.length === 0) {
       return false;
     }
     e.preventDefault();
+    if (action === 'select') {
+      const id = selectedId ?? ids[0];
+      if (id)
+        setBulkSelectedIds((current) =>
+          current.includes(id) ? current.filter((selected) => selected !== id) : [...current, id],
+        );
+      return true;
+    }
     const idx = ids.indexOf(selectedId ?? '');
     if (action === 'move-down') {
       const id = ids[Math.min(idx + 1, ids.length - 1)] ?? ids[0];

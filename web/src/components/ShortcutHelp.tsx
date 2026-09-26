@@ -32,6 +32,8 @@ export function ShortcutHelpView({
     { keys: t('ui.shortcutOpenLinkedCodeKeys'), action: t('ui.shortcutOpenLinkedCode') },
     { keys: '/', action: t('ui.shortcutFindInList') },
     { keys: 'j / k', action: t('ui.shortcutMoveSelection') },
+    { keys: 'x', action: t('ui.shortcutSelectIssue') },
+    { keys: 'Mod+A', action: t('ui.shortcutSelectAllIssues') },
     { keys: 'Enter', action: t('ui.shortcutOpenIssue') },
     { keys: 's', action: t('ui.shortcutSetStatus') },
     { keys: '1–7', action: t('ui.shortcutSwitchNavigation') },

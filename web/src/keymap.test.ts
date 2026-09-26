@@ -39,6 +39,25 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
   });
 
+  it('selects the focused list item with x', () => {
+    expect(
+      actionFromKeyboard({
+        key: 'x',
+        metaKey: false,
+        ctrlKey: false,
+        target: el('BODY'),
+      }),
+    ).toBe('select');
+    expect(
+      actionFromKeyboard({
+        key: 'x',
+        metaKey: false,
+        ctrlKey: false,
+        target: el('INPUT'),
+      }),
+    ).toBeNull();
+  });
+
   it('maps list motion and create keys', () => {
     const body = el('BODY');
     expect(
@@ -219,7 +238,7 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
     expect(
       actionFromKeyboard({
-        key: 'x',
+        key: 'z',
         metaKey: false,
         ctrlKey: false,
         target: body,
