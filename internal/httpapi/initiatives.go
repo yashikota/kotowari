@@ -31,6 +31,9 @@ func (s *Server) createInitiative(w http.ResponseWriter, r *http.Request) {
 		Description  string   `json:"description"`
 		Status       string   `json:"status"`
 		Color        string   `json:"color"`
+		Health       string   `json:"health"`
+		Priority     int      `json:"priority"`
+		Labels       []string `json:"labels"`
 		StartDate    *string  `json:"startDate"`
 		TargetDate   *string  `json:"targetDate"`
 		ProjectSlugs []string `json:"projectSlugs"`
@@ -39,7 +42,7 @@ func (s *Server) createInitiative(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateInitiativeWithProjects(in.Name, in.Slug, in.Description, in.Status, in.Color, in.StartDate, in.TargetDate, in.ProjectSlugs)
+	out, err := s.store.CreateInitiativeWithOptions(in.Name, in.Slug, in.Description, in.Status, in.Color, in.StartDate, in.TargetDate, in.ProjectSlugs, in.Health, in.Priority, in.Labels)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -53,6 +56,9 @@ func (s *Server) patchInitiative(w http.ResponseWriter, r *http.Request) {
 		Description     *string   `json:"description"`
 		Status          *string   `json:"status"`
 		Color           *string   `json:"color"`
+		Health          *string   `json:"health"`
+		Priority        *int      `json:"priority"`
+		Labels          *[]string `json:"labels"`
 		StartDate       *string   `json:"startDate"`
 		TargetDate      *string   `json:"targetDate"`
 		ClearStartDate  bool      `json:"clearStartDate"`
@@ -78,6 +84,7 @@ func (s *Server) patchInitiative(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := s.store.UpdateInitiative(r.PathValue("slug"), store.UpdateInitiativeInput{
 		Name: in.Name, Description: in.Description, Status: in.Status, Color: in.Color,
+		Health: in.Health, Priority: in.Priority, Labels: in.Labels,
 		StartDate: start, TargetDate: target, ProjectSlugs: in.ProjectSlugs,
 	})
 	if err != nil {

@@ -60,6 +60,10 @@ func (s *Store) CreateInitiative(name, slug, description, status, color string, 
 }
 
 func (s *Store) CreateInitiativeWithProjects(name, slug, description, status, color string, start, target *string, projectSlugs []string) (Initiative, error) {
+	return s.CreateInitiativeWithOptions(name, slug, description, status, color, start, target, projectSlugs, "", 0, nil)
+}
+
+func (s *Store) CreateInitiativeWithOptions(name, slug, description, status, color string, start, target *string, projectSlugs []string, health string, priority int, labels []string) (Initiative, error) {
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	description = strings.TrimSpace(description)
@@ -78,6 +82,12 @@ func (s *Store) CreateInitiativeWithProjects(name, slug, description, status, co
 	if !validProjectIconColor(color) {
 		return Initiative{}, validationf("invalid initiative color")
 	}
+	if !domain.ValidProjectHealth(health) {
+		return Initiative{}, validationf("invalid initiative health")
+	}
+	if !domain.ValidPriority(priority) {
+		return Initiative{}, validationf("invalid initiative priority")
+	}
 	if !validInitiativeDates(start, target) {
 		return Initiative{}, validationf("initiative dates must use YYYY-MM-DD and start before target")
 	}
@@ -90,10 +100,18 @@ func (s *Store) CreateInitiativeWithProjects(name, slug, description, status, co
 		if initiativeIndex(m, slug) >= 0 {
 			return errf(ErrConflict, "initiative slug")
 		}
+		canonicalLabels, err := canonicalProjectLabels(m, labels)
+		if err != nil {
+			return err
+		}
 		out = Initiative{
 			ID: m.nextID(), Name: name, Slug: slug, Description: description,
-			Status: status, Color: color, StartDate: cloneString(start), TargetDate: cloneString(target),
+			Status: status, Color: color, Health: health, Priority: priority, Labels: canonicalLabels,
+			StartDate: cloneString(start), TargetDate: cloneString(target),
 			CreatedAt: now, UpdatedAt: now, ProjectSlugs: []string{},
+		}
+		if status == "completed" {
+			out.CompletedAt = cloneString(&now)
 		}
 		if err := replaceInitiativeProjects(m, out, projectSlugs); err != nil {
 			return err
@@ -137,6 +155,25 @@ func (s *Store) UpdateInitiative(slug string, in UpdateInitiativeInput) (Initiat
 			}
 			initiative.Status = *in.Status
 		}
+		if in.Health != nil {
+			if !domain.ValidProjectHealth(*in.Health) {
+				return validationf("invalid initiative health")
+			}
+			initiative.Health = *in.Health
+		}
+		if in.Priority != nil {
+			if !domain.ValidPriority(*in.Priority) {
+				return validationf("invalid initiative priority")
+			}
+			initiative.Priority = *in.Priority
+		}
+		if in.Labels != nil {
+			labels, err := canonicalProjectLabels(m, *in.Labels)
+			if err != nil {
+				return err
+			}
+			initiative.Labels = labels
+		}
 		if in.Color != nil {
 			if !validProjectIconColor(*in.Color) {
 				return validationf("invalid initiative color")
@@ -158,6 +195,11 @@ func (s *Store) UpdateInitiative(slug string, in UpdateInitiativeInput) (Initiat
 			}
 		}
 		now := domain.Now()
+		if initiative.Status == "completed" && initiative.CompletedAt == nil {
+			initiative.CompletedAt = cloneString(&now)
+		} else if initiative.Status != "completed" {
+			initiative.CompletedAt = nil
+		}
 		initiative.UpdatedAt = now
 		m.Initiatives[i] = initiative
 		addActivity(m, "initiative", initiative.ID, "updated", map[string]any{"slug": slug}, now)

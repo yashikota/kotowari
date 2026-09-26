@@ -16,7 +16,7 @@ import { Link } from '@tanstack/react-router';
 import { IconArrowLeft, IconSearch, IconTarget, IconTrash } from '@tabler/icons-react';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
-import type { Initiative, InitiativeStatus } from '../types.ts';
+import type { Initiative, InitiativeStatus, ProjectHealth } from '../types.ts';
 import { formatCalendarDate } from '../time.ts';
 import { InitiativeListControls } from '../components/InitiativeListControls.tsx';
 import type { InitiativeDisplayProperty } from '../initiative-list.ts';
@@ -27,6 +27,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 const INITIATIVE_STATUSES: InitiativeStatus[] = ['planned', 'active', 'completed', 'canceled'];
+const INITIATIVE_HEALTH: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
 const INITIATIVE_COLORS = ['grey', 'blue', 'purple', 'pink', 'red', 'orange', 'yellow', 'green'];
 
 export function InitiativesPageView({
@@ -41,6 +42,10 @@ export function InitiativesPageView({
     scope,
     query,
     statusFilter,
+    priorityFilter,
+    healthFilter,
+    labelFilter,
+    labels,
     projectsFilter,
     targetDateFrom,
     targetDateTo,
@@ -101,6 +106,10 @@ export function InitiativesPageView({
                 filterOpened={filterOpened}
                 optionsOpened={optionsOpened}
                 statusFilter={statusFilter}
+                priorityFilter={priorityFilter}
+                healthFilter={healthFilter}
+                labelFilter={labelFilter}
+                labels={labels}
                 projectsFilter={projectsFilter}
                 targetDateFrom={targetDateFrom}
                 targetDateTo={targetDateTo}
@@ -299,6 +308,34 @@ function InitiativeListRow({
             <Badge size="sm" variant="light" color="gray">
               {statusLabel}
             </Badge>
+          ) : property === 'priority' ? (
+            <Text size="xs" c="dimmed">
+              {t(`initiativeList.priorityValue.${initiative.priority ?? 0}`)}
+            </Text>
+          ) : property === 'health' ? (
+            <Badge size="sm" variant="light" color={initiative.health ? 'green' : 'gray'}>
+              {initiative.health
+                ? t(`initiativeList.healthValue.${initiative.health}`)
+                : t('initiativeList.noHealth')}
+            </Badge>
+          ) : property === 'labels' ? (
+            <Group gap={4} wrap="nowrap">
+              {initiative.labels?.length ? (
+                initiative.labels.map((label) => (
+                  <Badge key={label} size="xs" variant="light" color="gray">
+                    {label}
+                  </Badge>
+                ))
+              ) : (
+                <Text size="xs" c="dimmed">
+                  —
+                </Text>
+              )}
+            </Group>
+          ) : property === 'completed' ? (
+            <Text size="xs" c={initiative.completedAt ? undefined : 'dimmed'}>
+              {initiative.completedAt ? date(initiative.completedAt) : '—'}
+            </Text>
           ) : property === 'projects' ? (
             <Text size="xs" c="dimmed">
               {t('initiatives.projectCount', { count: initiative.projectSlugs.length })}
@@ -356,6 +393,10 @@ export function InitiativeDetailPageView({
     color,
     startDate,
     targetDate,
+    priority,
+    health,
+    labels,
+    availableLabels,
     projectSlugs,
     error,
     saving,
@@ -433,6 +474,35 @@ export function InitiativeDetailPageView({
                 label={t('initiatives.targetDate')}
                 value={targetDate}
                 onChange={handlers.onTargetDateChange}
+              />
+            </Group>
+            <Group grow align="flex-start">
+              <Select
+                label={t('initiativeList.priority')}
+                value={String(priority)}
+                onChange={handlers.onPriorityChange}
+                data={['0', '1', '2', '3', '4'].map((value) => ({
+                  value,
+                  label: t(`initiativeList.priorityValue.${value}`),
+                }))}
+              />
+              <Select
+                label={t('initiativeList.health')}
+                value={health || null}
+                onChange={handlers.onHealthChange}
+                data={INITIATIVE_HEALTH.map((value) => ({
+                  value,
+                  label: t(`initiativeList.healthValue.${value}`),
+                }))}
+                clearable
+              />
+              <MultiSelect
+                label={t('initiativeList.labels')}
+                value={labels}
+                onChange={handlers.onLabelsChange}
+                data={availableLabels}
+                searchable
+                clearable
               />
             </Group>
             <MultiSelect

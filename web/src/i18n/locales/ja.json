@@ -848,6 +848,24 @@
     "search": "イニシアチブを検索",
     "addFilter": "フィルターを追加",
     "status": "ステータス",
+    "priority": "優先度",
+    "health": "ヘルス",
+    "noHealth": "更新なし",
+    "labels": "ラベル",
+    "created": "作成日",
+    "completed": "完了日",
+    "priorityValue": {
+      "0": "優先度なし",
+      "1": "緊急",
+      "2": "高",
+      "3": "中",
+      "4": "低"
+    },
+    "healthValue": {
+      "on_track": "順調",
+      "at_risk": "注意が必要",
+      "off_track": "遅延中"
+    },
     "projects": "プロジェクト",
     "allProjects": "すべてのプロジェクト",
     "withProjects": "プロジェクトあり",
@@ -873,12 +891,16 @@
     "property": {
       "id": "ID",
       "description": "説明",
+      "health": "ヘルス",
+      "priority": "優先度",
+      "labels": "ラベル",
       "status": "ステータス",
       "projects": "プロジェクト",
       "activeProjects": "進行中のプロジェクト",
       "targetDate": "目標日",
       "created": "作成日",
-      "updated": "更新日"
+      "updated": "更新日",
+      "completed": "完了日"
     }
   },
   "projectViews": {

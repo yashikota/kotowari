@@ -213,8 +213,12 @@ const initiativesRoute = createRoute({
   path: '/initiatives',
   validateSearch: parseInitiativeListSearch,
   loader: async () => {
-    const [initiatives, projects] = await Promise.all([api.initiatives(), api.projects()]);
-    return { initiatives, projects };
+    const [initiatives, projects, labels] = await Promise.all([
+      api.initiatives(),
+      api.projects(),
+      api.labels(),
+    ]);
+    return { initiatives, projects, labels };
   },
   component: lazyRouteComponent(() => import('./pages/InitiativesPages.tsx'), 'InitiativesPage'),
 });
@@ -223,8 +227,12 @@ const initiativeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/initiatives/$slug',
   loader: async ({ params }) => {
-    const [initiative, projects] = await Promise.all([api.initiative(params.slug), api.projects()]);
-    return { initiative, projects };
+    const [initiative, projects, labels] = await Promise.all([
+      api.initiative(params.slug),
+      api.projects(),
+      api.labels(),
+    ]);
+    return { initiative, projects, labels };
   },
   component: lazyRouteComponent(
     () => import('./pages/InitiativesPages.tsx'),

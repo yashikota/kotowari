@@ -7,13 +7,24 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   const stamp = Date.now();
   const activeName = `Active initiative ${stamp}`;
   const plannedName = `Planned initiative ${stamp}`;
+  const label = `initiative-${stamp}`;
+  const detailLabel = `initiative-detail-${stamp}`;
   const projectSlug = `initiative-list-project-${stamp}`;
+  const labelResponse = await request.post('/api/labels', {
+    data: { name: label, color: '#7950f2' },
+  });
+  expect(labelResponse.ok(), await labelResponse.text()).toBeTruthy();
+  const detailLabelResponse = await request.post('/api/labels', {
+    data: { name: detailLabel, color: '#7950f2' },
+  });
+  expect(detailLabelResponse.ok(), await detailLabelResponse.text()).toBeTruthy();
   const projectResponse = await request.post('/api/projects', {
     data: {
       name: `Active initiative project ${stamp}`,
       slug: projectSlug,
       status: 'started',
       description: '',
+      labels: [label],
     },
   });
   expect(projectResponse.ok(), await projectResponse.text()).toBeTruthy();
@@ -26,6 +37,9 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
       description: 'Ship the next version',
       targetDate: '2026-11-20',
       projectSlugs: [projectSlug],
+      priority: 2,
+      health: 'on_track',
+      labels: [label],
     },
   });
   expect(activeResponse.ok(), await activeResponse.text()).toBeTruthy();
@@ -36,6 +50,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
       slug: `planned-initiative-${stamp}`,
       status: 'planned',
       targetDate: '2026-12-10',
+      priority: 3,
     },
   });
   expect(plannedResponse.ok(), await plannedResponse.text()).toBeTruthy();
@@ -52,15 +67,33 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  const filterDialog = page.getByRole('dialog', { name: 'Add filter' });
+  await filterDialog.getByRole('checkbox', { name: 'High', exact: true }).click();
+  await filterDialog.getByRole('checkbox', { name: 'On track', exact: true }).click();
+  await filterDialog.getByRole('checkbox', { name: label, exact: true }).click();
+  await expect(page).toHaveURL(/priorityFilter=.*healthFilter=.*labelFilter=/);
+  await expect(page.getByRole('link', { name: activeName })).toBeVisible();
+  await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
+  await page.goto('/initiatives?scope=all');
+  await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
 
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('combobox', { name: 'Grouping' }).selectOption('status');
   await page.getByRole('combobox', { name: 'Ordering' }).selectOption('targetDate');
   await page.getByRole('checkbox', { name: 'ID' }).check();
   await page.getByRole('checkbox', { name: 'Description' }).check();
+  await page.getByRole('checkbox', { name: 'Priority' }).check();
+  await page.getByRole('checkbox', { name: 'Health' }).check();
+  await page.getByRole('checkbox', { name: 'Labels' }).check();
+  await page.getByRole('checkbox', { name: 'Completed' }).check();
   await page.getByRole('checkbox', { name: 'Active projects' }).check();
   await expect(page.getByRole('columnheader', { name: 'ID' }).first()).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Description' }).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Priority' }).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Health' }).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Labels' }).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Completed' }).first()).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Active projects' }).first()).toBeVisible();
   await expect(page.getByText('In progress', { exact: true }).first()).toBeVisible();
   await expect(page.getByText(`#${active.id}`, { exact: true })).toBeVisible();
@@ -73,6 +106,40 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   await expect(page.getByRole('link', { name: activeName })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Description' }).first()).toBeVisible();
   await expect(page.getByText('1 active project', { exact: true })).toBeVisible();
+
+  await page.getByRole('link', { name: activeName }).click();
+  await page.getByRole('combobox', { name: 'Priority' }).click();
+  await page.getByRole('option', { name: 'Urgent', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Health' }).click();
+  await page.getByRole('option', { name: 'Off track', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Labels' }).click();
+  await page.getByRole('option', { name: detailLabel, exact: true }).click();
+  await page.getByRole('combobox', { name: 'Status' }).click();
+  await page.getByRole('option', { name: 'Completed', exact: true }).click();
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/initiatives/active-initiative-${stamp}`);
+      return (await response.json()) as {
+        status: string;
+        priority: number;
+        health: string;
+        labels: string[];
+        completedAt: string;
+      };
+    })
+    .toMatchObject({
+      status: 'completed',
+      priority: 1,
+      health: 'off_track',
+      labels: [label, detailLabel],
+    });
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/initiatives/active-initiative-${stamp}`);
+      return (await response.json()) as { completedAt?: string };
+    })
+    .toHaveProperty('completedAt');
 });
 
 test('initiatives link projects in both directions and filter project lists', async ({

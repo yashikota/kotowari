@@ -15,23 +15,31 @@ func TestInitiativeAPIManagesProjectsAndDates(t *testing.T) {
 			t.Fatalf("create project %s: %d %s", project, created.Code, created.Body.String())
 		}
 	}
+	createdLabel := doJSON(t, s, http.MethodPost, "/api/labels", `{"name":"Initiative QA","color":"#7950f2"}`)
+	if createdLabel.Code != http.StatusCreated {
+		t.Fatalf("create label %d %s", createdLabel.Code, createdLabel.Body.String())
+	}
 
-	created := doJSON(t, s, http.MethodPost, "/api/initiatives", `{"name":"Platform launch","slug":"platform-launch","description":"Ship the platform","status":"planned","color":"purple","startDate":"2026-09-01","targetDate":"2026-12-31"}`)
+	created := doJSON(t, s, http.MethodPost, "/api/initiatives", `{"name":"Platform launch","slug":"platform-launch","description":"Ship the platform","status":"planned","color":"purple","health":"on_track","priority":2,"labels":["Initiative QA"],"startDate":"2026-09-01","targetDate":"2026-12-31"}`)
 	if created.Code != http.StatusCreated {
 		t.Fatalf("create initiative %d %s", created.Code, created.Body.String())
 	}
-	updated := doJSON(t, s, http.MethodPatch, "/api/initiatives/platform-launch", `{"status":"active","projectSlugs":["alpha","beta"]}`)
+	updated := doJSON(t, s, http.MethodPatch, "/api/initiatives/platform-launch", `{"status":"completed","projectSlugs":["alpha","beta"]}`)
 	if updated.Code != http.StatusOK {
 		t.Fatalf("update initiative %d %s", updated.Code, updated.Body.String())
 	}
 	var initiative struct {
 		Status       string   `json:"status"`
 		ProjectSlugs []string `json:"projectSlugs"`
+		Health       string   `json:"health"`
+		Priority     int      `json:"priority"`
+		Labels       []string `json:"labels"`
+		CompletedAt  *string  `json:"completedAt"`
 	}
 	if err := json.Unmarshal(updated.Body.Bytes(), &initiative); err != nil {
 		t.Fatal(err)
 	}
-	if initiative.Status != "active" || len(initiative.ProjectSlugs) != 2 {
+	if initiative.Status != "completed" || len(initiative.ProjectSlugs) != 2 || initiative.Health != "on_track" || initiative.Priority != 2 || len(initiative.Labels) != 1 || initiative.CompletedAt == nil {
 		t.Fatalf("updated initiative %#v", initiative)
 	}
 	project := doJSON(t, s, http.MethodGet, "/api/projects/alpha", "")
@@ -77,5 +85,13 @@ func TestInitiativeAPIRejectsInvalidStatusAndDateRange(t *testing.T) {
 	invalid = doJSON(t, s, http.MethodPost, "/api/initiatives", `{"name":"Broken","slug":"broken","startDate":"2026-12-31","targetDate":"2026-09-01"}`)
 	if invalid.Code != http.StatusBadRequest {
 		t.Fatalf("invalid date range %d %s", invalid.Code, invalid.Body.String())
+	}
+	invalid = doJSON(t, s, http.MethodPost, "/api/initiatives", `{"name":"Broken","slug":"broken","priority":5}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid priority %d %s", invalid.Code, invalid.Body.String())
+	}
+	invalid = doJSON(t, s, http.MethodPost, "/api/initiatives", `{"name":"Broken","slug":"broken","health":"unknown"}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid health %d %s", invalid.Code, invalid.Body.String())
 	}
 }

@@ -47,6 +47,9 @@ describe('initiative list search', () => {
       parseInitiativeListSearch({
         scope: 'planned',
         statusFilter: ['active', 'invalid', 'active'],
+        priorityFilter: ['2', '9', '2'],
+        healthFilter: ['on_track', 'invalid'],
+        labelFilter: ['Launch', ''],
         projects: 'withProjects',
         targetDateFrom: '2026-03-01',
         targetDateTo: 'not-a-date',
@@ -57,6 +60,9 @@ describe('initiative list search', () => {
     ).toEqual({
       scope: 'planned',
       statusFilter: ['active'],
+      priorityFilter: [2],
+      healthFilter: ['on_track'],
+      labelFilter: ['Launch'],
       projects: 'withProjects',
       targetDateFrom: '2026-03-01',
       orderBy: 'targetDate',
@@ -110,6 +116,50 @@ describe('initiative list search', () => {
       search: { orderBy: 'targetDate', direction: 'desc' },
     });
     expect(descending[0]?.initiatives.map((item) => item.slug)).toEqual(['b', 'a', 'undated']);
+  });
+
+  it('filters on priority, health, and labels and sorts completed initiatives last when undated', () => {
+    const initiatives = [
+      initiative('healthy', 'active', {
+        priority: 2,
+        health: 'on_track',
+        labels: ['Launch'],
+        completedAt: null,
+      }),
+      initiative('at-risk', 'active', {
+        priority: 2,
+        health: 'at_risk',
+        labels: ['Launch'],
+      }),
+      initiative('other-priority', 'active', {
+        priority: 3,
+        health: 'on_track',
+        labels: ['Launch'],
+      }),
+      initiative('completed', 'completed', {
+        priority: 2,
+        health: 'on_track',
+        labels: ['Launch'],
+        completedAt: '2026-03-01T00:00:00Z',
+      }),
+    ];
+    const filtered = buildInitiativeList({
+      initiatives,
+      projects: [],
+      search: { priorityFilter: [2], healthFilter: ['on_track'], labelFilter: ['Launch'] },
+    });
+    expect(filtered[0]?.initiatives.map((item) => item.slug)).toEqual(['healthy', 'completed']);
+    const sorted = buildInitiativeList({
+      initiatives,
+      projects: [],
+      search: { orderBy: 'completed' },
+    });
+    expect(sorted[0]?.initiatives.map((item) => item.slug)).toEqual([
+      'completed',
+      'healthy',
+      'at-risk',
+      'other-priority',
+    ]);
   });
 
   it('counts only linked non-completed projects as active', () => {

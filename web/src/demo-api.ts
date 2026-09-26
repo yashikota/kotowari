@@ -14,6 +14,7 @@ import type {
   Page,
   Project,
   ProjectDependency,
+  ProjectHealth,
   ProjectTemplate,
   RecurringIssue,
   View,
@@ -387,7 +388,23 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const value = body(init);
     const name = text(value.name).trim();
     const slug = text(value.slug).trim();
+    const priority = Number(value.priority ?? 0);
+    const health = text(value.health);
+    const initiativeLabels = Array.isArray(value.labels) ? (value.labels as string[]) : [];
     if (!name || !slug) return json({ error: 'initiative name and slug required' }, 400);
+    if (!Number.isInteger(priority) || priority < 0 || priority > 4)
+      return json({ error: 'invalid initiative priority' }, 400);
+    if (
+      health &&
+      !PROJECT_HEALTH_STATUSES.includes(health as (typeof PROJECT_HEALTH_STATUSES)[number])
+    )
+      return json({ error: 'invalid initiative health' }, 400);
+    if (
+      initiativeLabels.some(
+        (name) => typeof name !== 'string' || !labels.some((label) => label.name === name),
+      )
+    )
+      return json({ error: 'unknown initiative label' }, 400);
     if (initiatives.some((initiative) => initiative.slug === slug))
       return json({ error: 'initiative slug already exists' }, 409);
     const projectSlugs = Array.isArray(value.projectSlugs) ? (value.projectSlugs as string[]) : [];
@@ -402,8 +419,12 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       description: text(value.description),
       status: (value.status as Initiative['status']) ?? 'planned',
       color: text(value.color),
+      health: (health || undefined) as ProjectHealth | undefined,
+      priority,
+      labels: initiativeLabels,
       startDate: text(value.startDate) || null,
       targetDate: text(value.targetDate) || null,
+      completedAt: value.status === 'completed' ? now : null,
       projectSlugs,
       createdAt: now,
       updatedAt: now,
@@ -424,6 +445,32 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     if (method === 'GET') return json(initiative);
     if (method === 'PATCH') {
       const value = body(init);
+      const changes = { ...value };
+      if ('priority' in changes) {
+        const priority = Number(changes.priority);
+        if (!Number.isInteger(priority) || priority < 0 || priority > 4)
+          return json({ error: 'invalid initiative priority' }, 400);
+        changes.priority = priority;
+      }
+      if ('health' in changes) {
+        const health = text(changes.health);
+        if (
+          health &&
+          !PROJECT_HEALTH_STATUSES.includes(health as (typeof PROJECT_HEALTH_STATUSES)[number])
+        )
+          return json({ error: 'invalid initiative health' }, 400);
+        changes.health = health || undefined;
+      }
+      if ('labels' in changes) {
+        if (
+          !Array.isArray(changes.labels) ||
+          changes.labels.some(
+            (name) => typeof name !== 'string' || !labels.some((label) => label.name === name),
+          )
+        ) {
+          return json({ error: 'unknown initiative label' }, 400);
+        }
+      }
       if (Array.isArray(value.projectSlugs)) {
         const projectSlugs = value.projectSlugs as string[];
         if (
@@ -440,12 +487,18 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         }
         initiative.projectSlugs = projectSlugs;
       }
-      const { clearStartDate, clearTargetDate, ...changes } = value;
+      const { clearStartDate, clearTargetDate, ...patchValues } = changes;
+      const previousStatus = initiative.status;
       patch(initiative, {
-        ...changes,
+        ...patchValues,
         ...(clearStartDate ? { startDate: null } : {}),
         ...(clearTargetDate ? { targetDate: null } : {}),
       });
+      if (initiative.status === 'completed' && previousStatus !== 'completed') {
+        initiative.completedAt = initiative.updatedAt;
+      } else if (initiative.status !== 'completed') {
+        initiative.completedAt = null;
+      }
       return json(initiative);
     }
     if (method === 'DELETE') {

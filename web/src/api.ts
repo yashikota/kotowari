@@ -247,6 +247,9 @@ export const api = {
     description?: string;
     status?: Initiative['status'];
     color?: string;
+    health?: Project['health'];
+    priority?: number;
+    labels?: string[];
     startDate?: string;
     targetDate?: string;
   }) => req<Initiative>('/api/initiatives', { method: 'POST', body: JSON.stringify(body) }),

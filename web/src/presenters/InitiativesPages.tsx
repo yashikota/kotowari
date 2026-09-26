@@ -27,7 +27,11 @@ function initiativeSlug(name: string, existing: Initiative[]): string {
 }
 
 export function useInitiativesPagePresenter() {
-  const { initiatives, projects } = useLoaderData({ from: '/initiatives' });
+  const {
+    initiatives,
+    projects,
+    labels: workspaceLabels,
+  } = useLoaderData({ from: '/initiatives' });
   const search = useSearch({ from: '/initiatives' });
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { t } = useTranslation();
@@ -51,10 +55,17 @@ export function useInitiativesPagePresenter() {
   );
   const displayProperties = search.displayProperties ?? DEFAULT_INITIATIVE_DISPLAY_PROPERTIES;
   const projectsFilter = search.projects ?? 'all';
+  const priorityFilter = search.priorityFilter ?? [];
+  const healthFilter = search.healthFilter ?? [];
+  const labelFilter = search.labelFilter ?? [];
+  const labels = workspaceLabels.map((label) => label.name).sort((a, b) => a.localeCompare(b));
   const scope = search.scope ?? 'all';
   const hasFilters = Boolean(
     search.q ||
     search.statusFilter?.length ||
+    search.priorityFilter?.length ||
+    search.healthFilter?.length ||
+    search.labelFilter?.length ||
     search.projects ||
     search.targetDateFrom ||
     search.targetDateTo,
@@ -100,6 +111,10 @@ export function useInitiativesPagePresenter() {
     scope,
     query: search.q ?? '',
     statusFilter: search.statusFilter ?? [],
+    priorityFilter,
+    healthFilter,
+    labelFilter,
+    labels,
     projectsFilter,
     targetDateFrom: search.targetDateFrom ?? '',
     targetDateTo: search.targetDateTo ?? '',
@@ -156,6 +171,16 @@ export function useInitiativesPagePresenter() {
         updateListSearch({
           statusFilter: value.length ? (value as InitiativeStatus[]) : undefined,
         }),
+      onPriorityFilterChange: (value: string[]) =>
+        updateListSearch({
+          priorityFilter: value.length ? value.map(Number).filter(Number.isInteger) : undefined,
+        }),
+      onHealthFilterChange: (value: string[]) =>
+        updateListSearch({
+          healthFilter: value.length ? (value as InitiativeListSearch['healthFilter']) : undefined,
+        }),
+      onLabelFilterChange: (value: string[]) =>
+        updateListSearch({ labelFilter: value.length ? value : undefined }),
       onProjectsFilterChange: (value: string) =>
         updateListSearch({
           projects: value === 'all' ? undefined : (value as InitiativeListSearch['projects']),
@@ -176,6 +201,9 @@ export function useInitiativesPagePresenter() {
         updateListSearch({
           q: undefined,
           statusFilter: undefined,
+          priorityFilter: undefined,
+          healthFilter: undefined,
+          labelFilter: undefined,
           projects: undefined,
           targetDateFrom: undefined,
           targetDateTo: undefined,
@@ -185,7 +213,13 @@ export function useInitiativesPagePresenter() {
 }
 
 export function useInitiativeDetailPresenter() {
-  const { initiative, projects } = useLoaderData({ from: '/initiatives/$slug' });
+  const {
+    initiative,
+    projects,
+    labels: workspaceLabels,
+  } = useLoaderData({
+    from: '/initiatives/$slug',
+  });
   const { t } = useTranslation();
   const router = useRouter();
   const navigate = useNavigate();
@@ -195,6 +229,9 @@ export function useInitiativeDetailPresenter() {
   const [color, setColor] = useState(initiative.color ?? 'purple');
   const [startDate, setStartDate] = useState(initiative.startDate ?? '');
   const [targetDate, setTargetDate] = useState(initiative.targetDate ?? '');
+  const [priority, setPriority] = useState(initiative.priority ?? 0);
+  const [health, setHealth] = useState(initiative.health ?? '');
+  const [labels, setLabels] = useState(initiative.labels ?? []);
   const [projectSlugs, setProjectSlugs] = useState(initiative.projectSlugs);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -210,6 +247,9 @@ export function useInitiativeDetailPresenter() {
         description,
         status,
         color,
+        priority,
+        health,
+        labels,
         ...(startDate ? { startDate } : { clearStartDate: true }),
         ...(targetDate ? { targetDate } : { clearTargetDate: true }),
         projectSlugs,
@@ -247,6 +287,10 @@ export function useInitiativeDetailPresenter() {
     color,
     startDate,
     targetDate,
+    priority,
+    health,
+    labels,
+    availableLabels: workspaceLabels.map((label) => label.name).sort((a, b) => a.localeCompare(b)),
     projectSlugs,
     availableProjects: projects.map((project) => ({ value: project.slug, label: project.name })),
     linkedProjects: projects.filter((project) => projectSlugs.includes(project.slug)),
@@ -261,6 +305,9 @@ export function useInitiativeDetailPresenter() {
       onStartDateChange: (event: ChangeEvent<HTMLInputElement>) => setStartDate(event.target.value),
       onTargetDateChange: (event: ChangeEvent<HTMLInputElement>) =>
         setTargetDate(event.target.value),
+      onPriorityChange: (value: string | null) => setPriority(Number(value ?? 0)),
+      onHealthChange: (value: string | null) => setHealth(value ?? ''),
+      onLabelsChange: setLabels,
       onProjectSlugsChange: setProjectSlugs,
       onSubmit: saveInitiative,
       onDelete: deleteInitiative,

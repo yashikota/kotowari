@@ -1,23 +1,45 @@
-import type { Initiative, InitiativeStatus, Project, ProjectWorkflowStatus } from './types.ts';
+import type {
+  Initiative,
+  InitiativeStatus,
+  Project,
+  ProjectHealth,
+  ProjectWorkflowStatus,
+} from './types.ts';
 
 export type InitiativeScope = 'active' | 'planned' | 'all';
 export type InitiativeGrouping = 'none' | 'status';
-export type InitiativeOrderBy = 'manual' | 'name' | 'status' | 'targetDate' | 'updated';
+export type InitiativeOrderBy =
+  | 'manual'
+  | 'name'
+  | 'status'
+  | 'priority'
+  | 'health'
+  | 'targetDate'
+  | 'created'
+  | 'updated'
+  | 'completed';
 export type InitiativeProjectFilter = 'all' | 'withProjects' | 'withoutProjects';
 export type InitiativeDisplayProperty =
   | 'id'
   | 'description'
+  | 'health'
+  | 'priority'
+  | 'labels'
   | 'status'
   | 'projects'
   | 'activeProjects'
   | 'targetDate'
   | 'created'
-  | 'updated';
+  | 'updated'
+  | 'completed';
 
 export type InitiativeListSearch = {
   scope?: InitiativeScope;
   q?: string;
   statusFilter?: InitiativeStatus[];
+  priorityFilter?: number[];
+  healthFilter?: ProjectHealth[];
+  labelFilter?: string[];
   projects?: InitiativeProjectFilter;
   targetDateFrom?: string;
   targetDateTo?: string;
@@ -30,17 +52,23 @@ export type InitiativeListSearch = {
 export const INITIATIVE_DISPLAY_PROPERTIES: InitiativeDisplayProperty[] = [
   'id',
   'description',
+  'health',
+  'priority',
+  'labels',
   'status',
   'projects',
   'activeProjects',
   'targetDate',
   'created',
   'updated',
+  'completed',
 ];
 
 export const DEFAULT_INITIATIVE_DISPLAY_PROPERTIES: InitiativeDisplayProperty[] = [
   'status',
+  'priority',
   'projects',
+  'health',
   'targetDate',
 ];
 
@@ -62,6 +90,34 @@ export function parseInitiativeListSearch(raw: Record<string, unknown>): Initiat
       typeof value === 'string' && INITIATIVE_STATUSES.includes(value as InitiativeStatus),
   );
   if (statusFilter.length) search.statusFilter = [...new Set(statusFilter)];
+  const priorityValues = Array.isArray(raw.priorityFilter)
+    ? raw.priorityFilter
+    : typeof raw.priorityFilter === 'string'
+      ? raw.priorityFilter.split(',')
+      : [];
+  const priorityFilter = priorityValues
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value >= 0 && value <= 4);
+  if (priorityFilter.length) search.priorityFilter = [...new Set(priorityFilter)];
+  const healthValues = Array.isArray(raw.healthFilter)
+    ? raw.healthFilter
+    : typeof raw.healthFilter === 'string'
+      ? raw.healthFilter.split(',')
+      : [];
+  const healthFilter = healthValues.filter(
+    (value): value is ProjectHealth =>
+      value === 'on_track' || value === 'at_risk' || value === 'off_track',
+  );
+  if (healthFilter.length) search.healthFilter = [...new Set(healthFilter)];
+  const labelValues = Array.isArray(raw.labelFilter)
+    ? raw.labelFilter
+    : typeof raw.labelFilter === 'string'
+      ? raw.labelFilter.split(',')
+      : [];
+  const labelFilter = labelValues.filter(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0,
+  );
+  if (labelFilter.length) search.labelFilter = [...new Set(labelFilter)];
   if (raw.projects === 'withProjects' || raw.projects === 'withoutProjects') {
     search.projects = raw.projects;
   }
@@ -75,8 +131,12 @@ export function parseInitiativeListSearch(raw: Record<string, unknown>): Initiat
     raw.orderBy === 'manual' ||
     raw.orderBy === 'name' ||
     raw.orderBy === 'status' ||
+    raw.orderBy === 'priority' ||
+    raw.orderBy === 'health' ||
     raw.orderBy === 'targetDate' ||
-    raw.orderBy === 'updated'
+    raw.orderBy === 'created' ||
+    raw.orderBy === 'updated' ||
+    raw.orderBy === 'completed'
   ) {
     search.orderBy = raw.orderBy;
   }
@@ -117,6 +177,19 @@ export function buildInitiativeList({
     if (search.scope === 'planned' && initiative.status !== 'planned') return false;
     if (search.statusFilter?.length && !search.statusFilter.includes(initiative.status))
       return false;
+    if (search.priorityFilter?.length && !search.priorityFilter.includes(initiative.priority ?? 0))
+      return false;
+    if (
+      search.healthFilter?.length &&
+      (!initiative.health || !search.healthFilter.includes(initiative.health))
+    )
+      return false;
+    if (
+      search.labelFilter?.length &&
+      !search.labelFilter.some((label) => initiative.labels?.includes(label))
+    ) {
+      return false;
+    }
     if (
       query &&
       !`${initiative.name}\n${initiative.description}`.toLocaleLowerCase().includes(query)
@@ -154,12 +227,20 @@ export function buildInitiativeList({
       comparison =
         INITIATIVE_STATUSES.indexOf(left.status) - INITIATIVE_STATUSES.indexOf(right.status);
     }
+    if (orderBy === 'priority') comparison = (left.priority ?? 0) - (right.priority ?? 0);
+    if (orderBy === 'health') comparison = (left.health ?? '').localeCompare(right.health ?? '');
     if (orderBy === 'targetDate') {
       if (!left.targetDate && right.targetDate) return 1;
       if (left.targetDate && !right.targetDate) return -1;
       comparison = (left.targetDate ?? '').localeCompare(right.targetDate ?? '');
     }
     if (orderBy === 'updated') comparison = left.updatedAt.localeCompare(right.updatedAt);
+    if (orderBy === 'created') comparison = left.createdAt.localeCompare(right.createdAt);
+    if (orderBy === 'completed') {
+      if (!left.completedAt && right.completedAt) return 1;
+      if (left.completedAt && !right.completedAt) return -1;
+      comparison = (left.completedAt ?? '').localeCompare(right.completedAt ?? '');
+    }
     if (comparison === 0)
       comparison = (originalIndex.get(left.slug) ?? 0) - (originalIndex.get(right.slug) ?? 0);
     return comparison * directionMultiplier;

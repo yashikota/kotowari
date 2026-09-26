@@ -84,6 +84,44 @@ func TestCreateInitiativeRejectsInvalidDatesAndProjectLinks(t *testing.T) {
 	}
 }
 
+func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
+	s := openTest(t)
+	label, err := s.CreateLabel("Initiative QA", "#7950f2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	initiative, err := s.CreateInitiativeWithOptions(
+		"Release quality", "release-quality", "", "active", "purple", nil, nil,
+		nil, "on_track", 2, []string{label.Name},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if initiative.Health != "on_track" || initiative.Priority != 2 || len(initiative.Labels) != 1 || initiative.Labels[0] != label.Name || initiative.CompletedAt != nil {
+		t.Fatalf("initiative properties %#v", initiative)
+	}
+	completed, err := s.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{Status: stringPointer("completed")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if completed.CompletedAt == nil {
+		t.Fatalf("completion date not recorded: %#v", completed)
+	}
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = reopened.Close() })
+	reloaded, err := reopened.GetInitiative(initiative.Slug)
+	if err != nil || reloaded.Priority != 2 || reloaded.Health != "on_track" || reloaded.CompletedAt == nil || len(reloaded.Labels) != 1 || reloaded.Labels[0] != label.Name {
+		t.Fatalf("initiative properties did not persist: %#v (%v)", reloaded, err)
+	}
+	active, err := reopened.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{Status: stringPointer("active")})
+	if err != nil || active.CompletedAt != nil {
+		t.Fatalf("reopened initiative retained completion date: %#v (%v)", active, err)
+	}
+}
+
 func TestProjectInitiativePropertyUpdatesBothSides(t *testing.T) {
 	s := openTest(t)
 	project, err := s.CreateProject("Roadmap", "roadmap", "", "started", nil, nil)

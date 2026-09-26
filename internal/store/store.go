@@ -101,8 +101,12 @@ type Initiative struct {
 	Description  string   `json:"description" toml:"description,omitempty"`
 	Status       string   `json:"status" toml:"status"`
 	Color        string   `json:"color,omitempty" toml:"color,omitempty"`
+	Health       string   `json:"health,omitempty" toml:"health,omitempty"`
+	Priority     int      `json:"priority" toml:"priority"`
+	Labels       []string `json:"labels,omitempty" toml:"labels,omitempty"`
 	StartDate    *string  `json:"startDate" toml:"start_date,omitempty"`
 	TargetDate   *string  `json:"targetDate" toml:"target_date,omitempty"`
+	CompletedAt  *string  `json:"completedAt,omitempty" toml:"completed_at,omitempty"`
 	ProjectSlugs []string `json:"projectSlugs" toml:"-"`
 	CreatedAt    string   `json:"createdAt" toml:"created_at"`
 	UpdatedAt    string   `json:"updatedAt" toml:"updated_at"`
@@ -113,6 +117,9 @@ type UpdateInitiativeInput struct {
 	Description  *string
 	Status       *string
 	Color        *string
+	Health       *string
+	Priority     *int
+	Labels       *[]string
 	StartDate    **string
 	TargetDate   **string
 	ProjectSlugs *[]string

@@ -851,6 +851,24 @@
     "search": "Search initiatives",
     "addFilter": "Add filter",
     "status": "Status",
+    "priority": "Priority",
+    "health": "Health",
+    "noHealth": "No update",
+    "labels": "Labels",
+    "created": "Created",
+    "completed": "Completed",
+    "priorityValue": {
+      "0": "No priority",
+      "1": "Urgent",
+      "2": "High",
+      "3": "Medium",
+      "4": "Low"
+    },
+    "healthValue": {
+      "on_track": "On track",
+      "at_risk": "At risk",
+      "off_track": "Off track"
+    },
     "projects": "Projects",
     "allProjects": "All projects",
     "withProjects": "With projects",
@@ -877,12 +895,16 @@
     "property": {
       "id": "ID",
       "description": "Description",
+      "health": "Health",
+      "priority": "Priority",
+      "labels": "Labels",
       "status": "Status",
       "projects": "Projects",
       "activeProjects": "Active projects",
       "targetDate": "Target date",
       "created": "Created",
-      "updated": "Updated"
+      "updated": "Updated",
+      "completed": "Completed"
     }
   },
   "projectViews": {
