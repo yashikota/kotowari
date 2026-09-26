@@ -20,6 +20,10 @@ export function formatActivity(
     const toLabel = workflowStatusLabel(to, workflowStatuses);
     return i18n.t('activity.statusChanged', { from: fromLabel, to: toLabel });
   }
+  if (action === 'cycle_issue_added' || action === 'cycle_issue_completed') {
+    const cycle = typeof payload.cycle === 'string' ? payload.cycle : '';
+    return i18n.t(`activity.${action}`, { cycle });
+  }
   if (action === 'type_changed') {
     const from = typeof payload.from === 'string' ? payload.from : '';
     const to = typeof payload.to === 'string' ? payload.to : '';

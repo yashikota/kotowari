@@ -199,6 +199,8 @@ export type Cycle = {
   endsAt: string;
   status: string;
   isFavorite?: boolean;
+  notifyOnIssueAdded?: boolean;
+  notifyOnIssueCompleted?: boolean;
   resources?: IssueLink[];
   createdAt: string;
   updatedAt: string;

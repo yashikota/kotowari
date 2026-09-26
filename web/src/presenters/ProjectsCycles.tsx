@@ -1973,6 +1973,10 @@ export function useCycleDetailPagePresenter() {
         setDatesOpen(false);
       },
       onToggleFavorite: () => save({ isFavorite: !cycle.isFavorite }),
+      onToggleIssueAddedNotifications: () =>
+        save({ notifyOnIssueAdded: !cycle.notifyOnIssueAdded }),
+      onToggleIssueCompletedNotifications: () =>
+        save({ notifyOnIssueCompleted: !cycle.notifyOnIssueCompleted }),
       onStartCycleToday: () =>
         save({ startsAt: dateAtUTCStart(localDateToday()), status: 'active' }),
       onExportIssues: exportIssues,

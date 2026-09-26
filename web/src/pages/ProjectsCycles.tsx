@@ -1188,6 +1188,27 @@ export function CycleDetailPageView({
                                   {t('cycle.startToday')}
                                 </Menu.Item>
                               ) : null}
+                              <Menu.Sub>
+                                <Menu.Sub.Target>
+                                  <Menu.Sub.Item>{t('cycle.subscribeNotifications')}</Menu.Sub.Item>
+                                </Menu.Sub.Target>
+                                <Menu.Sub.Dropdown>
+                                  <Menu.CheckboxItem
+                                    checked={!!cycle.notifyOnIssueAdded}
+                                    closeMenuOnClick={false}
+                                    onChange={handlers.onToggleIssueAddedNotifications}
+                                  >
+                                    {t('cycle.notifyIssueAdded')}
+                                  </Menu.CheckboxItem>
+                                  <Menu.CheckboxItem
+                                    checked={!!cycle.notifyOnIssueCompleted}
+                                    closeMenuOnClick={false}
+                                    onChange={handlers.onToggleIssueCompletedNotifications}
+                                  >
+                                    {t('cycle.notifyIssueCompleted')}
+                                  </Menu.CheckboxItem>
+                                </Menu.Sub.Dropdown>
+                              </Menu.Sub>
                               <Menu.Item onClick={handlers.onCopyLink}>
                                 {cycleLinkCopied ? t('cycle.linkCopied') : t('cycle.copyLink')}
                               </Menu.Item>

@@ -1005,6 +1005,75 @@ func TestCycleActivitiesIncludeStatusHistoryForCurrentMembers(t *testing.T) {
 	}
 }
 
+func TestCycleNotificationSubscriptionsDeliverIssueEventsToInbox(t *testing.T) {
+	s := openTest(t)
+	start := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
+	end := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	cycle, err := s.CreateCycle(start, end, "active")
+	if err != nil {
+		t.Fatal(err)
+	}
+	added, completed := true, true
+	cycle, err = s.UpdateCycle(cycle.Number, UpdateCycleInput{
+		NotifyOnIssueAdded: &added, NotifyOnIssueCompleted: &completed,
+	})
+	if err != nil || !cycle.NotifyOnIssueAdded || !cycle.NotifyOnIssueCompleted {
+		t.Fatalf("cycle notification preferences %#v (%v)", cycle, err)
+	}
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Subscribed cycle issue", CycleID: &cycle.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	status := "done"
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{Status: &status}); err != nil {
+		t.Fatal(err)
+	}
+	inbox, err := s.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cycleEvents []InboxActivity
+	for _, activity := range inbox {
+		if activity.EntityType == "cycle" && activity.Identifier == issue.Identifier {
+			cycleEvents = append(cycleEvents, activity)
+		}
+	}
+	if len(cycleEvents) != 2 || cycleEvents[0].Action != "cycle_issue_completed" || cycleEvents[1].Action != "cycle_issue_added" {
+		t.Fatalf("cycle notifications in inbox = %#v", cycleEvents)
+	}
+	if cycleEvents[0].Payload == nil || !strings.Contains(string(cycleEvents[0].Payload), `"cycle":"Cycle `) {
+		t.Fatalf("cycle notification payload = %s", cycleEvents[0].Payload)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	persisted, err := reopened.GetCycle(cycle.Number)
+	if err != nil || !persisted.NotifyOnIssueAdded || !persisted.NotifyOnIssueCompleted {
+		t.Fatalf("persisted cycle notification preferences %#v (%v)", persisted, err)
+	}
+
+	disabled := false
+	if _, err := reopened.UpdateCycle(cycle.Number, UpdateCycleInput{NotifyOnIssueAdded: &disabled}); err != nil {
+		t.Fatal(err)
+	}
+	withoutNotification, err := reopened.CreateIssue(CreateIssueInput{Title: "Unsubscribed cycle issue", CycleID: &cycle.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	inbox, err = reopened.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, activity := range inbox {
+		if activity.EntityType == "cycle" && activity.Identifier == withoutNotification.Identifier && activity.Action == "cycle_issue_added" {
+			t.Fatalf("unexpected notification while unsubscribed: %#v", activity)
+		}
+	}
+}
+
 func TestCreateLabelValidation(t *testing.T) {
 	s := openTest(t)
 	if _, err := s.CreateLabel(" ", "#aabbcc"); !errors.Is(err, ErrValidation) {

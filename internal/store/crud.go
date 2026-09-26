@@ -1119,6 +1119,12 @@ func (s *Store) UpdateCycle(number int, in UpdateCycleInput) (Cycle, error) {
 		if in.IsFavorite != nil {
 			c.IsFavorite = *in.IsFavorite
 		}
+		if in.NotifyOnIssueAdded != nil {
+			c.NotifyOnIssueAdded = *in.NotifyOnIssueAdded
+		}
+		if in.NotifyOnIssueCompleted != nil {
+			c.NotifyOnIssueCompleted = *in.NotifyOnIssueCompleted
+		}
 		now := domain.Now()
 		ensureSingleActive(m, c.ID, c.Status)
 		c.UpdatedAt = now
@@ -1128,6 +1134,29 @@ func (s *Store) UpdateCycle(number int, in UpdateCycleInput) (Cycle, error) {
 		return nil
 	})
 	return out, err
+}
+
+func addCycleNotification(m *mem, cycleID *int64, issue Issue, action, now string) {
+	if cycleID == nil {
+		return
+	}
+	cycle, ok := cycleByID(m, *cycleID)
+	if !ok {
+		return
+	}
+	if (action == "cycle_issue_added" && !cycle.NotifyOnIssueAdded) ||
+		(action == "cycle_issue_completed" && !cycle.NotifyOnIssueCompleted) {
+		return
+	}
+	cycleName := cycle.Name
+	if cycleName == "" {
+		cycleName = fmt.Sprintf("Cycle %d", cycle.Number)
+	}
+	addActivity(m, "cycle", cycle.ID, action, map[string]any{
+		"issueIdentifier": issue.Identifier,
+		"issueTitle":      issue.Title,
+		"cycle":           cycleName,
+	}, now)
 }
 
 func ensureSingleActive(m *mem, id int64, status string) {
@@ -1634,6 +1663,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		m.Issues = append(m.Issues, out)
 		m.Comments[ident] = []Comment{}
 		addActivity(m, "issue", out.ID, "created", map[string]any{"identifier": ident}, now)
+		addCycleNotification(m, out.CycleID, out, "cycle_issue_added", now)
 		m.bump(now)
 		return nil
 	})
@@ -1824,6 +1854,12 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		m.Issues[i] = iss
 		if iss.WorkflowStatus != oldWorkflowStatus {
 			addActivity(m, "issue", iss.ID, "status_changed", map[string]any{"from": oldWorkflowStatus, "to": iss.WorkflowStatus}, now)
+		}
+		if !sameInt64(oldCycleID, iss.CycleID) {
+			addCycleNotification(m, iss.CycleID, iss, "cycle_issue_added", now)
+		}
+		if iss.Status != oldStatus && (iss.Status == "done" || iss.Status == "canceled") {
+			addCycleNotification(m, iss.CycleID, iss, "cycle_issue_completed", now)
 		}
 		if in.Type != nil && *in.Type != oldType {
 			addActivity(m, "issue", iss.ID, "type_changed", map[string]any{"from": oldType, "to": iss.Type}, now)
@@ -2375,9 +2411,9 @@ type InboxActivity struct {
 	Title      string          `json:"title"`
 }
 
-// ListRecentIssueActivities returns the newest issue changes with enough
-// context to render a single-user activity inbox without an N+1 API request
-// for each issue.
+// ListRecentIssueActivities returns issue changes and subscribed cycle
+// notifications with enough context for the single-user inbox to render them
+// without an N+1 API request for each issue.
 func (s *Store) ListRecentIssueActivities(limit int) ([]InboxActivity, error) {
 	if limit <= 0 {
 		limit = 100
@@ -2394,17 +2430,30 @@ func (s *Store) ListRecentIssueActivities(limit int) ([]InboxActivity, error) {
 		out = make([]InboxActivity, 0, limit)
 		for i := len(m.Activities) - 1; i >= 0 && len(out) < limit; i-- {
 			activity := m.Activities[i]
-			if activity.EntityType != "issue" {
-				continue
-			}
-			issue, ok := issuesByID[activity.EntityID]
-			if !ok {
+			identifier, title := "", ""
+			if activity.EntityType == "issue" {
+				issue, ok := issuesByID[activity.EntityID]
+				if !ok {
+					continue
+				}
+				identifier, title = issue.Identifier, issue.Title
+			} else if activity.EntityType == "cycle" && (activity.Action == "cycle_issue_added" || activity.Action == "cycle_issue_completed") {
+				var payload map[string]any
+				if err := json.Unmarshal(activity.Payload, &payload); err != nil {
+					continue
+				}
+				identifier, _ = payload["issueIdentifier"].(string)
+				title, _ = payload["issueTitle"].(string)
+				if identifier == "" || title == "" {
+					continue
+				}
+			} else {
 				continue
 			}
 			out = append(out, InboxActivity{
 				ID: activity.ID, EntityType: activity.EntityType, EntityID: activity.EntityID,
 				Action: activity.Action, Payload: activity.Payload, CreatedAt: activity.CreatedAt,
-				Identifier: issue.Identifier, Title: issue.Title,
+				Identifier: identifier, Title: title,
 			})
 		}
 		return nil

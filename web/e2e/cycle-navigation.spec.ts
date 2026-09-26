@@ -99,3 +99,79 @@ test('cycle header navigates to adjacent cycles by search and keyboard shortcuts
   await page.keyboard.press('Alt+j');
   await expect(page).toHaveURL(new RegExp(`/cycles/${previous.number}$`));
 });
+
+test('cycle notification subscriptions persist and deliver matching events to the inbox', async ({
+  page,
+  request,
+}) => {
+  const now = Date.now();
+  const cycleResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: new Date(now + 14 * 86_400_000).toISOString(),
+      endsAt: new Date(now + 21 * 86_400_000).toISOString(),
+      status: 'upcoming',
+    },
+  });
+  expect(cycleResponse.ok(), await cycleResponse.text()).toBeTruthy();
+  const cycle = (await cycleResponse.json()) as { id: number; number: number; name: string };
+
+  await page.goto(`/cycles/${cycle.number}`);
+  await page.getByRole('button', { name: 'Cycle options' }).click();
+  await page.getByRole('menuitem', { name: 'Subscribe to cycle notifications' }).hover();
+  const addedPreference = page.getByRole('menuitemcheckbox', {
+    name: 'An issue is added to the current cycle',
+  });
+  const completedPreference = page.getByRole('menuitemcheckbox', {
+    name: 'An issue is marked completed or canceled',
+  });
+  await addedPreference.click();
+  await completedPreference.click();
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/cycles/${cycle.number}`);
+      return (await response.json()) as {
+        notifyOnIssueAdded: boolean;
+        notifyOnIssueCompleted: boolean;
+      };
+    })
+    .toMatchObject({ notifyOnIssueAdded: true, notifyOnIssueCompleted: true });
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Cycle options' }).click();
+  await page.getByRole('menuitem', { name: 'Subscribe to cycle notifications' }).hover();
+  await expect(addedPreference).toHaveAttribute('aria-checked', 'true');
+  await expect(completedPreference).toHaveAttribute('aria-checked', 'true');
+
+  const title = `Subscribed cycle issue ${now}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo', cycleId: cycle.id },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  const completed = await request.patch(`/api/issues/${issue.identifier}`, {
+    data: { status: 'done' },
+  });
+  expect(completed.ok(), await completed.text()).toBeTruthy();
+
+  await expect
+    .poll(async () => {
+      const response = await request.get('/api/inbox/activities');
+      const activities = (await response.json()) as {
+        action: string;
+        entityType: string;
+        identifier: string;
+      }[];
+      return activities
+        .filter(
+          (activity) => activity.entityType === 'cycle' && activity.identifier === issue.identifier,
+        )
+        .map((activity) => activity.action);
+    })
+    .toEqual(['cycle_issue_completed', 'cycle_issue_added']);
+
+  await page.goto('/inbox');
+  await expect(page.getByText(`Issue added to ${cycle.name}`, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`Issue marked completed or canceled in ${cycle.name}`, { exact: true }),
+  ).toBeVisible();
+});

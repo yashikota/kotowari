@@ -69,6 +69,7 @@ function activityGroup(
 }
 
 function activityIcon(action: string) {
+  if (action.startsWith('cycle_issue_')) return <IconCircleDot size={15} aria-hidden />;
   if (action.startsWith('comment')) return <IconMessage size={15} aria-hidden />;
   if (action.includes('reaction')) return <IconBell size={15} aria-hidden />;
   if (action.startsWith('attachment_')) return <IconPaperclip size={15} aria-hidden />;

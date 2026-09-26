@@ -518,12 +518,14 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Name        *string `json:"name"`
-		Description *string `json:"description"`
-		StartsAt    *string `json:"startsAt"`
-		EndsAt      *string `json:"endsAt"`
-		Status      *string `json:"status"`
-		IsFavorite  *bool   `json:"isFavorite"`
+		Name                   *string `json:"name"`
+		Description            *string `json:"description"`
+		StartsAt               *string `json:"startsAt"`
+		EndsAt                 *string `json:"endsAt"`
+		Status                 *string `json:"status"`
+		IsFavorite             *bool   `json:"isFavorite"`
+		NotifyOnIssueAdded     *bool   `json:"notifyOnIssueAdded"`
+		NotifyOnIssueCompleted *bool   `json:"notifyOnIssueCompleted"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
@@ -532,6 +534,7 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 	out, err := s.store.UpdateCycle(n, store.UpdateCycleInput{
 		Name: in.Name, Description: in.Description, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
 		Status: in.Status, IsFavorite: in.IsFavorite,
+		NotifyOnIssueAdded: in.NotifyOnIssueAdded, NotifyOnIssueCompleted: in.NotifyOnIssueCompleted,
 	})
 	if err != nil {
 		writeError(w, err)

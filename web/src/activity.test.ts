@@ -17,6 +17,15 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes cycle notification events', () => {
+    expect(formatActivity('cycle_issue_added', { cycle: 'Cycle 7' })).toBe(
+      'Issue added to Cycle 7',
+    );
+    expect(formatActivity('cycle_issue_completed', { cycle: 'Cycle 7' })).toBe(
+      'Issue marked completed or canceled in Cycle 7',
+    );
+  });
+
   it('describes issue type and estimate changes', () => {
     expect(formatActivity('type_changed', { from: '', to: 'feature' })).toBe(
       'Type No type → Feature',
