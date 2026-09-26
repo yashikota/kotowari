@@ -159,6 +159,7 @@
   "cycle": {
     "options": "Cycle options",
     "dates": "Dates",
+    "dateRangeTo": "to",
     "scope": "Scope",
     "completed": "Completed",
     "issuesCount_one": "{{count}} issue",
@@ -188,6 +189,7 @@
     "nextShortcut": "Alt K",
     "previousShortcut": "Alt J",
     "editNameAndDescription": "Edit cycle name and description…",
+    "changeStatus": "Change cycle status",
     "changeDates": "Change cycle dates",
     "startToday": "Start cycle today…",
     "exportIssues": "Export issues as CSV…",

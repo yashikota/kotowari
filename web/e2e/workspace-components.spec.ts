@@ -2461,11 +2461,14 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
   const cycle = (await created.json()) as { number: number; name: string };
 
   await page.goto(`/cycles/${cycle.number}`);
-  const datesButton = page.getByRole('button', { name: 'Dates' });
-  await expect(datesButton).toContainText('Feb 1');
-  await datesButton.click();
-  await expect(page.getByRole('dialog', { name: 'Change cycle dates' })).toBeVisible();
-  await page.getByRole('button', { name: 'Cancel' }).click();
+  const endDateButton = page.getByRole('button', { name: 'Change end date' });
+  await expect(endDateButton).toContainText('Feb 14');
+  await expect(page.getByRole('button', { name: 'Change start date' })).toHaveCount(0);
+  await endDateButton.click();
+  const endDateInput = page.getByRole('textbox', { name: 'Set end date' });
+  await endDateInput.fill('2030-02-15');
+  await endDateInput.press('Enter');
+  await expect(endDateButton).toContainText('Feb 15');
 
   await page.evaluate(() => {
     const target = window as Window & { copiedCycleLink?: string };
@@ -2526,6 +2529,10 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
   const calendarDownload = await calendarDownloadPromise;
   expect(calendarDownload.suggestedFilename()).toBe(`cycle-${cycle.number}.ics`);
 
+  await page.getByRole('button', { name: 'Cycle options' }).click();
+  await page.getByRole('menuitem', { name: 'Change cycle status' }).hover();
+  await page.getByRole('menuitem', { name: 'Completed', exact: true }).click();
+
   const saved = await request.get(`/api/cycles/${cycle.number}`);
   expect(saved.ok()).toBeTruthy();
   expect(await saved.json()).toMatchObject({
@@ -2533,8 +2540,37 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
     description: 'Stabilize the next release.',
     startsAt: '2030-02-01T00:00:00Z',
     endsAt: '2030-02-21T00:00:00Z',
+    status: 'completed',
     isFavorite: true,
   });
+});
+
+test('upcoming cycle start dates can be changed from the date range control', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/cycles', {
+    data: {
+      startsAt: '2035-02-01T00:00:00Z',
+      endsAt: '2035-02-14T00:00:00Z',
+      status: 'upcoming',
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const cycle = (await created.json()) as { number: number };
+
+  await page.goto(`/cycles/${cycle.number}`);
+  const startDateButton = page.getByRole('button', { name: 'Change start date' });
+  await expect(startDateButton).toContainText('Feb 1');
+  await startDateButton.click();
+  const startDateInput = page.getByRole('textbox', { name: 'Set start date' });
+  await startDateInput.fill('2035-01-31');
+  await startDateInput.press('Enter');
+  await expect(startDateButton).toContainText('Jan 31');
+
+  const saved = await request.get(`/api/cycles/${cycle.number}`);
+  expect(saved.ok()).toBeTruthy();
+  expect(await saved.json()).toMatchObject({ startsAt: '2035-01-31T00:00:00Z' });
 });
 
 test('cycle details summarize scope, started, and completed work', async ({ page, request }) => {

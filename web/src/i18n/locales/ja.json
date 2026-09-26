@@ -159,6 +159,7 @@
   "cycle": {
     "options": "サイクルのオプション",
     "dates": "期間",
+    "dateRangeTo": "〜",
     "scope": "対象",
     "completed": "完了",
     "issuesCount": "{{count}} 件のイシュー",
@@ -186,6 +187,7 @@
     "nextShortcut": "Alt K",
     "previousShortcut": "Alt J",
     "editNameAndDescription": "サイクル名と説明を編集…",
+    "changeStatus": "サイクルのステータスを変更",
     "changeDates": "サイクルの日付を変更",
     "startToday": "今日からサイクルを開始…",
     "exportIssues": "イシューをCSVに書き出す…",

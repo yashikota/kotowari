@@ -1789,9 +1789,15 @@ export function useCycleDetailPagePresenter() {
     endDateDraft,
     datesValid: !!startDateDraft && !!endDateDraft && endDateDraft > startDateDraft,
     handlers: {
-      Cycle_status_onChange0: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ status: e.target.value }),
+      onStatusChange: (status: Cycle['status']) => save({ status }),
+      onStartDatePickerChange: async (value: string) => {
+        if (cycle.status !== 'upcoming' || value >= cycle.endsAt.slice(0, 10)) return;
+        await save({ startsAt: dateAtUTCStart(value) });
+      },
+      onEndDatePickerChange: async (value: string) => {
+        if (cycle.status === 'completed' || value <= cycle.startsAt.slice(0, 10)) return;
+        await save({ endsAt: dateAtUTCStart(value) });
+      },
       onClick1: () => sendIntent('issue.create', { cycleId: cycle.id }),
       onToggleCycleDetails: () => setCycleDetailsOpen((open) => !open),
       onToggleCycleProgress: () =>

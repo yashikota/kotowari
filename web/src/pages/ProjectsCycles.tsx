@@ -41,14 +41,14 @@ import { ProjectsEmptyState } from '../components/ProjectsEmptyState.tsx';
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { ProjectUpdateFeed } from '../components/ProjectUpdateFeed.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
+import { CycleDateRangeControl } from '../components/CycleDateRangeControl.tsx';
 import { ViewIcon } from '../components/ViewIcon.tsx';
 import { CycleOverview } from '../components/CycleOverview.tsx';
 import timelineStyles from '../components/CyclesTimeline.module.css';
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
-import { CYCLE_STATUSES } from '../types.ts';
 import { priorityLabel } from '../i18n/labels.ts';
-import { formatCalendarDate } from '../time.ts';
+import { CYCLE_STATUSES } from '../types.ts';
 import {
   EmptyState,
   LabelChip,
@@ -1150,31 +1150,13 @@ export function CycleDetailPageView({
                 <Pane variant="detail">
                   <Stack gap="lg">
                     <Stack gap="sm">
-                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-                        <NativeSelect
-                          aria-label={t('field.status')}
-                          value={cycle.status}
-                          onChange={handlers.Cycle_status_onChange0}
-                          data={CYCLE_STATUSES.map((s) => ({
-                            value: s,
-                            label: t(`cycle.status.${s}`),
-                          }))}
-                          w={132}
-                        />
-                        <Button
-                          type="button"
-                          size="compact-xs"
-                          variant="default"
-                          aria-label={t('cycle.dates')}
-                          title={t('cycle.changeDates')}
-                          onClick={handlers.onOpenDates}
-                        >
-                          <Text size="xs" span>
-                            {formatCalendarDate(cycle.startsAt, locale)} —{' '}
-                            {formatCalendarDate(cycle.endsAt, locale)}
-                          </Text>
-                        </Button>
-                      </Group>
+                      <CycleDateRangeControl
+                        status={cycle.status}
+                        startsAt={cycle.startsAt}
+                        endsAt={cycle.endsAt}
+                        onStartDateChange={handlers.onStartDatePickerChange}
+                        onEndDateChange={handlers.onEndDatePickerChange}
+                      />
                       <Group justify="space-between" align="center" wrap="nowrap">
                         <Text size="md" fw={600} truncate>
                           {cycle.name || t('field.cycleN', { number: cycle.number })}
@@ -1210,6 +1192,21 @@ export function CycleDetailPageView({
                               </ActionIcon>
                             </Menu.Target>
                             <Menu.Dropdown>
+                              <Menu.Sub>
+                                <Menu.Sub.Target>
+                                  <Menu.Sub.Item>{t('cycle.changeStatus')}</Menu.Sub.Item>
+                                </Menu.Sub.Target>
+                                <Menu.Sub.Dropdown>
+                                  {CYCLE_STATUSES.map((status) => (
+                                    <Menu.Item
+                                      key={status}
+                                      onClick={() => handlers.onStatusChange(status)}
+                                    >
+                                      {t(`cycle.status.${status}`)}
+                                    </Menu.Item>
+                                  ))}
+                                </Menu.Sub.Dropdown>
+                              </Menu.Sub>
                               <Menu.Item onClick={handlers.onOpenMetadata}>
                                 {t('cycle.editNameAndDescription')}
                               </Menu.Item>
