@@ -725,6 +725,52 @@ test('advanced project lead filters support only the current user and no lead', 
   await expect(page.getByRole('link', { name: new RegExp(noLeadName) })).toHaveCount(0);
 });
 
+test('advanced project latest-update filters match recent updates and never-updated projects', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const recentName = `Recently updated ${stamp}`;
+  const neverName = `Never updated ${stamp}`;
+  const recentSlug = `recently-updated-${stamp}`;
+  for (const project of [
+    { name: recentName, slug: recentSlug, status: 'planned' },
+    { name: neverName, slug: `never-updated-${stamp}`, status: 'planned' },
+  ]) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+  const updateResponse = await request.post(`/api/projects/${recentSlug}/updates`, {
+    data: { health: 'on_track', body: `Recent update ${stamp}` },
+  });
+  expect(updateResponse.ok()).toBeTruthy();
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Advanced filter', exact: true }).click();
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
+
+  const rootGroup = page.locator('[aria-label="Filter group 1"]');
+  await rootGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await rootGroup.getByRole('option', { name: 'Latest update date', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await rootGroup.getByRole('option', { name: '1 day ago', exact: true }).click();
+
+  await expect(page.getByRole('link', { name: new RegExp(recentName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(neverName) })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(recentName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(neverName) })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
+  const persistedGroup = page.locator('[aria-label="Filter group 1"]');
+  await persistedGroup.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await persistedGroup.getByRole('option', { name: 'Never', exact: true }).click();
+  await expect(page.getByRole('link', { name: new RegExp(recentName) })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: new RegExp(neverName) })).toBeVisible();
+});
+
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 800 });
   await page.goto('/views/projects/new');

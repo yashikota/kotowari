@@ -152,6 +152,7 @@ export function AdvancedProjectFilterBuilder({
             { value: 'startDate', label: t('projectList.orderStartDate') },
             { value: 'targetDate', label: t('projectList.orderTargetDate') },
             { value: 'completedDate', label: t('projectList.filterCompletedDate') },
+            { value: 'latestUpdateDate', label: t('projectList.filterLatestUpdateDate') },
           ];
           const valueChoices = child.field ? (choices[child.field] ?? []) : [];
           const rule = child as ProjectFilterCondition;

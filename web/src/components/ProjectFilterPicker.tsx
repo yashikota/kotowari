@@ -207,6 +207,22 @@ export function ProjectFilterPicker({
     { value: 'within:1y', label: t('projectList.dateWithin1Year') },
     { value: 'custom', label: t('projectList.customDateTimeframe') },
   ];
+  const latestUpdateDateChoices = [
+    { value: 'last:1d', label: t('projectList.dateLast1Day') },
+    { value: 'last:2d', label: t('projectList.dateLast2Days') },
+    { value: 'last:3d', label: t('projectList.dateLast3Days') },
+    { value: 'last:5d', label: t('projectList.dateLast5Days') },
+    { value: 'last:1w', label: t('projectList.dateLast1Week') },
+    { value: 'last:2w', label: t('projectList.dateLast2Weeks') },
+    { value: 'last:3w', label: t('projectList.dateLast3Weeks') },
+    { value: 'last:1m', label: t('projectList.dateLast1Month') },
+    { value: 'last:2m', label: t('projectList.dateLast2Months') },
+    { value: 'last:3m', label: t('projectList.dateLast3Months') },
+    { value: 'last:6m', label: t('projectList.dateLast6Months') },
+    { value: 'last:1y', label: t('projectList.dateLast1Year') },
+    { value: 'never', label: t('projectList.dateNever') },
+    { value: 'custom', label: t('projectList.customDate') },
+  ];
   const advancedFilterChoices = {
     status: projectStatuses.map((status) => ({
       value: status.id,
@@ -251,6 +267,7 @@ export function ProjectFilterPicker({
       ...relativeDateChoices,
       { value: 'no-date', label: t('projectList.noCompletedDate') },
     ],
+    latestUpdateDate: latestUpdateDateChoices,
   };
 
   function openFilter(key: FilterKey) {

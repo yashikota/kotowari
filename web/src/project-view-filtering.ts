@@ -27,6 +27,34 @@ function dateAfterPeriod(today: Date, period: string): string | undefined {
   return localDateString(result);
 }
 
+function dateBeforePeriod(now: Date, period: string): Date | undefined {
+  const match = /^last:(\d+)([dwmy])$/.exec(period);
+  if (!match) return undefined;
+  const amount = Number(match[1]);
+  const result = new Date(now);
+  if (match[2] === 'd') result.setDate(result.getDate() - amount);
+  if (match[2] === 'w') result.setDate(result.getDate() - amount * 7);
+  if (match[2] === 'm') {
+    const day = result.getDate();
+    result.setDate(1);
+    result.setMonth(result.getMonth() - amount);
+    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+    result.setDate(Math.min(day, lastDay));
+  }
+  if (match[2] === 'y') {
+    const month = result.getMonth();
+    const day = result.getDate();
+    result.setFullYear(result.getFullYear() - amount);
+    if (result.getMonth() !== month) {
+      result.setDate(0);
+      result.setMonth(month);
+    } else if (result.getDate() !== day) {
+      result.setDate(0);
+    }
+  }
+  return result;
+}
+
 function matchesDateValue(project: Project, field: ProjectFilterCondition): boolean {
   const dateValue = (() => {
     switch (field.field) {
@@ -40,6 +68,8 @@ function matchesDateValue(project: Project, field: ProjectFilterCondition): bool
         return project.targetDate;
       case 'completedDate':
         return project.completedAt;
+      case 'latestUpdateDate':
+        return project.healthUpdatedAt;
       default:
         return undefined;
     }
@@ -48,6 +78,14 @@ function matchesDateValue(project: Project, field: ProjectFilterCondition): bool
   if (!value) return true;
   const date = dateValue?.slice(0, 10);
   if (value === 'no-date') return !date;
+  if (field.field === 'latestUpdateDate') {
+    if (value === 'never') return !date;
+    if (value.startsWith('last:')) {
+      const threshold = dateBeforePeriod(new Date(), value);
+      const timestamp = dateValue ? Date.parse(dateValue) : Number.NaN;
+      return !!threshold && Number.isFinite(timestamp) && timestamp >= threshold.getTime();
+    }
+  }
   if (!date) return false;
   if (value === 'overdue') {
     const now = new Date();
@@ -77,7 +115,8 @@ function matchesAdvancedFilterGroup(
       child.field === 'updatedDate' ||
       child.field === 'startDate' ||
       child.field === 'targetDate' ||
-      child.field === 'completedDate'
+      child.field === 'completedDate' ||
+      child.field === 'latestUpdateDate'
     ) {
       if (value === 'custom' && !child.dateFrom && !child.dateTo) return true;
       const found = matchesDateValue(project, child);

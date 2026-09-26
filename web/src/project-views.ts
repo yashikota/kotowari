@@ -27,7 +27,8 @@ export type ProjectFilterField =
   | 'updatedDate'
   | 'startDate'
   | 'targetDate'
-  | 'completedDate';
+  | 'completedDate'
+  | 'latestUpdateDate';
 
 export type ProjectFilterCondition = {
   kind: 'condition';
@@ -104,6 +105,7 @@ const PROJECT_FILTER_FIELDS = new Set<ProjectFilterField>([
   'startDate',
   'targetDate',
   'completedDate',
+  'latestUpdateDate',
 ]);
 
 function parseDateBound(value: unknown): string | undefined {

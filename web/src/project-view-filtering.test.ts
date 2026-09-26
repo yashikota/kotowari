@@ -115,7 +115,7 @@ describe('matchesProjectViewSearch', () => {
         target: Partial<Project>,
         value: string,
         condition: {
-          field: 'targetDate';
+          field: 'targetDate' | 'latestUpdateDate';
           operator?: 'is' | 'isNot';
           dateFrom?: string;
           dateTo?: string;
@@ -161,6 +161,26 @@ describe('matchesProjectViewSearch', () => {
         matchesDate({ targetDate: null }, 'custom', {
           field: 'targetDate',
           operator: 'isNot',
+        }),
+      ).toBe(true);
+      expect(
+        matchesDate({ healthUpdatedAt: '2030-01-14T12:00:00' }, 'last:1d', {
+          field: 'latestUpdateDate',
+        }),
+      ).toBe(true);
+      expect(
+        matchesDate({ healthUpdatedAt: '2030-01-14T11:59:00' }, 'last:1d', {
+          field: 'latestUpdateDate',
+        }),
+      ).toBe(false);
+      expect(matchesDate({ healthUpdatedAt: null }, 'never', { field: 'latestUpdateDate' })).toBe(
+        true,
+      );
+      expect(
+        matchesDate({ healthUpdatedAt: '2030-01-14T12:00:00' }, 'custom', {
+          field: 'latestUpdateDate',
+          dateFrom: '2030-01-14',
+          dateTo: '2030-01-14',
         }),
       ).toBe(true);
     } finally {
