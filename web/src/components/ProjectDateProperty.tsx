@@ -160,6 +160,9 @@ export function ProjectDateProperty({
           size="xs"
           leftSection={<IconCalendarEvent size={14} stroke={1.7} aria-hidden="true" />}
           aria-label={t('projectDate.change', { field: label })}
+          onPointerDown={() => {
+            if (!opened) openPicker();
+          }}
           onClick={() => (opened ? setOpened(false) : openPicker())}
           styles={{ root: { borderRadius: 999 } }}
         >
