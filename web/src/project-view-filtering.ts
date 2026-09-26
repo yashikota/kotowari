@@ -106,6 +106,8 @@ function matchesAdvancedFilterGroup(
           return [`template:${project.templateSlug ?? ''}`];
         case 'project':
           return [project.slug];
+        case 'lead':
+          return [project.lead === 'self' ? 'self' : 'none'];
         case 'title':
           return [`${project.name} ${project.summary ?? ''}`.toLocaleLowerCase()];
         default:

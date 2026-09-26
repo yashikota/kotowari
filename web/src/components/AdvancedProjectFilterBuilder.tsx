@@ -138,6 +138,7 @@ export function AdvancedProjectFilterBuilder({
           const fieldChoices: FilterChoice[] = [
             { value: 'status', label: t('projectList.filterStatus') },
             { value: 'priority', label: t('projectList.filterPriority') },
+            { value: 'lead', label: t('projectList.property.lead') },
             { value: 'health', label: t('projectList.filterCategoryHealth') },
             { value: 'label', label: t('projectList.filterLabels') },
             { value: 'milestone', label: t('projectList.filterCategoryMilestones') },

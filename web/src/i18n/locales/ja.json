@@ -682,6 +682,7 @@
     "filterCreatedDate": "作成日",
     "filterUpdatedDate": "更新日",
     "filterCompletedDate": "完了日",
+    "noLead": "担当者なし",
     "filterTemplate": "テンプレート",
     "filterNoTemplate": "テンプレートなし",
     "filterInitiative": "イニシアチブ",

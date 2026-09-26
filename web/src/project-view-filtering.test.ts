@@ -85,6 +85,28 @@ describe('matchesProjectViewSearch', () => {
     ).toBe(false);
   });
 
+  it('filters project leads without introducing multi-user assignment values', () => {
+    const group = {
+      kind: 'group' as const,
+      operator: 'and' as const,
+      children: [{ kind: 'condition' as const, field: 'lead' as const, value: 'self' }],
+    };
+    expect(
+      matchesProjectViewSearch(project({ lead: 'self' }), { advancedFilterGroup: group }),
+    ).toBe(true);
+    expect(matchesProjectViewSearch(project({ lead: '' }), { advancedFilterGroup: group })).toBe(
+      false,
+    );
+    expect(
+      matchesProjectViewSearch(project({ lead: '' }), {
+        advancedFilterGroup: {
+          ...group,
+          children: [{ kind: 'condition', field: 'lead', value: 'none' }],
+        },
+      }),
+    ).toBe(true);
+  });
+
   it('matches date presets, missing dates, and custom ranges', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2030, 0, 15, 12));

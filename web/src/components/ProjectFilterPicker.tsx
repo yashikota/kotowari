@@ -236,6 +236,10 @@ export function ProjectFilterPicker({
       ...model.availableTemplates,
     ],
     project: model.availableProjects ?? [],
+    lead: [
+      { value: 'self', label: t('projectList.leadYou') },
+      { value: 'none', label: t('projectList.noLead') },
+    ],
     createdDate: relativeDateChoices,
     updatedDate: relativeDateChoices,
     startDate: [...relativeDateChoices, { value: 'no-date', label: t('projectList.noStartDate') }],

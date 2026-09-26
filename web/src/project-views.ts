@@ -22,6 +22,7 @@ export type ProjectFilterField =
   | 'template'
   | 'project'
   | 'title'
+  | 'lead'
   | 'createdDate'
   | 'updatedDate'
   | 'startDate'
@@ -97,6 +98,7 @@ const PROJECT_FILTER_FIELDS = new Set<ProjectFilterField>([
   'template',
   'project',
   'title',
+  'lead',
   'createdDate',
   'updatedDate',
   'startDate',

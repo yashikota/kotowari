@@ -681,6 +681,50 @@ test('advanced project date filters support custom date ranges', async ({ page, 
   await expect(page.getByRole('link', { name: new RegExp(outOfRangeName) })).toHaveCount(0);
 });
 
+test('advanced project lead filters support only the current user and no lead', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const mineName = `My lead project ${stamp}`;
+  const noLeadName = `No lead project ${stamp}`;
+  for (const project of [
+    {
+      name: mineName,
+      slug: `my-lead-${stamp}`,
+      status: 'planned',
+      lead: 'self',
+    },
+    {
+      name: noLeadName,
+      slug: `no-lead-${stamp}`,
+      status: 'planned',
+      lead: '',
+    },
+  ]) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Advanced filter', exact: true }).click();
+  await page.getByRole('button', { name: 'Open advanced filter builder' }).click();
+
+  const rootGroup = page.locator('[aria-label="Filter group 1"]');
+  await rootGroup.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await rootGroup.getByRole('option', { name: 'Lead', exact: true }).click();
+  await rootGroup.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await rootGroup.getByRole('option', { name: 'You', exact: true }).click();
+
+  await expect(page.getByRole('link', { name: new RegExp(mineName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noLeadName) })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(mineName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noLeadName) })).toHaveCount(0);
+});
+
 test('project view filter menu stays within a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 760, height: 800 });
   await page.goto('/views/projects/new');

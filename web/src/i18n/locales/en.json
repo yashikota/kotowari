@@ -684,6 +684,7 @@
     "filterCreatedDate": "Created date",
     "filterUpdatedDate": "Updated date",
     "filterCompletedDate": "Completed date",
+    "noLead": "No lead",
     "filterTemplate": "Template",
     "filterNoTemplate": "No template",
     "filterInitiative": "Initiative",
