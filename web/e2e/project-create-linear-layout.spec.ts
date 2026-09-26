@@ -55,7 +55,10 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   // Property chips may wrap onto another line at this width, like Linear's.
   expect(dependenciesBounds!.y).toBeGreaterThanOrEqual(statusBounds!.y);
   expect(dependenciesBounds!.y).toBeLessThan(descriptionBounds!.y);
-  expect(milestonesBounds!.y - descriptionBounds!.y).toBeGreaterThan(340);
+  expect(descriptionBounds!.height).toBeGreaterThan(240);
+  expect(milestonesBounds!.y).toBeGreaterThanOrEqual(
+    descriptionBounds!.y + descriptionBounds!.height,
+  );
   await expect(dialog.getByRole('heading', { name: 'Dependencies' })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Create project' })).toBeInViewport();
 });

@@ -169,6 +169,7 @@ export function useProjectsPagePresenter() {
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [selectedProjectTemplate, setSelectedProjectTemplate] = useState<string | null>(null);
   const [initialMilestones, setInitialMilestones] = useState<ProjectMilestoneDraft[]>([]);
+  const [milestonesExpanded, setMilestonesExpanded] = useState(false);
   const [milestoneDraftOpen, setMilestoneDraftOpen] = useState(false);
   const [milestoneDraftName, setMilestoneDraftName] = useState('');
   const [milestoneDraftDescription, setMilestoneDraftDescription] = useState('');
@@ -866,6 +867,7 @@ export function useProjectsPagePresenter() {
     targetDate,
     selectedLabels,
     initialMilestones,
+    milestonesExpanded,
     milestoneDraftOpen,
     milestoneDraftName,
     milestoneDraftDescription,
@@ -909,6 +911,7 @@ export function useProjectsPagePresenter() {
         setTargetDate('');
         setSelectedLabels([]);
         setInitialMilestones([]);
+        setMilestonesExpanded(false);
         setMilestoneDraftOpen(false);
         setMilestoneDraftName('');
         setMilestoneDraftDescription('');
@@ -922,7 +925,11 @@ export function useProjectsPagePresenter() {
       onCloseCreateProject: () => setCreateOpen(false),
       onProjectTemplateChange: (value: string | null) => applyProjectTemplate(value),
       onDeleteProjectTemplate: deleteSelectedProjectTemplate,
-      onOpenMilestoneDraft: () => setMilestoneDraftOpen(true),
+      onToggleMilestones: () => setMilestonesExpanded((current) => !current),
+      onOpenMilestoneDraft: () => {
+        setMilestonesExpanded(true);
+        setMilestoneDraftOpen(true);
+      },
       onCancelMilestoneDraft: () => {
         setMilestoneDraftOpen(false);
         setMilestoneDraftName('');

@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Box,
   Button,
+  Collapse,
   Group,
   Modal,
   MultiSelect,
@@ -11,7 +12,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
+import { IconChevronDown, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { RefObject } from 'react';
 import {
@@ -45,6 +46,7 @@ export function ProjectCreateDialog({
     iconColor,
     initialMilestones,
     lead,
+    milestonesExpanded,
     milestoneDraftDescription,
     milestoneDraftName,
     milestoneDraftOpen,
@@ -237,104 +239,128 @@ export function ProjectCreateDialog({
               styles={{ input: { borderTop: '1px solid var(--mantine-color-default-border)' } }}
             />
             <Stack gap="xs" aria-label={t('projectMilestones.heading')}>
-              <Group justify="space-between">
-                <Text size="sm" fw={600}>
-                  {t('projectMilestones.heading')}
-                </Text>
+              <Group justify="space-between" mih={32}>
                 <Button
                   type="button"
                   variant="subtle"
-                  size="sm"
+                  color="gray"
+                  size="compact-sm"
+                  leftSection={
+                    <IconChevronDown
+                      size={14}
+                      stroke={1.8}
+                      aria-hidden="true"
+                      style={{
+                        transform: milestonesExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                        transition: 'transform 120ms ease',
+                      }}
+                    />
+                  }
+                  aria-expanded={milestonesExpanded}
+                  aria-controls="project-create-milestones-content"
+                  onClick={handlers.onToggleMilestones}
+                >
+                  {t('projectMilestones.heading')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="subtle"
+                  size="compact-sm"
+                  leftSection={<IconPlus size={14} stroke={1.7} aria-hidden="true" />}
                   onClick={handlers.onOpenMilestoneDraft}
                 >
                   {t('projectMilestones.addToProject')}
                 </Button>
               </Group>
-              {initialMilestones.map((milestone, index) => (
-                <Group key={`${milestone.name}-${index}`} justify="space-between" gap="xs">
-                  <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                    <Text size="sm" fw={500}>
-                      {milestone.name}
-                    </Text>
-                    {milestone.description && (
-                      <Text size="xs" c="dimmed">
-                        {milestone.description}
-                      </Text>
-                    )}
-                    {milestone.targetDate && (
-                      <Text size="xs" c="dimmed">
-                        {formatCalendarDate(milestone.targetDate)}
-                      </Text>
-                    )}
-                  </Stack>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    aria-label={t('projectMilestones.remove', { name: milestone.name })}
-                    onClick={() => handlers.onRemoveInitialMilestone(index)}
-                  >
-                    <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                  </ActionIcon>
-                </Group>
-              ))}
-              {milestoneDraftOpen && (
-                <Box
-                  p="sm"
-                  style={{
-                    border: '1px solid var(--mantine-color-default-border)',
-                    borderRadius: 'var(--mantine-radius-sm)',
-                  }}
-                >
-                  <Stack gap="xs">
-                    <Text size="sm" fw={500}>
-                      {t('projectMilestones.createMilestone')}
-                    </Text>
-                    <TextInput
-                      autoFocus
-                      required
-                      maxLength={120}
-                      label={t('projectMilestones.name')}
-                      placeholder={t('projectMilestones.namePlaceholder')}
-                      value={milestoneDraftName}
-                      onChange={handlers.onMilestoneDraftNameChange}
-                      onKeyDown={handlers.onMilestoneDraftNameKeyDown}
-                    />
-                    <Group grow align="flex-start">
-                      <Textarea
-                        label={t('projectMilestones.description')}
-                        placeholder={t('projectMilestones.descriptionPlaceholder')}
-                        value={milestoneDraftDescription}
-                        onChange={handlers.onMilestoneDraftDescriptionChange}
-                        minRows={2}
-                        autosize
-                      />
-                      <TextInput
-                        type="date"
-                        label={t('projectMilestones.targetDate')}
-                        value={milestoneDraftTargetDate}
-                        onChange={handlers.onMilestoneDraftTargetDateChange}
-                      />
-                    </Group>
-                    <Group justify="flex-end">
-                      <Button
+              <Collapse expanded={milestonesExpanded} transitionDuration={140} animateOpacity>
+                <Stack id="project-create-milestones-content" gap="xs">
+                  {initialMilestones.map((milestone, index) => (
+                    <Group key={`${milestone.name}-${index}`} justify="space-between" gap="xs">
+                      <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="sm" fw={500}>
+                          {milestone.name}
+                        </Text>
+                        {milestone.description && (
+                          <Text size="xs" c="dimmed">
+                            {milestone.description}
+                          </Text>
+                        )}
+                        {milestone.targetDate && (
+                          <Text size="xs" c="dimmed">
+                            {formatCalendarDate(milestone.targetDate)}
+                          </Text>
+                        )}
+                      </Stack>
+                      <ActionIcon
                         type="button"
-                        variant="default"
-                        onClick={handlers.onCancelMilestoneDraft}
+                        variant="subtle"
+                        color="gray"
+                        aria-label={t('projectMilestones.remove', { name: milestone.name })}
+                        onClick={() => handlers.onRemoveInitialMilestone(index)}
                       >
-                        {t('common.cancel')}
-                      </Button>
-                      <Button
-                        type="button"
-                        disabled={!milestoneDraftName.trim()}
-                        onClick={handlers.onAddInitialMilestone}
-                      >
-                        {t('projectMilestones.add')}
-                      </Button>
+                        <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                      </ActionIcon>
                     </Group>
-                  </Stack>
-                </Box>
-              )}
+                  ))}
+                  {milestoneDraftOpen && (
+                    <Box
+                      p="sm"
+                      style={{
+                        border: '1px solid var(--mantine-color-default-border)',
+                        borderRadius: 'var(--mantine-radius-sm)',
+                      }}
+                    >
+                      <Stack gap="xs">
+                        <Text size="sm" fw={500}>
+                          {t('projectMilestones.createMilestone')}
+                        </Text>
+                        <TextInput
+                          autoFocus
+                          required
+                          maxLength={120}
+                          label={t('projectMilestones.name')}
+                          placeholder={t('projectMilestones.namePlaceholder')}
+                          value={milestoneDraftName}
+                          onChange={handlers.onMilestoneDraftNameChange}
+                          onKeyDown={handlers.onMilestoneDraftNameKeyDown}
+                        />
+                        <Group grow align="flex-start">
+                          <Textarea
+                            label={t('projectMilestones.description')}
+                            placeholder={t('projectMilestones.descriptionPlaceholder')}
+                            value={milestoneDraftDescription}
+                            onChange={handlers.onMilestoneDraftDescriptionChange}
+                            minRows={2}
+                            autosize
+                          />
+                          <TextInput
+                            type="date"
+                            label={t('projectMilestones.targetDate')}
+                            value={milestoneDraftTargetDate}
+                            onChange={handlers.onMilestoneDraftTargetDateChange}
+                          />
+                        </Group>
+                        <Group justify="flex-end">
+                          <Button
+                            type="button"
+                            variant="default"
+                            onClick={handlers.onCancelMilestoneDraft}
+                          >
+                            {t('common.cancel')}
+                          </Button>
+                          <Button
+                            type="button"
+                            disabled={!milestoneDraftName.trim()}
+                            onClick={handlers.onAddInitialMilestone}
+                          >
+                            {t('projectMilestones.add')}
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Box>
+                  )}
+                </Stack>
+              </Collapse>
             </Stack>
           </Stack>
         </Box>
