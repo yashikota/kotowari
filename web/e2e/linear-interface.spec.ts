@@ -177,10 +177,17 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
     page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Home' }),
   ).toHaveCount(0);
   await expect(teamNavigation.getByRole('link', { name: 'Cycles', exact: true })).toBeVisible();
+  await expect(teamNavigation.getByRole('link', { name: 'Views', exact: true })).toBeVisible();
+  await expect(teamNavigation.getByRole('link', { name: 'Initiatives', exact: true })).toHaveCount(
+    0,
+  );
   await expect(page.getByRole('navigation', { name: 'Saved views' })).toBeVisible();
   await expandMoreNavigation(page);
   await expect(
     page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Board' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'More' }).getByRole('link', { name: 'Initiatives' }),
   ).toBeVisible();
   await teamNavigation.getByRole('button', { name: 'Your teams' }).click();
   await expect(teamNavigation.getByRole('link', { name: 'Cycles' })).toHaveCount(0);

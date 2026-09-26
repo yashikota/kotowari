@@ -15,7 +15,8 @@ type NavKey =
   | 'i'
   | 'm'
   | 'r'
-  | 't';
+  | 't'
+  | 'v';
 
 export type NavTarget = {
   id?: string;
@@ -45,13 +46,14 @@ export const TEAM_NAV: NavTarget[] = [
   { key: '2', labelKey: 'nav.issues', to: '/issues', search: {} },
   { key: '6', labelKey: 'nav.cycles', to: '/cycles', fuzzy: true },
   { key: '5', labelKey: 'nav.projects', to: '/projects' },
-  { key: 'i', labelKey: 'nav.initiatives', to: '/initiatives' },
+  { key: 'v', labelKey: 'nav.views', to: '/views', fuzzy: false },
 ];
 
 export const MORE_NAV: NavTarget[] = [
   { key: '8', labelKey: 'nav.reminders', to: '/reminders', fuzzy: false },
   { key: '3', labelKey: 'nav.board', to: '/board', search: {} },
   { key: '4', labelKey: 'nav.adrs', to: '/adrs' },
+  { key: 'i', labelKey: 'nav.initiatives', to: '/initiatives' },
   { key: '7', labelKey: 'nav.pages', to: '/pages' },
   { key: 't', labelKey: 'nav.templates', to: '/templates' },
   { key: 'r', labelKey: 'nav.recurringIssues', to: '/recurring' },

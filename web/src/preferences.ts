@@ -13,6 +13,7 @@ export type SidebarItem =
   | '/board'
   | '/cycles'
   | '/projects'
+  | '/views'
   | '/initiatives'
   | '/adrs'
   | '/pages'
@@ -28,6 +29,7 @@ export const SIDEBAR_ITEM_IDS = [
   '/board',
   '/cycles',
   '/projects',
+  '/views',
   '/initiatives',
   '/adrs',
   '/pages',
@@ -62,7 +64,8 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
     '/board': 'more',
     '/cycles': 'primary',
     '/projects': 'primary',
-    '/initiatives': 'primary',
+    '/views': 'primary',
+    '/initiatives': 'more',
     '/adrs': 'more',
     '/pages': 'more',
     '/templates': 'more',
