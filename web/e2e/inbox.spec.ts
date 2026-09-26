@@ -73,3 +73,45 @@ test('personal inbox reviews, filters, reads, and archives recent issue activity
   await details.getByRole('button', { name: 'Back to inbox' }).click();
   await expect(notifications).toBeVisible();
 });
+
+test('H snoozes a focused notification and keeps it hidden after reload', async ({
+  page,
+  request,
+}) => {
+  const title = `Inbox snooze ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  const comment = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body: 'Snooze this notification.' },
+  });
+  expect(comment.ok()).toBeTruthy();
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('kotowari.inbox.v1'));
+  await page.goto('/inbox');
+
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  const notification = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}\\. Added a note`),
+  });
+  await expect(notification).toBeVisible();
+  await notification.focus();
+  await page.keyboard.press('h');
+
+  const snoozeMenu = page.getByRole('menu');
+  await expect(snoozeMenu.getByRole('menuitem', { name: 'Tomorrow morning' })).toBeVisible();
+  await snoozeMenu.getByRole('menuitem', { name: 'Tomorrow morning' }).click();
+  await expect(notification).toHaveCount(0);
+  await page.reload();
+  await expect(
+    page
+      .getByRole('region', { name: 'Notifications' })
+      .getByRole('button', { name: new RegExp(`${issue.identifier}: ${title}`) }),
+  ).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('kotowari.inbox.v1')))
+    .toContain('snoozedUntil');
+});

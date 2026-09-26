@@ -226,6 +226,31 @@ export function globalNavigationSequenceFromKeyboard(
   return { action: null, pendingSince: null };
 }
 
+export function inboxShortcutFromKeyboard(event: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  repeat?: boolean;
+  isComposing?: boolean;
+  defaultPrevented?: boolean;
+  target: EventTarget | null;
+}): 'snooze-notification' | null {
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.repeat ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.shiftKey ||
+    isTypingTarget(event.target)
+  )
+    return null;
+  return event.key.toLowerCase() === 'h' ? 'snooze-notification' : null;
+}
+
 export type IssueDetailShortcut =
   | 'assign-self'
   | 'open-status'

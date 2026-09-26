@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import {
   IconArchive,
+  IconClock,
   IconBell,
   IconCheck,
   IconCircleDot,
@@ -242,6 +243,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
                           type="button"
                           key={activity.id}
                           className={`${styles.activity} ${isSelected ? styles.selected : ''} ${activity.isRead ? '' : styles.unread} ${model.density === 'compact' ? styles.compact : ''}`}
+                          data-inbox-activity-id={activity.id}
                           aria-current={isSelected ? 'true' : undefined}
                           aria-label={`${activity.identifier}: ${activity.title}. ${description}. ${relativeTime(activity.createdAt, i18n.language)}`}
                           onClick={() => model.handlers.onSelect(activity.id)}
@@ -298,6 +300,38 @@ function InboxPageView({ model }: { model: InboxModel }) {
                   </Text>
                 </Group>
                 <Group gap={4} wrap="nowrap">
+                  <Menu
+                    opened={model.snoozeMenuOpen}
+                    onChange={model.handlers.onSetSnoozeMenuOpen}
+                    position="bottom-end"
+                    withinPortal
+                  >
+                    <Menu.Target>
+                      <ActionIcon
+                        type="button"
+                        variant="subtle"
+                        color="gray"
+                        aria-label={t('inbox.snooze')}
+                      >
+                        <IconClock size={15} aria-hidden />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Label>{t('inbox.snoozeUntil')}</Menu.Label>
+                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('one-hour')}>
+                        {t('inbox.snoozeOneHour')}
+                      </Menu.Item>
+                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('later-today')}>
+                        {t('inbox.snoozeLaterToday')}
+                      </Menu.Item>
+                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('tomorrow')}>
+                        {t('inbox.snoozeTomorrow')}
+                      </Menu.Item>
+                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('next-week')}>
+                        {t('inbox.snoozeNextWeek')}
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
                   <ActionIcon
                     type="button"
                     variant="subtle"

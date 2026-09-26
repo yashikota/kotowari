@@ -30,6 +30,7 @@ test('Linear-style G sequences navigate to supported personal and workspace view
   const shortcuts = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
   await expect(shortcuts).toContainText('G, then I');
   await expect(shortcuts).toContainText('G, then W');
+  await expect(shortcuts).toContainText('Snooze the selected inbox notification');
 });
 
 test('global navigation sequences remain ordinary text while an input is focused', async ({

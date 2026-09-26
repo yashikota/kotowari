@@ -2,14 +2,17 @@ import { useLoaderData } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
-import { useActions } from '../application/Root.tsx';
+import { useActions, useKeyboard } from '../application/Root.tsx';
 import {
   DEFAULT_INBOX_STATE,
+  inboxSnoozeUntil,
   INBOX_STATE_KEY,
   parseInboxState,
   serializeInboxState,
+  type InboxSnoozePreset,
   type InboxState,
 } from '../inbox-state.ts';
+import { inboxShortcutFromKeyboard } from '../keymap.ts';
 import type { InboxActivity } from '../types.ts';
 
 export type InboxFilter = 'all' | 'changes' | 'comments' | 'reactions' | 'attachments';
@@ -38,6 +41,7 @@ export function useInboxPresenter() {
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [filter, setFilter] = useState<InboxFilter>('all');
   const [commentPreview, setCommentPreview] = useState('');
+  const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
   const { t } = useTranslation();
 
   function updateInboxState(update: (current: InboxState) => InboxState) {
@@ -53,10 +57,18 @@ export function useInboxPresenter() {
       activities.filter(
         (activity) =>
           !inboxState.archivedIds.includes(activity.id) &&
+          !(inboxState.snoozedUntil[activity.id] > Date.now()) &&
           (!onlyUnread || !inboxState.readIds.includes(activity.id)) &&
           actionMatchesFilter(activity.action, filter),
       ),
-    [activities, filter, inboxState.archivedIds, inboxState.readIds, onlyUnread],
+    [
+      activities,
+      filter,
+      inboxState.archivedIds,
+      inboxState.readIds,
+      inboxState.snoozedUntil,
+      onlyUnread,
+    ],
   );
   const selectedActivity = activities.find((activity) => activity.id === selectedId) ?? null;
   useEffect(() => {
@@ -88,8 +100,33 @@ export function useInboxPresenter() {
   }, [selectedActivity]);
   const unreadCount = activities.filter(
     (activity) =>
-      !inboxState.readIds.includes(activity.id) && !inboxState.archivedIds.includes(activity.id),
+      !inboxState.readIds.includes(activity.id) &&
+      !inboxState.archivedIds.includes(activity.id) &&
+      !(inboxState.snoozedUntil[activity.id] > Date.now()),
   ).length;
+
+  useEffect(() => {
+    const deadlines = Object.values(inboxState.snoozedUntil);
+    if (deadlines.length === 0) return;
+    const wakeAt = Math.min(...deadlines);
+    const timer = window.setTimeout(
+      () => {
+        setInboxState((current) => {
+          const now = Date.now();
+          const snoozedUntil = Object.fromEntries(
+            Object.entries(current.snoozedUntil).filter(([, until]) => until > now),
+          );
+          if (Object.keys(snoozedUntil).length === Object.keys(current.snoozedUntil).length)
+            return current;
+          const next = { ...current, snoozedUntil };
+          window.localStorage.setItem(INBOX_STATE_KEY, serializeInboxState(next));
+          return next;
+        });
+      },
+      Math.max(0, wakeAt - Date.now() + 1),
+    );
+    return () => window.clearTimeout(timer);
+  }, [inboxState.snoozedUntil]);
 
   function markRead(ids: number[], read: boolean) {
     const uniqueIds = new Set(ids);
@@ -127,6 +164,17 @@ export function useInboxPresenter() {
     onArchiveSelected: () => {
       if (selectedId !== null) archive([selectedId]);
     },
+    onSetSnoozeMenuOpen: (opened: boolean) => setSnoozeMenuOpen(opened),
+    onSnoozeSelected: (preset: InboxSnoozePreset) => {
+      if (selectedId === null) return;
+      const until = inboxSnoozeUntil(preset);
+      updateInboxState((current) => ({
+        ...current,
+        snoozedUntil: { ...current.snoozedUntil, [selectedId]: until },
+      }));
+      setSelectedId(null);
+      setSnoozeMenuOpen(false);
+    },
     onMarkAllRead: () =>
       markRead(
         activities.map((activity) => activity.id),
@@ -138,6 +186,30 @@ export function useInboxPresenter() {
           .filter((activity) => inboxState.readIds.includes(activity.id))
           .map((activity) => activity.id),
       ),
+  });
+
+  useKeyboard((event) => {
+    if (inboxShortcutFromKeyboard(event) !== 'snooze-notification') return false;
+    const focusedRow =
+      event.target instanceof Element
+        ? event.target.closest<HTMLElement>('[data-inbox-activity-id]')
+        : null;
+    const focusedId = Number(focusedRow?.dataset.inboxActivityId);
+    const activityId =
+      selectedId ?? (Number.isSafeInteger(focusedId) && focusedId > 0 ? focusedId : null);
+    if (
+      activityId === null ||
+      !activities.some((activity) => activity.id === activityId) ||
+      inboxState.archivedIds.includes(activityId)
+    )
+      return false;
+    event.preventDefault();
+    if (activityId !== selectedId) {
+      setSelectedId(activityId);
+      markRead([activityId], true);
+    }
+    setSnoozeMenuOpen(true);
+    return true;
   });
 
   return {
@@ -153,6 +225,7 @@ export function useInboxPresenter() {
     filter,
     density: inboxState.density,
     groupByDate: inboxState.groupByDate,
+    snoozeMenuOpen,
     unreadCount,
     handlers,
     t,

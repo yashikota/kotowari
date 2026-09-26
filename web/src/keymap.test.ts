@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import {
   actionFromKeyboard,
   globalNavigationSequenceFromKeyboard,
+  inboxShortcutFromKeyboard,
   issueLinkedCodeSequenceFromKeyboard,
   issueDetailShortcutFromKeyboard,
   isTypingTarget,
@@ -459,6 +460,35 @@ describe('global navigation keyboard sequence', () => {
       action: null,
       pendingSince: null,
     });
+  });
+});
+
+describe('inbox keyboard shortcuts', () => {
+  const key = (
+    value: string,
+    overrides: Partial<Parameters<typeof inboxShortcutFromKeyboard>[0]> = {},
+  ) =>
+    inboxShortcutFromKeyboard({
+      key: value,
+      metaKey: false,
+      ctrlKey: false,
+      target: el('BODY'),
+      ...overrides,
+    });
+
+  it('snoozes a focused notification with H', () => {
+    expect(key('h')).toBe('snooze-notification');
+    expect(key('H')).toBe('snooze-notification');
+  });
+
+  it('does not intercept typing, composition, repeats, or modified shortcuts', () => {
+    expect(key('h', { target: el('INPUT') })).toBeNull();
+    expect(key('h', { target: el('TEXTAREA') })).toBeNull();
+    expect(key('h', { target: { isContentEditable: true } as unknown as EventTarget })).toBeNull();
+    expect(key('h', { isComposing: true })).toBeNull();
+    expect(key('h', { repeat: true })).toBeNull();
+    expect(key('h', { shiftKey: true })).toBeNull();
+    expect(key('h', { ctrlKey: true })).toBeNull();
   });
 });
 
