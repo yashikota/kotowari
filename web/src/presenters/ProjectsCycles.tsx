@@ -788,6 +788,7 @@ export function useProjectsPagePresenter() {
         targetDate: '',
       })),
     );
+    setMilestonesExpanded(template.milestones.length > 0);
   }
 
   async function deleteSelectedProjectTemplate() {
