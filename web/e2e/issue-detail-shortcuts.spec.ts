@@ -133,3 +133,28 @@ test('issue description shortcut enters edit mode and focuses the markdown edito
   await page.goto(`/issues/${anotherIssue.identifier}`);
   await expect(page.getByRole('textbox', { name: 'Markdown body' })).toHaveCount(0);
 });
+
+test('shortcut help documents issue detail actions in the active locale', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/issues', {
+    data: { title: `Issue shortcut help ${Date.now()}`, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  await page.goto(`/issues/${issue.identifier}`);
+
+  await page.getByRole('button', { name: 'Issue options' }).focus();
+  await page.keyboard.press('?');
+
+  const help = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+  await expect(help).toBeVisible();
+  await expect(help).toContainText('Assign the issue to yourself');
+  await expect(help).toContainText('Toggle the issue favorite');
+  await expect(help).toContainText('Set the issue due date');
+  await expect(help).toContainText('Focus the issue description');
+  await expect(help).toContainText('Create a sub-issue');
+  await expect(help).toContainText('Collapse or expand issue resources');
+  await expect(help).toContainText('Add a link to the issue');
+});
