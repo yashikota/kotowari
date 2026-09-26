@@ -24,6 +24,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   const stamp = Date.now();
   const activeName = `Active initiative ${stamp}`;
   const plannedName = `Planned initiative ${stamp}`;
+  const proposedName = `Proposed initiative ${stamp}`;
   const label = `initiative-${stamp}`;
   const detailLabel = `initiative-detail-${stamp}`;
   const projectSlug = `initiative-list-project-${stamp}`;
@@ -71,15 +72,34 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
     },
   });
   expect(plannedResponse.ok(), await plannedResponse.text()).toBeTruthy();
+  const proposedResponse = await request.post('/api/initiatives', {
+    data: {
+      name: proposedName,
+      slug: `proposed-initiative-${stamp}`,
+      status: 'proposed',
+    },
+  });
+  expect(proposedResponse.ok(), await proposedResponse.text()).toBeTruthy();
 
   await page.goto('/initiatives?scope=active');
   await expect(page.getByRole('link', { name: activeName })).toBeVisible();
   await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
   await page.getByRole('tab', { name: 'All initiatives' }).click();
   await expect(page.getByRole('link', { name: plannedName })).toBeVisible();
+  await expect(page.getByRole('link', { name: proposedName })).toBeVisible();
 
   await page.getByRole('button', { name: 'Add filter' }).click();
   const filterDialog = page.getByRole('dialog');
+  await filterDialog.getByRole('button', { name: 'Status' }).click();
+  await filterDialog.getByRole('checkbox', { name: 'Proposed', exact: true }).click();
+  await expect(page.getByRole('link', { name: proposedName })).toBeVisible();
+  await expect(page.getByRole('link', { name: plannedName })).toHaveCount(0);
+  await page
+    .getByRole('group', { name: 'Active filters' })
+    .getByRole('button', { name: 'Remove Status filter' })
+    .click();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
   await filterDialog.getByRole('button', { name: 'Projects' }).click();
   await filterDialog.getByRole('combobox', { name: 'Projects' }).selectOption('withProjects');
   await expect(page.getByRole('link', { name: activeName })).toBeVisible();

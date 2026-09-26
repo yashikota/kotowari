@@ -31,7 +31,7 @@ import { useTranslation } from 'react-i18next';
 import type { InitiativeProjectFilter } from '../initiative-list.ts';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
 
-const STATUSES: InitiativeStatus[] = ['planned', 'active', 'completed', 'canceled'];
+const STATUSES: InitiativeStatus[] = ['proposed', 'planned', 'active', 'completed', 'canceled'];
 const HEALTH_STATUSES: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
 const PRIORITIES = [0, 1, 2, 3, 4];
 const FILTERS = ['status', 'priority', 'labels', 'health', 'dates', 'projects'] as const;

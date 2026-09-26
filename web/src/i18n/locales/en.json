@@ -828,6 +828,7 @@
     "name": "Name",
     "description": "Description",
     "status": "Status",
+    "proposed": "Proposed",
     "planned": "Planned",
     "active": "In progress",
     "completed": "Completed",

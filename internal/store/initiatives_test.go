@@ -84,6 +84,23 @@ func TestCreateInitiativeRejectsInvalidDatesAndProjectLinks(t *testing.T) {
 	}
 }
 
+func TestProposedInitiativeStatusPersists(t *testing.T) {
+	s := openTest(t)
+	initiative, err := s.CreateInitiative("Proposed launch", "proposed-launch", "", "proposed", "blue", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = reopened.Close() })
+	reloaded, err := reopened.GetInitiative(initiative.Slug)
+	if err != nil || reloaded.Status != "proposed" {
+		t.Fatalf("proposed initiative status did not persist: %#v (%v)", reloaded, err)
+	}
+}
+
 func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
 	s := openTest(t)
 	label, err := s.CreateLabel("Initiative QA", "#7950f2")

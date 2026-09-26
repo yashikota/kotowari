@@ -72,7 +72,13 @@ export const DEFAULT_INITIATIVE_DISPLAY_PROPERTIES: InitiativeDisplayProperty[] 
   'targetDate',
 ];
 
-const INITIATIVE_STATUSES: InitiativeStatus[] = ['planned', 'active', 'completed', 'canceled'];
+const INITIATIVE_STATUSES: InitiativeStatus[] = [
+  'proposed',
+  'planned',
+  'active',
+  'completed',
+  'canceled',
+];
 
 export function parseInitiativeListSearch(raw: Record<string, unknown>): InitiativeListSearch {
   const search: InitiativeListSearch = {};
@@ -174,7 +180,13 @@ export function buildInitiativeList({
   const query = search.q?.trim().toLocaleLowerCase();
   const filtered = initiatives.filter((initiative) => {
     if (search.scope === 'active' && initiative.status !== 'active') return false;
-    if (search.scope === 'planned' && initiative.status !== 'planned') return false;
+    if (
+      search.scope === 'planned' &&
+      initiative.status !== 'proposed' &&
+      initiative.status !== 'planned'
+    ) {
+      return false;
+    }
     if (search.statusFilter?.length && !search.statusFilter.includes(initiative.status))
       return false;
     if (search.priorityFilter?.length && !search.priorityFilter.includes(initiative.priority ?? 0))

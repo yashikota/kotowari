@@ -136,7 +136,7 @@ export type Project = {
   updatedAt: string;
 };
 
-export type InitiativeStatus = 'planned' | 'active' | 'completed' | 'canceled';
+export type InitiativeStatus = 'proposed' | 'planned' | 'active' | 'completed' | 'canceled';
 
 export type Initiative = {
   id: number;

@@ -11,7 +11,7 @@ import (
 
 func validInitiativeStatus(status string) bool {
 	switch status {
-	case "planned", "active", "completed", "canceled":
+	case "proposed", "planned", "active", "completed", "canceled":
 		return true
 	default:
 		return false

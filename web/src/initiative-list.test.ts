@@ -46,7 +46,7 @@ describe('initiative list search', () => {
     expect(
       parseInitiativeListSearch({
         scope: 'planned',
-        statusFilter: ['active', 'invalid', 'active'],
+        statusFilter: ['proposed', 'active', 'invalid', 'proposed'],
         priorityFilter: ['2', '9', '2'],
         healthFilter: ['on_track', 'invalid'],
         labelFilter: ['Launch', ''],
@@ -59,7 +59,7 @@ describe('initiative list search', () => {
       }),
     ).toEqual({
       scope: 'planned',
-      statusFilter: ['active'],
+      statusFilter: ['proposed', 'active'],
       priorityFilter: [2],
       healthFilter: ['on_track'],
       labelFilter: ['Launch'],
@@ -94,6 +94,23 @@ describe('initiative list search', () => {
 
     expect(groups.map((group) => group.initiatives.map((item) => item.slug))).toEqual([['launch']]);
     expect(source.map((item) => item.slug)).toEqual(['launch', 'cleanup', 'archive']);
+  });
+
+  it('includes proposed and planned initiatives in the planned scope', () => {
+    const initiatives = [
+      initiative('proposal', 'proposed'),
+      initiative('planned', 'planned'),
+      initiative('in-progress', 'active'),
+    ];
+    const groups = buildInitiativeList({
+      initiatives,
+      projects: [],
+      search: { scope: 'planned' },
+    });
+    expect(groups.flatMap((group) => group.initiatives.map((item) => item.slug))).toEqual([
+      'proposal',
+      'planned',
+    ]);
   });
 
   it('orders and groups initiatives by status while leaving null target dates last', () => {

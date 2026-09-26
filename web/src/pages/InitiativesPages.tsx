@@ -27,7 +27,13 @@ import {
 } from '../presenters/InitiativesPages.tsx';
 import { useTranslation } from 'react-i18next';
 
-const INITIATIVE_STATUSES: InitiativeStatus[] = ['planned', 'active', 'completed', 'canceled'];
+const INITIATIVE_STATUSES: InitiativeStatus[] = [
+  'proposed',
+  'planned',
+  'active',
+  'completed',
+  'canceled',
+];
 const INITIATIVE_HEALTH: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
 const INITIATIVE_COLORS = ['grey', 'blue', 'purple', 'pink', 'red', 'orange', 'yellow', 'green'];
 
