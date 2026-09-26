@@ -69,6 +69,7 @@ export function ProjectCreateDialog({
       centered
       size="1080px"
       styles={{
+        inner: { padding: 12 },
         content: { height: 'min(88vh, 920px)', display: 'flex', flexDirection: 'column' },
         header: { minHeight: 52 },
         body: { flex: 1, minHeight: 0, padding: 0, overflow: 'hidden' },

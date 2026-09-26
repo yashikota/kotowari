@@ -56,3 +56,18 @@ test('project creation wraps controls on a narrow viewport', async ({ page }) =>
   });
   expect(formFits).toBe(true);
 });
+
+test('project creation uses Linear-sized side gutters on a desktop viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 930, height: 920 });
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+
+  const dialog = page.getByRole('dialog', { name: 'New project' });
+  await expect(dialog).toBeVisible();
+  const bounds = await dialog.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(8);
+  expect(bounds!.x).toBeLessThanOrEqual(20);
+  expect(bounds!.width).toBeGreaterThan(890);
+  expect(bounds!.x + bounds!.width).toBeGreaterThanOrEqual(910);
+});
