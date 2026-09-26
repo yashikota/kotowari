@@ -1014,6 +1014,7 @@ export function CycleDetailPageView({
         selected,
         cycle,
         cycleDetailsOpen,
+        cycleProgressOpen,
         googleCalendarURL,
         resources,
         progressTimeline,
@@ -1317,8 +1318,11 @@ export function CycleDetailPageView({
                       startedPercent={startedPercent}
                       completed={done}
                       completionPercent={completionPercent}
-                    />
-                    <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
+                      expanded={cycleProgressOpen}
+                      onToggle={handlers.onToggleCycleProgress}
+                    >
+                      <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
+                    </CycleProgressSummary>
                     {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
                   </Stack>
                 </Pane>

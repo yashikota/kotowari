@@ -165,6 +165,8 @@
     "issuesCount_other": "{{count}} issues",
     "progress": "Cycle completion",
     "progressHeading": "Progress",
+    "collapseProgress": "Collapse progress section",
+    "expandProgress": "Expand progress section",
     "currentOverview": "Current cycle overview",
     "progressChartHeading": "Progress over time",
     "progressChartDescription": "Cycle progress over time: {{scope}} in scope, {{started}} started, {{completed}} completed",

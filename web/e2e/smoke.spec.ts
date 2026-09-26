@@ -308,6 +308,22 @@ test('create issue, comment, and page', async ({ page, request }) => {
     'Cycle progress over time: 0 in scope, 0 started, 0 completed',
   );
   await expect(cycleProgressChart.getByText('Ideal', { exact: true })).toBeVisible();
+  const collapseProgress = cycleProgress.getByRole('button', {
+    name: 'Collapse progress section',
+  });
+  await collapseProgress.click();
+  const expandProgress = cycleProgress.getByRole('button', {
+    name: 'Expand progress section',
+  });
+  await expect(expandProgress).toHaveAttribute('aria-expanded', 'false');
+  await expect(cycleProgress.getByText('Scope', { exact: true }).first()).toBeHidden();
+  await expect(cycleProgressChart).toBeHidden();
+  await expandProgress.click();
+  const expandedProgress = cycleProgress.getByRole('button', {
+    name: 'Collapse progress section',
+  });
+  await expect(expandedProgress).toHaveAttribute('aria-expanded', 'true');
+  await expect(cycleProgressChart).toBeVisible();
 
   await page.goto(`/issues/${identifier}`);
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
