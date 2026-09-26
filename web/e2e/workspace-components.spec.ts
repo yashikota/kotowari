@@ -2536,6 +2536,12 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
   await page.getByRole('menuitem', { name: 'Change cycle status' }).hover();
   await page.getByRole('menuitem', { name: 'Completed', exact: true }).click();
 
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/cycles/${cycle.number}`);
+      return ((await response.json()) as { status: string }).status;
+    })
+    .toBe('completed');
   const saved = await request.get(`/api/cycles/${cycle.number}`);
   expect(saved.ok()).toBeTruthy();
   expect(await saved.json()).toMatchObject({

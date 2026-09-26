@@ -27,6 +27,9 @@ import { isTypingTarget } from '../keymap.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
+import { useIssueWorkflow } from '../workflow.tsx';
+import { usePersonalPreferences } from '../preferences.ts';
+import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
 type IssueListData = {
   issues: Issue[];
@@ -75,6 +78,8 @@ export function useIssuesPagePresenter() {
   const locationState = useRouterState({ select: (state) => state.location.state });
   const navigate = useNavigate();
   const router = useRouter();
+  const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
+  const { preferences } = usePersonalPreferences();
   const [find, setFind] = useState(locationState.issueListFind ?? '');
   const [view, setView] = useState<'active' | 'backlog' | 'all'>('all');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('priority');
@@ -270,8 +275,17 @@ export function useIssuesPagePresenter() {
       },
       onBoardOpen8: (id: string, state: IssueNavigationState) =>
         navigate({ to: '/issues/$identifier', params: { identifier: id }, state }),
-      onBoardMove9: (id: string, status: string, sortOrder: number) =>
-        api.patchIssue(id, { workflowStatus: status, sortOrder }).then(() => router.invalidate()),
+      onBoardMove9: async (id: string, status: string, sortOrder: number) => {
+        const issue = await api.issue(id);
+        const patch = autoAssignOnStartedTransition(
+          issue,
+          { workflowStatus: status, sortOrder },
+          issueWorkflowStatuses,
+          preferences.autoAssignOnStart,
+        );
+        await api.patchIssue(id, patch);
+        await router.invalidate();
+      },
     },
   };
 }
@@ -332,6 +346,8 @@ export function useBoardPagePresenter() {
   const locationState = useRouterState({ select: (state) => state.location.state });
   const navigate = useNavigate();
   const router = useRouter();
+  const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
+  const { preferences } = usePersonalPreferences();
   const [find, setFind] = useState(locationState.issueListFind ?? '');
   const issues = (data.issues ?? []).filter((i) => matchesFind(i, find));
 
@@ -360,9 +376,15 @@ export function useBoardPagePresenter() {
         status: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[1],
         sortOrder: Parameters<NonNullable<React.ComponentProps<typeof IssueBoard>['onMove']>>[2],
       ) => {
-        return api
-          .patchIssue(id, { workflowStatus: status, sortOrder })
-          .then(() => router.invalidate());
+        return api.issue(id).then((issue) => {
+          const patch = autoAssignOnStartedTransition(
+            issue,
+            { workflowStatus: status, sortOrder },
+            issueWorkflowStatuses,
+            preferences.autoAssignOnStart,
+          );
+          return api.patchIssue(id, patch).then(() => router.invalidate());
+        });
       },
     },
   };

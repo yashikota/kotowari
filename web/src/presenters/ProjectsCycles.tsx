@@ -66,6 +66,9 @@ import {
   projectWorkflowStatusCategory,
   projectWorkflowStatusLabel,
 } from '../project-workflow.tsx';
+import { useIssueWorkflow } from '../workflow.tsx';
+import { usePersonalPreferences } from '../preferences.ts';
+import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
 const CYCLE_PROGRESS_OPEN_KEY = 'kotowari.cycle-progress-open.v1';
 
@@ -1635,6 +1638,8 @@ export function useCycleDetailPagePresenter() {
     labels: Label[];
   };
   const router = useRouter();
+  const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
+  const { preferences } = usePersonalPreferences();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(
     locationState.issueListSelectedId ?? null,
@@ -1936,7 +1941,14 @@ export function useCycleDetailPagePresenter() {
       onBoardOpen: (identifier: string, state: IssueNavigationState) =>
         navigate({ to: '/issues/$identifier', params: { identifier }, state }),
       onBoardMove: async (identifier: string, status: string, sortOrder: number) => {
-        await api.patchIssue(identifier, { workflowStatus: status, sortOrder });
+        const issue = await api.issue(identifier);
+        const patch = autoAssignOnStartedTransition(
+          issue,
+          { workflowStatus: status, sortOrder },
+          issueWorkflowStatuses,
+          preferences.autoAssignOnStart,
+        );
+        await api.patchIssue(identifier, patch);
         await router.invalidate();
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },

@@ -27,6 +27,7 @@ import type {
   View,
 } from '../types.ts';
 import { useIssueWorkflow, workflowStatusCategory } from '../workflow.tsx';
+import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
 function slugify(s: string): string {
   return s
@@ -444,7 +445,14 @@ export function useShellPresenter() {
       }
       if (id.startsWith('set-status-') && currentIdentifier) {
         const status = id.replace('set-status-', '');
-        await api.patchIssue(currentIdentifier, { workflowStatus: status });
+        const issue = await api.issue(currentIdentifier);
+        const patch = autoAssignOnStartedTransition(
+          issue,
+          { workflowStatus: status },
+          issueWorkflowStatuses,
+          preferences.autoAssignOnStart,
+        );
+        await api.patchIssue(currentIdentifier, patch);
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
         await navigate({

@@ -22,6 +22,9 @@ import {
 import { IssueList } from '../components/IssueList.tsx';
 import type { IssueNavigationState } from '../focus.ts';
 import type { Cycle, Issue, Label, Project, View } from '../types.ts';
+import { useIssueWorkflow } from '../workflow.tsx';
+import { usePersonalPreferences } from '../preferences.ts';
+import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
 export function useViewPagePresenter() {
   const { slug } = useParams({ from: '/views/$slug' });
@@ -35,6 +38,8 @@ export function useViewPagePresenter() {
   const locationState = useRouterState({ select: (state) => state.location.state });
   const router = useRouter();
   const navigate = useNavigate();
+  const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
+  const { preferences } = usePersonalPreferences();
   const [find, setFind] = useState(locationState.issueListFind ?? '');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>(
     (data.view.groupBy || 'priority') as IssueGroupBy,
@@ -203,8 +208,17 @@ export function useViewPagePresenter() {
       },
       onBoardOpen17: (id: string, state: IssueNavigationState) =>
         navigate({ to: '/issues/$identifier', params: { identifier: id }, state }),
-      onBoardMove18: (id: string, status: string, sortOrder: number) =>
-        api.patchIssue(id, { status, sortOrder }).then(() => router.invalidate()),
+      onBoardMove18: async (id: string, status: string, sortOrder: number) => {
+        const issue = await api.issue(id);
+        const patch = autoAssignOnStartedTransition(
+          issue,
+          { status, sortOrder },
+          issueWorkflowStatuses,
+          preferences.autoAssignOnStart,
+        );
+        await api.patchIssue(id, patch);
+        await router.invalidate();
+      },
     },
   };
 }

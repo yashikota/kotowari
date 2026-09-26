@@ -24,6 +24,8 @@ import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
+import { usePersonalPreferences } from '../preferences.ts';
+import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
 type Props = {
   issues: Issue[];
@@ -65,6 +67,7 @@ export function useIssueListPresenter({
   const sendIntent = useIntent();
   const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const { statuses: workflowStatuses } = useIssueWorkflow();
+  const { preferences } = usePersonalPreferences();
   const projectedIssues = useIssueProjection(initialIssues);
   const visibleIssues = showSubIssues
     ? projectedIssues
@@ -117,7 +120,18 @@ export function useIssueListPresenter({
   });
 
   async function updateSelectedIssues(patch: Record<string, unknown>) {
-    await Promise.all(bulkSelectedIds.map((id) => api.patchIssue(id, patch)));
+    await Promise.all(
+      bulkSelectedIds.map(async (id) => {
+        const issue = await api.issue(id);
+        const adjustedPatch = autoAssignOnStartedTransition(
+          issue,
+          patch,
+          workflowStatuses,
+          preferences.autoAssignOnStart,
+        );
+        await api.patchIssue(id, adjustedPatch);
+      }),
+    );
     await router.invalidate();
     setBulkSelectedIds([]);
   }

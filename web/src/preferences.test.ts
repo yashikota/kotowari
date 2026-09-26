@@ -7,6 +7,7 @@ describe('personal preferences', () => {
     expect(parsePersonalPreferences(null)).toEqual({
       defaultHome: 'home',
       autoAssignToSelf: true,
+      autoAssignOnStart: false,
       fontSize: 'default',
       commentSubmitShortcut: 'modEnter',
       sidebarLocations: {
@@ -61,6 +62,7 @@ describe('personal preferences', () => {
         JSON.stringify({
           defaultHome: 'cycles',
           autoAssignToSelf: false,
+          autoAssignOnStart: true,
           fontSize: 'large',
           commentSubmitShortcut: 'enter',
         }),
@@ -68,6 +70,7 @@ describe('personal preferences', () => {
     ).toMatchObject({
       defaultHome: 'cycles',
       autoAssignToSelf: false,
+      autoAssignOnStart: true,
       fontSize: 'large',
       commentSubmitShortcut: 'enter',
     });

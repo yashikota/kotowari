@@ -258,6 +258,8 @@
     "defaultHome": "Default home view",
     "autoAssignToSelf": "Auto-assign new issues to yourself",
     "autoAssignToSelfDescription": "New issues start assigned to you unless a template specifies another assignee.",
+    "autoAssignOnStart": "Assign yourself when moving an issue to Started",
+    "autoAssignOnStartDescription": "When you move an unassigned issue into a started status, assign it to yourself.",
     "home": {
       "home": "Home",
       "issues": "Issues",

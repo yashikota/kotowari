@@ -134,6 +134,12 @@ export function ConfigPageView({
                     checked={preferences.autoAssignToSelf}
                     onChange={handlers.onAutoAssignToSelfChange}
                   />
+                  <Checkbox
+                    label={t('config.autoAssignOnStart')}
+                    description={t('config.autoAssignOnStartDescription')}
+                    checked={preferences.autoAssignOnStart}
+                    onChange={handlers.onAutoAssignOnStartChange}
+                  />
                   <Select
                     label={t('config.colorScheme')}
                     aria-label={t('config.colorScheme')}

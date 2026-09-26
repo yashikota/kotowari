@@ -144,3 +144,34 @@ test('auto-assign preference controls the new issue default and persists', async
   await page.getByRole('button', { name: 'Create issue' }).click();
   await expect(page.getByRole('combobox', { name: 'Assignee' })).toHaveValue('self');
 });
+
+test('moving an unassigned issue to Started can automatically assign it to yourself', async ({
+  page,
+  request,
+}) => {
+  const response = await request.post('/api/issues', {
+    data: { title: `Assign on start ${Date.now()}`, status: 'todo' },
+  });
+  expect(response.ok()).toBeTruthy();
+  const issue = (await response.json()) as { identifier: string };
+
+  await page.goto('/config');
+  const preference = page.getByRole('checkbox', {
+    name: 'Assign yourself when moving an issue to Started',
+  });
+  await expect(preference).not.toBeChecked();
+  await preference.check();
+  await page.reload();
+  await expect(preference).toBeChecked();
+
+  await page.goto(`/issues/${issue.identifier}`);
+  const status = page.getByRole('combobox', { name: 'Status' });
+  await status.click();
+  await page.getByRole('option', { name: 'In Progress', exact: true }).click();
+  await expect
+    .poll(async () => {
+      const updated = await request.get(`/api/issues/${issue.identifier}`);
+      return ((await updated.json()) as { assignee?: string }).assignee;
+    })
+    .toBe('self');
+});

@@ -23,6 +23,8 @@ import type {
 } from '../types.ts';
 import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-workflow.tsx';
 import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts';
+import { useIssueWorkflow } from '../workflow.tsx';
+import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
 const LABEL_COLORS = ['#d4725a', '#6b9bd1', '#c4a574', '#7a9e7e', '#d4a05a'];
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
@@ -73,6 +75,7 @@ export function useIssueDetailPresenter({
 }: Props) {
   const sendIntent = useIntent();
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
+  const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const { preferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const navigate = useNavigate();
@@ -205,7 +208,15 @@ export function useIssueDetailPresenter({
   }, [identifier]);
 
   async function patch(body: Record<string, unknown>) {
-    const next = await api.patchIssue(identifier, body);
+    const adjustedBody = issue
+      ? autoAssignOnStartedTransition(
+          issue,
+          body,
+          issueWorkflowStatuses,
+          preferences.autoAssignOnStart,
+        )
+      : body;
+    const next = await api.patchIssue(identifier, adjustedBody);
     setIssue(next);
     setActivities(await api.activities(identifier));
   }
