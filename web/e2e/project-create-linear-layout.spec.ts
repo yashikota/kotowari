@@ -19,27 +19,38 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   const template = dialog.getByRole('combobox', { name: 'Project template' });
   const summary = dialog.getByRole('textbox', { name: 'Summary' });
   const status = dialog.getByRole('combobox', { name: 'Status' });
+  const addDependencies = dialog.getByRole('button', { name: 'Add dependencies' });
   const description = dialog.getByRole('textbox', { name: 'Description' });
-  const [nameBounds, templateBounds, summaryBounds, statusBounds, descriptionBounds] =
-    await Promise.all([
-      name.boundingBox(),
-      template.boundingBox(),
-      summary.boundingBox(),
-      status.boundingBox(),
-      description.boundingBox(),
-    ]);
+  const [
+    nameBounds,
+    templateBounds,
+    summaryBounds,
+    statusBounds,
+    dependenciesBounds,
+    descriptionBounds,
+  ] = await Promise.all([
+    name.boundingBox(),
+    template.boundingBox(),
+    summary.boundingBox(),
+    status.boundingBox(),
+    addDependencies.boundingBox(),
+    description.boundingBox(),
+  ]);
 
   expect(nameBounds).not.toBeNull();
   expect(templateBounds).not.toBeNull();
   expect(summaryBounds).not.toBeNull();
   expect(statusBounds).not.toBeNull();
+  expect(dependenciesBounds).not.toBeNull();
   expect(descriptionBounds).not.toBeNull();
   expect(
     Math.abs(nameBounds!.y + nameBounds!.height - (templateBounds!.y + templateBounds!.height)),
   ).toBeLessThan(4);
   expect(nameBounds!.y).toBeLessThan(summaryBounds!.y);
   expect(summaryBounds!.y).toBeLessThan(statusBounds!.y);
-  expect(statusBounds!.y).toBeLessThan(descriptionBounds!.y);
+  expect(statusBounds!.y).toBeLessThan(dependenciesBounds!.y);
+  expect(dependenciesBounds!.y).toBeLessThan(descriptionBounds!.y);
+  await expect(dialog.getByRole('heading', { name: 'Dependencies' })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Create project' })).toBeInViewport();
 });
 

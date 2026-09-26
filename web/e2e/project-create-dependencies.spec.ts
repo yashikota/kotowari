@@ -18,7 +18,15 @@ test('new projects can link reciprocal dependencies before creation', async ({ p
   await dialog.getByLabel('Project', { exact: true }).selectOption(dependencySlug);
   await dialog.getByLabel('Relationship', { exact: true }).selectOption('blocked_by');
   await dialog.getByRole('button', { name: 'Add dependency', exact: true }).click();
-  await expect(dialog.getByText(`Blocked by ${dependencyName}`)).toBeVisible();
+  const dependencySummary = dialog.getByText(`Blocked by ${dependencyName}`);
+  await expect(dependencySummary).toBeVisible();
+  const [dependencyBounds, descriptionBounds] = await Promise.all([
+    dependencySummary.boundingBox(),
+    dialog.getByLabel('Description').boundingBox(),
+  ]);
+  expect(dependencyBounds).not.toBeNull();
+  expect(descriptionBounds).not.toBeNull();
+  expect(dependencyBounds!.y).toBeLessThan(descriptionBounds!.y);
   await dialog.getByRole('button', { name: 'Create project' }).click();
 
   await expect(page).toHaveURL(/\/projects\/[^/]+$/);

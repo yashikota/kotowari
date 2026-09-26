@@ -5,7 +5,6 @@ import {
   Group,
   Modal,
   MultiSelect,
-  NativeSelect,
   Select,
   Stack,
   Text,
@@ -15,6 +14,10 @@ import {
 import { IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { RefObject } from 'react';
+import {
+  ProjectCreateDependencyQuickAdd,
+  ProjectCreateDependencySummary,
+} from './ProjectCreateDependencies.tsx';
 import { ProjectIconPicker } from './ProjectIcon.tsx';
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
@@ -35,14 +38,10 @@ export function ProjectCreateDialog({
     availableDependencyProjects,
     availableLabels,
     createOpen,
-    dependencyDraftKind,
-    dependencyDraftOpen,
-    dependencyDraftProjectSlug,
     description,
     handlers,
     icon,
     iconColor,
-    initialDependencies,
     initialMilestones,
     lead,
     milestoneDraftDescription,
@@ -51,7 +50,6 @@ export function ProjectCreateDialog({
     milestoneDraftTargetDate,
     name,
     priority,
-    projectNameBySlug,
     projectTemplates,
     selectedLabels,
     selectedProjectTemplate,
@@ -229,7 +227,12 @@ export function ProjectCreateDialog({
                 style={{ minWidth: 180, maxWidth: 280 }}
                 styles={{ input: { borderRadius: 999 } }}
               />
+              <ProjectCreateDependencyQuickAdd
+                available={availableDependencyProjects.length > 0}
+                onOpen={handlers.onOpenDependencyDraft}
+              />
             </Group>
+            <ProjectCreateDependencySummary model={model} handlers={handlers} />
             <Textarea
               aria-label={t('modal.projectDescription')}
               placeholder={t('modal.projectDescription')}
@@ -240,92 +243,6 @@ export function ProjectCreateDialog({
               variant="unstyled"
               styles={{ input: { borderTop: '1px solid var(--mantine-color-default-border)' } }}
             />
-            <Stack gap="xs" aria-label={t('projectDependencies.heading')}>
-              <Group justify="space-between">
-                <Text size="sm" fw={600}>
-                  {t('projectDependencies.heading')}
-                </Text>
-                <Button
-                  type="button"
-                  variant="subtle"
-                  size="sm"
-                  disabled={availableDependencyProjects.length === 0}
-                  onClick={handlers.onOpenDependencyDraft}
-                >
-                  {t('projectDependencies.addFromCreate')}
-                </Button>
-              </Group>
-              {initialDependencies.map((dependency) => (
-                <Group key={dependency.projectSlug} justify="space-between" gap="xs">
-                  <Text size="sm">
-                    {t(`projectDependencies.kindOptions.${dependency.kind}`)}{' '}
-                    {projectNameBySlug[dependency.projectSlug] ?? dependency.projectSlug}
-                  </Text>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    aria-label={t('projectDependencies.remove', {
-                      project: projectNameBySlug[dependency.projectSlug] ?? dependency.projectSlug,
-                    })}
-                    onClick={() => handlers.onRemoveInitialDependency(dependency.projectSlug)}
-                  >
-                    <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                  </ActionIcon>
-                </Group>
-              ))}
-              {dependencyDraftOpen && (
-                <Box
-                  p="sm"
-                  style={{
-                    border: '1px solid var(--mantine-color-default-border)',
-                    borderRadius: 'var(--mantine-radius-sm)',
-                  }}
-                >
-                  <Stack gap="xs">
-                    <Group grow>
-                      <NativeSelect
-                        aria-label={t('projectDependencies.project')}
-                        value={dependencyDraftProjectSlug}
-                        onChange={handlers.onDependencyDraftProjectChange}
-                        data={[
-                          { value: '', label: t('projectDependencies.chooseProject') },
-                          ...availableDependencyProjects.map((candidate) => ({
-                            value: candidate.slug,
-                            label: candidate.name,
-                          })),
-                        ]}
-                      />
-                      <NativeSelect
-                        aria-label={t('projectDependencies.kind')}
-                        value={dependencyDraftKind}
-                        onChange={handlers.onDependencyDraftKindChange}
-                        data={(['blocks', 'blocked_by', 'related'] as const).map((kind) => ({
-                          value: kind,
-                          label: t(`projectDependencies.kindOptions.${kind}`),
-                        }))}
-                      />
-                    </Group>
-                    <Group justify="flex-end">
-                      <Button
-                        type="button"
-                        variant="default"
-                        onClick={handlers.onCancelDependencyDraft}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                      <Button
-                        type="button"
-                        disabled={!dependencyDraftProjectSlug}
-                        onClick={handlers.onAddInitialDependency}
-                      >
-                        {t('projectDependencies.add')}
-                      </Button>
-                    </Group>
-                  </Stack>
-                </Box>
-              )}
-            </Stack>
             <Stack gap="xs" aria-label={t('projectMilestones.heading')}>
               <Group justify="space-between">
                 <Text size="sm" fw={600}>
