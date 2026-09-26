@@ -9,7 +9,12 @@ describe('project date input', () => {
     expect(parseProjectDate('May 2027', now)).toBe('2027-05-01');
     expect(parseProjectDate('Q4', now)).toBe('2026-10-01');
     expect(parseProjectDate('Q4 2027', now)).toBe('2027-10-01');
+    expect(parseProjectDate('H1 2027', now)).toBe('2027-01-01');
+    expect(parseProjectDate('H2 2027', now)).toBe('2027-07-01');
     expect(parseProjectDate('2027 H2', now)).toBe('2027-07-01');
+    expect(parseProjectDate('2027 H1', now)).toBe('2027-01-01');
+    expect(parseProjectDate('1半期 2027', now)).toBe('2027-01-01');
+    expect(parseProjectDate('2半期 2027', now)).toBe('2027-07-01');
     expect(parseProjectDate('2027年5月', now)).toBe('2027-05-01');
     expect(parseProjectDate('2027', now)).toBe('2027-01-01');
   });

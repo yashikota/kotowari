@@ -52,7 +52,7 @@ export function parseProjectDate(input: string, now = new Date()): string | null
 
   const halfYear = HALF_YEAR_PATTERN.exec(value);
   if (halfYear) {
-    const number = Number(halfYear[1] || halfYear[2] || halfYear[5]);
+    const number = Number(halfYear[1] || halfYear[3] || halfYear[6]);
     const year = Number(halfYear[2] || halfYear[4] || halfYear[5] || now.getFullYear());
     return dateString(year, number === 1 ? 1 : 7, 1);
   }

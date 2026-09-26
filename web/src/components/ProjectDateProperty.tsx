@@ -10,7 +10,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { IconCalendarEvent, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '../time.ts';
 import {
@@ -63,6 +63,7 @@ export function ProjectDateProperty({
   const [cursorDate, setCursorDate] = useState(() => initialCursor(value));
   const [input, setInput] = useState(value);
   const [invalidInput, setInvalidInput] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedDate = parseStoredProjectDate(value);
   const selectedDateString = selectedDate ? projectDateString(selectedDate) : '';
   const year = cursorDate.getUTCFullYear();
@@ -92,13 +93,18 @@ export function ProjectDateProperty({
     setOpened(false);
   }
 
-  function applyNaturalDate() {
+  function commitNaturalInput(showError = false): boolean {
     const parsed = parseProjectDate(input);
     if (!parsed) {
-      setInvalidInput(true);
-      return;
+      if (showError && input.trim()) setInvalidInput(true);
+      return false;
     }
     selectDate(parsed);
+    return true;
+  }
+
+  function applyNaturalDate() {
+    commitNaturalInput(true);
   }
 
   function moveCalendar(direction: -1 | 1) {
@@ -161,7 +167,7 @@ export function ProjectDateProperty({
         </Button>
       </Popover.Target>
       <Popover.Dropdown aria-label={t('projectDate.change', { field: label })}>
-        <Stack gap="xs" w={304}>
+        <Stack gap="xs" w={304} ref={dropdownRef}>
           <TextInput
             autoFocus
             aria-label={t('projectDate.set', { field: label })}
@@ -171,6 +177,10 @@ export function ProjectDateProperty({
             onChange={(event) => {
               setInput(event.currentTarget.value);
               setInvalidInput(false);
+            }}
+            onBlur={(event) => {
+              if (dropdownRef.current?.contains(event.relatedTarget as Node | null)) return;
+              commitNaturalInput();
             }}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {

@@ -117,9 +117,10 @@ test('project dates use a compact picker and can be cleared', async ({ page }) =
   await startDate.click();
   const datePopover = page.getByRole('dialog', { name: 'Change Start date' });
   await datePopover.getByRole('textbox', { name: 'Set Start date' }).fill('2026-09-26');
-  await datePopover.getByRole('textbox', { name: 'Set Start date' }).press('Enter');
+  await dialog.getByRole('button', { name: 'Change Target date' }).click();
   await expect(startDate).not.toHaveText('Start date');
 
+  await page.keyboard.press('Escape');
   await startDate.click();
   await datePopover.getByRole('button', { name: 'Clear date' }).click();
   await expect(startDate).toHaveText('Start date');
@@ -150,4 +151,9 @@ test('project dates support Linear-style precision tabs and natural-language per
   await dateInput.fill('Q4 2027');
   await dateInput.press('Enter');
   await expect(startDate).toHaveText('Oct 1');
+
+  await startDate.click();
+  await datePopover.getByRole('textbox', { name: 'Set Start date' }).fill('H1 2027');
+  await datePopover.getByRole('textbox', { name: 'Set Start date' }).press('Enter');
+  await expect(startDate).toHaveText('Jan 1');
 });
