@@ -892,10 +892,24 @@ test('project board groups can be reordered, hidden, and saved in the view previ
   await expect(columnControls.getByRole('combobox', { name: 'Columns' })).toBeVisible();
   await expect(columnControls.getByRole('button', { name: 'Group ordering' })).toBeVisible();
   await page.getByRole('button', { name: 'Group ordering' }).click();
+  const statusOrder = () => {
+    const value = new URL(page.url()).searchParams.get('statusColumnOrder');
+    return value ? (JSON.parse(value) as string[]) : [];
+  };
   await page.getByRole('button', { name: 'Move Backlog down' }).click();
   await expect(page).toHaveURL(/statusColumnOrder=/);
   await expect(columns().nth(0)).toHaveAccessibleName('Planned');
   await expect(columns().nth(1)).toHaveAccessibleName('Backlog');
+
+  await page
+    .locator('[data-project-board-group="backlog"]')
+    .dragTo(page.locator('[data-project-board-group="planned"]'));
+  await expect
+    .poll(statusOrder)
+    .toEqual(['backlog', 'planned', 'started', 'completed', 'canceled']);
+  await expect(columns().nth(0)).toHaveAccessibleName('Backlog');
+  await page.getByRole('button', { name: 'Move Backlog down' }).click();
+  await expect(columns().nth(0)).toHaveAccessibleName('Planned');
 
   await page.getByRole('button', { name: 'Hide Backlog' }).click();
   await expect(page).toHaveURL(/hiddenStatusColumns=/);
