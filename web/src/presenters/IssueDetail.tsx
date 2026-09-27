@@ -3,7 +3,13 @@ import { useNavigate, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
-import { issueBranchName, issueMarkdown, renderIssuePrompt } from '../issue-actions.ts';
+import {
+  issueBranchName,
+  issueMarkdown,
+  renderIssuePrompt,
+  selectedIssuesAgentPrompt,
+} from '../issue-actions.ts';
+import { setPendingAgentPrompt } from '../agent-prompt.ts';
 import { buildCodingToolURL, useCodingToolPreferences } from '../coding-tools.ts';
 import { cachedIssue, useIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
@@ -1017,6 +1023,10 @@ export function useIssueDetailPresenter({
       Copy_branch_onClick40: () => copyText(issueBranchName(issue)),
       Copy_prompt_onClick41: () =>
         copyText(renderIssuePrompt(issue, codingToolPreferences.promptTemplate, issueURL)),
+      onOpenIssueAgentPage: () => {
+        setPendingAgentPrompt(selectedIssuesAgentPrompt([issue], window.location.origin));
+        return navigate({ to: '/agent' });
+      },
       onOpenCodingTool: () => {
         if (codingToolURL) window.open(codingToolURL, '_blank', 'noopener,noreferrer');
       },

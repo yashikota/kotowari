@@ -1335,7 +1335,28 @@ export function IssueDetailView({
                   </Group>
                 </Section>
                 <Box pt="sm" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-                  <AIPanel kind="issues" id={identifier} />
+                  <AIPanel
+                    kind="issues"
+                    id={identifier}
+                    floating
+                    contextLabel={issue.title}
+                    promptPlaceholder={t('issueAssistant.placeholder')}
+                    starterPrompts={[
+                      {
+                        label: t('issueAssistant.prompts.summary'),
+                        prompt: t('issueAssistant.prompts.summaryPrompt'),
+                      },
+                      {
+                        label: t('issueAssistant.prompts.plan'),
+                        prompt: t('issueAssistant.prompts.planPrompt'),
+                      },
+                      {
+                        label: t('issueAssistant.prompts.risks'),
+                        prompt: t('issueAssistant.prompts.risksPrompt'),
+                      },
+                    ]}
+                    onOpenFullPage={handlers.onOpenIssueAgentPage}
+                  />
                 </Box>
               </Stack>
             </Grid.Col>

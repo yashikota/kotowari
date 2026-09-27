@@ -23,13 +23,42 @@ type State = {
   authMethods?: { id: string; name: string }[];
 };
 
-export function useAIPanelPresenter({ kind, id }: { kind: string; id: string }) {
-  return { _view: 0 as const, kind, id, handlers: {} };
+export function useAIPanelPresenter({
+  kind,
+  id,
+  floating = false,
+  contextLabel = '',
+  starterPrompts = [],
+  promptPlaceholder,
+  onOpenFullPage,
+}: {
+  kind: string;
+  id: string;
+  floating?: boolean;
+  contextLabel?: string;
+  starterPrompts?: { label: string; prompt: string }[];
+  promptPlaceholder?: string;
+  onOpenFullPage?: () => void;
+}) {
+  return {
+    _view: 0 as const,
+    kind,
+    id,
+    floating,
+    contextLabel,
+    starterPrompts,
+    promptPlaceholder,
+    onOpenFullPage,
+    handlers: {},
+  };
 }
 export function usePanelPresenter({
   kind,
   id,
   standalone = false,
+  floating = false,
+  contextLabel = '',
+  onOpenFullPage,
   onPromptSubmitted,
   initialPrompt = '',
   starterPrompts = [],
@@ -39,6 +68,9 @@ export function usePanelPresenter({
   kind: string;
   id: string;
   standalone?: boolean;
+  floating?: boolean;
+  contextLabel?: string;
+  onOpenFullPage?: () => void;
   onPromptSubmitted?: (prompt: string) => void;
   initialPrompt?: string;
   starterPrompts?: { label: string; prompt: string }[];
@@ -121,7 +153,10 @@ export function usePanelPresenter({
   return {
     _view: 0 as const,
     standalone,
+    floating,
     id,
+    contextLabel,
+    onOpenFullPage,
     open,
     state,
     prompt,
@@ -134,6 +169,12 @@ export function usePanelPresenter({
     hidePromptLabel,
     handlers: {
       onClick0: () => setOpen(!open),
+      onOpenChange: (next: boolean) => setOpen(next),
+      onClose: () => setOpen(false),
+      onOpenFullPage: () => {
+        setOpen(false);
+        onOpenFullPage?.();
+      },
       onClick1: (a: { id: string; name: string }) => action({ action: 'authenticate', auth: a.id }),
       onClick2: (
         p: {

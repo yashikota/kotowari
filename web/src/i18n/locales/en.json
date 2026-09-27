@@ -1290,6 +1290,20 @@
     "copySuffix": "copy",
     "deleteConfirmation": "Delete {{identifier}}?"
   },
+  "issueAssistant": {
+    "openFullPage": "Open full page",
+    "welcome": "Ask AI about this issue",
+    "description": "The current issue is attached as context for each message.",
+    "placeholder": "Ask a question about this issue…",
+    "prompts": {
+      "summary": "Summarize",
+      "summaryPrompt": "Summarize this issue and list its key acceptance criteria.",
+      "plan": "Create a plan",
+      "planPrompt": "Suggest a small, ordered implementation plan for this issue.",
+      "risks": "Find risks",
+      "risksPrompt": "Identify unclear requirements, edge cases, and risks in this issue."
+    }
+  },
   "documentHistory": {
     "button": "History",
     "heading": "Description history",

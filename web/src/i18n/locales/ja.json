@@ -1283,6 +1283,20 @@
     "copySuffix": "コピー",
     "deleteConfirmation": "{{identifier}} を削除しますか？"
   },
+  "issueAssistant": {
+    "openFullPage": "全画面で開く",
+    "welcome": "このイシューについてAIに質問",
+    "description": "各メッセージには、このイシューの内容がコンテキストとして含まれます。",
+    "placeholder": "このイシューについて質問…",
+    "prompts": {
+      "summary": "要点をまとめる",
+      "summaryPrompt": "このイシューを要約し、主な受け入れ条件を列挙してください。",
+      "plan": "実装計画を作る",
+      "planPrompt": "このイシューの実装手順を、少数の具体的なステップに分けて提案してください。",
+      "risks": "リスクを洗い出す",
+      "risksPrompt": "このイシューの要件で不明確な点、境界ケース、リスクを挙げてください。"
+    }
+  },
   "documentHistory": {
     "button": "履歴",
     "heading": "説明の履歴",
