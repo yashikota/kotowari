@@ -2792,6 +2792,65 @@ func validViewIcon(icon string) bool {
 	}
 }
 
+func validateIssueFilterGroup(root *IssueFilterNode) error {
+	if root == nil {
+		return nil
+	}
+	fields := map[string]bool{
+		"status": true, "assignee": true, "priority": true, "type": true, "estimate": true,
+		"project": true, "cycle": true, "label": true, "title": true, "identifier": true,
+	}
+	operators := map[string]bool{"is": true, "isNot": true, "contains": true, "doesNotContain": true}
+	visited := 0
+	var validate func(node *IssueFilterNode, depth int, isRoot bool) error
+	validate = func(node *IssueFilterNode, depth int, isRoot bool) error {
+		visited++
+		if visited > 80 || depth > 6 {
+			return validationf("issue filter group is too large")
+		}
+		switch node.Kind {
+		case "group":
+			if node.Operator != "and" && node.Operator != "or" {
+				return validationf("invalid issue filter group operator")
+			}
+			if node.Field != "" || node.Value != "" || len(node.Children) > 40 {
+				return validationf("invalid issue filter group")
+			}
+			for i := range node.Children {
+				if err := validate(&node.Children[i], depth+1, false); err != nil {
+					return err
+				}
+			}
+		case "condition":
+			if isRoot || len(node.Children) > 0 || (node.Field != "" && !fields[node.Field]) {
+				return validationf("invalid issue filter condition")
+			}
+			if node.Operator != "" && !operators[node.Operator] {
+				return validationf("invalid issue filter operator")
+			}
+			if node.Field != "" && node.Operator == "" {
+				return validationf("issue filter operator is required")
+			}
+			if (node.Field == "title" || node.Field == "identifier") && node.Operator != "" && node.Operator != "contains" && node.Operator != "doesNotContain" {
+				return validationf("invalid issue text filter operator")
+			}
+			if node.Field != "" && node.Field != "title" && node.Field != "identifier" && node.Operator != "" && node.Operator != "is" && node.Operator != "isNot" {
+				return validationf("invalid issue property filter operator")
+			}
+			if utf8.RuneCountInString(node.Value) > 240 {
+				return validationf("issue filter value is too long")
+			}
+		default:
+			return validationf("invalid issue filter node")
+		}
+		return nil
+	}
+	if root.Kind != "group" {
+		return validationf("issue filter root must be a group")
+	}
+	return validate(root, 0, true)
+}
+
 func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	in.Name = strings.TrimSpace(in.Name)
 	in.Slug = strings.TrimSpace(in.Slug)
@@ -2811,6 +2870,9 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	}
 	if in.Name == "" {
 		return View{}, validationf("name required")
+	}
+	if err := validateIssueFilterGroup(in.AdvancedFilterGroup); err != nil {
+		return View{}, err
 	}
 	if !domain.ValidSlug(in.Slug) {
 		return View{}, validationf("invalid slug")
@@ -2958,6 +3020,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			Status: in.Status, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
 			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
+			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 		}
 		if in.DueDate != nil {
 			out.DueDate = *in.DueDate
@@ -2986,6 +3049,15 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 			return ErrNotFound
 		}
 		v := m.Views[i]
+		if in.AdvancedFilter != nil {
+			v.AdvancedFilter = *in.AdvancedFilter
+		}
+		if in.AdvancedFilterGroup != nil {
+			if err := validateIssueFilterGroup(in.AdvancedFilterGroup); err != nil {
+				return err
+			}
+			v.AdvancedFilterGroup = in.AdvancedFilterGroup
+		}
 		if name := strings.TrimSpace(in.Name); name != "" {
 			v.Name = name
 		}

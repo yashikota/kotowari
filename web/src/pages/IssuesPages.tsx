@@ -79,6 +79,10 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               cycles={data.cycles}
               labels={data.labels}
               onChange={handlers.onChange0}
+              advancedFilter={search.advancedFilter}
+              advancedFilterGroup={search.advancedFilterGroup}
+              onAdvancedFilterToggle={handlers.onAdvancedFilterToggle}
+              onAdvancedFilterChange={handlers.onAdvancedFilterChange}
               find={find}
               onFind={handlers.onFind2}
               groupBy={groupBy}

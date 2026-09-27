@@ -1,9 +1,10 @@
-import { ActionIcon, Box, Group, TextInput } from '@mantine/core';
-import { IconLayoutSidebarRight, IconSearch } from '@tabler/icons-react';
+import { ActionIcon, Box, Button, Group, TextInput } from '@mantine/core';
+import { IconFilter, IconLayoutSidebarRight, IconSearch } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { IssueDisplayOptions } from './IssueDisplayOptions.tsx';
 import { IssueFilterMenu } from './IssueFilterMenu.tsx';
+import { AdvancedIssueFilterBuilder } from './AdvancedIssueFilterBuilder.tsx';
 import { DEFAULT_DISPLAY_PROPERTIES } from '../issue-list.ts';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -46,6 +47,11 @@ export function IssueFiltersView({
         displayProperties,
         detailsOpen,
         onDetailsToggle,
+        advancedFilter,
+        advancedFilterGroup,
+        advancedFilterChoices,
+        onAdvancedFilterToggle,
+        onAdvancedFilterChange,
         handlers,
       } = model;
       return (
@@ -62,6 +68,21 @@ export function IssueFiltersView({
             align="center"
           >
             {leading}
+            {onAdvancedFilterToggle ? (
+              <Button
+                type="button"
+                variant={advancedFilter ? 'light' : 'subtle'}
+                color="gray"
+                size="compact-xs"
+                leftSection={<IconFilter size={14} aria-hidden="true" />}
+                aria-label={t('issueFilters.toggleAdvancedFilter')}
+                aria-expanded={advancedFilter}
+                aria-controls="issue-advanced-filter-builder"
+                onClick={handlers.onAdvancedFilterToggle}
+              >
+                {t('issueFilters.advancedFilter')}
+              </Button>
+            ) : null}
             <IssueFilterMenu
               search={search}
               projects={projects}
@@ -162,6 +183,24 @@ export function IssueFiltersView({
               </ActionIcon>
             ) : null}
           </Group>
+          {onAdvancedFilterChange ? (
+            <Box
+              id="issue-advanced-filter-builder"
+              mt="xs"
+              p="xs"
+              style={{
+                borderTop: '1px solid var(--mantine-color-default-border)',
+                display: advancedFilter ? undefined : 'none',
+              }}
+              aria-label={t('issueFilters.advancedFilter')}
+            >
+              <AdvancedIssueFilterBuilder
+                group={advancedFilterGroup}
+                choices={advancedFilterChoices}
+                onChange={handlers.onAdvancedFilterChange}
+              />
+            </Box>
+          ) : null}
         </Box>
       );
     }

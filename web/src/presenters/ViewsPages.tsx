@@ -25,6 +25,7 @@ import type { Cycle, Issue, Label, Project, View } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import { matchesIssueFilterGroup, parseIssueFilterGroup } from '../issue-advanced-filter.ts';
 
 export function useViewPagePresenter() {
   const { slug } = useParams({ from: '/views/$slug' });
@@ -48,12 +49,16 @@ export function useViewPagePresenter() {
     (data.view.orderBy || 'manual') as IssueOrderBy,
   );
   const [view, setView] = useState(data.view);
+  const advancedFilterGroup = parseIssueFilterGroup(view.advancedFilterGroup);
   const matchingIssues = (data.issues ?? []).filter((issue) => {
     const query = find.trim().toLowerCase();
     return (
-      !query ||
-      issue.title.toLowerCase().includes(query) ||
-      issue.identifier.toLowerCase().includes(query)
+      (!query ||
+        issue.title.toLowerCase().includes(query) ||
+        issue.identifier.toLowerCase().includes(query)) &&
+      (!view.advancedFilter ||
+        !advancedFilterGroup ||
+        matchesIssueFilterGroup(issue, advancedFilterGroup))
     );
   });
   const issues = filterCompletedIssues(
@@ -103,6 +108,8 @@ export function useViewPagePresenter() {
     projectPriority: view.projectPriority ?? undefined,
     projectLabels: view.projectLabels ?? undefined,
     addedToCycle: view.addedToCycle ?? undefined,
+    advancedFilter: view.advancedFilter ?? false,
+    advancedFilterGroup,
     labels: view.labels.length > 0 ? view.labels.join(',') : undefined,
   };
 
@@ -129,6 +136,12 @@ export function useViewPagePresenter() {
       projectPriority: next.projectPriority ?? -1,
       projectLabels: next.projectLabels ?? [],
       addedToCycle: next.addedToCycle ?? [],
+      advancedFilter: next.advancedFilter ?? false,
+      advancedFilterGroup: next.advancedFilterGroup ?? {
+        kind: 'group',
+        operator: 'and',
+        children: [],
+      },
       labels: next.labels ? next.labels.split(',').filter(Boolean) : [],
     });
   }
@@ -180,6 +193,10 @@ export function useViewPagePresenter() {
       },
       onDetailsToggle26: () => setDetailsOpen((current) => !current),
       onFilterChange12: (next: IssueSearch) => patchFilters(next),
+      onAdvancedFilterToggle13: (enabled: boolean) =>
+        patchFilters({ ...search, advancedFilter: enabled }),
+      onAdvancedFilterChange14: (group: NonNullable<IssueSearch['advancedFilterGroup']>) =>
+        patchFilters({ ...search, advancedFilter: true, advancedFilterGroup: group }),
       onFind13: (query: string) => setFind(query),
       onGroupBy14: (next: IssueGroupBy) => {
         setGroupBy(next);

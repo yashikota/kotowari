@@ -31,6 +31,7 @@ import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
+import { matchesIssueFilterGroup } from '../issue-advanced-filter.ts';
 import type { Activity } from '../types.ts';
 
 type IssueListData = {
@@ -44,6 +45,8 @@ type IssueListData = {
 function compactSearch(next: IssueSearch): IssueSearch {
   return parseIssueSearch({
     archived: next.archived,
+    advancedFilter: next.advancedFilter ?? false,
+    advancedFilterGroup: next.advancedFilterGroup,
     view: next.view ?? '',
     myIssuesTab: next.myIssuesTab ?? '',
     assignee: next.assignee ?? '',
@@ -141,6 +144,12 @@ export function useIssuesPagePresenter() {
           : true,
     )
     .filter((i) => matchesFind(i, find))
+    .filter(
+      (issue) =>
+        !search.advancedFilter ||
+        !search.advancedFilterGroup ||
+        matchesIssueFilterGroup(issue, search.advancedFilterGroup),
+    )
     .filter((i) =>
       activeView === 'active'
         ? i.status === 'todo' || i.status === 'in_progress'
@@ -199,6 +208,30 @@ export function useIssuesPagePresenter() {
         const normalized = compactSearch(next);
         latestSearch.current = normalized;
         return navigate({ to: '/issues', search: normalized, replace: true });
+      },
+      onAdvancedFilterToggle: (enabled: boolean) => {
+        const next = compactSearch({
+          ...latestSearch.current,
+          advancedFilter: enabled || undefined,
+          advancedFilterGroup: enabled
+            ? (latestSearch.current.advancedFilterGroup ?? {
+                kind: 'group',
+                operator: 'and',
+                children: [],
+              })
+            : latestSearch.current.advancedFilterGroup,
+        });
+        latestSearch.current = next;
+        return navigate({ to: '/issues', search: next, replace: true });
+      },
+      onAdvancedFilterChange: (group: NonNullable<IssueSearch['advancedFilterGroup']>) => {
+        const next = compactSearch({
+          ...latestSearch.current,
+          advancedFilter: true,
+          advancedFilterGroup: group,
+        });
+        latestSearch.current = next;
+        return navigate({ to: '/issues', search: next, replace: true });
       },
       onNewViewOpen: () =>
         navigate({

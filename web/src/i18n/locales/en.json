@@ -46,6 +46,28 @@
     "emptyAction": "Browse issues",
     "pullRequestCount": "{{count}} pull requests"
   },
+  "issueFilters": {
+    "advancedFilter": "Advanced filter",
+    "toggleAdvancedFilter": "Toggle advanced filter",
+    "chooseField": "Choose field",
+    "conditionField": "Group {{group}} condition {{number}} field",
+    "conditionOperator": "Group {{group}} condition {{number}} operator",
+    "conditionValue": "Group {{group}} condition {{number}} value",
+    "group": "Filter group {{number}}",
+    "groupOperator": "Filter group {{number}} operator",
+    "matchAll": "All",
+    "matchAny": "Any",
+    "is": "is",
+    "isNot": "is not",
+    "contains": "contains",
+    "doesNotContain": "does not contain",
+    "addCondition": "Add condition",
+    "addGroup": "Add filter group",
+    "deleteGroup": "Delete filter group",
+    "removeCondition": "Remove filter condition",
+    "title": "Title",
+    "identifier": "Identifier"
+  },
   "searchPage": {
     "heading": "Search",
     "inputLabel": "Search issues, projects, and documents",

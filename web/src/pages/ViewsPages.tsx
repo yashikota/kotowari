@@ -87,6 +87,10 @@ export function ViewPageView({
                   cycles={data.cycles}
                   labels={data.labels}
                   onChange={handlers.onFilterChange12}
+                  advancedFilter={search.advancedFilter}
+                  advancedFilterGroup={search.advancedFilterGroup}
+                  onAdvancedFilterToggle={handlers.onAdvancedFilterToggle13}
+                  onAdvancedFilterChange={handlers.onAdvancedFilterChange14}
                   find={find}
                   onFind={handlers.onFind13}
                   groupBy={groupBy}

@@ -545,38 +545,40 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 
 func viewInput(r *http.Request) (store.CreateViewInput, error) {
 	var in struct {
-		Name              string   `json:"name"`
-		Slug              string   `json:"slug"`
-		Description       *string  `json:"description"`
-		Icon              *string  `json:"icon"`
-		Display           string   `json:"display"`
-		GroupBy           string   `json:"groupBy"`
-		SubGroupBy        string   `json:"subGroupBy"`
-		OrderBy           string   `json:"orderBy"`
-		Direction         string   `json:"direction"`
-		CompletedIssues   string   `json:"completedIssues"`
-		ShowSubIssues     *bool    `json:"showSubIssues"`
-		NestedSubIssues   string   `json:"nestedSubIssues"`
-		ShowEmptyGroups   *bool    `json:"showEmptyGroups"`
-		DisplayProperties []string `json:"displayProperties"`
-		Status            *string  `json:"status"`
-		Assignee          *string  `json:"assignee"`
-		Project           *string  `json:"project"`
-		Cycle             *int     `json:"cycle"`
-		Labels            []string `json:"labels"`
-		Priority          *int     `json:"priority"`
-		Type              *string  `json:"type"`
-		Estimate          *int     `json:"estimate"`
-		DueDate           *string  `json:"dueDate"`
-		Relation          *string  `json:"relation"`
-		Content           *string  `json:"content"`
-		MilestoneName     *string  `json:"milestoneName"`
-		ProjectLabels     []string `json:"projectLabels"`
-		DateField         *string  `json:"dateField"`
-		DateRange         *string  `json:"dateRange"`
-		ProjectStatus     *string  `json:"projectStatus"`
-		ProjectPriority   *int     `json:"projectPriority"`
-		AddedToCycle      []string `json:"addedToCycle"`
+		Name                string                 `json:"name"`
+		Slug                string                 `json:"slug"`
+		Description         *string                `json:"description"`
+		Icon                *string                `json:"icon"`
+		Display             string                 `json:"display"`
+		GroupBy             string                 `json:"groupBy"`
+		SubGroupBy          string                 `json:"subGroupBy"`
+		OrderBy             string                 `json:"orderBy"`
+		Direction           string                 `json:"direction"`
+		CompletedIssues     string                 `json:"completedIssues"`
+		ShowSubIssues       *bool                  `json:"showSubIssues"`
+		NestedSubIssues     string                 `json:"nestedSubIssues"`
+		ShowEmptyGroups     *bool                  `json:"showEmptyGroups"`
+		DisplayProperties   []string               `json:"displayProperties"`
+		Status              *string                `json:"status"`
+		Assignee            *string                `json:"assignee"`
+		Project             *string                `json:"project"`
+		Cycle               *int                   `json:"cycle"`
+		Labels              []string               `json:"labels"`
+		Priority            *int                   `json:"priority"`
+		Type                *string                `json:"type"`
+		Estimate            *int                   `json:"estimate"`
+		DueDate             *string                `json:"dueDate"`
+		Relation            *string                `json:"relation"`
+		Content             *string                `json:"content"`
+		MilestoneName       *string                `json:"milestoneName"`
+		ProjectLabels       []string               `json:"projectLabels"`
+		DateField           *string                `json:"dateField"`
+		DateRange           *string                `json:"dateRange"`
+		ProjectStatus       *string                `json:"projectStatus"`
+		ProjectPriority     *int                   `json:"projectPriority"`
+		AddedToCycle        []string               `json:"addedToCycle"`
+		AdvancedFilter      *bool                  `json:"advancedFilter"`
+		AdvancedFilterGroup *store.IssueFilterNode `json:"advancedFilterGroup"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		return store.CreateViewInput{}, err
@@ -587,6 +589,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 		Status: in.Status, Assignee: in.Assignee,
 		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, DueDate: in.DueDate, Relation: in.Relation, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
+		AdvancedFilter: in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 	}, nil
 }
 

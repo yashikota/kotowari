@@ -1,3 +1,5 @@
+import type { IssueFilterGroup } from './issue-advanced-filter.ts';
+
 export type IssueStatus = 'backlog' | 'todo' | 'in_progress' | 'done' | 'canceled';
 export type IssueWorkflowStatus = {
   id: string;
@@ -290,6 +292,8 @@ export type View = {
   projectPriority?: number | null;
   projectLabels?: string[];
   addedToCycle?: ('planned' | 'during' | 'after')[];
+  advancedFilter?: boolean;
+  advancedFilterGroup?: IssueFilterGroup;
   createdAt: string;
   updatedAt: string;
 };

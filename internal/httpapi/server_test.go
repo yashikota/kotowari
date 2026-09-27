@@ -1288,6 +1288,49 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	}
 }
 
+func TestAdvancedIssueFilterViewRoundTrip(t *testing.T) {
+	s := testAPI(t)
+	create := `{"name":"Grouped issues","slug":"grouped-issues","advancedFilter":true,"advancedFilterGroup":{"kind":"group","operator":"or","children":[{"kind":"condition","field":"status","operator":"is","value":"in_progress"},{"kind":"group","operator":"and","children":[{"kind":"condition","field":"priority","operator":"is","value":"0"}]}]}}`
+	rec := doJSON(t, s, "POST", "/api/views", create)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create view %d %s", rec.Code, rec.Body.String())
+	}
+	var view map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &view); err != nil {
+		t.Fatal(err)
+	}
+	if view["advancedFilter"] != true {
+		t.Fatalf("advanced filter flag %#v", view["advancedFilter"])
+	}
+	group, ok := view["advancedFilterGroup"].(map[string]any)
+	if !ok || group["operator"] != "or" || len(group["children"].([]any)) != 2 {
+		t.Fatalf("advanced filter group %#v", view["advancedFilterGroup"])
+	}
+
+	patch := `{"advancedFilter":false,"advancedFilterGroup":{"kind":"group","operator":"and","children":[{"kind":"condition","field":"title","operator":"contains","value":"release"}]}}`
+	rec = doJSON(t, s, "PATCH", "/api/views/grouped-issues", patch)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("patch view %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/views/grouped-issues", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("get patched view %d %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &view); err != nil {
+		t.Fatal(err)
+	}
+	group, ok = view["advancedFilterGroup"].(map[string]any)
+	if !ok || view["advancedFilter"] != false || group["operator"] != "and" {
+		t.Fatalf("patched advanced filter %#v", view)
+	}
+
+	invalid := `{"advancedFilterGroup":{"kind":"group","operator":"and","children":[{"kind":"condition","field":"unsupported","operator":"is","value":"x"}]}}`
+	rec = doJSON(t, s, "PATCH", "/api/views/grouped-issues", invalid)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid advanced filter status %d %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestListIssuesPriorityQuery(t *testing.T) {
 	s := testAPI(t)
 	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"hot","priority":1}`); rec.Code != http.StatusCreated {

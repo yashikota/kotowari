@@ -12,6 +12,7 @@ import type {
   IssueOrderBy,
 } from '../issue-list.ts';
 import type { Cycle, Label, Project } from '../types.ts';
+import type { IssueFilterChoices, IssueFilterGroup } from '../issue-advanced-filter.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
@@ -64,6 +65,10 @@ type Props = {
   cycles: Cycle[];
   labels: Label[];
   onChange: (next: IssueSearch) => void;
+  advancedFilter?: boolean;
+  advancedFilterGroup?: IssueFilterGroup;
+  onAdvancedFilterToggle?: (enabled: boolean) => void;
+  onAdvancedFilterChange?: (group: IssueFilterGroup) => void;
   find?: string;
   onFind?: (q: string) => void;
   groupBy?: IssueGroupBy;
@@ -96,6 +101,10 @@ export function useIssueFiltersPresenter({
   cycles,
   labels,
   onChange,
+  advancedFilter,
+  advancedFilterGroup,
+  onAdvancedFilterToggle,
+  onAdvancedFilterChange,
   find,
   onFind,
   groupBy,
@@ -152,6 +161,50 @@ export function useIssueFiltersPresenter({
     .filter(Boolean);
   const selectedProjectLabels = search.projectLabels ?? [];
   const selectedAddedToCycle = search.addedToCycle ?? [];
+  const advancedFilterChoices: IssueFilterChoices = {
+    status: workflowStatuses.map((status) => ({
+      value: status.id,
+      label: workflowStatusLabel(status.id, workflowStatuses),
+    })),
+    assignee: [
+      { value: 'self', label: t('issueAssignment.you') },
+      { value: 'agent', label: t('issueAssignment.agent') },
+      { value: 'none', label: t('issueAssignment.unassigned') },
+    ],
+    priority: [0, 1, 2, 3, 4].map((priority) => ({
+      value: String(priority),
+      label: priorityLabel(priority),
+    })),
+    type: (['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
+      value: type,
+      label: issueTypeLabel(type),
+    })),
+    estimate: [
+      { value: 'none', label: t('issueProperties.noEstimate') },
+      ...[0, 1, 2, 3, 5, 8].map((estimate) => ({
+        value: String(estimate),
+        label: String(estimate),
+      })),
+    ],
+    project: [
+      { value: 'none', label: t('field.noProject') },
+      ...projects.map((project) => ({
+        value: project.slug || String(project.id),
+        label: project.name,
+      })),
+    ],
+    cycle: [
+      { value: 'none', label: t('field.noCycle') },
+      ...cycles.map((cycle) => ({
+        value: String(cycle.id),
+        label: cycle.name || t('field.cycleN', { number: cycle.number }),
+      })),
+    ],
+    label: [
+      { value: 'none', label: t('issueProperties.noLabels') },
+      ...labels.map((label) => ({ value: label.name, label: label.name })),
+    ],
+  };
 
   function set(patch: IssueSearch) {
     const next = { ...searchRef.current, ...patch };
@@ -251,6 +304,9 @@ export function useIssueFiltersPresenter({
           },
         ]
       : []),
+    ...(search.advancedFilter && search.advancedFilterGroup?.children.length
+      ? [{ key: 'advancedFilter', label: t('issueFilters.advancedFilter') }]
+      : []),
     ...selectedLabels.map((name) => ({
       key: `label:${name}`,
       label: `${t('issueProperties.labels')} · ${name}`,
@@ -272,6 +328,12 @@ export function useIssueFiltersPresenter({
     cycles,
     labels,
     onChange,
+    onAdvancedFilterToggle,
+    onAdvancedFilterChange,
+    advancedFilter: advancedFilter ?? search.advancedFilter ?? false,
+    advancedFilterGroup: advancedFilterGroup ??
+      search.advancedFilterGroup ?? { kind: 'group', operator: 'and', children: [] },
+    advancedFilterChoices,
     findOpen,
     find,
     onFind,
@@ -299,6 +361,9 @@ export function useIssueFiltersPresenter({
     chips,
     handlers: {
       onFilterOpenChange: (next: boolean) => setFilterOpened(next),
+      onAdvancedFilterToggle: () =>
+        onAdvancedFilterToggle?.(!(advancedFilter ?? search.advancedFilter ?? false)),
+      onAdvancedFilterChange: (group: IssueFilterGroup) => onAdvancedFilterChange?.(group),
       onDisplayToggle: () => setDisplayOpened((current) => !current),
       onDisplayOpenChange: (next: boolean) => setDisplayOpened(next),
       onFindToggle: () => {
@@ -399,6 +464,8 @@ export function useIssueFiltersPresenter({
           projectPriority: undefined,
           projectLabels: undefined,
           addedToCycle: undefined,
+          advancedFilter: undefined,
+          advancedFilterGroup: undefined,
           labels: undefined,
         });
         onFind?.('');
@@ -433,9 +500,14 @@ export function useIssueFiltersPresenter({
           key === 'milestoneName' ||
           key === 'date' ||
           key === 'projectStatus' ||
-          key === 'projectPriority'
+          key === 'projectPriority' ||
+          key === 'advancedFilter'
         ) {
-          set({ [key]: undefined });
+          if (key === 'advancedFilter') {
+            set({ advancedFilter: undefined, advancedFilterGroup: undefined });
+          } else {
+            set({ [key]: undefined });
+          }
         }
       },
       onToggleLabel: (name: string) => {

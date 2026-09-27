@@ -46,6 +46,28 @@
     "emptyAction": "イシューを見る",
     "pullRequestCount": "{{count}} 件のプルリクエスト"
   },
+  "issueFilters": {
+    "advancedFilter": "詳細フィルター",
+    "toggleAdvancedFilter": "詳細フィルターを切り替え",
+    "chooseField": "項目を選択",
+    "conditionField": "グループ{{group}} 条件{{number}}の項目",
+    "conditionOperator": "グループ{{group}} 条件{{number}}の演算子",
+    "conditionValue": "グループ{{group}} 条件{{number}}の値",
+    "group": "フィルターグループ {{number}}",
+    "groupOperator": "フィルターグループ {{number}}の演算子",
+    "matchAll": "すべて",
+    "matchAny": "いずれか",
+    "is": "次と一致",
+    "isNot": "次と一致しない",
+    "contains": "次を含む",
+    "doesNotContain": "次を含まない",
+    "addCondition": "条件を追加",
+    "addGroup": "フィルターグループを追加",
+    "deleteGroup": "フィルターグループを削除",
+    "removeCondition": "フィルター条件を削除",
+    "title": "タイトル",
+    "identifier": "識別子"
+  },
   "searchPage": {
     "heading": "検索",
     "inputLabel": "イシュー、プロジェクト、ドキュメントを検索",

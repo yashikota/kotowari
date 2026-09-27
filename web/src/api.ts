@@ -25,6 +25,7 @@ import type {
   View,
   Workspace,
 } from './types.ts';
+import { parseIssueFilterGroup, type IssueFilterGroup } from './issue-advanced-filter.ts';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -425,6 +426,8 @@ export const api = {
     projectPriority?: number | null;
     projectLabels?: string[];
     addedToCycle?: string[];
+    advancedFilter?: boolean;
+    advancedFilterGroup?: IssueFilterGroup;
   }) => req<View>('/api/views', { method: 'POST', body: JSON.stringify(body) }),
   patchView: (slug: string, body: Record<string, unknown>) =>
     req<View>(`/api/views/${slug}`, {
@@ -504,6 +507,8 @@ export function issuesQuery(filter: {
 
 export type IssueSearch = {
   archived?: boolean;
+  advancedFilter?: boolean;
+  advancedFilterGroup?: IssueFilterGroup;
   view?: 'active' | 'backlog' | 'all';
   myIssuesTab?: 'assigned' | 'created' | 'subscribed' | 'activity';
   assignee?: 'self' | 'agent' | 'none';
@@ -553,6 +558,11 @@ function localDateValue(date: Date): string {
 export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   const out: IssueSearch = {};
   if (raw.archived === true || raw.archived === 'true') out.archived = true;
+  const advancedFilterGroup = parseIssueFilterGroup(raw.advancedFilterGroup);
+  if (raw.advancedFilter === true || raw.advancedFilter === 'true' || advancedFilterGroup) {
+    out.advancedFilter = true;
+  }
+  if (advancedFilterGroup) out.advancedFilterGroup = advancedFilterGroup;
   if (
     raw.myIssuesTab === 'assigned' ||
     raw.myIssuesTab === 'created' ||

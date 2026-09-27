@@ -76,6 +76,89 @@ test('filter picker keeps its scoped editor inside a narrow viewport', async ({ 
   await expect(page.getByRole('menuitem', { name: 'Status', exact: true })).toBeVisible();
 });
 
+test('advanced issue filters combine nested conditions and survive reload', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const statusTitle = `Advanced status ${stamp}`;
+  const priorityTitle = `Advanced priority ${stamp}`;
+  const noMatchTitle = `Advanced no match ${stamp}`;
+  for (const [title, status, priority] of [
+    [statusTitle, 'in_progress', 2],
+    [priorityTitle, 'todo', 0],
+    [noMatchTitle, 'todo', 4],
+  ] as const) {
+    const response = await request.post('/api/issues', {
+      data: { title, status, priority },
+    });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Toggle advanced filter' }).click();
+  const builder = page.locator('#issue-advanced-filter-builder');
+  const root = builder.locator('[aria-label="Filter group 1"]');
+  await root.getByText('Any', { exact: true }).click();
+  await root.getByRole('button', { name: 'Add condition' }).click();
+  await root.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await root.getByRole('option', { name: 'Status', exact: true }).click();
+  await root.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+  await root.getByRole('option', { name: 'In Progress', exact: true }).click();
+
+  await root.getByRole('button', { name: 'Add filter group' }).click();
+  const nested = builder.locator('[aria-label="Filter group 1.2"]');
+  await nested.getByRole('button', { name: 'Add condition' }).click();
+  await nested.getByRole('combobox', { name: 'Group 1.2 condition 1 field' }).click();
+  await nested.getByRole('option', { name: 'Priority', exact: true }).click();
+  await nested.getByRole('combobox', { name: 'Group 1.2 condition 1 value' }).click();
+  await nested.getByRole('option', { name: 'No priority', exact: true }).click();
+
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('advancedFilterGroup'))
+    .not.toBeNull();
+  await page.reload();
+  await expect(issueList.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
+
+  const viewName = `Advanced view ${stamp}`;
+  const slug = viewName.toLowerCase().replaceAll(' ', '-');
+  await page.getByRole('button', { name: 'Add new view', exact: true }).click();
+  await page.getByRole('textbox', { name: 'View name', exact: true }).fill(viewName);
+  await page.getByRole('button', { name: 'Create view', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
+  const savedView = await request.get(`/api/views/${slug}`);
+  expect(savedView.ok()).toBeTruthy();
+  expect(await savedView.json()).toMatchObject({
+    advancedFilter: true,
+    advancedFilterGroup: {
+      kind: 'group',
+      operator: 'or',
+      children: [
+        { kind: 'condition', field: 'status', operator: 'is', value: 'in_progress' },
+        {
+          kind: 'group',
+          operator: 'and',
+          children: [{ kind: 'condition', field: 'priority', operator: 'is', value: '0' }],
+        },
+      ],
+    },
+  });
+  const savedIssues = page.getByRole('listbox', { name: 'Issues' });
+  await expect(savedIssues.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
+  await expect(savedIssues.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
+  await expect(savedIssues.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
+  await page.reload();
+  await expect(savedIssues.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
+  await expect(savedIssues.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
+  await expect(savedIssues.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
+});
+
 test('issue details facets show counts and filter the visible issue list', async ({
   page,
   request,

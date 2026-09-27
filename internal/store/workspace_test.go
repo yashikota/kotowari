@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -176,11 +177,21 @@ func TestViewFileAndSearch(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	projectPriority := 2
+	advancedFilter := true
+	advancedFilterGroup := &IssueFilterNode{
+		Kind: "group", Operator: "or", Children: []IssueFilterNode{
+			{Kind: "condition", Field: "status", Operator: "is", Value: "in_progress"},
+			{Kind: "group", Operator: "and", Children: []IssueFilterNode{
+				{Kind: "condition", Field: "priority", Operator: "is", Value: "0"},
+			}},
+		},
+	}
 	created, err := s.CreateView(CreateViewInput{
 		Name: "Bugs", Slug: "bugs", Display: "board", GroupBy: "status", OrderBy: "title",
 		Content:   stringPointer("database migration"),
 		DateField: stringPointer("createdAt"), DateRange: stringPointer("weekAgo"),
 		ProjectStatus: stringPointer("started"), ProjectPriority: &projectPriority,
+		AdvancedFilter: &advancedFilter, AdvancedFilterGroup: advancedFilterGroup,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -193,7 +204,7 @@ func TestViewFileAndSearch(t *testing.T) {
 		!strings.Contains(string(raw), "group_by = 'status'") || !strings.Contains(string(raw), "order_by = 'title'") {
 		t.Fatalf("view file: %s", raw)
 	}
-	if created.GroupBy != "status" || created.OrderBy != "title" || created.Content == nil || *created.Content != "database migration" || created.DateField != "createdAt" || created.DateRange != "weekAgo" || created.ProjectStatus == nil || *created.ProjectStatus != "started" || created.ProjectPriority == nil || *created.ProjectPriority != 2 {
+	if created.GroupBy != "status" || created.OrderBy != "title" || created.Content == nil || *created.Content != "database migration" || created.DateField != "createdAt" || created.DateRange != "weekAgo" || created.ProjectStatus == nil || *created.ProjectStatus != "started" || created.ProjectPriority == nil || *created.ProjectPriority != 2 || !created.AdvancedFilter || !reflect.DeepEqual(created.AdvancedFilterGroup, advancedFilterGroup) {
 		t.Fatalf("created view settings: %#v", created)
 	}
 	reopened, err := Open(dir)
@@ -205,7 +216,7 @@ func TestViewFileAndSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if persisted.GroupBy != "status" || persisted.OrderBy != "title" || persisted.Content == nil || *persisted.Content != "database migration" || persisted.DateField != "createdAt" || persisted.DateRange != "weekAgo" || persisted.ProjectStatus == nil || *persisted.ProjectStatus != "started" || persisted.ProjectPriority == nil || *persisted.ProjectPriority != 2 {
+	if persisted.GroupBy != "status" || persisted.OrderBy != "title" || persisted.Content == nil || *persisted.Content != "database migration" || persisted.DateField != "createdAt" || persisted.DateRange != "weekAgo" || persisted.ProjectStatus == nil || *persisted.ProjectStatus != "started" || persisted.ProjectPriority == nil || *persisted.ProjectPriority != 2 || !persisted.AdvancedFilter || !reflect.DeepEqual(persisted.AdvancedFilterGroup, advancedFilterGroup) {
 		t.Fatalf("persisted view settings: %#v", persisted)
 	}
 	hits, err := s.Search("bug")

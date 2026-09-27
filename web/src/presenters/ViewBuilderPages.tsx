@@ -159,6 +159,12 @@ export function useViewBuilderPresenter() {
         projectPriority: filter.projectPriority ?? null,
         projectLabels: filter.projectLabels ?? [],
         addedToCycle: filter.addedToCycle ?? [],
+        advancedFilter: search.advancedFilter ?? false,
+        advancedFilterGroup: search.advancedFilterGroup ?? {
+          kind: 'group',
+          operator: 'and',
+          children: [],
+        },
       });
       await router.invalidate();
       await navigate({ to: '/views/$slug', params: { slug: view.slug } });
