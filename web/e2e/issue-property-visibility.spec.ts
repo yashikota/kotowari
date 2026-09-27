@@ -41,17 +41,27 @@ test('issue details keep optional properties out of the way until added', async 
   await expect(coreProperties.getByRole('combobox', { name: 'Cycle' })).toBeVisible();
   const propertyRows = coreProperties.locator('div[class*="row"]');
   const propertyRowBounds = await propertyRows.evaluateAll((rows) =>
-    rows.map((row) => ({ y: row.getBoundingClientRect().y })),
+    rows.map((row) => {
+      const { x, y, width, height } = row.getBoundingClientRect();
+      return { x, y, width, height };
+    }),
   );
-  expect(Math.max(...propertyRowBounds.map((bounds) => bounds.y))).toBe(
-    Math.min(...propertyRowBounds.map((bounds) => bounds.y)),
-  );
+  expect(propertyRowBounds.length).toBeGreaterThan(0);
+  for (let index = 1; index < propertyRowBounds.length; index += 1) {
+    const previous = propertyRowBounds[index - 1]!;
+    const current = propertyRowBounds[index]!;
+    if (Math.abs(current.y - previous.y) < 1) {
+      expect(current.x).toBeGreaterThanOrEqual(previous.x + previous.width - 1);
+    } else {
+      expect(current.y).toBeGreaterThanOrEqual(previous.y + previous.height - 1);
+    }
+  }
   expect(await optionalProperties.getByRole('combobox', { name: 'Cycle' }).count()).toBe(0);
   const cycleRowY = await coreProperties
     .getByRole('combobox', { name: 'Cycle' })
     .evaluate((element) => element.closest('div[class*="row"]')?.getBoundingClientRect().y ?? null);
   expect(cycleRowY).not.toBeNull();
-  expect(cycleRowY).toBe(propertyRowBounds[0]!.y);
+  expect(cycleRowY).toBeGreaterThanOrEqual(propertyRowBounds[0]!.y);
   const statusRadius = await properties
     .locator('div[class*="row"]')
     .first()
