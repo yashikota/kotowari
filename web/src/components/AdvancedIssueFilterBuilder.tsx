@@ -15,7 +15,36 @@ import type {
   IssueFilterField,
   IssueFilterGroup,
   IssueFilterNode,
+  IssueFilterOperator,
 } from '../issue-advanced-filter.ts';
+
+const DATE_FIELDS = new Set<IssueFilterField>([
+  'dueDate',
+  'createdAt',
+  'updatedAt',
+  'startedAt',
+  'completedAt',
+  'cycleAddedAt',
+]);
+
+const TEXT_FIELDS = new Set<IssueFilterField>(['title', 'identifier', 'content', 'milestone']);
+
+function defaultOperator(field: IssueFilterField | null): IssueFilterOperator {
+  return field && TEXT_FIELDS.has(field) ? 'contains' : 'is';
+}
+
+function fieldLabel(field: IssueFilterField, t: ReturnType<typeof useTranslation>['t']) {
+  if (field === 'title' || field === 'identifier' || field === 'content' || field === 'links') {
+    return t(`issueFilters.${field}`);
+  }
+  if (field === 'dueDate') return t('filters.dueDate');
+  if (field === 'cycleAddedAt') return t('filters.addedToCycle');
+  if (DATE_FIELDS.has(field)) return t(`filters.dateField.${field}`);
+  if (field === 'milestone') return t('field.milestone');
+  if (field === 'relation') return t('filters.relation');
+  if (field === 'recurring') return t('filters.relationValue.recurring');
+  return t(`field.${field}`);
+}
 
 function updateNodeAtPath(
   group: IssueFilterGroup,
@@ -70,15 +99,23 @@ export function AdvancedIssueFilterBuilder({
     'project',
     'cycle',
     'label',
+    'dueDate',
+    'createdAt',
+    'updatedAt',
+    'startedAt',
+    'completedAt',
+    'cycleAddedAt',
+    'milestone',
+    'relation',
+    'content',
+    'links',
+    'recurring',
     'title',
     'identifier',
   ];
   const fieldChoices = fields.map((field) => ({
     value: field,
-    label:
-      field === 'title' || field === 'identifier'
-        ? t(`issueFilters.${field}`)
-        : t(`field.${field}`),
+    label: fieldLabel(field, t),
   }));
 
   function renderGroup(current: IssueFilterGroup, path: number[], depth: number) {
@@ -140,16 +177,31 @@ export function AdvancedIssueFilterBuilder({
             value: t('issueFilters.conditionValue', { group: groupNumber, number: index + 1 }),
           };
           const rule = child as IssueFilterCondition;
-          const textField = child.field === 'title' || child.field === 'identifier';
-          const operators = textField
-            ? [
-                { value: 'contains', label: t('issueFilters.contains') },
-                { value: 'doesNotContain', label: t('issueFilters.doesNotContain') },
-              ]
-            : [
-                { value: 'is', label: t('issueFilters.is') },
-                { value: 'isNot', label: t('issueFilters.isNot') },
-              ];
+          const textField = child.field !== undefined && TEXT_FIELDS.has(child.field);
+          const dateField = child.field !== undefined && DATE_FIELDS.has(child.field);
+          const operators = [
+            ...(textField
+              ? [
+                  { value: 'contains', label: t('issueFilters.contains') },
+                  { value: 'doesNotContain', label: t('issueFilters.doesNotContain') },
+                ]
+              : dateField
+                ? [
+                    { value: 'is', label: t('issueFilters.is') },
+                    { value: 'isNot', label: t('issueFilters.isNot') },
+                    { value: 'before', label: t('issueFilters.before') },
+                    { value: 'after', label: t('issueFilters.after') },
+                    { value: 'onOrBefore', label: t('issueFilters.onOrBefore') },
+                    { value: 'onOrAfter', label: t('issueFilters.onOrAfter') },
+                  ]
+                : [
+                    { value: 'is', label: t('issueFilters.is') },
+                    { value: 'isNot', label: t('issueFilters.isNot') },
+                  ]),
+            { value: 'isEmpty', label: t('issueFilters.isEmpty') },
+            { value: 'isNotEmpty', label: t('issueFilters.isNotEmpty') },
+          ];
+          const emptyOperator = rule.operator === 'isEmpty' || rule.operator === 'isNotEmpty';
           return (
             <Group key={childPath.join('-')} gap={4} wrap="nowrap" align="center">
               <Select
@@ -163,8 +215,7 @@ export function AdvancedIssueFilterBuilder({
                         ? {
                             ...node,
                             field: (value as IssueFilterField | null) ?? undefined,
-                            operator:
-                              value === 'title' || value === 'identifier' ? 'contains' : 'is',
+                            operator: defaultOperator(value as IssueFilterField | null),
                             value: undefined,
                           }
                         : node,
@@ -200,7 +251,7 @@ export function AdvancedIssueFilterBuilder({
                     allowDeselect={false}
                     comboboxProps={{ withinPortal: false }}
                   />
-                  {textField ? (
+                  {emptyOperator ? null : textField ? (
                     <TextInput
                       aria-label={labels.value}
                       value={rule.value ?? ''}
@@ -209,6 +260,23 @@ export function AdvancedIssueFilterBuilder({
                           updateNodeAtPath(group, childPath, (node) =>
                             node.kind === 'condition'
                               ? { ...node, value: event.currentTarget.value }
+                              : node,
+                          ),
+                        )
+                      }
+                      size="xs"
+                      style={{ flex: 1, minWidth: 100 }}
+                    />
+                  ) : dateField ? (
+                    <TextInput
+                      aria-label={labels.value}
+                      type="date"
+                      value={rule.value ?? ''}
+                      onChange={(event) =>
+                        onChange(
+                          updateNodeAtPath(group, childPath, (node) =>
+                            node.kind === 'condition'
+                              ? { ...node, value: event.currentTarget.value || undefined }
                               : node,
                           ),
                         )

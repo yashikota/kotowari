@@ -123,6 +123,56 @@ describe('issue advanced filters', () => {
     ).toBe(false);
   });
 
+  it('supports issue dates, description text, relations, and empty-value checks', () => {
+    const parent = issue({
+      id: 7,
+      title: 'Parent',
+      body: 'dashboard body',
+      dueDate: '2026-09-15',
+    });
+    const child = issue({ id: 8, parentId: parent.id, title: 'Child' });
+    const group: import('./issue-advanced-filter.ts').IssueFilterGroup = {
+      kind: 'group',
+      operator: 'and',
+      children: [
+        { kind: 'condition', field: 'dueDate', operator: 'onOrAfter', value: '2026-09-01' },
+        { kind: 'condition', field: 'createdAt', operator: 'before', value: '2026-02-01' },
+        { kind: 'condition', field: 'content', operator: 'contains', value: 'dashboard' },
+        { kind: 'condition', field: 'relation', operator: 'is', value: 'parent' },
+        { kind: 'condition', field: 'milestone', operator: 'isEmpty' },
+        { kind: 'condition', field: 'links', operator: 'is', value: 'no' },
+      ],
+    };
+    for (const condition of group.children) {
+      expect(
+        matchesIssueFilterGroup(parent, { kind: 'group', operator: 'and', children: [condition] }, [
+          parent,
+          child,
+        ]),
+        JSON.stringify(condition),
+      ).toBe(true);
+    }
+    expect(matchesIssueFilterGroup(parent, group, [parent, child])).toBe(true);
+    expect(matchesIssueFilterGroup(parent, group)).toBe(false);
+    expect(
+      matchesIssueFilterGroup(issue({ dueDate: '2026-08-31' }), {
+        kind: 'group',
+        operator: 'and',
+        children: [group.children[0]!],
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects operators that do not apply to a selected field', () => {
+    expect(
+      parseIssueFilterGroup({
+        kind: 'group',
+        operator: 'and',
+        children: [{ kind: 'condition', field: 'priority', operator: 'before', value: '2' }],
+      }),
+    ).toEqual({ kind: 'group', operator: 'and', children: [] });
+  });
+
   it('ignores over-deep or oversized untrusted filter trees', () => {
     const tooDeep = {
       kind: 'group',

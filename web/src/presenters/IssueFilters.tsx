@@ -204,6 +204,26 @@ export function useIssueFiltersPresenter({
       { value: 'none', label: t('issueProperties.noLabels') },
       ...labels.map((label) => ({ value: label.name, label: label.name })),
     ],
+    relation: [
+      'parent',
+      'subissue',
+      'blocked',
+      'blocking',
+      'recurring',
+      'related',
+      'duplicate',
+    ].map((relation) => ({
+      value: relation,
+      label: t(`filters.relationValue.${relation}`),
+    })),
+    links: [
+      { value: 'yes', label: t('issueFilters.hasAny') },
+      { value: 'no', label: t('issueFilters.hasNone') },
+    ],
+    recurring: [
+      { value: 'yes', label: t('issueFilters.hasAny') },
+      { value: 'no', label: t('issueFilters.hasNone') },
+    ],
   };
 
   function set(patch: IssueSearch) {

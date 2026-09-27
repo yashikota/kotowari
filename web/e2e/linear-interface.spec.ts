@@ -82,7 +82,7 @@ test('advanced issue filters combine nested conditions and survive reload', asyn
 }) => {
   const stamp = Date.now();
   const statusTitle = `Advanced status ${stamp}`;
-  const priorityTitle = `Advanced priority ${stamp}`;
+  const priorityTitle = `Advanced priority dashboard ${stamp}`;
   const noMatchTitle = `Advanced no match ${stamp}`;
   for (const [title, status, priority] of [
     [statusTitle, 'in_progress', 2],
@@ -157,6 +157,64 @@ test('advanced issue filters combine nested conditions and survive reload', asyn
   await expect(savedIssues.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
   await expect(savedIssues.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
   await expect(savedIssues.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
+});
+
+test('advanced issue filters compare dates and search issue content', async ({ page, request }) => {
+  const stamp = Date.now();
+  const matchingTitle = `Date content match ${stamp}`;
+  const contentMismatchTitle = `Date content mismatch ${stamp}`;
+  const dateMismatchTitle = `Date mismatch ${stamp}`;
+  for (const issue of [
+    {
+      title: matchingTitle,
+      body: `Contains advanced filter token ${stamp}`,
+      dueDate: '2026-10-01',
+    },
+    {
+      title: contentMismatchTitle,
+      body: 'Different description',
+      dueDate: '2026-10-02',
+    },
+    {
+      title: dateMismatchTitle,
+      body: `Contains advanced filter token ${stamp}`,
+      dueDate: '2026-08-31',
+    },
+  ]) {
+    const response = await request.post('/api/issues', {
+      data: { ...issue, status: 'todo', priority: 2 },
+    });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Toggle advanced filter' }).click();
+  const root = page.locator('#issue-advanced-filter-builder [aria-label="Filter group 1"]');
+  await root.getByRole('button', { name: 'Add condition' }).click();
+  await root.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+  await page.getByRole('option', { name: 'Due date', exact: true }).click();
+  await root.getByRole('combobox', { name: 'Group 1 condition 1 operator' }).click();
+  await page.getByRole('option', { name: 'is after', exact: true }).click();
+  await root.getByRole('textbox', { name: 'Group 1 condition 1 value' }).fill('2026-09-01');
+
+  await root.getByRole('button', { name: 'Add condition' }).click();
+  await root.getByRole('combobox', { name: 'Group 1 condition 2 field' }).click();
+  await page.getByRole('option', { name: 'Content', exact: true }).click();
+  await root
+    .getByRole('textbox', { name: 'Group 1 condition 2 value' })
+    .fill(`advanced filter token ${stamp}`);
+
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(matchingTitle) })).toBeVisible();
+  await expect(
+    issueList.getByRole('option', { name: new RegExp(contentMismatchTitle) }),
+  ).toHaveCount(0);
+  await expect(issueList.getByRole('option', { name: new RegExp(dateMismatchTitle) })).toHaveCount(
+    0,
+  );
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('advancedFilterGroup'))
+    .not.toBeNull();
 });
 
 test('issue details facets show counts and filter the visible issue list', async ({

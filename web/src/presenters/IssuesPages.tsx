@@ -148,7 +148,7 @@ export function useIssuesPagePresenter() {
       (issue) =>
         !search.advancedFilter ||
         !search.advancedFilterGroup ||
-        matchesIssueFilterGroup(issue, search.advancedFilterGroup),
+        matchesIssueFilterGroup(issue, search.advancedFilterGroup, data.issues ?? []),
     )
     .filter((i) =>
       activeView === 'active'

@@ -1290,7 +1290,7 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 
 func TestAdvancedIssueFilterViewRoundTrip(t *testing.T) {
 	s := testAPI(t)
-	create := `{"name":"Grouped issues","slug":"grouped-issues","advancedFilter":true,"advancedFilterGroup":{"kind":"group","operator":"or","children":[{"kind":"condition","field":"status","operator":"is","value":"in_progress"},{"kind":"group","operator":"and","children":[{"kind":"condition","field":"priority","operator":"is","value":"0"}]}]}}`
+	create := `{"name":"Grouped issues","slug":"grouped-issues","advancedFilter":true,"advancedFilterGroup":{"kind":"group","operator":"or","children":[{"kind":"condition","field":"status","operator":"is","value":"in_progress"},{"kind":"group","operator":"and","children":[{"kind":"condition","field":"priority","operator":"is","value":"0"},{"kind":"condition","field":"dueDate","operator":"onOrAfter","value":"2026-09-01"},{"kind":"condition","field":"content","operator":"contains","value":"release"}]}]}}`
 	rec := doJSON(t, s, "POST", "/api/views", create)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("create view %d %s", rec.Code, rec.Body.String())
@@ -1305,6 +1305,10 @@ func TestAdvancedIssueFilterViewRoundTrip(t *testing.T) {
 	group, ok := view["advancedFilterGroup"].(map[string]any)
 	if !ok || group["operator"] != "or" || len(group["children"].([]any)) != 2 {
 		t.Fatalf("advanced filter group %#v", view["advancedFilterGroup"])
+	}
+	nestedGroup := group["children"].([]any)[1].(map[string]any)
+	if len(nestedGroup["children"].([]any)) != 3 {
+		t.Fatalf("advanced date/content conditions %#v", nestedGroup)
 	}
 
 	patch := `{"advancedFilter":false,"advancedFilterGroup":{"kind":"group","operator":"and","children":[{"kind":"condition","field":"title","operator":"contains","value":"release"}]}}`
@@ -1328,6 +1332,11 @@ func TestAdvancedIssueFilterViewRoundTrip(t *testing.T) {
 	rec = doJSON(t, s, "PATCH", "/api/views/grouped-issues", invalid)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("invalid advanced filter status %d %s", rec.Code, rec.Body.String())
+	}
+	invalidOperator := `{"advancedFilterGroup":{"kind":"group","operator":"and","children":[{"kind":"condition","field":"priority","operator":"before","value":"2"}]}}`
+	rec = doJSON(t, s, "PATCH", "/api/views/grouped-issues", invalidOperator)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid advanced filter operator status %d %s", rec.Code, rec.Body.String())
 	}
 }
 

@@ -58,7 +58,7 @@ export function useViewPagePresenter() {
         issue.identifier.toLowerCase().includes(query)) &&
       (!view.advancedFilter ||
         !advancedFilterGroup ||
-        matchesIssueFilterGroup(issue, advancedFilterGroup))
+        matchesIssueFilterGroup(issue, advancedFilterGroup, data.issues ?? []))
     );
   });
   const issues = filterCompletedIssues(

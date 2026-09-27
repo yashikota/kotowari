@@ -2799,8 +2799,20 @@ func validateIssueFilterGroup(root *IssueFilterNode) error {
 	fields := map[string]bool{
 		"status": true, "assignee": true, "priority": true, "type": true, "estimate": true,
 		"project": true, "cycle": true, "label": true, "title": true, "identifier": true,
+		"dueDate": true, "createdAt": true, "updatedAt": true, "startedAt": true,
+		"completedAt": true, "cycleAddedAt": true, "milestone": true, "relation": true,
+		"content": true, "links": true, "recurring": true,
 	}
-	operators := map[string]bool{"is": true, "isNot": true, "contains": true, "doesNotContain": true}
+	operators := map[string]bool{
+		"is": true, "isNot": true, "contains": true, "doesNotContain": true,
+		"before": true, "after": true, "onOrBefore": true, "onOrAfter": true,
+		"isEmpty": true, "isNotEmpty": true,
+	}
+	textFields := map[string]bool{"title": true, "identifier": true, "content": true, "milestone": true}
+	dateFields := map[string]bool{
+		"dueDate": true, "createdAt": true, "updatedAt": true, "startedAt": true,
+		"completedAt": true, "cycleAddedAt": true,
+	}
 	visited := 0
 	var validate func(node *IssueFilterNode, depth int, isRoot bool) error
 	validate = func(node *IssueFilterNode, depth int, isRoot bool) error {
@@ -2831,10 +2843,13 @@ func validateIssueFilterGroup(root *IssueFilterNode) error {
 			if node.Field != "" && node.Operator == "" {
 				return validationf("issue filter operator is required")
 			}
-			if (node.Field == "title" || node.Field == "identifier") && node.Operator != "" && node.Operator != "contains" && node.Operator != "doesNotContain" {
+			if textFields[node.Field] && node.Operator != "" && node.Operator != "contains" && node.Operator != "doesNotContain" && node.Operator != "isEmpty" && node.Operator != "isNotEmpty" {
 				return validationf("invalid issue text filter operator")
 			}
-			if node.Field != "" && node.Field != "title" && node.Field != "identifier" && node.Operator != "" && node.Operator != "is" && node.Operator != "isNot" {
+			if dateFields[node.Field] && node.Operator != "" && node.Operator != "is" && node.Operator != "isNot" && node.Operator != "before" && node.Operator != "after" && node.Operator != "onOrBefore" && node.Operator != "onOrAfter" && node.Operator != "isEmpty" && node.Operator != "isNotEmpty" {
+				return validationf("invalid issue date filter operator")
+			}
+			if node.Field != "" && !textFields[node.Field] && !dateFields[node.Field] && node.Operator != "" && node.Operator != "is" && node.Operator != "isNot" && node.Operator != "isEmpty" && node.Operator != "isNotEmpty" {
 				return validationf("invalid issue property filter operator")
 			}
 			if utf8.RuneCountInString(node.Value) > 240 {

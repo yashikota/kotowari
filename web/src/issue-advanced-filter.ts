@@ -9,10 +9,31 @@ export type IssueFilterField =
   | 'project'
   | 'cycle'
   | 'label'
+  | 'dueDate'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'startedAt'
+  | 'completedAt'
+  | 'cycleAddedAt'
+  | 'milestone'
+  | 'relation'
+  | 'content'
+  | 'links'
+  | 'recurring'
   | 'title'
   | 'identifier';
 
-export type IssueFilterOperator = 'is' | 'isNot' | 'contains' | 'doesNotContain';
+export type IssueFilterOperator =
+  | 'is'
+  | 'isNot'
+  | 'contains'
+  | 'doesNotContain'
+  | 'before'
+  | 'after'
+  | 'onOrBefore'
+  | 'onOrAfter'
+  | 'isEmpty'
+  | 'isNotEmpty';
 
 export type IssueFilterCondition = {
   kind: 'condition';
@@ -40,9 +61,31 @@ const ISSUE_FILTER_FIELDS = new Set<IssueFilterField>([
   'project',
   'cycle',
   'label',
+  'dueDate',
+  'createdAt',
+  'updatedAt',
+  'startedAt',
+  'completedAt',
+  'cycleAddedAt',
+  'milestone',
+  'relation',
+  'content',
+  'links',
+  'recurring',
   'title',
   'identifier',
 ]);
+
+const DATE_FIELDS = new Set<IssueFilterField>([
+  'dueDate',
+  'createdAt',
+  'updatedAt',
+  'startedAt',
+  'completedAt',
+  'cycleAddedAt',
+]);
+
+const TEXT_FIELDS = new Set<IssueFilterField>(['title', 'identifier', 'content', 'milestone']);
 
 export function parseIssueFilterGroup(value: unknown): IssueFilterGroup | undefined {
   let parsed = value;
@@ -86,9 +129,26 @@ export function parseIssueFilterGroup(value: unknown): IssueFilterGroup | undefi
       candidate.operator === 'is' ||
       candidate.operator === 'isNot' ||
       candidate.operator === 'contains' ||
-      candidate.operator === 'doesNotContain'
+      candidate.operator === 'doesNotContain' ||
+      candidate.operator === 'before' ||
+      candidate.operator === 'after' ||
+      candidate.operator === 'onOrBefore' ||
+      candidate.operator === 'onOrAfter' ||
+      candidate.operator === 'isEmpty' ||
+      candidate.operator === 'isNotEmpty'
         ? candidate.operator
         : undefined;
+    if (field && operator) {
+      const validOperator =
+        operator === 'isEmpty' ||
+        operator === 'isNotEmpty' ||
+        (DATE_FIELDS.has(field)
+          ? ['is', 'isNot', 'before', 'after', 'onOrBefore', 'onOrAfter'].includes(operator)
+          : TEXT_FIELDS.has(field)
+            ? ['contains', 'doesNotContain'].includes(operator)
+            : operator === 'is' || operator === 'isNot');
+      if (!validOperator) return undefined;
+    }
     return {
       kind: 'condition',
       field,
@@ -104,7 +164,11 @@ export function parseIssueFilterGroup(value: unknown): IssueFilterGroup | undefi
   return result?.kind === 'group' ? result : undefined;
 }
 
-function fieldValue(issue: Issue, field: IssueFilterField): string | undefined {
+function fieldValue(
+  issue: Issue,
+  field: IssueFilterField,
+  issues: readonly Issue[],
+): string | undefined {
   switch (field) {
     case 'status':
       return issue.workflowStatus ?? issue.status;
@@ -122,6 +186,45 @@ function fieldValue(issue: Issue, field: IssueFilterField): string | undefined {
       return issue.cycleId === null ? 'none' : String(issue.cycleId);
     case 'label':
       return issue.labels.length ? issue.labels.map((label) => label.name).join('\0') : 'none';
+    case 'dueDate':
+      return issue.dueDate?.slice(0, 10) ?? 'none';
+    case 'createdAt':
+      return issue.createdAt.slice(0, 10);
+    case 'updatedAt':
+      return issue.updatedAt.slice(0, 10);
+    case 'startedAt':
+      return issue.startedAt?.slice(0, 10) ?? 'none';
+    case 'completedAt':
+      return issue.completedAt?.slice(0, 10) ?? 'none';
+    case 'cycleAddedAt':
+      return issue.cycleAddedAt?.slice(0, 10) ?? 'none';
+    case 'milestone':
+      return issue.milestoneName ?? 'none';
+    case 'relation': {
+      const relations = new Set<string>();
+      if (issues.some((candidate) => candidate.parentId === issue.id)) relations.add('parent');
+      if (issue.parentId !== null) relations.add('subissue');
+      if (issue.relations.some((relation) => relation.kind === 'blockedBy')) {
+        relations.add('blocked');
+      }
+      if (issue.relations.some((relation) => relation.kind === 'blocks')) relations.add('blocking');
+      if (
+        issue.relations.some(
+          (relation) => relation.kind === 'duplicateOf' || relation.kind === 'duplicateBy',
+        )
+      ) {
+        relations.add('duplicate');
+      }
+      if (issue.relations.length > 0) relations.add('related');
+      if (issue.recurringSlug) relations.add('recurring');
+      return relations.size ? [...relations].join('\0') : 'none';
+    }
+    case 'content':
+      return `${issue.title}\0${issue.identifier}\0${issue.body}`;
+    case 'links':
+      return issue.externalLinks.length > 0 ? 'yes' : 'no';
+    case 'recurring':
+      return issue.recurringSlug ? 'yes' : 'no';
     case 'title':
       return issue.title;
     case 'identifier':
@@ -129,11 +232,21 @@ function fieldValue(issue: Issue, field: IssueFilterField): string | undefined {
   }
 }
 
-function matchesCondition(issue: Issue, condition: IssueFilterCondition): boolean {
-  if (!condition.field || !condition.operator || condition.value === undefined) return true;
-  const actual = fieldValue(issue, condition.field);
+function matchesCondition(
+  issue: Issue,
+  condition: IssueFilterCondition,
+  issues: readonly Issue[],
+): boolean {
+  if (!condition.field || !condition.operator) return true;
+  const actual = fieldValue(issue, condition.field, issues);
+  if (condition.operator === 'isEmpty')
+    return actual === undefined || actual === 'none' || actual === '';
+  if (condition.operator === 'isNotEmpty') {
+    return actual !== undefined && actual !== 'none' && actual !== '';
+  }
+  if (condition.value === undefined) return true;
   if (actual === undefined) return condition.operator === 'isNot';
-  if (condition.field === 'label') {
+  if (condition.field === 'label' || condition.field === 'relation') {
     const matches =
       actual === 'none' ? condition.value === 'none' : actual.split('\0').includes(condition.value);
     return condition.operator === 'isNot' ? !matches : matches;
@@ -142,13 +255,32 @@ function matchesCondition(issue: Issue, condition: IssueFilterCondition): boolea
   const expectedValue = condition.value.toLocaleLowerCase();
   if (condition.operator === 'contains') return actualValue.includes(expectedValue);
   if (condition.operator === 'doesNotContain') return !actualValue.includes(expectedValue);
+  if (DATE_FIELDS.has(condition.field)) {
+    const actualDate = actual.slice(0, 10);
+    switch (condition.operator) {
+      case 'before':
+        return actual !== 'none' && actualDate < condition.value;
+      case 'after':
+        return actual !== 'none' && actualDate > condition.value;
+      case 'onOrBefore':
+        return actual !== 'none' && actualDate <= condition.value;
+      case 'onOrAfter':
+        return actual !== 'none' && actualDate >= condition.value;
+    }
+  }
   const matches = actualValue === expectedValue;
   return condition.operator === 'isNot' ? !matches : matches;
 }
 
-export function matchesIssueFilterGroup(issue: Issue, group: IssueFilterGroup): boolean {
+export function matchesIssueFilterGroup(
+  issue: Issue,
+  group: IssueFilterGroup,
+  issues: readonly Issue[] = [issue],
+): boolean {
   const matches = (group.children ?? []).map((child) =>
-    child.kind === 'group' ? matchesIssueFilterGroup(issue, child) : matchesCondition(issue, child),
+    child.kind === 'group'
+      ? matchesIssueFilterGroup(issue, child, issues)
+      : matchesCondition(issue, child, issues),
   );
   return group.operator === 'or' ? matches.some(Boolean) : matches.every(Boolean);
 }
