@@ -5,6 +5,12 @@ import {
   openIssueFilterCategory,
 } from './issue-list-controls.ts';
 
+async function scrollIssueListToEnd(list: import('@playwright/test').Locator) {
+  await list.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+}
+
 test('workspace views page lists saved views and opens them', async ({ page }) => {
   const name = `Workspace view ${Date.now()}`;
   await page.goto('/issues');
@@ -118,6 +124,7 @@ test('subscriber filters work in issue lists and persist in saved views', async 
   await expect(issueList.getByText(noSubscriberTitle)).toHaveCount(0);
 
   await page.goto('/issues?subscribers=none');
+  await scrollIssueListToEnd(issueList);
   await expect(issueList.getByText(noSubscriberTitle)).toBeVisible();
   await expect(
     issueList.getByRole('option', { name: new RegExp(subscribedIssue.identifier) }),
@@ -152,6 +159,7 @@ test('subscriber filters work in issue lists and persist in saved views', async 
   await openIssueFilterCategory(page, 'Subscribers');
   await chooseIssueFilterOption(page, 'Filter subscribers', 'No subscribers');
   const noSubscriberPreview = page.locator('[aria-label="Preview"]');
+  await scrollIssueListToEnd(noSubscriberPreview.locator('[role="listbox"]'));
   await expect(noSubscriberPreview.getByText(noSubscriberTitle)).toBeVisible();
   await expect(noSubscriberPreview.getByText(subscribedTitle)).toHaveCount(0);
   const noSubscriberViewName = `No subscribers ${stamp}`;
@@ -162,6 +170,7 @@ test('subscriber filters work in issue lists and persist in saved views', async 
   const noSubscriberView = await request.get(`/api/views/${noSubscriberViewSlug}`);
   expect(await noSubscriberView.json()).toMatchObject({ subscriber: 'none' });
   const noSubscriberList = page.getByRole('listbox', { name: 'Issues' });
+  await scrollIssueListToEnd(noSubscriberList);
   await expect(noSubscriberList.getByText(noSubscriberTitle)).toBeVisible();
   await expect(noSubscriberList.getByText(subscribedTitle)).toHaveCount(0);
 });
