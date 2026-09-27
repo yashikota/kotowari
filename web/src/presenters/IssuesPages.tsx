@@ -70,6 +70,12 @@ function compactSearch(next: IssueSearch): IssueSearch {
   });
 }
 
+function searchKey(search: IssueSearch): string {
+  return JSON.stringify(
+    Object.entries(search).sort(([left], [right]) => left.localeCompare(right)),
+  );
+}
+
 function matchesFind(issue: Issue, q: string): boolean {
   const n = q.trim().toLowerCase();
   if (!n) {
@@ -82,7 +88,16 @@ export function useIssuesPagePresenter() {
   const data = useLoaderData({ from: '/issues' }) as IssueListData;
   const search = useSearch({ from: '/issues' }) as IssueSearch;
   const latestSearch = useRef(search);
-  latestSearch.current = search;
+  const pendingSearch = useRef<IssueSearch | null>(null);
+  const normalizedSearch = compactSearch(search);
+  if (pendingSearch.current) {
+    if (searchKey(normalizedSearch) === searchKey(pendingSearch.current)) {
+      latestSearch.current = normalizedSearch;
+      pendingSearch.current = null;
+    }
+  } else {
+    latestSearch.current = normalizedSearch;
+  }
   const locationState = useRouterState({ select: (state) => state.location.state });
   const navigate = useNavigate();
   const router = useRouter();
@@ -207,6 +222,7 @@ export function useIssuesPagePresenter() {
       ) => {
         const normalized = compactSearch(next);
         latestSearch.current = normalized;
+        pendingSearch.current = normalized;
         return navigate({ to: '/issues', search: normalized, replace: true });
       },
       onAdvancedFilterToggle: (enabled: boolean) => {
@@ -222,6 +238,7 @@ export function useIssuesPagePresenter() {
             : latestSearch.current.advancedFilterGroup,
         });
         latestSearch.current = next;
+        pendingSearch.current = next;
         return navigate({ to: '/issues', search: next, replace: true });
       },
       onAdvancedFilterChange: (group: NonNullable<IssueSearch['advancedFilterGroup']>) => {
@@ -231,6 +248,7 @@ export function useIssuesPagePresenter() {
           advancedFilterGroup: group,
         });
         latestSearch.current = next;
+        pendingSearch.current = next;
         return navigate({ to: '/issues', search: next, replace: true });
       },
       onNewViewOpen: () =>

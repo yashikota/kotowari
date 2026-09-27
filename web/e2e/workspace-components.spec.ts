@@ -907,6 +907,11 @@ test('time-in-current-status filters by elapsed status time and persist on a sav
   await chooseIssueFilterOption(page, 'Filter issue date', 'Time in current status');
   await chooseIssueFilterOption(page, 'Filter date timeframe', 'At least 1 day');
   await expect(page).toHaveURL(/dateRange=dayAgo/);
+  await expect(
+    page
+      .getByRole('group', { name: 'Filter date timeframe' })
+      .getByRole('button', { name: 'At least 1 day', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
   const issueList = page.getByRole('listbox', { name: 'Issues' });
   await expect(issueList.getByRole('option', { name: new RegExp(title) })).toHaveCount(0);
 

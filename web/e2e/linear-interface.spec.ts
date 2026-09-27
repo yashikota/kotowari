@@ -96,6 +96,7 @@ test('advanced issue filters combine nested conditions and survive reload', asyn
   }
 
   await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
   await page.getByRole('button', { name: 'Toggle advanced filter' }).click();
   const builder = page.locator('#issue-advanced-filter-builder');
   const root = builder.locator('[aria-label="Filter group 1"]');
@@ -113,6 +114,10 @@ test('advanced issue filters combine nested conditions and survive reload', asyn
   await nested.getByRole('option', { name: 'Priority', exact: true }).click();
   await nested.getByRole('combobox', { name: 'Group 1.2 condition 1 value' }).click();
   await nested.getByRole('option', { name: 'No priority', exact: true }).click();
+  await nested.getByRole('button', { name: 'Add condition' }).click();
+  await nested.getByRole('combobox', { name: 'Group 1.2 condition 2 field' }).click();
+  await page.getByRole('option', { name: 'Title', exact: true }).click();
+  await nested.getByRole('textbox', { name: 'Group 1.2 condition 2 value' }).fill('dashboard');
 
   const issueList = page.getByRole('listbox', { name: 'Issues' });
   await expect(issueList.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
@@ -122,6 +127,7 @@ test('advanced issue filters combine nested conditions and survive reload', asyn
     .poll(() => new URL(page.url()).searchParams.get('advancedFilterGroup'))
     .not.toBeNull();
   await page.reload();
+  await fillIssueSearch(page, String(stamp));
   await expect(issueList.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
   await expect(issueList.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
   await expect(issueList.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
@@ -144,16 +150,21 @@ test('advanced issue filters combine nested conditions and survive reload', asyn
         {
           kind: 'group',
           operator: 'and',
-          children: [{ kind: 'condition', field: 'priority', operator: 'is', value: '0' }],
+          children: [
+            { kind: 'condition', field: 'priority', operator: 'is', value: '0' },
+            { kind: 'condition', field: 'title', operator: 'contains', value: 'dashboard' },
+          ],
         },
       ],
     },
   });
+  await fillIssueSearch(page, String(stamp));
   const savedIssues = page.getByRole('listbox', { name: 'Issues' });
   await expect(savedIssues.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
   await expect(savedIssues.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
   await expect(savedIssues.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
   await page.reload();
+  await fillIssueSearch(page, String(stamp));
   await expect(savedIssues.getByRole('option', { name: new RegExp(statusTitle) })).toBeVisible();
   await expect(savedIssues.getByRole('option', { name: new RegExp(priorityTitle) })).toBeVisible();
   await expect(savedIssues.getByRole('option', { name: new RegExp(noMatchTitle) })).toHaveCount(0);
