@@ -1660,6 +1660,7 @@ export function useCycleDetailPagePresenter() {
     labels: Label[];
     linkSources: import('../types.ts').IssueLinkSource[];
     templateOptions: import('../types.ts').IssueTemplateFilterOption[];
+    initiatives: Initiative[];
   };
   const router = useRouter();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
@@ -1855,7 +1856,12 @@ export function useCycleDetailPagePresenter() {
   }
 
   function exportIssues() {
-    const content = `\uFEFF${cycleIssuesCSV(data.issues)}`;
+    const content = `\uFEFF${cycleIssuesCSV(data.cycleIssues, {
+      cycle,
+      cycles: data.cycles,
+      projects: data.projects,
+      initiatives: data.initiatives,
+    })}`;
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');

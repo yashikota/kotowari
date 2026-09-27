@@ -519,6 +519,7 @@ const cycleRoute = createRoute({
       labels,
       linkSources,
       templateOptions,
+      initiatives,
     ] = await Promise.all([
       api.cycle(number),
       api.issues(issuesQuery(searchToFilter({ ...deps, cycle: number }))),
@@ -530,6 +531,7 @@ const cycleRoute = createRoute({
       api.labels(),
       api.issueLinkSources(),
       api.issueTemplateFilterOptions(),
+      api.initiatives(),
     ]);
     return {
       cycle,
@@ -542,6 +544,7 @@ const cycleRoute = createRoute({
       labels,
       linkSources,
       templateOptions,
+      initiatives,
     };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CycleDetailPage'),

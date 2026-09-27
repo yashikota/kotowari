@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import type { Cycle, Issue } from './types.ts';
+import type { Cycle, Initiative, Issue, Project } from './types.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from './cycle-export.ts';
 
 describe('cycleCalendarICS', () => {
@@ -62,27 +62,75 @@ describe('cycleGoogleCalendarURL', () => {
 });
 
 describe('cycleIssuesCSV', () => {
-  it('quotes CSV values and prevents spreadsheet formula execution', () => {
+  it('matches Linear’s cycle export schema and includes the full issue record', () => {
     const issue = {
-      identifier: 'KOT-1',
+      id: 42,
+      identifier: 'ENBU-42',
       title: '=HYPERLINK("https://example.com","open")',
-      status: 'todo',
-      priority: 2,
-      estimate: 3,
-      dueDate: null,
+      body: 'Plan, carefully.',
+      status: 'in_progress',
+      priority: 3,
+      estimate: 2,
+      projectId: 7,
+      milestoneId: 9,
+      milestoneName: 'Beta',
+      cycleId: 11,
+      cycleNumber: 11,
+      parentId: 8,
+      parentIdentifier: 'ENBU-8',
+      assignee: 'self',
+      labels: [
+        { id: 1, name: 'Bug' },
+        { id: 2, name: 'Feature' },
+      ],
+      relations: [
+        { id: 1, kind: 'related', targetIdentifier: 'ENBU-12' },
+        { id: 2, kind: 'blockedBy', targetIdentifier: 'ENBU-9' },
+        { id: 3, kind: 'duplicateOf', targetIdentifier: 'ENBU-5' },
+      ],
+      dueDate: '2026-09-25',
       createdAt: '2026-09-24T00:00:00Z',
       updatedAt: '2026-09-24T00:00:00Z',
+      startedAt: '2026-09-20T12:00:00Z',
+      statusChangedAt: '2026-09-24T00:00:00Z',
+      completedAt: null,
     } as Issue;
+    const cycle = {
+      id: 11,
+      number: 11,
+      name: 'Sprint 11',
+      startsAt: '2026-09-20T15:00:00.000Z',
+      endsAt: '2026-09-27T15:00:00.000Z',
+    } as Cycle;
 
-    expect(cycleIssuesCSV([issue])).toBe(
-      '"Identifier","Title","Status","Priority","Estimate","Due date","Created at","Updated at"\r\n' +
-        '"KOT-1","\'=HYPERLINK(""https://example.com"",""open"")","todo","2","3","","2026-09-24T00:00:00Z","2026-09-24T00:00:00Z"\r\n',
+    const csv = cycleIssuesCSV([issue], {
+      cycle,
+      projects: [
+        {
+          id: 7,
+          name: 'Release',
+          slug: 'release',
+          initiativeSlugs: ['quality'],
+        } as Project,
+      ],
+      initiatives: [{ slug: 'quality', name: 'Quality' } as Initiative],
+      exportedAt: new Date('2026-09-24T01:00:00Z'),
+    });
+
+    expect(csv.split('\r\n')[0]).toBe(
+      '"ID","Team","Title","Description","Status","Estimate","Priority","Project ID","Project","Creator","Assignee","Labels","Cycle Number","Cycle Name","Cycle Start","Cycle End","Created","Updated","Started","Triaged","Completed","Canceled","Archived","Due Date","Parent issue","Initiatives","Project Milestone ID","Project Milestone","SLA Status","UUID","Time in status (minutes)","Related to","Blocked by","Duplicate of"',
+    );
+    expect(csv).toContain(
+      '"ENBU-42","enbu","\'=HYPERLINK(""https://example.com"",""open"")","Plan, carefully.","進行中","2","中","7","Release","","Me","Bug, Feature","11","Sprint 11","2026-09-20T15:00:00.000Z","2026-09-27T15:00:00.000Z"',
+    );
+    expect(csv).toContain(
+      '"2026-09-24T00:00:00Z","2026-09-24T00:00:00Z","2026-09-20T12:00:00Z","","","","","2026-09-25","ENBU-8","Quality","9","Beta","","","60","ENBU-12","ENBU-9","ENBU-5"',
     );
   });
 
   it('exports a header row for cycles without issues', () => {
     expect(cycleIssuesCSV([])).toBe(
-      '"Identifier","Title","Status","Priority","Estimate","Due date","Created at","Updated at"\r\n',
+      '"ID","Team","Title","Description","Status","Estimate","Priority","Project ID","Project","Creator","Assignee","Labels","Cycle Number","Cycle Name","Cycle Start","Cycle End","Created","Updated","Started","Triaged","Completed","Canceled","Archived","Due Date","Parent issue","Initiatives","Project Milestone ID","Project Milestone","SLA Status","UUID","Time in status (minutes)","Related to","Blocked by","Duplicate of"\r\n',
     );
   });
 });

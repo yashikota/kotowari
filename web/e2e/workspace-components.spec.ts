@@ -1392,7 +1392,7 @@ test('issue options create a linked workspace document and open it for editing',
   expect(created.ok()).toBeTruthy();
   const issue = (await created.json()) as { identifier: string };
 
-  await page.goto(`/issues/${issue.identifier}`);
+  await page.goto(`/issues/${issue.identifier}`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: 'Issue options' }).click();
   await page.getByRole('menuitem', { name: 'Add document…' }).click();
   await expect(page).toHaveURL(/\/pages\/document-/);
@@ -1582,7 +1582,7 @@ test('issue options mark the current issue as parent, child, and reciprocal rela
   const blockedBy = await create('Blocked-by target');
   const blocking = await create('Blocking target');
   const duplicate = await create('Duplicate target');
-  await page.goto(`/issues/${source.identifier}`);
+  await page.goto(`/issues/${source.identifier}`, { waitUntil: 'domcontentloaded' });
 
   async function markAs(option: string, target: { identifier: string }) {
     await page.getByRole('button', { name: 'Issue options' }).click();
@@ -1591,11 +1591,17 @@ test('issue options mark the current issue as parent, child, and reciprocal rela
     const dialog = page.getByRole('dialog', { name: new RegExp('Mark as') });
     const selector = dialog.getByRole('combobox', { name: 'Related issue' });
     await selector.fill(target.identifier);
-    await page
-      .getByRole('listbox')
-      .getByRole('option', { name: new RegExp(target.identifier) })
-      .click();
-    await expect(dialog).toHaveCount(0);
+    const targetOption = page
+      .getByRole('listbox', { name: 'Related issue' })
+      .getByRole('option', { name: new RegExp(`^${target.identifier}\\b`) });
+    await expect(targetOption).toBeVisible();
+    const mutation = page.waitForResponse((response) => {
+      const method = response.request().method();
+      return response.url().includes('/api/issues/') && (method === 'PATCH' || method === 'POST');
+    });
+    await targetOption.click();
+    expect((await mutation).ok()).toBeTruthy();
+    await expect(dialog).toHaveCount(0, { timeout: 10_000 });
   }
 
   await markAs('Parent of…', parentChild);
@@ -2626,7 +2632,17 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
     },
   });
   expect(created.ok()).toBeTruthy();
-  const cycle = (await created.json()) as { number: number; name: string };
+  const cycle = (await created.json()) as { id: number; number: number; name: string };
+  const issueResponse = await request.post('/api/issues', {
+    data: {
+      title: `Cycle CSV export ${cycle.number}`,
+      body: 'Full issue export body',
+      status: 'todo',
+      cycleId: cycle.id,
+    },
+  });
+  expect(issueResponse.ok()).toBeTruthy();
+  const issue = (await issueResponse.json()) as { identifier: string };
 
   await page.goto(`/cycles/${cycle.number}`);
   const endDateButton = page.getByRole('button', { name: 'Change end date' });
@@ -2698,6 +2714,16 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
   await page.getByRole('menuitem', { name: 'Export issues as CSV…' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(`cycle-${cycle.number}-issues.csv`);
+  const csvStream = await download.createReadStream();
+  expect(csvStream).not.toBeNull();
+  const decoder = new TextDecoder();
+  let csv = '';
+  for await (const chunk of csvStream!) csv += decoder.decode(chunk, { stream: true });
+  csv += decoder.decode();
+  const csvHeader = csv.replace(/^\uFEFF/, '').split('\r\n', 1)[0];
+  expect(csvHeader?.split(',')).toHaveLength(34);
+  expect(csv).toContain(`"${issue.identifier}"`);
+  expect(csv).toContain('Full issue export body');
 
   const calendarDownloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Cycle options' }).click();
