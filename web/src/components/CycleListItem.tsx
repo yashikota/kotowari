@@ -9,12 +9,14 @@ import styles from './CycleListItem.module.css';
 type CycleSummary = Cycle & {
   googleCalendarURL: string;
   linkCopied: boolean;
+  calendarFeedCopied: boolean;
   onEdit: () => void;
   onChangeDates: () => void;
   onStartCycleToday: () => void;
   onToggleFavorite: () => void;
   onCopyLink: () => void;
   onExportCalendar: () => void;
+  onCopyCalendarFeed: () => void;
 };
 
 export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
@@ -103,6 +105,11 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
                 rel="noopener noreferrer"
               >
                 {t('cycle.addToGoogleCalendar')}
+              </Menu.Item>
+              <Menu.Item onClick={cycle.onCopyCalendarFeed}>
+                {cycle.calendarFeedCopied
+                  ? t('cycle.calendarFeedCopied')
+                  : t('cycle.copyCalendarFeed')}
               </Menu.Item>
               <Menu.Item onClick={cycle.onExportCalendar}>{t('cycle.exportCalendar')}</Menu.Item>
             </Menu.Sub.Dropdown>

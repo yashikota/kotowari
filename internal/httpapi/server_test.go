@@ -312,6 +312,76 @@ func TestCycleActivityEndpointReturnsStatusHistoryForCurrentMembers(t *testing.T
 	}
 }
 
+func TestCycleCalendarFeedIsLiveAndCacheable(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/cycles", `{"startsAt":"2034-02-01T00:00:00Z","endsAt":"2034-02-14T00:00:00Z","status":"active"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create cycle %d %s", created.Code, created.Body.String())
+	}
+	var cycle store.Cycle
+	if err := json.Unmarshal(created.Body.Bytes(), &cycle); err != nil {
+		t.Fatal(err)
+	}
+	update, err := json.Marshal(map[string]string{
+		"name":        strings.Repeat("予定", 40),
+		"description": "Design, review; and approve\\publish",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	updated := doJSON(t, s, http.MethodPatch, "/api/cycles/"+strconv.Itoa(cycle.Number), string(update))
+	if updated.Code != http.StatusOK {
+		t.Fatalf("update cycle %d %s", updated.Code, updated.Body.String())
+	}
+
+	feedPath := "/api/cycles/" + strconv.Itoa(cycle.Number) + "/calendar.ics"
+	feed := doJSON(t, s, http.MethodGet, feedPath, "")
+	if feed.Code != http.StatusOK {
+		t.Fatalf("calendar feed %d %s", feed.Code, feed.Body.String())
+	}
+	if got := feed.Header().Get("Content-Type"); got != "text/calendar; charset=utf-8" {
+		t.Fatalf("content type = %q", got)
+	}
+	if got := feed.Header().Get("Cache-Control"); got != "no-cache, must-revalidate" {
+		t.Fatalf("cache control = %q", got)
+	}
+	if got := feed.Header().Get("ETag"); got == "" {
+		t.Fatal("calendar feed missing ETag")
+	}
+	for _, want := range []string{
+		"BEGIN:VCALENDAR\r\n",
+		"METHOD:PUBLISH\r\n",
+		"DTSTART;VALUE=DATE:20340201\r\nDTEND;VALUE=DATE:20340215\r\n",
+		"SUMMARY:" + strings.Repeat("予定", 10),
+		`DESCRIPTION:Cycle 1\nDesign\, review\; and approve\\publish`,
+		"URL:http://example.com/cycles/1\r\n",
+		"END:VCALENDAR\r\n",
+	} {
+		if !strings.Contains(feed.Body.String(), want) {
+			t.Fatalf("calendar feed missing %q:\n%s", want, feed.Body.String())
+		}
+	}
+	for _, line := range strings.Split(strings.TrimSuffix(feed.Body.String(), "\r\n"), "\r\n") {
+		if len(line) > 75 {
+			t.Fatalf("calendar line exceeds 75 octets (%d): %q", len(line), line)
+		}
+	}
+
+	conditionalRequest := httptest.NewRequest(http.MethodGet, feedPath, nil)
+	conditionalRequest.Header.Set("If-None-Match", feed.Header().Get("ETag"))
+	conditional := httptest.NewRecorder()
+	s.ServeHTTP(conditional, conditionalRequest)
+	if conditional.Code != http.StatusNotModified || conditional.Body.Len() != 0 {
+		t.Fatalf("conditional feed response = %d %q", conditional.Code, conditional.Body.String())
+	}
+	if malformed := doJSON(t, s, http.MethodGet, "/api/cycles/nope/calendar.ics", ""); malformed.Code != http.StatusBadRequest {
+		t.Fatalf("malformed cycle number status %d", malformed.Code)
+	}
+	if missing := doJSON(t, s, http.MethodGet, "/api/cycles/999/calendar.ics", ""); missing.Code != http.StatusNotFound {
+		t.Fatalf("missing cycle status %d", missing.Code)
+	}
+}
+
 func TestCommentAttachmentsAreStoredScopedAndServedAsDownloads(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Attachment issue"}`)

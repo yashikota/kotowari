@@ -997,6 +997,7 @@ export function CycleDetailPageView({
         resourceTitle,
         resourceError,
         cycleLinkCopied,
+        calendarFeedCopied,
         nameDraft,
         descriptionDraft,
         startDateDraft,
@@ -1229,6 +1230,11 @@ export function CycleDetailPageView({
                                     rel="noopener noreferrer"
                                   >
                                     {t('cycle.addToGoogleCalendar')}
+                                  </Menu.Item>
+                                  <Menu.Item onClick={handlers.onCopyCalendarFeed}>
+                                    {calendarFeedCopied
+                                      ? t('cycle.calendarFeedCopied')
+                                      : t('cycle.copyCalendarFeed')}
                                   </Menu.Item>
                                   <Menu.Item onClick={handlers.onExportCalendar}>
                                     {t('cycle.exportCalendar')}

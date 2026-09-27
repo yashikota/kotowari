@@ -98,6 +98,13 @@ function cycleURL(number: number) {
   return new URL(`${import.meta.env.BASE_URL}cycles/${number}`, window.location.origin).toString();
 }
 
+function cycleCalendarFeedURL(number: number) {
+  return new URL(
+    `${import.meta.env.BASE_URL}api/cycles/${number}/calendar.ics`,
+    window.location.origin,
+  ).toString();
+}
+
 function monthKey(year: number, month: number) {
   const value = new Date(Date.UTC(year, month, 1));
   return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -1458,6 +1465,9 @@ export function useCyclesPagePresenter() {
   const { scope } = useSearch({ from: '/cycles' });
   const router = useRouter();
   const [copiedCycleNumber, setCopiedCycleNumber] = useState<number | null>(null);
+  const [calendarFeedCopiedCycleNumber, setCalendarFeedCopiedCycleNumber] = useState<number | null>(
+    null,
+  );
   const [metadataCycle, setMetadataCycle] = useState<Cycle | null>(null);
   const [datesCycle, setDatesCycle] = useState<Cycle | null>(null);
   const [nameDraft, setNameDraft] = useState('');
@@ -1520,6 +1530,16 @@ export function useCyclesPagePresenter() {
     }
   }
 
+  async function copyCycleCalendarFeed(number: number) {
+    try {
+      await navigator.clipboard.writeText(cycleCalendarFeedURL(number));
+      setCalendarFeedCopiedCycleNumber(number);
+      window.setTimeout(() => setCalendarFeedCopiedCycleNumber(null), 1600);
+    } catch {
+      // Clipboard permission can be unavailable in an embedded or non-secure context.
+    }
+  }
+
   function exportCalendar(cycle: Cycle) {
     const content = cycleCalendarICS(cycle, cycleURL(cycle.number));
     const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
@@ -1546,6 +1566,7 @@ export function useCyclesPagePresenter() {
           (issue) => issue.status === 'done' || issue.status === 'canceled',
         ).length,
         linkCopied: copiedCycleNumber === cycle.number,
+        calendarFeedCopied: calendarFeedCopiedCycleNumber === cycle.number,
         onEdit: () => openCycleMetadata(cycle),
         onChangeDates: () => openCycleDates(cycle),
         onStartCycleToday: () =>
@@ -1553,6 +1574,7 @@ export function useCyclesPagePresenter() {
         onToggleFavorite: () => updateCycle(cycle.number, { isFavorite: !cycle.isFavorite }),
         onCopyLink: () => copyCycleLink(cycle.number),
         onExportCalendar: () => exportCalendar(cycle),
+        onCopyCalendarFeed: () => copyCycleCalendarFeed(cycle.number),
       };
     });
   const activeCycle = scopedCycles.find((cycle) => cycle.status === 'active');
@@ -1685,6 +1707,7 @@ export function useCycleDetailPagePresenter() {
   const [resourceTitle, setResourceTitle] = useState('');
   const [resourceError, setResourceError] = useState('');
   const [cycleLinkCopied, setCycleLinkCopied] = useState(false);
+  const [calendarFeedCopied, setCalendarFeedCopied] = useState(false);
   const [nameDraft, setNameDraft] = useState(cycle.name ?? `Cycle ${cycle.number}`);
   const [descriptionDraft, setDescriptionDraft] = useState(cycle.description ?? '');
   const [startDateDraft, setStartDateDraft] = useState(cycle.startsAt.slice(0, 10));
@@ -1863,6 +1886,16 @@ export function useCycleDetailPagePresenter() {
     }
   }
 
+  async function copyCycleCalendarFeed() {
+    try {
+      await navigator.clipboard.writeText(cycleCalendarFeedURL(cycle.number));
+      setCalendarFeedCopied(true);
+      window.setTimeout(() => setCalendarFeedCopied(false), 1600);
+    } catch {
+      // Clipboard permission can be unavailable in an embedded or non-secure context.
+    }
+  }
+
   return {
     _view: 0 as const,
     data,
@@ -1896,6 +1929,7 @@ export function useCycleDetailPagePresenter() {
     resourceTitle,
     resourceError,
     cycleLinkCopied,
+    calendarFeedCopied,
     nameDraft,
     descriptionDraft,
     startDateDraft,
@@ -1995,6 +2029,7 @@ export function useCycleDetailPagePresenter() {
         save({ startsAt: dateAtUTCStart(localDateToday()), status: 'active' }),
       onExportIssues: exportIssues,
       onExportCalendar: exportCalendar,
+      onCopyCalendarFeed: copyCycleCalendarFeed,
       onCopyLink: copyCycleLink,
       onCreateDocument: createCycleDocument,
       onOpenResourceLink: openResourceLink,

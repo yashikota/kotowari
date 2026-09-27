@@ -2658,6 +2658,18 @@ test('cycle details edit metadata and dates, favorite the cycle, and export issu
     .toMatch(new RegExp(`/cycles/${cycle.number}$`));
 
   await page.getByRole('button', { name: 'Cycle options' }).click();
+  await page.getByRole('menuitem', { name: 'Subscribe to cycle calendar' }).hover();
+  await page.getByRole('menuitem', { name: 'Copy feed URL for your calendar' }).click();
+  const calendarFeedURL = await page.evaluate(
+    () => (window as Window & { copiedCycleLink?: string }).copiedCycleLink ?? '',
+  );
+  expect(new URL(calendarFeedURL).pathname).toBe(`/api/cycles/${cycle.number}/calendar.ics`);
+  const calendarFeedResponse = await request.get(new URL(calendarFeedURL).pathname);
+  expect(calendarFeedResponse.ok()).toBeTruthy();
+  expect(calendarFeedResponse.headers()['content-type']).toContain('text/calendar');
+  expect(await calendarFeedResponse.text()).toContain(`SUMMARY:Cycle ${cycle.number}`);
+
+  await page.getByRole('button', { name: 'Cycle options' }).click();
   await page.getByRole('menuitem', { name: 'Edit cycle name and description…' }).click();
   const metadata = page.getByRole('dialog', { name: 'Edit cycle name and description…' });
   await metadata.getByLabel('Cycle name').fill('Release planning');
@@ -2984,6 +2996,14 @@ test('cycle list actions favorite, copy, export, and start an upcoming cycle', a
       page.evaluate(() => (window as Window & { copiedCycleLink?: string }).copiedCycleLink),
     )
     .toMatch(new RegExp(`/cycles/${cycle.number}$`));
+
+  await options.click();
+  await page.getByRole('menuitem', { name: 'Subscribe to cycle calendar' }).hover();
+  await page.getByRole('menuitem', { name: 'Copy feed URL for your calendar' }).click();
+  const calendarFeedURL = await page.evaluate(
+    () => (window as Window & { copiedCycleLink?: string }).copiedCycleLink ?? '',
+  );
+  expect(new URL(calendarFeedURL).pathname).toBe(`/api/cycles/${cycle.number}/calendar.ics`);
 
   const calendarDownloadPromise = page.waitForEvent('download');
   await options.click();

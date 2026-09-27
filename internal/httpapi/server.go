@@ -114,6 +114,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/cycles", s.listCycles)
 	s.mux.HandleFunc("POST /api/cycles", s.createCycle)
 	s.mux.HandleFunc("GET /api/cycles/{number}/activities", s.listCycleActivities)
+	s.mux.HandleFunc("GET /api/cycles/{number}/calendar.ics", s.cycleCalendarFeed)
 	s.mux.HandleFunc("GET /api/cycles/{number}", s.getCycle)
 	s.mux.HandleFunc("PATCH /api/cycles/{number}", s.patchCycle)
 	s.mux.HandleFunc("POST /api/cycles/{number}/links", s.addCycleLink)
