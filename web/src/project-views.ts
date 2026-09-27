@@ -60,6 +60,7 @@ export type ProjectViewSearch = {
   status?: string[];
   priority?: string[];
   health?: Array<ProjectHealth | 'none'>;
+  leads?: Array<'self' | 'none'>;
   labels?: string[];
   templates?: string[];
   initiatives?: string[];

@@ -293,6 +293,7 @@ export function useProjectViewBuilderPresenter() {
   const statusFilters = search.status ?? [];
   const priorityFilters = search.priority ?? [];
   const healthFilters = search.health ?? [];
+  const leadFilters = search.leads ?? [];
   const labelFilters = search.labels ?? [];
   const templateFilters = search.templates ?? [];
   const initiativeFilters = search.initiatives ?? [];
@@ -302,6 +303,7 @@ export function useProjectViewBuilderPresenter() {
     statusFilters.length +
     priorityFilters.length +
     healthFilters.length +
+    leadFilters.length +
     labelFilters.length +
     templateFilters.length +
     initiativeFilters.length +
@@ -321,6 +323,7 @@ export function useProjectViewBuilderPresenter() {
     statuses: statusFilters,
     priorities: priorityFilters,
     healths: healthFilters,
+    leads: leadFilters,
     labels: labelFilters,
     templates: templateFilters,
     initiatives: initiativeFilters,
@@ -384,6 +387,7 @@ export function useProjectViewBuilderPresenter() {
         void updateSearch({
           health: value.length ? (value as ProjectViewSearch['health']) : undefined,
         }),
+      onLeadsChange: (value) => void updateSearch({ leads: value.length ? value : undefined }),
       onLabelsChange: (value) => void updateSearch({ labels: value.length ? value : undefined }),
       onTemplatesChange: (value) =>
         void updateSearch({ templates: value.length ? value : undefined }),

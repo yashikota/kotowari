@@ -46,6 +46,7 @@ export type ProjectListControlsModel = {
   statuses: string[];
   priorities: string[];
   healths: string[];
+  leads: Array<'self' | 'none'>;
   labels: string[];
   templates: string[];
   initiatives: string[];
@@ -81,6 +82,7 @@ export type ProjectListControlsModel = {
     onStatusesChange: (value: string[]) => void;
     onPrioritiesChange: (value: string[]) => void;
     onHealthsChange: (value: string[]) => void;
+    onLeadsChange: (value: Array<'self' | 'none'>) => void;
     onLabelsChange: (value: string[]) => void;
     onTemplatesChange: (value: string[]) => void;
     onInitiativesChange: (value: string[]) => void;

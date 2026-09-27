@@ -107,6 +107,18 @@ describe('matchesProjectViewSearch', () => {
     ).toBe(true);
   });
 
+  it('filters quick lead facets by current user and unassigned projects', () => {
+    const selfProject = project({ lead: 'self' });
+    const unassignedProject = project({ lead: '' });
+
+    expect(matchesProjectViewSearch(selfProject, { leads: ['self'] })).toBe(true);
+    expect(matchesProjectViewSearch(unassignedProject, { leads: ['self'] })).toBe(false);
+    expect(matchesProjectViewSearch(unassignedProject, { leads: ['none'] })).toBe(true);
+    expect(matchesProjectViewSearch(selfProject, { leads: ['none'] })).toBe(false);
+    expect(matchesProjectViewSearch(selfProject, { leads: ['self', 'none'] })).toBe(true);
+    expect(matchesProjectViewSearch(unassignedProject, { leads: ['self', 'none'] })).toBe(true);
+  });
+
   it('matches date presets, missing dates, and custom ranges', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2030, 0, 15, 12));

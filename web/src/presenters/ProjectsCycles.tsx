@@ -294,6 +294,7 @@ export function useProjectsPagePresenter() {
       status: search.status,
       priority: search.priority,
       health: search.health,
+      leads: search.leads,
       labels: search.labels,
       templates: search.templates,
       initiatives: search.initiatives,
@@ -382,6 +383,7 @@ export function useProjectsPagePresenter() {
   const statusFilters = search.status ?? [];
   const priorityFilters = search.priority ?? [];
   const healthFilters = search.health ?? [];
+  const leadFilters = search.leads ?? [];
   const labelFilters = search.labels ?? [];
   const templateFilters = search.templates ?? [];
   const initiativeFilters = search.initiatives ?? [];
@@ -627,6 +629,7 @@ export function useProjectsPagePresenter() {
     statusFilters.length +
     priorityFilters.length +
     healthFilters.length +
+    leadFilters.length +
     labelFilters.length +
     templateFilters.length +
     initiativeFilters.length +
@@ -724,6 +727,7 @@ export function useProjectsPagePresenter() {
     statuses: statusFilters,
     priorities: priorityFilters,
     healths: healthFilters,
+    leads: leadFilters,
     labels: labelFilters,
     templates: templateFilters,
     initiatives: initiativeFilters,
@@ -785,6 +789,8 @@ export function useProjectsPagePresenter() {
         void updateProjectSearch({
           health: value.length ? (value as NonNullable<typeof search.health>) : undefined,
         }),
+      onLeadsChange: (value) =>
+        void updateProjectSearch({ leads: value.length ? value : undefined }),
       onLabelsChange: (value) =>
         void updateProjectSearch({ labels: value.length ? value : undefined }),
       onTemplatesChange: (value) =>
@@ -882,6 +888,7 @@ export function useProjectsPagePresenter() {
           status: undefined,
           priority: undefined,
           health: undefined,
+          leads: undefined,
           labels: undefined,
           templates: undefined,
           initiatives: undefined,

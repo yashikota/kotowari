@@ -170,6 +170,7 @@ export function matchesProjectViewSearch(project: Project, search: ProjectViewSe
   const status = search.status ?? [];
   const priorities = search.priority ?? [];
   const health = search.health ?? [];
+  const leads = search.leads ?? [];
   const labels = search.labels ?? [];
   const templates = search.templates ?? [];
   const initiatives = search.initiatives ?? [];
@@ -196,6 +197,9 @@ export function matchesProjectViewSearch(project: Project, search: ProjectViewSe
   }
   if (priorities.length) conditions.push(priorities.includes(String(project.priority)));
   if (health.length) conditions.push(health.includes(project.health || 'none'));
+  if (leads.length) {
+    conditions.push(leads.includes(project.lead === 'self' ? 'self' : 'none'));
+  }
   if (labels.length) {
     conditions.push(labels.some((label) => (project.labels ?? []).includes(label)));
   }

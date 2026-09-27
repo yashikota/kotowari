@@ -25,6 +25,7 @@ import {
   IconStack2,
   IconTag,
   IconTarget,
+  IconUser,
   IconX,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
@@ -46,12 +47,23 @@ const FILTERS = [
   'template',
   'title',
   'specificProject',
+  'lead',
 ] as const;
 
 type FilterKey = (typeof FILTERS)[number];
 
 const FILTER_GROUPS: FilterKey[][] = [
-  ['status', 'priority', 'labels', 'health', 'dates', 'milestones', 'relations', 'initiatives'],
+  [
+    'status',
+    'priority',
+    'labels',
+    'lead',
+    'health',
+    'dates',
+    'milestones',
+    'relations',
+    'initiatives',
+  ],
   ['template', 'title'],
   ['specificProject'],
 ];
@@ -60,6 +72,7 @@ const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
   status: IconCircleDot,
   priority: IconFlag,
   labels: IconTag,
+  lead: IconUser,
   health: IconChartBar,
   dates: IconCalendar,
   milestones: IconFlag,
@@ -89,6 +102,7 @@ export function ProjectFilterPicker({
     status: t('projectList.filterStatus'),
     priority: t('projectList.filterPriority'),
     labels: t('projectList.filterLabels'),
+    lead: t('projectList.property.lead'),
     health: t('projectList.filterCategoryHealth'),
     dates: t('projectList.filterDates'),
     milestones: t('projectList.filterCategoryMilestones'),
@@ -120,7 +134,9 @@ export function ProjectFilterPicker({
                         ? model.initiatives.length
                         : key === 'title'
                           ? Number(Boolean(model.search.trim()))
-                          : Number(Boolean(model.specificProject));
+                          : key === 'lead'
+                            ? model.leads.length
+                            : Number(Boolean(model.specificProject));
     if (!count) return [];
     const dateFieldLabels: Record<string, string> = {
       startDate: t('projectList.orderStartDate'),
@@ -170,11 +186,17 @@ export function ProjectFilterPicker({
                                     )?.label ?? value.slice('initiative:'.length)),
                               )
                               .join(', ')
-                          : (model.availableProjects?.find(
-                              (project) => project.value === model.specificProject,
-                            )?.label ??
-                            model.specificProject ??
-                            '');
+                          : key === 'lead'
+                            ? model.leads
+                                .map((lead) =>
+                                  t(lead === 'self' ? 'projectList.leadYou' : 'projectList.noLead'),
+                                )
+                                .join(', ')
+                            : (model.availableProjects?.find(
+                                (project) => project.value === model.specificProject,
+                              )?.label ??
+                              model.specificProject ??
+                              '');
     const label =
       key === 'title'
         ? `${labels.title} ${t(
@@ -290,6 +312,9 @@ export function ProjectFilterPicker({
       case 'health':
         model.handlers.onHealthsChange([]);
         break;
+      case 'lead':
+        model.handlers.onLeadsChange([]);
+        break;
       case 'dates':
         model.handlers.onDateFieldChange(null);
         break;
@@ -365,6 +390,24 @@ export function ProjectFilterPicker({
               value: health,
               label: t(`projectHealth.status.${health}`),
             }))}
+            searchable
+            comboboxProps={{ withinPortal: false }}
+          />
+        );
+      case 'lead':
+        return (
+          <MultiSelect
+            aria-label={labels.lead}
+            value={model.leads}
+            onChange={(value) =>
+              model.handlers.onLeadsChange(
+                value.filter((lead): lead is 'self' | 'none' => lead === 'self' || lead === 'none'),
+              )
+            }
+            data={[
+              { value: 'self', label: t('projectList.leadYou') },
+              { value: 'none', label: t('projectList.noLead') },
+            ]}
             searchable
             comboboxProps={{ withinPortal: false }}
           />

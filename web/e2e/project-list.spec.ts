@@ -785,6 +785,44 @@ test('advanced project lead filters support only the current user and no lead', 
   await expect(page.getByRole('link', { name: new RegExp(noLeadName) })).toHaveCount(0);
 });
 
+test('quick project lead filter matches Linear and persists current-user selection', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const mineName = `Quick lead self ${stamp}`;
+  const noLeadName = `Quick lead none ${stamp}`;
+  for (const project of [
+    { name: mineName, slug: `quick-lead-self-${stamp}`, status: 'planned', lead: 'self' },
+    { name: noLeadName, slug: `quick-lead-none-${stamp}`, status: 'planned', lead: '' },
+  ]) {
+    const response = await request.post('/api/projects', { data: project });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('button', { name: 'Lead', exact: true }).click();
+  const leadFilter = page.getByRole('combobox', { name: 'Lead' });
+  await leadFilter.fill('You');
+  await page.getByRole('option', { name: 'You', exact: true }).click();
+
+  await expect(page.getByRole('link', { name: new RegExp(mineName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noLeadName) })).toHaveCount(0);
+  await expect.poll(() => new URL(page.url()).searchParams.get('leads')).toBe('["self"]');
+  await page.reload();
+  await expect(page.getByRole('link', { name: new RegExp(mineName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(noLeadName) })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Lead: You/ })).toBeVisible();
+
+  await openProjectFilter(page, 'Lead', 'Lead');
+  await leadFilter.fill('No lead');
+  await page.getByRole('option', { name: 'No lead', exact: true }).click();
+  await expect(page.getByRole('link', { name: new RegExp(noLeadName) })).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp(mineName) })).toBeVisible();
+  await expect.poll(() => new URL(page.url()).searchParams.get('leads')).toBe('["self","none"]');
+});
+
 test('advanced project latest-update filters match recent updates and never-updated projects', async ({
   page,
   request,
@@ -1356,13 +1394,13 @@ test('project summary is distinct from description through creation and editing'
       iconColor: 'purple',
     });
   await page.getByLabel('Project status').selectOption('started');
-  await expect(page.getByText('Status changed from Planned to In progress')).toBeVisible();
+  await expect(page.getByText('Status changed from Backlog to In progress')).toBeVisible();
   await page.getByLabel('Health').selectOption('at_risk');
   await expect(page.getByText('Health changed from No update to At risk')).toBeVisible();
   await page.reload();
   await expect(summaryField).toHaveValue(revisedSummary);
   await expect(descriptionField).toHaveValue(description);
-  await expect(page.getByText('Status changed from Planned to In progress')).toBeVisible();
+  await expect(page.getByText('Status changed from Backlog to In progress')).toBeVisible();
   await expect(page.getByText('Health changed from No update to At risk')).toBeVisible();
 });
 

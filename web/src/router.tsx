@@ -316,6 +316,8 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
     ['none', 'on_track', 'at_risk', 'off_track'].includes(value),
   );
   if (health.length) result.health = health as NonNullable<ProjectListSearch['health']>;
+  const leads = searchStringList(raw.leads).filter((value) => value === 'self' || value === 'none');
+  if (leads.length) result.leads = leads as NonNullable<ProjectListSearch['leads']>;
   const labels = searchStringList(raw.labels).filter((value) => value.length <= 100);
   if (labels.length) result.labels = labels;
   const templates = searchStringList(raw.templates).filter((value) =>
