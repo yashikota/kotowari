@@ -97,7 +97,7 @@ export function ProjectsPageView({
       } = model;
       return (
         <SplitLayout single>
-          <Pane single flush>
+          <Pane single flush style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <PageHeader
               title={t('nav.projects')}
               minHeight={62}

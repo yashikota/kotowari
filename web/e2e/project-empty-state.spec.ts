@@ -28,8 +28,34 @@ test('empty projects page explains projects and opens project creation', async (
     'href',
     '/pages',
   );
+  const [emptyBounds, headingBounds, descriptionBounds] = await Promise.all([
+    emptyState.boundingBox(),
+    emptyState.getByRole('heading', { name: 'Projects', level: 2 }).boundingBox(),
+    emptyState
+      .getByText(
+        'Projects are larger units of work with a clear outcome, such as a feature you want to ship. A project brings together issues and optional documents.',
+      )
+      .boundingBox(),
+  ]);
+  expect(emptyBounds).not.toBeNull();
+  expect(headingBounds).not.toBeNull();
+  expect(descriptionBounds).not.toBeNull();
+  expect(emptyBounds!.height).toBeGreaterThan(600);
+  expect(Math.abs(emptyBounds!.y + emptyBounds!.height / 2 - 450)).toBeLessThan(60);
+  expect(descriptionBounds!.width).toBeLessThanOrEqual(340);
+  expect(Math.abs(headingBounds!.x - descriptionBounds!.x)).toBeLessThanOrEqual(1);
 
-  await emptyState.getByRole('button', { name: 'Create new project' }).click();
+  const createProject = emptyState.getByRole('button', { name: 'Create new project' });
+  await expect(createProject.getByText('N', { exact: true })).toBeVisible();
+  await expect(createProject.getByText('P', { exact: true })).toBeVisible();
+  const [createBounds, documentationBounds] = await Promise.all([
+    createProject.boundingBox(),
+    emptyState.getByRole('link', { name: 'Documentation' }).boundingBox(),
+  ]);
+  expect(createBounds).not.toBeNull();
+  expect(documentationBounds).not.toBeNull();
+  expect(Math.abs(createBounds!.y - documentationBounds!.y)).toBeLessThanOrEqual(1);
+  await createProject.click();
   await expect(page.getByRole('dialog', { name: 'New project' })).toBeVisible();
 });
 

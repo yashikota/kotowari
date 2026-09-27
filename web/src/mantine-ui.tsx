@@ -14,7 +14,7 @@ import {
   type ChipProps,
   type NavLinkProps,
 } from '@mantine/core';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 export function RouterNavLink({
   to,
@@ -172,12 +172,14 @@ export function Pane({
   variant = 'default',
   compact,
   flush,
+  style,
 }: {
   children: ReactNode;
   single?: boolean;
   variant?: 'default' | 'list' | 'detail';
   compact?: boolean;
   flush?: boolean;
+  style?: CSSProperties;
 }) {
   const variantStyle =
     variant === 'list'
@@ -220,7 +222,7 @@ export function Pane({
       p={flush || variant === 'list' ? 0 : 'md'}
       radius={0}
       bg="transparent"
-      style={variantStyle}
+      style={{ ...variantStyle, ...style }}
     >
       {children}
     </Paper>

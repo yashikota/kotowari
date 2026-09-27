@@ -1,6 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Button, Group, Kbd, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
+
+const shortcutKeyStyle = {
+  background: 'rgba(255, 255, 255, 0.22)',
+  color: 'inherit',
+  fontSize: 10,
+  lineHeight: 1,
+  padding: '2px 3px',
+};
 
 export function ProjectsEmptyState({ onCreateProject }: { onCreateProject: () => void }) {
   const { t } = useTranslation();
@@ -9,12 +17,12 @@ export function ProjectsEmptyState({ onCreateProject }: { onCreateProject: () =>
     <Stack
       component="section"
       aria-label={t('nav.projects')}
-      align="center"
+      align="flex-start"
       justify="center"
       gap="sm"
       px="md"
       py="xl"
-      style={{ flex: 1, minHeight: 320 }}
+      style={{ flex: 1, minHeight: 320, width: 'min(352px, 100%)', marginInline: 'auto' }}
     >
       <svg
         aria-hidden="true"
@@ -45,22 +53,33 @@ export function ProjectsEmptyState({ onCreateProject }: { onCreateProject: () =>
           <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
         </g>
       </svg>
-      <Text component="h2" fw={600} size="md" ta="center">
+      <Text component="h2" fw={600} size="md">
         {t('nav.projects')}
       </Text>
-      <Text c="dimmed" size="sm" ta="center" maw={440}>
+      <Text c="dimmed" size="sm" maw={320}>
         {t('projectList.empty')}
       </Text>
-      <Group gap="xs" mt="xs" justify="center" wrap="wrap">
-        <Button type="button" variant="default" onClick={onCreateProject}>
-          {t('projectList.emptyCreate')}
+      <Group gap={8} mt="xs" justify="flex-start" wrap="wrap">
+        <Button
+          type="button"
+          variant="filled"
+          size="xs"
+          style={{ paddingInline: 8 }}
+          aria-label={t('projectList.emptyCreate')}
+          onClick={onCreateProject}
+        >
+          <Group component="span" gap={6} wrap="nowrap">
+            <Text component="span">{t('projectList.emptyCreate')}</Text>
+            <Kbd style={shortcutKeyStyle}>N</Kbd>
+            <Text component="span" size="xs">
+              {t('ui.shortcutThen')}
+            </Text>
+            <Kbd style={shortcutKeyStyle}>P</Kbd>
+          </Group>
         </Button>
-        <Button component={Link} to="/pages" variant="default">
+        <Button component={Link} to="/pages" variant="default" size="xs">
           {t('projectList.emptyDocumentation')}
         </Button>
-        <Text size="xs" c="dimmed">
-          {t('ui.shortcutProjectSequence')}
-        </Text>
       </Group>
     </Stack>
   );
