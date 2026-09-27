@@ -1747,6 +1747,7 @@
     "selectIssueRow": "Select {{identifier}}",
     "selectedIssueCount": "{{count}} selected",
     "issueSelectionActions": "Actions",
+    "askAgentAboutSelected": "Ask Agent",
     "clearIssueSelection": "Clear selected",
     "setSelectedIssueStatus": "Set status to {{status}}",
     "setSelectedIssuePriority": "Set priority to {{priority}}",

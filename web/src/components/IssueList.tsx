@@ -107,6 +107,7 @@ export function IssueListView({
                 onAddLabel={handlers.onAddBulkLabel}
                 onRemoveLabel={handlers.onRemoveBulkLabel}
                 onCopyIssues={handlers.onCopyBulkIssues}
+                onAskAgent={handlers.onAskAgentAboutSelectedIssues}
                 onClear={handlers.onClearBulkSelection}
               />
             ) : null}

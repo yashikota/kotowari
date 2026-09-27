@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { takePendingAgentPrompt } from '../agent-prompt.ts';
 import i18n from '../i18n/index.ts';
 import type { AgentChat } from '../types.ts';
 
@@ -31,14 +32,19 @@ function readHistory(): AgentChat[] {
   }
 }
 
-function initialState() {
+function initialState(startNewChat: boolean) {
   const chats = readHistory();
+  if (startNewChat) {
+    const chat = newChat();
+    return { chats: [chat, ...chats], activeChatId: chat.id };
+  }
   const entries = chats.length > 0 ? chats : [newChat()];
   return { chats: entries, activeChatId: entries[0]!.id };
 }
 
 export function useAgentPagePresenter() {
-  const [state, setState] = useState(initialState);
+  const [initialPrompt, setInitialPrompt] = useState(() => takePendingAgentPrompt());
+  const [state, setState] = useState(() => initialState(Boolean(initialPrompt)));
   const [historyOpened, setHistoryOpened] = useState(false);
 
   useEffect(() => {
@@ -55,9 +61,11 @@ export function useAgentPagePresenter() {
     _view: 0 as const,
     chats: state.chats,
     activeChat,
+    initialPrompt,
     historyOpened,
     handlers: {
       onNewChat: () => {
+        setInitialPrompt('');
         const chat = newChat();
         setState((current) => ({
           chats: [chat, ...current.chats],
@@ -67,6 +75,7 @@ export function useAgentPagePresenter() {
       },
       onToggleHistory: () => setHistoryOpened((current) => !current),
       onSelectChat: (id: string) => {
+        setInitialPrompt('');
         setState((current) =>
           current.chats.some((chat) => chat.id === id) ? { ...current, activeChatId: id } : current,
         );

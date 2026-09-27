@@ -23,6 +23,7 @@ type Props = {
   onAddLabel: (labelId: number) => void;
   onRemoveLabel: (labelId: number) => void;
   onCopyIssues: (kind: IssueCopyKind) => void;
+  onAskAgent: () => void;
   onClear: () => void;
 };
 
@@ -43,6 +44,7 @@ export function useIssueSelectionToolbarPresenter({
   onAddLabel,
   onRemoveLabel,
   onCopyIssues,
+  onAskAgent,
   onClear,
 }: Props) {
   const { statuses } = useIssueWorkflow();
@@ -109,6 +111,7 @@ export function useIssueSelectionToolbarPresenter({
       onAddLabel: (labelId: number) => onAddLabel(labelId),
       onRemoveLabel: (labelId: number) => onRemoveLabel(labelId),
       onCopyIssues: (kind: IssueCopyKind) => onCopyIssues(kind),
+      onAskAgent,
       onProjectQueryChange: (query: string) => setProjectQuery(query),
       onCycleQueryChange: (query: string) => setCycleQuery(query),
       onLabelQueryChange: (query: string) => setLabelQuery(query),

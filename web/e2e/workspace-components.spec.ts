@@ -321,6 +321,36 @@ test('issue list selects multiple issues and applies bulk status changes', async
   await expect(rows).toHaveCount(2);
 });
 
+test('issue selection opens a new Agent chat with safe, unsent issue context', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const title = `Ask Agent ${stamp}`;
+  const body = 'Inspect this issue and identify its next step.';
+  const response = await request.post('/api/issues', {
+    data: { title, body, status: 'todo', priority: 2 },
+  });
+  expect(response.ok()).toBeTruthy();
+  const issue = (await response.json()) as { identifier: string };
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.getByRole('checkbox', { name: `Select ${issue.identifier}` }).check();
+  await page.getByRole('button', { name: 'Ask Agent', exact: true }).click();
+
+  await expect(page).toHaveURL(/\/agent$/);
+  const prompt = page.getByRole('textbox', { name: 'Message to AI' });
+  await expect(prompt).toHaveValue(new RegExp(issue.identifier));
+  await expect(prompt).toHaveValue(new RegExp(title));
+  await expect(prompt).toHaveValue(new RegExp(body));
+  await expect(prompt).toHaveValue(/Do not modify issue or workspace data/);
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+  await expect(
+    page.getByRole('region', { name: 'AI assistant' }).getByText(title, { exact: true }),
+  ).toHaveCount(0);
+});
+
 test('issue list copies selected identifiers and URLs without clearing selection', async ({
   page,
   request,

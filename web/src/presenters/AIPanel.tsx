@@ -31,6 +31,7 @@ export function usePanelPresenter({
   id,
   standalone = false,
   onPromptSubmitted,
+  initialPrompt = '',
   starterPrompts = [],
   promptPlaceholder,
   hidePromptLabel = false,
@@ -39,13 +40,14 @@ export function usePanelPresenter({
   id: string;
   standalone?: boolean;
   onPromptSubmitted?: (prompt: string) => void;
+  initialPrompt?: string;
   starterPrompts?: { label: string; prompt: string }[];
   promptPlaceholder?: string;
   hidePromptLabel?: boolean;
 }) {
   const [open, setOpen] = useState(standalone);
   const [state, setState] = useState<State | null>(null);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const path = `/api/ai/${kind}/${encodeURIComponent(id)}`;
@@ -123,6 +125,7 @@ export function usePanelPresenter({
     open,
     state,
     prompt,
+    initialPrompt,
     error,
     sending,
     messages,

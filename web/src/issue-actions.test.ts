@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { issueBranchName, issueMarkdown, issuePrompt } from './issue-actions.ts';
+import {
+  issueBranchName,
+  issueMarkdown,
+  issuePrompt,
+  selectedIssuesAgentPrompt,
+} from './issue-actions.ts';
 import type { Issue } from './types.ts';
 
 const sample: Issue = {
@@ -57,5 +62,30 @@ describe('issue actions', () => {
     expect(issuePrompt(sample)).toContain('Suggested branch name: kot-4-improve-issue-navigation');
     expect(issuePrompt(sample)).toContain('Keep issue context visible.');
     expect(issuePrompt(sample)).toContain('Due date: 2026-10-02');
+  });
+
+  it('builds a bounded, read-only Agent prompt with selected issue context', () => {
+    const prompt = selectedIssuesAgentPrompt([sample], 'https://kotowari.test');
+    expect(prompt).toContain('Analyze the selected Kotowari issues.');
+    expect(prompt).toContain('Do not modify issue or workspace data');
+    expect(prompt).toContain('KOT-4 Improve issue navigation');
+    expect(prompt).toContain('Keep issue context visible.');
+    expect(prompt).toContain('https://kotowari.test/issues/KOT-4');
+    expect(prompt).toContain('frontend');
+
+    const many = Array.from({ length: 21 }, (_, index) => ({
+      ...sample,
+      identifier: `KOT-${index + 1}`,
+      title: `Issue ${index + 1}`,
+    }));
+    expect(selectedIssuesAgentPrompt(many, 'https://kotowari.test')).toContain(
+      '[1 additional selected issues omitted.]',
+    );
+    expect(
+      selectedIssuesAgentPrompt(
+        [{ ...sample, body: 'details'.repeat(10_000) }],
+        'https://kotowari.test',
+      ),
+    ).toContain('…[truncated]');
   });
 });

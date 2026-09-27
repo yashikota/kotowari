@@ -10,7 +10,7 @@ export function AgentPageView({ model }: { model: ReturnType<typeof useAgentPage
   const { t, i18n } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { chats, activeChat, historyOpened, handlers } = model;
+      const { chats, activeChat, initialPrompt, historyOpened, handlers } = model;
       return (
         <SplitLayout single>
           <Pane single>
@@ -74,6 +74,7 @@ export function AgentPageView({ model }: { model: ReturnType<typeof useAgentPage
                   kind="agent"
                   id={activeChat.id}
                   standalone
+                  initialPrompt={initialPrompt}
                   onPromptSubmitted={handlers.onPromptSubmitted}
                 />
               </Box>

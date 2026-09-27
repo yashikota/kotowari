@@ -51,6 +51,7 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
         open,
         state,
         prompt,
+        initialPrompt,
         error,
         sending,
         messages,
@@ -173,6 +174,7 @@ export function PanelView({ model }: { model: ReturnType<typeof usePanelPresente
                     label={hidePromptLabel ? undefined : t('ui.message')}
                     aria-label={t('ui.messageToAi')}
                     placeholder={promptPlaceholder}
+                    autoFocus={Boolean(initialPrompt)}
                     value={prompt}
                     onChange={handlers.Message_to_AI_onChange4}
                     required

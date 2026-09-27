@@ -276,6 +276,9 @@ function IssueSelectionToolbarView({
             ))}
           </Menu.Dropdown>
         </Menu>
+        <Button type="button" size="compact-sm" onClick={handlers.onAskAgent}>
+          {t('ui.askAgentAboutSelected')}
+        </Button>
         <Button
           type="button"
           size="compact-sm"

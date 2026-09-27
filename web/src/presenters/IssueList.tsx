@@ -2,11 +2,17 @@ import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { api } from '../api.ts';
+import { setPendingAgentPrompt } from '../agent-prompt.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
-import { issueBranchName, issueMarkdown, renderIssuePrompt } from '../issue-actions.ts';
+import {
+  issueBranchName,
+  issueMarkdown,
+  renderIssuePrompt,
+  selectedIssuesAgentPrompt,
+} from '../issue-actions.ts';
 import type { IssueCopyKind } from '../issue-actions.ts';
 import { useCodingToolPreferences } from '../coding-tools.ts';
 import {
@@ -211,6 +217,16 @@ export function useIssueListPresenter({
     }
   }
 
+  function askAgentAboutSelectedIssues() {
+    const selectedIssues = bulkSelectedIds.flatMap((identifier) => {
+      const issue = issueRows.find((row) => row.issue.identifier === identifier)?.issue;
+      return issue ? [issue] : [];
+    });
+    if (selectedIssues.length === 0) return;
+    setPendingAgentPrompt(selectedIssuesAgentPrompt(selectedIssues, window.location.origin));
+    void navigate({ to: '/agent' });
+  }
+
   useKeyboard((e) => {
     if (
       (e.ctrlKey || e.metaKey) &&
@@ -339,6 +355,7 @@ export function useIssueListPresenter({
       onAddBulkLabel: (labelId: number) => updateSelectedLabels(labelId, true),
       onRemoveBulkLabel: (labelId: number) => updateSelectedLabels(labelId, false),
       onCopyBulkIssues: (kind: IssueCopyKind) => copySelectedIssues(kind),
+      onAskAgentAboutSelectedIssues: askAgentAboutSelectedIssues,
       onClearBulkSelection: () => setBulkSelectedIds([]),
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>
