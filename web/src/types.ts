@@ -16,6 +16,8 @@ export type ProjectWorkflowStatus = {
 };
 export type IssueType = 'bug' | 'feature' | 'improvement' | 'task';
 
+export type LabelOperator = 'includeAny' | 'includeAll' | 'excludeAny' | 'excludeAll';
+
 export type Label = {
   id: number;
   name: string;
@@ -293,6 +295,7 @@ export type View = {
   project: string | null;
   cycle: number | null;
   labels: string[];
+  labelOperator?: LabelOperator;
   priority: number | null;
   priorities?: number[];
   type: IssueType | null;

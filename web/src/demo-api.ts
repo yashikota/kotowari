@@ -884,6 +884,9 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const asOf = url.searchParams.get('asOf') ?? localDateValue(new Date());
     const favorite = url.searchParams.get('favorite');
     const wantedLabels = url.searchParams.get('labels')?.split(',');
+    const labelOperator = url.searchParams.get('labelOperator') ?? 'includeAll';
+    if (!['includeAny', 'includeAll', 'excludeAny', 'excludeAll'].includes(labelOperator))
+      return json({ error: 'invalid label operator' }, 400);
     if (status)
       result = result.filter(
         (i) => i.status === status || (i.workflowStatus ?? i.status) === status,
@@ -1066,9 +1069,15 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     }
     if (favorite != null) result = result.filter((i) => i.isFavorite === (favorite === 'true'));
     if (wantedLabels?.length)
-      result = result.filter((i) =>
-        wantedLabels.every((name) => i.labels.some((label) => label.name === name)),
-      );
+      result = result.filter((item) => {
+        const matches = wantedLabels.filter((name) =>
+          item.labels.some((label) => label.name === name),
+        ).length;
+        if (labelOperator === 'includeAny') return matches > 0;
+        if (labelOperator === 'excludeAny') return matches === 0;
+        if (labelOperator === 'excludeAll') return matches !== wantedLabels.length;
+        return matches === wantedLabels.length;
+      });
     return json(result);
   }
   if (path === '/api/issues' && method === 'POST') {
@@ -1718,6 +1727,9 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         project: value.project ?? null,
         cycle: value.cycle ?? null,
         labels: value.labels ?? [],
+        labelOperator:
+          value.labelOperator ??
+          ((value.labels as unknown[] | undefined)?.length === 1 ? 'includeAny' : 'includeAll'),
         priority: value.priority ?? null,
         priorities: value.priorities ?? [],
         type: value.type ?? null,

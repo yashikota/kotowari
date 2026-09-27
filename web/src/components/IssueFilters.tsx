@@ -116,6 +116,7 @@ export function IssueFiltersView({
               onProjectStatusChange={handlers.onProjectStatusChange}
               onProjectPriorityChange={handlers.onProjectPriorityChange}
               onToggleLabel={handlers.onToggleLabel}
+              onLabelOperatorChange={handlers.onLabelOperatorChange}
               onToggleProjectLabel={handlers.onToggleProjectLabel}
               onToggleAddedToCycle={handlers.onToggleAddedToCycle}
               onRemoveFilter={handlers.onRemoveFilter}

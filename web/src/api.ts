@@ -15,6 +15,7 @@ import type {
   InboxActivity,
   Initiative,
   Label,
+  LabelOperator,
   Page,
   ADR,
   Project,
@@ -419,6 +420,7 @@ export const api = {
     project?: string | null;
     cycle?: number | null;
     labels?: string[];
+    labelOperator?: LabelOperator;
     priority?: number | null;
     priorities?: number[];
     type?: string | null;
@@ -456,6 +458,7 @@ export function issuesQuery(filter: {
   project?: string | null;
   cycle?: number | null;
   labels?: string[] | null;
+  labelOperator?: LabelOperator | null;
   priority?: number | null;
   priorities?: number[] | null;
   type?: string | null;
@@ -497,6 +500,7 @@ export function issuesQuery(filter: {
   }
   if (filter.labels?.length) {
     q.set('labels', filter.labels.join(','));
+    if (filter.labelOperator) q.set('labelOperator', filter.labelOperator);
   }
   if (filter.priority != null && filter.priority >= 0) {
     q.set('priority', String(filter.priority));
@@ -556,6 +560,7 @@ export type IssueSearch = {
   estimates?: number[];
   noEstimate?: boolean;
   labels?: string;
+  labelOperator?: LabelOperator;
   dueDate?:
     | 'overdue'
     | 'today'
@@ -657,7 +662,23 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
     }
   }
   if (typeof raw.labels === 'string' && raw.labels) {
-    out.labels = raw.labels;
+    const labels = [
+      ...new Set(
+        raw.labels
+          .split(',')
+          .map((label) => label.trim())
+          .filter(Boolean),
+      ),
+    ];
+    if (labels.length) {
+      out.labels = labels.join(',');
+      const operators: LabelOperator[] = ['includeAny', 'includeAll', 'excludeAny', 'excludeAll'];
+      out.labelOperator = operators.includes(raw.labelOperator as LabelOperator)
+        ? (raw.labelOperator as LabelOperator)
+        : labels.length > 1
+          ? 'includeAll'
+          : 'includeAny';
+    }
   }
   const dueDateFilters = [
     'overdue',
@@ -871,6 +892,7 @@ export function searchToFilter(search: IssueSearch): {
   project?: string;
   cycle?: number;
   labels?: string[];
+  labelOperator?: LabelOperator;
   priority?: number;
   priorities?: number[];
   type?: string;
@@ -906,6 +928,7 @@ export function searchToFilter(search: IssueSearch): {
           .map((n) => n.trim())
           .filter(Boolean)
       : undefined,
+    labelOperator: search.labels ? (search.labelOperator ?? 'includeAll') : undefined,
     priority: search.priorities?.length ? undefined : search.priority,
     ...(search.priorities?.length ? { priorities: search.priorities } : {}),
     type: search.type,

@@ -1389,6 +1389,13 @@
       "none": "期限なし"
     },
     "filterLabels": "ラベルで絞り込む",
+    "labelOperator": "ラベル条件",
+    "labelOperatorValue": {
+      "includeAny": "いずれかを含む",
+      "includeAll": "すべてを含む",
+      "excludeAny": "いずれかを含む場合は除外",
+      "excludeAll": "すべてを含む場合は除外"
+    },
     "active": "適用中のフィルター",
     "remove": "{{label}} フィルターを削除",
     "clear": "フィルターをクリア"

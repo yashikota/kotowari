@@ -594,6 +594,7 @@ export function useIssueFiltersPresenter({
           advancedFilter: undefined,
           advancedFilterGroup: undefined,
           labels: undefined,
+          labelOperator: undefined,
         });
         onFind?.('');
       },
@@ -616,7 +617,16 @@ export function useIssueFiltersPresenter({
             .map((label) => label.trim())
             .filter(Boolean);
           const next = currentLabels.filter((label) => label !== key.slice(6));
-          set({ labels: next.length > 0 ? next.join(',') : undefined });
+          const nextOperator =
+            next.length === 0
+              ? undefined
+              : next.length === 1 && searchRef.current.labelOperator === 'includeAll'
+                ? 'includeAny'
+                : searchRef.current.labelOperator;
+          set({
+            labels: next.length > 0 ? next.join(',') : undefined,
+            labelOperator: nextOperator,
+          });
         } else if (key.startsWith('projectLabel:')) {
           const currentLabels = searchRef.current.projectLabels ?? [];
           const next = currentLabels.filter((label) => label !== key.slice(13));
@@ -668,7 +678,23 @@ export function useIssueFiltersPresenter({
         const next = currentLabels.includes(name)
           ? currentLabels.filter((label) => label !== name)
           : [...currentLabels, name];
-        set({ labels: next.length ? next.join(',') : undefined });
+        const currentOperator =
+          searchRef.current.labelOperator ??
+          (currentLabels.length > 1 ? 'includeAll' : 'includeAny');
+        const nextOperator =
+          next.length === 0
+            ? undefined
+            : next.length > 1 && currentLabels.length < 2 && currentOperator === 'includeAny'
+              ? 'includeAll'
+              : next.length === 1 && currentOperator === 'includeAll'
+                ? 'includeAny'
+                : currentOperator;
+        set({ labels: next.length ? next.join(',') : undefined, labelOperator: nextOperator });
+      },
+      onLabelOperatorChange: (value: string) => {
+        if (['includeAny', 'includeAll', 'excludeAny', 'excludeAll'].includes(value)) {
+          set({ labelOperator: value as NonNullable<IssueSearch['labelOperator']> });
+        }
       },
       onToggleProjectLabel: (name: string) => {
         const current = searchRef.current.projectLabels ?? [];

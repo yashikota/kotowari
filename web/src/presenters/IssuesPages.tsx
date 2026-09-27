@@ -75,6 +75,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     projectLabels: next.projectLabels?.join(',') ?? '',
     addedToCycle: next.addedToCycle?.join(',') ?? '',
     labels: next.labels ?? '',
+    labelOperator: next.labelOperator ?? '',
   });
 }
 

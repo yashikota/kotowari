@@ -305,6 +305,7 @@ export function IssueFilterMenu({
   onProjectStatusChange,
   onProjectPriorityChange,
   onToggleLabel,
+  onLabelOperatorChange,
   onToggleProjectLabel,
   onToggleAddedToCycle,
   onRemoveFilter,
@@ -342,6 +343,7 @@ export function IssueFilterMenu({
   onProjectStatusChange: (value: string) => void;
   onProjectPriorityChange: (value: string) => void;
   onToggleLabel: (name: string) => void;
+  onLabelOperatorChange: (value: string) => void;
   onToggleProjectLabel: (name: string) => void;
   onToggleAddedToCycle: (phase: 'planned' | 'during' | 'after') => void;
   onRemoveFilter: (key: string) => void;
@@ -922,6 +924,22 @@ export function IssueFilterMenu({
       </Menu>
       {chips.length > 0 ? (
         <Group role="group" aria-label={t('filters.active')} gap={4} mt={6}>
+          {selectedLabels.length > 0 ? (
+            <Select
+              aria-label={t('filters.labelOperator')}
+              size="xs"
+              w={160}
+              value={
+                search.labelOperator ?? (selectedLabels.length > 1 ? 'includeAll' : 'includeAny')
+              }
+              data={(['includeAny', 'includeAll', 'excludeAny', 'excludeAll'] as const).map(
+                (value) => ({ value, label: t(`filters.labelOperatorValue.${value}`) }),
+              )}
+              onChange={(value) => {
+                if (value) onLabelOperatorChange(value);
+              }}
+            />
+          ) : null}
           {chips.map((chip) => (
             <Button
               key={chip.key}

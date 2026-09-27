@@ -19,6 +19,12 @@ describe('issuesQuery', () => {
     ).toBe('?status=todo&project=harbor&cycle=2&labels=Bug%2CFeature&priority=1');
   });
 
+  it('encodes the selected label-matching operator', () => {
+    expect(issuesQuery({ labels: ['Bug', 'Feature'], labelOperator: 'excludeAny' })).toBe(
+      '?labels=Bug%2CFeature&labelOperator=excludeAny',
+    );
+  });
+
   it('encodes the personal issue assignment filter', () => {
     expect(issuesQuery({ assignee: 'self' })).toBe('?assignee=self');
     expect(parseIssueSearch({ assignee: 'self' })).toEqual({ assignee: 'self' });
@@ -127,6 +133,26 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ status: '', cycle: 'nope', priority: '' })).toEqual({});
   });
 
+  it('defaults label matching by selection count and accepts only supported operators', () => {
+    expect(parseIssueSearch({ labels: 'Bug' })).toEqual({
+      labels: 'Bug',
+      labelOperator: 'includeAny',
+    });
+    expect(parseIssueSearch({ labels: 'Bug,Feature' })).toEqual({
+      labels: 'Bug,Feature',
+      labelOperator: 'includeAll',
+    });
+    expect(parseIssueSearch({ labels: 'Bug,Feature', labelOperator: 'excludeAny' })).toEqual({
+      labels: 'Bug,Feature',
+      labelOperator: 'excludeAny',
+    });
+    expect(parseIssueSearch({ labels: 'Bug', labelOperator: 'unsupported' })).toEqual({
+      labels: 'Bug',
+      labelOperator: 'includeAny',
+    });
+    expect(parseIssueSearch({ labelOperator: 'excludeAny' })).toEqual({});
+  });
+
   it('accepts only an explicit archived view flag', () => {
     expect(parseIssueSearch({ archived: 'true' })).toEqual({ archived: true });
     expect(parseIssueSearch({ archived: 'yes' })).toEqual({});
@@ -162,6 +188,7 @@ describe('parseIssueSearch', () => {
       cycle: 2,
       priority: 1,
       labels: 'Bug,Feature',
+      labelOperator: 'includeAll',
     });
   });
 
@@ -325,6 +352,7 @@ describe('searchToFilter', () => {
       project: undefined,
       cycle: undefined,
       labels: ['Bug', 'Feature'],
+      labelOperator: 'includeAll',
       priority: 1,
       projectLabels: undefined,
       addedToCycle: undefined,
@@ -346,6 +374,7 @@ describe('searchToFilter', () => {
       project: undefined,
       cycle: undefined,
       labels: undefined,
+      labelOperator: undefined,
       priority: undefined,
       projectLabels: undefined,
       addedToCycle: undefined,

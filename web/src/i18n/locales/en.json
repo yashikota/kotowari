@@ -1393,6 +1393,13 @@
       "none": "No due date"
     },
     "filterLabels": "Filter labels",
+    "labelOperator": "Label matching",
+    "labelOperatorValue": {
+      "includeAny": "include any of",
+      "includeAll": "include all of",
+      "excludeAny": "exclude if any of",
+      "excludeAll": "exclude if all"
+    },
     "active": "Active filters",
     "remove": "Remove {{label}} filter",
     "clear": "Clear filters"

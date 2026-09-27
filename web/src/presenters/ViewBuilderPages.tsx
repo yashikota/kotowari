@@ -70,6 +70,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     projectLabels: next.projectLabels,
     addedToCycle: next.addedToCycle,
     labels: next.labels,
+    labelOperator: next.labelOperator,
   };
 }
 
@@ -155,6 +156,7 @@ export function useViewBuilderPresenter() {
         project: filter.project ?? null,
         cycle: filter.cycle ?? null,
         labels: filter.labels ?? [],
+        labelOperator: filter.labelOperator ?? 'includeAll',
         priority: filter.priority ?? null,
         priorities: filter.priorities ?? [],
         type: filter.type ?? null,

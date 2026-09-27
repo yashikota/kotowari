@@ -119,6 +119,10 @@ export function useViewPagePresenter() {
     advancedFilter: view.advancedFilter ?? false,
     advancedFilterGroup,
     labels: view.labels.length > 0 ? view.labels.join(',') : undefined,
+    labelOperator:
+      view.labels.length > 0
+        ? (view.labelOperator ?? (view.labels.length > 1 ? 'includeAll' : 'includeAny'))
+        : undefined,
   };
 
   function patchFilters(next: IssueSearch) {
@@ -157,6 +161,7 @@ export function useViewPagePresenter() {
         children: [],
       },
       labels: next.labels ? next.labels.split(',').filter(Boolean) : [],
+      labelOperator: next.labels ? (next.labelOperator ?? 'includeAll') : 'includeAny',
     });
   }
 

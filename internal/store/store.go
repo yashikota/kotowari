@@ -326,6 +326,7 @@ type View struct {
 	Project             *string          `json:"project" toml:"project,omitempty"`
 	Cycle               *int             `json:"cycle" toml:"cycle,omitempty"`
 	Labels              []string         `json:"labels" toml:"labels,omitempty"`
+	LabelOperator       string           `json:"labelOperator,omitempty" toml:"label_operator,omitempty"`
 	Priority            *int             `json:"priority" toml:"priority,omitempty"`
 	Priorities          []int            `json:"priorities,omitempty" toml:"priorities,omitempty"`
 	Type                *string          `json:"type" toml:"type,omitempty"`
@@ -359,7 +360,7 @@ type IssueFilterNode struct {
 }
 
 func (v View) Filter() IssueFilter {
-	f := IssueFilter{Labels: v.Labels, Priority: v.Priority, Priorities: v.Priorities, DueDate: v.DueDate, Statuses: v.Statuses, Estimates: v.Estimates, NoEstimate: v.NoEstimate}
+	f := IssueFilter{Labels: v.Labels, LabelOperator: v.LabelOperator, Priority: v.Priority, Priorities: v.Priorities, DueDate: v.DueDate, Statuses: v.Statuses, Estimates: v.Estimates, NoEstimate: v.NoEstimate}
 	if v.Assignee != nil {
 		f.Assignee = *v.Assignee
 	}
@@ -471,6 +472,7 @@ type IssueFilter struct {
 	ProjectSlug     string
 	CycleNumber     int
 	Labels          []string
+	LabelOperator   string
 	Priority        *int
 	Priorities      []int
 	Type            string
@@ -557,6 +559,7 @@ type CreateViewInput struct {
 	Project             *string
 	Cycle               *int
 	Labels              []string
+	LabelOperator       string
 	Priority            *int
 	Priorities          []int
 	Type                *string

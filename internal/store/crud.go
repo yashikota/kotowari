@@ -1267,6 +1267,9 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	if len(f.ProjectLabels) > 32 {
 		return nil, validationf("too many project labels in filter")
 	}
+	if f.LabelOperator != "" && !validIssueLabelOperator(f.LabelOperator) {
+		return nil, validationf("invalid label operator")
+	}
 	for _, name := range f.ProjectLabels {
 		if utf8.RuneCountInString(name) > 100 {
 			return nil, validationf("project label filter is too long")
@@ -1554,12 +1557,26 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 				for _, l := range iss.Labels {
 					have[l.Name] = struct{}{}
 				}
-				ok := true
+				matchesCount := 0
 				for _, name := range f.Labels {
-					if _, found := have[name]; !found {
-						ok = false
-						break
+					if _, found := have[name]; found {
+						matchesCount++
 					}
+				}
+				operator := f.LabelOperator
+				if operator == "" {
+					operator = "includeAll"
+				}
+				ok := false
+				switch operator {
+				case "includeAny":
+					ok = matchesCount > 0
+				case "includeAll":
+					ok = matchesCount == len(f.Labels)
+				case "excludeAny":
+					ok = matchesCount == 0
+				case "excludeAll":
+					ok = matchesCount != len(f.Labels)
 				}
 				if !ok {
 					continue
@@ -1574,6 +1591,22 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 		return nil
 	})
 	return out, err
+}
+
+func validIssueLabelOperator(operator string) bool {
+	switch operator {
+	case "includeAny", "includeAll", "excludeAny", "excludeAll":
+		return true
+	default:
+		return false
+	}
+}
+
+func defaultIssueLabelOperator(labels []string) string {
+	if len(labels) > 1 {
+		return "includeAll"
+	}
+	return "includeAny"
 }
 
 func validateAddedToCycle(values []string) error {
@@ -3028,6 +3061,12 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if err := validateIssueFilterGroup(in.AdvancedFilterGroup); err != nil {
 		return View{}, err
 	}
+	if in.LabelOperator != "" && !validIssueLabelOperator(in.LabelOperator) {
+		return View{}, validationf("invalid label operator")
+	}
+	if in.LabelOperator == "" {
+		in.LabelOperator = defaultIssueLabelOperator(in.Labels)
+	}
 	if !domain.ValidSlug(in.Slug) {
 		return View{}, validationf("invalid slug")
 	}
@@ -3215,7 +3254,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy, Direction: in.Direction,
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-			Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
+			Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, LabelOperator: in.LabelOperator,
 			Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Estimates: in.Estimates, NoEstimate: in.NoEstimate != nil && *in.NoEstimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
@@ -3240,6 +3279,9 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 }
 
 func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
+	if in.LabelOperator != "" && !validIssueLabelOperator(in.LabelOperator) {
+		return View{}, validationf("invalid label operator")
+	}
 	var out View
 	err := s.mutate(func(m *mem) error {
 		i := indexView(m, slug)
@@ -3377,6 +3419,12 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 		}
 		if in.Labels != nil {
 			v.Labels = in.Labels
+			if in.LabelOperator == "" {
+				v.LabelOperator = defaultIssueLabelOperator(in.Labels)
+			}
+		}
+		if in.LabelOperator != "" {
+			v.LabelOperator = in.LabelOperator
 		}
 		if in.ProjectLabels != nil {
 			if len(in.ProjectLabels) > 32 {

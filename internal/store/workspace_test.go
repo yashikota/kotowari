@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -234,27 +235,82 @@ func TestViewFileAndSearch(t *testing.T) {
 	}
 }
 
-func TestLabelFilterRequiresAll(t *testing.T) {
+func TestIssueLabelFilterOperators(t *testing.T) {
 	s := openTest(t)
-	labels, err := s.ListLabels()
-	if err != nil || len(labels) < 2 {
-		t.Fatalf("seeded labels: %v %#v", err, labels)
-	}
-	a := labels[0]
-	b := labels[1]
-	if _, err := s.CreateIssue(CreateIssueInput{Title: "both", LabelIDs: []int64{a.ID, b.ID}}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.CreateIssue(CreateIssueInput{Title: "one", LabelIDs: []int64{a.ID}}); err != nil {
-		t.Fatal(err)
-	}
-	got, err := s.ListIssues(IssueFilter{Labels: []string{a.Name, b.Name}})
+	a, err := s.CreateLabel("Operator A", "#123456")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0].Title != "both" {
-		t.Fatalf("AND labels %#v", got)
+	b, err := s.CreateLabel("Operator B", "#654321")
+	if err != nil {
+		t.Fatal(err)
 	}
+	for _, issue := range []struct {
+		title    string
+		labelIDs []int64
+	}{
+		{title: "both", labelIDs: []int64{a.ID, b.ID}},
+		{title: "a only", labelIDs: []int64{a.ID}},
+		{title: "b only", labelIDs: []int64{b.ID}},
+		{title: "none"},
+	} {
+		if _, err := s.CreateIssue(CreateIssueInput{Title: issue.title, LabelIDs: issue.labelIDs}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tests := []struct {
+		operator string
+		want     []string
+	}{
+		{operator: "includeAny", want: []string{"both", "a only", "b only"}},
+		{operator: "includeAll", want: []string{"both"}},
+		{operator: "excludeAny", want: []string{"none"}},
+		{operator: "excludeAll", want: []string{"a only", "b only", "none"}},
+	}
+	for _, test := range tests {
+		t.Run(test.operator, func(t *testing.T) {
+			got, err := s.ListIssues(IssueFilter{Labels: []string{a.Name, b.Name}, LabelOperator: test.operator})
+			if err != nil {
+				t.Fatal(err)
+			}
+			gotTitles := make([]string, 0, len(got))
+			for _, issue := range got {
+				if issue.Title == "both" || issue.Title == "a only" || issue.Title == "b only" || issue.Title == "none" {
+					gotTitles = append(gotTitles, issue.Title)
+				}
+			}
+			if !reflect.DeepEqual(stringSet(gotTitles), stringSet(test.want)) {
+				t.Fatalf("labels %s got %v, want %v", test.operator, gotTitles, test.want)
+			}
+		})
+	}
+
+	if _, err := s.ListIssues(IssueFilter{Labels: []string{a.Name}, LabelOperator: "unknown"}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid operator error %v", err)
+	}
+	view, err := s.CreateView(CreateViewInput{
+		Name: "Exclude one label", Slug: "exclude-one-label", Labels: []string{a.Name, b.Name}, LabelOperator: "excludeAny",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Filter().LabelOperator != "excludeAny" {
+		t.Fatalf("saved view filter %#v", view.Filter())
+	}
+}
+
+func stringSet(values []string) []string {
+	set := map[string]struct{}{}
+	for _, value := range values {
+		set[value] = struct{}{}
+	}
+	result := make([]string, 0, len(set))
+	for value := range set {
+		result = append(result, value)
+	}
+	sort.Strings(result)
+	return result
 }
 
 func TestUnknownParentOnCreate(t *testing.T) {
