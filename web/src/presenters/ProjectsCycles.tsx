@@ -1707,7 +1707,7 @@ export function useCycleDetailPagePresenter() {
   const completionPercent = scope ? Math.round((done / scope) * 100) : 0;
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('status');
   const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
-  const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
+  const [orderBy, setOrderBy] = useState<IssueOrderBy>('priority');
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
   const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');

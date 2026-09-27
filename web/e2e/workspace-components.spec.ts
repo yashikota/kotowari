@@ -2841,6 +2841,9 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   }
 
   await page.goto(`/cycles/${cycle.number}`);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByLabel('Ordering', { exact: true })).toHaveValue('priority');
+  await page.getByRole('button', { name: 'Display options' }).click();
   const progress = page.getByRole('region', { name: 'Progress', exact: true });
   const resources = page.getByRole('region', { name: 'Documents and links', exact: true });
   await expect(resources).toBeVisible();
