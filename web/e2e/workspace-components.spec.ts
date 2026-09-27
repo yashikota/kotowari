@@ -2832,6 +2832,7 @@ test('cycle details summarize scope, started, and completed work', async ({ page
         title: `Cycle detail progress ${cycle.number} ${index}`,
         status,
         assignee: index === 0 ? 'self' : index === 1 ? 'agent' : undefined,
+        priority: index + 1,
         cycleId: cycle.id,
       },
     });
@@ -2861,12 +2862,40 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   const assignees = progress.getByRole('region', { name: 'Assignees', exact: true });
   await expect(assignees).toBeVisible();
   await expect(
-    assignees.getByRole('img', { name: 'Cycle issue distribution by assignee' }),
+    assignees.getByRole('img', { name: 'Cycle issue distribution by Assignees' }),
   ).toBeVisible();
   await expect(assignees.getByText('You', { exact: true })).toBeVisible();
   await expect(assignees.getByText('Agent', { exact: true })).toBeVisible();
   await expect(assignees.getByText('Unassigned', { exact: true })).toBeVisible();
   await expect(assignees.getByText('33% · 1/3', { exact: true })).toHaveCount(3);
+  const breakdownSelector = progress.getByRole('combobox', { name: 'Group cycle progress by' });
+  await breakdownSelector.click();
+  await page.getByRole('option', { name: 'Priority', exact: true }).click();
+  const priorities = progress.getByRole('region', { name: 'Priority', exact: true });
+  await expect(priorities.getByText('Urgent', { exact: true })).toBeVisible();
+  await expect(priorities.getByText('High', { exact: true })).toBeVisible();
+  await expect(priorities.getByText('Medium', { exact: true })).toBeVisible();
+  await expect(page.getByText('3 issues', { exact: true })).toBeVisible();
+  await priorities.getByRole('button', { name: 'Filter cycle issues to Priority: Urgent' }).click();
+  await expect(page.getByText('1 issue', { exact: true })).toBeVisible();
+  await expect(priorities.getByText('Clear filter', { exact: true })).toBeVisible();
+  await priorities.getByRole('button', { name: 'Filter cycle issues to Priority: Urgent' }).click();
+  await expect(page.getByText('3 issues', { exact: true })).toBeVisible();
+  await breakdownSelector.click();
+  await page.getByRole('option', { name: 'Labels', exact: true }).click();
+  const labels = progress.getByRole('region', { name: 'Labels', exact: true });
+  await expect(labels.getByText('No labels used', { exact: true })).toBeVisible();
+  await breakdownSelector.click();
+  await page.getByRole('option', { name: 'Projects', exact: true }).click();
+  const projects = progress.getByRole('region', { name: 'Projects', exact: true });
+  await expect(projects.getByText('No project', { exact: true })).toBeVisible();
+  await projects
+    .getByRole('button', { name: 'Filter cycle issues to Projects: No project' })
+    .click();
+  await expect(projects.getByText('Clear filter', { exact: true })).toBeVisible();
+  await projects
+    .getByRole('button', { name: 'Filter cycle issues to Projects: No project' })
+    .click();
   await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toHaveAttribute(
     'aria-valuetext',
     '67%',

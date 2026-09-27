@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
-  cycleAssigneeDistribution,
   cycleProgressPointIndexAtRatio,
+  cycleProgressBreakdown,
+  matchesCycleProgressBreakdown,
   cycleProgressTimeline,
 } from './cycle-progress.ts';
 import type { Activity, Cycle, Issue } from './types.ts';
@@ -144,23 +145,92 @@ describe('cycleProgressPointIndexAtRatio', () => {
   });
 });
 
-describe('cycleAssigneeDistribution', () => {
+describe('cycleProgressBreakdown', () => {
   it('groups the single-user assignee states and reports each scope share', () => {
     expect(
-      cycleAssigneeDistribution([
-        { assignee: 'self' },
-        { assignee: 'self' },
-        { assignee: 'agent' },
-        { assignee: undefined },
-      ]),
+      cycleProgressBreakdown(
+        [
+          { assignee: 'self', labels: [], priority: 0, projectId: null, projectSlug: null },
+          { assignee: 'self', labels: [], priority: 0, projectId: null, projectSlug: null },
+          { assignee: 'agent', labels: [], priority: 0, projectId: null, projectSlug: null },
+          { assignee: undefined, labels: [], priority: 0, projectId: null, projectSlug: null },
+        ],
+        'assignee',
+      ),
     ).toEqual([
-      { assignee: 'self', count: 2, share: 50 },
-      { assignee: 'agent', count: 1, share: 25 },
-      { assignee: 'unassigned', count: 1, share: 25 },
+      { key: 'self', value: 'self', count: 2, share: 50 },
+      { key: 'agent', value: 'agent', count: 1, share: 25 },
+      { key: 'unassigned', value: 'unassigned', count: 1, share: 25 },
     ]);
   });
 
   it('has no segments when the cycle has no issues', () => {
-    expect(cycleAssigneeDistribution([])).toEqual([]);
+    expect(cycleProgressBreakdown([], 'assignee')).toEqual([]);
+  });
+
+  it('leaves the label breakdown empty when no issue has labels', () => {
+    expect(
+      cycleProgressBreakdown(
+        [{ assignee: 'self', labels: [], priority: 0, projectId: null, projectSlug: null }],
+        'label',
+      ),
+    ).toEqual([]);
+  });
+
+  it('groups priority and project values with stable priority ordering', () => {
+    const issues = [
+      { assignee: undefined, labels: [], priority: 0, projectId: 2, projectSlug: 'harbor' },
+      { assignee: undefined, labels: [], priority: 3, projectId: 1, projectSlug: 'kotowari' },
+      { assignee: undefined, labels: [], priority: 1, projectId: null, projectSlug: null },
+    ];
+    const priorities = cycleProgressBreakdown(issues, 'priority');
+    expect(priorities.map(({ key }) => key)).toEqual(['priority:1', 'priority:3', 'priority:0']);
+    priorities.forEach((item) => expect(item.share).toBeCloseTo(100 / 3));
+    expect(
+      cycleProgressBreakdown(issues, 'project', [
+        { id: 1, slug: 'kotowari', name: 'Kotowari' },
+        { id: 2, slug: 'harbor', name: 'Harbor' },
+      ]).map(({ key, value }) => [key, value]),
+    ).toEqual([
+      ['project:2', 'Harbor'],
+      ['project:1', 'Kotowari'],
+      ['no-project', ''],
+    ]);
+  });
+
+  it('counts each label membership and gives unlabeled issues a distinct group', () => {
+    const issue = {
+      assignee: undefined,
+      priority: 0,
+      projectId: null,
+      projectSlug: null,
+      labels: [
+        { id: 2, name: 'Feature', color: '#aabbcc' },
+        { id: 1, name: 'Bug', color: '#112233' },
+      ],
+    };
+    const labels = cycleProgressBreakdown([issue, { ...issue, labels: [] }], 'label');
+    expect(labels.map(({ key, value, count, color }) => [key, value, count, color])).toEqual([
+      ['label:1', 'Bug', 1, '#112233'],
+      ['label:2', 'Feature', 1, '#aabbcc'],
+      ['no-labels', '', 1, undefined],
+    ]);
+    labels.forEach((item) => expect(item.share).toBeCloseTo(100 / 3));
+  });
+
+  it('matches an issue to the selected breakdown group', () => {
+    const issue = {
+      assignee: 'agent' as const,
+      priority: 2,
+      projectId: 7,
+      projectSlug: 'harbor',
+      labels: [{ id: 3, name: 'Bug', color: 'red' }],
+    };
+    expect(matchesCycleProgressBreakdown(issue, 'assignee', 'agent')).toBe(true);
+    expect(matchesCycleProgressBreakdown(issue, 'priority', 'priority:2')).toBe(true);
+    expect(matchesCycleProgressBreakdown(issue, 'label', 'label:3')).toBe(true);
+    expect(matchesCycleProgressBreakdown(issue, 'project', 'project:7')).toBe(true);
+    expect(matchesCycleProgressBreakdown(issue, 'project', 'project:harbor')).toBe(true);
+    expect(matchesCycleProgressBreakdown(issue, 'project', 'no-project')).toBe(false);
   });
 });

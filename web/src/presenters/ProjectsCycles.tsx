@@ -14,7 +14,9 @@ import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
 import {
-  cycleAssigneeDistribution,
+  cycleProgressBreakdown,
+  type CycleProgressBreakdownBy,
+  matchesCycleProgressBreakdown,
   cycleProgressPointIndexAtRatio,
   cycleProgressTimeline,
 } from '../cycle-progress.ts';
@@ -1681,10 +1683,12 @@ export function useCycleDetailPagePresenter() {
   const [cycle, setCycle] = useState(data.cycle);
   const [cycleDetailsOpen, setCycleDetailsOpen] = useState(true);
   const [cycleProgressOpen, setCycleProgressOpen] = useState(readCycleProgressOpen);
+  const [breakdownBy, setBreakdownBy] = useState<CycleProgressBreakdownBy>('assignee');
+  const [activeBreakdownFilterKey, setActiveBreakdownFilterKey] = useState<string | null>(null);
   const [activeProgressIndex, setActiveProgressIndex] = useState<number | null>(null);
   const googleCalendarURL = cycleGoogleCalendarURL(cycle, cycleURL(cycle.number));
   const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
-  const assigneeDistribution = cycleAssigneeDistribution(data.cycleIssues);
+  const breakdownItems = cycleProgressBreakdown(data.cycleIssues, breakdownBy, data.projects);
   const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
   const currentProgressIndex = progressTimeline.reduce(
     (index, point, pointIndex) => (Date.parse(point.at) <= asOf ? pointIndex : index),
@@ -1784,6 +1788,10 @@ export function useCycleDetailPagePresenter() {
     includeNestedIssueMatches(matchingIssues, data.issues, nestedSubIssues),
     completedIssues,
     data.cycles,
+  ).filter(
+    (issue) =>
+      activeBreakdownFilterKey == null ||
+      matchesCycleProgressBreakdown(issue, breakdownBy, activeBreakdownFilterKey),
   );
   const selectedId =
     selected && issues.some((issue) => issue.identifier === selected) ? selected : null;
@@ -1932,7 +1940,9 @@ export function useCycleDetailPagePresenter() {
     resources,
     progressTimeline,
     activeProgressPoint,
-    assigneeDistribution,
+    breakdownBy,
+    breakdownItems,
+    activeBreakdownFilterKey,
     started,
     startedPercent,
     done,
@@ -1978,6 +1988,12 @@ export function useCycleDetailPagePresenter() {
           writeCycleProgressOpen(next);
           return next;
         }),
+      onCycleBreakdownChange: (by: CycleProgressBreakdownBy) => {
+        setBreakdownBy(by);
+        setActiveBreakdownFilterKey(null);
+      },
+      onCycleBreakdownFilterToggle: (key: string) =>
+        setActiveBreakdownFilterKey((current) => (current === key ? null : key)),
       onProgressPointerMove: (ratio: number) =>
         setActiveProgressIndex(cycleProgressPointIndexAtRatio(progressTimeline, ratio)),
       onProgressPointerLeave: () => setActiveProgressIndex(null),

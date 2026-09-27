@@ -1,4 +1,4 @@
-import type { Activity, Cycle, Issue, IssueStatus } from './types.ts';
+import type { Activity, Cycle, Issue, IssueStatus, Project } from './types.ts';
 
 export type CycleProgressPoint = {
   at: string;
@@ -9,11 +9,20 @@ export type CycleProgressPoint = {
 
 type CycleProgressIssue = Pick<Issue, 'id' | 'status' | 'createdAt' | 'cycleAddedAt'>;
 
-export type CycleAssigneeKey = 'self' | 'agent' | 'unassigned';
-export type CycleAssigneeShare = {
-  assignee: CycleAssigneeKey;
+export type CycleProgressBreakdownBy = 'assignee' | 'label' | 'priority' | 'project';
+export type CycleProgressBreakdownItem = {
+  key: string;
+  value: string;
   count: number;
   share: number;
+  color?: string;
+};
+
+const breakdownOrder: Partial<Record<CycleProgressBreakdownBy, Record<string, number>>> = {
+  assignee: { self: 0, agent: 1, unassigned: 2 },
+  priority: { 'priority:1': 0, 'priority:2': 1, 'priority:3': 2, 'priority:4': 3, 'priority:0': 4 },
+  label: { 'no-labels': Number.MAX_SAFE_INTEGER },
+  project: { 'no-project': Number.MAX_SAFE_INTEGER },
 };
 
 export function cycleProgressPointIndexAtRatio(
@@ -39,17 +48,67 @@ export function cycleProgressPointIndexAtRatio(
   return Number.isFinite(selectedDistance) ? selectedIndex : null;
 }
 
-export function cycleAssigneeDistribution(issues: Pick<Issue, 'assignee'>[]): CycleAssigneeShare[] {
+export function cycleProgressBreakdown(
+  issues: Pick<Issue, 'assignee' | 'labels' | 'priority' | 'projectId' | 'projectSlug'>[],
+  by: CycleProgressBreakdownBy,
+  projects: Pick<Project, 'id' | 'slug' | 'name'>[] = [],
+): CycleProgressBreakdownItem[] {
   if (issues.length === 0) return [];
-  const counts: Record<CycleAssigneeKey, number> = { self: 0, agent: 0, unassigned: 0 };
-  for (const issue of issues) counts[issue.assignee ?? 'unassigned']++;
-  return (Object.keys(counts) as CycleAssigneeKey[])
-    .filter((assignee) => counts[assignee] > 0)
-    .map((assignee) => ({
-      assignee,
-      count: counts[assignee],
-      share: (counts[assignee] / issues.length) * 100,
-    }));
+  if (by === 'label' && issues.every((issue) => issue.labels.length === 0)) return [];
+  const entries = new Map<string, Omit<CycleProgressBreakdownItem, 'share'>>();
+  const projectById = new Map(projects.map((project) => [project.id, project]));
+  const projectBySlug = new Map(projects.map((project) => [project.slug, project]));
+  const add = (key: string, value: string, color?: string) => {
+    const entry = entries.get(key);
+    if (entry) entry.count++;
+    else entries.set(key, { key, value, count: 1, ...(color ? { color } : {}) });
+  };
+
+  for (const issue of issues) {
+    if (by === 'assignee') {
+      const assignee = issue.assignee ?? 'unassigned';
+      add(assignee, assignee);
+    } else if (by === 'priority') {
+      add(`priority:${issue.priority}`, String(issue.priority));
+    } else if (by === 'project') {
+      const project =
+        (issue.projectId == null ? undefined : projectById.get(issue.projectId)) ??
+        (issue.projectSlug == null ? undefined : projectBySlug.get(issue.projectSlug));
+      if (project) add(`project:${project.id}`, project.name);
+      else if (issue.projectId != null || issue.projectSlug) {
+        const slug = issue.projectSlug ?? String(issue.projectId);
+        add(`project:${slug}`, slug.replaceAll('-', ' '));
+      } else add('no-project', '');
+    } else if (issue.labels.length > 0) {
+      for (const label of issue.labels) add(`label:${label.id}`, label.name, label.color);
+    } else add('no-labels', '');
+  }
+
+  const total = [...entries.values()].reduce((count, item) => count + item.count, 0);
+  const order = breakdownOrder[by];
+  return [...entries.values()]
+    .sort(
+      (left, right) =>
+        (order?.[left.key] ?? 0) - (order?.[right.key] ?? 0) ||
+        left.value.localeCompare(right.value),
+    )
+    .map((item) => ({ ...item, share: (item.count / total) * 100 }));
+}
+
+export function matchesCycleProgressBreakdown(
+  issue: Pick<Issue, 'assignee' | 'labels' | 'priority' | 'projectId' | 'projectSlug'>,
+  by: CycleProgressBreakdownBy,
+  key: string,
+): boolean {
+  if (by === 'assignee') return (issue.assignee ?? 'unassigned') === key;
+  if (by === 'priority') return `priority:${issue.priority}` === key;
+  if (by === 'label') {
+    return key === 'no-labels'
+      ? issue.labels.length === 0
+      : issue.labels.some((label) => `label:${label.id}` === key);
+  }
+  if (key === 'no-project') return issue.projectId == null && !issue.projectSlug;
+  return key === `project:${issue.projectId}` || key === `project:${issue.projectSlug}`;
 }
 
 const completedStatuses = new Set<IssueStatus>(['done', 'canceled']);

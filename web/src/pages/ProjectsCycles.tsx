@@ -32,7 +32,7 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { CycleListItem } from '../components/CycleListItem.tsx';
 import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { CycleProgressChart } from '../components/CycleProgressChart.tsx';
-import { CycleAssigneeBreakdown } from '../components/CycleAssigneeBreakdown.tsx';
+import { CycleProgressBreakdown } from '../components/CycleProgressBreakdown.tsx';
 import { ProjectListView } from '../components/ProjectListView.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
@@ -1008,7 +1008,9 @@ export function CycleDetailPageView({
         resources,
         progressTimeline,
         activeProgressPoint,
-        assigneeDistribution,
+        breakdownBy,
+        breakdownItems,
+        activeBreakdownFilterKey,
         started,
         startedPercent,
         done,
@@ -1349,7 +1351,13 @@ export function CycleDetailPageView({
                         onBlur={handlers.onProgressBlur}
                         onKeyDown={handlers.onProgressKeyDown}
                       />
-                      <CycleAssigneeBreakdown items={assigneeDistribution} />
+                      <CycleProgressBreakdown
+                        by={breakdownBy}
+                        items={breakdownItems}
+                        activeKey={activeBreakdownFilterKey}
+                        onChange={handlers.onCycleBreakdownChange}
+                        onFilterToggle={handlers.onCycleBreakdownFilterToggle}
+                      />
                     </CycleProgressSummary>
                     {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
                   </Stack>
