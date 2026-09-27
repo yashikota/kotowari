@@ -38,6 +38,7 @@ type issueFM struct {
 	Reactions      []string            `toml:"reactions,omitempty"`
 	Attachments    []CommentAttachment `toml:"attachments,omitempty"`
 	RecurringSlug  *string             `toml:"recurring_slug,omitempty"`
+	TemplateSlug   string              `toml:"template_slug,omitempty"`
 	Comments       []commentFM         `toml:"comments,omitempty"`
 }
 
@@ -153,6 +154,7 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		Reactions:        fm.Reactions,
 		Attachments:      fm.Attachments,
 		RecurringSlug:    fm.RecurringSlug,
+		TemplateSlug:     fm.TemplateSlug,
 		IsFavorite:       fm.Favorite,
 		Labels:           []Label{},
 	}
@@ -306,6 +308,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		Reactions:      iss.Reactions,
 		Attachments:    iss.Attachments,
 		RecurringSlug:  iss.RecurringSlug,
+		TemplateSlug:   iss.TemplateSlug,
 		Labels:         make([]string, 0, len(iss.Labels)),
 	}
 	if iss.ProjectID != nil {

@@ -36,6 +36,12 @@ export type IssueLinkSource = {
   count: number;
 };
 
+export type IssueTemplateFilterOption = {
+  id: string;
+  name: string;
+  count: number;
+};
+
 export type IssueRelation = {
   id: number;
   kind: 'related' | 'blocks' | 'blockedBy' | 'duplicateOf' | 'duplicateBy';
@@ -64,6 +70,7 @@ export type Issue = {
   parentId: number | null;
   parentIdentifier?: string | null;
   recurringSlug?: string | null;
+  templateSlug?: string;
   depth: number;
   dueDate: string | null;
   reminderAt: string | null;
@@ -291,6 +298,7 @@ export type View = {
   dueDate?: string;
   relation?: string | null;
   linkSources?: string[];
+  templateSlugs?: string[];
   content?: string | null;
   milestoneName?: string | null;
   dateField?: string;

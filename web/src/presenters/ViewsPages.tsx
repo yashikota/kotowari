@@ -36,6 +36,7 @@ export function useViewPagePresenter() {
     cycles: Cycle[];
     labels: Label[];
     linkSources: import('../types.ts').IssueLinkSource[];
+    templateOptions: import('../types.ts').IssueTemplateFilterOption[];
   };
   const locationState = useRouterState({ select: (state) => state.location.state });
   const router = useRouter();
@@ -102,6 +103,7 @@ export function useViewPagePresenter() {
     dueDate: view.dueDate === '' ? undefined : (view.dueDate as IssueSearch['dueDate']),
     relation: view.relation === '' ? undefined : (view.relation as IssueSearch['relation']),
     linkSources: view.linkSources ?? undefined,
+    templateSlugs: view.templateSlugs ?? undefined,
     content: view.content ?? undefined,
     milestoneName: view.milestoneName ?? undefined,
     dateField: view.dateField as IssueSearch['dateField'],
@@ -131,6 +133,7 @@ export function useViewPagePresenter() {
       dueDate: next.dueDate ?? '',
       relation: next.relation ?? '',
       linkSources: next.linkSources ?? [],
+      templateSlugs: next.templateSlugs ?? [],
       content: next.content ?? '',
       milestoneName: next.milestoneName ?? '',
       dateField: next.dateField ?? '',

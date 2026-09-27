@@ -37,6 +37,51 @@ func TestIssueTemplateAPI(t *testing.T) {
 		t.Fatalf("created template %#v", template)
 	}
 
+	createdFromTemplate := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Created from template","templateSlug":"release-checklist"}`)
+	if createdFromTemplate.Code != http.StatusCreated {
+		t.Fatalf("create issue from template %d %s", createdFromTemplate.Code, createdFromTemplate.Body.String())
+	}
+	var templatedIssue struct {
+		Identifier   string `json:"identifier"`
+		TemplateSlug string `json:"templateSlug"`
+	}
+	if err := json.Unmarshal(createdFromTemplate.Body.Bytes(), &templatedIssue); err != nil {
+		t.Fatal(err)
+	}
+	if templatedIssue.TemplateSlug != template.Slug {
+		t.Fatalf("issue template provenance = %q, want %q", templatedIssue.TemplateSlug, template.Slug)
+	}
+	if unknown := doJSON(t, s, http.MethodPost, "/api/issues", `{"title":"Unknown template","templateSlug":"missing"}`); unknown.Code != http.StatusBadRequest {
+		t.Fatalf("unknown template issue create %d %s", unknown.Code, unknown.Body.String())
+	}
+	templateFiltered := doJSON(t, s, http.MethodGet, "/api/issues?templateSlugs=release-checklist", "")
+	var filtered []struct {
+		Identifier string `json:"identifier"`
+	}
+	if templateFiltered.Code != http.StatusOK || json.Unmarshal(templateFiltered.Body.Bytes(), &filtered) != nil || len(filtered) != 1 || filtered[0].Identifier != templatedIssue.Identifier {
+		t.Fatalf("template-filtered issues %d %s", templateFiltered.Code, templateFiltered.Body.String())
+	}
+	noTemplateFiltered := doJSON(t, s, http.MethodGet, "/api/issues?templateSlugs=no-template", "")
+	if noTemplateFiltered.Code != http.StatusOK || json.Unmarshal(noTemplateFiltered.Body.Bytes(), &filtered) != nil || len(filtered) != 1 || filtered[0].Identifier != issue.Identifier {
+		t.Fatalf("no-template-filtered issues %d %s", noTemplateFiltered.Code, noTemplateFiltered.Body.String())
+	}
+	optionsResponse := doJSON(t, s, http.MethodGet, "/api/issue-template-options", "")
+	var options []struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Count int    `json:"count"`
+	}
+	if optionsResponse.Code != http.StatusOK || json.Unmarshal(optionsResponse.Body.Bytes(), &options) != nil {
+		t.Fatalf("template filter options %d %s", optionsResponse.Code, optionsResponse.Body.String())
+	}
+	counts := map[string]int{}
+	for _, option := range options {
+		counts[option.ID] = option.Count
+	}
+	if counts["no-template"] != 1 || counts[template.Slug] != 1 {
+		t.Fatalf("template filter options counts = %#v", options)
+	}
+
 	listed := doJSON(t, s, http.MethodGet, "/api/issue-templates", "")
 	var templates []struct {
 		Slug string `json:"slug"`

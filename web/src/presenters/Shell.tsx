@@ -639,6 +639,7 @@ export function useShellPresenter() {
       dueDate: issueRecurringOpen ? undefined : issueDueDate || undefined,
       parentId: issueParentId,
       links: issueExternalLinks,
+      templateSlug: issueTemplateSlug || undefined,
       recurring: issueRecurringOpen
         ? {
             name: title,

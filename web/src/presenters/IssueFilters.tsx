@@ -11,7 +11,13 @@ import type {
   IssueLayout,
   IssueOrderBy,
 } from '../issue-list.ts';
-import type { Cycle, IssueLinkSource, Label, Project } from '../types.ts';
+import type {
+  Cycle,
+  IssueLinkSource,
+  IssueTemplateFilterOption,
+  Label,
+  Project,
+} from '../types.ts';
 import type { IssueFilterChoices, IssueFilterGroup } from '../issue-advanced-filter.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
@@ -65,6 +71,7 @@ type Props = {
   cycles: Cycle[];
   labels: Label[];
   linkSources?: IssueLinkSource[];
+  templateOptions?: IssueTemplateFilterOption[];
   onChange: (next: IssueSearch) => void;
   advancedFilter?: boolean;
   advancedFilterGroup?: IssueFilterGroup;
@@ -102,6 +109,7 @@ export function useIssueFiltersPresenter({
   cycles,
   labels,
   linkSources = [],
+  templateOptions = [],
   onChange,
   advancedFilter,
   advancedFilterGroup,
@@ -163,6 +171,7 @@ export function useIssueFiltersPresenter({
     .filter(Boolean);
   const selectedProjectLabels = search.projectLabels ?? [];
   const selectedLinkSources = search.linkSources ?? [];
+  const selectedTemplateSlugs = search.templateSlugs ?? [];
   const selectedAddedToCycle = search.addedToCycle ?? [];
   const advancedFilterChoices: IssueFilterChoices = {
     status: workflowStatuses.map((status) => ({
@@ -296,6 +305,10 @@ export function useIssueFiltersPresenter({
       key: `linkSource:${source}`,
       label: `${t('filters.categories.links')} · ${source === 'no-source' ? t('filters.noLinkSource') : (linkSources.find((item) => item.id === source)?.name ?? source)}`,
     })),
+    ...selectedTemplateSlugs.map((slug) => ({
+      key: `template:${slug}`,
+      label: `${t('filters.categories.template')} · ${slug === 'no-template' ? t('filters.noIssueTemplate') : (templateOptions.find((item) => item.id === slug)?.name ?? slug)}`,
+    })),
     ...(search.content
       ? [{ key: 'content', label: `${t('filters.content')} · ${search.content.trim()}` }]
       : []),
@@ -355,6 +368,7 @@ export function useIssueFiltersPresenter({
     cycles,
     labels,
     linkSources,
+    templateOptions,
     onChange,
     onAdvancedFilterToggle,
     onAdvancedFilterChange,
@@ -383,6 +397,7 @@ export function useIssueFiltersPresenter({
     findRef,
     selectedLabels,
     selectedLinkSources,
+    selectedTemplateSlugs,
     selectedProjectLabels,
     selectedAddedToCycle,
     filterOpened,
@@ -423,6 +438,13 @@ export function useIssueFiltersPresenter({
           ? current.filter((source) => source !== value)
           : [...current, value];
         set({ linkSources: next.length > 0 ? next : undefined });
+      },
+      onToggleTemplateSlug: (value: string) => {
+        const current = searchRef.current.templateSlugs ?? [];
+        const next = current.includes(value)
+          ? current.filter((slug) => slug !== value)
+          : [...current, value];
+        set({ templateSlugs: next.length > 0 ? next : undefined });
       },
       onContentChange: (value: string) => set({ content: value.trim() ? value : undefined }),
       onMilestoneNameChange: (value: string) =>
@@ -493,6 +515,7 @@ export function useIssueFiltersPresenter({
           dueDate: undefined,
           relation: undefined,
           linkSources: undefined,
+          templateSlugs: undefined,
           content: undefined,
           milestoneName: undefined,
           dateField: undefined,
@@ -512,6 +535,12 @@ export function useIssueFiltersPresenter({
           const current = searchRef.current.linkSources ?? [];
           const next = current.filter((source) => source !== key.slice('linkSource:'.length));
           set({ linkSources: next.length > 0 ? next : undefined });
+          return;
+        }
+        if (key.startsWith('template:')) {
+          const current = searchRef.current.templateSlugs ?? [];
+          const next = current.filter((slug) => slug !== key.slice('template:'.length));
+          set({ templateSlugs: next.length > 0 ? next : undefined });
           return;
         }
         if (key.startsWith('label:')) {

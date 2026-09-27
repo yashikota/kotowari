@@ -1636,6 +1636,8 @@ export function useCycleDetailPagePresenter() {
     projects: Project[];
     cycles: Cycle[];
     labels: Label[];
+    linkSources: import('../types.ts').IssueLinkSource[];
+    templateOptions: import('../types.ts').IssueTemplateFilterOption[];
   };
   const router = useRouter();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();

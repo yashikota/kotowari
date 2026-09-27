@@ -126,6 +126,7 @@ export function ViewBuilderPageView({
             cycles={model.data.cycles}
             labels={model.data.labels}
             linkSources={model.data.linkSources}
+            templateOptions={model.data.templateOptions}
             onChange={model.handlers.onSearchChange}
             groupBy={model.groupBy}
             onGroupBy={model.handlers.onGroupByChange}

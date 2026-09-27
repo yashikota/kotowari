@@ -1061,6 +1061,8 @@ export function CycleDetailPageView({
                   projects={data.projects}
                   cycles={data.cycles}
                   labels={data.labels}
+                  linkSources={data.linkSources}
+                  templateOptions={data.templateOptions}
                   onChange={handlers.onFilterChange}
                   groupBy={groupBy}
                   onGroupBy={handlers.onGroupBy}

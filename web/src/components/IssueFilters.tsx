@@ -91,6 +91,8 @@ export function IssueFiltersView({
               linkSources={model.linkSources}
               selectedLabels={selectedLabels}
               selectedLinkSources={model.selectedLinkSources}
+              templateOptions={model.templateOptions}
+              selectedTemplateSlugs={model.selectedTemplateSlugs}
               selectedProjectLabels={selectedProjectLabels}
               selectedAddedToCycle={selectedAddedToCycle}
               opened={filterOpened}
@@ -106,6 +108,7 @@ export function IssueFiltersView({
               onDueDateChange={handlers.onDueDateChange}
               onRelationChange={handlers.onRelationChange}
               onToggleLinkSource={handlers.onToggleLinkSource}
+              onToggleTemplateSlug={handlers.onToggleTemplateSlug}
               onContentChange={handlers.onContentChange}
               onMilestoneNameChange={handlers.onMilestoneNameChange}
               onDateFieldChange={handlers.onDateFieldChange}

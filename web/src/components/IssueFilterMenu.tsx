@@ -36,7 +36,13 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { IssueSearch } from '../api.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
-import type { Cycle, IssueLinkSource, Label, Project } from '../types.ts';
+import type {
+  Cycle,
+  IssueLinkSource,
+  IssueTemplateFilterOption,
+  Label,
+  Project,
+} from '../types.ts';
 import { LabelChip } from '../mantine-ui.tsx';
 import type { FilterChip } from '../presenters/IssueFilters.tsx';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
@@ -51,6 +57,7 @@ const FILTER_CATEGORIES = [
   { id: 'labels', group: 'issue', chips: ['label:'] },
   { id: 'relations', group: 'issue', chips: ['relation'] },
   { id: 'links', group: 'issue', chips: ['linkSource:'] },
+  { id: 'template', group: 'issue', chips: ['template:'] },
   { id: 'dates', group: 'issue', chips: ['date'] },
   { id: 'project', group: 'planning', chips: ['project'] },
   {
@@ -74,6 +81,7 @@ const FILTER_CATEGORY_ICONS = {
   labels: IconTag,
   relations: IconLink,
   links: IconLink,
+  template: IconFileText,
   dates: IconCalendar,
   project: IconFolder,
   projectProperties: IconFolderCog,
@@ -270,8 +278,10 @@ export function IssueFilterMenu({
   cycles,
   labels,
   linkSources,
+  templateOptions,
   selectedLabels,
   selectedLinkSources,
+  selectedTemplateSlugs,
   selectedProjectLabels,
   selectedAddedToCycle,
   opened,
@@ -287,6 +297,7 @@ export function IssueFilterMenu({
   onDueDateChange,
   onRelationChange,
   onToggleLinkSource,
+  onToggleTemplateSlug,
   onContentChange,
   onMilestoneNameChange,
   onDateFieldChange,
@@ -304,8 +315,10 @@ export function IssueFilterMenu({
   cycles: Cycle[];
   labels: Label[];
   linkSources: IssueLinkSource[];
+  templateOptions: IssueTemplateFilterOption[];
   selectedLabels: string[];
   selectedLinkSources: string[];
+  selectedTemplateSlugs: string[];
   selectedProjectLabels: string[];
   selectedAddedToCycle: string[];
   opened: boolean;
@@ -321,6 +334,7 @@ export function IssueFilterMenu({
   onDueDateChange: (value: string) => void;
   onRelationChange: (value: string) => void;
   onToggleLinkSource: (value: string) => void;
+  onToggleTemplateSlug: (value: string) => void;
   onContentChange: (value: string) => void;
   onMilestoneNameChange: (value: string) => void;
   onDateFieldChange: (value: string) => void;
@@ -501,6 +515,22 @@ export function IssueFilterMenu({
               }),
             }))}
             onChange={onToggleLinkSource}
+          />
+        );
+      case 'template':
+        return (
+          <FilterOptionList
+            label={t('filters.filterTemplate')}
+            value={null}
+            selectedValues={selectedTemplateSlugs}
+            options={templateOptions.map((option) => ({
+              value: option.id,
+              label: t('filters.templateOptionCount', {
+                name: option.id === 'no-template' ? t('filters.noIssueTemplate') : option.name,
+                count: option.count,
+              }),
+            }))}
+            onChange={onToggleTemplateSlug}
           />
         );
       case 'dates':

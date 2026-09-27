@@ -905,6 +905,85 @@ test('links filter selects a source and persists on a saved view', async ({ page
   );
 });
 
+test('template filter distinguishes template-created issues and saves its selection', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const sourceResponse = await request.post('/api/issues', {
+    data: { title: 'Template source ' + stamp, body: '## Release checklist' },
+  });
+  expect(sourceResponse.ok()).toBeTruthy();
+  const source = (await sourceResponse.json()) as { identifier: string };
+  const templateResponse = await request.post('/api/issues/' + source.identifier + '/templates', {
+    data: { name: 'Release checklist ' + stamp },
+  });
+  expect(templateResponse.ok()).toBeTruthy();
+  const template = (await templateResponse.json()) as { slug: string; name: string };
+  const templatedTitle = 'From template ' + stamp;
+  const templatedResponse = await request.post('/api/issues', {
+    data: { title: templatedTitle, templateSlug: template.slug },
+  });
+  const noTemplateTitle = 'Without template ' + stamp;
+  const noTemplateResponse = await request.post('/api/issues', {
+    data: { title: noTemplateTitle },
+  });
+  expect(templatedResponse.ok()).toBeTruthy();
+  expect(noTemplateResponse.ok()).toBeTruthy();
+
+  const optionsResponse = await request.get('/api/issue-template-options');
+  expect(optionsResponse.ok()).toBeTruthy();
+  const options = (await optionsResponse.json()) as { id: string; name: string; count: number }[];
+  const templateOption = options.find((option) => option.id === template.slug);
+  const noTemplateOption = options.find((option) => option.id === 'no-template');
+  expect(templateOption).toBeDefined();
+  expect(noTemplateOption).toBeDefined();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await openIssueFilterCategory(page, 'Template');
+  await chooseIssueFilterOption(
+    page,
+    'Filter template',
+    template.name + ' · ' + templateOption!.count,
+  );
+  const issues = page.getByRole('listbox', { name: 'Issues' });
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('templateSlugs'))
+    .toBe('["' + template.slug + '"]');
+  await expect(issues.getByRole('option', { name: new RegExp(templatedTitle) })).toBeVisible();
+  await expect(issues.getByRole('option', { name: new RegExp(noTemplateTitle) })).toHaveCount(0);
+
+  const viewName = 'Template issues ' + stamp;
+  await createIssueView(page, viewName);
+  const slug = 'template-issues-' + stamp;
+  await expect(page).toHaveURL(new RegExp('/views/' + slug + '$'));
+  const saved = await request.get('/api/views/' + slug);
+  expect(saved.ok()).toBeTruthy();
+  expect(await saved.json()).toMatchObject({ templateSlugs: [template.slug] });
+  await expect(
+    page
+      .getByRole('listbox', { name: 'Issues' })
+      .getByRole('option', { name: new RegExp(templatedTitle) }),
+  ).toBeVisible();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await openIssueFilterCategory(page, 'Template');
+  await chooseIssueFilterOption(
+    page,
+    'Filter template',
+    'No template · ' + noTemplateOption!.count,
+  );
+  const untemplatedIssues = page.getByRole('listbox', { name: 'Issues' });
+  await expect(
+    untemplatedIssues.getByRole('option', { name: new RegExp(noTemplateTitle) }),
+  ).toBeVisible();
+  await expect(
+    untemplatedIssues.getByRole('option', { name: new RegExp(templatedTitle) }),
+  ).toHaveCount(0);
+});
+
 test('created-date filters support relative and exact dates on saved views', async ({
   page,
   request,

@@ -823,6 +823,23 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         .sort((left, right) => left.name.localeCompare(right.name)),
     );
   }
+  if (path === '/api/issue-template-options' && method === 'GET') {
+    const counts = new Map<string, number>();
+    for (const item of issues.filter((candidate) => !candidate.archivedAt)) {
+      const id = item.templateSlug || 'no-template';
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    const options = [
+      { id: 'no-template', name: 'No template', count: counts.get('no-template') ?? 0 },
+      ...issueTemplates.map((template) => ({
+        id: template.slug,
+        name: template.name,
+        count: counts.get(template.slug) ?? 0,
+      })),
+    ];
+    options.sort((left, right) => left.name.localeCompare(right.name));
+    return json(options);
+  }
   if (path === '/api/issues' && method === 'GET') {
     processDemoRecurringIssues();
     let result = [...issues];
@@ -848,6 +865,12 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         .get('linkSources')
         ?.split(',')
         .map((source) => source.trim())
+        .filter(Boolean) ?? [];
+    const templateSlugsFilter =
+      url.searchParams
+        .get('templateSlugs')
+        ?.split(',')
+        .map((slug) => slug.trim())
         .filter(Boolean) ?? [];
     const contentFilter = url.searchParams.get('content')?.trim().toLowerCase();
     const milestoneNameFilter = url.searchParams.get('milestoneName')?.trim().toLowerCase();
@@ -961,6 +984,13 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
           ),
       );
     }
+    if (templateSlugsFilter.length > 0) {
+      result = result.filter((item) =>
+        templateSlugsFilter.some((slug) =>
+          slug === 'no-template' ? !item.templateSlug : item.templateSlug === slug,
+        ),
+      );
+    }
     if (contentFilter) {
       result = result.filter((item) =>
         [item.identifier, item.title, item.body].some((value) =>
@@ -1045,6 +1075,13 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       value.cycleId == null ? null : Number(value.cycleId),
       [],
     );
+    const requestedTemplateSlug = text(value.templateSlug).trim();
+    if (
+      requestedTemplateSlug &&
+      !issueTemplates.some((template) => template.slug === requestedTemplateSlug)
+    )
+      return json({ error: 'issue template not found' }, 400);
+    if (requestedTemplateSlug) item.templateSlug = requestedTemplateSlug;
     const requestedLinks = Array.isArray(value.links)
       ? (value.links as { url?: unknown; title?: unknown; kind?: unknown }[])
       : [];

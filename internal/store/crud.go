@@ -1217,6 +1217,9 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 			return nil, validationf("invalid issue link source filter")
 		}
 	}
+	if err := validateIssueTemplateSlugs(f.TemplateSlugs); err != nil {
+		return nil, err
+	}
 	asOf := f.DueDateAsOf
 	if f.DueDate != "" && !domain.ValidDueDateFilter(f.DueDate) {
 		return nil, validationf("invalid due date filter")
@@ -1323,6 +1326,9 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 				continue
 			}
 			if len(f.LinkSources) > 0 && !matchesIssueLinkSources(iss, f.LinkSources) {
+				continue
+			}
+			if len(f.TemplateSlugs) > 0 && !matchesIssueTemplateSlugs(iss, f.TemplateSlugs) {
 				continue
 			}
 			if f.DueDate != "" {
@@ -1583,6 +1589,25 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 	if !domain.ValidIssueAssignee(in.Assignee) {
 		return Issue{}, validationf("invalid issue assignee")
 	}
+	if in.TemplateSlug != "" {
+		if issueTemplateSlug(in.TemplateSlug) != in.TemplateSlug {
+			return Issue{}, validationf("invalid issue template")
+		}
+		templates, err := s.ListIssueTemplates()
+		if err != nil {
+			return Issue{}, err
+		}
+		found := false
+		for _, template := range templates {
+			if template.Slug == in.TemplateSlug {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return Issue{}, validationf("issue template not found")
+		}
+	}
 	now := domain.Now()
 	normalizedLinks, err := normalizeIssueLinks(in.ExternalLinks)
 	if err != nil {
@@ -1626,7 +1651,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		out = Issue{
 			ID: int64(n), Number: n, Identifier: ident, Title: in.Title, Body: in.Body,
 			Status: workflowState.Category, WorkflowStatus: workflowState.ID, Assignee: in.Assignee, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate, ProjectID: in.ProjectID, CycleID: in.CycleID, CycleAddedAt: cycleAddedAt,
-			DueDate: in.DueDate, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
+			DueDate: in.DueDate, TemplateSlug: in.TemplateSlug, RecurringSlug: in.RecurringSlug, SortOrder: sort, CreatedAt: now, UpdatedAt: now, StatusChangedAt: now,
 			StartedAt: startedAt, CompletedAt: completedAt(workflowState.Category, now, nil), Labels: []Label{}, ADRNumbers: []int{}, ExternalLinks: externalLinks, Relations: []IssueRelation{}, Reactions: []string{}, Attachments: []CommentAttachment{},
 		}
 		if in.MilestoneID != nil {
@@ -2977,6 +3002,9 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			return View{}, validationf("invalid issue link source filter")
 		}
 	}
+	if err := validateIssueTemplateSlugs(in.TemplateSlugs); err != nil {
+		return View{}, err
+	}
 	if in.ProjectStatus != nil && *in.ProjectStatus != "" {
 		statuses, err := s.ProjectWorkflowStatuses()
 		if err != nil {
@@ -3008,6 +3036,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 		}
 	}
 	in.LinkSources = normalizeIssueLinkSources(in.LinkSources)
+	in.TemplateSlugs = normalizeIssueTemplateSlugs(in.TemplateSlugs)
 	if len(in.ProjectLabels) > 32 {
 		return View{}, validationf("too many project labels in filter")
 	}
@@ -3053,7 +3082,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 			Status: in.Status, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
-			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, LinkSources: in.LinkSources, Content: in.Content, DateField: dateField, DateRange: dateRange,
+			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 		}
@@ -3279,6 +3308,12 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 				}
 			}
 			v.LinkSources = normalizeIssueLinkSources(in.LinkSources)
+		}
+		if in.TemplateSlugs != nil {
+			if err := validateIssueTemplateSlugs(in.TemplateSlugs); err != nil {
+				return err
+			}
+			v.TemplateSlugs = normalizeIssueTemplateSlugs(in.TemplateSlugs)
 		}
 		if in.Content != nil {
 			content := *in.Content

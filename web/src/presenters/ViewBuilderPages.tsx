@@ -26,6 +26,7 @@ type BuilderData = {
   cycles: import('../types.ts').Cycle[];
   labels: import('../types.ts').Label[];
   linkSources: import('../types.ts').IssueLinkSource[];
+  templateOptions: import('../types.ts').IssueTemplateFilterOption[];
   views: import('../types.ts').View[];
 };
 
@@ -55,6 +56,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     dueDate: next.dueDate,
     relation: next.relation,
     linkSources: next.linkSources,
+    templateSlugs: next.templateSlugs,
     content: next.content,
     milestoneName: next.milestoneName,
     dateField: next.dateField,
@@ -154,6 +156,7 @@ export function useViewBuilderPresenter() {
         dueDate: filter.dueDate ?? '',
         relation: filter.relation ?? '',
         linkSources: filter.linkSources ?? [],
+        templateSlugs: filter.templateSlugs ?? [],
         content: filter.content ?? '',
         milestoneName: filter.milestoneName ?? '',
         dateField: filter.dateField ?? '',

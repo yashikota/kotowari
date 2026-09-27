@@ -8,6 +8,7 @@ import type {
   Issue,
   IssueLink,
   IssueLinkSource,
+  IssueTemplateFilterOption,
   IssueRelation,
   IssueTemplate,
   IssueWorkflowStatus,
@@ -91,6 +92,7 @@ export const api = {
   diagnostics: () => req<Diagnostic[]>('/api/diagnostics'),
   issues: (q = '') => req<Issue[]>(`/api/issues${q}`),
   issueLinkSources: () => req<IssueLinkSource[]>('/api/issue-link-sources'),
+  issueTemplateFilterOptions: () => req<IssueTemplateFilterOption[]>('/api/issue-template-options'),
   issueTemplates: () => req<IssueTemplate[]>('/api/issue-templates'),
   createIssueTemplate: (identifier: string, name: string) =>
     req<IssueTemplate>(`/api/issues/${identifier}/templates`, {
@@ -148,6 +150,7 @@ export const api = {
     labelIds?: number[];
     dueDate?: string;
     links?: { url: string; title?: string; kind?: IssueLink['kind'] }[];
+    templateSlug?: string;
     recurring?: {
       name: string;
       firstDueDate: string;
@@ -421,6 +424,7 @@ export const api = {
     dueDate?: string;
     relation?: string;
     linkSources?: string[];
+    templateSlugs?: string[];
     content?: string;
     milestoneName?: string;
     dateField?: string;
@@ -454,6 +458,7 @@ export function issuesQuery(filter: {
   asOf?: string | null;
   relation?: string | null;
   linkSources?: string[] | null;
+  templateSlugs?: string[] | null;
   content?: string | null;
   milestoneName?: string | null;
   dateField?: string | null;
@@ -494,6 +499,7 @@ export function issuesQuery(filter: {
   }
   if (filter.relation) q.set('relation', filter.relation);
   if (filter.linkSources?.length) q.set('linkSources', filter.linkSources.join(','));
+  if (filter.templateSlugs?.length) q.set('templateSlugs', filter.templateSlugs.join(','));
   if (filter.content?.trim()) q.set('content', filter.content.trim());
   if (filter.milestoneName?.trim()) q.set('milestoneName', filter.milestoneName.trim());
   if (filter.dateField && filter.dateRange && filter.dateRange !== 'custom') {
@@ -537,6 +543,7 @@ export type IssueSearch = {
     | `on:${string}`;
   relation?: 'parent' | 'subissue' | 'blocked' | 'blocking' | 'recurring' | 'related' | 'duplicate';
   linkSources?: string[];
+  templateSlugs?: string[];
   content?: string;
   milestoneName?: string;
   dateField?: 'createdAt' | 'updatedAt' | 'startedAt' | 'completedAt' | 'timeInCurrentStatus';
@@ -640,14 +647,28 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   if (typeof raw.relation === 'string' && relationFilters.includes(raw.relation)) {
     out.relation = raw.relation as IssueSearch['relation'];
   }
-  if (typeof raw.linkSources === 'string' && raw.linkSources.trim()) {
-    const sources = raw.linkSources
-      .split(',')
+  const linkSourceValues = parseStringList(raw.linkSources);
+  if (linkSourceValues.length > 0) {
+    const sources = linkSourceValues
       .map((source) => source.trim().toLowerCase())
       .filter((source) => /^[a-z0-9.-]{1,253}$/.test(source));
     const normalizedSources = [...new Set(sources)];
     if (normalizedSources.length > 0 && normalizedSources.length <= 32) {
       out.linkSources = normalizedSources;
+    }
+  }
+  const templateValues = parseStringList(raw.templateSlugs);
+  if (templateValues.length > 0) {
+    const templates = [...new Set(templateValues.map((slug) => slug.trim().toLowerCase()))];
+    if (
+      templates.length <= 32 &&
+      templates.every(
+        (slug) =>
+          slug === 'no-template' ||
+          (slug.length <= 400 && /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u.test(slug)),
+      )
+    ) {
+      out.templateSlugs = templates;
     }
   }
   if (typeof raw.content === 'string' && raw.content.trim()) {
@@ -732,6 +753,23 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   return out;
 }
 
+function parseStringList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
+  if (typeof value !== 'string' || !value.trim()) return [];
+  const trimmed = value.trim();
+  if (trimmed.startsWith('[')) {
+    try {
+      const decoded: unknown = JSON.parse(trimmed);
+      if (Array.isArray(decoded)) {
+        return decoded.filter((item): item is string => typeof item === 'string');
+      }
+    } catch {
+      return [];
+    }
+  }
+  return trimmed.split(',');
+}
+
 export function searchToFilter(search: IssueSearch): {
   archived?: boolean;
   assignee?: 'self' | 'agent' | 'none';
@@ -745,6 +783,7 @@ export function searchToFilter(search: IssueSearch): {
   dueDate?: string;
   relation?: string;
   linkSources?: string[];
+  templateSlugs?: string[];
   content?: string;
   milestoneName?: string;
   dateField?: string;
@@ -772,6 +811,7 @@ export function searchToFilter(search: IssueSearch): {
     dueDate: search.dueDate,
     relation: search.relation,
     linkSources: search.linkSources,
+    templateSlugs: search.templateSlugs,
     content: search.content,
     milestoneName: search.milestoneName,
     dateField: search.dateRange === 'custom' ? undefined : search.dateField,

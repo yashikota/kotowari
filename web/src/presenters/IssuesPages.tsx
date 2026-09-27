@@ -40,6 +40,7 @@ type IssueListData = {
   cycles: Cycle[];
   labels: Label[];
   linkSources: import('../types.ts').IssueLinkSource[];
+  templateOptions: import('../types.ts').IssueTemplateFilterOption[];
   activityItems?: { identifier: string; title: string; activity: Activity }[];
 };
 
@@ -60,6 +61,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     dueDate: next.dueDate ?? '',
     relation: next.relation ?? '',
     linkSources: next.linkSources?.join(',') ?? '',
+    templateSlugs: next.templateSlugs?.join(',') ?? '',
     content: next.content ?? '',
     milestoneName: next.milestoneName ?? '',
     dateField: next.dateField ?? '',

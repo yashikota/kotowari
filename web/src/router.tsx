@@ -70,6 +70,7 @@ async function loadFilteredIssues(search: IssueSearch) {
       cycles: [],
       labels: [],
       linkSources: [],
+      templateOptions: [],
       activityItems: activities.map(({ identifier, title, ...activity }) => ({
         identifier,
         title,
@@ -81,14 +82,15 @@ async function loadFilteredIssues(search: IssueSearch) {
     personalTab && personalTab !== 'assigned'
       ? { ...search, assignee: undefined, view: undefined, archived: false }
       : search;
-  const [issues, projects, cycles, labels, linkSources] = await Promise.all([
+  const [issues, projects, cycles, labels, linkSources, templateOptions] = await Promise.all([
     api.issues(issuesQuery(searchToFilter(issueSearch))),
     api.projects(),
     api.cycles(),
     api.labels(),
     api.issueLinkSources(),
+    api.issueTemplateFilterOptions(),
   ]);
-  return { issues: issues ?? [], projects, cycles, labels, linkSources };
+  return { issues: issues ?? [], projects, cycles, labels, linkSources, templateOptions };
 }
 
 const rootRoute = createRootRoute({
@@ -506,18 +508,41 @@ const cycleRoute = createRoute({
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {
     const number = Number(params.number);
-    const [cycle, issues, cycleIssues, activities, pages, projects, cycles, labels] =
-      await Promise.all([
-        api.cycle(number),
-        api.issues(issuesQuery(searchToFilter({ ...deps, cycle: number }))),
-        api.issues(`?cycle=${number}`),
-        api.cycleActivities(number),
-        api.pages(),
-        api.projects(),
-        api.cycles(),
-        api.labels(),
-      ]);
-    return { cycle, issues, cycleIssues, activities, pages, projects, cycles, labels };
+    const [
+      cycle,
+      issues,
+      cycleIssues,
+      activities,
+      pages,
+      projects,
+      cycles,
+      labels,
+      linkSources,
+      templateOptions,
+    ] = await Promise.all([
+      api.cycle(number),
+      api.issues(issuesQuery(searchToFilter({ ...deps, cycle: number }))),
+      api.issues(`?cycle=${number}`),
+      api.cycleActivities(number),
+      api.pages(),
+      api.projects(),
+      api.cycles(),
+      api.labels(),
+      api.issueLinkSources(),
+      api.issueTemplateFilterOptions(),
+    ]);
+    return {
+      cycle,
+      issues,
+      cycleIssues,
+      activities,
+      pages,
+      projects,
+      cycles,
+      labels,
+      linkSources,
+      templateOptions,
+    };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CycleDetailPage'),
 });
@@ -527,14 +552,15 @@ const viewRoute = createRoute({
   path: '/views/$slug',
   loader: async ({ params }) => {
     const view = await api.view(params.slug);
-    const [issues, projects, cycles, labels, linkSources] = await Promise.all([
+    const [issues, projects, cycles, labels, linkSources, templateOptions] = await Promise.all([
       api.issues(issuesQuery(view)),
       api.projects(),
       api.cycles(),
       api.labels(),
       api.issueLinkSources(),
+      api.issueTemplateFilterOptions(),
     ]);
-    return { view, issues, projects, cycles, labels, linkSources };
+    return { view, issues, projects, cycles, labels, linkSources, templateOptions };
   },
   component: lazyRouteComponent(() => import('./pages/ViewsPages.tsx'), 'ViewPage'),
 });

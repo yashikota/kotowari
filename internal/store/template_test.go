@@ -135,6 +135,71 @@ func TestIssueTemplateRoundTripAndNameConflicts(t *testing.T) {
 	}
 }
 
+func TestIssueTemplateProvenanceCanBeFilteredAndSaved(t *testing.T) {
+	s := openTest(t)
+	source, err := s.CreateIssue(CreateIssueInput{Title: "Template source"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	template, err := s.CreateIssueTemplate(source.Identifier, "Release checklist")
+	if err != nil {
+		t.Fatal(err)
+	}
+	applied, err := s.CreateIssue(CreateIssueInput{
+		Title: "Created from template", TemplateSlug: template.Slug,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if applied.TemplateSlug != template.Slug {
+		t.Fatalf("template provenance = %q, want %q", applied.TemplateSlug, template.Slug)
+	}
+	if _, err := s.CreateIssue(CreateIssueInput{Title: "Created without template", TemplateSlug: "missing"}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("unknown template error = %v, want validation", err)
+	}
+
+	templateIssues, err := s.ListIssues(IssueFilter{TemplateSlugs: []string{template.Slug}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templateIssues) != 1 || templateIssues[0].Identifier != applied.Identifier {
+		t.Fatalf("template filter returned %#v", templateIssues)
+	}
+	noTemplateIssues, err := s.ListIssues(IssueFilter{TemplateSlugs: []string{"no-template"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(noTemplateIssues) != 1 || noTemplateIssues[0].Identifier != source.Identifier {
+		t.Fatalf("no-template filter returned %#v", noTemplateIssues)
+	}
+
+	options, err := s.IssueTemplateFilterOptions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(options) != 2 || options[0].ID != "no-template" || options[0].Count != 1 ||
+		options[1].ID != template.Slug || options[1].Count != 1 {
+		t.Fatalf("template filter options = %#v", options)
+	}
+	view, err := s.CreateView(CreateViewInput{
+		Name: "Template issues", Slug: "template-issues", TemplateSlugs: []string{template.Slug},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(view.TemplateSlugs) != 1 || view.TemplateSlugs[0] != template.Slug ||
+		len(view.Filter().TemplateSlugs) != 1 {
+		t.Fatalf("saved template filter = %#v", view)
+	}
+	view, err = s.UpdateView(view.Slug, CreateViewInput{TemplateSlugs: []string{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(view.TemplateSlugs) != 0 {
+		t.Fatalf("template filter was not cleared: %#v", view.TemplateSlugs)
+	}
+}
+
 func TestRecurringIssueCreatesAndRecoversScheduledInstances(t *testing.T) {
 	dir := t.TempDir()
 	s, err := Open(dir)

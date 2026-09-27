@@ -58,6 +58,12 @@ describe('issuesQuery', () => {
     expect(issuesQuery({ linkSources: ['github', 'slack'] })).toBe('?linkSources=github%2Cslack');
   });
 
+  it('encodes applied-template filters', () => {
+    expect(issuesQuery({ templateSlugs: ['no-template', 'release-checklist'] })).toBe(
+      '?templateSlugs=no-template%2Crelease-checklist',
+    );
+  });
+
   it('encodes content searches without changing their display value', () => {
     expect(issuesQuery({ content: '  Moonstone migration  ' })).toBe(
       '?content=Moonstone+migration',
@@ -178,6 +184,19 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ linkSources: '../unsafe' })).toEqual({});
   });
 
+  it('normalizes template filters from router arrays and encoded array values', () => {
+    expect(parseIssueSearch({ templateSlugs: ['Release-checklist', 'no-template'] })).toEqual({
+      templateSlugs: ['release-checklist', 'no-template'],
+    });
+    expect(parseIssueSearch({ templateSlugs: '["release-checklist","no-template"]' })).toEqual({
+      templateSlugs: ['release-checklist', 'no-template'],
+    });
+    expect(parseIssueSearch({ templateSlugs: '../unsafe' })).toEqual({});
+    expect(searchToFilter({ templateSlugs: ['release-checklist'] })).toMatchObject({
+      templateSlugs: ['release-checklist'],
+    });
+  });
+
   it('keeps non-empty milestone name filters and ignores whitespace-only queries', () => {
     expect(parseIssueSearch({ milestoneName: '  Beta rollout  ' })).toEqual({
       milestoneName: '  Beta rollout  ',
@@ -247,6 +266,7 @@ describe('searchToFilter', () => {
       addedToCycle: undefined,
       milestoneName: undefined,
       linkSources: undefined,
+      templateSlugs: undefined,
       content: undefined,
       dateField: undefined,
       dateRange: undefined,
@@ -267,6 +287,7 @@ describe('searchToFilter', () => {
       addedToCycle: undefined,
       milestoneName: undefined,
       linkSources: undefined,
+      templateSlugs: undefined,
       content: undefined,
       dateField: undefined,
       dateRange: undefined,

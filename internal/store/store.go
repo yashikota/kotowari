@@ -208,6 +208,7 @@ type Issue struct {
 	Labels           []Label             `json:"labels"`
 	ADRNumbers       []int               `json:"adrNumbers"`
 	ExternalLinks    []IssueLink         `json:"externalLinks"`
+	TemplateSlug     string              `json:"templateSlug,omitempty" toml:"template_slug,omitempty"`
 	Relations        []IssueRelation     `json:"relations"`
 	Reactions        []string            `json:"reactions"`
 	Attachments      []CommentAttachment `json:"attachments"`
@@ -233,6 +234,12 @@ type IssueLink struct {
 }
 
 type IssueLinkSource struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+type IssueTemplateFilterOption struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Count int    `json:"count"`
@@ -324,6 +331,7 @@ type View struct {
 	DueDate             string           `json:"dueDate,omitempty" toml:"due_date,omitempty"`
 	Relation            *string          `json:"relation,omitempty" toml:"relation,omitempty"`
 	LinkSources         []string         `json:"linkSources,omitempty" toml:"link_sources,omitempty"`
+	TemplateSlugs       []string         `json:"templateSlugs,omitempty" toml:"template_slugs,omitempty"`
 	Content             *string          `json:"content,omitempty" toml:"content,omitempty"`
 	MilestoneName       *string          `json:"milestoneName,omitempty" toml:"milestone_name,omitempty"`
 	DateField           string           `json:"dateField,omitempty" toml:"date_field,omitempty"`
@@ -355,6 +363,7 @@ func (v View) Filter() IssueFilter {
 		f.Relation = *v.Relation
 	}
 	f.LinkSources = v.LinkSources
+	f.TemplateSlugs = v.TemplateSlugs
 	if v.Content != nil {
 		f.Content = *v.Content
 	}
@@ -458,6 +467,7 @@ type IssueFilter struct {
 	DueDateAsOf     string
 	Relation        string
 	LinkSources     []string
+	TemplateSlugs   []string
 	Content         string
 	MilestoneName   string
 	ProjectLabels   []string
@@ -487,6 +497,7 @@ type CreateIssueInput struct {
 	DueDate        *string
 	LabelIDs       []int64
 	ExternalLinks  []CreateIssueLinkInput
+	TemplateSlug   string
 	RecurringSlug  *string
 }
 
@@ -537,6 +548,7 @@ type CreateViewInput struct {
 	DueDate             *string
 	Relation            *string
 	LinkSources         []string
+	TemplateSlugs       []string
 	Content             *string
 	MilestoneName       *string
 	DateField           *string
