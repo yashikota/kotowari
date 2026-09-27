@@ -1770,7 +1770,7 @@ test('issue detail exposes Linear quick-copy actions and makes a property-preser
   const copyMenu = page.getByRole('menu', { name: 'Copy', exact: true });
   await expect(copyMenu).toHaveCSS('min-width', '300px');
   const copyMenuBounds = await copyMenu.boundingBox();
-  const lastShortcutBounds = await page.getByTestId('copy-shortcut').last().boundingBox();
+  const lastShortcutBounds = await copyMenu.getByTestId('copy-shortcut').last().boundingBox();
   expect(copyMenuBounds).not.toBeNull();
   expect(lastShortcutBounds).not.toBeNull();
   expect(lastShortcutBounds!.x + lastShortcutBounds!.width).toBeLessThanOrEqual(
