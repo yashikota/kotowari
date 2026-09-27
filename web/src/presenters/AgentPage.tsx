@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { takePendingAgentPrompt } from '../agent-prompt.ts';
+import { clearPendingAgentPrompt, readPendingAgentPrompt } from '../agent-prompt.ts';
 import i18n from '../i18n/index.ts';
 import type { AgentChat } from '../types.ts';
 
@@ -43,9 +43,13 @@ function initialState(startNewChat: boolean) {
 }
 
 export function useAgentPagePresenter() {
-  const [initialPrompt, setInitialPrompt] = useState(() => takePendingAgentPrompt());
+  const [initialPrompt, setInitialPrompt] = useState(() => readPendingAgentPrompt());
   const [state, setState] = useState(() => initialState(Boolean(initialPrompt)));
   const [historyOpened, setHistoryOpened] = useState(false);
+
+  useEffect(() => {
+    if (initialPrompt) clearPendingAgentPrompt();
+  }, [initialPrompt]);
 
   useEffect(() => {
     try {

@@ -10,15 +10,21 @@ export function setPendingAgentPrompt(prompt: string): void {
   }
 }
 
-export function takePendingAgentPrompt(): string {
+export function readPendingAgentPrompt(): string {
   let stored = '';
   try {
     stored = sessionStorage.getItem(PENDING_PROMPT_KEY) ?? '';
-    sessionStorage.removeItem(PENDING_PROMPT_KEY);
   } catch {
     // Use the in-memory value when session storage is unavailable.
   }
-  const prompt = stored || pendingPrompt;
+  return stored || pendingPrompt;
+}
+
+export function clearPendingAgentPrompt(): void {
+  try {
+    sessionStorage.removeItem(PENDING_PROMPT_KEY);
+  } catch {
+    // The in-memory value is still cleared below.
+  }
   pendingPrompt = '';
-  return prompt;
 }

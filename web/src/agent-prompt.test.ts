@@ -1,18 +1,25 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { setPendingAgentPrompt, takePendingAgentPrompt } from './agent-prompt.ts';
+import {
+  clearPendingAgentPrompt,
+  readPendingAgentPrompt,
+  setPendingAgentPrompt,
+} from './agent-prompt.ts';
 
 describe('pending Agent prompt', () => {
-  it('is consumed once when navigating to the Agent page', () => {
+  it('can be read repeatedly during React initialization and cleared after mount', () => {
     setPendingAgentPrompt('Review KOT-4');
 
-    expect(takePendingAgentPrompt()).toBe('Review KOT-4');
-    expect(takePendingAgentPrompt()).toBe('');
+    expect(readPendingAgentPrompt()).toBe('Review KOT-4');
+    expect(readPendingAgentPrompt()).toBe('Review KOT-4');
+    clearPendingAgentPrompt();
+    expect(readPendingAgentPrompt()).toBe('');
   });
 
   it('replaces stale context when another issue selection is sent', () => {
     setPendingAgentPrompt('First selection');
     setPendingAgentPrompt('Second selection');
 
-    expect(takePendingAgentPrompt()).toBe('Second selection');
+    expect(readPendingAgentPrompt()).toBe('Second selection');
+    clearPendingAgentPrompt();
   });
 });
