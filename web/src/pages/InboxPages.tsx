@@ -25,6 +25,8 @@ import {
   IconMessage,
   IconPaperclip,
   IconAdjustments,
+  IconMenu2,
+  IconSettings,
   IconTrash,
 } from '@tabler/icons-react';
 import { useMemo } from 'react';
@@ -134,6 +136,34 @@ function InboxPageView({ model }: { model: InboxModel }) {
         className={styles.toolbar}
       >
         <Group gap="xs" wrap="nowrap">
+          <Menu position="bottom-start" withinPortal>
+            <Menu.Target>
+              <ActionIcon type="button" variant="subtle" color="gray" aria-label={t('inbox.menu')}>
+                <IconMenu2 size={16} aria-hidden />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconTrash size={14} />}
+                color="red"
+                onClick={model.handlers.onRequestDeleteAll}
+              >
+                {t('inbox.deleteAll')}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconTrash size={14} />}
+                color="red"
+                rightSection={<Shortcut>Shift+⌫</Shortcut>}
+                onClick={model.handlers.onRequestDeleteRead}
+              >
+                {t('inbox.deleteAllRead')}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item component={Link} to="/config" leftSection={<IconSettings size={14} />}>
+                {t('inbox.goToSettings')}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
           <Title order={2} size="sm" fw={550} className={styles.heading}>
             {t('inbox.heading')}
           </Title>
@@ -158,24 +188,8 @@ function InboxPageView({ model }: { model: InboxModel }) {
               <Menu.Item
                 leftSection={<IconArchive size={14} />}
                 onClick={model.handlers.onArchiveReadActivities}
-                rightSection={<Shortcut>Shift+⌫</Shortcut>}
               >
                 {t('inbox.archiveReadActivities')}
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item
-                color="red"
-                leftSection={<IconTrash size={14} />}
-                onClick={model.handlers.onRequestDeleteAll}
-              >
-                {t('inbox.deleteAll')}
-              </Menu.Item>
-              <Menu.Item
-                color="red"
-                leftSection={<IconTrash size={14} />}
-                onClick={model.handlers.onRequestDeleteRead}
-              >
-                {t('inbox.deleteAllRead')}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>

@@ -215,7 +215,7 @@ test('inbox delete actions require confirmation and never delete issue data', as
   );
 
   await issueNotifications.first().click();
-  await page.getByRole('button', { name: 'Notification actions' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Delete all read' }).click();
   const dialog = page.getByRole('dialog');
   await expect(
@@ -238,7 +238,13 @@ test('inbox delete actions require confirmation and never delete issue data', as
   await page.reload();
   await expect(issueNotifications).toHaveCount(1);
 
-  await page.getByRole('button', { name: 'Notification actions' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Go to settings' }).click();
+  await expect(page).toHaveURL(/\/config$/);
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'Inbox', level: 2 })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Delete all', exact: true }).click();
   const deleteAllDialog = page.getByRole('dialog');
   await expect(
@@ -247,7 +253,7 @@ test('inbox delete actions require confirmation and never delete issue data', as
   await deleteAllDialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(issueNotifications).toHaveCount(1);
 
-  await page.getByRole('button', { name: 'Notification actions' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Delete all', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete notifications' }).click();
   await expect(issueNotifications).toHaveCount(0);

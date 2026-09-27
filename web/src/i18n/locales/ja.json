@@ -1518,6 +1518,8 @@
   },
   "inbox": {
     "heading": "受信トレイ",
+    "menu": "メニュー",
+    "goToSettings": "設定へ移動",
     "notifications": "通知",
     "details": "通知の詳細",
     "back": "受信トレイに戻る",

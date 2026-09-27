@@ -1523,6 +1523,8 @@
   },
   "inbox": {
     "heading": "Inbox",
+    "menu": "Menu",
+    "goToSettings": "Go to settings",
     "notifications": "Notifications",
     "details": "Notification details",
     "back": "Back to inbox",
