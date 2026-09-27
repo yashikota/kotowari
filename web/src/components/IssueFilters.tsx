@@ -100,6 +100,7 @@ export function IssueFiltersView({
               onOpenChange={handlers.onFilterOpenChange}
               onStatusChange={handlers.onStatusChange}
               onAssigneeChange={handlers.onAssigneeChange}
+              onSubscribersChange={handlers.onSubscribersChange}
               onProjectChange={handlers.onProjectChange}
               onCycleChange={handlers.onCycleChange}
               onPriorityChange={handlers.onPriorityChange}

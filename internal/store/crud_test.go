@@ -1932,6 +1932,54 @@ func TestViewAssigneeFilterPersistsAndClears(t *testing.T) {
 	}
 }
 
+func TestViewSubscriberFilterPersistsAndClears(t *testing.T) {
+	s := openTest(t)
+	self := "self"
+	view, err := s.CreateView(CreateViewInput{Name: "Subscribed issues", Slug: "subscribed-issues", Subscriber: &self})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Subscriber != "self" {
+		t.Fatalf("subscriber filter = %#v", view)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	view, err = reopened.GetView(view.Slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Subscriber != "self" {
+		t.Fatalf("subscriber filter did not persist: %#v", view)
+	}
+
+	none := "none"
+	view, err = reopened.UpdateView(view.Slug, CreateViewInput{Subscriber: &none})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Subscriber != "none" {
+		t.Fatalf("no-subscriber filter = %#v", view)
+	}
+
+	clear := ""
+	view, err = reopened.UpdateView(view.Slug, CreateViewInput{Subscriber: &clear})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Subscriber != "" {
+		t.Fatalf("cleared subscriber filter = %#v", view)
+	}
+
+	invalid := "someone-else"
+	if _, err := reopened.UpdateView(view.Slug, CreateViewInput{Subscriber: &invalid}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid subscriber filter error = %v", err)
+	}
+}
+
 func boolPointer(value bool) *bool { return &value }
 
 func TestListIssuesCycleFilter(t *testing.T) {

@@ -6,7 +6,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { api, type IssueSearch } from '../api.ts';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
@@ -26,6 +26,7 @@ import type { Cycle, Issue, Label, Project, View } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { matchesIssueFilterGroup, parseIssueFilterGroup } from '../issue-advanced-filter.ts';
 
 export function useViewPagePresenter() {
@@ -44,6 +45,11 @@ export function useViewPagePresenter() {
   const navigate = useNavigate();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const { preferences } = usePersonalPreferences();
+  const subscriptionSnapshot = useSyncExternalStore(
+    issueSubscriptions.subscribe,
+    () => issueSubscriptions.list().sort().join('\0'),
+    () => '',
+  );
   const [find, setFind] = useState(locationState.issueListFind ?? '');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>(
     (data.view.groupBy || 'priority') as IssueGroupBy,
@@ -52,6 +58,7 @@ export function useViewPagePresenter() {
     (data.view.orderBy || 'manual') as IssueOrderBy,
   );
   const [view, setView] = useState(data.view);
+  const subscribedIds = new Set(subscriptionSnapshot.split('\0').filter(Boolean));
   const advancedFilterGroup = parseIssueFilterGroup(view.advancedFilterGroup);
   const matchingIssues = (data.issues ?? []).filter((issue) => {
     const query = find.trim().toLowerCase();
@@ -59,6 +66,11 @@ export function useViewPagePresenter() {
       (!query ||
         issue.title.toLowerCase().includes(query) ||
         issue.identifier.toLowerCase().includes(query)) &&
+      (view.subscriber === 'self'
+        ? subscribedIds.has(issue.identifier)
+        : view.subscriber === 'none'
+          ? !subscribedIds.has(issue.identifier)
+          : true) &&
       (!view.advancedFilter ||
         !advancedFilterGroup ||
         matchesIssueFilterGroup(issue, advancedFilterGroup, data.issues ?? []))
@@ -97,6 +109,7 @@ export function useViewPagePresenter() {
     status: view.status ?? undefined,
     statuses: view.statuses ?? (view.status ? [view.status] : undefined),
     assignee: view.assignee ?? undefined,
+    subscribers: view.subscriber ?? undefined,
     project: view.project ?? undefined,
     cycle: view.cycle ?? undefined,
     priority: view.priority ?? undefined,
@@ -135,6 +148,7 @@ export function useViewPagePresenter() {
       status: next.status ?? '',
       statuses: next.statuses ?? [],
       assignee: next.assignee ?? '',
+      subscriber: next.subscribers ?? '',
       project: next.project ?? '',
       cycle: next.cycle ?? 0,
       priority: next.priorities?.length ? -1 : (next.priority ?? -1),

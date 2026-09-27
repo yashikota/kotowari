@@ -595,6 +595,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Status              *string                `json:"status"`
 		Statuses            []string               `json:"statuses"`
 		Assignee            *string                `json:"assignee"`
+		Subscriber          *string                `json:"subscriber"`
 		Project             *string                `json:"project"`
 		Cycle               *int                   `json:"cycle"`
 		Labels              []string               `json:"labels"`
@@ -627,7 +628,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Name: in.Name, Slug: in.Slug, IsFavorite: in.IsFavorite, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-		Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee,
+		Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Subscriber: in.Subscriber,
 		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, LabelOperator: in.LabelOperator, Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Estimates: in.Estimates, NoEstimate: in.NoEstimate, DueDate: in.DueDate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
 		AdvancedFilter: in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 	}, nil
@@ -725,7 +726,7 @@ func hasViewContentPatch(in store.CreateViewInput) bool {
 	return in.Name != "" || in.Description != nil || in.Icon != nil || in.Display != "" || in.GroupBy != "" ||
 		in.OrderBy != "" || in.SubGroupBy != "" || in.Direction != "" || in.CompletedIssues != "" ||
 		in.ShowSubIssues != nil || in.NestedSubIssues != "" || in.ShowEmptyGroups != nil || in.DisplayProperties != nil ||
-		in.Status != nil || in.Statuses != nil || in.Assignee != nil || in.Project != nil || in.Cycle != nil ||
+		in.Status != nil || in.Statuses != nil || in.Assignee != nil || in.Subscriber != nil || in.Project != nil || in.Cycle != nil ||
 		in.Labels != nil || in.LabelOperator != "" || in.Priority != nil || in.Priorities != nil || in.Type != nil ||
 		in.Estimate != nil || in.Estimates != nil || in.NoEstimate != nil || in.DueDate != nil || in.Relation != nil ||
 		in.LinkSources != nil || in.TemplateSlugs != nil || in.Content != nil || in.MilestoneName != nil ||

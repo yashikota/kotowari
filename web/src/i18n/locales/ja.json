@@ -1283,6 +1283,7 @@
     "categories": {
       "status": "ステータス",
       "assignee": "担当者",
+      "subscribers": "購読者",
       "priority": "優先度",
       "estimate": "見積もり",
       "labels": "ラベル",
@@ -1304,6 +1305,11 @@
     "prioritiesSelected": "{{count}} 件の優先度",
     "estimatesSelected": "{{count}} 件の見積もり",
     "filterAssignee": "担当者で絞り込む",
+    "filterSubscribers": "購読者で絞り込む",
+    "subscriberValue": {
+      "self": "自分",
+      "none": "購読者なし"
+    },
     "anyStatus": "すべてのステータス",
     "filterType": "種別で絞り込む",
     "anyType": "すべての種別",

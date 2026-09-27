@@ -17,6 +17,7 @@ import {
   IconCalendar,
   IconCalendarPlus,
   IconCalendarTime,
+  IconBell,
   IconChartBar,
   IconCheck,
   IconChevronRight,
@@ -52,6 +53,7 @@ import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 const FILTER_CATEGORIES = [
   { id: 'status', group: 'issue', chips: ['status', 'statuses'] },
   { id: 'assignee', group: 'issue', chips: ['assignee'] },
+  { id: 'subscribers', group: 'issue', chips: ['subscribers'] },
   { id: 'priority', group: 'issue', chips: ['priority', 'priorities'] },
   { id: 'estimate', group: 'issue', chips: ['estimate', 'estimates', 'noEstimate'] },
   { id: 'labels', group: 'issue', chips: ['label:'] },
@@ -76,6 +78,7 @@ const FILTER_CATEGORIES = [
 const FILTER_CATEGORY_ICONS = {
   status: IconCircleDot,
   assignee: IconUser,
+  subscribers: IconBell,
   priority: IconFlag,
   estimate: IconChartBar,
   labels: IconTag,
@@ -289,6 +292,7 @@ export function IssueFilterMenu({
   onOpenChange,
   onStatusChange,
   onAssigneeChange,
+  onSubscribersChange,
   onProjectChange,
   onCycleChange,
   onPriorityChange,
@@ -327,6 +331,7 @@ export function IssueFilterMenu({
   onOpenChange: (next: boolean) => void;
   onStatusChange: (value: string) => void;
   onAssigneeChange: (value: string) => void;
+  onSubscribersChange: (value: string) => void;
   onProjectChange: (value: string) => void;
   onCycleChange: (value: string) => void;
   onPriorityChange: (value: string) => void;
@@ -437,6 +442,18 @@ export function IssueFilterMenu({
               ),
             }))}
             onChange={onAssigneeChange}
+          />
+        );
+      case 'subscribers':
+        return (
+          <FilterOptionList
+            label={t('filters.filterSubscribers')}
+            value={search.subscribers ?? null}
+            options={(['self', 'none'] as const).map((value) => ({
+              value,
+              label: t(`filters.subscriberValue.${value}`),
+            }))}
+            onChange={onSubscribersChange}
           />
         );
       case 'priority':

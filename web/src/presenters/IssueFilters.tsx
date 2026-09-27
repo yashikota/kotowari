@@ -270,6 +270,14 @@ export function useIssueFiltersPresenter({
           },
         ]
       : []),
+    ...(search.subscribers
+      ? [
+          {
+            key: 'subscribers',
+            label: `${t('filters.categories.subscribers')} · ${t(`filters.subscriberValue.${search.subscribers}`)}`,
+          },
+        ]
+      : []),
     ...(search.project
       ? [
           {
@@ -456,6 +464,10 @@ export function useIssueFiltersPresenter({
       },
       onAssigneeChange: (value: string) =>
         set({ assignee: value ? (value as NonNullable<IssueSearch['assignee']>) : undefined }),
+      onSubscribersChange: (value: string) =>
+        set({
+          subscribers: value ? (value as NonNullable<IssueSearch['subscribers']>) : undefined,
+        }),
       onProjectChange: (value: string) => set({ project: value || undefined }),
       onCycleChange: (value: string) => set({ cycle: value ? Number(value) : undefined }),
       onPriorityChange: (value: string) => {
@@ -573,6 +585,7 @@ export function useIssueFiltersPresenter({
           priority: undefined,
           priorities: undefined,
           assignee: undefined,
+          subscribers: undefined,
           project: undefined,
           cycle: undefined,
           type: undefined,
@@ -641,6 +654,7 @@ export function useIssueFiltersPresenter({
           key === 'priority' ||
           key === 'priorities' ||
           key === 'assignee' ||
+          key === 'subscribers' ||
           key === 'project' ||
           key === 'cycle' ||
           key === 'priority' ||
@@ -663,6 +677,8 @@ export function useIssueFiltersPresenter({
             set({ status: undefined, statuses: undefined });
           } else if (key === 'priority' || key === 'priorities') {
             set({ priority: undefined, priorities: undefined });
+          } else if (key === 'subscribers') {
+            set({ subscribers: undefined });
           } else if (key === 'estimate' || key === 'estimates' || key === 'noEstimate') {
             set({ estimate: undefined, estimates: undefined, noEstimate: undefined });
           } else {

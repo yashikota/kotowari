@@ -325,6 +325,7 @@ type View struct {
 	Status              *string          `json:"status" toml:"status,omitempty"`
 	Statuses            []string         `json:"statuses,omitempty" toml:"statuses,omitempty"`
 	Assignee            *string          `json:"assignee" toml:"assignee,omitempty"`
+	Subscriber          string           `json:"subscriber,omitempty" toml:"subscriber,omitempty"`
 	Project             *string          `json:"project" toml:"project,omitempty"`
 	Cycle               *int             `json:"cycle" toml:"cycle,omitempty"`
 	Labels              []string         `json:"labels" toml:"labels,omitempty"`
@@ -559,6 +560,7 @@ type CreateViewInput struct {
 	Status              *string
 	Statuses            []string
 	Assignee            *string
+	Subscriber          *string
 	Project             *string
 	Cycle               *int
 	Labels              []string

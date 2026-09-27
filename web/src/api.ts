@@ -417,6 +417,7 @@ export const api = {
     status?: string | null;
     statuses?: string[];
     assignee?: 'self' | 'agent' | 'none' | null;
+    subscriber?: 'self' | 'none' | null;
     project?: string | null;
     cycle?: number | null;
     labels?: string[];
@@ -549,6 +550,7 @@ export type IssueSearch = {
   view?: 'active' | 'backlog' | 'all';
   myIssuesTab?: 'assigned' | 'created' | 'subscribed' | 'activity';
   assignee?: 'self' | 'agent' | 'none';
+  subscribers?: 'self' | 'none';
   status?: string;
   statuses?: string[];
   project?: string;
@@ -620,6 +622,9 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   }
   if (raw.assignee === 'self' || raw.assignee === 'agent' || raw.assignee === 'none') {
     out.assignee = raw.assignee;
+  }
+  if (raw.subscribers === 'self' || raw.subscribers === 'none') {
+    out.subscribers = raw.subscribers;
   }
   if (typeof raw.status === 'string' && raw.status) {
     out.status = raw.status;

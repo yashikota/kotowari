@@ -1287,6 +1287,7 @@
     "categories": {
       "status": "Status",
       "assignee": "Assignee",
+      "subscribers": "Subscribers",
       "priority": "Priority",
       "estimate": "Estimate",
       "labels": "Labels",
@@ -1308,6 +1309,11 @@
     "prioritiesSelected": "{{count}} priorities",
     "estimatesSelected": "{{count}} estimates",
     "filterAssignee": "Filter assignee",
+    "filterSubscribers": "Filter subscribers",
+    "subscriberValue": {
+      "self": "You",
+      "none": "No subscribers"
+    },
     "anyStatus": "Any status",
     "filterType": "Filter type",
     "anyType": "Any type",

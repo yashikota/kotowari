@@ -37,6 +37,13 @@ describe('issuesQuery', () => {
     expect(searchToFilter({ assignee: 'agent' })).toMatchObject({ assignee: 'agent' });
   });
 
+  it('keeps the personal subscriber filter in browser search only', () => {
+    expect(parseIssueSearch({ subscribers: 'self' })).toEqual({ subscribers: 'self' });
+    expect(parseIssueSearch({ subscribers: 'none' })).toEqual({ subscribers: 'none' });
+    expect(parseIssueSearch({ subscribers: 'someone-else' })).toEqual({});
+    expect(searchToFilter({ subscribers: 'self' })).toEqual(searchToFilter({}));
+  });
+
   it('preserves validated My Issues tabs in browser search but not API filters', () => {
     expect(parseIssueSearch({ myIssuesTab: 'subscribed' })).toEqual({ myIssuesTab: 'subscribed' });
     expect(parseIssueSearch({ myIssuesTab: 'unsupported' })).toEqual({});

@@ -3149,6 +3149,9 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.Assignee != nil && *in.Assignee == "" {
 		in.Assignee = nil
 	}
+	if in.Subscriber != nil && *in.Subscriber != "" && *in.Subscriber != "self" && *in.Subscriber != "none" {
+		return View{}, validationf("invalid subscriber filter")
+	}
 	if in.Priority != nil && !domain.ValidPriority(*in.Priority) {
 		return View{}, validationf("invalid priority")
 	}
@@ -3259,6 +3262,10 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.DisplayProperties == nil {
 		in.DisplayProperties = []string{"id", "status", "assignee", "priority", "project", "dueDate", "milestone", "cycle", "estimate", "labels", "links", "pullRequests"}
 	}
+	subscriber := ""
+	if in.Subscriber != nil {
+		subscriber = *in.Subscriber
+	}
 	now := domain.Now()
 	var out View
 	err := s.mutate(func(m *mem) error {
@@ -3270,7 +3277,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy, Direction: in.Direction,
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-			Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, LabelOperator: in.LabelOperator,
+			Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Subscriber: subscriber, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, LabelOperator: in.LabelOperator,
 			Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Estimates: in.Estimates, NoEstimate: in.NoEstimate != nil && *in.NoEstimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
@@ -3418,6 +3425,12 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 				}
 				v.Assignee = in.Assignee
 			}
+		}
+		if in.Subscriber != nil {
+			if *in.Subscriber != "" && *in.Subscriber != "self" && *in.Subscriber != "none" {
+				return validationf("invalid subscriber filter")
+			}
+			v.Subscriber = *in.Subscriber
 		}
 		if in.Project != nil {
 			if *in.Project == "" {

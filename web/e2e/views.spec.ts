@@ -86,6 +86,86 @@ test('built-in issue views can be favorited and remain available after reload', 
   await expect(favorites.getByRole('link', { name: 'Active', exact: true })).toHaveCount(0);
 });
 
+test('subscriber filters work in issue lists and persist in saved views', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const subscribedTitle = `Subscribed filter ${stamp}`;
+  const noSubscriberTitle = `No subscriber filter ${stamp}`;
+  const subscribedResponse = await request.post('/api/issues', {
+    data: { title: subscribedTitle, status: 'todo' },
+  });
+  const noSubscriberResponse = await request.post('/api/issues', {
+    data: { title: noSubscriberTitle, status: 'todo' },
+  });
+  await expect(subscribedResponse).toBeOK();
+  await expect(noSubscriberResponse).toBeOK();
+  const subscribedIssue = (await subscribedResponse.json()) as { identifier: string };
+
+  await page.goto(`/issues/${subscribedIssue.identifier}`);
+  await page.getByRole('button', { name: 'Subscribe to issue' }).click();
+  await expect(page.getByRole('button', { name: 'Unsubscribe from issue' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await page.goto('/issues?subscribers=self');
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(
+    issueList.getByRole('option', { name: new RegExp(subscribedIssue.identifier) }),
+  ).toBeVisible();
+  await expect(issueList.getByText(noSubscriberTitle)).toHaveCount(0);
+
+  await page.goto('/issues?subscribers=none');
+  await expect(issueList.getByText(noSubscriberTitle)).toBeVisible();
+  await expect(
+    issueList.getByRole('option', { name: new RegExp(subscribedIssue.identifier) }),
+  ).toHaveCount(0);
+
+  await page.goto('/views/new');
+  await openIssueFilterCategory(page, 'Subscribers');
+  await chooseIssueFilterOption(page, 'Filter subscribers', 'You');
+  const preview = page.locator('[aria-label="Preview"]');
+  await expect(preview.getByText(subscribedTitle)).toBeVisible();
+  await expect(preview.getByText(noSubscriberTitle)).toHaveCount(0);
+  const name = `Subscribers ${stamp}`;
+  await page.getByRole('textbox', { name: 'View name', exact: true }).fill(name);
+  await page.getByRole('button', { name: 'Create view', exact: true }).click();
+
+  const slug = name.toLowerCase().replaceAll(' ', '-');
+  await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
+  const saved = await request.get(`/api/views/${slug}`);
+  expect(await saved.json()).toMatchObject({ subscriber: 'self' });
+  const savedList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(
+    savedList.getByRole('option', { name: new RegExp(subscribedIssue.identifier) }),
+  ).toBeVisible();
+  await expect(savedList.getByText(noSubscriberTitle)).toHaveCount(0);
+  await page.reload();
+  await expect(
+    savedList.getByRole('option', { name: new RegExp(subscribedIssue.identifier) }),
+  ).toBeVisible();
+  await expect(savedList.getByText(noSubscriberTitle)).toHaveCount(0);
+
+  await page.goto('/views/new');
+  await openIssueFilterCategory(page, 'Subscribers');
+  await chooseIssueFilterOption(page, 'Filter subscribers', 'No subscribers');
+  const noSubscriberPreview = page.locator('[aria-label="Preview"]');
+  await expect(noSubscriberPreview.getByText(noSubscriberTitle)).toBeVisible();
+  await expect(noSubscriberPreview.getByText(subscribedTitle)).toHaveCount(0);
+  const noSubscriberViewName = `No subscribers ${stamp}`;
+  await page.getByRole('textbox', { name: 'View name', exact: true }).fill(noSubscriberViewName);
+  await page.getByRole('button', { name: 'Create view', exact: true }).click();
+  const noSubscriberViewSlug = noSubscriberViewName.toLowerCase().replaceAll(' ', '-');
+  await expect(page).toHaveURL(new RegExp(`/views/${noSubscriberViewSlug}$`));
+  const noSubscriberView = await request.get(`/api/views/${noSubscriberViewSlug}`);
+  expect(await noSubscriberView.json()).toMatchObject({ subscriber: 'none' });
+  const noSubscriberList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(noSubscriberList.getByText(noSubscriberTitle)).toBeVisible();
+  await expect(noSubscriberList.getByText(subscribedTitle)).toHaveCount(0);
+});
+
 test('workspace views page has a useful empty state and create action', async ({ page }) => {
   await page.route('**/api/views', async (route) => {
     if (route.request().method() === 'GET') await route.fulfill({ json: [] });

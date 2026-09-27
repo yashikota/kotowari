@@ -294,6 +294,7 @@ export type View = {
   status: string | null;
   statuses?: string[];
   assignee: 'self' | 'agent' | 'none' | null;
+  subscriber?: 'self' | 'none' | null;
   project: string | null;
   cycle: number | null;
   labels: string[];

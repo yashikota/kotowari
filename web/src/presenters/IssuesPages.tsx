@@ -52,6 +52,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     view: next.view ?? '',
     myIssuesTab: next.myIssuesTab ?? '',
     assignee: next.assignee ?? '',
+    subscribers: next.subscribers ?? '',
     status: next.status ?? '',
     statuses: next.statuses?.join(',') ?? '',
     project: next.project ?? '',
@@ -165,6 +166,13 @@ export function useIssuesPagePresenter() {
         ? issue.assignee === 'self'
         : myIssuesTab === 'subscribed'
           ? subscribedIds.has(issue.identifier)
+          : true,
+    )
+    .filter((issue) =>
+      search.subscribers === 'self'
+        ? subscribedIds.has(issue.identifier)
+        : search.subscribers === 'none'
+          ? !subscribedIds.has(issue.identifier)
           : true,
     )
     .filter((i) => matchesFind(i, find))

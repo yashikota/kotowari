@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import {
   useLoaderData,
   useNavigate,
@@ -19,6 +19,7 @@ import {
 import type { ViewIconName } from '../types.ts';
 import { VIEW_ICON_NAMES } from '../components/ViewIcon.tsx';
 import { isSubmitShortcut } from '../keymap.ts';
+import { issueSubscriptions } from '../issue-subscriptions.ts';
 
 type BuilderData = {
   issues: import('../types.ts').Issue[];
@@ -47,6 +48,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
   return {
     archived: next.archived,
     assignee: next.assignee,
+    subscribers: next.subscribers,
     status: next.status,
     statuses: next.statuses,
     project: next.project,
@@ -104,11 +106,23 @@ export function useViewBuilderPresenter() {
   const draft = locationState.viewDraft ?? {};
   const navigate = useNavigate();
   const router = useRouter();
+  const subscriptionSnapshot = useSyncExternalStore(
+    issueSubscriptions.subscribe,
+    () => issueSubscriptions.list().sort().join('\0'),
+    () => '',
+  );
   const [name, setName] = useState(() => t('viewBuilder.defaultName'));
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState<ViewIconName>('list');
   const search = routeSearch;
-  const issues = data.issues;
+  const subscribedIds = new Set(subscriptionSnapshot.split('\0').filter(Boolean));
+  const issues = data.issues.filter((issue) =>
+    search.subscribers === 'self'
+      ? subscribedIds.has(issue.identifier)
+      : search.subscribers === 'none'
+        ? !subscribedIds.has(issue.identifier)
+        : true,
+  );
   const [display, setDisplay] = useState<IssueLayout>(draft.display ?? 'list');
   const [groupBy, setGroupBy] = useState<IssueGroupBy>(draft.groupBy ?? 'priority');
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>(draft.subGroupBy ?? 'none');
@@ -153,6 +167,7 @@ export function useViewBuilderPresenter() {
         status: filter.status ?? null,
         statuses: filter.statuses ?? [],
         assignee: filter.assignee ?? null,
+        subscriber: search.subscribers ?? null,
         project: filter.project ?? null,
         cycle: filter.cycle ?? null,
         labels: filter.labels ?? [],
