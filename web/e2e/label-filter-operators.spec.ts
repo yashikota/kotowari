@@ -62,8 +62,11 @@ test('label filters match Linear any, all, and exclusion operators', async ({ pa
 
   await operator.click();
   await page.getByRole('option', { name: 'exclude if all', exact: true }).click();
+  await fillIssueSearch(page, titles.a);
   await expect(issue(titles.a)).toBeVisible();
+  await fillIssueSearch(page, titles.b);
   await expect(issue(titles.b)).toBeVisible();
+  await fillIssueSearch(page, titles.both);
   await expect(issue(titles.both)).toHaveCount(0);
   await fillIssueSearch(page, titles.none);
   await expect(issue(titles.none)).toBeVisible();
