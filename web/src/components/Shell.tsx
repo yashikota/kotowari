@@ -159,6 +159,7 @@ export function ShellView({
         cycles,
         views,
         favoriteIssues,
+        favoriteIssueViews,
         paletteOpen,
         query,
         createIssue,
@@ -335,6 +336,15 @@ export function ShellView({
                           to="/issues/$identifier"
                           params={{ identifier: issue.identifier }}
                           label={`${issue.identifier} ${issue.title}`}
+                          leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                        />
+                      ))}
+                      {favoriteIssueViews.map((view) => (
+                        <RouterNavLink
+                          key={`issue-view-${view}`}
+                          to="/issues"
+                          search={view === 'archived' ? { archived: true } : { view }}
+                          label={t(`issueViews.${view}`)}
                           leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
                         />
                       ))}

@@ -111,7 +111,7 @@ export function useIssuesPagePresenter() {
   const navigate = useNavigate();
   const router = useRouter();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
-  const { preferences } = usePersonalPreferences();
+  const { preferences, update: updatePreferences } = usePersonalPreferences();
   const subscriptionSnapshot = useSyncExternalStore(
     issueSubscriptions.subscribe,
     () => issueSubscriptions.list().sort().join('\0'),
@@ -211,6 +211,7 @@ export function useIssuesPagePresenter() {
     selected: selectedId,
     restoreScrollTop,
     view: activeView,
+    viewFavorite: preferences.favoriteIssueViews.includes(activeView),
     groupBy,
     layout,
     orderBy,
@@ -302,6 +303,14 @@ export function useIssuesPagePresenter() {
             search: compactSearch({ ...search, archived: false, view: next }),
           });
         }
+      },
+      onToggleViewFavorite: () => {
+        const favorites = preferences.favoriteIssueViews;
+        updatePreferences({
+          favoriteIssueViews: favorites.includes(activeView)
+            ? favorites.filter((view) => view !== activeView)
+            : [...favorites, activeView],
+        });
       },
       onMyIssuesTabChange: (next: string | null) => {
         if (

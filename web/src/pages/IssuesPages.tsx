@@ -1,4 +1,5 @@
-import { Box, Group, VisuallyHidden } from '@mantine/core';
+import { ActionIcon, Box, Group, VisuallyHidden } from '@mantine/core';
+import { IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
@@ -59,9 +60,39 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
       }
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <VisuallyHidden>
-            <h2>{myIssuesTab ? t('nav.myIssues') : t('nav.issues')}</h2>
-          </VisuallyHidden>
+          {myIssuesTab ? (
+            <VisuallyHidden>
+              <h2>{t('nav.myIssues')}</h2>
+            </VisuallyHidden>
+          ) : null}
+          {!myIssuesTab ? (
+            <PageHeader
+              title={t('nav.issues')}
+              actions={
+                <ActionIcon
+                  type="button"
+                  variant="subtle"
+                  color={model.viewFavorite ? 'yellow' : 'gray'}
+                  role="switch"
+                  aria-label={t(
+                    model.viewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
+                  )}
+                  aria-checked={model.viewFavorite}
+                  title={t(
+                    model.viewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
+                  )}
+                  onClick={handlers.onToggleViewFavorite}
+                >
+                  <IconStar
+                    size={15}
+                    stroke={1.7}
+                    fill={model.viewFavorite ? 'currentColor' : 'none'}
+                    aria-hidden="true"
+                  />
+                </ActionIcon>
+              }
+            />
+          ) : null}
           {myIssuesTab ? (
             <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
           ) : null}

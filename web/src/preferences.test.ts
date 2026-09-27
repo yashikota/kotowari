@@ -50,6 +50,7 @@ describe('personal preferences', () => {
       convertEmoticons: true,
       underlineLinks: false,
       pointerCursors: false,
+      favoriteIssueViews: [],
     });
     expect(parsePersonalPreferences('{')).toEqual(parsePersonalPreferences(null));
     expect(
@@ -87,6 +88,19 @@ describe('personal preferences', () => {
     expect(defaultHomeHref('agent')).toBe('/agent');
     expect(defaultHomeHref('issues')).toBe('/issues');
     expect(defaultHomeHref('currentCycle')).toBe('/cycles?scope=current');
+  });
+
+  it('keeps only supported unique issue view favorites', () => {
+    expect(
+      parsePersonalPreferences(
+        JSON.stringify({ favoriteIssueViews: ['active', 'all', 'active', 'unknown', 1] }),
+      ).favoriteIssueViews,
+    ).toEqual(['active', 'all']);
+    expect(
+      parsePersonalPreferences(
+        JSON.stringify({ firstDayOfWeek: 'monday', favoriteIssueViews: 'active' }),
+      ),
+    ).toMatchObject({ firstDayOfWeek: 'monday', favoriteIssueViews: [] });
   });
 
   it('moves sidebar entries between primary and More and preserves their order', () => {

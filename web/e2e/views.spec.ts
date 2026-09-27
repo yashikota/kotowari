@@ -64,6 +64,28 @@ test('saved issue views can be favorited and opened from Favorites', async ({ pa
   ).toHaveCount(0);
 });
 
+test('built-in issue views can be favorited and remain available after reload', async ({
+  page,
+}) => {
+  await page.goto('/issues?view=active');
+  await expect(page.getByRole('heading', { name: 'Issues', level: 2 })).toBeVisible();
+  const addFavorite = page.getByRole('switch', { name: 'Add issue view to favorites' });
+  await expect(addFavorite).toHaveAttribute('aria-checked', 'false');
+  await addFavorite.click();
+
+  const favorites = page.getByRole('navigation', { name: 'Favorites' });
+  await expect(favorites.getByRole('link', { name: 'Active', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole('switch', { name: 'Remove issue view from favorites' }),
+  ).toHaveAttribute('aria-checked', 'true');
+  await favorites.getByRole('link', { name: 'Active', exact: true }).click();
+  await expect(page).toHaveURL(/\/issues\?view=active$/);
+
+  await page.getByRole('switch', { name: 'Remove issue view from favorites' }).click();
+  await expect(favorites.getByRole('link', { name: 'Active', exact: true })).toHaveCount(0);
+});
+
 test('workspace views page has a useful empty state and create action', async ({ page }) => {
   await page.route('**/api/views', async (route) => {
     if (route.request().method() === 'GET') await route.fulfill({ json: [] });

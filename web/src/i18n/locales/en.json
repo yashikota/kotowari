@@ -529,6 +529,10 @@
     "add": "Add to favorites",
     "remove": "Remove from favorites"
   },
+  "issueViewFavorite": {
+    "add": "Add issue view to favorites",
+    "remove": "Remove issue view from favorites"
+  },
   "projectFavorite": {
     "add": "Add project to favorites",
     "remove": "Remove project from favorites"

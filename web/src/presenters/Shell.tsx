@@ -755,6 +755,7 @@ export function useShellPresenter() {
     cycles,
     views,
     favoriteIssues,
+    favoriteIssueViews: preferences.favoriteIssueViews,
     overlay,
     paletteOpen,
     query,

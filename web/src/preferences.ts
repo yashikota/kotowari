@@ -23,6 +23,7 @@ export type DefaultHome =
   | 'cycles'
   | 'agent';
 export type CommentSubmitShortcut = 'modEnter' | 'enter';
+export type FavoriteIssueView = 'active' | 'backlog' | 'all' | 'archived';
 export type SidebarItem =
   | '/'
   | '/inbox'
@@ -73,6 +74,7 @@ export type PersonalPreferences = {
   convertEmoticons: boolean;
   underlineLinks: boolean;
   pointerCursors: boolean;
+  favoriteIssueViews: FavoriteIssueView[];
 };
 
 export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
@@ -104,6 +106,7 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
   convertEmoticons: true,
   underlineLinks: false,
   pointerCursors: false,
+  favoriteIssueViews: [],
 };
 
 export const PERSONAL_PREFERENCES_KEY = 'kotowari.preferences.v1';
@@ -124,6 +127,7 @@ const DEFAULT_HOMES: DefaultHome[] = [
 const FONT_SIZES: FontSize[] = ['small', 'default', 'large'];
 const COMMENT_SHORTCUTS: CommentSubmitShortcut[] = ['modEnter', 'enter'];
 const SIDEBAR_LOCATIONS: SidebarLocation[] = ['primary', 'more', 'hidden'];
+const FAVORITE_ISSUE_VIEWS: FavoriteIssueView[] = ['active', 'backlog', 'all', 'archived'];
 
 function isSidebarItemId(value: unknown): value is SidebarItemId {
   return SIDEBAR_ITEM_IDS.includes(value as SidebarItemId);
@@ -183,6 +187,14 @@ export function parsePersonalPreferences(value: string | null): PersonalPreferen
         typeof parsed.pointerCursors === 'boolean'
           ? parsed.pointerCursors
           : DEFAULT_PERSONAL_PREFERENCES.pointerCursors,
+      favoriteIssueViews: [
+        ...new Set(
+          (Array.isArray(parsed.favoriteIssueViews) ? parsed.favoriteIssueViews : []).filter(
+            (view): view is FavoriteIssueView =>
+              FAVORITE_ISSUE_VIEWS.includes(view as FavoriteIssueView),
+          ),
+        ),
+      ],
     };
   } catch {
     return { ...DEFAULT_PERSONAL_PREFERENCES };
