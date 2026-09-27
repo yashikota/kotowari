@@ -642,29 +642,29 @@ export function IssueDetailView({
             style={issue.archivedAt ? { opacity: 0.72 } : undefined}
           >
             <Grid.Col span={12}>
+              <TextInput
+                ref={titleRef}
+                aria-label={t('ui.issueTitle')}
+                value={issue.title}
+                onChange={handlers.Issue_title_onChange3}
+                onBlur={handlers.Issue_title_onBlur4}
+                variant="unstyled"
+                styles={{
+                  input: {
+                    height: 'auto',
+                    minHeight: 0,
+                    padding: 0,
+                    color: 'var(--mantine-color-text)',
+                    fontSize: '24px',
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                  },
+                }}
+              />
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, md: 8 }} order={{ base: 1, md: 0 }}>
               <Stack gap="lg">
-                <TextInput
-                  ref={titleRef}
-                  aria-label={t('ui.issueTitle')}
-                  value={issue.title}
-                  onChange={handlers.Issue_title_onChange3}
-                  onBlur={handlers.Issue_title_onBlur4}
-                  variant="unstyled"
-                  styles={{
-                    input: {
-                      height: 'auto',
-                      minHeight: 0,
-                      padding: 0,
-                      color: 'var(--mantine-color-text)',
-                      fontSize: '24px',
-                      fontWeight: 600,
-                      lineHeight: 1.3,
-                    },
-                  }}
-                />
-
-                <IssuePropertiesPanel model={model} />
-
                 <DocumentEditor
                   documentKey={`issues/${identifier}/body`}
                   inline
@@ -1288,6 +1288,9 @@ export function IssueDetailView({
                   <AIPanel kind="issues" id={identifier} />
                 </Box>
               </Stack>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 4 }} order={{ base: 0, md: 1 }}>
+              <IssuePropertiesPanel model={model} />
             </Grid.Col>
           </Grid>
           <Modal

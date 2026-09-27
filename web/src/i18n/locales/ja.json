@@ -494,6 +494,7 @@
     "noEstimate": "見積もりなし",
     "noDueDate": "期限なし",
     "noProject": "プロジェクトなし",
+    "addToProject": "プロジェクトに追加",
     "noMilestone": "マイルストーンなし",
     "noProjectsFound": "プロジェクトが見つかりません",
     "noMilestonesFound": "マイルストーンが見つかりません",

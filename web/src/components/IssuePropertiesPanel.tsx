@@ -88,7 +88,8 @@ export function IssuePropertiesPanel({
         ? t('issueAssignment.agent')
         : t('issueAssignment.unassigned');
   const projectValueLabel =
-    projects.find((project) => project.id === issue.projectId)?.name ?? t('field.project');
+    projects.find((project) => project.id === issue.projectId)?.name ??
+    t('issueProperties.addToProject');
   const estimateValueLabel =
     issue.estimate == null ? t('issueProperties.noEstimate') : String(issue.estimate);
   const currentCycle = cycles.find((cycle) => cycle.id === issue.cycleId);
@@ -203,27 +204,6 @@ export function IssuePropertiesPanel({
             />
           </PropertyRow>
 
-          <PropertyRow label={t('field.project')} icon={<IconFolder size={14} stroke={1.7} />}>
-            <PropertySelect
-              compactChars={14}
-              compactLabel={projectValueLabel}
-              aria-label={t('field.project')}
-              value={issue.projectId != null ? String(issue.projectId) : 'none'}
-              onChange={handlers.Project_onChange7}
-              data={[
-                { value: 'none', label: t('field.project') },
-                ...projects.map((project) => ({ value: String(project.id), label: project.name })),
-              ]}
-              renderOption={({ option }) => (
-                <span>
-                  {option.value === 'none' ? t('issueProperties.noProject') : option.label}
-                </span>
-              )}
-              searchable
-              nothingFoundMessage={t('issueProperties.noProjectsFound')}
-            />
-          </PropertyRow>
-
           <PropertyRow label={t('field.estimate')} icon={<IconChartBar size={14} stroke={1.7} />}>
             <PropertySelect
               compactChars={12}
@@ -248,120 +228,6 @@ export function IssuePropertiesPanel({
             />
           </PropertyRow>
 
-          <Box role="group" aria-label={t('issueProperties.labels')}>
-            <PropertyRow
-              label={t('issueProperties.labels')}
-              icon={<IconTag size={14} stroke={1.7} />}
-            >
-              <Popover
-                position="bottom-start"
-                shadow="md"
-                width={264}
-                withinPortal
-                opened={issuePropertyMenu === 'labels'}
-                onChange={(opened) => handlers.onOpenIssuePropertyMenu(opened ? 'labels' : null)}
-              >
-                <Popover.Target>
-                  <UnstyledButton
-                    type="button"
-                    aria-label={t('issueProperties.changeLabels')}
-                    aria-expanded={issuePropertyMenu === 'labels'}
-                    className={styles.labelPickerTarget}
-                    onClick={() => handlers.onToggleIssuePropertyMenu('labels')}
-                  >
-                    <Group gap={4} wrap="nowrap" className={styles.selectedLabels}>
-                      {selectedLabels.length > 0 ? (
-                        selectedLabels.map((label) => (
-                          <span
-                            key={label.id}
-                            className={styles.labelPill}
-                            style={{
-                              backgroundColor: `color-mix(in srgb, ${label.color} 18%, transparent)`,
-                            }}
-                          >
-                            {label.name}
-                          </span>
-                        ))
-                      ) : (
-                        <Text size="xs" c="dimmed" truncate>
-                          {t('issueProperties.noLabels')}
-                        </Text>
-                      )}
-                    </Group>
-                    <IconChevronDown size={13} stroke={1.8} aria-hidden="true" />
-                  </UnstyledButton>
-                </Popover.Target>
-                <Popover.Dropdown
-                  role="dialog"
-                  aria-label={t('issueProperties.changeLabels')}
-                  className={styles.labelPicker}
-                >
-                  <TextInput
-                    aria-label={t('issueProperties.changeLabels')}
-                    placeholder={t('issueProperties.findOrCreateLabel')}
-                    autoFocus={issuePropertyMenu === 'labels'}
-                    value={labelName}
-                    onChange={handlers.onLabelQueryChange}
-                    onKeyDown={handlers.onLabelQueryKeyDown}
-                    size="xs"
-                    mb="xs"
-                  />
-                  <ScrollArea.Autosize mah={196} type="auto">
-                    <Stack gap={2}>
-                      {visibleLabels.map((label) => {
-                        const selected = selectedLabelIds.has(label.id);
-                        return (
-                          <UnstyledButton
-                            key={label.id}
-                            type="button"
-                            role="checkbox"
-                            aria-label={label.name}
-                            aria-checked={selected}
-                            onClick={() => handlers.onToggleIssueLabel(label)}
-                            className={styles.labelOption}
-                          >
-                            <Group gap="xs" wrap="nowrap">
-                              <Box
-                                w={8}
-                                h={8}
-                                style={{
-                                  flex: '0 0 auto',
-                                  borderRadius: '50%',
-                                  backgroundColor: label.color,
-                                }}
-                              />
-                              <Text size="xs" truncate>
-                                {label.name}
-                              </Text>
-                              {selected ? <IconCheck size={14} className={styles.check} /> : null}
-                            </Group>
-                          </UnstyledButton>
-                        );
-                      })}
-                      {visibleLabels.length === 0 ? (
-                        <Text size="xs" c="dimmed" p="xs">
-                          {t('issueProperties.noLabelsFound')}
-                        </Text>
-                      ) : null}
-                    </Stack>
-                  </ScrollArea.Autosize>
-                  {canCreateLabel ? (
-                    <Button
-                      type="button"
-                      variant="subtle"
-                      size="compact-xs"
-                      fullWidth
-                      mt="xs"
-                      onClick={handlers.onCreateLabel}
-                    >
-                      {t('issueProperties.createLabel', { name: labelName.trim() })}
-                    </Button>
-                  ) : null}
-                </Popover.Dropdown>
-              </Popover>
-            </PropertyRow>
-          </Box>
-
           <PropertyRow label={t('field.cycle')} icon={<IconRefresh size={14} stroke={1.7} />}>
             <PropertySelect
               compactChars={12}
@@ -381,6 +247,150 @@ export function IssuePropertiesPanel({
               )}
               searchable
               nothingFoundMessage={t('issueProperties.noCyclesFound')}
+            />
+          </PropertyRow>
+        </Box>
+
+        <Box role="group" aria-label={t('issueProperties.labels')} className={styles.section}>
+          <Text className={styles.heading}>{t('issueProperties.labels')}</Text>
+          <PropertyRow
+            label={t('issueProperties.labels')}
+            icon={<IconTag size={14} stroke={1.7} />}
+            className={styles.labelsRow}
+          >
+            <Popover
+              position="bottom-start"
+              shadow="md"
+              width={264}
+              withinPortal
+              opened={issuePropertyMenu === 'labels'}
+              onChange={(opened) => handlers.onOpenIssuePropertyMenu(opened ? 'labels' : null)}
+            >
+              <Popover.Target>
+                <UnstyledButton
+                  type="button"
+                  aria-label={t('issueProperties.changeLabels')}
+                  aria-expanded={issuePropertyMenu === 'labels'}
+                  className={styles.labelPickerTarget}
+                  onClick={() => handlers.onToggleIssuePropertyMenu('labels')}
+                >
+                  <Group gap={4} wrap="nowrap" className={styles.selectedLabels}>
+                    {selectedLabels.length > 0 ? (
+                      selectedLabels.map((label) => (
+                        <span
+                          key={label.id}
+                          className={styles.labelPill}
+                          style={{
+                            backgroundColor: `color-mix(in srgb, ${label.color} 18%, transparent)`,
+                          }}
+                        >
+                          {label.name}
+                        </span>
+                      ))
+                    ) : (
+                      <Text size="xs" c="dimmed" truncate>
+                        {t('issueProperties.noLabels')}
+                      </Text>
+                    )}
+                  </Group>
+                  <IconChevronDown size={13} stroke={1.8} aria-hidden="true" />
+                </UnstyledButton>
+              </Popover.Target>
+              <Popover.Dropdown
+                role="dialog"
+                aria-label={t('issueProperties.changeLabels')}
+                className={styles.labelPicker}
+              >
+                <TextInput
+                  aria-label={t('issueProperties.changeLabels')}
+                  placeholder={t('issueProperties.findOrCreateLabel')}
+                  autoFocus={issuePropertyMenu === 'labels'}
+                  value={labelName}
+                  onChange={handlers.onLabelQueryChange}
+                  onKeyDown={handlers.onLabelQueryKeyDown}
+                  size="xs"
+                  mb="xs"
+                />
+                <ScrollArea.Autosize mah={196} type="auto">
+                  <Stack gap={2}>
+                    {visibleLabels.map((label) => {
+                      const selected = selectedLabelIds.has(label.id);
+                      return (
+                        <UnstyledButton
+                          key={label.id}
+                          type="button"
+                          role="checkbox"
+                          aria-label={label.name}
+                          aria-checked={selected}
+                          onClick={() => handlers.onToggleIssueLabel(label)}
+                          className={styles.labelOption}
+                        >
+                          <Group gap="xs" wrap="nowrap">
+                            <Box
+                              w={8}
+                              h={8}
+                              style={{
+                                flex: '0 0 auto',
+                                borderRadius: '50%',
+                                backgroundColor: label.color,
+                              }}
+                            />
+                            <Text size="xs" truncate>
+                              {label.name}
+                            </Text>
+                            {selected ? <IconCheck size={14} className={styles.check} /> : null}
+                          </Group>
+                        </UnstyledButton>
+                      );
+                    })}
+                    {visibleLabels.length === 0 ? (
+                      <Text size="xs" c="dimmed" p="xs">
+                        {t('issueProperties.noLabelsFound')}
+                      </Text>
+                    ) : null}
+                  </Stack>
+                </ScrollArea.Autosize>
+                {canCreateLabel ? (
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    size="compact-xs"
+                    fullWidth
+                    mt="xs"
+                    onClick={handlers.onCreateLabel}
+                  >
+                    {t('issueProperties.createLabel', { name: labelName.trim() })}
+                  </Button>
+                ) : null}
+              </Popover.Dropdown>
+            </Popover>
+          </PropertyRow>
+        </Box>
+
+        <Box role="group" aria-label={t('field.project')} className={styles.section}>
+          <Text className={styles.heading}>{t('field.project')}</Text>
+          <PropertyRow
+            label={t('field.project')}
+            icon={<IconFolder size={14} stroke={1.7} />}
+            className={styles.projectRow}
+          >
+            <PropertySelect
+              compactChars={18}
+              compactLabel={projectValueLabel}
+              aria-label={t('field.project')}
+              value={issue.projectId != null ? String(issue.projectId) : 'none'}
+              onChange={handlers.Project_onChange7}
+              data={[
+                { value: 'none', label: t('field.project') },
+                ...projects.map((project) => ({ value: String(project.id), label: project.name })),
+              ]}
+              renderOption={({ option }) => (
+                <span>
+                  {option.value === 'none' ? t('issueProperties.noProject') : option.label}
+                </span>
+              )}
+              searchable
+              nothingFoundMessage={t('issueProperties.noProjectsFound')}
             />
           </PropertyRow>
         </Box>

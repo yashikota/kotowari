@@ -8,7 +8,7 @@ import {
   openIssueFilterCategory,
 } from './issue-list-controls.ts';
 
-test('issue list row opens a Linear-style full-width detail view with editable properties', async ({
+test('issue detail keeps Linear-style properties in a right rail with editable fields', async ({
   page,
   request,
 }) => {
@@ -83,6 +83,8 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   const properties = page.getByRole('region', { name: 'Issue properties' });
   const activity = page.getByRole('region', { name: 'Activity' });
   await expect(properties).toBeVisible();
+  await expect(properties.getByText('Properties', { exact: true })).toBeVisible();
+  await expect(properties.getByRole('group', { name: 'Project' })).toBeVisible();
   await expect(activity.getByText(commentBody, { exact: true })).toBeVisible();
   await expect(activity.getByText(/Added a note/)).toHaveCount(0);
   const [createdActivityBounds, commentBounds] = await Promise.all([
@@ -117,13 +119,15 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   expect(titleBounds).not.toBeNull();
   expect(propertiesBounds).not.toBeNull();
   expect(editorBounds).not.toBeNull();
-  expect(propertiesBounds!.width).toBeGreaterThan(600);
+  expect(propertiesBounds!.width).toBeGreaterThan(200);
+  expect(propertiesBounds!.width).toBeLessThan(420);
   expect(titleBounds!.y).toBeLessThan(propertiesBounds!.y);
-  expect(propertiesBounds!.y).toBeLessThan(editorBounds!.y);
-  expect(Math.abs(statusBounds!.y - priorityBounds!.y)).toBeLessThan(2);
+  expect(propertiesBounds!.y).toBeLessThanOrEqual(editorBounds!.y + 2);
+  expect(propertiesBounds!.x).toBeGreaterThan(editorBounds!.x);
+  expect(statusBounds!.y).toBeLessThan(priorityBounds!.y);
+  expect(priorityBounds!.y).toBeLessThan(cycleBounds!.y);
   expect(labelsBounds).not.toBeNull();
-  expect(Math.abs(statusBounds!.y - labelsBounds!.y)).toBeLessThanOrEqual(2);
-  expect(cycleBounds!.y).toBeGreaterThan(labelsBounds!.y);
+  expect(cycleBounds!.y).toBeLessThan(labelsBounds!.y);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
