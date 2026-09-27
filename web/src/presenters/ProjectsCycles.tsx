@@ -1711,6 +1711,7 @@ export function useCycleDetailPagePresenter() {
   const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
   const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');
+  const completedByRecency = search.completedByRecency ?? false;
   const [showSubIssues, setShowSubIssues] = useState(true);
   const [nestedSubIssues, setNestedSubIssues] = useState<'showMatching' | 'showAll'>(
     'showMatching',
@@ -1951,6 +1952,7 @@ export function useCycleDetailPagePresenter() {
     subGroupBy,
     direction,
     completedIssues,
+    completedByRecency,
     showSubIssues,
     nestedSubIssues,
     showEmptyGroups,
@@ -2025,6 +2027,13 @@ export function useCycleDetailPagePresenter() {
       onSubGroupBy: (next: IssueGroupBy) => setSubGroupBy(next),
       onDirection: (next: 'asc' | 'desc') => setDirection(next),
       onCompletedIssues: (next: CompletedIssuesFilter) => setCompletedIssues(next),
+      onCompletedByRecencyChange: (show: boolean) =>
+        navigate({
+          to: '/cycles/$number',
+          params: { number: String(cycle.number) },
+          search: { ...search, completedByRecency: show ? true : undefined },
+          replace: true,
+        }),
       onShowSubIssues: (next: boolean) => setShowSubIssues(next),
       onNestedSubIssues: (next: 'showMatching' | 'showAll') => setNestedSubIssues(next),
       onShowEmptyGroups: (next: boolean) => setShowEmptyGroups(next),

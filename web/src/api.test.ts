@@ -181,6 +181,7 @@ describe('parseIssueSearch', () => {
         orderBy: 'dueDate',
         direction: 'desc',
         completedIssues: 'pastWeek',
+        completedByRecency: 'true',
         showSubIssues: 'false',
         nestedSubIssues: 'showAll',
         showEmptyGroups: true,
@@ -193,6 +194,7 @@ describe('parseIssueSearch', () => {
       orderBy: 'dueDate',
       direction: 'desc',
       completedIssues: 'pastWeek',
+      completedByRecency: true,
       showSubIssues: false,
       nestedSubIssues: 'showAll',
       showEmptyGroups: true,
@@ -204,6 +206,7 @@ describe('parseIssueSearch', () => {
         layout: 'table',
         direction: 'sideways',
         completedIssues: 'forever',
+        completedByRecency: 'sometimes',
         displayProperties: '["creator"]',
       }),
     ).toEqual({});

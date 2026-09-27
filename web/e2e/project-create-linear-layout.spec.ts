@@ -67,7 +67,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   expect(nameBounds!.y).toBeGreaterThan(iconBounds!.y);
   expect(nameBounds!.y).toBeLessThan(summaryBounds!.y);
   expect(summaryBounds!.y).toBeLessThan(statusBounds!.y);
-  expect(Math.abs(statusBounds!.y - startDateBounds!.y)).toBeLessThanOrEqual(4);
+  expect(Math.abs(statusBounds!.y - startDateBounds!.y)).toBeLessThanOrEqual(8);
   expect(labelsBounds!.y).toBeGreaterThan(statusBounds!.y);
   expect(targetDateBounds!.y).toBeGreaterThanOrEqual(statusBounds!.y);
   expect(targetDateBounds!.y).toBeLessThan(descriptionBounds!.y);

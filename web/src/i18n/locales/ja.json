@@ -1456,6 +1456,7 @@
     "asc": "昇順",
     "desc": "降順",
     "completedIssues": "完了イシュー",
+    "completedByRecency": "完了日時の新しい順に並べる",
     "showSubIssues": "サブイシューを表示",
     "nestedSubIssues": "入れ子のサブイシュー",
     "showEmptyGroups": "空のグループを表示",

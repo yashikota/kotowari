@@ -567,6 +567,7 @@ export type IssueSearch = {
   orderBy?: IssueOrderBy;
   direction?: 'asc' | 'desc';
   completedIssues?: CompletedIssuesFilter;
+  completedByRecency?: boolean;
   showSubIssues?: boolean;
   nestedSubIssues?: 'showMatching' | 'showAll';
   showEmptyGroups?: boolean;
@@ -653,6 +654,8 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   if (raw.direction === 'asc' || raw.direction === 'desc') out.direction = raw.direction;
   if (COMPLETED_ISSUES_FILTERS.includes(raw.completedIssues as CompletedIssuesFilter))
     out.completedIssues = raw.completedIssues as CompletedIssuesFilter;
+  const completedByRecency = parseOptionalBoolean(raw.completedByRecency);
+  if (completedByRecency !== undefined) out.completedByRecency = completedByRecency;
   const showSubIssues = parseOptionalBoolean(raw.showSubIssues);
   if (showSubIssues !== undefined) out.showSubIssues = showSubIssues;
   if (raw.nestedSubIssues === 'showMatching' || raw.nestedSubIssues === 'showAll')

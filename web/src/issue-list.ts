@@ -448,13 +448,17 @@ export function sortIssues(
   issues: Issue[],
   orderBy: IssueOrderBy,
   direction?: 'asc' | 'desc',
+  options: { completedByRecency?: boolean } = {},
 ): Issue[] {
-  if (orderBy === 'manual') return [...issues];
+  if (orderBy === 'manual') {
+    const manualOrder = [...issues];
+    return options.completedByRecency ? orderCompletedIssuesByRecency(manualOrder) : manualOrder;
+  }
   const resolvedDirection =
     direction ??
     (orderBy === 'updated' || orderBy === 'created' || orderBy === 'timeInStatus' ? 'desc' : 'asc');
 
-  return [...issues].sort((a, b) => {
+  const sorted = [...issues].sort((a, b) => {
     let comparison = 0;
     if (orderBy === 'status') {
       comparison = STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
@@ -487,4 +491,22 @@ export function sortIssues(
       (resolvedDirection === 'desc' ? -1 : 1)
     );
   });
+  return options.completedByRecency ? orderCompletedIssuesByRecency(sorted) : sorted;
+}
+
+function orderCompletedIssuesByRecency(issues: Issue[]): Issue[] {
+  const completedIssues = issues.filter(isCompleted).sort((a, b) => {
+    const completedAt = (issue: Issue) => {
+      const timestamp = Date.parse(issue.completedAt ?? issue.updatedAt);
+      return Number.isFinite(timestamp) ? timestamp : null;
+    };
+    const aCompletedAt = completedAt(a);
+    const bCompletedAt = completedAt(b);
+    if (aCompletedAt === bCompletedAt) return 0;
+    if (aCompletedAt === null) return 1;
+    if (bCompletedAt === null) return -1;
+    return bCompletedAt - aCompletedAt;
+  });
+  let completedIndex = 0;
+  return issues.map((issue) => (isCompleted(issue) ? completedIssues[completedIndex++]! : issue));
 }

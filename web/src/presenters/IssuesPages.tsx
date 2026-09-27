@@ -56,6 +56,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     orderBy: next.orderBy ?? '',
     direction: next.direction ?? '',
     completedIssues: next.completedIssues ?? '',
+    completedByRecency: next.completedByRecency ?? '',
     showSubIssues: next.showSubIssues ?? '',
     nestedSubIssues: next.nestedSubIssues ?? '',
     showEmptyGroups: next.showEmptyGroups ?? '',

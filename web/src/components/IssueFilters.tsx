@@ -41,6 +41,8 @@ export function IssueFiltersView({
         subGroupBy,
         direction,
         completedIssues,
+        completedByRecency,
+        onCompletedByRecencyChange,
         showSubIssues,
         nestedSubIssues,
         showEmptyGroups,
@@ -163,6 +165,7 @@ export function IssueFiltersView({
                   subGroupBy={subGroupBy ?? 'none'}
                   direction={direction ?? 'asc'}
                   completedIssues={completedIssues ?? 'all'}
+                  completedByRecency={completedByRecency}
                   showSubIssues={showSubIssues ?? true}
                   nestedSubIssues={nestedSubIssues ?? 'showMatching'}
                   showEmptyGroups={showEmptyGroups ?? false}
@@ -170,6 +173,9 @@ export function IssueFiltersView({
                   onSubGroupByChange={handlers.onSubGroupByChange}
                   onDirectionChange={handlers.onDirectionChange}
                   onCompletedIssuesChange={handlers.onCompletedIssuesChange}
+                  onCompletedByRecencyChange={
+                    onCompletedByRecencyChange ? handlers.onCompletedByRecencyChange : undefined
+                  }
                   onShowSubIssuesChange={handlers.onShowSubIssuesChange}
                   onNestedSubIssuesChange={handlers.onNestedSubIssuesChange}
                   onShowEmptyGroupsChange={handlers.onShowEmptyGroupsChange}

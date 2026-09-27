@@ -38,6 +38,7 @@ export function IssueDisplayOptions({
   subGroupBy,
   direction,
   completedIssues,
+  completedByRecency,
   showSubIssues,
   nestedSubIssues,
   showEmptyGroups,
@@ -45,6 +46,7 @@ export function IssueDisplayOptions({
   onSubGroupByChange,
   onDirectionChange,
   onCompletedIssuesChange,
+  onCompletedByRecencyChange,
   onShowSubIssuesChange,
   onNestedSubIssuesChange,
   onShowEmptyGroupsChange,
@@ -62,6 +64,7 @@ export function IssueDisplayOptions({
   subGroupBy: IssueGroupBy;
   direction: 'asc' | 'desc';
   completedIssues: CompletedIssuesFilter;
+  completedByRecency?: boolean;
   showSubIssues: boolean;
   nestedSubIssues: 'showMatching' | 'showAll';
   showEmptyGroups: boolean;
@@ -69,6 +72,7 @@ export function IssueDisplayOptions({
   onSubGroupByChange: (groupBy: string) => void;
   onDirectionChange: (direction: 'asc' | 'desc') => void;
   onCompletedIssuesChange: (filter: CompletedIssuesFilter) => void;
+  onCompletedByRecencyChange?: (show: boolean) => void;
   onShowSubIssuesChange: (show: boolean) => void;
   onNestedSubIssuesChange: (mode: 'showMatching' | 'showAll') => void;
   onShowEmptyGroupsChange: (show: boolean) => void;
@@ -167,6 +171,14 @@ export function IssueDisplayOptions({
           >
             {t('displayOptions.directionLabel', { direction: t(`displayOptions.${direction}`) })}
           </Button>
+          {onCompletedByRecencyChange ? (
+            <Checkbox
+              size="xs"
+              label={t('displayOptions.completedByRecency')}
+              checked={completedByRecency ?? false}
+              onChange={(event) => onCompletedByRecencyChange(event.currentTarget.checked)}
+            />
+          ) : null}
           <NativeSelect
             aria-label={t('displayOptions.completedIssues')}
             label={t('displayOptions.completedIssues')}

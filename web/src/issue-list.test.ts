@@ -320,6 +320,27 @@ describe('sortIssues', () => {
     expect(sortIssues(issues, 'title', 'desc').map((row) => row.number)).toEqual([1, 3, 2]);
   });
 
+  it('orders completed issues by recency without moving open issues', () => {
+    const rows = [
+      {
+        ...issue(1, 1),
+        status: 'done' as const,
+        completedAt: '2026-04-01T10:00:00Z',
+      },
+      issue(2, 2),
+      {
+        ...issue(3, 1),
+        status: 'done' as const,
+        completedAt: '2026-04-03T10:00:00Z',
+      },
+    ];
+
+    expect(
+      sortIssues(rows, 'manual', undefined, { completedByRecency: true }).map((row) => row.number),
+    ).toEqual([3, 2, 1]);
+    expect(sortIssues(rows, 'priority').map((row) => row.number)).toEqual([1, 3, 2]);
+  });
+
   it('orders by workflow status, external link count, and status age', () => {
     const rows = [
       {

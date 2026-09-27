@@ -1463,6 +1463,7 @@
     "asc": "Ascending",
     "desc": "Descending",
     "completedIssues": "Completed issues",
+    "completedByRecency": "Order completed by recency",
     "showSubIssues": "Show sub-issues",
     "nestedSubIssues": "Nested sub-issues",
     "showEmptyGroups": "Show empty groups",

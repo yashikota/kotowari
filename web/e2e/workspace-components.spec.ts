@@ -2887,7 +2887,10 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   await expect(breakdownTooltip).toContainText('0 estimate points completed');
   const breakdownSelector = progress.getByRole('combobox', { name: 'Group cycle progress by' });
   await breakdownSelector.click();
-  await page.getByRole('option', { name: 'Priority', exact: true }).click();
+  await page
+    .locator('[role="option"][data-combobox-option="true"]')
+    .getByText('Priority', { exact: true })
+    .click();
   const priorities = progress.getByRole('region', { name: 'Priority', exact: true });
   await expect(priorities.getByText('Urgent', { exact: true })).toBeVisible();
   await expect(priorities.getByText('High', { exact: true })).toBeVisible();
@@ -3015,6 +3018,75 @@ test('cycle issues default to priority ordering within each status group', async
   const rows = await issueList.getByRole('option').allTextContents();
   expect(rows.findIndex((row) => row.includes(urgentTitle))).toBeLessThan(
     rows.findIndex((row) => row.includes(lowTitle)),
+  );
+});
+
+test('cycle completed issues can be ordered by recency and the setting survives reload', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/cycles', {
+    data: {
+      startsAt: '2034-04-01T00:00:00Z',
+      endsAt: '2034-04-14T00:00:00Z',
+      status: 'active',
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const cycle = (await created.json()) as { id: number; number: number };
+  const earlierTitle = `Cycle completed earlier ${cycle.number}`;
+  const laterTitle = `Cycle completed later ${cycle.number}`;
+  const earlierCreated = await request.post('/api/issues', {
+    data: { title: earlierTitle, status: 'todo', priority: 2, cycleId: cycle.id },
+  });
+  expect(earlierCreated.ok()).toBeTruthy();
+  const earlierIssue = (await earlierCreated.json()) as { identifier: string };
+  const earlierCompleted = await request.patch(`/api/issues/${earlierIssue.identifier}`, {
+    data: { status: 'done' },
+  });
+  expect(earlierCompleted.ok()).toBeTruthy();
+  const earlierTimestamp = (await earlierCompleted.json()) as { completedAt: string };
+
+  // The API stores timestamps at second precision, so make the completion order explicit.
+  await page.waitForFunction(
+    (completedAt) => Date.now() > Date.parse(completedAt) + 1_000,
+    earlierTimestamp.completedAt,
+  );
+  const laterIssue = await request.post('/api/issues', {
+    data: { title: laterTitle, status: 'done', priority: 2, cycleId: cycle.id },
+  });
+  expect(laterIssue.ok()).toBeTruthy();
+
+  await page.goto(`/cycles/${cycle.number}`);
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  const earlier = issueList.getByRole('option', { name: new RegExp(earlierTitle) });
+  await expect(earlier).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(laterTitle) })).toBeVisible();
+  const initialRows = await issueList.getByRole('option').allTextContents();
+  expect(initialRows.findIndex((row) => row.includes(earlierTitle))).toBeLessThan(
+    initialRows.findIndex((row) => row.includes(laterTitle)),
+  );
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('checkbox', { name: 'Order completed by recency' }).check();
+  await expect(page).toHaveURL(new RegExp(`/cycles/${cycle.number}\\?completedByRecency=true$`));
+  const recentRows = await issueList.getByRole('option').allTextContents();
+  expect(recentRows.findIndex((row) => row.includes(laterTitle))).toBeLessThan(
+    recentRows.findIndex((row) => row.includes(earlierTitle)),
+  );
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByRole('checkbox', { name: 'Order completed by recency' })).toBeChecked();
+  const reloadedRows = await issueList.getByRole('option').allTextContents();
+  expect(reloadedRows.findIndex((row) => row.includes(laterTitle))).toBeLessThan(
+    reloadedRows.findIndex((row) => row.includes(earlierTitle)),
+  );
+
+  await page.getByRole('checkbox', { name: 'Order completed by recency' }).uncheck();
+  const restoredRows = await issueList.getByRole('option').allTextContents();
+  expect(restoredRows.findIndex((row) => row.includes(earlierTitle))).toBeLessThan(
+    restoredRows.findIndex((row) => row.includes(laterTitle)),
   );
 });
 

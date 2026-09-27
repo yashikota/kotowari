@@ -46,6 +46,7 @@ type Props = {
   showEmptyGroups?: boolean;
   showSubIssues?: boolean;
   direction?: 'asc' | 'desc';
+  completedByRecency?: boolean;
   displayProperties?: IssueDisplayProperty[];
   projects?: Project[];
   cycles?: Cycle[];
@@ -65,6 +66,7 @@ export function useIssueListPresenter({
   showEmptyGroups = false,
   showSubIssues = true,
   direction,
+  completedByRecency = false,
   displayProperties,
   projects = [],
   cycles = [],
@@ -78,7 +80,7 @@ export function useIssueListPresenter({
   const visibleIssues = showSubIssues
     ? projectedIssues
     : projectedIssues.filter((issue) => issue.parentId == null);
-  const issues = sortIssues(visibleIssues, orderBy, direction);
+  const issues = sortIssues(visibleIssues, orderBy, direction, { completedByRecency });
   const navigate = useNavigate();
   const router = useRouter();
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
@@ -377,6 +379,7 @@ type BoardProps = {
   orderBy?: IssueOrderBy;
   direction?: 'asc' | 'desc';
   showSubIssues?: boolean;
+  completedByRecency?: boolean;
 };
 
 function columnIssues(
@@ -384,9 +387,11 @@ function columnIssues(
   status: string,
   orderBy: IssueOrderBy,
   direction?: 'asc' | 'desc',
+  completedByRecency = false,
 ): Issue[] {
   const matching = issues.filter((issue) => (issue.workflowStatus ?? issue.status) === status);
-  if (orderBy !== 'manual') return sortIssues(matching, orderBy, direction);
+  if (orderBy !== 'manual') return sortIssues(matching, orderBy, direction, { completedByRecency });
+  if (completedByRecency) return sortIssues(matching, 'manual', direction, { completedByRecency });
   return matching.sort((a, b) => a.sortOrder - b.sortOrder || a.number - b.number);
 }
 
@@ -398,6 +403,7 @@ export function useIssueBoardPresenter({
   orderBy = 'manual',
   direction,
   showSubIssues = true,
+  completedByRecency = false,
 }: BoardProps) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const projectedIssues = useIssueProjection(initialIssues);
@@ -411,9 +417,9 @@ export function useIssueBoardPresenter({
         status: status.id,
         category: status.category,
         name: status.name,
-        issues: columnIssues(issues, status.id, orderBy, direction),
+        issues: columnIssues(issues, status.id, orderBy, direction, completedByRecency),
       })),
-    [issues, orderBy, direction, workflowStatuses],
+    [issues, orderBy, direction, completedByRecency, workflowStatuses],
   );
   const issueIds = useMemo(
     () => columns.flatMap((column) => column.issues.map((issue) => issue.identifier)),

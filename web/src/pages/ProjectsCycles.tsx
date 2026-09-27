@@ -1035,6 +1035,7 @@ export function CycleDetailPageView({
         subGroupBy,
         direction,
         completedIssues,
+        completedByRecency,
         showSubIssues,
         nestedSubIssues,
         showEmptyGroups,
@@ -1102,6 +1103,8 @@ export function CycleDetailPageView({
                   direction={direction}
                   onDirection={handlers.onDirection}
                   completedIssues={completedIssues}
+                  completedByRecency={completedByRecency}
+                  onCompletedByRecencyChange={handlers.onCompletedByRecencyChange}
                   onCompletedIssues={handlers.onCompletedIssues}
                   showSubIssues={showSubIssues}
                   onShowSubIssues={handlers.onShowSubIssues}
@@ -1124,6 +1127,7 @@ export function CycleDetailPageView({
                       direction={direction}
                       showEmptyGroups={showEmptyGroups}
                       showSubIssues={showSubIssues}
+                      completedByRecency={completedByRecency}
                       displayProperties={displayProperties}
                       projects={data.projects}
                       cycles={data.cycles}
@@ -1136,6 +1140,7 @@ export function CycleDetailPageView({
                         orderBy={orderBy}
                         direction={direction}
                         showSubIssues={showSubIssues}
+                        completedByRecency={completedByRecency}
                         onOpen={handlers.onBoardOpen}
                         onMove={handlers.onBoardMove}
                       />

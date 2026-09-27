@@ -91,6 +91,8 @@ type Props = {
   onDirection?: (direction: 'asc' | 'desc') => void;
   completedIssues?: CompletedIssuesFilter;
   onCompletedIssues?: (filter: CompletedIssuesFilter) => void;
+  completedByRecency?: boolean;
+  onCompletedByRecencyChange?: (show: boolean) => void;
   showSubIssues?: boolean;
   onShowSubIssues?: (show: boolean) => void;
   nestedSubIssues?: 'showMatching' | 'showAll';
@@ -129,6 +131,8 @@ export function useIssueFiltersPresenter({
   onDirection,
   completedIssues,
   onCompletedIssues,
+  completedByRecency,
+  onCompletedByRecencyChange,
   showSubIssues,
   onShowSubIssues,
   nestedSubIssues,
@@ -420,6 +424,8 @@ export function useIssueFiltersPresenter({
     subGroupBy,
     direction,
     completedIssues,
+    completedByRecency,
+    onCompletedByRecencyChange,
     showSubIssues,
     nestedSubIssues,
     showEmptyGroups,
@@ -571,6 +577,7 @@ export function useIssueFiltersPresenter({
         if (COMPLETED_ISSUES.includes(value as CompletedIssuesFilter))
           return onCompletedIssues?.(value as CompletedIssuesFilter);
       },
+      onCompletedByRecencyChange: (show: boolean) => onCompletedByRecencyChange?.(show),
       onShowSubIssuesChange: (value: boolean) => onShowSubIssues?.(value),
       onNestedSubIssuesChange: (value: string) => {
         if (value === 'showMatching' || value === 'showAll') onNestedSubIssues?.(value);
