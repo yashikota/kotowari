@@ -2871,6 +2871,22 @@ test('cycle details summarize scope, started, and completed work', async ({ page
     'aria-valuetext',
     '67%',
   );
+  const chart = progress.getByRole('img', { name: /Cycle progress over time/ });
+  await expect(chart).toBeVisible();
+  const chartBounds = await chart.boundingBox();
+  expect(chartBounds).not.toBeNull();
+  await page.mouse.move(
+    chartBounds!.x + chartBounds!.width * 0.65,
+    chartBounds!.y + chartBounds!.height * 0.45,
+  );
+  const chartTooltip = chart.locator('[role="tooltip"]');
+  await expect(chartTooltip).toBeVisible();
+  await expect(chartTooltip).toContainText('Scope: 3');
+  await expect(chartTooltip).toContainText('Started: 1');
+  await expect(chartTooltip).toContainText('Completed: 2');
+  await chart.focus();
+  await page.keyboard.press('Home');
+  await expect(chart.locator('[role="tooltip"]')).toBeVisible();
 });
 
 test('cycle issues can be filtered in the URL and displayed as a board', async ({

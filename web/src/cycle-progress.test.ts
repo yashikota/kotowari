@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { cycleAssigneeDistribution, cycleProgressTimeline } from './cycle-progress.ts';
+import {
+  cycleAssigneeDistribution,
+  cycleProgressPointIndexAtRatio,
+  cycleProgressTimeline,
+} from './cycle-progress.ts';
 import type { Activity, Cycle, Issue } from './types.ts';
 
 const cycle: Cycle = {
@@ -110,6 +114,33 @@ describe('cycleProgressTimeline', () => {
         new Date('2026-09-02T00:00:00Z'),
       ),
     ).toEqual([]);
+  });
+});
+
+describe('cycleProgressPointIndexAtRatio', () => {
+  const points = [
+    { at: '2026-09-01T00:00:00.000Z', scope: 0, started: 0, completed: 0 },
+    { at: '2026-09-02T00:00:00.000Z', scope: 1, started: 0, completed: 0 },
+    { at: '2026-09-05T00:00:00.000Z', scope: 2, started: 1, completed: 1 },
+  ];
+
+  it('selects the nearest timeline point while clamping pointer positions', () => {
+    expect(cycleProgressPointIndexAtRatio(points, 0)).toBe(0);
+    expect(cycleProgressPointIndexAtRatio(points, 0.2)).toBe(1);
+    expect(cycleProgressPointIndexAtRatio(points, 0.95)).toBe(2);
+    expect(cycleProgressPointIndexAtRatio(points, -1)).toBe(0);
+    expect(cycleProgressPointIndexAtRatio(points, 2)).toBe(2);
+  });
+
+  it('ignores empty or invalid pointer input', () => {
+    expect(cycleProgressPointIndexAtRatio([], 0.5)).toBeNull();
+    expect(cycleProgressPointIndexAtRatio(points, Number.NaN)).toBeNull();
+    expect(
+      cycleProgressPointIndexAtRatio(
+        [{ at: 'not-a-date', scope: 0, started: 0, completed: 0 }],
+        0.5,
+      ),
+    ).toBeNull();
   });
 });
 

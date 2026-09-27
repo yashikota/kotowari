@@ -16,6 +16,29 @@ export type CycleAssigneeShare = {
   share: number;
 };
 
+export function cycleProgressPointIndexAtRatio(
+  points: CycleProgressPoint[],
+  ratio: number,
+): number | null {
+  if (points.length === 0 || !Number.isFinite(ratio)) return null;
+  const first = Date.parse(points[0]!.at);
+  const last = Date.parse(points.at(-1)!.at);
+  if (!Number.isFinite(first) || !Number.isFinite(last)) return null;
+  const target = first + Math.min(1, Math.max(0, ratio)) * (last - first);
+  let selectedIndex = 0;
+  let selectedDistance = Number.POSITIVE_INFINITY;
+  for (const [index, point] of points.entries()) {
+    const at = Date.parse(point.at);
+    if (!Number.isFinite(at)) continue;
+    const distance = Math.abs(at - target);
+    if (distance < selectedDistance) {
+      selectedIndex = index;
+      selectedDistance = distance;
+    }
+  }
+  return Number.isFinite(selectedDistance) ? selectedIndex : null;
+}
+
 export function cycleAssigneeDistribution(issues: Pick<Issue, 'assignee'>[]): CycleAssigneeShare[] {
   if (issues.length === 0) return [];
   const counts: Record<CycleAssigneeKey, number> = { self: 0, agent: 0, unassigned: 0 };

@@ -13,7 +13,11 @@ import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
-import { cycleAssigneeDistribution, cycleProgressTimeline } from '../cycle-progress.ts';
+import {
+  cycleAssigneeDistribution,
+  cycleProgressPointIndexAtRatio,
+  cycleProgressTimeline,
+} from '../cycle-progress.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import type { IssueNavigationState } from '../focus.ts';
 import {
@@ -1677,10 +1681,17 @@ export function useCycleDetailPagePresenter() {
   const [cycle, setCycle] = useState(data.cycle);
   const [cycleDetailsOpen, setCycleDetailsOpen] = useState(true);
   const [cycleProgressOpen, setCycleProgressOpen] = useState(readCycleProgressOpen);
+  const [activeProgressIndex, setActiveProgressIndex] = useState<number | null>(null);
   const googleCalendarURL = cycleGoogleCalendarURL(cycle, cycleURL(cycle.number));
   const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
   const assigneeDistribution = cycleAssigneeDistribution(data.cycleIssues);
   const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
+  const currentProgressIndex = progressTimeline.reduce(
+    (index, point, pointIndex) => (Date.parse(point.at) <= asOf ? pointIndex : index),
+    0,
+  );
+  const activeProgressPoint =
+    activeProgressIndex == null ? null : (progressTimeline[activeProgressIndex] ?? null);
   const progress = progressTimeline.reduce(
     (current, point) => (Date.parse(point.at) <= asOf ? point : current),
     progressTimeline[0] ?? { at: cycle.startsAt, scope: 0, started: 0, completed: 0 },
@@ -1920,6 +1931,7 @@ export function useCycleDetailPagePresenter() {
     googleCalendarURL,
     resources,
     progressTimeline,
+    activeProgressPoint,
     assigneeDistribution,
     started,
     startedPercent,
@@ -1966,6 +1978,27 @@ export function useCycleDetailPagePresenter() {
           writeCycleProgressOpen(next);
           return next;
         }),
+      onProgressPointerMove: (ratio: number) =>
+        setActiveProgressIndex(cycleProgressPointIndexAtRatio(progressTimeline, ratio)),
+      onProgressPointerLeave: () => setActiveProgressIndex(null),
+      onProgressFocus: () => setActiveProgressIndex((current) => current ?? currentProgressIndex),
+      onProgressBlur: () => setActiveProgressIndex(null),
+      onProgressKeyDown: (event: React.KeyboardEvent<SVGSVGElement>) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setActiveProgressIndex(null);
+          return;
+        }
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        setActiveProgressIndex((current) => {
+          const lastIndex = progressTimeline.length - 1;
+          const index = current ?? currentProgressIndex;
+          if (event.key === 'Home') return 0;
+          if (event.key === 'End') return Math.max(0, lastIndex);
+          return Math.min(lastIndex, Math.max(0, index + (event.key === 'ArrowRight' ? 1 : -1)));
+        });
+      },
       onFilterChange: (next: IssueSearch) =>
         navigate({
           to: '/cycles/$number',

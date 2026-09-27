@@ -1,4 +1,5 @@
 import { Group, Stack, Text } from '@mantine/core';
+import type { KeyboardEventHandler } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Cycle } from '../types.ts';
 import type { CycleProgressPoint } from '../cycle-progress.ts';
@@ -35,11 +36,23 @@ export function CycleProgressChart({
   points,
   locale,
   showLegend = true,
+  activePoint = null,
+  onPointerMove,
+  onPointerLeave,
+  onFocus,
+  onBlur,
+  onKeyDown,
 }: {
   cycle: Cycle;
   points: CycleProgressPoint[];
   locale: string;
   showLegend?: boolean;
+  activePoint?: CycleProgressPoint | null;
+  onPointerMove?: (ratio: number) => void;
+  onPointerLeave?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  onKeyDown?: KeyboardEventHandler<SVGSVGElement>;
 }) {
   const { t } = useTranslation();
   const start = Date.parse(cycle.startsAt);
@@ -61,19 +74,62 @@ export function CycleProgressChart({
     (current, point) => (Date.parse(point.at) <= asOf ? point : current),
     points[0]!,
   );
+  const selectedPoint = activePoint;
+  const selectedAt = selectedPoint ? Date.parse(selectedPoint.at) : null;
+  const selectedX = selectedAt == null ? null : xAt(selectedAt, start, end);
+  const tooltipWidth = 144;
+  const tooltipHeight = 64;
+  const tooltipX =
+    selectedX == null
+      ? null
+      : Math.min(
+          Math.max(plot.left, selectedX - tooltipWidth / 2),
+          plot.left + plot.width - tooltipWidth,
+        );
+  const tooltipY =
+    selectedPoint == null
+      ? null
+      : Math.min(
+          Math.max(
+            plot.top,
+            yAt(
+              Math.max(selectedPoint.scope, selectedPoint.started, selectedPoint.completed),
+              max,
+            ) -
+              tooltipHeight -
+              8,
+          ),
+          plot.top + plot.height - tooltipHeight,
+        );
+  const selectedDate = selectedPoint ? dateFormat.format(Date.parse(selectedPoint.at)) : '';
+  const descriptionPoint = selectedPoint ?? progress;
+  const progressDescription = t('cycle.progressChartDescription', {
+    scope: descriptionPoint.scope,
+    started: descriptionPoint.started,
+    completed: descriptionPoint.completed,
+  });
 
   return (
     <Stack component="section" aria-label={t('cycle.progressChartHeading')} gap={6}>
       <svg
         role="img"
-        aria-label={t('cycle.progressChartDescription', {
-          scope: progress.scope,
-          started: progress.started,
-          completed: progress.completed,
-        })}
+        aria-label={progressDescription}
+        aria-keyshortcuts="ArrowLeft ArrowRight Home End Escape"
+        tabIndex={0}
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         style={{ display: 'block', overflow: 'visible' }}
+        onPointerMove={(event) => {
+          if (!onPointerMove) return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const viewBoxX = ((event.clientX - bounds.left) / bounds.width) * width;
+          if (viewBoxX < plot.left || viewBoxX > plot.left + plot.width) return;
+          onPointerMove((viewBoxX - plot.left) / plot.width);
+        }}
+        onPointerLeave={onPointerLeave}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
       >
         <defs>
           <pattern
@@ -144,6 +200,84 @@ export function CycleProgressChart({
           stroke="var(--mantine-color-indigo-5)"
           strokeWidth="1.8"
         />
+        {selectedPoint && selectedX != null ? (
+          <g pointerEvents="none">
+            <line
+              x1={selectedX}
+              y1={plot.top}
+              x2={selectedX}
+              y2={plot.top + plot.height}
+              stroke="var(--mantine-color-text)"
+              strokeDasharray="2 3"
+              strokeWidth="1"
+              opacity="0.45"
+            />
+            <circle
+              cx={selectedX}
+              cy={yAt(selectedPoint.scope, max)}
+              r="3"
+              fill="var(--mantine-color-gray-6)"
+            />
+            <circle
+              cx={selectedX}
+              cy={yAt(selectedPoint.started, max)}
+              r="3"
+              fill="var(--mantine-color-yellow-7)"
+            />
+            <circle
+              cx={selectedX}
+              cy={yAt(selectedPoint.completed, max)}
+              r="3"
+              fill="var(--mantine-color-indigo-5)"
+            />
+            {tooltipX != null && tooltipY != null ? (
+              <g role="tooltip" aria-label={`${selectedDate}: ${progressDescription}`}>
+                <rect
+                  x={tooltipX}
+                  y={tooltipY}
+                  width={tooltipWidth}
+                  height={tooltipHeight}
+                  rx="5"
+                  fill="var(--mantine-color-body)"
+                  stroke="var(--mantine-color-default-border)"
+                />
+                <text
+                  x={tooltipX + 9}
+                  y={tooltipY + 15}
+                  fill="var(--mantine-color-text)"
+                  fontSize="10"
+                  fontWeight="600"
+                >
+                  {selectedDate}
+                </text>
+                <text
+                  x={tooltipX + 9}
+                  y={tooltipY + 31}
+                  fill="var(--mantine-color-text)"
+                  fontSize="9"
+                >
+                  {t('cycle.scope')}: {selectedPoint.scope}
+                </text>
+                <text
+                  x={tooltipX + 9}
+                  y={tooltipY + 44}
+                  fill="var(--mantine-color-text)"
+                  fontSize="9"
+                >
+                  {t('cycle.started')}: {selectedPoint.started}
+                </text>
+                <text
+                  x={tooltipX + 9}
+                  y={tooltipY + 57}
+                  fill="var(--mantine-color-text)"
+                  fontSize="9"
+                >
+                  {t('cycle.completed')}: {selectedPoint.completed}
+                </text>
+              </g>
+            ) : null}
+          </g>
+        ) : null}
         <text x={plot.left} y={height - 5} fill="currentColor" fontSize="11">
           {dateFormat.format(start)}
         </text>

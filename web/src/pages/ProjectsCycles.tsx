@@ -1007,6 +1007,7 @@ export function CycleDetailPageView({
         googleCalendarURL,
         resources,
         progressTimeline,
+        activeProgressPoint,
         assigneeDistribution,
         started,
         startedPercent,
@@ -1337,7 +1338,17 @@ export function CycleDetailPageView({
                       expanded={cycleProgressOpen}
                       onToggle={handlers.onToggleCycleProgress}
                     >
-                      <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
+                      <CycleProgressChart
+                        cycle={cycle}
+                        points={progressTimeline}
+                        locale={locale}
+                        activePoint={activeProgressPoint}
+                        onPointerMove={handlers.onProgressPointerMove}
+                        onPointerLeave={handlers.onProgressPointerLeave}
+                        onFocus={handlers.onProgressFocus}
+                        onBlur={handlers.onProgressBlur}
+                        onKeyDown={handlers.onProgressKeyDown}
+                      />
                       <CycleAssigneeBreakdown items={assigneeDistribution} />
                     </CycleProgressSummary>
                     {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
