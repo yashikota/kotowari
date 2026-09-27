@@ -1036,6 +1036,9 @@ export function CycleDetailPageView({
         direction,
         completedIssues,
         completedByRecency,
+        groupOptions,
+        groupOrder,
+        hiddenGroups,
         showSubIssues,
         nestedSubIssues,
         showEmptyGroups,
@@ -1094,6 +1097,11 @@ export function CycleDetailPageView({
                   onChange={handlers.onFilterChange}
                   groupBy={groupBy}
                   onGroupBy={handlers.onGroupBy}
+                  groupOptions={groupOptions}
+                  groupOrder={groupOrder}
+                  hiddenGroups={hiddenGroups}
+                  onGroupOrderChange={handlers.onGroupOrderChange}
+                  onGroupVisibilityChange={handlers.onGroupVisibilityChange}
                   layout={layout}
                   onLayout={handlers.onLayout}
                   orderBy={orderBy}
@@ -1128,6 +1136,8 @@ export function CycleDetailPageView({
                       showEmptyGroups={showEmptyGroups}
                       showSubIssues={showSubIssues}
                       completedByRecency={completedByRecency}
+                      groupOrder={groupOrder}
+                      hiddenGroups={hiddenGroups}
                       displayProperties={displayProperties}
                       projects={data.projects}
                       cycles={data.cycles}

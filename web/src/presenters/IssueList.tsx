@@ -47,6 +47,8 @@ type Props = {
   showSubIssues?: boolean;
   direction?: 'asc' | 'desc';
   completedByRecency?: boolean;
+  groupOrder?: string[];
+  hiddenGroups?: string[];
   displayProperties?: IssueDisplayProperty[];
   projects?: Project[];
   cycles?: Cycle[];
@@ -67,6 +69,8 @@ export function useIssueListPresenter({
   showSubIssues = true,
   direction,
   completedByRecency = false,
+  groupOrder = [],
+  hiddenGroups = [],
   displayProperties,
   projects = [],
   cycles = [],
@@ -90,6 +94,8 @@ export function useIssueListPresenter({
     subGroupBy,
     showEmptyGroups,
     issueStatuses: workflowStatuses,
+    groupOrder,
+    hiddenGroups: new Set(hiddenGroups),
   });
   const issueRows = rows.filter(
     (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',

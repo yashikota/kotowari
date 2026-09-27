@@ -264,6 +264,19 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ dueDate: 'on:2026-02-30' })).toEqual({});
   });
 
+  it('normalizes issue group order and visibility settings from browser search', () => {
+    expect(
+      parseIssueSearch({
+        groupOrder: '["status:in_progress","status:todo","status:in_progress"]',
+        hiddenGroups: ['status:done', 'status:done'],
+      }),
+    ).toEqual({
+      groupOrder: ['status:in_progress', 'status:todo'],
+      hiddenGroups: ['status:done'],
+    });
+    expect(parseIssueSearch({ groupOrder: '[]', hiddenGroups: '[]' })).toEqual({});
+  });
+
   it('accepts only supported issue relationship filters', () => {
     expect(parseIssueSearch({ relation: 'duplicate' })).toEqual({ relation: 'duplicate' });
     expect(parseIssueSearch({ relation: 'team' })).toEqual({});

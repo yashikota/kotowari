@@ -3090,6 +3090,64 @@ test('cycle completed issues can be ordered by recency and the setting survives 
   );
 });
 
+test('cycle issue groups can be reordered and hidden with shareable view settings', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/cycles', {
+    data: {
+      startsAt: '2034-05-01T00:00:00Z',
+      endsAt: '2034-05-14T00:00:00Z',
+      status: 'active',
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const cycle = (await created.json()) as { id: number; number: number };
+  const titles = {
+    todo: `Cycle group todo ${cycle.number}`,
+    inProgress: `Cycle group in progress ${cycle.number}`,
+    done: `Cycle group done ${cycle.number}`,
+  };
+  for (const [title, status] of [
+    [titles.todo, 'todo'],
+    [titles.inProgress, 'in_progress'],
+    [titles.done, 'done'],
+  ]) {
+    const issue = await request.post('/api/issues', {
+      data: { title, status, priority: 2, cycleId: cycle.id },
+    });
+    expect(issue.ok()).toBeTruthy();
+  }
+
+  await page.goto(`/cycles/${cycle.number}`);
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option')).toHaveCount(3);
+  const initialRows = await issueList.getByRole('option').allTextContents();
+  expect(initialRows.findIndex((row) => row.includes(titles.todo))).toBeLessThan(
+    initialRows.findIndex((row) => row.includes(titles.inProgress)),
+  );
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('button', { name: 'Group ordering' }).click();
+  await page.getByRole('button', { name: 'Move In Progress up' }).click();
+  await expect(page).toHaveURL(/groupOrder=/);
+  const reorderedRows = await issueList.getByRole('option').allTextContents();
+  expect(reorderedRows.findIndex((row) => row.includes(titles.inProgress))).toBeLessThan(
+    reorderedRows.findIndex((row) => row.includes(titles.todo)),
+  );
+
+  await page.getByRole('button', { name: 'Hide Done' }).click();
+  await expect(page).toHaveURL(/hiddenGroups=/);
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.done) })).toHaveCount(0);
+  await page.reload();
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.done) })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('button', { name: 'Group ordering' }).click();
+  await page.getByRole('button', { name: 'Show Done' }).click();
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.done) })).toBeVisible();
+});
+
 test('cycle details add, open, and remove documents and links', async ({ page, request }) => {
   const stamp = Date.now();
   const created = await request.post('/api/cycles', {

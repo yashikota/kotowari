@@ -563,6 +563,8 @@ export type IssueSearch = {
   view?: 'active' | 'backlog' | 'all';
   groupBy?: IssueGroupBy;
   subGroupBy?: IssueGroupBy;
+  groupOrder?: string[];
+  hiddenGroups?: string[];
   layout?: IssueLayout;
   orderBy?: IssueOrderBy;
   direction?: 'asc' | 'desc';
@@ -648,6 +650,14 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
     out.groupBy = raw.groupBy as IssueGroupBy;
   if (ISSUE_GROUP_BY_VALUES.includes(raw.subGroupBy as IssueGroupBy))
     out.subGroupBy = raw.subGroupBy as IssueGroupBy;
+  const groupOrder = [...new Set(parseStringList(raw.groupOrder).map((key) => key.trim()))].filter(
+    Boolean,
+  );
+  if (groupOrder.length > 0 && groupOrder.length <= 500) out.groupOrder = groupOrder;
+  const hiddenGroups = [
+    ...new Set(parseStringList(raw.hiddenGroups).map((key) => key.trim())),
+  ].filter(Boolean);
+  if (hiddenGroups.length > 0 && hiddenGroups.length <= 500) out.hiddenGroups = hiddenGroups;
   if (raw.layout === 'list' || raw.layout === 'board') out.layout = raw.layout;
   if (ISSUE_ORDER_BY_VALUES.includes(raw.orderBy as IssueOrderBy))
     out.orderBy = raw.orderBy as IssueOrderBy;

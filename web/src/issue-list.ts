@@ -61,6 +61,13 @@ export type IssueDisplayProperty =
   | 'timeInStatus'
   | 'created'
   | 'updated';
+
+export type IssueGroupOption = {
+  key: string;
+  label: string;
+  priority: number | null;
+  status: string | null;
+};
 export const COMPLETED_ISSUES_FILTERS = [
   'all',
   'pastDay',
@@ -172,6 +179,8 @@ export function buildIssueListRows(
     subGroupBy?: IssueGroupBy;
     showEmptyGroups?: boolean;
     issueStatuses?: IssueWorkflowStatus[];
+    groupOrder?: string[];
+    hiddenGroups?: ReadonlySet<string>;
   } = {},
 ): IssueListRow[] {
   if (groupBy === 'none') return issues.map((issue) => ({ kind: 'issue', issue }));
@@ -179,15 +188,28 @@ export function buildIssueListRows(
   const subGroupBy = options.subGroupBy ?? 'none';
 
   function appendGroups(subset: Issue[], grouping: IssueGroupBy, parentKey = '', level = 0) {
-    for (const groupInfo of issueGroups(
+    const groupInfos = issueGroups(
       subset,
       grouping,
       options.showEmptyGroups ?? false,
       options.issueStatuses,
-    )) {
+    );
+    const groupOrder = options.groupOrder ?? [];
+    const groupOrderIndex = new Map(groupOrder.map((key, index) => [key, index]));
+    if (groupOrderIndex.size > 0) {
+      groupInfos.sort((left, right) => {
+        const leftIndex = groupOrderIndex.get(parentKey ? `${parentKey}/${left.key}` : left.key);
+        const rightIndex = groupOrderIndex.get(parentKey ? `${parentKey}/${right.key}` : right.key);
+        if (leftIndex === undefined) return rightIndex === undefined ? 0 : 1;
+        if (rightIndex === undefined) return -1;
+        return leftIndex - rightIndex;
+      });
+    }
+    for (const groupInfo of groupInfos) {
       const group = subset.filter((issue) => matchesGroup(issue, grouping, groupInfo));
       if (group.length === 0 && !options.showEmptyGroups) continue;
       const key = parentKey ? `${parentKey}/${groupInfo.key}` : groupInfo.key;
+      if (level === 0 && options.hiddenGroups?.has(key)) continue;
       const collapsed = collapsedGroups.has(key);
       rows.push({
         kind: 'group',
@@ -379,6 +401,18 @@ function matchesGroup(issue: Issue, groupBy: IssueGroupBy, groupInfo: GroupInfo)
   if (groupBy === 'estimate')
     return (issue.estimate == null ? '' : String(issue.estimate)) === groupInfo.label;
   return (issue.parentIdentifier ?? 'No parent') === groupInfo.label;
+}
+
+export function issueGroupOptions(
+  issues: Issue[],
+  groupBy: IssueGroupBy,
+  issueStatuses?: IssueWorkflowStatus[],
+  showEmptyGroups = false,
+): IssueGroupOption[] {
+  if (groupBy === 'none') return [];
+  return issueGroups(issues, groupBy, showEmptyGroups, issueStatuses).filter(
+    (group) => showEmptyGroups || issues.some((issue) => matchesGroup(issue, groupBy, group)),
+  );
 }
 
 export function filterCompletedIssues(

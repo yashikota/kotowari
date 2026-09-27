@@ -35,6 +35,11 @@ export function IssueFiltersView({
         filterOpened,
         displayOpened,
         chips,
+        groupOptions,
+        groupOrder,
+        hiddenGroups,
+        onGroupOrderChange,
+        onGroupVisibilityChange,
         groupBy,
         layout,
         orderBy,
@@ -161,6 +166,11 @@ export function IssueFiltersView({
                   onOpenChange={handlers.onDisplayOpenChange}
                   onLayoutChange={handlers.onLayoutChange}
                   onGroupByChange={handlers.onGroupByChange}
+                  groupOptions={groupOptions}
+                  groupOrder={groupOrder}
+                  hiddenGroups={hiddenGroups}
+                  onGroupOrderChange={onGroupOrderChange}
+                  onGroupVisibilityChange={onGroupVisibilityChange}
                   onOrderByChange={handlers.onOrderByChange}
                   subGroupBy={subGroupBy ?? 'none'}
                   direction={direction ?? 'asc'}

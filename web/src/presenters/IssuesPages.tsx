@@ -52,6 +52,8 @@ function compactSearch(next: IssueSearch): IssueSearch {
     view: next.view ?? '',
     groupBy: next.groupBy ?? '',
     subGroupBy: next.subGroupBy ?? '',
+    groupOrder: next.groupOrder === undefined ? '' : JSON.stringify(next.groupOrder),
+    hiddenGroups: next.hiddenGroups === undefined ? '' : JSON.stringify(next.hiddenGroups),
     layout: next.layout ?? '',
     orderBy: next.orderBy ?? '',
     direction: next.direction ?? '',

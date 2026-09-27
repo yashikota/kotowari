@@ -8,6 +8,7 @@ import type {
   CompletedIssuesFilter,
   IssueDisplayProperty,
   IssueGroupBy,
+  IssueGroupOption,
   IssueLayout,
   IssueOrderBy,
 } from '../issue-list.ts';
@@ -81,6 +82,11 @@ type Props = {
   onFind?: (q: string) => void;
   groupBy?: IssueGroupBy;
   onGroupBy?: (groupBy: IssueGroupBy) => void;
+  groupOptions?: IssueGroupOption[];
+  groupOrder?: string[];
+  hiddenGroups?: string[];
+  onGroupOrderChange?: (groupOrder: string[]) => void;
+  onGroupVisibilityChange?: (key: string, visible: boolean) => void;
   layout?: IssueLayout;
   onLayout?: (layout: IssueLayout) => void;
   orderBy?: IssueOrderBy;
@@ -121,6 +127,11 @@ export function useIssueFiltersPresenter({
   onFind,
   groupBy,
   onGroupBy,
+  groupOptions,
+  groupOrder,
+  hiddenGroups,
+  onGroupOrderChange,
+  onGroupVisibilityChange,
   layout,
   onLayout,
   orderBy,
@@ -417,6 +428,11 @@ export function useIssueFiltersPresenter({
     onFind,
     groupBy,
     onGroupBy,
+    groupOptions,
+    groupOrder,
+    hiddenGroups,
+    onGroupOrderChange,
+    onGroupVisibilityChange,
     layout,
     onLayout,
     orderBy,

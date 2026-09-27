@@ -26,9 +26,11 @@ import {
   DEFAULT_DISPLAY_PROPERTIES,
   filterCompletedIssues,
   includeNestedIssueMatches,
+  issueGroupOptions,
   type CompletedIssuesFilter,
   type IssueDisplayProperty,
   type IssueGroupBy,
+  type IssueGroupOption,
   type IssueLayout,
   type IssueOrderBy,
 } from '../issue-list.ts';
@@ -53,13 +55,15 @@ import {
   projectBoardSearchOrder,
 } from '../project-board.ts';
 import { isTypingTarget } from '../keymap.ts';
-import { priorityLabel } from '../i18n/labels.ts';
+import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import type {
   Activity,
   ADR,
   Cycle,
   Issue,
   Initiative,
+  IssueType,
+  IssueWorkflowStatus,
   Label,
   Page,
   Project,
@@ -72,7 +76,7 @@ import {
   projectWorkflowStatusCategory,
   projectWorkflowStatusLabel,
 } from '../project-workflow.tsx';
-import { useIssueWorkflow } from '../workflow.tsx';
+import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
@@ -94,6 +98,43 @@ function writeCycleProgressOpen(open: boolean) {
   } catch {
     // Keep the view usable when browser storage is unavailable.
   }
+}
+
+function cycleIssueGroupLabel(
+  groupBy: IssueGroupBy,
+  group: IssueGroupOption,
+  statuses: IssueWorkflowStatus[],
+): string {
+  if (groupBy === 'status' && group.status) return workflowStatusLabel(group.status, statuses);
+  if (groupBy === 'priority') return priorityLabel(group.priority ?? 0);
+  if (groupBy === 'assignee')
+    return i18n.t(
+      group.key === 'assignee:self'
+        ? 'issueAssignment.you'
+        : group.key === 'assignee:agent'
+          ? 'issueAssignment.agent'
+          : 'issueAssignment.unassigned',
+    );
+  if (groupBy === 'agent')
+    return i18n.t(
+      group.key === 'agent:agent' ? 'issueAssignment.agent' : 'issueAssignment.noAgent',
+    );
+  if (groupBy === 'type')
+    return group.label
+      ? issueTypeLabel(group.label as IssueType)
+      : i18n.t('issueProperties.noType');
+  if (groupBy === 'estimate') return group.label || i18n.t('issueProperties.noEstimate');
+  if (groupBy === 'project' && group.label === 'No project')
+    return i18n.t('issueProperties.noProject');
+  if (groupBy === 'cycle') {
+    if (group.label === 'No cycle') return i18n.t('field.noCycle');
+    if (group.label.startsWith('Cycle '))
+      return i18n.t('field.cycleN', { number: group.label.slice(6) });
+  }
+  if (groupBy === 'label' && group.label === 'No label') return i18n.t('issueProperties.noLabels');
+  if (groupBy === 'parent' && group.label === 'No parent')
+    return i18n.t('issueProperties.noParent');
+  return group.label;
 }
 
 const DAY_MS = 86_400_000;
@@ -1712,6 +1753,8 @@ export function useCycleDetailPagePresenter() {
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
   const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');
   const completedByRecency = search.completedByRecency ?? false;
+  const groupOrder = search.groupOrder ?? [];
+  const hiddenGroups = search.hiddenGroups ?? [];
   const [showSubIssues, setShowSubIssues] = useState(true);
   const [nestedSubIssues, setNestedSubIssues] = useState<'showMatching' | 'showAll'>(
     'showMatching',
@@ -1790,6 +1833,14 @@ export function useCycleDetailPagePresenter() {
     (issue) =>
       activeBreakdownFilterKey == null ||
       matchesCycleProgressBreakdown(issue, breakdownBy, activeBreakdownFilterKey),
+  );
+  const groupOptions = useMemo(
+    () =>
+      issueGroupOptions(issues, groupBy, issueWorkflowStatuses, showEmptyGroups).map((group) => ({
+        ...group,
+        label: cycleIssueGroupLabel(groupBy, group, issueWorkflowStatuses),
+      })),
+    [groupBy, issueWorkflowStatuses, issues, showEmptyGroups],
   );
   const selectedId =
     selected && issues.some((issue) => issue.identifier === selected) ? selected : null;
@@ -1953,6 +2004,9 @@ export function useCycleDetailPagePresenter() {
     direction,
     completedIssues,
     completedByRecency,
+    groupOptions,
+    groupOrder,
+    hiddenGroups,
     showSubIssues,
     nestedSubIssues,
     showEmptyGroups,
@@ -2034,6 +2088,24 @@ export function useCycleDetailPagePresenter() {
           search: { ...search, completedByRecency: show ? true : undefined },
           replace: true,
         }),
+      onGroupOrderChange: (next: string[]) =>
+        navigate({
+          to: '/cycles/$number',
+          params: { number: String(cycle.number) },
+          search: { ...search, groupOrder: next.length ? next : undefined },
+          replace: true,
+        }),
+      onGroupVisibilityChange: (key: string, visible: boolean) => {
+        const next = new Set(hiddenGroups);
+        if (visible) next.delete(key);
+        else next.add(key);
+        return navigate({
+          to: '/cycles/$number',
+          params: { number: String(cycle.number) },
+          search: { ...search, hiddenGroups: next.size ? [...next] : undefined },
+          replace: true,
+        });
+      },
       onShowSubIssues: (next: boolean) => setShowSubIssues(next),
       onNestedSubIssues: (next: 'showMatching' | 'showAll') => setNestedSubIssues(next),
       onShowEmptyGroups: (next: boolean) => setShowEmptyGroups(next),

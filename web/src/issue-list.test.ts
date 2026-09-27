@@ -6,6 +6,7 @@ import {
   filterCompletedIssues,
   formatIssueCreatedDate,
   includeNestedIssueMatches,
+  issueGroupOptions,
   sortIssues,
 } from './issue-list.ts';
 import type { Cycle, Issue, Project } from './types.ts';
@@ -143,6 +144,32 @@ describe('buildIssueListRows', () => {
         count: 2,
         collapsed: true,
       },
+    ]);
+  });
+
+  it('reorders and hides groups without changing the issues in visible groups', () => {
+    const issues = [
+      { ...issue(1, 2), status: 'todo' as const },
+      { ...issue(2, 2), status: 'in_progress' as const },
+      { ...issue(3, 2), status: 'done' as const },
+    ];
+    const rows = buildIssueListRows(issues, new Set(), 'status', {
+      issueStatuses: [
+        { id: 'todo', name: 'Todo', category: 'todo' },
+        { id: 'in_progress', name: 'In Progress', category: 'in_progress' },
+        { id: 'done', name: 'Done', category: 'done' },
+      ],
+      groupOrder: ['status:in_progress', 'status:todo', 'status:done'],
+      hiddenGroups: new Set(['status:done']),
+    });
+
+    expect(rows.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
+      'status:in_progress',
+      'status:todo',
+    ]);
+    expect(rows.filter((row) => row.kind === 'issue').map((row) => row.issue.identifier)).toEqual([
+      'KOT-2',
+      'KOT-1',
     ]);
   });
 
@@ -285,6 +312,24 @@ describe('buildIssueListRows', () => {
       'canceled',
     ]);
     expect(rows.filter((row) => row.kind === 'issue')).toHaveLength(1);
+  });
+});
+
+describe('issue group ordering options', () => {
+  it('hides empty groups unless Show empty groups is enabled', () => {
+    const workflowStatuses = [
+      { id: 'todo', name: 'Todo', category: 'todo' as const },
+      { id: 'in_progress', name: 'In Progress', category: 'in_progress' as const },
+      { id: 'done', name: 'Done', category: 'done' as const },
+    ];
+    const issues = [{ ...issue(1, 2), status: 'in_progress' as const }];
+
+    expect(issueGroupOptions(issues, 'status', workflowStatuses).map((group) => group.key)).toEqual(
+      ['status:in_progress'],
+    );
+    expect(
+      issueGroupOptions(issues, 'status', workflowStatuses, true).map((group) => group.key),
+    ).toEqual(['status:todo', 'status:in_progress', 'status:done']);
   });
 });
 
