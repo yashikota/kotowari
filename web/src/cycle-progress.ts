@@ -13,8 +13,11 @@ export type CycleProgressBreakdownBy = 'assignee' | 'label' | 'priority' | 'proj
 export type CycleProgressBreakdownItem = {
   key: string;
   value: string;
-  count: number;
-  share: number;
+  issueCount: number;
+  estimateTotal: number;
+  estimateStarted: number;
+  estimateCompleted: number;
+  progressPercent: number;
   color?: string;
 };
 
@@ -49,42 +52,61 @@ export function cycleProgressPointIndexAtRatio(
 }
 
 export function cycleProgressBreakdown(
-  issues: Pick<Issue, 'assignee' | 'labels' | 'priority' | 'projectId' | 'projectSlug'>[],
+  issues: Pick<
+    Issue,
+    'assignee' | 'labels' | 'priority' | 'projectId' | 'projectSlug' | 'status' | 'estimate'
+  >[],
   by: CycleProgressBreakdownBy,
   projects: Pick<Project, 'id' | 'slug' | 'name'>[] = [],
 ): CycleProgressBreakdownItem[] {
   if (issues.length === 0) return [];
   if (by === 'label' && issues.every((issue) => issue.labels.length === 0)) return [];
-  const entries = new Map<string, Omit<CycleProgressBreakdownItem, 'share'>>();
+  const entries = new Map<string, Omit<CycleProgressBreakdownItem, 'progressPercent'>>();
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const projectBySlug = new Map(projects.map((project) => [project.slug, project]));
-  const add = (key: string, value: string, color?: string) => {
+  const add = (key: string, value: string, issue: (typeof issues)[number], color?: string) => {
     const entry = entries.get(key);
-    if (entry) entry.count++;
-    else entries.set(key, { key, value, count: 1, ...(color ? { color } : {}) });
+    const estimate = issue.estimate ?? 1;
+    const estimateStarted = issue.status === 'in_progress' ? estimate : 0;
+    const estimateCompleted = issue.status === 'done' || issue.status === 'canceled' ? estimate : 0;
+    if (entry) {
+      entry.issueCount++;
+      entry.estimateTotal += estimate;
+      entry.estimateStarted += estimateStarted;
+      entry.estimateCompleted += estimateCompleted;
+    } else {
+      entries.set(key, {
+        key,
+        value,
+        issueCount: 1,
+        estimateTotal: estimate,
+        estimateStarted,
+        estimateCompleted,
+        ...(color ? { color } : {}),
+      });
+    }
   };
 
   for (const issue of issues) {
     if (by === 'assignee') {
       const assignee = issue.assignee ?? 'unassigned';
-      add(assignee, assignee);
+      add(assignee, assignee, issue);
     } else if (by === 'priority') {
-      add(`priority:${issue.priority}`, String(issue.priority));
+      add(`priority:${issue.priority}`, String(issue.priority), issue);
     } else if (by === 'project') {
       const project =
         (issue.projectId == null ? undefined : projectById.get(issue.projectId)) ??
         (issue.projectSlug == null ? undefined : projectBySlug.get(issue.projectSlug));
-      if (project) add(`project:${project.id}`, project.name);
+      if (project) add(`project:${project.id}`, project.name, issue);
       else if (issue.projectId != null || issue.projectSlug) {
         const slug = issue.projectSlug ?? String(issue.projectId);
-        add(`project:${slug}`, slug.replaceAll('-', ' '));
-      } else add('no-project', '');
+        add(`project:${slug}`, slug.replaceAll('-', ' '), issue);
+      } else add('no-project', '', issue);
     } else if (issue.labels.length > 0) {
-      for (const label of issue.labels) add(`label:${label.id}`, label.name, label.color);
-    } else add('no-labels', '');
+      for (const label of issue.labels) add(`label:${label.id}`, label.name, issue, label.color);
+    } else add('no-labels', '', issue);
   }
 
-  const total = [...entries.values()].reduce((count, item) => count + item.count, 0);
   const order = breakdownOrder[by];
   return [...entries.values()]
     .sort(
@@ -92,7 +114,15 @@ export function cycleProgressBreakdown(
         (order?.[left.key] ?? 0) - (order?.[right.key] ?? 0) ||
         left.value.localeCompare(right.value),
     )
-    .map((item) => ({ ...item, share: (item.count / total) * 100 }));
+    .map((item) => ({
+      ...item,
+      progressPercent:
+        item.estimateTotal > 0
+          ? Math.round(
+              ((item.estimateStarted * 0.25 + item.estimateCompleted) / item.estimateTotal) * 100,
+            )
+          : 0,
+    }));
 }
 
 export function matchesCycleProgressBreakdown(

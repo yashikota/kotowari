@@ -2833,6 +2833,7 @@ test('cycle details summarize scope, started, and completed work', async ({ page
         status,
         assignee: index === 0 ? 'self' : index === 1 ? 'agent' : undefined,
         priority: index + 1,
+        estimate: index + 1,
         cycleId: cycle.id,
       },
     });
@@ -2855,19 +2856,28 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   await expect(progress.getByText('Scope', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('Started', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('Completed', { exact: true }).first()).toBeVisible();
-  await expect(progress.getByText('3', { exact: true })).toBeVisible();
+  await expect(progress.getByText('3', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('1 · 33%', { exact: true })).toBeVisible();
   await expect(progress.getByText('2 · 67%', { exact: true })).toBeVisible();
   await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toBeVisible();
   const assignees = progress.getByRole('region', { name: 'Assignees', exact: true });
   await expect(assignees).toBeVisible();
-  await expect(
-    assignees.getByRole('img', { name: 'Cycle issue distribution by Assignees' }),
-  ).toBeVisible();
   await expect(assignees.getByText('You', { exact: true })).toBeVisible();
   await expect(assignees.getByText('Agent', { exact: true })).toBeVisible();
   await expect(assignees.getByText('Unassigned', { exact: true })).toBeVisible();
-  await expect(assignees.getByText('33% · 1/3', { exact: true })).toHaveCount(3);
+  const youProgress = assignees.getByRole('img', {
+    name: 'Cycle progress for Assignees: You, 25% of 1',
+  });
+  await expect(youProgress).toBeVisible();
+  await expect(
+    assignees.getByRole('img', { name: 'Cycle progress for Assignees: Agent, 100% of 2' }),
+  ).toBeVisible();
+  await youProgress.hover();
+  const breakdownTooltip = page.getByRole('tooltip');
+  await expect(breakdownTooltip).toContainText('25% progress');
+  await expect(breakdownTooltip).toContainText('1 estimate point total');
+  await expect(breakdownTooltip).toContainText('1 estimate point started');
+  await expect(breakdownTooltip).toContainText('0 estimate points completed');
   const breakdownSelector = progress.getByRole('combobox', { name: 'Group cycle progress by' });
   await breakdownSelector.click();
   await page.getByRole('option', { name: 'Priority', exact: true }).click();

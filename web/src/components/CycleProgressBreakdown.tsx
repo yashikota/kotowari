@@ -1,4 +1,4 @@
-import { Box, Button, Group, Progress, Select, Stack, Text } from '@mantine/core';
+import { Box, Button, Group, RingProgress, Select, Stack, Text, Tooltip } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import type { CycleProgressBreakdownBy, CycleProgressBreakdownItem } from '../cycle-progress.ts';
 
@@ -31,9 +31,11 @@ export function CycleProgressBreakdown({
   onChange: (by: CycleProgressBreakdownBy) => void;
   onFilterToggle: (key: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const categoryLabel = t(`cycle.breakdown.${by}`);
-  const total = items.reduce((count, item) => count + item.count, 0);
+  const numberFormat = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language, {
+    maximumFractionDigits: 2,
+  });
   const options: { value: CycleProgressBreakdownBy; label: string }[] = [
     { value: 'assignee', label: t('cycle.breakdown.assignee') },
     { value: 'label', label: t('cycle.breakdown.label') },
@@ -88,73 +90,108 @@ export function CycleProgressBreakdown({
           {by === 'label' ? t('cycle.noLabelsUsed') : t('cycle.noBreakdownData')}
         </Text>
       ) : (
-        <>
-          <Progress.Root
-            role="img"
-            aria-label={t('cycle.breakdownDistribution', { category: categoryLabel })}
-            size={8}
-            radius="xl"
-          >
-            {items.map((item, index) => (
-              <Progress.Section key={item.key} value={item.share} color={itemColor(item, index)} />
-            ))}
-          </Progress.Root>
-          <Stack gap={2}>
-            {items.map((item, index) => {
-              const color = itemColor(item, index);
-              const active = activeKey === item.key;
-              const label = itemLabel(item);
-              return (
-                <Button
-                  key={item.key}
-                  type="button"
-                  variant={active ? 'light' : 'subtle'}
-                  color="gray"
-                  size="compact-sm"
-                  fullWidth
-                  px={5}
-                  aria-label={t('cycle.filterBreakdownGroup', {
-                    category: categoryLabel,
-                    group: label,
+        <Stack gap={2}>
+          {items.map((item, index) => {
+            const color = itemColor(item, index);
+            const active = activeKey === item.key;
+            const label = itemLabel(item);
+            const estimateTotal = numberFormat.format(item.estimateTotal);
+            const estimateStarted = numberFormat.format(item.estimateStarted);
+            const estimateCompleted = numberFormat.format(item.estimateCompleted);
+            const tooltip = (
+              <Stack gap={2}>
+                <Text size="xs">
+                  {t('cycle.progressTooltip', { percent: item.progressPercent })}
+                </Text>
+                <Text size="xs">
+                  {t('cycle.estimatePointsTotal', {
+                    count: item.estimateTotal,
+                    value: estimateTotal,
                   })}
-                  aria-pressed={active}
-                  onClick={() => onFilterToggle(item.key)}
-                >
-                  <Group justify="space-between" wrap="nowrap" w="100%" gap="xs">
-                    <Group gap={5} wrap="nowrap" style={{ minWidth: 0 }}>
-                      <Box
-                        aria-hidden="true"
-                        w={7}
-                        h={7}
-                        style={{
-                          flex: '0 0 auto',
-                          borderRadius: '50%',
-                          background:
-                            color.startsWith('#') || color.startsWith('rgb')
-                              ? color
-                              : `var(--mantine-color-${color.replace('.', '-')})`,
-                        }}
-                      />
-                      <Text size="xs" truncate>
-                        {label}
-                      </Text>
-                      <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                        {t('cycle.breakdownShare', {
-                          count: item.count,
-                          percent: Math.round(item.share),
-                          total,
-                        })}
-                      </Text>
-                    </Group>
-                    <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                      {t(active ? 'cycle.clearFilter' : 'cycle.seeIssues')}
+                </Text>
+                <Text size="xs">
+                  {t('cycle.estimatePointsStarted', {
+                    count: item.estimateStarted,
+                    value: estimateStarted,
+                  })}
+                </Text>
+                <Text size="xs">
+                  {t('cycle.estimatePointsCompleted', {
+                    count: item.estimateCompleted,
+                    value: estimateCompleted,
+                  })}
+                </Text>
+              </Stack>
+            );
+            return (
+              <Group key={item.key} justify="space-between" gap="xs" wrap="nowrap">
+                <Group gap="xs" wrap="nowrap" style={{ minWidth: 0, flex: '1 1 auto' }}>
+                  <Group gap={5} wrap="nowrap" style={{ minWidth: 0 }}>
+                    <Box
+                      aria-hidden="true"
+                      w={7}
+                      h={7}
+                      style={{
+                        flex: '0 0 auto',
+                        borderRadius: '50%',
+                        background:
+                          color.startsWith('#') || color.startsWith('rgb')
+                            ? color
+                            : `var(--mantine-color-${color.replace('.', '-')}, ${color})`,
+                      }}
+                    />
+                    <Text size="xs" truncate>
+                      {label}
                     </Text>
                   </Group>
-                </Button>
-              );
-            })}
-          </Stack>
-        </>
+                  <Button
+                    type="button"
+                    variant={active ? 'light' : 'subtle'}
+                    color="gray"
+                    size="compact-sm"
+                    px={5}
+                    aria-label={t('cycle.filterBreakdownGroup', {
+                      category: categoryLabel,
+                      group: label,
+                    })}
+                    aria-pressed={active}
+                    onClick={() => onFilterToggle(item.key)}
+                  >
+                    {t(active ? 'cycle.clearFilter' : 'cycle.seeIssues')}
+                  </Button>
+                </Group>
+                <Tooltip label={tooltip} withArrow multiline>
+                  <Group
+                    role="img"
+                    aria-label={t('cycle.groupProgressLabel', {
+                      category: categoryLabel,
+                      group: label,
+                      percent: item.progressPercent,
+                      total: estimateTotal,
+                    })}
+                    tabIndex={0}
+                    gap={4}
+                    wrap="nowrap"
+                    style={{ flex: '0 0 auto' }}
+                  >
+                    <RingProgress
+                      size={18}
+                      thickness={2}
+                      rootColor="gray.3"
+                      sections={[{ value: item.progressPercent, color }]}
+                    />
+                    <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                      {t('cycle.estimateProgressOf', { percent: item.progressPercent })}
+                    </Text>
+                    <Text size="xs" style={{ whiteSpace: 'nowrap' }}>
+                      {estimateTotal}
+                    </Text>
+                  </Group>
+                </Tooltip>
+              </Group>
+            );
+          })}
+        </Stack>
       )}
     </Stack>
   );

@@ -146,21 +146,51 @@ describe('cycleProgressPointIndexAtRatio', () => {
 });
 
 describe('cycleProgressBreakdown', () => {
-  it('groups the single-user assignee states and reports each scope share', () => {
+  const issue = (
+    overrides: Partial<
+      Pick<
+        Issue,
+        'assignee' | 'labels' | 'priority' | 'projectId' | 'projectSlug' | 'status' | 'estimate'
+      >
+    > = {},
+  ): Pick<
+    Issue,
+    'assignee' | 'labels' | 'priority' | 'projectId' | 'projectSlug' | 'status' | 'estimate'
+  > => ({
+    assignee: undefined,
+    labels: [],
+    priority: 0,
+    projectId: null,
+    projectSlug: null,
+    status: 'todo',
+    estimate: null,
+    ...overrides,
+  });
+
+  it('groups single-user assignees and weights active and completed estimates', () => {
     expect(
       cycleProgressBreakdown(
         [
-          { assignee: 'self', labels: [], priority: 0, projectId: null, projectSlug: null },
-          { assignee: 'self', labels: [], priority: 0, projectId: null, projectSlug: null },
-          { assignee: 'agent', labels: [], priority: 0, projectId: null, projectSlug: null },
-          { assignee: undefined, labels: [], priority: 0, projectId: null, projectSlug: null },
+          issue({ assignee: 'self', status: 'in_progress' }),
+          issue({ assignee: 'self', status: 'done', estimate: 3 }),
+          issue({ assignee: 'agent' }),
+          issue({ status: 'canceled', estimate: 2 }),
         ],
         'assignee',
+      ).map(
+        ({
+          key,
+          issueCount,
+          estimateTotal,
+          estimateStarted,
+          estimateCompleted,
+          progressPercent,
+        }) => [key, issueCount, estimateTotal, estimateStarted, estimateCompleted, progressPercent],
       ),
     ).toEqual([
-      { key: 'self', value: 'self', count: 2, share: 50 },
-      { key: 'agent', value: 'agent', count: 1, share: 25 },
-      { key: 'unassigned', value: 'unassigned', count: 1, share: 25 },
+      ['self', 2, 4, 1, 3, 81],
+      ['agent', 1, 1, 0, 0, 0],
+      ['unassigned', 1, 2, 0, 2, 100],
     ]);
   });
 
@@ -169,23 +199,17 @@ describe('cycleProgressBreakdown', () => {
   });
 
   it('leaves the label breakdown empty when no issue has labels', () => {
-    expect(
-      cycleProgressBreakdown(
-        [{ assignee: 'self', labels: [], priority: 0, projectId: null, projectSlug: null }],
-        'label',
-      ),
-    ).toEqual([]);
+    expect(cycleProgressBreakdown([issue({ assignee: 'self' })], 'label')).toEqual([]);
   });
 
   it('groups priority and project values with stable priority ordering', () => {
     const issues = [
-      { assignee: undefined, labels: [], priority: 0, projectId: 2, projectSlug: 'harbor' },
-      { assignee: undefined, labels: [], priority: 3, projectId: 1, projectSlug: 'kotowari' },
-      { assignee: undefined, labels: [], priority: 1, projectId: null, projectSlug: null },
+      issue({ priority: 0, projectId: 2, projectSlug: 'harbor' }),
+      issue({ priority: 3, projectId: 1, projectSlug: 'kotowari' }),
+      issue({ priority: 1 }),
     ];
     const priorities = cycleProgressBreakdown(issues, 'priority');
     expect(priorities.map(({ key }) => key)).toEqual(['priority:1', 'priority:3', 'priority:0']);
-    priorities.forEach((item) => expect(item.share).toBeCloseTo(100 / 3));
     expect(
       cycleProgressBreakdown(issues, 'project', [
         { id: 1, slug: 'kotowari', name: 'Kotowari' },
@@ -199,23 +223,26 @@ describe('cycleProgressBreakdown', () => {
   });
 
   it('counts each label membership and gives unlabeled issues a distinct group', () => {
-    const issue = {
-      assignee: undefined,
-      priority: 0,
-      projectId: null,
-      projectSlug: null,
-      labels: [
-        { id: 2, name: 'Feature', color: '#aabbcc' },
-        { id: 1, name: 'Bug', color: '#112233' },
+    const labels = cycleProgressBreakdown(
+      [
+        issue({
+          labels: [
+            { id: 2, name: 'Feature', color: '#aabbcc' },
+            { id: 1, name: 'Bug', color: '#112233' },
+          ],
+        }),
+        issue(),
       ],
-    };
-    const labels = cycleProgressBreakdown([issue, { ...issue, labels: [] }], 'label');
-    expect(labels.map(({ key, value, count, color }) => [key, value, count, color])).toEqual([
+      'label',
+    );
+    expect(
+      labels.map(({ key, value, issueCount, color }) => [key, value, issueCount, color]),
+    ).toEqual([
       ['label:1', 'Bug', 1, '#112233'],
       ['label:2', 'Feature', 1, '#aabbcc'],
       ['no-labels', '', 1, undefined],
     ]);
-    labels.forEach((item) => expect(item.share).toBeCloseTo(100 / 3));
+    labels.forEach((item) => expect(item.estimateTotal).toBe(1));
   });
 
   it('matches an issue to the selected breakdown group', () => {
