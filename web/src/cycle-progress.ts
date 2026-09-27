@@ -7,7 +7,7 @@ export type CycleProgressPoint = {
   completed: number;
 };
 
-type CycleProgressIssue = Pick<Issue, 'id' | 'status' | 'createdAt' | 'cycleAddedAt'>;
+type CycleProgressIssue = Pick<Issue, 'id' | 'status' | 'createdAt' | 'cycleAddedAt' | 'estimate'>;
 
 export type CycleProgressBreakdownBy = 'assignee' | 'label' | 'priority' | 'project';
 export type CycleProgressBreakdownItem = {
@@ -200,6 +200,7 @@ export function cycleProgressTimeline(
         membershipAt,
         events,
         initialStatus,
+        estimate: issue.estimate ?? 1,
       },
     ];
   });
@@ -221,14 +222,14 @@ export function cycleProgressTimeline(
       let completed = 0;
       for (const track of tracks) {
         if (track.membershipAt > at) continue;
-        scope++;
+        scope += track.estimate;
         let status = track.initialStatus;
         for (const event of track.events) {
           if (event.at < track.membershipAt || event.at > at) continue;
           status = event.to;
         }
-        if (status === 'in_progress') started++;
-        if (completedStatuses.has(status)) completed++;
+        if (status === 'in_progress') started += track.estimate;
+        if (completedStatuses.has(status)) completed += track.estimate;
       }
       return { at: new Date(at).toISOString(), scope, started, completed };
     });

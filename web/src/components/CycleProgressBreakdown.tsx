@@ -1,6 +1,7 @@
 import { Box, Button, Group, RingProgress, Select, Stack, Text, Tooltip } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import type { CycleProgressBreakdownBy, CycleProgressBreakdownItem } from '../cycle-progress.ts';
+import { IssueEstimateIcon } from './issue-ui.tsx';
 
 const assigneeColors: Record<string, string> = {
   self: 'indigo.5',
@@ -183,6 +184,7 @@ export function CycleProgressBreakdown({
                     <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                       {t('cycle.estimateProgressOf', { percent: item.progressPercent })}
                     </Text>
+                    <IssueEstimateIcon size={12} />
                     <Text size="xs" style={{ whiteSpace: 'nowrap' }}>
                       {estimateTotal}
                     </Text>

@@ -10,6 +10,7 @@ import {
   IconCircleDashed,
   IconCircleX,
   IconProgress,
+  IconTriangle,
 } from '@tabler/icons-react';
 import type { IssueStatus } from '../types.ts';
 
@@ -62,6 +63,12 @@ export function IssuePriorityIcon({ priority }: { priority: number }) {
     return <IconAntennaBars3 size={13} stroke={1.75} color="var(--mantine-color-gray-5)" />;
   }
   return <IconAntennaBars1 size={13} stroke={1.75} color="var(--mantine-color-gray-6)" />;
+}
+
+export function IssueEstimateIcon({ size = 13 }: { size?: number }) {
+  return (
+    <IconTriangle size={size} stroke={1.8} color="var(--mantine-color-gray-5)" aria-hidden="true" />
+  );
 }
 
 export function IssueLabelPill({ name, color }: { name: string; color: string }) {

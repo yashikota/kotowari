@@ -2,6 +2,7 @@ import { Box, Group, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import type { Cycle } from '../types.ts';
 import type { CycleProgressPoint } from '../cycle-progress.ts';
+import { IssueEstimateIcon } from './issue-ui.tsx';
 import { CycleProgressChart } from './CycleProgressChart.tsx';
 import styles from './CycleOverview.module.css';
 
@@ -44,7 +45,7 @@ export function CycleOverview({
           gap={0}
           style={{ minWidth: 0 }}
         >
-          <OverviewStat label={t('cycle.scope')} value={String(scope)} />
+          <OverviewStat label={t('cycle.scope')} value={scope} />
           <OverviewStat label={t('cycle.started')} value={`${started} · ${startedPercent}%`} />
           <OverviewStat
             label={t('cycle.completed')}
@@ -56,7 +57,7 @@ export function CycleOverview({
   );
 }
 
-function OverviewStat({ label, value }: { label: string; value: string }) {
+function OverviewStat({ label, value }: { label: string; value: string | number }) {
   return (
     <Group
       justify="space-between"
@@ -69,7 +70,7 @@ function OverviewStat({ label, value }: { label: string; value: string }) {
         {label}
       </Text>
       <Text size="sm" fw={500}>
-        {value}
+        <IssueEstimateIcon size={12} /> {value}
       </Text>
     </Group>
   );

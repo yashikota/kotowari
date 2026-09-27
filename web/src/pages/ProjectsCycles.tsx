@@ -1011,6 +1011,7 @@ export function CycleDetailPageView({
         breakdownBy,
         breakdownItems,
         activeBreakdownFilterKey,
+        scope,
         started,
         startedPercent,
         done,
@@ -1332,7 +1333,7 @@ export function CycleDetailPageView({
                       ) : null}
                     </Stack>
                     <CycleProgressSummary
-                      scope={data.cycleIssues.length}
+                      scope={scope}
                       started={started}
                       startedPercent={startedPercent}
                       completed={done}

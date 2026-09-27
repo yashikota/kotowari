@@ -2,6 +2,7 @@ import { Button, Group, Progress, Stack, Text } from '@mantine/core';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { IssueEstimateIcon } from './issue-ui.tsx';
 
 export function CycleProgressSummary({
   scope,
@@ -57,23 +58,32 @@ export function CycleProgressSummary({
             <Text size="xs" c="dimmed">
               {t('cycle.scope')}
             </Text>
-            <Text size="sm">{scope}</Text>
+            <Group gap={4} wrap="nowrap">
+              <IssueEstimateIcon />
+              <Text size="sm">{scope}</Text>
+            </Group>
           </Stack>
           <Stack gap={4}>
             <Text size="xs" c="dimmed">
               {t('cycle.started')}
             </Text>
-            <Text size="sm">
-              {started} · {startedPercent}%
-            </Text>
+            <Group gap={4} wrap="nowrap">
+              <IssueEstimateIcon />
+              <Text size="sm">
+                {started} · {startedPercent}%
+              </Text>
+            </Group>
           </Stack>
           <Stack gap={4}>
             <Text size="xs" c="dimmed">
               {t('cycle.completed')}
             </Text>
-            <Text size="sm">
-              {completed} · {completionPercent}%
-            </Text>
+            <Group gap={4} wrap="nowrap">
+              <IssueEstimateIcon />
+              <Text size="sm">
+                {completed} · {completionPercent}%
+              </Text>
+            </Group>
           </Stack>
         </Group>
         <Progress

@@ -1700,14 +1700,11 @@ export function useCycleDetailPagePresenter() {
     (current, point) => (Date.parse(point.at) <= asOf ? point : current),
     progressTimeline[0] ?? { at: cycle.startsAt, scope: 0, started: 0, completed: 0 },
   );
+  const scope = progress.scope;
   const started = progress.started;
   const done = progress.completed;
-  const startedPercent = data.cycleIssues.length
-    ? Math.round((started / data.cycleIssues.length) * 100)
-    : 0;
-  const completionPercent = data.cycleIssues.length
-    ? Math.round((done / data.cycleIssues.length) * 100)
-    : 0;
+  const startedPercent = scope ? Math.round((started / scope) * 100) : 0;
+  const completionPercent = scope ? Math.round((done / scope) * 100) : 0;
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('status');
   const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
@@ -1943,6 +1940,7 @@ export function useCycleDetailPagePresenter() {
     breakdownBy,
     breakdownItems,
     activeBreakdownFilterKey,
+    scope,
     started,
     startedPercent,
     done,

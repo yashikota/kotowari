@@ -22,8 +22,9 @@ function issue(
   status: Issue['status'],
   createdAt: string,
   cycleAddedAt: string,
-): Pick<Issue, 'id' | 'status' | 'createdAt' | 'cycleAddedAt'> {
-  return { id, status, createdAt, cycleAddedAt };
+  estimate: number | null = null,
+): Pick<Issue, 'id' | 'status' | 'createdAt' | 'cycleAddedAt' | 'estimate'> {
+  return { id, status, createdAt, cycleAddedAt, estimate };
 }
 
 function statusChange(
@@ -48,7 +49,7 @@ describe('cycleProgressTimeline', () => {
     const points = cycleProgressTimeline(
       cycle,
       [
-        issue(10, 'done', '2026-09-01T00:00:00Z', '2026-09-01T00:00:00Z'),
+        issue(10, 'done', '2026-09-01T00:00:00Z', '2026-09-01T00:00:00Z', 3),
         issue(11, 'done', '2026-08-25T00:00:00Z', '2026-09-03T00:00:00Z'),
       ],
       [
@@ -60,13 +61,13 @@ describe('cycleProgressTimeline', () => {
     );
 
     expect(points).toEqual([
-      { at: '2026-09-01T00:00:00.000Z', scope: 1, started: 0, completed: 0 },
-      { at: '2026-09-02T09:00:00.000Z', scope: 1, started: 1, completed: 0 },
-      { at: '2026-09-03T00:00:00.000Z', scope: 2, started: 1, completed: 0 },
-      { at: '2026-09-04T12:00:00.000Z', scope: 2, started: 0, completed: 1 },
-      { at: '2026-09-04T16:00:00.000Z', scope: 2, started: 0, completed: 2 },
-      { at: '2026-09-04T18:00:00.000Z', scope: 2, started: 0, completed: 2 },
-      { at: '2026-09-05T00:00:00.000Z', scope: 2, started: 0, completed: 2 },
+      { at: '2026-09-01T00:00:00.000Z', scope: 3, started: 0, completed: 0 },
+      { at: '2026-09-02T09:00:00.000Z', scope: 3, started: 3, completed: 0 },
+      { at: '2026-09-03T00:00:00.000Z', scope: 4, started: 3, completed: 0 },
+      { at: '2026-09-04T12:00:00.000Z', scope: 4, started: 0, completed: 3 },
+      { at: '2026-09-04T16:00:00.000Z', scope: 4, started: 0, completed: 4 },
+      { at: '2026-09-04T18:00:00.000Z', scope: 4, started: 0, completed: 4 },
+      { at: '2026-09-05T00:00:00.000Z', scope: 4, started: 0, completed: 4 },
     ]);
   });
 

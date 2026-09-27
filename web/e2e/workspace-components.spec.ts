@@ -2856,9 +2856,9 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   await expect(progress.getByText('Scope', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('Started', { exact: true }).first()).toBeVisible();
   await expect(progress.getByText('Completed', { exact: true }).first()).toBeVisible();
-  await expect(progress.getByText('3', { exact: true }).first()).toBeVisible();
-  await expect(progress.getByText('1 · 33%', { exact: true })).toBeVisible();
-  await expect(progress.getByText('2 · 67%', { exact: true })).toBeVisible();
+  await expect(progress.getByText('6', { exact: true }).first()).toBeVisible();
+  await expect(progress.getByText('1 · 17%', { exact: true })).toBeVisible();
+  await expect(progress.getByText('5 · 83%', { exact: true })).toBeVisible();
   await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toBeVisible();
   const assignees = progress.getByRole('region', { name: 'Assignees', exact: true });
   await expect(assignees).toBeVisible();
@@ -2908,7 +2908,7 @@ test('cycle details summarize scope, started, and completed work', async ({ page
     .click();
   await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toHaveAttribute(
     'aria-valuetext',
-    '67%',
+    '83%',
   );
   const chart = progress.getByRole('img', { name: /Cycle progress over time/ });
   await expect(chart).toBeVisible();
@@ -2920,9 +2920,9 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   );
   const chartTooltip = chart.locator('[role="tooltip"]');
   await expect(chartTooltip).toBeVisible();
-  await expect(chartTooltip).toContainText('Scope: 3');
+  await expect(chartTooltip).toContainText('Scope: 6');
   await expect(chartTooltip).toContainText('Started: 1');
-  await expect(chartTooltip).toContainText('Completed: 2');
+  await expect(chartTooltip).toContainText('Completed: 5');
   await chart.focus();
   await page.keyboard.press('Home');
   await expect(chart.locator('[role="tooltip"]')).toBeVisible();
