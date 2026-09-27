@@ -11,7 +11,7 @@ import type {
   IssueLayout,
   IssueOrderBy,
 } from '../issue-list.ts';
-import type { Cycle, Label, Project } from '../types.ts';
+import type { Cycle, IssueLinkSource, Label, Project } from '../types.ts';
 import type { IssueFilterChoices, IssueFilterGroup } from '../issue-advanced-filter.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
@@ -64,6 +64,7 @@ type Props = {
   projects: Project[];
   cycles: Cycle[];
   labels: Label[];
+  linkSources?: IssueLinkSource[];
   onChange: (next: IssueSearch) => void;
   advancedFilter?: boolean;
   advancedFilterGroup?: IssueFilterGroup;
@@ -100,6 +101,7 @@ export function useIssueFiltersPresenter({
   projects,
   cycles,
   labels,
+  linkSources = [],
   onChange,
   advancedFilter,
   advancedFilterGroup,
@@ -160,6 +162,7 @@ export function useIssueFiltersPresenter({
     .map((n) => n.trim())
     .filter(Boolean);
   const selectedProjectLabels = search.projectLabels ?? [];
+  const selectedLinkSources = search.linkSources ?? [];
   const selectedAddedToCycle = search.addedToCycle ?? [];
   const advancedFilterChoices: IssueFilterChoices = {
     status: workflowStatuses.map((status) => ({
@@ -289,6 +292,10 @@ export function useIssueFiltersPresenter({
           },
         ]
       : []),
+    ...selectedLinkSources.map((source) => ({
+      key: `linkSource:${source}`,
+      label: `${t('filters.categories.links')} · ${source === 'no-source' ? t('filters.noLinkSource') : (linkSources.find((item) => item.id === source)?.name ?? source)}`,
+    })),
     ...(search.content
       ? [{ key: 'content', label: `${t('filters.content')} · ${search.content.trim()}` }]
       : []),
@@ -347,6 +354,7 @@ export function useIssueFiltersPresenter({
     projects,
     cycles,
     labels,
+    linkSources,
     onChange,
     onAdvancedFilterToggle,
     onAdvancedFilterChange,
@@ -374,6 +382,7 @@ export function useIssueFiltersPresenter({
     onDetailsToggle,
     findRef,
     selectedLabels,
+    selectedLinkSources,
     selectedProjectLabels,
     selectedAddedToCycle,
     filterOpened,
@@ -408,6 +417,13 @@ export function useIssueFiltersPresenter({
         set({ dueDate: value ? (value as NonNullable<IssueSearch['dueDate']>) : undefined }),
       onRelationChange: (value: string) =>
         set({ relation: value ? (value as NonNullable<IssueSearch['relation']>) : undefined }),
+      onToggleLinkSource: (value: string) => {
+        const current = searchRef.current.linkSources ?? [];
+        const next = current.includes(value)
+          ? current.filter((source) => source !== value)
+          : [...current, value];
+        set({ linkSources: next.length > 0 ? next : undefined });
+      },
       onContentChange: (value: string) => set({ content: value.trim() ? value : undefined }),
       onMilestoneNameChange: (value: string) =>
         set({ milestoneName: value.trim() ? value : undefined }),
@@ -476,6 +492,7 @@ export function useIssueFiltersPresenter({
           estimate: undefined,
           dueDate: undefined,
           relation: undefined,
+          linkSources: undefined,
           content: undefined,
           milestoneName: undefined,
           dateField: undefined,
@@ -491,6 +508,12 @@ export function useIssueFiltersPresenter({
         onFind?.('');
       },
       onRemoveFilter: (key: string) => {
+        if (key.startsWith('linkSource:')) {
+          const current = searchRef.current.linkSources ?? [];
+          const next = current.filter((source) => source !== key.slice('linkSource:'.length));
+          set({ linkSources: next.length > 0 ? next : undefined });
+          return;
+        }
         if (key.startsWith('label:')) {
           const currentLabels = (searchRef.current.labels ?? '')
             .split(',')

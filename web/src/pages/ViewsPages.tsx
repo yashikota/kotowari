@@ -86,6 +86,7 @@ export function ViewPageView({
                   projects={data.projects}
                   cycles={data.cycles}
                   labels={data.labels}
+                  linkSources={data.linkSources}
                   onChange={handlers.onFilterChange12}
                   advancedFilter={search.advancedFilter}
                   advancedFilterGroup={search.advancedFilterGroup}

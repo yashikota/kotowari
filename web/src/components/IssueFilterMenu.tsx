@@ -36,7 +36,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { IssueSearch } from '../api.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
-import type { Cycle, Label, Project } from '../types.ts';
+import type { Cycle, IssueLinkSource, Label, Project } from '../types.ts';
 import { LabelChip } from '../mantine-ui.tsx';
 import type { FilterChip } from '../presenters/IssueFilters.tsx';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
@@ -50,6 +50,7 @@ const FILTER_CATEGORIES = [
   { id: 'estimate', group: 'issue', chips: ['estimate'] },
   { id: 'labels', group: 'issue', chips: ['label:'] },
   { id: 'relations', group: 'issue', chips: ['relation'] },
+  { id: 'links', group: 'issue', chips: ['linkSource:'] },
   { id: 'dates', group: 'issue', chips: ['date'] },
   { id: 'project', group: 'planning', chips: ['project'] },
   {
@@ -72,6 +73,7 @@ const FILTER_CATEGORY_ICONS = {
   estimate: IconChartBar,
   labels: IconTag,
   relations: IconLink,
+  links: IconLink,
   dates: IconCalendar,
   project: IconFolder,
   projectProperties: IconFolderCog,
@@ -267,7 +269,9 @@ export function IssueFilterMenu({
   projects,
   cycles,
   labels,
+  linkSources,
   selectedLabels,
+  selectedLinkSources,
   selectedProjectLabels,
   selectedAddedToCycle,
   opened,
@@ -282,6 +286,7 @@ export function IssueFilterMenu({
   onEstimateChange,
   onDueDateChange,
   onRelationChange,
+  onToggleLinkSource,
   onContentChange,
   onMilestoneNameChange,
   onDateFieldChange,
@@ -298,7 +303,9 @@ export function IssueFilterMenu({
   projects: Project[];
   cycles: Cycle[];
   labels: Label[];
+  linkSources: IssueLinkSource[];
   selectedLabels: string[];
+  selectedLinkSources: string[];
   selectedProjectLabels: string[];
   selectedAddedToCycle: string[];
   opened: boolean;
@@ -313,6 +320,7 @@ export function IssueFilterMenu({
   onEstimateChange: (value: string) => void;
   onDueDateChange: (value: string) => void;
   onRelationChange: (value: string) => void;
+  onToggleLinkSource: (value: string) => void;
   onContentChange: (value: string) => void;
   onMilestoneNameChange: (value: string) => void;
   onDateFieldChange: (value: string) => void;
@@ -477,6 +485,22 @@ export function IssueFilterMenu({
               ] as const
             ).map((value) => ({ value, label: t(`filters.relationValue.${value}`) }))}
             onChange={onRelationChange}
+          />
+        );
+      case 'links':
+        return (
+          <FilterOptionList
+            label={t('filters.filterLinks')}
+            value={null}
+            selectedValues={selectedLinkSources}
+            options={linkSources.map((source) => ({
+              value: source.id,
+              label: t('filters.linkSourceCount', {
+                name: source.id === 'no-source' ? t('filters.noLinkSource') : source.name,
+                count: source.count,
+              }),
+            }))}
+            onChange={onToggleLinkSource}
           />
         );
       case 'dates':

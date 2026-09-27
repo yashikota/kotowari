@@ -69,6 +69,7 @@ async function loadFilteredIssues(search: IssueSearch) {
       projects: [],
       cycles: [],
       labels: [],
+      linkSources: [],
       activityItems: activities.map(({ identifier, title, ...activity }) => ({
         identifier,
         title,
@@ -80,13 +81,14 @@ async function loadFilteredIssues(search: IssueSearch) {
     personalTab && personalTab !== 'assigned'
       ? { ...search, assignee: undefined, view: undefined, archived: false }
       : search;
-  const [issues, projects, cycles, labels] = await Promise.all([
+  const [issues, projects, cycles, labels, linkSources] = await Promise.all([
     api.issues(issuesQuery(searchToFilter(issueSearch))),
     api.projects(),
     api.cycles(),
     api.labels(),
+    api.issueLinkSources(),
   ]);
-  return { issues: issues ?? [], projects, cycles, labels };
+  return { issues: issues ?? [], projects, cycles, labels, linkSources };
 }
 
 const rootRoute = createRootRoute({
@@ -525,13 +527,14 @@ const viewRoute = createRoute({
   path: '/views/$slug',
   loader: async ({ params }) => {
     const view = await api.view(params.slug);
-    const [issues, projects, cycles, labels] = await Promise.all([
+    const [issues, projects, cycles, labels, linkSources] = await Promise.all([
       api.issues(issuesQuery(view)),
       api.projects(),
       api.cycles(),
       api.labels(),
+      api.issueLinkSources(),
     ]);
-    return { view, issues, projects, cycles, labels };
+    return { view, issues, projects, cycles, labels, linkSources };
   },
   component: lazyRouteComponent(() => import('./pages/ViewsPages.tsx'), 'ViewPage'),
 });

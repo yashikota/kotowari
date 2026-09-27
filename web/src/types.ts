@@ -30,6 +30,12 @@ export type IssueLink = {
   createdAt: string;
 };
 
+export type IssueLinkSource = {
+  id: string;
+  name: string;
+  count: number;
+};
+
 export type IssueRelation = {
   id: number;
   kind: 'related' | 'blocks' | 'blockedBy' | 'duplicateOf' | 'duplicateBy';
@@ -284,6 +290,7 @@ export type View = {
   estimate: number | null;
   dueDate?: string;
   relation?: string | null;
+  linkSources?: string[];
   content?: string | null;
   milestoneName?: string | null;
   dateField?: string;

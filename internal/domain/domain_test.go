@@ -77,6 +77,17 @@ func TestIssueDateFilters(t *testing.T) {
 	}
 }
 
+func TestIssueLinkSourceValidation(t *testing.T) {
+	for _, test := range []struct {
+		value string
+		want  bool
+	}{{"github", true}, {"acme.example", true}, {"", false}, {"GitHub", false}, {"../unsafe", false}} {
+		if got := ValidIssueLinkSource(test.value); got != test.want {
+			t.Errorf("ValidIssueLinkSource(%q) = %v, want %v", test.value, got, test.want)
+		}
+	}
+}
+
 func TestIdentifierRoundTrip(t *testing.T) {
 	t.Parallel()
 	id := Identifier(12)

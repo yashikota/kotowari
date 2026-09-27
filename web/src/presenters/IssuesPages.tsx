@@ -39,6 +39,7 @@ type IssueListData = {
   projects: Project[];
   cycles: Cycle[];
   labels: Label[];
+  linkSources: import('../types.ts').IssueLinkSource[];
   activityItems?: { identifier: string; title: string; activity: Activity }[];
 };
 
@@ -58,6 +59,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     estimate: next.estimate ?? '',
     dueDate: next.dueDate ?? '',
     relation: next.relation ?? '',
+    linkSources: next.linkSources?.join(',') ?? '',
     content: next.content ?? '',
     milestoneName: next.milestoneName ?? '',
     dateField: next.dateField ?? '',

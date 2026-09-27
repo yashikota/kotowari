@@ -294,6 +294,16 @@ function body(init?: RequestInit): Record<string, unknown> {
 function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
+function issueLinkSource(rawUrl: string): string {
+  try {
+    const host = new URL(rawUrl).hostname.toLowerCase().replace(/^www\./, '');
+    if (host === 'github.com' || host.endsWith('.github.com')) return 'github';
+    if (host === 'slack.com' || host.endsWith('.slack.com')) return 'slack';
+    return host;
+  } catch {
+    return '';
+  }
+}
 function findIssue(id: string): Issue | undefined {
   return issues.find(
     (item) => item.identifier === id || String(item.number) === id || String(item.id) === id,
@@ -783,6 +793,36 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     }
     return json(labels);
   }
+  if (path === '/api/issue-link-sources' && method === 'GET') {
+    const counts = new Map<string, number>();
+    for (const issue of issues.filter((item) => !item.archivedAt)) {
+      if ((issue.externalLinks ?? []).length === 0) {
+        counts.set('no-source', (counts.get('no-source') ?? 0) + 1);
+        continue;
+      }
+      for (const source of new Set(
+        (issue.externalLinks ?? []).map((link) => issueLinkSource(link.url)),
+      )) {
+        if (source) counts.set(source, (counts.get(source) ?? 0) + 1);
+      }
+    }
+    return json(
+      [...counts]
+        .map(([id, count]) => ({
+          id,
+          name:
+            id === 'github'
+              ? 'GitHub'
+              : id === 'slack'
+                ? 'Slack'
+                : id === 'no-source'
+                  ? 'No source'
+                  : id,
+          count,
+        }))
+        .sort((left, right) => left.name.localeCompare(right.name)),
+    );
+  }
   if (path === '/api/issues' && method === 'GET') {
     processDemoRecurringIssues();
     let result = [...issues];
@@ -803,6 +843,12 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const estimate = url.searchParams.get('estimate');
     const dueDateFilter = url.searchParams.get('dueDate');
     const relationFilter = url.searchParams.get('relation');
+    const linkSourcesFilter =
+      url.searchParams
+        .get('linkSources')
+        ?.split(',')
+        .map((source) => source.trim())
+        .filter(Boolean) ?? [];
     const contentFilter = url.searchParams.get('content')?.trim().toLowerCase();
     const milestoneNameFilter = url.searchParams.get('milestoneName')?.trim().toLowerCase();
     const dateFieldFilter = url.searchParams.get('dateField');
@@ -905,6 +951,15 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
           );
         return false;
       });
+    }
+    if (linkSourcesFilter.length > 0) {
+      result = result.filter(
+        (item) =>
+          (linkSourcesFilter.includes('no-source') && (item.externalLinks ?? []).length === 0) ||
+          (item.externalLinks ?? []).some((link) =>
+            linkSourcesFilter.includes(issueLinkSource(link.url)),
+          ),
+      );
     }
     if (contentFilter) {
       result = result.filter((item) =>

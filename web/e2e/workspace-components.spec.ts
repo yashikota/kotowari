@@ -831,6 +831,80 @@ test('content filter searches descriptions and persists on a saved view', async 
   await expect(savedIssues.getByRole('option', { name: new RegExp(otherTitle) })).toHaveCount(0);
 });
 
+test('links filter selects a source and persists on a saved view', async ({ page, request }) => {
+  const stamp = Date.now();
+  const githubTitle = `GitHub source ${stamp}`;
+  const slackTitle = `Slack source ${stamp}`;
+  const noSourceTitle = `No source ${stamp}`;
+  const github = await request.post('/api/issues', {
+    data: {
+      title: githubTitle,
+      links: [{ url: `https://github.com/kotowari/${stamp}`, title: 'Pull request', kind: 'link' }],
+    },
+  });
+  const slack = await request.post('/api/issues', {
+    data: {
+      title: slackTitle,
+      links: [
+        { url: `https://kotowari.slack.com/archives/${stamp}`, title: 'Discussion', kind: 'link' },
+      ],
+    },
+  });
+  const noSource = await request.post('/api/issues', { data: { title: noSourceTitle } });
+  expect(github.ok()).toBeTruthy();
+  expect(slack.ok()).toBeTruthy();
+  expect(noSource.ok()).toBeTruthy();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await openIssueFilterCategory(page, 'Links');
+  const sourcesResponse = await request.get('/api/issue-link-sources');
+  expect(sourcesResponse.ok()).toBeTruthy();
+  const sources = (await sourcesResponse.json()) as { id: string; name: string; count: number }[];
+  const githubSource = sources.find((source) => source.id === 'github');
+  expect(githubSource).toBeDefined();
+  await chooseIssueFilterOption(page, 'Filter links', `GitHub · ${githubSource!.count}`);
+  const issues = page.getByRole('listbox', { name: 'Issues' });
+  await expect.poll(() => new URL(page.url()).searchParams.get('linkSources')).toBe('["github"]');
+  await expect(issues.getByRole('option', { name: new RegExp(githubTitle) })).toBeVisible();
+  await expect(issues.getByRole('option', { name: new RegExp(slackTitle) })).toHaveCount(0);
+
+  const viewName = `GitHub links ${stamp}`;
+  await createIssueView(page, viewName);
+  const slug = `github-links-${stamp}`;
+  await expect(page).toHaveURL(new RegExp(`/views/${slug}$`));
+  const saved = await request.get(`/api/views/${slug}`);
+  expect(saved.ok()).toBeTruthy();
+  expect(await saved.json()).toMatchObject({ linkSources: ['github'] });
+  await expect(
+    page
+      .getByRole('listbox', { name: 'Issues' })
+      .getByRole('option', { name: new RegExp(githubTitle) }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole('listbox', { name: 'Issues' })
+      .getByRole('option', { name: new RegExp(slackTitle) }),
+  ).toHaveCount(0);
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await openIssueFilterCategory(page, 'Links');
+  const noSourceOption = sources.find((source) => source.id === 'no-source');
+  expect(noSourceOption).toBeDefined();
+  await chooseIssueFilterOption(page, 'Filter links', `No source · ${noSourceOption!.count}`);
+  const noSourceIssues = page.getByRole('listbox', { name: 'Issues' });
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('linkSources'))
+    .toBe('["no-source"]');
+  await expect(
+    noSourceIssues.getByRole('option', { name: new RegExp(noSourceTitle) }),
+  ).toBeVisible();
+  await expect(noSourceIssues.getByRole('option', { name: new RegExp(githubTitle) })).toHaveCount(
+    0,
+  );
+});
+
 test('created-date filters support relative and exact dates on saved views', async ({
   page,
   request,

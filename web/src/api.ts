@@ -7,6 +7,7 @@ import type {
   Diagnostic,
   Issue,
   IssueLink,
+  IssueLinkSource,
   IssueRelation,
   IssueTemplate,
   IssueWorkflowStatus,
@@ -89,6 +90,7 @@ export const api = {
     req<Label>('/api/labels', { method: 'POST', body: JSON.stringify(body) }),
   diagnostics: () => req<Diagnostic[]>('/api/diagnostics'),
   issues: (q = '') => req<Issue[]>(`/api/issues${q}`),
+  issueLinkSources: () => req<IssueLinkSource[]>('/api/issue-link-sources'),
   issueTemplates: () => req<IssueTemplate[]>('/api/issue-templates'),
   createIssueTemplate: (identifier: string, name: string) =>
     req<IssueTemplate>(`/api/issues/${identifier}/templates`, {
@@ -418,6 +420,7 @@ export const api = {
     estimate?: number | null;
     dueDate?: string;
     relation?: string;
+    linkSources?: string[];
     content?: string;
     milestoneName?: string;
     dateField?: string;
@@ -450,6 +453,7 @@ export function issuesQuery(filter: {
   dueDate?: string | null;
   asOf?: string | null;
   relation?: string | null;
+  linkSources?: string[] | null;
   content?: string | null;
   milestoneName?: string | null;
   dateField?: string | null;
@@ -489,6 +493,7 @@ export function issuesQuery(filter: {
     q.set('asOf', filter.asOf ?? localDateValue(new Date()));
   }
   if (filter.relation) q.set('relation', filter.relation);
+  if (filter.linkSources?.length) q.set('linkSources', filter.linkSources.join(','));
   if (filter.content?.trim()) q.set('content', filter.content.trim());
   if (filter.milestoneName?.trim()) q.set('milestoneName', filter.milestoneName.trim());
   if (filter.dateField && filter.dateRange && filter.dateRange !== 'custom') {
@@ -531,6 +536,7 @@ export type IssueSearch = {
     | 'none'
     | `on:${string}`;
   relation?: 'parent' | 'subissue' | 'blocked' | 'blocking' | 'recurring' | 'related' | 'duplicate';
+  linkSources?: string[];
   content?: string;
   milestoneName?: string;
   dateField?: 'createdAt' | 'updatedAt' | 'startedAt' | 'completedAt' | 'timeInCurrentStatus';
@@ -634,6 +640,16 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   if (typeof raw.relation === 'string' && relationFilters.includes(raw.relation)) {
     out.relation = raw.relation as IssueSearch['relation'];
   }
+  if (typeof raw.linkSources === 'string' && raw.linkSources.trim()) {
+    const sources = raw.linkSources
+      .split(',')
+      .map((source) => source.trim().toLowerCase())
+      .filter((source) => /^[a-z0-9.-]{1,253}$/.test(source));
+    const normalizedSources = [...new Set(sources)];
+    if (normalizedSources.length > 0 && normalizedSources.length <= 32) {
+      out.linkSources = normalizedSources;
+    }
+  }
   if (typeof raw.content === 'string' && raw.content.trim()) {
     out.content = raw.content.slice(0, 512);
   }
@@ -728,6 +744,7 @@ export function searchToFilter(search: IssueSearch): {
   estimate?: number;
   dueDate?: string;
   relation?: string;
+  linkSources?: string[];
   content?: string;
   milestoneName?: string;
   dateField?: string;
@@ -754,6 +771,7 @@ export function searchToFilter(search: IssueSearch): {
     estimate: search.estimate,
     dueDate: search.dueDate,
     relation: search.relation,
+    linkSources: search.linkSources,
     content: search.content,
     milestoneName: search.milestoneName,
     dateField: search.dateRange === 'custom' ? undefined : search.dateField,

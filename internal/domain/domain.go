@@ -138,6 +138,19 @@ func ValidIssueRelationFilter(value string) bool {
 	}
 }
 
+func ValidIssueLinkSource(value string) bool {
+	if value == "" || len(value) > 253 || value != strings.ToLower(value) {
+		return false
+	}
+	for _, r := range value {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' || r == '-' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 // ValidPrefix keeps identifiers safe as single URL path segments.
 func ValidPrefix(p string) bool {
 	if p == "" {

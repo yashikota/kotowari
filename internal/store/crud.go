@@ -1209,6 +1209,14 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	if !domain.ValidIssueRelationFilter(f.Relation) {
 		return nil, validationf("invalid issue relation filter")
 	}
+	if len(f.LinkSources) > 32 {
+		return nil, validationf("too many issue link sources in filter")
+	}
+	for _, source := range f.LinkSources {
+		if !domain.ValidIssueLinkSource(source) {
+			return nil, validationf("invalid issue link source filter")
+		}
+	}
 	asOf := f.DueDateAsOf
 	if f.DueDate != "" && !domain.ValidDueDateFilter(f.DueDate) {
 		return nil, validationf("invalid due date filter")
@@ -1312,6 +1320,9 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 				continue
 			}
 			if f.Relation != "" && !matchesIssueRelationFilter(m, iss, f.Relation) {
+				continue
+			}
+			if len(f.LinkSources) > 0 && !matchesIssueLinkSources(iss, f.LinkSources) {
 				continue
 			}
 			if f.DueDate != "" {
@@ -2958,6 +2969,14 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.Relation != nil && !domain.ValidIssueRelationFilter(*in.Relation) {
 		return View{}, validationf("invalid issue relation filter")
 	}
+	if len(in.LinkSources) > 32 {
+		return View{}, validationf("too many issue link sources in filter")
+	}
+	for _, source := range in.LinkSources {
+		if !domain.ValidIssueLinkSource(source) {
+			return View{}, validationf("invalid issue link source filter")
+		}
+	}
 	if in.ProjectStatus != nil && *in.ProjectStatus != "" {
 		statuses, err := s.ProjectWorkflowStatuses()
 		if err != nil {
@@ -2988,6 +3007,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			in.MilestoneName = nil
 		}
 	}
+	in.LinkSources = normalizeIssueLinkSources(in.LinkSources)
 	if len(in.ProjectLabels) > 32 {
 		return View{}, validationf("too many project labels in filter")
 	}
@@ -3033,7 +3053,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 			Status: in.Status, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
-			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, Content: in.Content, DateField: dateField, DateRange: dateRange,
+			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, LinkSources: in.LinkSources, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 		}
@@ -3248,6 +3268,17 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 			} else {
 				v.Relation = in.Relation
 			}
+		}
+		if in.LinkSources != nil {
+			if len(in.LinkSources) > 32 {
+				return validationf("too many issue link sources in filter")
+			}
+			for _, source := range in.LinkSources {
+				if !domain.ValidIssueLinkSource(source) {
+					return validationf("invalid issue link source filter")
+				}
+			}
+			v.LinkSources = normalizeIssueLinkSources(in.LinkSources)
 		}
 		if in.Content != nil {
 			content := *in.Content

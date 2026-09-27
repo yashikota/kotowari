@@ -717,6 +717,63 @@ func TestListIssuesByContentSearchesTitleIdentifierAndBody(t *testing.T) {
 	}
 }
 
+func TestListIssuesByLinkSourceAndSaveFilter(t *testing.T) {
+	s := openTest(t)
+	githubIssue, err := s.CreateIssue(CreateIssueInput{Title: "GitHub issue", ExternalLinks: []CreateIssueLinkInput{{URL: "https://github.com/example/repo/issues/1", Title: "Reference"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	slackIssue, err := s.CreateIssue(CreateIssueInput{Title: "Slack issue", ExternalLinks: []CreateIssueLinkInput{{URL: "https://acme.slack.com/archives/123", Title: "Discussion"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateIssue(CreateIssueInput{Title: "Other source", ExternalLinks: []CreateIssueLinkInput{{URL: "https://docs.example.com/reference", Title: "Docs"}}}); err != nil {
+		t.Fatal(err)
+	}
+	noSourceIssue, err := s.CreateIssue(CreateIssueInput{Title: "No source issue"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		source string
+		want   string
+	}{
+		{source: "github", want: githubIssue.Identifier},
+		{source: "slack", want: slackIssue.Identifier},
+		{source: "no-source", want: noSourceIssue.Identifier},
+	} {
+		got, err := s.ListIssues(IssueFilter{LinkSources: []string{test.source}})
+		if err != nil {
+			t.Fatalf("link source %q: %v", test.source, err)
+		}
+		if len(got) != 1 || got[0].Identifier != test.want {
+			t.Errorf("link source %q got %#v, want %s", test.source, got, test.want)
+		}
+	}
+
+	sources, err := s.IssueLinkSources()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sources) != 4 || sources[0].Name != "docs.example.com" || sources[1].Name != "GitHub" || sources[2].Name != "No source" || sources[3].Name != "Slack" {
+		t.Fatalf("link source choices %#v", sources)
+	}
+	view, err := s.CreateView(CreateViewInput{Name: "GitHub links", Slug: "github-links", LinkSources: []string{"github"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(view.LinkSources) != 1 || view.LinkSources[0] != "github" || len(view.Filter().LinkSources) != 1 {
+		t.Fatalf("saved link-source filter %#v", view)
+	}
+	view, err = s.UpdateView(view.Slug, CreateViewInput{LinkSources: []string{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(view.LinkSources) != 0 {
+		t.Fatalf("link-source filter was not cleared %#v", view.LinkSources)
+	}
+}
+
 func TestListIssuesByMilestoneNameAndSaveFilter(t *testing.T) {
 	s := openTest(t)
 	project, err := s.CreateProject("Release", "release", "", "started", nil, nil)

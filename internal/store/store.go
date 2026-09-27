@@ -232,6 +232,12 @@ type IssueLink struct {
 	CreatedAt string `json:"createdAt" toml:"created_at"`
 }
 
+type IssueLinkSource struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
 type CreateIssueLinkInput struct {
 	URL   string `json:"url" toml:"url"`
 	Title string `json:"title" toml:"title"`
@@ -317,6 +323,7 @@ type View struct {
 	Estimate            *int             `json:"estimate" toml:"estimate,omitempty"`
 	DueDate             string           `json:"dueDate,omitempty" toml:"due_date,omitempty"`
 	Relation            *string          `json:"relation,omitempty" toml:"relation,omitempty"`
+	LinkSources         []string         `json:"linkSources,omitempty" toml:"link_sources,omitempty"`
 	Content             *string          `json:"content,omitempty" toml:"content,omitempty"`
 	MilestoneName       *string          `json:"milestoneName,omitempty" toml:"milestone_name,omitempty"`
 	DateField           string           `json:"dateField,omitempty" toml:"date_field,omitempty"`
@@ -347,6 +354,7 @@ func (v View) Filter() IssueFilter {
 	if v.Relation != nil {
 		f.Relation = *v.Relation
 	}
+	f.LinkSources = v.LinkSources
 	if v.Content != nil {
 		f.Content = *v.Content
 	}
@@ -449,6 +457,7 @@ type IssueFilter struct {
 	DueDate         string
 	DueDateAsOf     string
 	Relation        string
+	LinkSources     []string
 	Content         string
 	MilestoneName   string
 	ProjectLabels   []string
@@ -527,6 +536,7 @@ type CreateViewInput struct {
 	Estimate            *int
 	DueDate             *string
 	Relation            *string
+	LinkSources         []string
 	Content             *string
 	MilestoneName       *string
 	DateField           *string

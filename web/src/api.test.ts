@@ -54,6 +54,10 @@ describe('issuesQuery', () => {
     expect(issuesQuery({ relation: 'blocked' })).toBe('?relation=blocked');
   });
 
+  it('encodes multiple link-source filters', () => {
+    expect(issuesQuery({ linkSources: ['github', 'slack'] })).toBe('?linkSources=github%2Cslack');
+  });
+
   it('encodes content searches without changing their display value', () => {
     expect(issuesQuery({ content: '  Moonstone migration  ' })).toBe(
       '?content=Moonstone+migration',
@@ -167,6 +171,13 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ content: '   ' })).toEqual({});
   });
 
+  it('normalizes link-source filters and rejects unsafe values', () => {
+    expect(parseIssueSearch({ linkSources: 'GitHub,slack,github' })).toEqual({
+      linkSources: ['github', 'slack'],
+    });
+    expect(parseIssueSearch({ linkSources: '../unsafe' })).toEqual({});
+  });
+
   it('keeps non-empty milestone name filters and ignores whitespace-only queries', () => {
     expect(parseIssueSearch({ milestoneName: '  Beta rollout  ' })).toEqual({
       milestoneName: '  Beta rollout  ',
@@ -235,6 +246,7 @@ describe('searchToFilter', () => {
       projectLabels: undefined,
       addedToCycle: undefined,
       milestoneName: undefined,
+      linkSources: undefined,
       content: undefined,
       dateField: undefined,
       dateRange: undefined,
@@ -254,6 +266,7 @@ describe('searchToFilter', () => {
       projectLabels: undefined,
       addedToCycle: undefined,
       milestoneName: undefined,
+      linkSources: undefined,
       content: undefined,
       dateField: undefined,
       dateRange: undefined,

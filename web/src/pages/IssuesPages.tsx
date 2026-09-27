@@ -78,6 +78,7 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               projects={data.projects}
               cycles={data.cycles}
               labels={data.labels}
+              linkSources={data.linkSources}
               onChange={handlers.onChange0}
               advancedFilter={search.advancedFilter}
               advancedFilterGroup={search.advancedFilterGroup}
@@ -255,6 +256,7 @@ export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPage
                 projects={data.projects}
                 cycles={data.cycles}
                 labels={data.labels}
+                linkSources={data.linkSources}
                 onChange={handlers.onChange0}
                 find={find}
                 onFind={handlers.onFind2}

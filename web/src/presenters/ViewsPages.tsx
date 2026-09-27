@@ -35,6 +35,7 @@ export function useViewPagePresenter() {
     projects: Project[];
     cycles: Cycle[];
     labels: Label[];
+    linkSources: import('../types.ts').IssueLinkSource[];
   };
   const locationState = useRouterState({ select: (state) => state.location.state });
   const router = useRouter();
@@ -100,6 +101,7 @@ export function useViewPagePresenter() {
     estimate: view.estimate ?? undefined,
     dueDate: view.dueDate === '' ? undefined : (view.dueDate as IssueSearch['dueDate']),
     relation: view.relation === '' ? undefined : (view.relation as IssueSearch['relation']),
+    linkSources: view.linkSources ?? undefined,
     content: view.content ?? undefined,
     milestoneName: view.milestoneName ?? undefined,
     dateField: view.dateField as IssueSearch['dateField'],
@@ -128,6 +130,7 @@ export function useViewPagePresenter() {
       estimate: next.estimate ?? -1,
       dueDate: next.dueDate ?? '',
       relation: next.relation ?? '',
+      linkSources: next.linkSources ?? [],
       content: next.content ?? '',
       milestoneName: next.milestoneName ?? '',
       dateField: next.dateField ?? '',
