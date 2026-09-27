@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 import type { Cycle, Initiative, Issue, Project } from './types.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from './cycle-export.ts';
+import i18n from './i18n/index.ts';
 
 describe('cycleCalendarICS', () => {
   it('exports a cycle as an all-day event with an exclusive end date', () => {
@@ -62,7 +63,7 @@ describe('cycleGoogleCalendarURL', () => {
 });
 
 describe('cycleIssuesCSV', () => {
-  it('matches Linear’s cycle export schema and includes the full issue record', () => {
+  it('matches Linear’s cycle export schema and includes the full issue record', async () => {
     const issue = {
       id: 42,
       identifier: 'ENBU-42',
@@ -103,6 +104,8 @@ describe('cycleIssuesCSV', () => {
       endsAt: '2026-09-27T15:00:00.000Z',
     } as Cycle;
 
+    const previousLanguage = i18n.language;
+    await i18n.changeLanguage('ja');
     const csv = cycleIssuesCSV([issue], {
       cycle,
       projects: [
@@ -116,6 +119,7 @@ describe('cycleIssuesCSV', () => {
       initiatives: [{ slug: 'quality', name: 'Quality' } as Initiative],
       exportedAt: new Date('2026-09-24T01:00:00Z'),
     });
+    await i18n.changeLanguage(previousLanguage);
 
     expect(csv.split('\r\n')[0]).toBe(
       '"ID","Team","Title","Description","Status","Estimate","Priority","Project ID","Project","Creator","Assignee","Labels","Cycle Number","Cycle Name","Cycle Start","Cycle End","Created","Updated","Started","Triaged","Completed","Canceled","Archived","Due Date","Parent issue","Initiatives","Project Milestone ID","Project Milestone","SLA Status","UUID","Time in status (minutes)","Related to","Blocked by","Duplicate of"',
