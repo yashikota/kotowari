@@ -57,6 +57,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     project: next.project ?? '',
     cycle: next.cycle ?? '',
     priority: next.priority ?? '',
+    priorities: next.priorities?.join(',') ?? '',
     type: next.type ?? '',
     estimate: next.estimate ?? '',
     dueDate: next.dueDate ?? '',
@@ -189,9 +190,9 @@ export function useIssuesPagePresenter() {
           .map((label) => label.trim())
           .filter(Boolean)
       : facet === 'priority'
-        ? search.priority === undefined
-          ? []
-          : [String(search.priority)]
+        ? (search.priorities ?? (search.priority === undefined ? [] : [search.priority])).map(
+            String,
+          )
         : search.project
           ? [search.project]
           : [];
@@ -337,11 +338,17 @@ export function useIssuesPagePresenter() {
       onFacetFilterToggle: (value: string) => {
         if (facet === 'priority') {
           const priority = Number(value);
+          const current =
+            search.priorities ?? (search.priority === undefined ? [] : [search.priority]);
+          const next = current.includes(priority)
+            ? current.filter((selectedPriority) => selectedPriority !== priority)
+            : [...current, priority];
           return navigate({
             to: '/issues',
             search: compactSearch({
               ...search,
-              priority: search.priority === priority ? undefined : priority,
+              priority: next.length === 1 ? next[0] : undefined,
+              priorities: next.length > 1 ? next : undefined,
             }),
           });
         }

@@ -270,6 +270,51 @@ func TestIssueStatusFilterMatchesAnySelectedWorkflowStatusAndPersistsOnViews(t *
 	}
 }
 
+func TestIssuePriorityFilterMatchesAnySelectedPriorityAndPersistsOnViews(t *testing.T) {
+	s := openTest(t)
+	issues := make(map[int]string)
+	for priority, title := range map[int]string{
+		0: "no priority",
+		1: "urgent",
+		2: "high",
+		3: "medium",
+	} {
+		created, err := s.CreateIssue(CreateIssueInput{Title: title, Priority: priority})
+		if err != nil {
+			t.Fatal(err)
+		}
+		issues[priority] = created.Identifier
+	}
+	filtered, err := s.ListIssues(IssueFilter{Priorities: []int{0, 2, 2}})
+	if err != nil || len(filtered) != 2 {
+		t.Fatalf("priority-filtered issues = %#v, err = %v", filtered, err)
+	}
+	identifiers := map[string]bool{filtered[0].Identifier: true, filtered[1].Identifier: true}
+	if !identifiers[issues[0]] || !identifiers[issues[2]] || identifiers[issues[1]] || identifiers[issues[3]] {
+		t.Fatalf("priority filter returned wrong issues: %#v", filtered)
+	}
+	if _, err := s.ListIssues(IssueFilter{Priorities: []int{1, 5}}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid priority filter error = %v", err)
+	}
+
+	legacyPriority := 4
+	view, err := s.CreateView(CreateViewInput{
+		Name: "Urgent or high", Slug: "urgent-or-high", Priority: &legacyPriority, Priorities: []int{1, 2},
+	})
+	if err != nil || view.Priority != nil || len(view.Priorities) != 2 || len(view.Filter().Priorities) != 2 {
+		t.Fatalf("created multi-priority view = %#v, err = %v", view, err)
+	}
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	persisted, err := reopened.GetView(view.Slug)
+	if err != nil || len(persisted.Priorities) != 2 {
+		t.Fatalf("persisted view priorities = %#v, err = %v", persisted.Priorities, err)
+	}
+}
+
 func TestIssueArchiveLifecycle(t *testing.T) {
 	s := openTest(t)
 	created, err := s.CreateIssue(CreateIssueInput{Title: "archive me"})

@@ -107,6 +107,52 @@ test('status filters match any selected workflow state and save into a view', as
   expect(await response.json()).toMatchObject({ statuses: ['backlog', 'in_progress'] });
 });
 
+test('priority filters match any selected priority and save into a view', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const titles = {
+    urgent: `Multi priority urgent ${stamp}`,
+    high: `Multi priority high ${stamp}`,
+    low: `Multi priority low ${stamp}`,
+  };
+  for (const [title, priority] of [
+    [titles.urgent, 1],
+    [titles.high, 2],
+    [titles.low, 4],
+  ] as const) {
+    const response = await request.post('/api/issues', { data: { title, priority } });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  const searchFilters = page.getByRole('textbox', { name: 'Search filters' });
+  await searchFilters.fill('priority');
+  await page.getByRole('menuitem', { name: 'Priority', exact: true }).click();
+  const priorityOptions = page.getByRole('group', { name: 'Filter priority' });
+  await priorityOptions.getByRole('button', { name: 'Urgent', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('priority')).toBe('1');
+  await priorityOptions.getByRole('button', { name: 'High', exact: true }).click();
+
+  await expect
+    .poll(() => JSON.parse(new URL(page.url()).searchParams.get('priorities') ?? '[]'))
+    .toEqual([1, 2]);
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.urgent) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.high) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.low) })).toHaveCount(0);
+
+  const viewName = `Multi priority view ${stamp}`;
+  await createIssueView(page, viewName);
+  const slug = viewName.toLowerCase().replaceAll(' ', '-');
+  const savedView = await request.get(`/api/views/${slug}`);
+  expect(savedView.ok()).toBeTruthy();
+  expect(await savedView.json()).toMatchObject({ priorities: [1, 2], priority: null });
+});
+
 test('filter picker keeps its scoped editor inside a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/issues');

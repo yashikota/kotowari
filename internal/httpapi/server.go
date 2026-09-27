@@ -568,6 +568,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Cycle               *int                   `json:"cycle"`
 		Labels              []string               `json:"labels"`
 		Priority            *int                   `json:"priority"`
+		Priorities          []int                  `json:"priorities"`
 		Type                *string                `json:"type"`
 		Estimate            *int                   `json:"estimate"`
 		DueDate             *string                `json:"dueDate"`
@@ -593,7 +594,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 		Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee,
-		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, DueDate: in.DueDate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
+		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, DueDate: in.DueDate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
 		AdvancedFilter: in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 	}, nil
 }
@@ -688,7 +689,18 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 	if value := q.Get("statuses"); value != "" {
 		statuses = strings.Split(value, ",")
 	}
-	f := store.IssueFilter{Status: q.Get("status"), Statuses: statuses, Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
+	priorities := []int(nil)
+	if value := q.Get("priorities"); value != "" {
+		for _, raw := range strings.Split(value, ",") {
+			priority, err := strconv.Atoi(raw)
+			if err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid priorities filter"})
+				return
+			}
+			priorities = append(priorities, priority)
+		}
+	}
+	f := store.IssueFilter{Status: q.Get("status"), Statuses: statuses, Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus"), Priorities: priorities}
 	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid assignee filter"})
 		return

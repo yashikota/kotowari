@@ -58,6 +58,10 @@ describe('issuesQuery', () => {
     expect(issuesQuery({ statuses: ['done', 'in_progress'] })).toBe('?statuses=done%2Cin_progress');
   });
 
+  it('encodes multiple priorities as an any-of issue filter', () => {
+    expect(issuesQuery({ priorities: [1, 2] })).toBe('?priorities=1%2C2');
+  });
+
   it('encodes multiple link-source filters', () => {
     expect(issuesQuery({ linkSources: ['github', 'slack'] })).toBe('?linkSources=github%2Cslack');
   });
@@ -210,6 +214,18 @@ describe('parseIssueSearch', () => {
     expect(searchToFilter({ statuses: ['todo', 'done'], status: 'todo' })).toMatchObject({
       status: undefined,
       statuses: ['todo', 'done'],
+    });
+  });
+
+  it('normalizes multiple priorities from router arrays and encoded array values', () => {
+    expect(parseIssueSearch({ priorities: [1, 2, 1] })).toEqual({ priorities: [1, 2] });
+    expect(parseIssueSearch({ priorities: '[1,2]' })).toEqual({ priorities: [1, 2] });
+    expect(parseIssueSearch({ priorities: '1,2,1' })).toEqual({ priorities: [1, 2] });
+    expect(parseIssueSearch({ priorities: '1,5' })).toEqual({});
+    expect(parseIssueSearch({ priorities: ',2' })).toEqual({});
+    expect(searchToFilter({ priority: 4, priorities: [1, 2] })).toMatchObject({
+      priority: undefined,
+      priorities: [1, 2],
     });
   });
 

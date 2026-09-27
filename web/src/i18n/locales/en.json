@@ -1290,6 +1290,7 @@
     },
     "filterStatus": "Filter status",
     "statusesSelected": "{{count}} statuses",
+    "prioritiesSelected": "{{count}} priorities",
     "filterAssignee": "Filter assignee",
     "anyStatus": "Any status",
     "filterType": "Filter type",

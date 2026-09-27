@@ -1172,6 +1172,25 @@ func ensureSingleActive(m *mem, id int64, status string) {
 	}
 }
 
+func normalizeIssuePriorities(selected []int) ([]int, error) {
+	if len(selected) > 50 {
+		return nil, validationf("too many issue priorities in filter")
+	}
+	seen := make(map[int]struct{}, len(selected))
+	out := make([]int, 0, len(selected))
+	for _, priority := range selected {
+		if !domain.ValidPriority(priority) {
+			return nil, validationf("invalid issue priority filter")
+		}
+		if _, exists := seen[priority]; exists {
+			continue
+		}
+		seen[priority] = struct{}{}
+		out = append(out, priority)
+	}
+	return out, nil
+}
+
 func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	var out []Issue
 	if len(f.Statuses) > 0 {
@@ -1185,6 +1204,14 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 			return nil, err
 		}
 		f.Statuses = normalized
+	}
+	if len(f.Priorities) > 0 {
+		normalized, err := normalizeIssuePriorities(f.Priorities)
+		if err != nil {
+			return nil, err
+		}
+		f.Priorities = normalized
+		f.Priority = nil
 	}
 	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		return nil, validationf("invalid issue assignee")
@@ -1458,7 +1485,18 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 					continue
 				}
 			}
-			if f.Priority != nil && iss.Priority != *f.Priority {
+			if len(f.Priorities) > 0 {
+				matches := false
+				for _, priority := range f.Priorities {
+					if iss.Priority == priority {
+						matches = true
+						break
+					}
+				}
+				if !matches {
+					continue
+				}
+			} else if f.Priority != nil && iss.Priority != *f.Priority {
 				continue
 			}
 			if f.Type != "" && iss.Type != f.Type {
@@ -3018,6 +3056,14 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.Priority != nil && !domain.ValidPriority(*in.Priority) {
 		return View{}, validationf("invalid priority")
 	}
+	if len(in.Priorities) > 0 {
+		normalized, err := normalizeIssuePriorities(in.Priorities)
+		if err != nil {
+			return View{}, err
+		}
+		in.Priorities = normalized
+		in.Priority = nil
+	}
 	if in.Type != nil && !domain.ValidIssueType(*in.Type) {
 		return View{}, validationf("invalid issue type")
 	}
@@ -3118,7 +3164,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 			Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
-			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
+			Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 		}
@@ -3306,6 +3352,15 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 				}
 				v.Priority = in.Priority
 			}
+			v.Priorities = nil
+		}
+		if in.Priorities != nil && (len(in.Priorities) > 0 || in.Priority == nil) {
+			priorities, err := normalizeIssuePriorities(in.Priorities)
+			if err != nil {
+				return err
+			}
+			v.Priorities = priorities
+			v.Priority = nil
 		}
 		if in.Type != nil {
 			if *in.Type == "" {

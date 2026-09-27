@@ -294,6 +294,7 @@ export type View = {
   cycle: number | null;
   labels: string[];
   priority: number | null;
+  priorities?: number[];
   type: IssueType | null;
   estimate: number | null;
   dueDate?: string;

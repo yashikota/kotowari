@@ -420,6 +420,7 @@ export const api = {
     cycle?: number | null;
     labels?: string[];
     priority?: number | null;
+    priorities?: number[];
     type?: string | null;
     estimate?: number | null;
     dueDate?: string;
@@ -454,6 +455,7 @@ export function issuesQuery(filter: {
   cycle?: number | null;
   labels?: string[] | null;
   priority?: number | null;
+  priorities?: number[] | null;
   type?: string | null;
   estimate?: number | null;
   dueDate?: string | null;
@@ -490,6 +492,7 @@ export function issuesQuery(filter: {
   if (filter.priority != null && filter.priority >= 0) {
     q.set('priority', String(filter.priority));
   }
+  if (filter.priorities?.length) q.set('priorities', filter.priorities.join(','));
   if (filter.type) {
     q.set('type', filter.type);
   }
@@ -531,6 +534,7 @@ export type IssueSearch = {
   project?: string;
   cycle?: number;
   priority?: number;
+  priorities?: number[];
   type?: string;
   estimate?: number;
   labels?: string;
@@ -614,7 +618,21 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
       out.cycle = n;
     }
   }
-  if (raw.priority !== undefined && raw.priority !== '') {
+  const selectedPriorities = [...new Set(parseNumberList(raw.priorities))];
+  if (
+    selectedPriorities.length > 0 &&
+    selectedPriorities.length <= 5 &&
+    selectedPriorities.every((value) => Number.isInteger(value) && value >= 0 && value <= 4)
+  ) {
+    if (selectedPriorities.length === 1) out.priority = selectedPriorities[0];
+    else out.priorities = selectedPriorities;
+  }
+  if (
+    out.priority === undefined &&
+    !out.priorities &&
+    raw.priority !== undefined &&
+    raw.priority !== ''
+  ) {
     const n = Number(raw.priority);
     if (Number.isFinite(n) && n >= 0) {
       out.priority = n;
@@ -782,6 +800,34 @@ function parseStringList(value: unknown): string[] {
   return trimmed.split(',');
 }
 
+function parseNumberList(value: unknown): number[] {
+  let values: unknown[];
+  if (Array.isArray(value)) {
+    values = value;
+  } else if (typeof value === 'string' && value.trim()) {
+    const trimmed = value.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const decoded: unknown = JSON.parse(trimmed);
+        if (!Array.isArray(decoded)) return [];
+        values = decoded;
+      } catch {
+        return [];
+      }
+    } else {
+      values = trimmed.split(',');
+    }
+  } else {
+    return [];
+  }
+  const numbers = values.map((item) => {
+    if (typeof item === 'number') return item;
+    if (typeof item !== 'string' || !/^\d+$/.test(item.trim())) return Number.NaN;
+    return Number(item);
+  });
+  return numbers.every(Number.isSafeInteger) ? numbers : [];
+}
+
 export function searchToFilter(search: IssueSearch): {
   archived?: boolean;
   assignee?: 'self' | 'agent' | 'none';
@@ -791,6 +837,7 @@ export function searchToFilter(search: IssueSearch): {
   cycle?: number;
   labels?: string[];
   priority?: number;
+  priorities?: number[];
   type?: string;
   estimate?: number;
   dueDate?: string;
@@ -819,7 +866,8 @@ export function searchToFilter(search: IssueSearch): {
           .map((n) => n.trim())
           .filter(Boolean)
       : undefined,
-    priority: search.priority,
+    priority: search.priorities?.length ? undefined : search.priority,
+    ...(search.priorities?.length ? { priorities: search.priorities } : {}),
     type: search.type,
     estimate: search.estimate,
     dueDate: search.dueDate,

@@ -171,6 +171,8 @@ export function useIssueFiltersPresenter({
     .filter(Boolean);
   const selectedProjectLabels = search.projectLabels ?? [];
   const selectedStatuses = search.statuses ?? (search.status ? [search.status] : []);
+  const selectedPriorities =
+    search.priorities ?? (search.priority === undefined ? [] : [search.priority]);
   const selectedLinkSources = search.linkSources ?? [];
   const selectedTemplateSlugs = search.templateSlugs ?? [];
   const selectedAddedToCycle = search.addedToCycle ?? [];
@@ -275,8 +277,16 @@ export function useIssueFiltersPresenter({
         ]
       : []),
     ...(search.cycle ? [{ key: 'cycle', label: `${t('field.cycle')} · ${search.cycle}` }] : []),
-    ...(search.priority !== undefined
-      ? [{ key: 'priority', label: `${t('field.priority')} · ${priorityLabel(search.priority)}` }]
+    ...(selectedPriorities.length > 0
+      ? [
+          {
+            key: 'priorities',
+            label:
+              selectedPriorities.length === 1
+                ? `${t('field.priority')} · ${priorityLabel(selectedPriorities[0]!)}`
+                : `${t('field.priority')} · ${t('filters.prioritiesSelected', { count: selectedPriorities.length })}`,
+          },
+        ]
       : []),
     ...(search.type
       ? [
@@ -438,8 +448,19 @@ export function useIssueFiltersPresenter({
         set({ assignee: value ? (value as NonNullable<IssueSearch['assignee']>) : undefined }),
       onProjectChange: (value: string) => set({ project: value || undefined }),
       onCycleChange: (value: string) => set({ cycle: value ? Number(value) : undefined }),
-      onPriorityChange: (value: string) =>
-        set({ priority: value === '' ? undefined : Number(value) }),
+      onPriorityChange: (value: string) => {
+        const priority = Number(value);
+        const current =
+          searchRef.current.priorities ??
+          (searchRef.current.priority === undefined ? [] : [searchRef.current.priority]);
+        const next = current.includes(priority)
+          ? current.filter((selected) => selected !== priority)
+          : [...current, priority];
+        set({
+          priority: next.length === 1 ? next[0] : undefined,
+          priorities: next.length > 1 ? next : undefined,
+        });
+      },
       onTypeChange: (value: string) => set({ type: value || undefined }),
       onEstimateChange: (value: string) =>
         set({ estimate: value === '' ? undefined : Number(value) }),
@@ -522,10 +543,11 @@ export function useIssueFiltersPresenter({
         set({
           status: undefined,
           statuses: undefined,
+          priority: undefined,
+          priorities: undefined,
           assignee: undefined,
           project: undefined,
           cycle: undefined,
-          priority: undefined,
           type: undefined,
           estimate: undefined,
           dueDate: undefined,
@@ -577,6 +599,8 @@ export function useIssueFiltersPresenter({
         } else if (
           key === 'status' ||
           key === 'statuses' ||
+          key === 'priority' ||
+          key === 'priorities' ||
           key === 'assignee' ||
           key === 'project' ||
           key === 'cycle' ||
@@ -596,6 +620,8 @@ export function useIssueFiltersPresenter({
             set({ advancedFilter: undefined, advancedFilterGroup: undefined });
           } else if (key === 'status' || key === 'statuses') {
             set({ status: undefined, statuses: undefined });
+          } else if (key === 'priority' || key === 'priorities') {
+            set({ priority: undefined, priorities: undefined });
           } else {
             set({ [key]: undefined });
           }

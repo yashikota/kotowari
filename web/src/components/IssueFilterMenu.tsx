@@ -52,7 +52,7 @@ import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 const FILTER_CATEGORIES = [
   { id: 'status', group: 'issue', chips: ['status', 'statuses'] },
   { id: 'assignee', group: 'issue', chips: ['assignee'] },
-  { id: 'priority', group: 'issue', chips: ['priority'] },
+  { id: 'priority', group: 'issue', chips: ['priority', 'priorities'] },
   { id: 'estimate', group: 'issue', chips: ['estimate'] },
   { id: 'labels', group: 'issue', chips: ['label:'] },
   { id: 'relations', group: 'issue', chips: ['relation'] },
@@ -441,7 +441,11 @@ export function IssueFilterMenu({
         return (
           <FilterOptionList
             label={t('filters.filterPriority')}
-            value={search.priority === undefined ? null : String(search.priority)}
+            value={null}
+            selectedValues={
+              search.priorities?.map(String) ??
+              (search.priority === undefined ? [] : [String(search.priority)])
+            }
             options={[0, 1, 2, 3, 4].map((priority) => ({
               value: String(priority),
               label: priorityLabel(priority),

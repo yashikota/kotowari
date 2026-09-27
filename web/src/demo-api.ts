@@ -857,6 +857,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const cycle = url.searchParams.get('cycle');
     const addedToCycle = url.searchParams.get('addedToCycle')?.split(',').filter(Boolean) ?? [];
     const priority = url.searchParams.get('priority');
+    const priorities = url.searchParams.get('priorities')?.split(',').map(Number) ?? [];
     const type = url.searchParams.get('type');
     const estimate = url.searchParams.get('estimate');
     const dueDateFilter = url.searchParams.get('dueDate');
@@ -939,7 +940,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         return addedToCycle.includes(phase);
       });
     }
-    if (priority) result = result.filter((i) => i.priority === Number(priority));
+    if (priorities.length > 0) result = result.filter((item) => priorities.includes(item.priority));
+    else if (priority != null) result = result.filter((item) => item.priority === Number(priority));
     if (type) result = result.filter((i) => i.type === type);
     if (estimate != null) result = result.filter((i) => i.estimate === Number(estimate));
     if (dueDateFilter) {
@@ -1711,6 +1713,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         cycle: value.cycle ?? null,
         labels: value.labels ?? [],
         priority: value.priority ?? null,
+        priorities: value.priorities ?? [],
         type: value.type ?? null,
         estimate: value.estimate ?? null,
         projectStatus: value.projectStatus ?? null,
