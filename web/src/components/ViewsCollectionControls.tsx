@@ -51,35 +51,38 @@ export function ViewsCollectionControls({
       </Popover.Target>
       <Popover.Dropdown aria-label={t('views.displayOptions')}>
         <Stack gap="md">
-          <Group gap="xs" align="flex-end" wrap="nowrap">
-            <Select
-              aria-label={t('views.ordering')}
-              label={t('views.ordering')}
-              value={order}
-              onChange={(value) => {
-                if (value === 'name' || value === 'updated') onOrderChange(value);
-              }}
-              data={[
-                { value: 'name', label: t('views.order.name') },
-                { value: 'updated', label: t('views.order.updated') },
-              ]}
-              allowDeselect={false}
-              comboboxProps={{ withinPortal: false }}
-              style={{ flex: 1 }}
-            />
-            <ActionIcon
-              type="button"
-              variant="default"
-              aria-label={t('views.direction', {
-                direction: t(`views.${direction === 'asc' ? 'ascending' : 'descending'}`),
-              })}
-              title={t('views.direction', {
-                direction: t(`views.${direction === 'asc' ? 'ascending' : 'descending'}`),
-              })}
-              onClick={onToggleDirection}
-            >
-              {directionIcon}
-            </ActionIcon>
+          <Group justify="space-between" align="center" wrap="nowrap">
+            <Text size="sm">{t('views.ordering')}</Text>
+            <Group gap={2} wrap="nowrap">
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                aria-label={t('views.direction', {
+                  direction: t(`views.${direction === 'asc' ? 'ascending' : 'descending'}`),
+                })}
+                title={t('views.direction', {
+                  direction: t(`views.${direction === 'asc' ? 'ascending' : 'descending'}`),
+                })}
+                onClick={onToggleDirection}
+              >
+                {directionIcon}
+              </ActionIcon>
+              <Select
+                aria-label={t('views.ordering')}
+                value={order}
+                onChange={(value) => {
+                  if (value === 'name' || value === 'updated') onOrderChange(value);
+                }}
+                data={[
+                  { value: 'name', label: t('views.order.name') },
+                  { value: 'updated', label: t('views.order.updated') },
+                ]}
+                size="xs"
+                allowDeselect={false}
+                comboboxProps={{ withinPortal: false }}
+                style={{ width: 100 }}
+              />
+            </Group>
           </Group>
           <Stack gap={6}>
             <Text size="xs" c="dimmed" fw={500}>
@@ -93,8 +96,8 @@ export function ViewsCollectionControls({
                     key={property}
                     type="button"
                     size="compact-xs"
-                    variant={selected ? 'light' : 'default'}
-                    color={selected ? 'blue' : 'gray'}
+                    variant={selected ? 'default' : 'subtle'}
+                    color="gray"
                     radius="xl"
                     aria-pressed={selected}
                     onClick={() => onToggleDisplayProperty(property)}
