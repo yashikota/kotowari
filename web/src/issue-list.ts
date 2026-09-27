@@ -14,30 +14,34 @@ export type IssueListRow =
     }
   | { kind: 'issue'; issue: Issue };
 
-export type IssueGroupBy =
-  | 'none'
-  | 'priority'
-  | 'status'
-  | 'assignee'
-  | 'agent'
-  | 'project'
-  | 'cycle'
-  | 'label'
-  | 'parent'
-  | 'type'
-  | 'estimate';
-export type IssueOrderBy =
-  | 'manual'
-  | 'status'
-  | 'assignee'
-  | 'priority'
-  | 'updated'
-  | 'created'
-  | 'dueDate'
-  | 'title'
-  | 'estimate'
-  | 'linkCount'
-  | 'timeInStatus';
+export const ISSUE_GROUP_BY_VALUES = [
+  'none',
+  'status',
+  'assignee',
+  'agent',
+  'project',
+  'priority',
+  'cycle',
+  'label',
+  'parent',
+  'type',
+  'estimate',
+] as const;
+export type IssueGroupBy = (typeof ISSUE_GROUP_BY_VALUES)[number];
+export const ISSUE_ORDER_BY_VALUES = [
+  'manual',
+  'title',
+  'status',
+  'priority',
+  'assignee',
+  'estimate',
+  'updated',
+  'created',
+  'dueDate',
+  'linkCount',
+  'timeInStatus',
+] as const;
+export type IssueOrderBy = (typeof ISSUE_ORDER_BY_VALUES)[number];
 export type IssueLayout = 'list' | 'board';
 export type IssueFacetType = 'labels' | 'priority' | 'projects';
 export type IssueFacetOption = { value: string; label: string; count: number; color?: string };
@@ -57,13 +61,33 @@ export type IssueDisplayProperty =
   | 'timeInStatus'
   | 'created'
   | 'updated';
-export type CompletedIssuesFilter =
-  | 'all'
-  | 'pastDay'
-  | 'pastWeek'
-  | 'pastMonth'
-  | 'currentCycle'
-  | 'none';
+export const COMPLETED_ISSUES_FILTERS = [
+  'all',
+  'pastDay',
+  'pastWeek',
+  'pastMonth',
+  'currentCycle',
+  'none',
+] as const;
+export type CompletedIssuesFilter = (typeof COMPLETED_ISSUES_FILTERS)[number];
+
+export const ISSUE_DISPLAY_PROPERTIES = [
+  'id',
+  'status',
+  'assignee',
+  'priority',
+  'project',
+  'dueDate',
+  'milestone',
+  'cycle',
+  'estimate',
+  'labels',
+  'links',
+  'pullRequests',
+  'timeInStatus',
+  'created',
+  'updated',
+] as const satisfies readonly IssueDisplayProperty[];
 
 export const DEFAULT_DISPLAY_PROPERTIES = [
   'id',

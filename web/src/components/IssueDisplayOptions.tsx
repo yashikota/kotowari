@@ -5,9 +5,9 @@ import {
   NativeSelect,
   Popover,
   SegmentedControl,
-  SimpleGrid,
   Stack,
   Text,
+  Group,
 } from '@mantine/core';
 import { IconAdjustments } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -18,32 +18,12 @@ import type {
   IssueLayout,
   IssueOrderBy,
 } from '../issue-list.ts';
-
-const DISPLAY_PROPERTIES: IssueDisplayProperty[] = [
-  'id',
-  'status',
-  'assignee',
-  'priority',
-  'project',
-  'dueDate',
-  'milestone',
-  'cycle',
-  'estimate',
-  'labels',
-  'links',
-  'pullRequests',
-  'timeInStatus',
-  'created',
-  'updated',
-];
-const COMPLETED_OPTIONS: CompletedIssuesFilter[] = [
-  'all',
-  'pastDay',
-  'pastWeek',
-  'pastMonth',
-  'currentCycle',
-  'none',
-];
+import {
+  COMPLETED_ISSUES_FILTERS,
+  ISSUE_DISPLAY_PROPERTIES,
+  ISSUE_GROUP_BY_VALUES,
+  ISSUE_ORDER_BY_VALUES,
+} from '../issue-list.ts';
 
 export function IssueDisplayOptions({
   layout,
@@ -95,38 +75,29 @@ export function IssueDisplayOptions({
   onDisplayPropertyToggle: (property: IssueDisplayProperty) => void;
 }) {
   const { t } = useTranslation();
-  const groupOptions = [
-    { value: 'none', label: t('displayOptions.noGrouping') },
-    ...(
-      [
-        'status',
-        'assignee',
-        'agent',
-        'project',
-        'priority',
-        'cycle',
-        'label',
-        'parent',
-        'type',
-        'estimate',
-      ] as const
-    ).map((group) => ({ value: group, label: t(`displayOptions.group.${group}`) })),
-  ];
-  const orderOptions = [
-    { value: 'manual', label: t('displayOptions.order.manual') },
-    { value: 'title', label: t('displayOptions.order.title') },
-    { value: 'status', label: t('field.status') },
-    { value: 'priority', label: t('field.priority') },
-    { value: 'assignee', label: t('displayOptions.order.assignee') },
-    { value: 'estimate', label: t('field.estimate') },
-    { value: 'updated', label: t('displayOptions.order.updated') },
-    { value: 'created', label: t('displayOptions.order.created') },
-    { value: 'dueDate', label: t('issueProperties.dueDate') },
-    { value: 'linkCount', label: t('displayOptions.order.linkCount') },
-    { value: 'timeInStatus', label: t('displayOptions.property.timeInStatus') },
-  ];
+  const groupOptions = ISSUE_GROUP_BY_VALUES.map((group) => ({
+    value: group,
+    label: group === 'none' ? t('displayOptions.noGrouping') : t(`displayOptions.group.${group}`),
+  }));
+  const orderLabels: Record<IssueOrderBy, string> = {
+    manual: t('displayOptions.order.manual'),
+    title: t('displayOptions.order.title'),
+    status: t('field.status'),
+    priority: t('field.priority'),
+    assignee: t('displayOptions.order.assignee'),
+    estimate: t('field.estimate'),
+    updated: t('displayOptions.order.updated'),
+    created: t('displayOptions.order.created'),
+    dueDate: t('issueProperties.dueDate'),
+    linkCount: t('displayOptions.order.linkCount'),
+    timeInStatus: t('displayOptions.property.timeInStatus'),
+  };
+  const orderOptions = ISSUE_ORDER_BY_VALUES.map((order) => ({
+    value: order,
+    label: orderLabels[order],
+  }));
   return (
-    <Popover opened={opened} onChange={onOpenChange} position="bottom-end" shadow="md" width={280}>
+    <Popover opened={opened} onChange={onOpenChange} position="bottom-end" shadow="md" width={320}>
       <Popover.Target>
         <ActionIcon
           type="button"
@@ -203,7 +174,7 @@ export function IssueDisplayOptions({
             onChange={(event) =>
               onCompletedIssuesChange(event.currentTarget.value as CompletedIssuesFilter)
             }
-            data={COMPLETED_OPTIONS.map((value) => ({
+            data={COMPLETED_ISSUES_FILTERS.map((value) => ({
               value,
               label: t(`displayOptions.completed.${value}`),
             }))}
@@ -237,17 +208,22 @@ export function IssueDisplayOptions({
             <Text size="xs" fw={600} c="dimmed">
               {t('displayOptions.properties')}
             </Text>
-            <SimpleGrid cols={2} spacing={4}>
-              {DISPLAY_PROPERTIES.map((property) => (
-                <Checkbox
+            <Group gap={4} wrap="wrap" role="group" aria-label={t('displayOptions.properties')}>
+              {ISSUE_DISPLAY_PROPERTIES.map((property) => (
+                <Button
                   key={property}
-                  size="xs"
-                  label={t(`displayOptions.property.${property}`)}
-                  checked={displayProperties.includes(property)}
-                  onChange={() => onDisplayPropertyToggle(property)}
-                />
+                  type="button"
+                  size="compact-xs"
+                  radius="xl"
+                  color="gray"
+                  variant={displayProperties.includes(property) ? 'default' : 'light'}
+                  aria-pressed={displayProperties.includes(property)}
+                  onClick={() => onDisplayPropertyToggle(property)}
+                >
+                  {t(`displayOptions.property.${property}`)}
+                </Button>
               ))}
-            </SimpleGrid>
+            </Group>
           </Stack>
           <Text size="xs" c="dimmed">
             {t('displayOptions.shortcut')}

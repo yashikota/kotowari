@@ -50,6 +50,17 @@ function compactSearch(next: IssueSearch): IssueSearch {
     advancedFilter: next.advancedFilter ?? false,
     advancedFilterGroup: next.advancedFilterGroup,
     view: next.view ?? '',
+    groupBy: next.groupBy ?? '',
+    subGroupBy: next.subGroupBy ?? '',
+    layout: next.layout ?? '',
+    orderBy: next.orderBy ?? '',
+    direction: next.direction ?? '',
+    completedIssues: next.completedIssues ?? '',
+    showSubIssues: next.showSubIssues ?? '',
+    nestedSubIssues: next.nestedSubIssues ?? '',
+    showEmptyGroups: next.showEmptyGroups ?? '',
+    displayProperties:
+      next.displayProperties === undefined ? '' : JSON.stringify(next.displayProperties),
     myIssuesTab: next.myIssuesTab ?? '',
     assignee: next.assignee ?? '',
     subscribers: next.subscribers ?? '',
@@ -120,21 +131,16 @@ export function useIssuesPagePresenter() {
   );
   const myIssuesTab = search.myIssuesTab ?? (search.assignee === 'self' ? 'assigned' : undefined);
   const [find, setFind] = useState(locationState.issueListFind ?? '');
-  const [groupByOverride, setGroupByOverride] = useState<IssueGroupBy | null>(null);
-  const groupBy = groupByOverride ?? (myIssuesTab ? 'cycle' : 'priority');
-  const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
-  const [orderBy, setOrderBy] = useState<IssueOrderBy>('manual');
-  const [subGroupBy, setSubGroupBy] = useState<IssueGroupBy>('none');
-  const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
-  const [completedIssues, setCompletedIssues] = useState<CompletedIssuesFilter>('all');
-  const [showSubIssues, setShowSubIssues] = useState(true);
-  const [nestedSubIssues, setNestedSubIssues] = useState<'showMatching' | 'showAll'>(
-    'showMatching',
-  );
-  const [showEmptyGroups, setShowEmptyGroups] = useState(false);
-  const [displayProperties, setDisplayProperties] = useState<IssueDisplayProperty[]>([
-    ...DEFAULT_DISPLAY_PROPERTIES,
-  ]);
+  const groupBy = search.groupBy ?? (myIssuesTab ? 'cycle' : 'priority');
+  const layout = search.layout ?? locationState.issueListLayout ?? 'list';
+  const orderBy = search.orderBy ?? 'manual';
+  const subGroupBy = search.subGroupBy ?? 'none';
+  const direction = search.direction ?? 'asc';
+  const completedIssues = search.completedIssues ?? 'all';
+  const showSubIssues = search.showSubIssues ?? true;
+  const nestedSubIssues = search.nestedSubIssues ?? 'showMatching';
+  const showEmptyGroups = search.showEmptyGroups ?? false;
+  const displayProperties = search.displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES];
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [facet, setFacet] = useState<IssueFacetType>('priority');
   const [selected, setSelected] = useState<string | null>(
@@ -144,6 +150,13 @@ export function useIssuesPagePresenter() {
   const activeView: 'active' | 'backlog' | 'all' | 'archived' = search.archived
     ? 'archived'
     : (search.view ?? 'all');
+
+  const updateIssueDisplay = (changes: Partial<IssueSearch>) => {
+    const next = compactSearch({ ...latestSearch.current, ...changes });
+    latestSearch.current = next;
+    pendingSearch.current = next;
+    return navigate({ to: '/issues', search: next, replace: true });
+  };
 
   useKeyboard((event) => {
     if (
@@ -156,7 +169,7 @@ export function useIssuesPagePresenter() {
     )
       return false;
     event.preventDefault();
-    setLayout((current) => (current === 'list' ? 'board' : 'list'));
+    void updateIssueDisplay({ layout: layout === 'list' ? 'board' : 'list' });
     return true;
   });
   const subscribedIds = new Set(subscriptionSnapshot.split('\0').filter(Boolean));
@@ -238,7 +251,7 @@ export function useIssuesPagePresenter() {
       onChange0: (
         next: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onChange']>>[0],
       ) => {
-        const normalized = compactSearch(next);
+        const normalized = compactSearch({ ...latestSearch.current, ...next });
         latestSearch.current = normalized;
         pendingSearch.current = normalized;
         return navigate({ to: '/issues', search: normalized, replace: true });
@@ -338,21 +351,26 @@ export function useIssuesPagePresenter() {
         latestSearch.current = nextSearch;
         return navigate({ to: '/issues', search: nextSearch });
       },
-      onGroupBy5: (next: IssueGroupBy) => setGroupByOverride(next),
-      onLayout6: (next: IssueLayout) => setLayout(next),
-      onOrderBy7: (next: IssueOrderBy) => setOrderBy(next),
-      onSubGroupBy17: (next: IssueGroupBy) => setSubGroupBy(next),
-      onDirection18: (next: 'asc' | 'desc') => setDirection(next),
-      onCompletedIssues19: (next: CompletedIssuesFilter) => setCompletedIssues(next),
-      onShowSubIssues20: (next: boolean) => setShowSubIssues(next),
-      onNestedSubIssues21: (next: 'showMatching' | 'showAll') => setNestedSubIssues(next),
-      onShowEmptyGroups22: (next: boolean) => setShowEmptyGroups(next),
+      onGroupBy5: (next: IssueGroupBy) => updateIssueDisplay({ groupBy: next }),
+      onLayout6: (next: IssueLayout) => updateIssueDisplay({ layout: next }),
+      onOrderBy7: (next: IssueOrderBy) => updateIssueDisplay({ orderBy: next }),
+      onSubGroupBy17: (next: IssueGroupBy) => updateIssueDisplay({ subGroupBy: next }),
+      onDirection18: (next: 'asc' | 'desc') =>
+        updateIssueDisplay({
+          direction: next,
+        }),
+      onCompletedIssues19: (next: CompletedIssuesFilter) =>
+        updateIssueDisplay({ completedIssues: next }),
+      onShowSubIssues20: (next: boolean) => updateIssueDisplay({ showSubIssues: next }),
+      onNestedSubIssues21: (next: 'showMatching' | 'showAll') =>
+        updateIssueDisplay({ nestedSubIssues: next }),
+      onShowEmptyGroups22: (next: boolean) => updateIssueDisplay({ showEmptyGroups: next }),
       onDisplayPropertyToggle23: (property: IssueDisplayProperty) =>
-        setDisplayProperties((current) =>
-          current.includes(property)
-            ? current.filter((item) => item !== property)
-            : [...current, property],
-        ),
+        updateIssueDisplay({
+          displayProperties: displayProperties.includes(property)
+            ? displayProperties.filter((item) => item !== property)
+            : [...displayProperties, property],
+        }),
       onDetailsToggle: () => setDetailsOpen((current) => !current),
       onFacetChange: (next: IssueFacetType) => setFacet(next),
       onFacetFilterToggle: (value: string) => {

@@ -1,6 +1,34 @@
 import { expect, test } from '@playwright/test';
 import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
+test('issue display property chips persist as personal view state', async ({ page }) => {
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Display options' }).click();
+
+  const properties = page.getByRole('group', { name: 'Display properties' });
+  const dueDate = properties.getByRole('button', { name: 'Due date', exact: true });
+  const milestone = properties.getByRole('button', { name: 'Milestone', exact: true });
+  await expect(dueDate).toHaveAttribute('aria-pressed', 'true');
+  await expect(milestone).toHaveAttribute('aria-pressed', 'false');
+
+  await dueDate.click();
+  await milestone.click();
+  await expect(dueDate).toHaveAttribute('aria-pressed', 'false');
+  await expect(milestone).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(/displayProperties=/);
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(properties.getByRole('button', { name: 'Due date', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await expect(properties.getByRole('button', { name: 'Milestone', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
 test('issue filters use a searchable category menu with a scoped editor', async ({ page }) => {
   await page.goto('/issues');
 

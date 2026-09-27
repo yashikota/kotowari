@@ -172,6 +172,52 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ view: 'archived' })).toEqual({});
   });
 
+  it('parses and validates issue display settings from the URL', () => {
+    expect(
+      parseIssueSearch({
+        groupBy: 'status',
+        subGroupBy: 'priority',
+        layout: 'board',
+        orderBy: 'dueDate',
+        direction: 'desc',
+        completedIssues: 'pastWeek',
+        showSubIssues: 'false',
+        nestedSubIssues: 'showAll',
+        showEmptyGroups: true,
+        displayProperties: '["id","cycle","updated"]',
+      }),
+    ).toEqual({
+      groupBy: 'status',
+      subGroupBy: 'priority',
+      layout: 'board',
+      orderBy: 'dueDate',
+      direction: 'desc',
+      completedIssues: 'pastWeek',
+      showSubIssues: false,
+      nestedSubIssues: 'showAll',
+      showEmptyGroups: true,
+      displayProperties: ['id', 'cycle', 'updated'],
+    });
+    expect(
+      parseIssueSearch({
+        groupBy: 'creator',
+        layout: 'table',
+        direction: 'sideways',
+        completedIssues: 'forever',
+        displayProperties: '["creator"]',
+      }),
+    ).toEqual({});
+    expect(parseIssueSearch({ displayProperties: '[]' })).toEqual({ displayProperties: [] });
+    expect(
+      searchToFilter({
+        groupBy: 'status',
+        layout: 'board',
+        orderBy: 'dueDate',
+        displayProperties: ['cycle'],
+      }),
+    ).toEqual(searchToFilter({}));
+  });
+
   it('accepts numeric cycle and priority zero', () => {
     expect(parseIssueSearch({ cycle: 3, priority: 0 })).toEqual({ cycle: 3, priority: 0 });
   });

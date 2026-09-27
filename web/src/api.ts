@@ -29,6 +29,19 @@ import type {
   Workspace,
 } from './types.ts';
 import { parseIssueFilterGroup, type IssueFilterGroup } from './issue-advanced-filter.ts';
+import {
+  COMPLETED_ISSUES_FILTERS,
+  ISSUE_DISPLAY_PROPERTIES,
+  ISSUE_GROUP_BY_VALUES,
+  ISSUE_ORDER_BY_VALUES,
+} from './issue-list.ts';
+import type {
+  CompletedIssuesFilter,
+  IssueDisplayProperty,
+  IssueGroupBy,
+  IssueLayout,
+  IssueOrderBy,
+} from './issue-list.ts';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -548,6 +561,16 @@ export type IssueSearch = {
   advancedFilter?: boolean;
   advancedFilterGroup?: IssueFilterGroup;
   view?: 'active' | 'backlog' | 'all';
+  groupBy?: IssueGroupBy;
+  subGroupBy?: IssueGroupBy;
+  layout?: IssueLayout;
+  orderBy?: IssueOrderBy;
+  direction?: 'asc' | 'desc';
+  completedIssues?: CompletedIssuesFilter;
+  showSubIssues?: boolean;
+  nestedSubIssues?: 'showMatching' | 'showAll';
+  showEmptyGroups?: boolean;
+  displayProperties?: IssueDisplayProperty[];
   myIssuesTab?: 'assigned' | 'created' | 'subscribed' | 'activity';
   assignee?: 'self' | 'agent' | 'none';
   subscribers?: 'self' | 'none';
@@ -619,6 +642,37 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   }
   if (raw.view === 'active' || raw.view === 'backlog' || raw.view === 'all') {
     out.view = raw.view;
+  }
+  if (ISSUE_GROUP_BY_VALUES.includes(raw.groupBy as IssueGroupBy))
+    out.groupBy = raw.groupBy as IssueGroupBy;
+  if (ISSUE_GROUP_BY_VALUES.includes(raw.subGroupBy as IssueGroupBy))
+    out.subGroupBy = raw.subGroupBy as IssueGroupBy;
+  if (raw.layout === 'list' || raw.layout === 'board') out.layout = raw.layout;
+  if (ISSUE_ORDER_BY_VALUES.includes(raw.orderBy as IssueOrderBy))
+    out.orderBy = raw.orderBy as IssueOrderBy;
+  if (raw.direction === 'asc' || raw.direction === 'desc') out.direction = raw.direction;
+  if (COMPLETED_ISSUES_FILTERS.includes(raw.completedIssues as CompletedIssuesFilter))
+    out.completedIssues = raw.completedIssues as CompletedIssuesFilter;
+  const showSubIssues = parseOptionalBoolean(raw.showSubIssues);
+  if (showSubIssues !== undefined) out.showSubIssues = showSubIssues;
+  if (raw.nestedSubIssues === 'showMatching' || raw.nestedSubIssues === 'showAll')
+    out.nestedSubIssues = raw.nestedSubIssues;
+  const showEmptyGroups = parseOptionalBoolean(raw.showEmptyGroups);
+  if (showEmptyGroups !== undefined) out.showEmptyGroups = showEmptyGroups;
+  const hasDisplayProperties =
+    Array.isArray(raw.displayProperties) ||
+    (typeof raw.displayProperties === 'string' &&
+      (raw.displayProperties.trim().length > 0 || raw.displayProperties.trim().startsWith('[')));
+  if (hasDisplayProperties) {
+    const displayProperties = parseStringList(raw.displayProperties);
+    if (
+      displayProperties.length <= ISSUE_DISPLAY_PROPERTIES.length &&
+      displayProperties.every((property) =>
+        ISSUE_DISPLAY_PROPERTIES.includes(property as IssueDisplayProperty),
+      )
+    ) {
+      out.displayProperties = [...new Set(displayProperties)] as IssueDisplayProperty[];
+    }
   }
   if (raw.assignee === 'self' || raw.assignee === 'agent' || raw.assignee === 'none') {
     out.assignee = raw.assignee;
@@ -842,6 +896,12 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
     }
   }
   return out;
+}
+
+function parseOptionalBoolean(value: unknown): boolean | undefined {
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
+  return undefined;
 }
 
 function parseStringList(value: unknown): string[] {

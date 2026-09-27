@@ -1401,7 +1401,10 @@ test('issue links can be added, displayed, sorted as real links, and removed', a
   await expect(row.getByLabel('1 link')).toBeVisible();
   await expect(row.getByLabel('1 pull request')).toBeVisible();
   await page.getByRole('button', { name: 'Display options' }).click();
-  await expect(page.getByRole('checkbox', { name: 'Pull requests' })).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Pull requests' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 
   await page.goto(`/issues/${issue.identifier}`);
   await page.getByRole('button', { name: 'Remove link Review build' }).click();
@@ -2448,7 +2451,8 @@ test('Linear-style display settings persist on a saved view and render empty gro
   await page.getByLabel('Nested sub-issues').selectOption('showAll');
   await page.getByLabel('Show sub-issues').uncheck();
   await page.getByLabel('Show empty groups').check();
-  await page.getByRole('checkbox', { name: 'Time in status' }).check();
+  const timeInStatus = page.getByRole('button', { name: 'Time in status' });
+  if ((await timeInStatus.getAttribute('aria-pressed')) !== 'true') await timeInStatus.click();
 
   const viewName = `Display settings ${stamp}`;
   await createIssueView(page, viewName);
@@ -2537,7 +2541,7 @@ test('issue detail returns to the filtered issues board layout', async ({ page, 
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}$`));
 
   await page.getByRole('link', { name: 'Back to issues' }).click();
-  await expect(page).toHaveURL(/\/issues$/);
+  await expect(page).toHaveURL(/\/issues\?layout=board$/);
   await expect(page.getByRole('textbox', { name: 'Find issues', exact: true })).toHaveValue(
     String(stamp),
   );
