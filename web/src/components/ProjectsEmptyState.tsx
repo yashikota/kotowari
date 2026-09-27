@@ -22,7 +22,7 @@ export function ProjectsEmptyState({ onCreateProject }: { onCreateProject: () =>
       gap="sm"
       px="md"
       py="xl"
-      style={{ flex: 1, minHeight: 320, width: 'min(352px, 100%)', marginInline: 'auto' }}
+      style={{ flex: 1, minHeight: 320, width: 'min(380px, 100%)', marginInline: 'auto' }}
     >
       <svg
         aria-hidden="true"
