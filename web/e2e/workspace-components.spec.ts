@@ -8,7 +8,7 @@ import {
   openIssueFilterCategory,
 } from './issue-list-controls.ts';
 
-test('issue detail keeps Linear-style properties in a right rail with editable fields', async ({
+test('issue detail keeps Linear-style properties inline under the title with editable fields', async ({
   page,
   request,
 }) => {
@@ -83,7 +83,7 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   const properties = page.getByRole('region', { name: 'Issue properties' });
   const activity = page.getByRole('region', { name: 'Activity' });
   await expect(properties).toBeVisible();
-  await expect(properties.getByText('Properties', { exact: true })).toBeVisible();
+  await expect(properties.getByText('Properties', { exact: true })).toBeHidden();
   await expect(properties.getByRole('group', { name: 'Project' })).toBeVisible();
   await expect(activity.getByText(commentBody, { exact: true })).toBeVisible();
   await expect(activity.getByText(/Added a note/)).toHaveCount(0);
@@ -96,38 +96,53 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   expect(createdActivityBounds!.y).toBeLessThan(commentBounds!.y);
   await expect(properties.getByRole('group', { name: 'Labels' })).toBeVisible();
   const issueTitle = page.getByRole('textbox', { name: 'Issue title' });
+  const projectPicker = properties.getByRole('combobox', { name: 'Project' });
   const documentEditor = page.getByRole('region', { name: 'Document editor' }).first();
   await expect(documentEditor).toBeVisible();
   await expect(documentEditor.getByRole('button', { name: 'History' })).toHaveCount(0);
-  const [
-    titleBounds,
-    propertiesBounds,
-    editorBounds,
-    statusBounds,
-    priorityBounds,
-    cycleBounds,
-    labelsBounds,
-  ] = await Promise.all([
+  const [titleBounds, propertiesBounds, editorBounds, labelsBounds] = await Promise.all([
     issueTitle.boundingBox(),
     properties.boundingBox(),
     documentEditor.boundingBox(),
-    properties.getByRole('combobox', { name: 'Status' }).boundingBox(),
-    properties.getByRole('combobox', { name: 'Priority' }).boundingBox(),
-    properties.getByRole('combobox', { name: 'Cycle' }).boundingBox(),
-    properties.getByRole('group', { name: 'Labels' }).boundingBox(),
+    properties.getByRole('button', { name: 'Change labels' }).boundingBox(),
   ]);
   expect(titleBounds).not.toBeNull();
   expect(propertiesBounds).not.toBeNull();
   expect(editorBounds).not.toBeNull();
   expect(propertiesBounds!.width).toBeGreaterThan(200);
-  expect(propertiesBounds!.width).toBeLessThan(420);
+  expect(propertiesBounds!.width).toBeLessThan(1280);
   expect(titleBounds!.y).toBeLessThan(propertiesBounds!.y);
-  expect(propertiesBounds!.y).toBeLessThanOrEqual(editorBounds!.y + 2);
-  expect(propertiesBounds!.x).toBeGreaterThan(editorBounds!.x);
-  expect(statusBounds!.y).toBeLessThan(priorityBounds!.y);
-  expect(priorityBounds!.y).toBeLessThan(cycleBounds!.y);
+  expect(propertiesBounds!.y).toBeLessThan(editorBounds!.y);
+  expect(Math.abs(propertiesBounds!.x - editorBounds!.x)).toBeLessThanOrEqual(1);
   expect(labelsBounds).not.toBeNull();
-  expect(cycleBounds!.y).toBeLessThan(labelsBounds!.y);
+  const orderedProperties = [
+    properties.getByRole('combobox', { name: 'Status' }),
+    properties.getByRole('combobox', { name: 'Priority' }),
+    properties.getByRole('combobox', { name: 'Assignee' }),
+    projectPicker,
+    properties.getByRole('combobox', { name: 'Estimate' }),
+    properties.getByRole('button', { name: 'Change labels' }),
+    properties.getByRole('combobox', { name: 'Cycle' }),
+  ];
+  const orderedRowBounds = await Promise.all(
+    orderedProperties.map((property) =>
+      property.evaluate((element) => {
+        const row = element.closest('div[class*="row"]');
+        if (!row) throw new Error('Issue property is not inside a property row.');
+        const { x, y, width, height } = row.getBoundingClientRect();
+        return { x, y, width, height };
+      }),
+    ),
+  );
+  for (let index = 1; index < orderedRowBounds.length; index += 1) {
+    const previous = orderedRowBounds[index - 1]!;
+    const current = orderedRowBounds[index]!;
+    if (Math.abs(current.y - previous.y) < 1) {
+      expect(current.x).toBeGreaterThanOrEqual(previous.x + previous.width - 1);
+    } else {
+      expect(current.y).toBeGreaterThanOrEqual(previous.y + previous.height - 1);
+    }
+  }
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
@@ -166,7 +181,6 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   await chooseIssueProperty(page, 'Priority', 'Low');
   await chooseIssueProperty(page, 'Type', 'Feature');
   await chooseIssueProperty(page, 'Estimate', '8');
-  const projectPicker = properties.getByRole('combobox', { name: 'Project' });
   await projectPicker.click();
   await projectPicker.fill(projectName);
   await page.getByRole('option', { name: projectName, exact: true }).click();
@@ -1936,6 +1950,69 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     dueDate,
     templateSlug: appliedTemplate!.slug,
   });
+});
+
+test('create more keeps the issue composer open and ready for the next issue', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const firstTitle = `Create more first ${stamp}`;
+  const secondTitle = `Create more second ${stamp}`;
+  const lastTitle = `Create more last ${stamp}`;
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  const title = dialog.getByRole('textbox', { name: 'Issue title' });
+  const createMore = dialog.getByRole('checkbox', { name: 'Create more' });
+
+  await title.fill(firstTitle);
+  await createMore.check();
+  const firstResponse = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  const first = (await (await firstResponse).json()) as { identifier: string; title: string };
+  expect(first.title).toBe(firstTitle);
+  await expect(dialog).toBeVisible();
+  await expect(title).toHaveValue('');
+  await expect(title).toBeFocused();
+  await expect(createMore).toBeChecked();
+
+  await title.fill(secondTitle);
+  const secondResponse = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  const second = (await (await secondResponse).json()) as { identifier: string; title: string };
+  expect(second.title).toBe(secondTitle);
+  await expect(dialog).toBeVisible();
+  await expect(title).toHaveValue('');
+  await expect(title).toBeFocused();
+
+  await createMore.uncheck();
+  await title.fill(lastTitle);
+  const lastResponse = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith('/api/issues') && candidate.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  const last = (await (await lastResponse).json()) as { identifier: string; title: string };
+  expect(last.title).toBe(lastTitle);
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/issues/${last.identifier}$`));
+
+  for (const [identifier, expectedTitle] of [
+    [first.identifier, firstTitle],
+    [second.identifier, secondTitle],
+    [last.identifier, lastTitle],
+  ]) {
+    const response = await request.get(`/api/issues/${identifier}`);
+    expect(response.ok()).toBeTruthy();
+    expect(await response.json()).toMatchObject({ title: expectedTitle });
+  }
 });
 
 test('new issues can include file attachments before creation', async ({ page, request }) => {

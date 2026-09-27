@@ -433,6 +433,7 @@
     "adrTitle": "ADR のタイトル",
     "pageTitle": "ページのタイトル",
     "enterHint": "Enter で改行 · Ctrl/⌘+Enter で作成",
+    "createMore": "続けて作成",
     "create": "作成",
     "projectName": "プロジェクト名",
     "projectSummary": "概要",

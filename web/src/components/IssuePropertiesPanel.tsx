@@ -251,7 +251,11 @@ export function IssuePropertiesPanel({
           </PropertyRow>
         </Box>
 
-        <Box role="group" aria-label={t('issueProperties.labels')} className={styles.section}>
+        <Box
+          role="group"
+          aria-label={t('issueProperties.labels')}
+          className={`${styles.section} ${styles.labelsSection}`}
+        >
           <Text className={styles.heading}>{t('issueProperties.labels')}</Text>
           <PropertyRow
             label={t('issueProperties.labels')}
@@ -367,7 +371,11 @@ export function IssuePropertiesPanel({
           </PropertyRow>
         </Box>
 
-        <Box role="group" aria-label={t('field.project')} className={styles.section}>
+        <Box
+          role="group"
+          aria-label={t('field.project')}
+          className={`${styles.section} ${styles.projectSection}`}
+        >
           <Text className={styles.heading}>{t('field.project')}</Text>
           <PropertyRow
             label={t('field.project')}
@@ -542,14 +550,16 @@ function PropertyRow({
   return (
     <div className={[styles.row, className].filter(Boolean).join(' ')}>
       <div className={styles.label}>
-        <span className={styles.icon} aria-hidden="true">
-          {icon}
-        </span>
         <Text component="span" size="sm" c="dimmed" truncate className={styles.labelText}>
           {label}
         </Text>
       </div>
-      <div className={styles.value}>{children}</div>
+      <div className={styles.value}>
+        <span className={styles.icon} aria-hidden="true">
+          {icon}
+        </span>
+        {children}
+      </div>
     </div>
   );
 }

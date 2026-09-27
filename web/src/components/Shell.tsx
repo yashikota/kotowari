@@ -5,6 +5,7 @@ import {
   AppShell,
   Box,
   Button,
+  Checkbox,
   Divider,
   FileInput,
   Group,
@@ -893,6 +894,14 @@ export function ShellView({
                   <Text size="sm" c="dimmed">
                     {t('modal.enterHint')}
                   </Text>
+                  {!model.issueRecurringOpen ? (
+                    <Checkbox
+                      size="sm"
+                      label={t('modal.createMore')}
+                      checked={model.issueCreateMore}
+                      onChange={handlers.Issue_createMore_onChange}
+                    />
+                  ) : null}
                   <Button
                     type="button"
                     onClick={handlers.submitIssue}
@@ -1029,7 +1038,9 @@ function ShellBinding() {
   const model = useShellPresenter();
   const handlers = useActions(model.handlers);
   const { t } = useTranslation();
-  const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createIssue);
+  const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createIssue, [
+    model.issueCreateMoreFocusRequest,
+  ]);
   const adrTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createADR);
   const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createPage);
   return (

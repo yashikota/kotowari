@@ -23,28 +23,42 @@ test('issue details keep optional properties out of the way until added', async 
   await page.setViewportSize({ width: 930, height: 900 });
   const properties = page.getByRole('region', { name: 'Issue properties' });
   const coreProperties = properties.getByRole('group', { name: 'Core properties' });
+  const labelProperties = properties.getByRole('group', { name: 'Labels' });
+  const projectProperties = properties.getByRole('group', { name: 'Project' });
   const optionalProperties = properties.getByRole('group', { name: 'Optional properties' });
   await expect(coreProperties.getByRole('combobox', { name: 'Status' })).toBeVisible();
   await expect(coreProperties.getByRole('combobox', { name: 'Priority' })).toBeVisible();
   await expect(coreProperties.getByRole('combobox', { name: 'Assignee' })).toBeVisible();
-  await expect(coreProperties.getByRole('combobox', { name: 'Project' })).toBeVisible();
+  await expect(projectProperties.getByRole('combobox', { name: 'Project' })).toBeVisible();
   await expect(coreProperties.getByRole('combobox', { name: 'Priority' })).toHaveValue(
     'No priority',
   );
-  await expect(coreProperties.getByRole('combobox', { name: 'Project' })).toHaveValue('Project');
+  await expect(projectProperties.getByRole('combobox', { name: 'Project' })).toHaveValue('Project');
   await expect(coreProperties.getByRole('combobox', { name: 'Estimate' })).toHaveValue(
     'No estimate',
   );
   await expect(coreProperties.getByRole('combobox', { name: 'Cycle' })).toHaveValue('No cycle');
   await expect(coreProperties.getByRole('combobox', { name: 'Estimate' })).toBeVisible();
-  await expect(coreProperties.getByRole('group', { name: 'Labels' })).toBeVisible();
+  await expect(labelProperties).toBeVisible();
   await expect(coreProperties.getByRole('combobox', { name: 'Cycle' })).toBeVisible();
-  const propertyRows = coreProperties.locator('div[class*="row"]');
-  const propertyRowBounds = await propertyRows.evaluateAll((rows) =>
-    rows.map((row) => {
-      const { x, y, width, height } = row.getBoundingClientRect();
-      return { x, y, width, height };
-    }),
+  const orderedProperties = [
+    coreProperties.getByRole('combobox', { name: 'Status' }),
+    coreProperties.getByRole('combobox', { name: 'Priority' }),
+    coreProperties.getByRole('combobox', { name: 'Assignee' }),
+    projectProperties.getByRole('combobox', { name: 'Project' }),
+    coreProperties.getByRole('combobox', { name: 'Estimate' }),
+    labelProperties.getByRole('button', { name: 'Change labels' }),
+    coreProperties.getByRole('combobox', { name: 'Cycle' }),
+  ];
+  const propertyRowBounds = await Promise.all(
+    orderedProperties.map((property) =>
+      property.evaluate((element) => {
+        const row = element.closest('div[class*="row"]');
+        if (!row) throw new Error('Issue property is not inside a property row.');
+        const { x, y, width, height } = row.getBoundingClientRect();
+        return { x, y, width, height };
+      }),
+    ),
   );
   expect(propertyRowBounds.length).toBeGreaterThan(0);
   for (let index = 1; index < propertyRowBounds.length; index += 1) {
@@ -57,9 +71,7 @@ test('issue details keep optional properties out of the way until added', async 
     }
   }
   expect(await optionalProperties.getByRole('combobox', { name: 'Cycle' }).count()).toBe(0);
-  const cycleRowY = await coreProperties
-    .getByRole('combobox', { name: 'Cycle' })
-    .evaluate((element) => element.closest('div[class*="row"]')?.getBoundingClientRect().y ?? null);
+  const cycleRowY = propertyRowBounds.at(-1)?.y ?? null;
   expect(cycleRowY).not.toBeNull();
   expect(cycleRowY).toBeGreaterThanOrEqual(propertyRowBounds[0]!.y);
   const statusRadius = await properties
@@ -71,7 +83,7 @@ test('issue details keep optional properties out of the way until added', async 
     .getByRole('button', { name: 'Add property' })
     .boundingBox();
   expect(addPropertyBounds).not.toBeNull();
-  expect(addPropertyBounds!.y).toBeGreaterThan(cycleRowY!);
+  expect(addPropertyBounds!.y).toBeGreaterThanOrEqual(cycleRowY!);
   expect(addPropertyBounds!.y - cycleRowY!).toBeLessThan(48);
 
   const cyclePicker = coreProperties.getByRole('combobox', { name: 'Cycle' });

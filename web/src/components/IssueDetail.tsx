@@ -663,7 +663,7 @@ export function IssueDetailView({
               />
             </Grid.Col>
 
-            <Grid.Col span={{ base: 12, md: 8 }} order={{ base: 1, md: 0 }}>
+            <Grid.Col span={12} order={{ base: 2, md: 2 }}>
               <Stack gap="lg">
                 <DocumentEditor
                   documentKey={`issues/${identifier}/body`}
@@ -1289,7 +1289,7 @@ export function IssueDetailView({
                 </Box>
               </Stack>
             </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 4 }} order={{ base: 0, md: 1 }}>
+            <Grid.Col span={12} order={{ base: 1, md: 1 }}>
               <IssuePropertiesPanel model={model} />
             </Grid.Col>
           </Grid>

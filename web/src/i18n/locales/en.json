@@ -438,6 +438,7 @@
     "adrTitle": "ADR title",
     "pageTitle": "Page title",
     "enterHint": "Enter to insert a line · Ctrl/⌘+Enter to create",
+    "createMore": "Create more",
     "create": "Create",
     "projectName": "Project name",
     "projectSummary": "Summary",

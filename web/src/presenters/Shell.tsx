@@ -127,6 +127,8 @@ export function useShellPresenter() {
   const createPage = overlay === 'page';
   const setCreatePage = setOverlay('page');
   const [issueTitle, setIssueTitle] = useState('');
+  const [issueCreateMore, setIssueCreateMore] = useState(false);
+  const [issueCreateMoreFocusRequest, setIssueCreateMoreFocusRequest] = useState(0);
   const [issueStatus, setIssueStatus] = useState('todo');
   const [issuePriority, setIssuePriority] = useState(0);
   const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
@@ -255,6 +257,7 @@ export function useShellPresenter() {
   useIntentHandler('issue.createRecurring', (value) => {
     const draft = value as RecurringIssueDraft;
     const firstDueDate = localDateValue(new Date());
+    setIssueCreateMore(false);
     setIssueTitle(draft.title);
     setIssueBody(draft.body);
     setIssueStatus(
@@ -400,6 +403,7 @@ export function useShellPresenter() {
   }
 
   function openCreateIssue() {
+    setIssueCreateMore(false);
     setIssueAssignee(defaultIssueAssignee);
     setCreateIssue(true);
   }
@@ -659,6 +663,7 @@ export function useShellPresenter() {
     ) {
       return;
     }
+    const createMore = issueCreateMore && !issueRecurringOpen;
     const issue: Issue = await api.createIssue({
       title,
       body: issueBody,
@@ -723,9 +728,15 @@ export function useShellPresenter() {
     setIssueProjectId('');
     setIssueCycleId('');
     setIssueAssignee(defaultIssueAssignee);
-    setCreateIssue(false);
+    if (createMore) {
+      setIssueCreateMoreFocusRequest((request) => request + 1);
+    } else {
+      setIssueCreateMore(false);
+      setCreateIssue(false);
+    }
     if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
     await router.invalidate();
+    if (createMore) return;
     await navigate({
       to: '/issues/$identifier',
       params: { identifier: issue.identifier },
@@ -800,6 +811,8 @@ export function useShellPresenter() {
     createADR,
     createPage,
     issueTitle,
+    issueCreateMore,
+    issueCreateMoreFocusRequest,
     issueStatus,
     issueWorkflowStatuses,
     issuePriority,
@@ -857,6 +870,9 @@ export function useShellPresenter() {
       onCycleNavigationQueryChange: (query: string) => setCycleNavigationQuery(query),
       onNavigateCycle: navigateToCycle,
       submitIssue: () => send('submit:Issue'),
+      Issue_createMore_onChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setIssueCreateMore(e.target.checked),
       submitADR: () => send('submit:ADR'),
       submitPage: () => send('submit:Page'),
       onClick0: () =>
