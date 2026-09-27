@@ -544,7 +544,9 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await page.getByRole('button', { name: 'Create issue', exact: true }).click();
   const title = page.getByPlaceholder('Issue title');
   await title.fill(createdIssueTitle);
-  await page.getByRole('dialog').getByLabel('Priority').selectOption('0');
+  const priority = page.getByRole('dialog').getByRole('combobox', { name: 'Priority' });
+  await priority.click();
+  await page.getByRole('option', { name: 'No priority' }).click();
   await title.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
   await expect(page.locator('input[aria-label="Issue title"]')).toHaveValue(createdIssueTitle);
@@ -626,7 +628,7 @@ test('priority group quick-create inherits the group priority', async ({ page, r
 
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   const title = dialog.getByPlaceholder('Issue title');
-  await expect(dialog.getByLabel('Priority')).toHaveValue('2');
+  await expect(dialog.getByRole('combobox', { name: 'Priority' })).toHaveValue('High');
   await title.fill(`Created from high group ${stamp}`);
   await title.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);

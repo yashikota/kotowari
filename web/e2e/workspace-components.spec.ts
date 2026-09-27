@@ -1920,11 +1920,11 @@ test('issues can be converted into reusable workspace templates', async ({ page,
   await expect(createDialog.getByRole('textbox', { name: 'Description' })).toContainText(
     'Describe customer impact.',
   );
-  await expect(createDialog.getByLabel('Status')).toHaveValue('in_progress');
-  await expect(createDialog.getByLabel('Assignee')).toHaveValue('agent');
-  await expect(createDialog.getByLabel('Priority')).toHaveValue('2');
-  await expect(createDialog.getByLabel('Type')).toHaveValue('bug');
-  await expect(createDialog.getByLabel('Estimate')).toHaveValue('3');
+  await expect(createDialog.getByRole('combobox', { name: 'Status' })).toHaveValue('In Progress');
+  await expect(createDialog.getByRole('combobox', { name: 'Assignee' })).toHaveValue('Agent');
+  await expect(createDialog.getByRole('combobox', { name: 'Priority' })).toHaveValue('High');
+  await expect(createDialog.getByRole('combobox', { name: 'Type' })).toHaveValue('Bug');
+  await expect(createDialog.getByRole('combobox', { name: 'Estimate' })).toHaveValue('3');
 
   const createdTitle = `Follow-up incident ${stamp}`;
   const dueDate = '2035-04-12';
@@ -2389,9 +2389,9 @@ test('issues can become scheduled recurring issues with an initial instance', as
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await expect(dialog.getByRole('textbox', { name: 'Issue title' })).toHaveValue(sourceTitle);
   await expect(dialog.getByRole('textbox', { name: 'Description' })).toHaveValue(description);
-  await expect(dialog.getByLabel('Status')).toHaveValue('backlog');
-  await expect(dialog.getByLabel('Priority')).toHaveValue('2');
-  await expect(dialog.getByLabel('Assignee')).toHaveValue('self');
+  await expect(dialog.getByRole('combobox', { name: 'Status' })).toHaveValue('Backlog');
+  await expect(dialog.getByRole('combobox', { name: 'Priority' })).toHaveValue('High');
+  await expect(dialog.getByRole('combobox', { name: 'Assignee' })).toHaveValue('You');
   await dialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
   await dialog.getByRole('textbox', { name: 'First due' }).fill(firstDueDate);
   await dialog.getByRole('spinbutton', { name: 'Repeats every' }).fill('2');

@@ -927,12 +927,8 @@ export function useShellPresenter() {
           return send('submit:Issue');
         }
       },
-      Issue_status_onChange14: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueStatus(e.target.value),
-      Issue_priority_onChange15: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssuePriority(Number(e.target.value)),
+      Issue_status_onChange14: (value: string | null) => setIssueStatus(value ?? 'todo'),
+      Issue_priority_onChange15: (value: string | null) => setIssuePriority(Number(value ?? '0')),
       Issue_template_onChange30: (slug: string | null) => {
         const template = issueTemplates.find((candidate) => candidate.slug === slug);
         setIssueTemplateSlug(template?.slug ?? '');
@@ -1043,12 +1039,10 @@ export function useShellPresenter() {
             setIssueParentLoading(false);
           });
       },
-      Issue_type_onChange32: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueType(e.target.value as Issue['type'] | ''),
-      Issue_estimate_onChange33: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueEstimate(e.target.value),
+      Issue_type_onChange32: (value: string | null) =>
+        setIssueType(value && value !== 'none' ? (value as Issue['type']) : ''),
+      Issue_estimate_onChange33: (value: string | null) =>
+        setIssueEstimate(value && value !== 'none' ? value : ''),
       Issue_labels_onChange34: (values: string[]) => setIssueLabelNames(values),
       Issue_attachments_onChange: (files: File[]) => {
         if (files.length > 10) {
@@ -1069,16 +1063,12 @@ export function useShellPresenter() {
         setIssueAttachments(files);
         setIssueAttachmentError('');
       },
-      Issue_project_onChange16: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueProjectId(e.target.value),
-      Issue_assignee_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) =>
-        setIssueAssignee(
-          e.target.value === 'self' || e.target.value === 'agent' ? e.target.value : '',
-        ),
-      Issue_cycle_onChange17: (value: string | null) => setIssueCycleId(value ?? ''),
+      Issue_project_onChange16: (value: string | null) =>
+        setIssueProjectId(value && value !== 'none' ? value : ''),
+      Issue_assignee_onChange: (value: string | null) =>
+        setIssueAssignee(value === 'self' || value === 'agent' ? value : ''),
+      Issue_cycle_onChange17: (value: string | null) =>
+        setIssueCycleId(value && value !== 'none' ? value : ''),
       onClick18: () => setCreateADR(false),
       Create_ADR_onClick19: (
         e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],

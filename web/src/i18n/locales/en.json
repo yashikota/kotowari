@@ -454,6 +454,7 @@
   },
   "modal": {
     "createIssue": "Create issue",
+    "issueProperties": "Issue properties",
     "createAdr": "Create ADR",
     "createPage": "Create page",
     "issueTitle": "Issue title",

@@ -136,13 +136,13 @@ test('auto-assign preference controls the new issue default and persists', async
 
   await page.getByRole('button', { name: 'Create issue' }).click();
   const assignee = page.getByRole('combobox', { name: 'Assignee' });
-  await expect(assignee).toHaveValue('');
+  await expect(assignee).toHaveValue('Unassigned');
   await page.keyboard.press('Escape');
 
   await page.goto('/config');
   await preference.check();
   await page.getByRole('button', { name: 'Create issue' }).click();
-  await expect(page.getByRole('combobox', { name: 'Assignee' })).toHaveValue('self');
+  await expect(page.getByRole('combobox', { name: 'Assignee' })).toHaveValue('You');
 });
 
 test('moving an unassigned issue to Started can automatically assign it to yourself', async ({

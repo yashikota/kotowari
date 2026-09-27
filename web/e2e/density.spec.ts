@@ -13,8 +13,9 @@ test('shortcuts, find, and project-scoped create', async ({ page, request }) => 
   const hay = `Haystack ${stamp}`;
   await json(await request.post('/api/issues', { data: { title: needle, status: 'todo' } }));
   await json(await request.post('/api/issues', { data: { title: hay, status: 'todo' } }));
+  const projectName = `Pier ${stamp}`;
   const project = await json<{ slug: string }>(
-    await request.post('/api/projects', { data: { name: `Pier ${stamp}`, slug: `pier-${stamp}` } }),
+    await request.post('/api/projects', { data: { name: projectName, slug: `pier-${stamp}` } }),
   );
 
   await page.goto('/issues');
@@ -35,6 +36,7 @@ test('shortcuts, find, and project-scoped create', async ({ page, request }) => 
 
   await page.goto(`/projects/${project.slug}`);
   await page.getByRole('button', { name: 'New issue' }).click();
-  await expect(page.getByRole('dialog', { name: 'Create issue' })).toBeVisible();
-  await expect(page.getByRole('dialog').getByLabel('Project')).not.toHaveValue('');
+  const createDialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(createDialog).toBeVisible();
+  await expect(createDialog.getByRole('combobox', { name: 'Project' })).toHaveValue(projectName);
 });

@@ -11,7 +11,6 @@ import {
   Group,
   Modal,
   Menu,
-  MultiSelect,
   NativeSelect,
   Select,
   ScrollArea,
@@ -50,15 +49,14 @@ import {
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFocusWhen } from '../focus.ts';
-import { priorityLabel } from '../i18n/labels.ts';
 import { RouterNavLink } from '../mantine-ui.tsx';
 import { CycleNavigationMenu } from './CycleNavigationMenu.tsx';
 import { CONFIG_NAV } from '../nav.ts';
-import { workflowStatusLabel } from '../workflow.tsx';
 import { IssueWorkflowProvider } from '../workflow.tsx';
 import { ProjectWorkflowProvider } from '../project-workflow.tsx';
 import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
+import { IssueCreateProperties } from './IssueCreateProperties.tsx';
 import { ViewIcon } from './ViewIcon.tsx';
 import styles from './Shell.module.css';
 
@@ -168,7 +166,6 @@ export function ShellView({
         createPage,
         issueTitle,
         issueStatus,
-        issueWorkflowStatuses,
         issuePriority,
         issueAssignee,
         issueProjectId,
@@ -635,128 +632,54 @@ export function ShellView({
             opened={createIssue}
             onClose={handlers.onClick10}
             title={t('modal.createIssue')}
+            size="xl"
             centered
             autoFocus={false}
           >
-            <Stack gap="md">
+            <Stack gap="sm">
               <Textarea
                 ref={issueTitleRef}
                 data-autofocus
-                rows={2}
+                rows={1}
                 aria-label={t('modal.issueTitle')}
                 placeholder={t('modal.issueTitle')}
                 value={issueTitle}
                 onChange={handlers.Issue_title_onChange12}
                 onKeyDown={handlers.Issue_title_onKeyDown13}
               />
-              <Select
-                aria-label={t('modal.issueTemplate')}
-                label={t('modal.issueTemplate')}
-                placeholder={t('modal.noIssueTemplate')}
-                clearable
-                value={model.issueTemplateSlug || null}
-                data={model.issueTemplates.map((template) => ({
-                  value: template.slug,
-                  label: template.name,
-                }))}
-                onChange={handlers.Issue_template_onChange30}
-              />
               <Textarea
                 aria-label={t('modal.issueDescription')}
-                label={t('modal.issueDescription')}
-                rows={3}
+                placeholder={t('modal.issueDescription')}
+                rows={4}
                 value={model.issueBody}
                 onChange={handlers.Issue_body_onChange31}
               />
-              <Group grow align="flex-start">
-                <NativeSelect
-                  aria-label={t('field.status')}
-                  label={t('field.status')}
-                  value={issueStatus}
-                  onChange={handlers.Issue_status_onChange14}
-                  data={issueWorkflowStatuses.map((status) => ({
-                    value: status.id,
-                    label: workflowStatusLabel(status.id, issueWorkflowStatuses),
-                  }))}
-                />
-                <NativeSelect
-                  aria-label={t('field.priority')}
-                  label={t('field.priority')}
-                  value={String(issuePriority)}
-                  onChange={handlers.Issue_priority_onChange15}
-                  data={[0, 1, 2, 3, 4].map((i) => ({ value: String(i), label: priorityLabel(i) }))}
-                />
-                <NativeSelect
-                  aria-label={t('field.assignee')}
-                  label={t('field.assignee')}
-                  value={issueAssignee}
-                  onChange={handlers.Issue_assignee_onChange}
-                  data={[
-                    { value: '', label: t('issueAssignment.unassigned') },
-                    { value: 'self', label: t('issueAssignment.you') },
-                    { value: 'agent', label: t('issueAssignment.agent') },
-                  ]}
-                />
-                <NativeSelect
-                  aria-label={t('field.project')}
-                  label={t('field.project')}
-                  value={issueProjectId}
-                  onChange={handlers.Issue_project_onChange16}
-                  data={[
-                    { value: '', label: t('field.noProject') },
-                    ...projects.map((p) => ({ value: String(p.id), label: p.name })),
-                  ]}
-                />
-                <NativeSelect
-                  aria-label={t('field.estimate')}
-                  label={t('field.estimate')}
-                  value={model.issueEstimate || 'none'}
-                  onChange={handlers.Issue_estimate_onChange33}
-                  data={[
-                    { value: 'none', label: t('issueProperties.noEstimate') },
-                    ...[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
-                      value: String(estimate),
-                      label: String(estimate),
-                    })),
-                  ]}
-                />
-              </Group>
-              <Group grow align="flex-end">
-                <NativeSelect
-                  aria-label={t('field.type')}
-                  label={t('field.type')}
-                  value={model.issueType || 'none'}
-                  onChange={handlers.Issue_type_onChange32}
-                  data={[
-                    { value: 'none', label: t('issueProperties.noType') },
-                    ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
-                      value: type,
-                      label: t(`issueType.${type}`),
-                    })),
-                  ]}
-                />
-                <MultiSelect
-                  aria-label={t('field.label')}
-                  label={t('field.label')}
-                  searchable
-                  data={model.availableLabels.map((label) => ({
-                    value: label.name,
-                    label: label.name,
-                  }))}
-                  value={model.issueLabelNames}
-                  onChange={handlers.Issue_labels_onChange34}
-                />
-                <Select
-                  aria-label={t('issueActions.addToCycle')}
-                  placeholder={t('issueActions.addToCycle')}
-                  value={issueCycleId || null}
-                  onChange={handlers.Issue_cycle_onChange17}
-                  clearable
-                  data={cycles.map((cycle) => ({
-                    value: String(cycle.id),
-                    label: t('field.cycleN', { number: cycle.number }),
-                  }))}
-                />
+              <IssueCreateProperties
+                status={issueStatus}
+                priority={issuePriority}
+                assignee={issueAssignee}
+                projectId={issueProjectId}
+                estimate={model.issueEstimate}
+                type={model.issueType}
+                cycleId={issueCycleId}
+                templateSlug={model.issueTemplateSlug}
+                labelNames={model.issueLabelNames}
+                workflowStatuses={model.issueWorkflowStatuses}
+                projects={projects}
+                cycles={cycles}
+                templates={model.issueTemplates}
+                labels={model.availableLabels}
+                onStatusChange={handlers.Issue_status_onChange14}
+                onPriorityChange={handlers.Issue_priority_onChange15}
+                onAssigneeChange={handlers.Issue_assignee_onChange}
+                onProjectChange={handlers.Issue_project_onChange16}
+                onEstimateChange={handlers.Issue_estimate_onChange33}
+                onTypeChange={handlers.Issue_type_onChange32}
+                onCycleChange={handlers.Issue_cycle_onChange17}
+                onTemplateChange={handlers.Issue_template_onChange30}
+                onLabelsChange={handlers.Issue_labels_onChange34}
+              />
+              <Group justify="flex-end" align="center">
                 <Menu position="bottom-end" withinPortal>
                   <Menu.Target>
                     <Button type="button" variant="default">

@@ -449,6 +449,7 @@
   },
   "modal": {
     "createIssue": "イシューを作成",
+    "issueProperties": "イシューのプロパティ",
     "createAdr": "ADR を作成",
     "createPage": "ページを作成",
     "issueTitle": "イシューのタイトル",
