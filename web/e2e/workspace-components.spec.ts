@@ -2979,6 +2979,41 @@ test('cycle issues can be filtered in the URL and displayed as a board', async (
   await expect(page.getByRole('button', { name: new RegExp(inProgressTitle) })).toBeVisible();
 });
 
+test('cycle issues default to priority ordering within each status group', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/cycles', {
+    data: {
+      startsAt: '2034-03-01T00:00:00Z',
+      endsAt: '2034-03-14T00:00:00Z',
+      status: 'active',
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const cycle = (await created.json()) as { id: number; number: number };
+  const urgentTitle = `Cycle priority urgent ${cycle.number}`;
+  const lowTitle = `Cycle priority low ${cycle.number}`;
+  for (const [title, priority] of [
+    [lowTitle, 4],
+    [urgentTitle, 1],
+  ] as const) {
+    const issue = await request.post('/api/issues', {
+      data: { title, status: 'todo', priority, cycleId: cycle.id },
+    });
+    expect(issue.ok()).toBeTruthy();
+  }
+
+  await page.goto(`/cycles/${cycle.number}`);
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(urgentTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(lowTitle) })).toBeVisible();
+  const rows = await issueList.getByRole('option').allTextContents();
+  expect(rows.findIndex((row) => row.includes(urgentTitle))).toBeLessThan(
+    rows.findIndex((row) => row.includes(lowTitle)),
+  );
+});
+
 test('cycle details add, open, and remove documents and links', async ({ page, request }) => {
   const stamp = Date.now();
   const created = await request.post('/api/cycles', {
