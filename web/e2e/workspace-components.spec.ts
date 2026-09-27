@@ -1829,6 +1829,8 @@ test('issues can be converted into reusable workspace templates', async ({ page,
       estimate: 3,
     }),
   );
+  const appliedTemplate = templates.find((template) => template.name === templateName);
+  expect(appliedTemplate).toBeDefined();
 
   await page.goto('/templates');
   await expect(page.getByRole('listitem').filter({ hasText: templateName })).toBeVisible();
@@ -1867,13 +1869,16 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     title: createdTitle,
     dueDate,
     assignee: 'agent',
+    templateSlug: appliedTemplate!.slug,
   });
   const createdFromResponse = (await (await createResponse).json()) as {
     identifier: string;
     title: string;
     assignee?: string;
+    templateSlug?: string;
   };
   expect(createdFromResponse.title).toBe(createdTitle);
+  expect(createdFromResponse.templateSlug).toBe(appliedTemplate!.slug);
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+$/);
   const createdIssue = await request.get(`/api/issues/${createdFromResponse.identifier}`);
   expect(await createdIssue.json()).toMatchObject({
@@ -1885,6 +1890,7 @@ test('issues can be converted into reusable workspace templates', async ({ page,
     priority: 2,
     estimate: 3,
     dueDate,
+    templateSlug: appliedTemplate!.slug,
   });
 });
 
