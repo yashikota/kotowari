@@ -529,6 +529,10 @@
     "add": "Add to favorites",
     "remove": "Remove from favorites"
   },
+  "projectFavorite": {
+    "add": "Add project to favorites",
+    "remove": "Remove project from favorites"
+  },
   "issueSubscription": {
     "subscribe": "Subscribe to issue",
     "unsubscribe": "Unsubscribe from issue"

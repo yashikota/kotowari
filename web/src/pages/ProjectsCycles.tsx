@@ -333,6 +333,26 @@ export function ProjectDetailPageView({
                 }
                 actions={
                   <Group gap="xs" wrap="wrap">
+                    <ActionIcon
+                      type="button"
+                      variant="subtle"
+                      color={project.isFavorite ? 'yellow' : 'gray'}
+                      aria-label={t(
+                        project.isFavorite ? 'projectFavorite.remove' : 'projectFavorite.add',
+                      )}
+                      aria-pressed={!!project.isFavorite}
+                      title={t(
+                        project.isFavorite ? 'projectFavorite.remove' : 'projectFavorite.add',
+                      )}
+                      onClick={handlers.onToggleFavorite}
+                    >
+                      <IconStar
+                        size={15}
+                        stroke={1.7}
+                        fill={project.isFavorite ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                      />
+                    </ActionIcon>
                     <NativeSelect
                       aria-label={t('ui.projectStatus')}
                       value={project.workflowStatus ?? project.status}

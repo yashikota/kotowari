@@ -76,6 +76,7 @@ type Project struct {
 	Description     string              `json:"description" toml:"description"`
 	Status          string              `json:"status" toml:"status"`
 	WorkflowStatus  string              `json:"workflowStatus,omitempty" toml:"workflow_status,omitempty"`
+	IsFavorite      bool                `json:"isFavorite,omitempty" toml:"is_favorite,omitempty"`
 	Lead            string              `json:"lead,omitempty" toml:"lead,omitempty"`
 	TemplateSlug    string              `json:"templateSlug,omitempty" toml:"template_slug,omitempty"`
 	InitiativeSlugs []string            `json:"initiativeSlugs,omitempty" toml:"initiative_slugs,omitempty"`

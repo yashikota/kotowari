@@ -864,6 +864,22 @@ func (s *Store) UpdateProjectWithWorkflowInitiativesAndLead(slug string, name, s
 	return out, err
 }
 
+// UpdateProjectFavorite changes the personal favorite state without changing
+// the project's content update timestamp.
+func (s *Store) UpdateProjectFavorite(slug string, favorite bool) (Project, error) {
+	var out Project
+	err := s.mutate(func(m *mem) error {
+		i := indexProject(m, slug)
+		if i < 0 {
+			return ErrNotFound
+		}
+		m.Projects[i].IsFavorite = favorite
+		out = m.Projects[i]
+		return nil
+	})
+	return out, err
+}
+
 func (s *Store) PostProjectUpdate(slug, health, body string) (Activity, error) {
 	health = strings.TrimSpace(health)
 	body = strings.TrimSpace(body)

@@ -136,6 +136,7 @@ export type Project = {
   description: string;
   status: string;
   workflowStatus?: string;
+  isFavorite?: boolean;
   lead?: 'self' | '';
   templateSlug?: string;
   initiativeSlugs?: string[];

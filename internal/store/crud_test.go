@@ -1367,6 +1367,38 @@ func TestCreateProjectDefaultsAndConflict(t *testing.T) {
 	}
 }
 
+func TestProjectFavoritePersistsWithoutChangingContentTimestamp(t *testing.T) {
+	s := openTest(t)
+	project, err := s.CreateProject("Launch", "launch", "", "planned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	updated, err := s.UpdateProjectFavorite(project.Slug, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !updated.IsFavorite || updated.UpdatedAt != project.UpdatedAt {
+		t.Fatalf("favorite update changed content state: before=%#v after=%#v", project, updated)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	got, err := reopened.GetProject(project.Slug)
+	if err != nil || !got.IsFavorite {
+		t.Fatalf("favorite state did not persist: project=%#v error=%v", got, err)
+	}
+	got, err = reopened.UpdateProjectFavorite(project.Slug, false)
+	if err != nil || got.IsFavorite {
+		t.Fatalf("favorite state did not clear: project=%#v error=%v", got, err)
+	}
+	if _, err := reopened.UpdateProjectFavorite("missing", true); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing project favorite update: %v", err)
+	}
+}
+
 func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	s := openTest(t)
 	project, err := s.CreateProject("Launch", "launch", "", "started", nil, nil)

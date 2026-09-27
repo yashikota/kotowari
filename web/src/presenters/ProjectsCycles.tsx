@@ -1188,6 +1188,7 @@ export function useProjectDetailPagePresenter() {
         'description',
         'status',
         'workflowStatus',
+        'isFavorite',
         'lead',
         'health',
         'priority',
@@ -1279,6 +1280,10 @@ export function useProjectDetailPagePresenter() {
       Project_priority_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ priority: Number(e.target.value) }),
+      onToggleFavorite: async () => {
+        await save({ isFavorite: !project.isFavorite });
+        signals.dispatchEvent(new Event('kotowari:refresh'));
+      },
       onProjectLeadChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
         save({ lead: e.target.value }),
       onProjectHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>

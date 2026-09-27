@@ -390,6 +390,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		Description     *string   `json:"description"`
 		Status          *string   `json:"status"`
 		WorkflowStatus  *string   `json:"workflowStatus"`
+		IsFavorite      *bool     `json:"isFavorite"`
 		Lead            *string   `json:"lead"`
 		Health          *string   `json:"health"`
 		Priority        *int      `json:"priority"`
@@ -402,6 +403,22 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	hasContentPatch := in.Name != nil || in.Summary != nil || in.Icon != nil || in.IconColor != nil ||
+		in.Description != nil || in.Status != nil || in.WorkflowStatus != nil || in.Lead != nil ||
+		in.Health != nil || in.Priority != nil || in.StartDate != nil || in.TargetDate != nil ||
+		in.Labels != nil || in.InitiativeSlugs != nil || in.ClearStart || in.ClearTarget
+	if in.IsFavorite != nil && !hasContentPatch {
+		out, err := s.store.UpdateProjectFavorite(r.PathValue("slug"), *in.IsFavorite)
+		if err == nil {
+			out, err = s.store.GetProject(r.PathValue("slug"))
+		}
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, out)
 		return
 	}
 	var start, target **string
@@ -421,6 +438,18 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+	if in.IsFavorite != nil {
+		_, err = s.store.UpdateProjectFavorite(r.PathValue("slug"), *in.IsFavorite)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		out, err = s.store.GetProject(r.PathValue("slug"))
+		if err != nil {
+			writeError(w, err)
+			return
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
 }

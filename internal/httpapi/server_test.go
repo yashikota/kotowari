@@ -628,6 +628,39 @@ func TestPatchProjectHealth(t *testing.T) {
 	}
 }
 
+func TestPatchProjectFavorite(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create project %d %s", created.Code, created.Body.String())
+	}
+	var original struct {
+		UpdatedAt string `json:"updatedAt"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &original); err != nil {
+		t.Fatal(err)
+	}
+	updated := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"isFavorite":true}`)
+	var favorite struct {
+		IsFavorite bool   `json:"isFavorite"`
+		UpdatedAt  string `json:"updatedAt"`
+	}
+	if err := json.Unmarshal(updated.Body.Bytes(), &favorite); err != nil {
+		t.Fatal(err)
+	}
+	if updated.Code != http.StatusOK || !favorite.IsFavorite || favorite.UpdatedAt != original.UpdatedAt {
+		t.Fatalf("favorite project %d %s", updated.Code, updated.Body.String())
+	}
+	listed := doJSON(t, s, http.MethodGet, "/api/projects", "")
+	if listed.Code != http.StatusOK || !strings.Contains(listed.Body.String(), `"isFavorite":true`) {
+		t.Fatalf("favorite missing from projects list %d %s", listed.Code, listed.Body.String())
+	}
+	removed := doJSON(t, s, http.MethodPatch, "/api/projects/launch", `{"isFavorite":false}`)
+	if removed.Code != http.StatusOK || strings.Contains(removed.Body.String(), `"isFavorite":true`) {
+		t.Fatalf("remove project favorite %d %s", removed.Code, removed.Body.String())
+	}
+}
+
 func TestProjectCompletedAtTracksCompletionTransitions(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/projects", `{"name":"Launch","slug":"launch","status":"started"}`)

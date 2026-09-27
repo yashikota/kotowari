@@ -1312,3 +1312,45 @@ test('project summary is distinct from description through creation and editing'
   await expect(page.getByText('Status changed from Planned to In progress')).toBeVisible();
   await expect(page.getByText('Health changed from No update to At risk')).toBeVisible();
 });
+
+test('projects can be favorited from their detail page and appear in workspace navigation', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const project = {
+    name: `Favorite project ${stamp}`,
+    slug: `favorite-project-${stamp}`,
+  };
+  const created = await request.post('/api/projects', { data: project });
+  expect(created.ok(), await created.text()).toBeTruthy();
+
+  await page.goto(`/projects/${project.slug}`);
+  const favoriteButton = page.getByRole('button', { name: 'Add project to favorites' });
+  await favoriteButton.click();
+  await expect(page.getByRole('button', { name: 'Remove project from favorites' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/projects/${project.slug}`);
+      return ((await response.json()) as { isFavorite?: boolean }).isFavorite;
+    })
+    .toBe(true);
+  await expect(
+    page.getByRole('navigation', { name: 'Favorites' }).getByRole('link', { name: project.name }),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Remove project from favorites' }).click();
+  await expect(page.getByRole('button', { name: 'Add project to favorites' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/projects/${project.slug}`);
+      return ((await response.json()) as { isFavorite?: boolean }).isFavorite;
+    })
+    .toBeFalsy();
+});
