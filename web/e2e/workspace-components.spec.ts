@@ -2963,9 +2963,7 @@ test('cycle issues can be filtered in the URL and displayed as a board', async (
   await expect(page).toHaveURL(new RegExp(`/cycles/${cycle.number}\\?status=in_progress$`));
   await expect(issueList.getByRole('option', { name: new RegExp(inProgressTitle) })).toBeVisible();
   await expect(issueList.getByRole('option', { name: new RegExp(todoTitle) })).toHaveCount(0);
-  await expect(
-    page.getByRole('region', { name: 'Progress' }).getByText('2', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('img', { name: /Cycle progress for Assignees:.*2/ })).toBeVisible();
 
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Display options' }).click();
