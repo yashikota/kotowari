@@ -1,15 +1,9 @@
-import { Box, Button, Group, Menu, Stack, Tabs, Text, UnstyledButton } from '@mantine/core';
-import {
-  IconAdjustmentsHorizontal,
-  IconArrowDown,
-  IconArrowUp,
-  IconCheck,
-  IconChevronDown,
-  IconPlus,
-} from '@tabler/icons-react';
+import { Box, Button, Group, Stack, Tabs, Text, UnstyledButton } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { ViewIcon } from '../components/ViewIcon.tsx';
+import { ViewsCollectionControls } from '../components/ViewsCollectionControls.tsx';
 import { ViewsEmptyState } from '../components/ViewsEmptyState.tsx';
 import { PageHeader, RouterNavLink } from '../mantine-ui.tsx';
 import { useViewsIndexPresenter } from '../presenters/ViewsIndexPages.tsx';
@@ -71,58 +65,14 @@ export function ViewsIndexPageView({
             <Tabs.Tab value="projects">{t('viewBuilder.projects')}</Tabs.Tab>
           </Tabs.List>
         </Tabs>
-        <Menu shadow="md" width={220} position="bottom-end" withinPortal>
-          <Menu.Target>
-            <Button
-              type="button"
-              size="xs"
-              variant="subtle"
-              leftSection={<IconAdjustmentsHorizontal size={14} aria-hidden />}
-              rightSection={<IconChevronDown size={13} aria-hidden />}
-              aria-label={t('views.displayOptions')}
-            >
-              {t('views.displayOptions')}
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown aria-label={t('views.displayOptions')}>
-            <Menu.Label>{t('views.ordering')}</Menu.Label>
-            {(['name', 'updated'] as const).map((order) => (
-              <Menu.Item
-                key={order}
-                aria-current={model.order === order ? 'true' : undefined}
-                leftSection={model.order === order ? <IconCheck size={14} aria-hidden /> : null}
-                onClick={() => model.handlers.onOrderChange(order)}
-              >
-                {t(`views.order.${order}`)}
-              </Menu.Item>
-            ))}
-            <Menu.Item
-              leftSection={
-                model.direction === 'asc' ? (
-                  <IconArrowUp size={14} aria-hidden />
-                ) : (
-                  <IconArrowDown size={14} aria-hidden />
-                )
-              }
-              onClick={model.handlers.onToggleDirection}
-            >
-              {t('views.direction', {
-                direction: t(`views.${model.direction === 'asc' ? 'ascending' : 'descending'}`),
-              })}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('views.displayProperties')}</Menu.Label>
-            {(['created', 'updated'] as const).map((property) => (
-              <Menu.CheckboxItem
-                key={property}
-                checked={model.displayProperties.includes(property)}
-                onChange={() => model.handlers.onToggleDisplayProperty(property)}
-              >
-                {t(`views.properties.${property}`)}
-              </Menu.CheckboxItem>
-            ))}
-          </Menu.Dropdown>
-        </Menu>
+        <ViewsCollectionControls
+          order={model.order}
+          direction={model.direction}
+          displayProperties={model.displayProperties}
+          onOrderChange={model.handlers.onOrderChange}
+          onToggleDirection={model.handlers.onToggleDirection}
+          onToggleDisplayProperty={model.handlers.onToggleDisplayProperty}
+        />
       </Group>
 
       {isEmpty ? (

@@ -337,28 +337,20 @@ test('views display options control order, direction, and visible date propertie
   const displayOptions = page.getByRole('button', { name: 'Display options' });
 
   await displayOptions.click();
-  const nameOrder = page.getByRole('menuitem', { name: 'Name' });
-  await expect(nameOrder).toHaveAttribute('aria-current', 'true');
-  await page.getByRole('menuitem', { name: 'Updated' }).click();
+  const ordering = page.getByRole('combobox', { name: 'Ordering' });
+  await expect(ordering).toHaveValue('Name');
+  await ordering.click();
+  await page.getByRole('option', { name: 'Updated' }).click();
   await expect(savedViews.getByRole('link').first()).toContainText('Zebra view');
-  await displayOptions.click();
-  await expect(page.getByRole('menuitem', { name: 'Updated' })).toHaveAttribute(
-    'aria-current',
-    'true',
-  );
-  await page.getByRole('menuitem', { name: 'Direction: Ascending' }).click();
+  await expect(ordering).toHaveValue('Updated');
+  await page.getByRole('button', { name: 'Direction: Ascending' }).click();
   await expect(savedViews.getByRole('link').first()).toContainText('Alpha view');
-  await displayOptions.click();
-  await expect(page.getByRole('menuitem', { name: 'Direction: Descending' })).toBeVisible();
-  const createdProperty = page.getByRole('menuitemcheckbox', { name: 'Created' });
-  await expect(createdProperty).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('button', { name: 'Direction: Descending' })).toBeVisible();
+  const createdProperty = page.getByRole('button', { name: 'Created' });
+  await expect(createdProperty).toHaveAttribute('aria-pressed', 'true');
   await createdProperty.click();
   await expect(savedViews.getByText(/Created ·/)).toHaveCount(0);
-  await displayOptions.click();
-  await expect(page.getByRole('menuitemcheckbox', { name: 'Created' })).toHaveAttribute(
-    'aria-checked',
-    'false',
-  );
+  await expect(createdProperty).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('project saved views open from the Projects collection', async ({ page }) => {
