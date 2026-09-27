@@ -13,7 +13,7 @@ import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
-import { cycleProgressTimeline } from '../cycle-progress.ts';
+import { cycleAssigneeDistribution, cycleProgressTimeline } from '../cycle-progress.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import type { IssueNavigationState } from '../focus.ts';
 import {
@@ -1679,6 +1679,7 @@ export function useCycleDetailPagePresenter() {
   const [cycleProgressOpen, setCycleProgressOpen] = useState(readCycleProgressOpen);
   const googleCalendarURL = cycleGoogleCalendarURL(cycle, cycleURL(cycle.number));
   const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
+  const assigneeDistribution = cycleAssigneeDistribution(data.cycleIssues);
   const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
   const progress = progressTimeline.reduce(
     (current, point) => (Date.parse(point.at) <= asOf ? point : current),
@@ -1919,6 +1920,7 @@ export function useCycleDetailPagePresenter() {
     googleCalendarURL,
     resources,
     progressTimeline,
+    assigneeDistribution,
     started,
     startedPercent,
     done,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { cycleProgressTimeline } from './cycle-progress.ts';
+import { cycleAssigneeDistribution, cycleProgressTimeline } from './cycle-progress.ts';
 import type { Activity, Cycle, Issue } from './types.ts';
 
 const cycle: Cycle = {
@@ -110,5 +110,26 @@ describe('cycleProgressTimeline', () => {
         new Date('2026-09-02T00:00:00Z'),
       ),
     ).toEqual([]);
+  });
+});
+
+describe('cycleAssigneeDistribution', () => {
+  it('groups the single-user assignee states and reports each scope share', () => {
+    expect(
+      cycleAssigneeDistribution([
+        { assignee: 'self' },
+        { assignee: 'self' },
+        { assignee: 'agent' },
+        { assignee: undefined },
+      ]),
+    ).toEqual([
+      { assignee: 'self', count: 2, share: 50 },
+      { assignee: 'agent', count: 1, share: 25 },
+      { assignee: 'unassigned', count: 1, share: 25 },
+    ]);
+  });
+
+  it('has no segments when the cycle has no issues', () => {
+    expect(cycleAssigneeDistribution([])).toEqual([]);
   });
 });

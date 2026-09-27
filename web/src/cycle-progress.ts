@@ -9,6 +9,26 @@ export type CycleProgressPoint = {
 
 type CycleProgressIssue = Pick<Issue, 'id' | 'status' | 'createdAt' | 'cycleAddedAt'>;
 
+export type CycleAssigneeKey = 'self' | 'agent' | 'unassigned';
+export type CycleAssigneeShare = {
+  assignee: CycleAssigneeKey;
+  count: number;
+  share: number;
+};
+
+export function cycleAssigneeDistribution(issues: Pick<Issue, 'assignee'>[]): CycleAssigneeShare[] {
+  if (issues.length === 0) return [];
+  const counts: Record<CycleAssigneeKey, number> = { self: 0, agent: 0, unassigned: 0 };
+  for (const issue of issues) counts[issue.assignee ?? 'unassigned']++;
+  return (Object.keys(counts) as CycleAssigneeKey[])
+    .filter((assignee) => counts[assignee] > 0)
+    .map((assignee) => ({
+      assignee,
+      count: counts[assignee],
+      share: (counts[assignee] / issues.length) * 100,
+    }));
+}
+
 const completedStatuses = new Set<IssueStatus>(['done', 'canceled']);
 
 function statusValue(value: unknown): IssueStatus | null {

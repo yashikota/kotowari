@@ -2828,7 +2828,12 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   const cycle = (await created.json()) as { id: number; number: number };
   for (const [index, status] of ['in_progress', 'done', 'canceled'].entries()) {
     const issue = await request.post('/api/issues', {
-      data: { title: `Cycle detail progress ${cycle.number} ${index}`, status, cycleId: cycle.id },
+      data: {
+        title: `Cycle detail progress ${cycle.number} ${index}`,
+        status,
+        assignee: index === 0 ? 'self' : index === 1 ? 'agent' : undefined,
+        cycleId: cycle.id,
+      },
     });
     expect(issue.ok()).toBeTruthy();
   }
@@ -2853,6 +2858,15 @@ test('cycle details summarize scope, started, and completed work', async ({ page
   await expect(progress.getByText('1 · 33%', { exact: true })).toBeVisible();
   await expect(progress.getByText('2 · 67%', { exact: true })).toBeVisible();
   await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toBeVisible();
+  const assignees = progress.getByRole('region', { name: 'Assignees', exact: true });
+  await expect(assignees).toBeVisible();
+  await expect(
+    assignees.getByRole('img', { name: 'Cycle issue distribution by assignee' }),
+  ).toBeVisible();
+  await expect(assignees.getByText('You', { exact: true })).toBeVisible();
+  await expect(assignees.getByText('Agent', { exact: true })).toBeVisible();
+  await expect(assignees.getByText('Unassigned', { exact: true })).toBeVisible();
+  await expect(assignees.getByText('33% · 1/3', { exact: true })).toHaveCount(3);
   await expect(progress.getByRole('progressbar', { name: 'Cycle completion' })).toHaveAttribute(
     'aria-valuetext',
     '67%',

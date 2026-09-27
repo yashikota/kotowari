@@ -32,6 +32,7 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { CycleListItem } from '../components/CycleListItem.tsx';
 import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { CycleProgressChart } from '../components/CycleProgressChart.tsx';
+import { CycleAssigneeBreakdown } from '../components/CycleAssigneeBreakdown.tsx';
 import { ProjectListView } from '../components/ProjectListView.tsx';
 import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
@@ -1006,6 +1007,7 @@ export function CycleDetailPageView({
         googleCalendarURL,
         resources,
         progressTimeline,
+        assigneeDistribution,
         started,
         startedPercent,
         done,
@@ -1336,6 +1338,7 @@ export function CycleDetailPageView({
                       onToggle={handlers.onToggleCycleProgress}
                     >
                       <CycleProgressChart cycle={cycle} points={progressTimeline} locale={locale} />
+                      <CycleAssigneeBreakdown items={assigneeDistribution} />
                     </CycleProgressSummary>
                     {cycle.description ? <Text size="sm">{cycle.description}</Text> : null}
                   </Stack>
