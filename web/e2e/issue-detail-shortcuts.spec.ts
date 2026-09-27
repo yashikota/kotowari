@@ -37,6 +37,40 @@ test('issue shortcuts assign to me, toggle favorite, and open the due-date picke
   expect(resetFavorite.ok()).toBeTruthy();
 });
 
+test('issue options menu exposes the Linear favorite action and shortcut', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/issues', {
+    data: { title: `Issue menu favorite ${Date.now()}`, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  await page.goto(`/issues/${issue.identifier}`);
+
+  const issueOptions = page.getByRole('button', { name: 'Issue options' });
+  await issueOptions.click();
+  const menu = page.getByRole('menu', { name: 'Issue options' });
+  const favoriteAction = menu.getByRole('menuitem', { name: 'Favorite' });
+  await expect(favoriteAction).toBeVisible();
+  await expect(favoriteAction.getByTestId('copy-shortcut')).toHaveText('Alt F');
+  await favoriteAction.click();
+  await expect(page.getByRole('button', { name: 'Remove from favorites' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await issueOptions.click();
+  await page
+    .getByRole('menu', { name: 'Issue options' })
+    .getByRole('menuitem', { name: 'Remove from favorites' })
+    .click();
+  await expect(page.getByRole('button', { name: 'Add to favorites' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+});
+
 test('Shift+H opens the issue reminder submenu', async ({ page, request }) => {
   const created = await request.post('/api/issues', {
     data: { title: `Issue reminder shortcut ${Date.now()}` },
@@ -118,7 +152,9 @@ test('issue property shortcuts open focused status, priority, label, and estimat
 
   await issueOptions.focus();
   await page.keyboard.press('l');
-  const labelSearch = page.getByRole('textbox', { name: 'New label' });
+  const labelPicker = page.getByRole('dialog', { name: 'Change labels' });
+  await expect(labelPicker).toBeVisible();
+  const labelSearch = labelPicker.getByRole('textbox', { name: 'Change labels' });
   await expect(labelSearch).toBeVisible();
   await expect(labelSearch).toBeFocused();
 });

@@ -1018,7 +1018,7 @@ export function useIssueDetailPresenter({
       onCloseDueDate: () => setDueDateOpen(false),
       onSaveDueDate: () => saveDueDate(dueDateValue || null),
       onClearDueDate: () => saveDueDate(null),
-      Favorite_onClick29: async () => {
+      onToggleFavorite: async () => {
         await patch({ isFavorite: !issue.isFavorite });
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },

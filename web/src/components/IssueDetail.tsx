@@ -235,7 +235,7 @@ export function IssueDetailView({
                   aria-label={t(issue.isFavorite ? 'issueFavorite.remove' : 'issueFavorite.add')}
                   aria-pressed={issue.isFavorite}
                   title={t(issue.isFavorite ? 'issueFavorite.remove' : 'issueFavorite.add')}
-                  onClick={handlers.Favorite_onClick29}
+                  onClick={handlers.onToggleFavorite}
                 >
                   <IconStar
                     size={15}
@@ -539,6 +539,13 @@ export function IssueDetailView({
                     </Menu.Sub>
                     <Menu.Item onClick={handlers.Make_copy_onClick42}>
                       {t('issueActions.makeCopy')}
+                    </Menu.Item>
+                    <Menu.Divider />
+                    <Menu.Item
+                      onClick={handlers.onToggleFavorite}
+                      rightSection={<CopyShortcut label={`${alternateKey} F`} />}
+                    >
+                      {t(issue.isFavorite ? 'issueFavorite.remove' : 'issueActions.favorite')}
                     </Menu.Item>
                     <Menu.Sub opened={reminderMenuOpen} onChange={handlers.onReminderMenuChange}>
                       <Menu.Sub.Target>
@@ -1674,7 +1681,7 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
           void sendIntent('onFocusDescription', []);
           break;
         case 'toggle-favorite':
-          void sendIntent('Favorite_onClick29', []);
+          void sendIntent('onToggleFavorite', []);
           break;
         case 'rename':
           titleRef.current?.focus();
