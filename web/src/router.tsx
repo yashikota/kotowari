@@ -603,6 +603,8 @@ const projectViewBuilderRoute = createRoute({
 const viewsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/views',
+  validateSearch: (raw: Record<string, unknown>) =>
+    raw.entity === 'projects' ? { entity: 'projects' as const } : {},
   loader: () => api.views(),
   component: lazyRouteComponent(() => import('./pages/ViewsIndexPages.tsx'), 'ViewsIndexPage'),
 });

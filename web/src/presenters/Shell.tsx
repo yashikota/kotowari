@@ -107,7 +107,8 @@ export function useShellPresenter() {
     pathname === '/inbox' ||
     pathname === '/projects' ||
     pathname === '/cycles' ||
-    pathname === '/initiatives';
+    pathname === '/initiatives' ||
+    pathname === '/views';
   const [cycleNavigationOpen, setCycleNavigationOpen] = useState(false);
   const [cycleNavigationQuery, setCycleNavigationQuery] = useState('');
   const [cycles, setCycles] = useState<Cycle[]>([]);

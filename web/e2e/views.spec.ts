@@ -20,7 +20,9 @@ test('workspace views page lists saved views and opens them', async ({ page }) =
     .click();
 
   await expect(page).toHaveURL(/\/views$/);
-  await expect(page.getByRole('heading', { name: 'Views', level: 2 })).toBeVisible();
+  await expect(
+    page.getByRole('main').locator('header').getByRole('heading', { name: 'Views', level: 2 }),
+  ).toBeVisible();
   await expect(
     page
       .getByRole('navigation', { name: 'Workspace navigation' })
@@ -184,13 +186,174 @@ test('workspace views page has a useful empty state and create action', async ({
     else await route.continue();
   });
   await page.goto('/views');
-  await expect(page.getByText('No saved views yet', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'New view', exact: true }).first().click();
+  const emptyState = page.getByRole('region', { name: 'Views' });
+  await expect(emptyState.getByRole('heading', { name: 'Views', level: 2 })).toBeVisible();
+  await page
+    .getByRole('region', { name: 'Views' })
+    .getByRole('button', { name: 'Create new view', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/views\/new/);
   await expect(page.getByRole('textbox', { name: 'View name' })).toHaveValue('All issues');
   await expect(page.getByRole('textbox', { name: 'Description' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose icon' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Display options' })).toBeVisible();
+});
+
+test('views collection matches the centered Linear-style empty state and switches entity', async ({
+  page,
+}) => {
+  await page.route('**/api/views', async (route) => {
+    if (route.request().method() === 'GET') await route.fulfill({ json: [] });
+    else await route.continue();
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/views');
+
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
+  const tabs = page.getByRole('tablist', { name: 'View type' });
+  await expect(tabs.getByRole('tab', { name: 'Issues' })).toHaveAttribute('aria-selected', 'true');
+  await expect(tabs.getByRole('tab', { name: 'Projects' })).toHaveAttribute(
+    'aria-selected',
+    'false',
+  );
+
+  const emptyState = page.getByRole('region', { name: 'Views' });
+  await expect(emptyState.getByRole('heading', { name: 'Views', level: 2 })).toBeVisible();
+  await expect(emptyState).toContainText(
+    'Create custom views with filters to focus on the issues you want to see. Save and favorite views for quick access.',
+  );
+  await expect(emptyState.getByRole('link', { name: 'Documentation' })).toHaveAttribute(
+    'href',
+    '/pages',
+  );
+  const emptyBounds = await emptyState.boundingBox();
+  expect(emptyBounds).not.toBeNull();
+  expect(emptyBounds!.height).toBeGreaterThan(600);
+  expect(Math.abs(emptyBounds!.y + emptyBounds!.height / 2 - 500)).toBeLessThan(65);
+
+  await tabs.getByRole('tab', { name: 'Projects' }).click();
+  await expect(page).toHaveURL(/\/views\?entity=projects$/);
+  await expect(tabs.getByRole('tab', { name: 'Projects' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(emptyState).toContainText(
+    'Create project views with filters and layout options. Save your favorite project views to return to them quickly.',
+  );
+  await emptyState.getByRole('button', { name: 'Create new view' }).click();
+  await expect(page).toHaveURL(/\/views\/projects\/new/);
+  await expect(page.getByRole('textbox', { name: 'View name' })).toBeVisible();
+});
+
+test('views empty state fits a narrow viewport without clipping its actions', async ({ page }) => {
+  await page.route('**/api/views', async (route) => {
+    if (route.request().method() === 'GET') await route.fulfill({ json: [] });
+    else await route.continue();
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/views');
+
+  const emptyState = page.getByRole('region', { name: 'Views' });
+  await expect(emptyState).toBeVisible();
+  await expect(emptyState.getByRole('button', { name: 'Create new view' })).toBeInViewport();
+  await expect(emptyState.getByRole('link', { name: 'Documentation' })).toBeInViewport();
+  const contentFits = await emptyState.evaluate(
+    (section) => section.scrollWidth <= section.clientWidth + 1,
+  );
+  expect(contentFits).toBe(true);
+});
+
+test('views display options control order, direction, and visible date properties', async ({
+  page,
+}) => {
+  await page.route('**/api/views', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        json: [
+          {
+            name: 'Zebra view',
+            slug: 'zebra-view',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+          {
+            name: 'Alpha view',
+            slug: 'alpha-view',
+            createdAt: '2026-01-02T00:00:00.000Z',
+            updatedAt: '2026-02-01T00:00:00.000Z',
+          },
+        ],
+      });
+    } else await route.continue();
+  });
+  await page.goto('/views');
+  const savedViews = page.getByRole('main').getByRole('navigation', { name: 'Saved views' });
+  await expect(savedViews.getByRole('link').first()).toContainText('Alpha view');
+  await expect(savedViews.getByText(/Created ·/)).toHaveCount(2);
+  const displayOptions = page.getByRole('button', { name: 'Display options' });
+
+  await displayOptions.click();
+  const nameOrder = page.getByRole('menuitem', { name: 'Name' });
+  await expect(nameOrder).toHaveAttribute('aria-current', 'true');
+  await page.getByRole('menuitem', { name: 'Updated' }).click();
+  await expect(savedViews.getByRole('link').first()).toContainText('Zebra view');
+  await displayOptions.click();
+  await expect(page.getByRole('menuitem', { name: 'Updated' })).toHaveAttribute(
+    'aria-current',
+    'true',
+  );
+  await page.getByRole('menuitem', { name: 'Direction: Ascending' }).click();
+  await expect(savedViews.getByRole('link').first()).toContainText('Alpha view');
+  await displayOptions.click();
+  await expect(page.getByRole('menuitem', { name: 'Direction: Descending' })).toBeVisible();
+  const createdProperty = page.getByRole('menuitemcheckbox', { name: 'Created' });
+  await expect(createdProperty).toHaveAttribute('aria-checked', 'true');
+  await createdProperty.click();
+  await expect(savedViews.getByText(/Created ·/)).toHaveCount(0);
+  await displayOptions.click();
+  await expect(page.getByRole('menuitemcheckbox', { name: 'Created' })).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+});
+
+test('project saved views open from the Projects collection', async ({ page }) => {
+  const projectView = {
+    slug: 'roadmap',
+    name: 'Roadmap',
+    description: 'Near-term work',
+    icon: 'target',
+    search: { status: ['started'], view: 'timeline' },
+    createdAt: '2026-02-01T00:00:00.000Z',
+    updatedAt: '2026-03-01T00:00:00.000Z',
+  };
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify([value])), {
+    key: 'kotowari.project-views.v1',
+    value: projectView,
+  });
+  await page.goto('/views?entity=projects');
+
+  const savedViews = page.getByRole('main').getByRole('navigation', { name: 'Saved views' });
+  await expect(savedViews.getByRole('button', { name: 'Roadmap' })).toBeVisible();
+  await expect(savedViews).toContainText('Near-term work');
+  await savedViews.getByRole('button', { name: 'Roadmap' }).click();
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return {
+        pathname: url.pathname,
+        status: url.searchParams.get('status'),
+        view: url.searchParams.get('view'),
+        projectView: url.searchParams.get('projectView'),
+      };
+    })
+    .toEqual({
+      pathname: '/projects',
+      status: '["started"]',
+      view: 'timeline',
+      projectView: 'roadmap',
+    });
+  await expect(page.getByRole('heading', { name: 'Projects', level: 2 })).toBeVisible();
 });
 
 test('new view editor saves its description, icon, filter, and live preview', async ({

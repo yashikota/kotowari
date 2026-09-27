@@ -168,7 +168,28 @@
   "views": {
     "description": "Saved issue views for your workspace.",
     "emptyTitle": "No saved views yet",
-    "emptyDescription": "Create a view to save filters and layout."
+    "emptyDescription": "Create a view to save filters and layout.",
+    "create": "Create new view",
+    "collectionTabs": "View type",
+    "collectionToolbar": "View controls",
+    "displayOptions": "Display options",
+    "ordering": "Ordering",
+    "order": {
+      "name": "Name",
+      "updated": "Updated"
+    },
+    "direction": "Direction: {{direction}}",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "displayProperties": "Display properties",
+    "properties": {
+      "created": "Created",
+      "updated": "Updated"
+    },
+    "emptyDescriptionIssues": "Create custom views with filters to focus on the issues you want to see. Save and favorite views for quick access.",
+    "emptyDescriptionProjects": "Create project views with filters and layout options. Save your favorite project views to return to them quickly.",
+    "documentation": "Documentation",
+    "notAvailable": "—"
   },
   "viewBuilder": {
     "defaultName": "All issues",

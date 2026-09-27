@@ -475,13 +475,15 @@ export function useProjectViewBuilderPresenter() {
   function createView() {
     const cleanName = name.trim();
     if (!cleanName) return;
+    const now = new Date().toISOString();
     const view: ProjectSavedView = {
       slug: uniqueSlug(cleanName, projectViews.views),
       name: cleanName,
       description: description.trim(),
       icon,
       search: compactSearch(search),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     projectViews.save(view);
     void navigate({

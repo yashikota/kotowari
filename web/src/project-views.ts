@@ -209,6 +209,7 @@ export type ProjectSavedView = {
   description: string;
   icon?: ViewIconName;
   search: ProjectViewSearch;
+  createdAt?: string;
   updatedAt: string;
 };
 
