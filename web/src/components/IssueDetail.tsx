@@ -245,26 +245,6 @@ export function IssueDetailView({
                   />
                 </ActionIcon>
               ) : null}
-              <ActionIcon
-                type="button"
-                variant="subtle"
-                color={isSubscribed ? 'blue' : 'gray'}
-                aria-label={t(
-                  isSubscribed ? 'issueSubscription.unsubscribe' : 'issueSubscription.subscribe',
-                )}
-                aria-pressed={isSubscribed}
-                title={t(
-                  isSubscribed ? 'issueSubscription.unsubscribe' : 'issueSubscription.subscribe',
-                )}
-                onClick={handlers.Subscription_onClick}
-              >
-                <IconBell
-                  size={15}
-                  stroke={1.7}
-                  fill={isSubscribed ? 'currentColor' : 'none'}
-                  aria-hidden="true"
-                />
-              </ActionIcon>
               {issue.parentIdentifier ? (
                 <Button type="button" variant="subtle" onClick={handlers.onClick1}>
                   {issue.parentIdentifier}
@@ -1027,7 +1007,36 @@ export function IssueDetailView({
                   )}
                 </Section>
 
-                <Section title={t('ui.activity')} ariaLabel={t('ui.activity')}>
+                <Section
+                  title={t('ui.activity')}
+                  ariaLabel={t('ui.activity')}
+                  action={
+                    <ActionIcon
+                      type="button"
+                      variant="subtle"
+                      color={isSubscribed ? 'blue' : 'gray'}
+                      aria-label={t(
+                        isSubscribed
+                          ? 'issueSubscription.unsubscribe'
+                          : 'issueSubscription.subscribe',
+                      )}
+                      aria-pressed={isSubscribed}
+                      title={t(
+                        isSubscribed
+                          ? 'issueSubscription.unsubscribe'
+                          : 'issueSubscription.subscribe',
+                      )}
+                      onClick={handlers.Subscription_onClick}
+                    >
+                      <IconBell
+                        size={15}
+                        stroke={1.7}
+                        fill={isSubscribed ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                      />
+                    </ActionIcon>
+                  }
+                >
                   <Stack gap="sm">
                     {timeline.map((entry) => {
                       if (entry.kind === 'activity') {

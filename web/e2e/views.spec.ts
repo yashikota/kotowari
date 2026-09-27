@@ -110,8 +110,11 @@ test('subscriber filters work in issue lists and persist in saved views', async 
   const subscribedIssue = (await subscribedResponse.json()) as { identifier: string };
 
   await page.goto(`/issues/${subscribedIssue.identifier}`);
-  await page.getByRole('button', { name: 'Subscribe to issue' }).click();
-  await expect(page.getByRole('button', { name: 'Unsubscribe from issue' })).toHaveAttribute(
+  const activity = page.getByRole('region', { name: 'Activity', exact: true });
+  const subscribeButton = activity.getByRole('button', { name: 'Subscribe to issue' });
+  await expect(subscribeButton).toBeVisible();
+  await subscribeButton.click();
+  await expect(activity.getByRole('button', { name: 'Unsubscribe from issue' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );

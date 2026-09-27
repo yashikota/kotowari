@@ -52,8 +52,11 @@ test('self assignment works across issue details, My issues, and list grouping',
   await expect(page.getByRole('option', { name: new RegExp(issue.identifier) })).toBeVisible();
 
   await page.goto(`/issues/${issue.identifier}`);
-  await page.getByRole('button', { name: 'Subscribe to issue' }).click();
-  await expect(page.getByRole('button', { name: 'Unsubscribe from issue' })).toHaveAttribute(
+  const activity = page.getByRole('region', { name: 'Activity', exact: true });
+  const subscribeButton = activity.getByRole('button', { name: 'Subscribe to issue' });
+  await expect(subscribeButton).toBeVisible();
+  await subscribeButton.click();
+  await expect(activity.getByRole('button', { name: 'Unsubscribe from issue' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
