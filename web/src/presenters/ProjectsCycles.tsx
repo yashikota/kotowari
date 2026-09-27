@@ -250,7 +250,7 @@ export function useProjectsPagePresenter() {
   const [icon, setIcon] = useState('cube');
   const [iconColor, setIconColor] = useState('blue');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('planned');
+  const [status, setStatus] = useState('backlog');
   const [lead, setLead] = useState<'' | 'self'>('');
   const [priority, setPriority] = useState(0);
   const [startDate, setStartDate] = useState('');
@@ -1112,7 +1112,7 @@ export function useProjectsPagePresenter() {
         setIcon('cube');
         setIconColor('blue');
         setDescription('');
-        setStatus('planned');
+        setStatus('backlog');
         setLead('');
         setPriority(0);
         setStartDate('');

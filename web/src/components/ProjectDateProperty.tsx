@@ -52,10 +52,12 @@ export function ProjectDateProperty({
   label,
   value,
   onChange,
+  compact = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  compact?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const { preferences } = usePersonalPreferences();
@@ -161,15 +163,32 @@ export function ProjectDateProperty({
           type="button"
           variant="default"
           size="xs"
-          leftSection={<IconCalendarEvent size={14} stroke={1.7} aria-hidden="true" />}
+          leftSection={
+            compact && !value ? undefined : (
+              <IconCalendarEvent size={14} stroke={1.7} aria-hidden="true" />
+            )
+          }
           aria-label={t('projectDate.change', { field: label })}
+          title={label}
           onPointerDown={() => {
             if (!opened) openPicker();
           }}
           onClick={() => (opened ? setOpened(false) : openPicker())}
-          styles={{ root: { borderRadius: 999 } }}
+          styles={{
+            root: {
+              borderRadius: compact ? 'var(--mantine-radius-sm)' : 999,
+              width: compact && !value ? 30 : undefined,
+              paddingInline: compact && !value ? 6 : undefined,
+            },
+          }}
         >
-          {value ? formatCalendarDate(value, locale) : label}
+          {compact && !value ? (
+            <IconCalendarEvent size={14} stroke={1.7} aria-hidden="true" />
+          ) : value ? (
+            formatCalendarDate(value, locale)
+          ) : (
+            label
+          )}
         </Button>
       </Popover.Target>
       <Popover.Dropdown aria-label={t('projectDate.change', { field: label })}>

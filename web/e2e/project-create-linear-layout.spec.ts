@@ -1,5 +1,29 @@
 import { expect, test } from '@playwright/test';
 
+test('new projects default to Linear backlog and a persistable project icon', async ({
+  page,
+  request,
+}) => {
+  const projectName = `Linear defaults ${Date.now()}`;
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'New project' }).first().click();
+
+  const dialog = page.getByRole('dialog', { name: 'New project' });
+  await expect(dialog.getByRole('combobox', { name: 'Status' })).toHaveValue('Backlog');
+  await dialog.getByRole('textbox', { name: 'Project name' }).fill(projectName);
+  await dialog.getByRole('button', { name: 'Create project' }).click();
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/);
+
+  const slug = new URL(page.url()).pathname.split('/').pop();
+  if (!slug) throw new Error('expected created project route');
+  const response = await request.get(`/api/projects/${slug}`);
+  expect(await response.json()).toMatchObject({
+    status: 'backlog',
+    icon: 'cube',
+    iconColor: 'blue',
+  });
+});
+
 test('project creation uses a spacious Linear-style canvas with a persistent action bar', async ({
   page,
 }) => {
@@ -25,6 +49,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   const icon = dialog.getByRole('button', { name: 'Choose project icon' });
   const summary = dialog.getByRole('textbox', { name: 'Summary' });
   const status = dialog.getByRole('combobox', { name: 'Status' });
+  const lead = dialog.getByRole('combobox', { name: 'Lead' });
   const startDate = dialog.getByRole('button', { name: 'Change Start date' });
   const targetDate = dialog.getByRole('button', { name: 'Change Target date' });
   const labels = dialog.getByRole('combobox', { name: 'Project labels' });
@@ -66,6 +91,8 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   expect(iconBounds).not.toBeNull();
   expect(summaryBounds).not.toBeNull();
   expect(statusBounds).not.toBeNull();
+  await expect(status).toHaveValue('Backlog');
+  await expect(lead).toHaveAttribute('placeholder', 'Lead');
   expect(startDateBounds).not.toBeNull();
   expect(targetDateBounds).not.toBeNull();
   expect(labelsBounds).not.toBeNull();
@@ -148,6 +175,7 @@ test('project dates use a compact picker and can be cleared', async ({ page }) =
   const startDate = dialog.getByRole('button', { name: 'Change Start date' });
   const targetDate = dialog.getByRole('button', { name: 'Change Target date' });
   await startDate.click();
+  await expect(startDate).toHaveText('');
   const datePopover = page.getByRole('dialog', { name: 'Change Start date' });
   const dateInput = datePopover.getByRole('textbox', { name: 'Set Start date' });
   await dateInput.fill('2026-09-26');
@@ -160,7 +188,7 @@ test('project dates use a compact picker and can be cleared', async ({ page }) =
   await startDate.click();
   await expect(datePopover).toBeVisible();
   await datePopover.getByRole('button', { name: 'Clear date' }).click();
-  await expect(startDate).toHaveText('Start date');
+  await expect(startDate).toHaveText('');
 });
 
 test('project dates support Linear-style precision tabs and natural-language periods', async ({

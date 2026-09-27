@@ -12,7 +12,16 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconChevronDown, IconPlus, IconSparkles, IconTag, IconTrash } from '@tabler/icons-react';
+import {
+  IconAntennaBars1,
+  IconCircleDashed,
+  IconChevronDown,
+  IconPlus,
+  IconSparkles,
+  IconTag,
+  IconTrash,
+  IconUser,
+} from '@tabler/icons-react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import type { RefObject } from 'react';
@@ -22,13 +31,23 @@ import {
 } from './ProjectCreateDependencies.tsx';
 import { ProjectDateProperty } from './ProjectDateProperty.tsx';
 import { ProjectIconPicker } from './ProjectIcon.tsx';
-import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
+import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
+import { projectWorkflowStatusCategory, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
 import { formatCalendarDate } from '../time.ts';
 import { ProjectCreationAssistant } from './ProjectCreationAssistant.tsx';
 import type { useProjectsPagePresenter } from '../presenters/ProjectsCycles.tsx';
+import type { IssueStatus, ProjectStatus } from '../types.ts';
 
 type ProjectCreateDialogModel = ReturnType<typeof useProjectsPagePresenter>;
+
+const PROJECT_STATUS_ISSUE_ICON: Record<ProjectStatus, IssueStatus> = {
+  backlog: 'backlog',
+  planned: 'todo',
+  started: 'in_progress',
+  completed: 'done',
+  canceled: 'canceled',
+};
 
 export function ProjectCreateDialog({
   model,
@@ -66,6 +85,7 @@ export function ProjectCreateDialog({
     summary,
     targetDate,
   } = model;
+  const statusCategory = projectWorkflowStatusCategory(status, model.projectWorkflowStatuses);
 
   return (
     <Modal
@@ -211,9 +231,22 @@ export function ProjectCreateDialog({
                   aria-label={t('field.status')}
                   value={status}
                   onChange={handlers.New_project_status_onChange}
+                  leftSection={
+                    statusCategory === 'backlog' ? (
+                      <IconCircleDashed
+                        size={14}
+                        stroke={1.75}
+                        color="var(--mantine-color-orange-5)"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <IssueStatusIcon status={PROJECT_STATUS_ISSUE_ICON[statusCategory]} />
+                    )
+                  }
+                  leftSectionPointerEvents="none"
                   size="xs"
                   style={{ width: 110 }}
-                  styles={{ input: { borderRadius: 999 } }}
+                  styles={{ input: { borderRadius: 999 }, section: { width: 24 } }}
                   searchable
                   comboboxProps={{ withinPortal: false }}
                   data={model.projectWorkflowStatuses.map((workflowStatus) => ({
@@ -229,9 +262,22 @@ export function ProjectCreateDialog({
                   aria-label={t('field.priority')}
                   value={String(priority)}
                   onChange={handlers.New_project_priority_onChange}
+                  leftSection={
+                    priority === 0 ? (
+                      <IconAntennaBars1
+                        size={13}
+                        stroke={1.75}
+                        color="var(--mantine-color-gray-5)"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <IssuePriorityIcon priority={priority} />
+                    )
+                  }
+                  leftSectionPointerEvents="none"
                   size="xs"
-                  style={{ width: 100 }}
-                  styles={{ input: { borderRadius: 999 } }}
+                  style={{ width: 112 }}
+                  styles={{ input: { borderRadius: 999 }, section: { width: 24 } }}
                   searchable
                   comboboxProps={{ withinPortal: false }}
                   data={[0, 1, 2, 3, 4].map((value) => ({
@@ -243,10 +289,19 @@ export function ProjectCreateDialog({
                   aria-label={t('projectList.property.lead')}
                   value={lead || null}
                   onChange={handlers.New_project_lead_onChange}
-                  placeholder={t('projectList.leadUnassigned')}
+                  placeholder={t('projectList.property.lead')}
+                  leftSection={
+                    <IconUser
+                      size={14}
+                      stroke={1.7}
+                      color="var(--mantine-color-gray-5)"
+                      aria-hidden="true"
+                    />
+                  }
+                  leftSectionPointerEvents="none"
                   size="xs"
                   style={{ width: 110 }}
-                  styles={{ input: { borderRadius: 999 } }}
+                  styles={{ input: { borderRadius: 999 }, section: { width: 24 } }}
                   searchable
                   clearable
                   comboboxProps={{ withinPortal: false }}
@@ -256,11 +311,13 @@ export function ProjectCreateDialog({
                   label={t('modal.projectStartDate')}
                   value={startDate}
                   onChange={handlers.onProjectStartDateChange}
+                  compact={desktopViewport}
                 />
                 <ProjectDateProperty
                   label={t('modal.projectTargetDate')}
                   value={targetDate}
                   onChange={handlers.onProjectTargetDateChange}
+                  compact={desktopViewport}
                 />
               </Group>
               <Group gap="xs" wrap="wrap" align="center" mt={3}>
