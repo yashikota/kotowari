@@ -1,4 +1,5 @@
-import { Box, Button, Group, Stack, Text, TextInput } from '@mantine/core';
+import { ActionIcon, Box, Button, Group, Stack, Text, TextInput } from '@mantine/core';
+import { IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
@@ -60,6 +61,22 @@ export function ViewPageView({
                 }
                 actions={
                   <Group gap="xs" wrap="nowrap">
+                    <ActionIcon
+                      type="button"
+                      variant="subtle"
+                      color={view.isFavorite ? 'yellow' : 'gray'}
+                      aria-label={t(view.isFavorite ? 'viewFavorite.remove' : 'viewFavorite.add')}
+                      aria-pressed={!!view.isFavorite}
+                      title={t(view.isFavorite ? 'viewFavorite.remove' : 'viewFavorite.add')}
+                      onClick={handlers.onToggleFavorite}
+                    >
+                      <IconStar
+                        size={15}
+                        stroke={1.7}
+                        fill={view.isFavorite ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                      />
+                    </ActionIcon>
                     <TextInput
                       ref={viewNameRef}
                       aria-label={t('ui.viewName')}

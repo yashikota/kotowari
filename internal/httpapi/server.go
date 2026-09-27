@@ -579,6 +579,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 	var in struct {
 		Name                string                 `json:"name"`
 		Slug                string                 `json:"slug"`
+		IsFavorite          *bool                  `json:"isFavorite"`
 		Description         *string                `json:"description"`
 		Icon                *string                `json:"icon"`
 		Display             string                 `json:"display"`
@@ -623,7 +624,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		return store.CreateViewInput{}, err
 	}
 	return store.CreateViewInput{
-		Name: in.Name, Slug: in.Slug, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
+		Name: in.Name, Slug: in.Slug, IsFavorite: in.IsFavorite, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 		Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee,
@@ -688,12 +689,48 @@ func (s *Server) patchView(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
+	if in.IsFavorite != nil && !hasViewContentPatch(in) {
+		out, err := s.store.UpdateViewFavorite(r.PathValue("slug"), *in.IsFavorite)
+		if err == nil {
+			out, err = s.store.GetView(r.PathValue("slug"))
+		}
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, out)
+		return
+	}
+	favorite := in.IsFavorite
+	in.IsFavorite = nil
 	out, err := s.store.UpdateView(r.PathValue("slug"), in)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
+	if favorite != nil {
+		_, err = s.store.UpdateViewFavorite(r.PathValue("slug"), *favorite)
+		if err == nil {
+			out, err = s.store.GetView(r.PathValue("slug"))
+		}
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+func hasViewContentPatch(in store.CreateViewInput) bool {
+	return in.Name != "" || in.Description != nil || in.Icon != nil || in.Display != "" || in.GroupBy != "" ||
+		in.OrderBy != "" || in.SubGroupBy != "" || in.Direction != "" || in.CompletedIssues != "" ||
+		in.ShowSubIssues != nil || in.NestedSubIssues != "" || in.ShowEmptyGroups != nil || in.DisplayProperties != nil ||
+		in.Status != nil || in.Statuses != nil || in.Assignee != nil || in.Project != nil || in.Cycle != nil ||
+		in.Labels != nil || in.LabelOperator != "" || in.Priority != nil || in.Priorities != nil || in.Type != nil ||
+		in.Estimate != nil || in.Estimates != nil || in.NoEstimate != nil || in.DueDate != nil || in.Relation != nil ||
+		in.LinkSources != nil || in.TemplateSlugs != nil || in.Content != nil || in.MilestoneName != nil ||
+		in.DateField != nil || in.DateRange != nil || in.ProjectStatus != nil || in.ProjectPriority != nil ||
+		in.ProjectLabels != nil || in.AddedToCycle != nil || in.AdvancedFilter != nil || in.AdvancedFilterGroup != nil
 }
 
 func (s *Server) deleteView(w http.ResponseWriter, r *http.Request) {

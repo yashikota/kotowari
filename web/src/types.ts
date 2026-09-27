@@ -278,6 +278,7 @@ export type View = {
   id: number;
   name: string;
   slug: string;
+  isFavorite?: boolean;
   description?: string;
   icon?: string;
   display: 'list' | 'board';

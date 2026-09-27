@@ -8,6 +8,7 @@ import {
 import type * as React from 'react';
 import { useState } from 'react';
 import { api, type IssueSearch } from '../api.ts';
+import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import {
   DEFAULT_DISPLAY_PROPERTIES,
@@ -203,6 +204,10 @@ export function useViewPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setView({ ...view, name: e.target.value }),
       View_name_onBlur2: () => save({ name: view.name }),
+      onToggleFavorite: async () => {
+        await save({ isFavorite: !view.isFavorite });
+        signals.dispatchEvent(new Event('kotowari:refresh'));
+      },
       onSelect11: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {

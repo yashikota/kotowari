@@ -1391,6 +1391,48 @@ func TestViewCRUDAndIssueFilter(t *testing.T) {
 	}
 }
 
+func TestViewFavoritePatch(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/views", `{"name":"Pinned","slug":"pinned"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create view %d %s", created.Code, created.Body.String())
+	}
+	var before map[string]any
+	if err := json.Unmarshal(created.Body.Bytes(), &before); err != nil {
+		t.Fatal(err)
+	}
+	updated := doJSON(t, s, http.MethodPatch, "/api/views/pinned", `{"isFavorite":true}`)
+	if updated.Code != http.StatusOK {
+		t.Fatalf("favorite view %d %s", updated.Code, updated.Body.String())
+	}
+	var view map[string]any
+	if err := json.Unmarshal(updated.Body.Bytes(), &view); err != nil {
+		t.Fatal(err)
+	}
+	if view["isFavorite"] != true || view["updatedAt"] != before["updatedAt"] {
+		t.Fatalf("favorite patch changed content or failed: %#v", view)
+	}
+	listed := doJSON(t, s, http.MethodGet, "/api/views", "")
+	var views []map[string]any
+	if err := json.Unmarshal(listed.Body.Bytes(), &views); err != nil {
+		t.Fatal(err)
+	}
+	if len(views) != 1 || views[0]["isFavorite"] != true {
+		t.Fatalf("favorite view missing from list: %#v", views)
+	}
+	removed := doJSON(t, s, http.MethodPatch, "/api/views/pinned", `{"isFavorite":false}`)
+	if removed.Code != http.StatusOK {
+		t.Fatalf("remove favorite %d %s", removed.Code, removed.Body.String())
+	}
+	view = map[string]any{}
+	if err := json.Unmarshal(removed.Body.Bytes(), &view); err != nil {
+		t.Fatal(err)
+	}
+	if view["isFavorite"] == true {
+		t.Fatalf("favorite was not removed: %#v", view)
+	}
+}
+
 func TestAdvancedIssueFilterViewRoundTrip(t *testing.T) {
 	s := testAPI(t)
 	create := `{"name":"Grouped issues","slug":"grouped-issues","advancedFilter":true,"advancedFilterGroup":{"kind":"group","operator":"or","children":[{"kind":"condition","field":"status","operator":"is","value":"in_progress"},{"kind":"group","operator":"and","children":[{"kind":"condition","field":"priority","operator":"is","value":"0"},{"kind":"condition","field":"dueDate","operator":"onOrAfter","value":"2026-09-01"},{"kind":"condition","field":"content","operator":"contains","value":"release"}]}]}}`

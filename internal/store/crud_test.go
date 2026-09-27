@@ -1860,6 +1860,45 @@ func TestViewDisplayOptionsPersist(t *testing.T) {
 	}
 }
 
+func TestViewFavoritePersistsWithoutChangingContentTimestamp(t *testing.T) {
+	s := openTest(t)
+	favorite := true
+	created, err := s.CreateView(CreateViewInput{Name: "Pinned view", Slug: "pinned-view", IsFavorite: &favorite})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created.IsFavorite {
+		t.Fatalf("created view is not favorite: %#v", created)
+	}
+	updated, err := s.UpdateViewFavorite(created.Slug, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.IsFavorite || updated.UpdatedAt != created.UpdatedAt {
+		t.Fatalf("unfavorite changed view content: %#v", updated)
+	}
+	updated, err = s.UpdateViewFavorite(created.Slug, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !updated.IsFavorite || updated.UpdatedAt != created.UpdatedAt {
+		t.Fatalf("favorite changed view content: %#v", updated)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	persisted, err := reopened.GetView(created.Slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !persisted.IsFavorite || persisted.UpdatedAt != created.UpdatedAt {
+		t.Fatalf("favorite did not persist independently: %#v", persisted)
+	}
+}
+
 func TestViewAssigneeFilterPersistsAndClears(t *testing.T) {
 	s := openTest(t)
 	agent := "agent"

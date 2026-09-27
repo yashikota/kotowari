@@ -182,6 +182,7 @@ export function ShellView({
       } = model;
       const favoriteCycles = cycles.filter((cycle) => cycle.isFavorite);
       const favoriteProjects = projects.filter((project) => project.isFavorite);
+      const favoriteViews = views.filter((view) => view.isFavorite);
       return (
         <>
           <AppShell
@@ -343,6 +344,15 @@ export function ShellView({
                           to="/projects/$slug"
                           params={{ slug: project.slug }}
                           label={project.name}
+                          leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                        />
+                      ))}
+                      {favoriteViews.map((view) => (
+                        <RouterNavLink
+                          key={`view-${view.slug}`}
+                          to="/views/$slug"
+                          params={{ slug: view.slug }}
+                          label={view.name}
                           leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
                         />
                       ))}

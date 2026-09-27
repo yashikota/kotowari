@@ -531,6 +531,10 @@
     "add": "プロジェクトをお気に入りに追加",
     "remove": "プロジェクトをお気に入りから削除"
   },
+  "viewFavorite": {
+    "add": "ビューをお気に入りに追加",
+    "remove": "ビューをお気に入りから削除"
+  },
   "issueSubscription": {
     "subscribe": "イシューを購読",
     "unsubscribe": "イシューの購読を解除"

@@ -3266,7 +3266,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			return errf(ErrConflict, "slug %q exists", in.Slug)
 		}
 		out = View{
-			ID: m.nextID(), Name: in.Name, Slug: in.Slug, Description: description, Icon: icon, Display: in.Display,
+			ID: m.nextID(), Name: in.Name, Slug: in.Slug, IsFavorite: in.IsFavorite != nil && *in.IsFavorite, Description: description, Icon: icon, Display: in.Display,
 			GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy, Direction: in.Direction,
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
@@ -3609,6 +3609,22 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 		m.Views[i] = v
 		m.bump(now)
 		out = v
+		return nil
+	})
+	return out, err
+}
+
+// UpdateViewFavorite changes the personal favorite state without changing the
+// saved view's content update timestamp.
+func (s *Store) UpdateViewFavorite(slug string, favorite bool) (View, error) {
+	var out View
+	err := s.mutate(func(m *mem) error {
+		i := indexView(m, slug)
+		if i < 0 {
+			return ErrNotFound
+		}
+		m.Views[i].IsFavorite = favorite
+		out = m.Views[i]
 		return nil
 	})
 	return out, err

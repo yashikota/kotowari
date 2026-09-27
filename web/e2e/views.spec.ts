@@ -35,6 +35,35 @@ test('workspace views page lists saved views and opens them', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Open details' })).toBeVisible();
 });
 
+test('saved issue views can be favorited and opened from Favorites', async ({ page, request }) => {
+  const name = `Favorite view ${Date.now()}`;
+  const slug = name.toLowerCase().replaceAll(' ', '-');
+  const created = await request.post('/api/views', { data: { name, slug } });
+  expect(created.ok()).toBeTruthy();
+
+  await page.goto(`/views/${slug}`);
+  const addFavorite = page.getByRole('button', { name: 'Add view to favorites' });
+  await expect(addFavorite).toHaveAttribute('aria-pressed', 'false');
+  await addFavorite.click();
+
+  const removeFavorite = page.getByRole('button', { name: 'Remove view from favorites' });
+  await expect(removeFavorite).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByRole('navigation', { name: 'Favorites' }).getByRole('link', { name, exact: true }),
+  ).toBeVisible();
+  const saved = await request.get(`/api/views/${slug}`);
+  expect(await saved.json()).toMatchObject({ isFavorite: true });
+
+  await removeFavorite.click();
+  await expect(page.getByRole('button', { name: 'Add view to favorites' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await expect(
+    page.getByRole('navigation', { name: 'Favorites' }).getByRole('link', { name, exact: true }),
+  ).toHaveCount(0);
+});
+
 test('workspace views page has a useful empty state and create action', async ({ page }) => {
   await page.route('**/api/views', async (route) => {
     if (route.request().method() === 'GET') await route.fulfill({ json: [] });
