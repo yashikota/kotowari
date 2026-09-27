@@ -54,6 +54,10 @@ describe('issuesQuery', () => {
     expect(issuesQuery({ relation: 'blocked' })).toBe('?relation=blocked');
   });
 
+  it('encodes multiple workflow statuses as an any-of issue filter', () => {
+    expect(issuesQuery({ statuses: ['done', 'in_progress'] })).toBe('?statuses=done%2Cin_progress');
+  });
+
   it('encodes multiple link-source filters', () => {
     expect(issuesQuery({ linkSources: ['github', 'slack'] })).toBe('?linkSources=github%2Cslack');
   });
@@ -194,6 +198,18 @@ describe('parseIssueSearch', () => {
     expect(parseIssueSearch({ templateSlugs: '../unsafe' })).toEqual({});
     expect(searchToFilter({ templateSlugs: ['release-checklist'] })).toMatchObject({
       templateSlugs: ['release-checklist'],
+    });
+  });
+
+  it('normalizes a multi-status filter and prefers it over a legacy single status', () => {
+    expect(parseIssueSearch({ statuses: ['in_progress', 'done', 'in_progress'] })).toEqual({
+      statuses: ['in_progress', 'done'],
+    });
+    expect(parseIssueSearch({ statuses: 'todo,done' })).toEqual({ statuses: ['todo', 'done'] });
+    expect(parseIssueSearch({ statuses: '../unsafe' })).toEqual({});
+    expect(searchToFilter({ statuses: ['todo', 'done'], status: 'todo' })).toMatchObject({
+      status: undefined,
+      statuses: ['todo', 'done'],
     });
   });
 

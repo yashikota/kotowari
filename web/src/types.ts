@@ -288,6 +288,7 @@ export type View = {
   showEmptyGroups?: boolean;
   displayProperties?: string[];
   status: string | null;
+  statuses?: string[];
   assignee: 'self' | 'agent' | 'none' | null;
   project: string | null;
   cycle: number | null;

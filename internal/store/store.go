@@ -321,6 +321,7 @@ type View struct {
 	ShowEmptyGroups     bool             `json:"showEmptyGroups" toml:"show_empty_groups,omitempty"`
 	DisplayProperties   []string         `json:"displayProperties,omitempty" toml:"display_properties,omitempty"`
 	Status              *string          `json:"status" toml:"status,omitempty"`
+	Statuses            []string         `json:"statuses,omitempty" toml:"statuses,omitempty"`
 	Assignee            *string          `json:"assignee" toml:"assignee,omitempty"`
 	Project             *string          `json:"project" toml:"project,omitempty"`
 	Cycle               *int             `json:"cycle" toml:"cycle,omitempty"`
@@ -355,7 +356,7 @@ type IssueFilterNode struct {
 }
 
 func (v View) Filter() IssueFilter {
-	f := IssueFilter{Labels: v.Labels, Priority: v.Priority, DueDate: v.DueDate}
+	f := IssueFilter{Labels: v.Labels, Priority: v.Priority, DueDate: v.DueDate, Statuses: v.Statuses}
 	if v.Assignee != nil {
 		f.Assignee = *v.Assignee
 	}
@@ -382,7 +383,7 @@ func (v View) Filter() IssueFilter {
 	if v.Type != nil {
 		f.Type = *v.Type
 	}
-	if v.Status != nil {
+	if v.Status != nil && len(v.Statuses) == 0 {
 		f.Status = *v.Status
 	}
 	if v.Project != nil {
@@ -456,6 +457,7 @@ type SearchHit struct {
 
 type IssueFilter struct {
 	Status          string
+	Statuses        []string
 	Assignee        string
 	ProjectSlug     string
 	CycleNumber     int
@@ -538,6 +540,7 @@ type CreateViewInput struct {
 	ShowEmptyGroups     *bool
 	DisplayProperties   []string
 	Status              *string
+	Statuses            []string
 	Assignee            *string
 	Project             *string
 	Cycle               *int

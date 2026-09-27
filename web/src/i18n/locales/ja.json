@@ -1285,6 +1285,7 @@
       "milestone": "マイルストーン"
     },
     "filterStatus": "ステータスで絞り込む",
+    "statusesSelected": "{{count}} 件のステータス",
     "filterAssignee": "担当者で絞り込む",
     "anyStatus": "すべてのステータス",
     "filterType": "種別で絞り込む",

@@ -53,6 +53,7 @@ function compactSearch(next: IssueSearch): IssueSearch {
     myIssuesTab: next.myIssuesTab ?? '',
     assignee: next.assignee ?? '',
     status: next.status ?? '',
+    statuses: next.statuses?.join(',') ?? '',
     project: next.project ?? '',
     cycle: next.cycle ?? '',
     priority: next.priority ?? '',

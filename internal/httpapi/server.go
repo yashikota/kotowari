@@ -562,6 +562,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		ShowEmptyGroups     *bool                  `json:"showEmptyGroups"`
 		DisplayProperties   []string               `json:"displayProperties"`
 		Status              *string                `json:"status"`
+		Statuses            []string               `json:"statuses"`
 		Assignee            *string                `json:"assignee"`
 		Project             *string                `json:"project"`
 		Cycle               *int                   `json:"cycle"`
@@ -591,7 +592,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Name: in.Name, Slug: in.Slug, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-		Status: in.Status, Assignee: in.Assignee,
+		Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee,
 		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, DueDate: in.DueDate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
 		AdvancedFilter: in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 	}, nil
@@ -683,7 +684,11 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 	if value := q.Get("templateSlugs"); value != "" {
 		templateSlugs = strings.Split(value, ",")
 	}
-	f := store.IssueFilter{Status: q.Get("status"), Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
+	statuses := []string(nil)
+	if value := q.Get("statuses"); value != "" {
+		statuses = strings.Split(value, ",")
+	}
+	f := store.IssueFilter{Status: q.Get("status"), Statuses: statuses, Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus")}
 	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid assignee filter"})
 		return

@@ -170,6 +170,7 @@ export function useIssueFiltersPresenter({
     .map((n) => n.trim())
     .filter(Boolean);
   const selectedProjectLabels = search.projectLabels ?? [];
+  const selectedStatuses = search.statuses ?? (search.status ? [search.status] : []);
   const selectedLinkSources = search.linkSources ?? [];
   const selectedTemplateSlugs = search.templateSlugs ?? [];
   const selectedAddedToCycle = search.addedToCycle ?? [];
@@ -246,11 +247,14 @@ export function useIssueFiltersPresenter({
   }
 
   const chips: FilterChip[] = [
-    ...(search.status
+    ...(selectedStatuses.length > 0
       ? [
           {
-            key: 'status',
-            label: `${t('field.status')} · ${workflowStatusLabel(search.status, workflowStatuses)}`,
+            key: 'statuses',
+            label:
+              selectedStatuses.length === 1
+                ? `${t('field.status')} · ${workflowStatusLabel(selectedStatuses[0]!, workflowStatuses)}`
+                : `${t('field.status')} · ${t('filters.statusesSelected', { count: selectedStatuses.length })}`,
           },
         ]
       : []),
@@ -418,7 +422,18 @@ export function useIssueFiltersPresenter({
           setFindOpen(true);
         }
       },
-      onStatusChange: (value: string) => set({ status: value || undefined }),
+      onStatusChange: (value: string) => {
+        const current =
+          searchRef.current.statuses ??
+          (searchRef.current.status ? [searchRef.current.status] : []);
+        const next = current.includes(value)
+          ? current.filter((status) => status !== value)
+          : [...current, value];
+        set({
+          status: next.length === 1 ? next[0] : undefined,
+          statuses: next.length > 1 ? next : undefined,
+        });
+      },
       onAssigneeChange: (value: string) =>
         set({ assignee: value ? (value as NonNullable<IssueSearch['assignee']>) : undefined }),
       onProjectChange: (value: string) => set({ project: value || undefined }),
@@ -506,6 +521,7 @@ export function useIssueFiltersPresenter({
       onClearFilters: () => {
         set({
           status: undefined,
+          statuses: undefined,
           assignee: undefined,
           project: undefined,
           cycle: undefined,
@@ -560,6 +576,7 @@ export function useIssueFiltersPresenter({
           set({ addedToCycle: next.length ? next : undefined });
         } else if (
           key === 'status' ||
+          key === 'statuses' ||
           key === 'assignee' ||
           key === 'project' ||
           key === 'cycle' ||
@@ -577,6 +594,8 @@ export function useIssueFiltersPresenter({
         ) {
           if (key === 'advancedFilter') {
             set({ advancedFilter: undefined, advancedFilterGroup: undefined });
+          } else if (key === 'status' || key === 'statuses') {
+            set({ status: undefined, statuses: undefined });
           } else {
             set({ [key]: undefined });
           }

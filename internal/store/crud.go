@@ -1174,6 +1174,18 @@ func ensureSingleActive(m *mem, id int64, status string) {
 
 func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	var out []Issue
+	if len(f.Statuses) > 0 {
+		var normalized []string
+		err := s.snapshot(func(m *mem) error {
+			var err error
+			normalized, err = normalizeIssueWorkflowStatuses(m.Workspace, f.Statuses)
+			return err
+		})
+		if err != nil {
+			return nil, err
+		}
+		f.Statuses = normalized
+	}
 	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		return nil, validationf("invalid issue assignee")
 	}
@@ -1263,6 +1275,18 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	customDueDate := strings.TrimPrefix(f.DueDate, "on:")
 	err := s.snapshot(func(m *mem) error {
 		for _, iss := range m.Issues {
+			if len(f.Statuses) > 0 {
+				matches := false
+				for _, status := range f.Statuses {
+					if iss.Status == status || iss.WorkflowStatus == status {
+						matches = true
+						break
+					}
+				}
+				if !matches {
+					continue
+				}
+			}
 			if f.Assignee == "none" && iss.Assignee != "" ||
 				f.Assignee != "" && f.Assignee != "none" && iss.Assignee != f.Assignee {
 				continue
@@ -2973,6 +2997,18 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.Status != nil && *in.Status != "" && !domain.ValidIssueStatus(*in.Status) {
 		return View{}, validationf("invalid status")
 	}
+	if len(in.Statuses) > 0 {
+		var normalized []string
+		if err := s.snapshot(func(m *mem) error {
+			var err error
+			normalized, err = normalizeIssueWorkflowStatuses(m.Workspace, in.Statuses)
+			return err
+		}); err != nil {
+			return View{}, err
+		}
+		in.Statuses = normalized
+		in.Status = nil
+	}
 	if in.Assignee != nil && *in.Assignee != "none" && !domain.ValidIssueAssignee(*in.Assignee) {
 		return View{}, validationf("invalid assignee")
 	}
@@ -3081,7 +3117,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy, Direction: in.Direction,
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-			Status: in.Status, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
+			Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
 			Priority: in.Priority, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
@@ -3207,6 +3243,15 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 				}
 				v.Status = in.Status
 			}
+			v.Statuses = nil
+		}
+		if in.Statuses != nil && (len(in.Statuses) > 0 || in.Status == nil) {
+			statuses, err := normalizeIssueWorkflowStatuses(m.Workspace, in.Statuses)
+			if err != nil {
+				return err
+			}
+			v.Statuses = statuses
+			v.Status = nil
 		}
 		if in.Assignee != nil {
 			if *in.Assignee == "" {

@@ -50,7 +50,7 @@ import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workf
 import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 
 const FILTER_CATEGORIES = [
-  { id: 'status', group: 'issue', chips: ['status'] },
+  { id: 'status', group: 'issue', chips: ['status', 'statuses'] },
   { id: 'assignee', group: 'issue', chips: ['assignee'] },
   { id: 'priority', group: 'issue', chips: ['priority'] },
   { id: 'estimate', group: 'issue', chips: ['estimate'] },
@@ -412,7 +412,8 @@ export function IssueFilterMenu({
         return (
           <FilterOptionList
             label={t('filters.filterStatus')}
-            value={search.status ?? null}
+            value={null}
+            selectedValues={search.statuses ?? (search.status ? [search.status] : [])}
             searchable
             options={workflowStatuses.map((status) => ({
               value: status.id,

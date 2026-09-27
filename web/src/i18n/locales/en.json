@@ -1289,6 +1289,7 @@
       "milestone": "Milestone"
     },
     "filterStatus": "Filter status",
+    "statusesSelected": "{{count}} statuses",
     "filterAssignee": "Filter assignee",
     "anyStatus": "Any status",
     "filterType": "Filter type",

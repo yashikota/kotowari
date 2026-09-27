@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
+import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
 test('issue filters use a searchable category menu with a scoped editor', async ({ page }) => {
   await page.goto('/issues');
@@ -56,6 +56,55 @@ test('issue filters use a searchable category menu with a scoped editor', async 
     'aria-expanded',
     'false',
   );
+});
+
+test('status filters match any selected workflow state and save into a view', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const titles = {
+    backlog: `Multi status backlog ${stamp}`,
+    inProgress: `Multi status in progress ${stamp}`,
+    todo: `Multi status todo ${stamp}`,
+  };
+  for (const [title, status] of [
+    [titles.backlog, 'backlog'],
+    [titles.inProgress, 'in_progress'],
+    [titles.todo, 'todo'],
+  ] as const) {
+    const response = await request.post('/api/issues', { data: { title, status } });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  const searchFilters = page.getByRole('textbox', { name: 'Search filters' });
+  await searchFilters.fill('status');
+  await page.getByRole('menuitem', { name: 'Status', exact: true }).click();
+  const statusOptions = page.getByRole('group', { name: 'Filter status' });
+  await statusOptions.getByRole('button', { name: 'Backlog', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('status')).toBe('backlog');
+  await expect.poll(() => new URL(page.url()).searchParams.get('statuses')).toBeNull();
+  await statusOptions.getByRole('button', { name: 'In Progress', exact: true }).click();
+
+  await expect
+    .poll(() => JSON.parse(new URL(page.url()).searchParams.get('statuses') ?? '[]'))
+    .toEqual(['backlog', 'in_progress']);
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.backlog) })).toBeVisible();
+  await expect(
+    issueList.getByRole('option', { name: new RegExp(titles.inProgress) }),
+  ).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.todo) })).toHaveCount(0);
+
+  const viewName = `Multi status view ${stamp}`;
+  await createIssueView(page, viewName);
+  const slug = viewName.toLowerCase().replaceAll(' ', '-');
+  const response = await request.get(`/api/views/${slug}`);
+  expect(response.ok()).toBeTruthy();
+  expect(await response.json()).toMatchObject({ statuses: ['backlog', 'in_progress'] });
 });
 
 test('filter picker keeps its scoped editor inside a narrow viewport', async ({ page }) => {

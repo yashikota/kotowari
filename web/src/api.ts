@@ -414,6 +414,7 @@ export const api = {
     showEmptyGroups?: boolean;
     displayProperties?: string[];
     status?: string | null;
+    statuses?: string[];
     assignee?: 'self' | 'agent' | 'none' | null;
     project?: string | null;
     cycle?: number | null;
@@ -447,6 +448,7 @@ export const api = {
 
 export function issuesQuery(filter: {
   status?: string | null;
+  statuses?: string[] | null;
   assignee?: 'self' | 'agent' | 'none' | null;
   project?: string | null;
   cycle?: number | null;
@@ -474,6 +476,7 @@ export function issuesQuery(filter: {
   if (filter.status) {
     q.set('status', filter.status);
   }
+  if (filter.statuses?.length) q.set('statuses', filter.statuses.join(','));
   if (filter.assignee) q.set('assignee', filter.assignee);
   if (filter.project) {
     q.set('project', filter.project);
@@ -524,6 +527,7 @@ export type IssueSearch = {
   myIssuesTab?: 'assigned' | 'created' | 'subscribed' | 'activity';
   assignee?: 'self' | 'agent' | 'none';
   status?: string;
+  statuses?: string[];
   project?: string;
   cycle?: number;
   priority?: number;
@@ -592,6 +596,14 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   }
   if (typeof raw.status === 'string' && raw.status) {
     out.status = raw.status;
+  }
+  const selectedStatuses = [...new Set(parseStringList(raw.statuses).map((value) => value.trim()))];
+  if (
+    selectedStatuses.length > 0 &&
+    selectedStatuses.length <= 50 &&
+    selectedStatuses.every((value) => /^[a-z0-9_-]{1,48}$/.test(value))
+  ) {
+    out.statuses = selectedStatuses;
   }
   if (typeof raw.project === 'string' && raw.project) {
     out.project = raw.project;
@@ -774,6 +786,7 @@ export function searchToFilter(search: IssueSearch): {
   archived?: boolean;
   assignee?: 'self' | 'agent' | 'none';
   status?: string;
+  statuses?: string[];
   project?: string;
   cycle?: number;
   labels?: string[];
@@ -796,7 +809,8 @@ export function searchToFilter(search: IssueSearch): {
   return {
     archived: search.archived,
     assignee: search.assignee,
-    status: search.status,
+    status: search.statuses?.length ? undefined : search.status,
+    ...(search.statuses?.length ? { statuses: search.statuses } : {}),
     project: search.project,
     cycle: search.cycle,
     labels: search.labels

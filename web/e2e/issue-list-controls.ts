@@ -2,8 +2,10 @@ import type { Page } from '@playwright/test';
 
 export async function fillIssueSearch(page: Page, query: string) {
   const input = page.getByRole('textbox', { name: 'Find issues', exact: true });
-  if ((await input.count()) === 0) {
-    await page.getByRole('button', { name: 'Find issues', exact: true }).click();
+  if (!(await input.isVisible())) {
+    const toggle = page.getByRole('button', { name: 'Find issues', exact: true });
+    if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+    await input.waitFor({ state: 'visible' });
   }
   await input.fill(query);
 }

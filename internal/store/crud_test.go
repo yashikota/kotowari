@@ -205,6 +205,71 @@ func TestIssueAssigneeRoundTripAndFilter(t *testing.T) {
 	}
 }
 
+func TestIssueStatusFilterMatchesAnySelectedWorkflowStatusAndPersistsOnViews(t *testing.T) {
+	s := openTest(t)
+	backlog, err := s.CreateIssue(CreateIssueInput{Title: "backlog", Status: "backlog"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	inProgress, err := s.CreateIssue(CreateIssueInput{Title: "in progress", Status: "in_progress"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	done, err := s.CreateIssue(CreateIssueInput{Title: "done", Status: "done"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	filtered, err := s.ListIssues(IssueFilter{Statuses: []string{"done", "in_progress", "done"}})
+	if err != nil || len(filtered) != 2 {
+		t.Fatalf("status-filtered issues = %#v, err = %v", filtered, err)
+	}
+	identifiers := map[string]bool{filtered[0].Identifier: true, filtered[1].Identifier: true}
+	if !identifiers[inProgress.Identifier] || !identifiers[done.Identifier] || identifiers[backlog.Identifier] {
+		t.Fatalf("status filter returned wrong issues: %#v", filtered)
+	}
+	if _, err := s.ListIssues(IssueFilter{Statuses: []string{"not-a-workflow-status"}}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid status filter error = %v", err)
+	}
+
+	view, err := s.CreateView(CreateViewInput{
+		Name: "Completed and active", Slug: "completed-and-active", Statuses: []string{"done", "in_progress"},
+	})
+	if err != nil || len(view.Statuses) != 2 || len(view.Filter().Statuses) != 2 {
+		t.Fatalf("created multi-status view = %#v, err = %v", view, err)
+	}
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	persisted, err := reopened.GetView(view.Slug)
+	if err != nil || len(persisted.Statuses) != 2 {
+		t.Fatalf("persisted view statuses = %#v, err = %v", persisted.Statuses, err)
+	}
+	clear := []string{}
+	updated, err := reopened.UpdateView(view.Slug, CreateViewInput{Statuses: clear})
+	if err != nil || len(updated.Statuses) != 0 || len(updated.Filter().Statuses) != 0 {
+		t.Fatalf("cleared view statuses = %#v, err = %v", updated.Statuses, err)
+	}
+
+	singleStatus := "todo"
+	singleView, err := reopened.CreateView(CreateViewInput{
+		Name: "Single status", Slug: "single-status", Status: &singleStatus,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	updated, err = reopened.UpdateView(singleView.Slug, CreateViewInput{Status: &singleStatus, Statuses: clear})
+	if err != nil || updated.Status == nil || *updated.Status != singleStatus || len(updated.Statuses) != 0 {
+		t.Fatalf("single-status view update = %#v, err = %v", updated, err)
+	}
+	emptyStatus := ""
+	updated, err = reopened.UpdateView(singleView.Slug, CreateViewInput{Status: &emptyStatus, Statuses: clear})
+	if err != nil || updated.Status != nil || len(updated.Statuses) != 0 {
+		t.Fatalf("cleared single-status view = %#v, err = %v", updated, err)
+	}
+}
+
 func TestIssueArchiveLifecycle(t *testing.T) {
 	s := openTest(t)
 	created, err := s.CreateIssue(CreateIssueInput{Title: "archive me"})

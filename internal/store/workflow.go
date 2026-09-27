@@ -149,3 +149,30 @@ func resolveIssueWorkflowStatus(ws workspaceFile, status, workflowStatus string)
 	}
 	return IssueWorkflowStatus{}, false
 }
+
+func normalizeIssueWorkflowStatuses(ws workspaceFile, selected []string) ([]string, error) {
+	if len(selected) > 50 {
+		return nil, validationf("too many issue statuses in filter")
+	}
+	statuses := issueWorkflowStatuses(ws)
+	seen := make(map[string]struct{}, len(selected))
+	out := make([]string, 0, len(selected))
+	for _, value := range selected {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return nil, validationf("invalid issue status filter")
+		}
+		if _, ok := resolveIssueWorkflowStatus(ws, value, ""); !ok {
+			return nil, validationf("invalid issue status filter")
+		}
+		if _, exists := seen[value]; exists {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	if len(out) > len(statuses) {
+		return nil, validationf("too many issue statuses in filter")
+	}
+	return out, nil
+}

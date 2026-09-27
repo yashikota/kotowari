@@ -94,6 +94,7 @@ export function useViewPagePresenter() {
 
   const search: IssueSearch = {
     status: view.status ?? undefined,
+    statuses: view.statuses ?? (view.status ? [view.status] : undefined),
     assignee: view.assignee ?? undefined,
     project: view.project ?? undefined,
     cycle: view.cycle ?? undefined,
@@ -124,6 +125,7 @@ export function useViewPagePresenter() {
     }
     return save({
       status: next.status ?? '',
+      statuses: next.statuses ?? [],
       assignee: next.assignee ?? '',
       project: next.project ?? '',
       cycle: next.cycle ?? 0,

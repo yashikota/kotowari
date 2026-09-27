@@ -849,6 +849,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     if (assignee === 'none') result = result.filter((item) => !item.assignee);
     else if (assignee) result = result.filter((item) => item.assignee === assignee);
     const status = url.searchParams.get('status');
+    const statuses = url.searchParams.get('statuses')?.split(',').filter(Boolean) ?? [];
     const project = url.searchParams.get('project');
     const projectStatus = url.searchParams.get('projectStatus');
     const projectPriority = url.searchParams.get('projectPriority');
@@ -883,6 +884,13 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     if (status)
       result = result.filter(
         (i) => i.status === status || (i.workflowStatus ?? i.status) === status,
+      );
+    if (statuses.length > 0)
+      result = result.filter((item) =>
+        statuses.some(
+          (selected) =>
+            item.status === selected || (item.workflowStatus ?? item.status) === selected,
+        ),
       );
     if (project) result = result.filter((i) => i.projectSlug === project);
     if (projectStatus || projectPriority != null) {
@@ -1697,6 +1705,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
           'pullRequests',
         ],
         status: value.status ?? null,
+        statuses: value.statuses ?? [],
         assignee: value.assignee ?? null,
         project: value.project ?? null,
         cycle: value.cycle ?? null,
