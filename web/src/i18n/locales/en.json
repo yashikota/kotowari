@@ -486,8 +486,8 @@
     "dueDate": "Due date",
     "labels": "Labels",
     "noLabels": "No labels",
-    "removeLabel": "Remove label {{name}}",
-    "addLabels": "Add labels",
+    "changeLabels": "Change labels",
+    "noLabelsFound": "No matching labels",
     "newLabel": "New label",
     "findOrCreateLabel": "Find or create a label…",
     "createLabel": "Create “{{name}}”"

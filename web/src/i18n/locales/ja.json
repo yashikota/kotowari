@@ -484,8 +484,8 @@
     "dueDate": "期限",
     "labels": "ラベル",
     "noLabels": "ラベルなし",
-    "removeLabel": "ラベル {{name}} を削除",
-    "addLabels": "ラベルを追加",
+    "changeLabels": "ラベルを変更",
+    "noLabelsFound": "一致するラベルがありません",
     "newLabel": "新しいラベル",
     "findOrCreateLabel": "ラベルを検索または作成…",
     "createLabel": "「{{name}}」を作成"

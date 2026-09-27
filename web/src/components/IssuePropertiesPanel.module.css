@@ -163,42 +163,46 @@
   min-width: 0;
 }
 
-.labels {
-  min-height: 22px;
-  align-content: center;
-}
-
 .labelPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  display: block;
+  flex: 0 1 auto;
   max-width: 100%;
-  min-height: 21px;
-  padding: 2px 6px;
-  border: 0;
+  overflow: hidden;
+  padding: 2px 5px;
   border-radius: 5px;
   color: var(--mantine-color-text);
-  font: inherit;
   font-size: 11px;
   line-height: 16px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.labelPill:hover {
-  filter: brightness(0.96);
-}
-
-.labelName {
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.addLabelButton {
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
+.labelPickerTarget {
+  display: flex;
+  min-width: 0;
+  max-width: 155px;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: var(--mantine-color-text);
+  font-size: var(--mantine-font-size-sm);
+  text-align: left;
+}
+
+.labelPickerTarget:hover,
+.labelPickerTarget:focus-visible {
+  background-color: var(--mantine-color-default-hover);
+}
+
+.selectedLabels {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.labelPickerTarget > svg {
+  flex: 0 0 auto;
+  color: var(--mantine-color-dimmed);
 }
 
 .labelPicker {
@@ -213,7 +217,7 @@
 }
 
 .labelOption:hover,
-.labelOption[aria-pressed='true'] {
+.labelOption[aria-checked='true'] {
   background-color: var(--mantine-color-default-hover);
 }
 

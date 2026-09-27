@@ -182,9 +182,9 @@ test('issue list row opens a Linear-style full-width detail view with editable p
   await properties.getByLabel('Due date').fill(dueDate);
 
   const labelName = `Property label ${stamp}`;
-  await properties.getByRole('button', { name: 'Add labels' }).click();
-  const labelPicker = page.getByRole('dialog', { name: 'Add labels' });
-  await labelPicker.getByLabel('New label').fill(labelName);
+  await properties.getByRole('button', { name: 'Change labels' }).click();
+  const labelPicker = page.getByRole('dialog', { name: 'Change labels' });
+  await labelPicker.getByRole('textbox', { name: 'Change labels' }).fill(labelName);
   await labelPicker.getByRole('button', { name: `Create “${labelName}”` }).click();
 
   await expect
@@ -217,9 +217,10 @@ test('issue list row opens a Linear-style full-width detail view with editable p
       dueDate: expect.stringContaining(dueDate),
       labels: [expect.objectContaining({ name: labelName })],
     });
-  await expect(properties.getByRole('button', { name: `Remove label ${labelName}` })).toBeVisible();
+  const selectedLabel = labelPicker.getByRole('checkbox', { name: labelName });
+  await expect(selectedLabel).toHaveAttribute('aria-checked', 'true');
 
-  await properties.getByRole('button', { name: `Remove label ${labelName}` }).click();
+  await selectedLabel.click();
   await expect
     .poll(async () => {
       const updated = await request.get(`/api/issues/${issue.identifier}`);

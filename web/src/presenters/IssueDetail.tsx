@@ -948,16 +948,17 @@ export function useIssueDetailPresenter({
         setOptionalPropertyOverrides(nextOverrides);
         window.localStorage.setItem(ISSUE_PROPERTY_VISIBILITY_KEY, JSON.stringify(nextOverrides));
       },
-      onClick11: (on: boolean, l: Label) => {
-        const next = on
-          ? issue.labels.filter((x) => x.id !== l.id).map((x) => x.id)
-          : [...issue.labels.map((x) => x.id), l.id];
+      onToggleIssueLabel: (label: Label) => {
+        const isSelected = issue.labels.some((current) => current.id === label.id);
+        const next = isSelected
+          ? issue.labels.filter((current) => current.id !== label.id).map((current) => current.id)
+          : [...issue.labels.map((current) => current.id), label.id];
         return patch({ labelIds: next });
       },
-      New_label_onChange12: (
+      onLabelQueryChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setLabelName(e.target.value),
-      New_label_onKeyDown13: (
+      onLabelQueryKeyDown: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onKeyDown']>>[0],
       ) => {
         if (e.nativeEvent.isComposing || e.keyCode === 229) return;
@@ -967,7 +968,7 @@ export function useIssueDetailPresenter({
           return addLabel();
         }
       },
-      New_label_onClick23: () => addLabel(),
+      onCreateLabel: () => addLabel(),
       onClick14: (a: ADR) => {
         return api.unlinkIssueADR(identifier, a.number).then(() => reload());
       },

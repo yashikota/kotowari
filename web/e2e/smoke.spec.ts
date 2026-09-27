@@ -90,12 +90,13 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await expect(page.getByLabel('Issue title')).toHaveValue('Smoke issue');
 
   const labels = page.getByRole('group', { name: 'Labels' });
-  await labels.getByRole('button', { name: 'Add labels' }).click();
-  await page
-    .getByRole('dialog', { name: 'Add labels' })
-    .getByRole('button', { name: 'Bug' })
-    .click();
-  await expect(labels.getByRole('button', { name: 'Remove label Bug' })).toBeVisible();
+  await labels.getByRole('button', { name: 'Change labels' }).click();
+  const labelPicker = page.getByRole('dialog', { name: 'Change labels' });
+  await labelPicker.getByRole('checkbox', { name: 'Bug' }).click();
+  await expect(labelPicker.getByRole('checkbox', { name: 'Bug' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
 
   await ensureIssuePropertyVisible(page, 'Due date');
   await page.getByLabel('Due date').fill('2026-09-01');
