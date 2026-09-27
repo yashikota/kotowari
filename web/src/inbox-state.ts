@@ -1,6 +1,7 @@
 export type InboxState = {
   readIds: number[];
   archivedIds: number[];
+  deletedIds: number[];
   snoozedUntil: Record<number, number>;
   density: 'comfortable' | 'compact';
   groupByDate: boolean;
@@ -34,6 +35,7 @@ export const INBOX_STATE_KEY = 'kotowari.inbox.v1';
 export const DEFAULT_INBOX_STATE: InboxState = {
   readIds: [],
   archivedIds: [],
+  deletedIds: [],
   snoozedUntil: {},
   density: 'comfortable',
   groupByDate: true,
@@ -156,6 +158,7 @@ export function parseInboxState(value: string | null): InboxState {
     return {
       readIds: validIds(parsed.readIds),
       archivedIds: validIds(parsed.archivedIds),
+      deletedIds: validIds(parsed.deletedIds),
       snoozedUntil: validSnoozes(parsed.snoozedUntil),
       density: parsed.density === 'compact' ? 'compact' : 'comfortable',
       groupByDate:
@@ -192,6 +195,7 @@ export function serializeInboxState(value: InboxState): string {
   return JSON.stringify({
     readIds: validIds(value.readIds),
     archivedIds: validIds(value.archivedIds),
+    deletedIds: validIds(value.deletedIds),
     snoozedUntil: validSnoozes(value.snoozedUntil),
     density: value.density === 'compact' ? 'compact' : 'comfortable',
     groupByDate: value.groupByDate,

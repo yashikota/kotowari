@@ -48,6 +48,7 @@ export function useInboxPresenter() {
   const [filterMenu, setFilterMenu] = useState<InboxFilterMenuState>(CLOSED_INBOX_FILTER_MENU);
   const [commentPreview, setCommentPreview] = useState('');
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<'all' | 'read' | null>(null);
   const { t, i18n } = useTranslation();
 
   function updateInboxState(update: (current: InboxState) => InboxState) {
@@ -64,6 +65,7 @@ export function useInboxPresenter() {
         activities.filter(
           (activity) =>
             !inboxState.archivedIds.includes(activity.id) &&
+            !inboxState.deletedIds.includes(activity.id) &&
             (inboxState.showSnoozed || !(inboxState.snoozedUntil[activity.id] > Date.now())) &&
             (!onlyUnread || !inboxState.readIds.includes(activity.id)) &&
             matchesInboxFilters(activity, filters),
@@ -74,6 +76,7 @@ export function useInboxPresenter() {
       activities,
       filters,
       inboxState.archivedIds,
+      inboxState.deletedIds,
       inboxState.readIds,
       inboxState.snoozedUntil,
       inboxState.showSnoozed,
@@ -103,6 +106,7 @@ export function useInboxPresenter() {
     (activity) =>
       !inboxState.readIds.includes(activity.id) &&
       !inboxState.archivedIds.includes(activity.id) &&
+      !inboxState.deletedIds.includes(activity.id) &&
       !(inboxState.snoozedUntil[activity.id] > Date.now()),
   );
   const unreadBuckets = splitPriorityInboxActivities(unreadActivities, inboxState.priorityTypes);
@@ -183,7 +187,8 @@ export function useInboxPresenter() {
         .filter(
           (activity) =>
             inboxState.readIds.includes(activity.id) &&
-            !inboxState.archivedIds.includes(activity.id),
+            !inboxState.archivedIds.includes(activity.id) &&
+            !inboxState.deletedIds.includes(activity.id),
         )
         .map((activity) => activity.id),
     );
@@ -192,10 +197,31 @@ export function useInboxPresenter() {
   function markAllNotificationsRead() {
     markRead(
       activities
-        .filter((activity) => !inboxState.archivedIds.includes(activity.id))
+        .filter(
+          (activity) =>
+            !inboxState.archivedIds.includes(activity.id) &&
+            !inboxState.deletedIds.includes(activity.id),
+        )
         .map((activity) => activity.id),
       true,
     );
+  }
+
+  function deleteNotifications(scope: 'all' | 'read') {
+    const ids = activities
+      .filter(
+        (activity) =>
+          !inboxState.archivedIds.includes(activity.id) &&
+          !inboxState.deletedIds.includes(activity.id) &&
+          (scope === 'all' || inboxState.readIds.includes(activity.id)),
+      )
+      .map((activity) => activity.id);
+    updateInboxState((current) => ({
+      ...current,
+      deletedIds: [...new Set([...current.deletedIds, ...ids])],
+    }));
+    if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
+    setDeleteConfirmation(null);
   }
 
   const handlers = useActions({
@@ -288,13 +314,26 @@ export function useInboxPresenter() {
     },
     onMarkAllRead: () => markAllNotificationsRead(),
     onArchiveReadActivities: () => archiveReadNotifications(),
+    onRequestDeleteAll: () => setDeleteConfirmation('all'),
+    onRequestDeleteRead: () => setDeleteConfirmation('read'),
+    onCancelDeleteNotifications: () => setDeleteConfirmation(null),
+    onConfirmDeleteNotifications: () => {
+      if (deleteConfirmation !== null) deleteNotifications(deleteConfirmation);
+    },
   });
 
   useKeyboard((event) => {
     const shortcut = inboxShortcutFromKeyboard(event);
-    if (shortcut === 'archive-read-notifications') {
+    if (shortcut === 'delete-read-notifications') {
+      const hasReadNotifications = activities.some(
+        (activity) =>
+          inboxState.readIds.includes(activity.id) &&
+          !inboxState.archivedIds.includes(activity.id) &&
+          !inboxState.deletedIds.includes(activity.id),
+      );
+      if (!hasReadNotifications) return false;
       event.preventDefault();
-      archiveReadNotifications();
+      setDeleteConfirmation('read');
       return true;
     }
     if (shortcut !== 'snooze-notification') return false;
@@ -348,6 +387,7 @@ export function useInboxPresenter() {
     priorityUnreadCount: unreadBuckets.priority.length,
     otherUnreadCount: unreadBuckets.other.length,
     snoozeMenuOpen,
+    deleteConfirmation,
     unreadCount,
     handlers,
     t,

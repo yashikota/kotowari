@@ -24,6 +24,7 @@ describe('personal inbox state', () => {
       JSON.stringify({
         readIds: [8, 8, -1, '3'],
         archivedIds: [5, Number.MAX_SAFE_INTEGER + 1],
+        deletedIds: [9, 9, 0, '4'],
         snoozedUntil: { 8: 1_800_000_000_000, 0: 1_800_000_000_000, bad: 'later' },
         density: 'compact',
         groupByDate: false,
@@ -35,6 +36,7 @@ describe('personal inbox state', () => {
     expect(parsed).toEqual({
       readIds: [8],
       archivedIds: [5],
+      deletedIds: [9],
       snoozedUntil: { 8: 1_800_000_000_000 },
       density: 'compact',
       groupByDate: false,

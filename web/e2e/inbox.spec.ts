@@ -133,7 +133,7 @@ test('inbox combines project, issue priority, and status filters', async ({ page
   await expect(otherRows).toHaveCount(1);
 });
 
-test('inbox bulk actions mark all as read and archive read activities', async ({
+test('inbox bulk actions mark all as read, delete read notifications, and archive read activities', async ({
   page,
   request,
 }) => {
@@ -161,6 +161,7 @@ test('inbox bulk actions mark all as read and archive read activities', async ({
 
   await issueNotifications.first().click();
   await page.keyboard.press('Shift+Backspace');
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete notifications' }).click();
   await expect(issueNotifications).toHaveCount(1);
 
   await page.getByRole('button', { name: 'Notification actions' }).click();
@@ -184,6 +185,93 @@ test('inbox bulk actions mark all as read and archive read activities', async ({
 
   await page.getByRole('link', { name: 'Config' }).click();
   await expect(page).toHaveURL(/\/config$/);
+});
+
+test('inbox delete actions require confirmation and never delete issue data', async ({
+  page,
+  request,
+}) => {
+  const title = `Inbox delete safety ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  const comment = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body: 'This comment must survive inbox cleanup.' },
+  });
+  expect(comment.ok()).toBeTruthy();
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('kotowari.inbox.v1'));
+  await page.goto('/inbox');
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  const issueNotifications = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}`),
+  });
+  await expect(issueNotifications).toHaveCount(2);
+  const originalIds = await issueNotifications.evaluateAll((rows) =>
+    rows.map((row) => Number(row.getAttribute('data-inbox-activity-id'))),
+  );
+
+  await issueNotifications.first().click();
+  await page.getByRole('button', { name: 'Notification actions' }).click();
+  await page.getByRole('menuitem', { name: 'Delete all read' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(
+    dialog.getByRole('heading', { name: 'Delete all read notifications?' }),
+  ).toBeVisible();
+  await expect(dialog).toContainText('Issues and comments will not be deleted.');
+  await dialog.getByRole('button', { name: 'Delete notifications' }).click();
+
+  await expect(issueNotifications).toHaveCount(1);
+  await expect(issueNotifications.first()).toHaveAttribute('aria-label', /Created/);
+  const deletedReadId = Number(
+    await page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem('kotowari.inbox.v1') ?? '{}') as {
+        deletedIds?: number[];
+      };
+      return state.deletedIds?.[0] ?? 0;
+    }),
+  );
+  expect(originalIds).toContain(deletedReadId);
+  await page.reload();
+  await expect(issueNotifications).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Notification actions' }).click();
+  await page.getByRole('menuitem', { name: 'Delete all', exact: true }).click();
+  const deleteAllDialog = page.getByRole('dialog');
+  await expect(
+    deleteAllDialog.getByRole('heading', { name: 'Delete all notifications?' }),
+  ).toBeVisible();
+  await deleteAllDialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(issueNotifications).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Notification actions' }).click();
+  await page.getByRole('menuitem', { name: 'Delete all', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete notifications' }).click();
+  await expect(issueNotifications).toHaveCount(0);
+  await page.reload();
+  await expect(issueNotifications).toHaveCount(0);
+
+  const persistedActivities = (await (await request.get('/api/inbox/activities')).json()) as {
+    identifier: string;
+  }[];
+  expect(
+    persistedActivities.filter((activity) => activity.identifier === issue.identifier),
+  ).toHaveLength(2);
+  const persistedIssue = await request.get(`/api/issues/${issue.identifier}`);
+  expect(persistedIssue.ok()).toBeTruthy();
+  const issueData = (await persistedIssue.json()) as { title: string };
+  expect(issueData.title).toBe(title);
+  const persistedComments = (await (
+    await request.get(`/api/issues/${issue.identifier}/comments`)
+  ).json()) as { body: string }[];
+  expect(persistedComments).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ body: 'This comment must survive inbox cleanup.' }),
+    ]),
+  );
 });
 
 test('inbox display options show unread first and persist ordering', async ({ page, request }) => {

@@ -6,6 +6,7 @@ import {
   Button,
   Group,
   Menu,
+  Modal,
   ScrollArea,
   Stack,
   Text,
@@ -24,6 +25,7 @@ import {
   IconMessage,
   IconPaperclip,
   IconAdjustments,
+  IconTrash,
 } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -159,6 +161,21 @@ function InboxPageView({ model }: { model: InboxModel }) {
                 rightSection={<Shortcut>Shift+⌫</Shortcut>}
               >
                 {t('inbox.archiveReadActivities')}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={14} />}
+                onClick={model.handlers.onRequestDeleteAll}
+              >
+                {t('inbox.deleteAll')}
+              </Menu.Item>
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={14} />}
+                onClick={model.handlers.onRequestDeleteRead}
+              >
+                {t('inbox.deleteAllRead')}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -606,6 +623,27 @@ function InboxPageView({ model }: { model: InboxModel }) {
           )}
         </Box>
       </Box>
+      <Modal
+        opened={model.deleteConfirmation !== null}
+        onClose={model.handlers.onCancelDeleteNotifications}
+        title={t(
+          model.deleteConfirmation === 'read' ? 'inbox.deleteReadTitle' : 'inbox.deleteAllTitle',
+        )}
+        centered
+        size="sm"
+      >
+        <Stack gap="md">
+          <Text size="sm">{t('inbox.deleteConfirmBody')}</Text>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={model.handlers.onCancelDeleteNotifications}>
+              {t('inbox.cancel')}
+            </Button>
+            <Button color="red" onClick={model.handlers.onConfirmDeleteNotifications}>
+              {t('inbox.deleteConfirm')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   );
 }
