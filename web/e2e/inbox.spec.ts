@@ -280,6 +280,48 @@ test('inbox delete actions require confirmation and never delete issue data', as
   );
 });
 
+test('inbox notification settings persist into the inbox view', async ({ page, request }) => {
+  const title = `Inbox notification settings ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  const comment = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body: 'A reply configured as non-priority.' },
+  });
+  expect(comment.ok()).toBeTruthy();
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('kotowari.inbox.v1'));
+  await page.goto('/config');
+  const settings = page.getByRole('region', { name: 'Inbox notifications' });
+  await settings.getByRole('checkbox', { name: 'Priority inbox' }).check();
+  await settings.getByRole('button', { name: /Priority notifications/ }).click();
+  await settings.getByRole('checkbox', { name: 'Replies' }).uncheck();
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('kotowari.inbox.v1') ?? '{}')))
+    .toMatchObject({
+      priorityInboxEnabled: true,
+      priorityTypes: expect.not.arrayContaining(['replies']),
+    });
+
+  await page.goto('/inbox');
+  const priorityTab = page.getByRole('tab', { name: /Priority/ });
+  const otherTab = page.getByRole('tab', { name: /Other/ });
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  const createdActivity = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}\\. Created`),
+  });
+  const replyActivity = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}\\. Added a note`),
+  });
+  await expect(createdActivity).toBeVisible();
+  await expect(replyActivity).toHaveCount(0);
+  await otherTab.click();
+  await expect(replyActivity).toBeVisible();
+});
+
 test('inbox display options show unread first and persist ordering', async ({ page, request }) => {
   const title = `Inbox ordering ${Date.now()}`;
   const created = await request.post('/api/issues', {

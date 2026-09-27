@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import type { IssueStatus, ProjectStatus } from '../types.ts';
 import { FIRST_DAYS_OF_WEEK } from '../preferences.ts';
 import { IssueStatusIcon } from '../components/issue-ui.tsx';
+import { InboxNotificationSettings } from '../components/InboxNotificationSettings.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
@@ -211,6 +212,8 @@ export function ConfigPageView({
                   </Text>
                 </Stack>
               </Stack>
+
+              <InboxNotificationSettings />
 
               <Stack gap="md" component="section" aria-label={t('codingTools.heading')}>
                 <Title order={4}>{t('codingTools.heading')}</Title>
