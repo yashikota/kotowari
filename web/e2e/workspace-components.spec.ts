@@ -87,6 +87,8 @@ test('issue detail keeps Linear-style properties inline under the title with edi
   await expect(properties.getByRole('group', { name: 'Project' })).toBeVisible();
   await expect(activity.getByText(commentBody, { exact: true })).toBeVisible();
   await expect(activity.getByText(/Added a note/)).toHaveCount(0);
+  await expect(activity.getByTestId('issue-activity-entry')).toHaveCount(2);
+  await expect(activity.getByTestId('issue-activity-avatar')).toHaveCount(2);
   const [createdActivityBounds, commentBounds] = await Promise.all([
     activity.getByText(new RegExp(`You Created ${issue.identifier}`)).boundingBox(),
     activity.getByText(commentBody, { exact: true }).boundingBox(),
@@ -1697,6 +1699,23 @@ test('issue options add resource links and set, edit, and clear due dates', asyn
   await page.goto(`/issues/${issue.identifier}`);
 
   await page.getByRole('button', { name: 'Issue options' }).click();
+  const isApplePlatform = await page.evaluate(() => /Mac|iPhone|iPad/.test(navigator.platform));
+  await expect(page.getByRole('menuitem', { name: 'Due date', exact: true })).toHaveAttribute(
+    'aria-keyshortcuts',
+    'Shift+D',
+  );
+  await expect(page.getByRole('menuitem', { name: 'Add link…', exact: true })).toHaveAttribute(
+    'aria-keyshortcuts',
+    `${isApplePlatform ? 'Meta' : 'Control'}+Alt+L`,
+  );
+  await expect(page.getByRole('menuitem', { name: 'Favorite', exact: true })).toHaveAttribute(
+    'aria-keyshortcuts',
+    'Alt+F',
+  );
+  await expect(page.getByRole('menuitem', { name: 'Remind me', exact: true })).toHaveAttribute(
+    'aria-keyshortcuts',
+    'Shift+H',
+  );
   await page.getByRole('menuitem', { name: 'Add pull request…', exact: true }).click();
   const pullRequestDialog = page.getByRole('dialog', { name: 'Add Pull request' });
   await pullRequestDialog

@@ -3,6 +3,7 @@ import {
   Anchor,
   ActionIcon,
   Alert,
+  Avatar,
   Box,
   Button,
   Grid,
@@ -34,6 +35,7 @@ import {
   IconPlus,
   IconStar,
   IconTrash,
+  IconUser,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
@@ -78,6 +80,20 @@ function CopyShortcut({ label }: { label: string }) {
   );
 }
 
+function ActivityAvatar() {
+  return (
+    <Avatar
+      size={20}
+      radius="xl"
+      color="gray"
+      aria-hidden="true"
+      data-testid="issue-activity-avatar"
+    >
+      <IconUser size={12} stroke={1.8} />
+    </Avatar>
+  );
+}
+
 export function IssueDetailView({
   model,
   titleRef,
@@ -94,7 +110,8 @@ export function IssueDetailView({
   const isApplePlatform =
     typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
   const modifierKey = isApplePlatform ? '⌘' : 'Ctrl';
-  const shiftKey = '⇧';
+  const modifierShortcut = isApplePlatform ? 'Meta' : 'Control';
+  const shiftKey = isApplePlatform ? '⇧' : 'Shift';
   const alternateKey = isApplePlatform ? '⌥' : 'Alt';
   switch (model._view) {
     case 0: {
@@ -354,7 +371,12 @@ export function IssueDetailView({
                   <>
                     <Menu.Sub>
                       <Menu.Sub.Target>
-                        <Menu.Sub.Item>{t('issueActions.dueDate.label')}</Menu.Sub.Item>
+                        <Menu.Sub.Item
+                          aria-keyshortcuts="Shift+D"
+                          rightSection={<CopyShortcut label={`${shiftKey} D`} />}
+                        >
+                          {t('issueActions.dueDate.label')}
+                        </Menu.Sub.Item>
                       </Menu.Sub.Target>
                       <Menu.Sub.Dropdown>
                         <Menu.Item onClick={() => handlers.onSetDueDatePreset('tomorrow')}>
@@ -380,7 +402,11 @@ export function IssueDetailView({
                         ) : null}
                       </Menu.Sub.Dropdown>
                     </Menu.Sub>
-                    <Menu.Item onClick={() => handlers.onOpenExternalLink('link')}>
+                    <Menu.Item
+                      aria-keyshortcuts={`${modifierShortcut}+Alt+L`}
+                      onClick={() => handlers.onOpenExternalLink('link')}
+                      rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} L`} />}
+                    >
                       {t('issueActions.addLink')}
                     </Menu.Item>
                     <Menu.Item onClick={() => handlers.onOpenExternalLink('pullRequest')}>
@@ -517,6 +543,7 @@ export function IssueDetailView({
                     </Menu.Item>
                     <Menu.Divider />
                     <Menu.Item
+                      aria-keyshortcuts="Alt+F"
                       onClick={handlers.onToggleFavorite}
                       rightSection={<CopyShortcut label={`${alternateKey} F`} />}
                     >
@@ -524,7 +551,12 @@ export function IssueDetailView({
                     </Menu.Item>
                     <Menu.Sub opened={reminderMenuOpen} onChange={handlers.onReminderMenuChange}>
                       <Menu.Sub.Target>
-                        <Menu.Sub.Item>{t('issueActions.remindMe')}</Menu.Sub.Item>
+                        <Menu.Sub.Item
+                          aria-keyshortcuts="Shift+H"
+                          rightSection={<CopyShortcut label={`${shiftKey} H`} />}
+                        >
+                          {t('issueActions.remindMe')}
+                        </Menu.Sub.Item>
                       </Menu.Sub.Target>
                       <Menu.Sub.Dropdown>
                         <Menu.Item onClick={() => handlers.onSetReminder('hour')}>
@@ -1037,113 +1069,131 @@ export function IssueDetailView({
                       if (entry.kind === 'activity') {
                         const { activity } = entry;
                         return (
-                          <Text key={`activity-${entry.id}`}>
-                            <Text span fw={550}>
-                              {t('issueComments.you')}
-                            </Text>{' '}
-                            {formatActivity(activity.action, activity.payload, workflowStatuses)}{' '}
-                            <Text span c="dimmed" size="sm">
-                              {formatStamp(activity.createdAt, timeZone)}
+                          <Group
+                            key={`activity-${entry.id}`}
+                            gap="xs"
+                            wrap="nowrap"
+                            align="flex-start"
+                            data-testid="issue-activity-entry"
+                          >
+                            <ActivityAvatar />
+                            <Text size="sm" style={{ flex: 1, minWidth: 0 }}>
+                              <Text span fw={550}>
+                                {t('issueComments.you')}
+                              </Text>{' '}
+                              {formatActivity(activity.action, activity.payload, workflowStatuses)}{' '}
+                              <Text span c="dimmed" size="sm">
+                                {formatStamp(activity.createdAt, timeZone)}
+                              </Text>
                             </Text>
-                          </Text>
+                          </Group>
                         );
                       }
 
                       const c = entry.comment;
                       return (
-                        <Stack key={`comment-${entry.id}`} gap={4}>
-                          <Group justify="space-between" wrap="nowrap" align="flex-start">
-                            <Text c="dimmed" size="sm">
-                              <Text span fw={550} c="var(--mantine-color-text)">
-                                {t('issueComments.you')}
-                              </Text>
-                              {' · '}
-                              {formatStamp(c.createdAt, timeZone)}
-                              {c.updatedAt ? (
-                                <Text span ml={6}>
-                                  · {t('issueComments.edited')}
+                        <Group
+                          key={`comment-${entry.id}`}
+                          gap="xs"
+                          wrap="nowrap"
+                          align="flex-start"
+                          data-testid="issue-activity-entry"
+                        >
+                          <ActivityAvatar />
+                          <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                            <Group justify="space-between" wrap="nowrap" align="flex-start">
+                              <Text c="dimmed" size="sm">
+                                <Text span fw={550} c="var(--mantine-color-text)">
+                                  {t('issueComments.you')}
                                 </Text>
-                              ) : null}
-                            </Text>
-                            <Menu withinPortal position="bottom-end">
-                              <Menu.Target>
-                                <ActionIcon
-                                  type="button"
-                                  variant="subtle"
-                                  color="gray"
-                                  size="sm"
-                                  aria-label={t('issueComments.moreOptions')}
-                                >
-                                  <IconDotsVertical size={15} aria-hidden="true" />
-                                </ActionIcon>
-                              </Menu.Target>
-                              <Menu.Dropdown>
-                                <Menu.Item onClick={() => handlers.onEditComment(c.id, c.body)}>
-                                  {t('issueComments.edit')}
-                                </Menu.Item>
-                                <Menu.Item
-                                  color="red"
-                                  leftSection={<IconTrash size={14} aria-hidden="true" />}
-                                  onClick={() => handlers.onDeleteComment(c.id)}
-                                >
-                                  {t('issueComments.delete')}
-                                </Menu.Item>
-                              </Menu.Dropdown>
-                            </Menu>
-                          </Group>
-                          {editingCommentId === c.id ? (
-                            <Stack gap="xs">
-                              <Textarea
-                                aria-label={t('issueComments.edit')}
-                                value={editingCommentDraft}
-                                onChange={handlers.onChangeCommentEdit}
-                                autosize
-                                minRows={2}
-                                maxRows={12}
+                                {' · '}
+                                {formatStamp(c.createdAt, timeZone)}
+                                {c.updatedAt ? (
+                                  <Text span ml={6}>
+                                    · {t('issueComments.edited')}
+                                  </Text>
+                                ) : null}
+                              </Text>
+                              <Menu withinPortal position="bottom-end">
+                                <Menu.Target>
+                                  <ActionIcon
+                                    type="button"
+                                    variant="subtle"
+                                    color="gray"
+                                    size="sm"
+                                    aria-label={t('issueComments.moreOptions')}
+                                  >
+                                    <IconDotsVertical size={15} aria-hidden="true" />
+                                  </ActionIcon>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                  <Menu.Item onClick={() => handlers.onEditComment(c.id, c.body)}>
+                                    {t('issueComments.edit')}
+                                  </Menu.Item>
+                                  <Menu.Item
+                                    color="red"
+                                    leftSection={<IconTrash size={14} aria-hidden="true" />}
+                                    onClick={() => handlers.onDeleteComment(c.id)}
+                                  >
+                                    {t('issueComments.delete')}
+                                  </Menu.Item>
+                                </Menu.Dropdown>
+                              </Menu>
+                            </Group>
+                            {editingCommentId === c.id ? (
+                              <Stack gap="xs">
+                                <Textarea
+                                  aria-label={t('issueComments.edit')}
+                                  value={editingCommentDraft}
+                                  onChange={handlers.onChangeCommentEdit}
+                                  autosize
+                                  minRows={2}
+                                  maxRows={12}
+                                />
+                                <Group justify="flex-end" gap="xs">
+                                  <Button
+                                    type="button"
+                                    variant="default"
+                                    size="xs"
+                                    onClick={handlers.onCancelCommentEdit}
+                                  >
+                                    {t('issueComments.cancel')}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="xs"
+                                    disabled={!editingCommentDraft.trim() && !c.attachments?.length}
+                                    onClick={() => handlers.onSaveCommentEdit(c.id)}
+                                  >
+                                    {t('issueComments.save')}
+                                  </Button>
+                                </Group>
+                              </Stack>
+                            ) : c.body ? (
+                              <MarkdownContent
+                                html={renderMarkdown(c.body, '', `comment-${c.id}-`)}
                               />
-                              <Group justify="flex-end" gap="xs">
-                                <Button
-                                  type="button"
-                                  variant="default"
-                                  size="xs"
-                                  onClick={handlers.onCancelCommentEdit}
-                                >
-                                  {t('issueComments.cancel')}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="xs"
-                                  disabled={!editingCommentDraft.trim() && !c.attachments?.length}
-                                  onClick={() => handlers.onSaveCommentEdit(c.id)}
-                                >
-                                  {t('issueComments.save')}
-                                </Button>
-                              </Group>
-                            </Stack>
-                          ) : c.body ? (
-                            <MarkdownContent
-                              html={renderMarkdown(c.body, '', `comment-${c.id}-`)}
+                            ) : null}
+                            <IssueAttachmentList
+                              identifier={identifier}
+                              attachments={c.attachments ?? []}
                             />
-                          ) : null}
-                          <IssueAttachmentList
-                            identifier={identifier}
-                            attachments={c.attachments ?? []}
-                          />
-                          <Group gap="xs">
-                            <ReactionPicker
-                              target={`comment:${c.id}`}
-                              openedTarget={reactionPickerTarget}
-                              onOpenChange={handlers.onReactionPickerChange}
-                              onSelect={handlers.onSelectReaction}
-                            />
-                            <ReactionSummary
-                              reactions={c.reactions ?? []}
-                              onToggle={(emoji) =>
-                                handlers.onToggleReaction(`comment:${c.id}`, emoji)
-                              }
-                            />
-                          </Group>
-                        </Stack>
+                            <Group gap="xs">
+                              <ReactionPicker
+                                target={`comment:${c.id}`}
+                                openedTarget={reactionPickerTarget}
+                                onOpenChange={handlers.onReactionPickerChange}
+                                onSelect={handlers.onSelectReaction}
+                              />
+                              <ReactionSummary
+                                reactions={c.reactions ?? []}
+                                onToggle={(emoji) =>
+                                  handlers.onToggleReaction(`comment:${c.id}`, emoji)
+                                }
+                              />
+                            </Group>
+                          </Stack>
+                        </Group>
                       );
                     })}
                     <input
