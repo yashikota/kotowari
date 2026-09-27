@@ -328,7 +328,7 @@ export function ShellView({
                   />
                   {model.favoritesOpen ? (
                     <Stack gap={0}>
-                      {favoriteIssues.slice(0, 8).map((issue) => (
+                      {favoriteIssues.map((issue) => (
                         <RouterNavLink
                           key={`issue-${issue.identifier}`}
                           to="/issues/$identifier"
@@ -337,7 +337,7 @@ export function ShellView({
                           leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
                         />
                       ))}
-                      {favoriteProjects.slice(0, 8).map((project) => (
+                      {favoriteProjects.map((project) => (
                         <RouterNavLink
                           key={`project-${project.slug}`}
                           to="/projects/$slug"
@@ -346,7 +346,7 @@ export function ShellView({
                           leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
                         />
                       ))}
-                      {favoriteCycles.slice(0, 8).map((cycle) => (
+                      {favoriteCycles.map((cycle) => (
                         <RouterNavLink
                           key={`cycle-${cycle.number}`}
                           to="/cycles/$number"

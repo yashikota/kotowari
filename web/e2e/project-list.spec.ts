@@ -1354,3 +1354,29 @@ test('projects can be favorited from their detail page and appear in workspace n
     })
     .toBeFalsy();
 });
+
+test('workspace navigation keeps project favorites beyond the first eight', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projects = Array.from({ length: 9 }, (_, index) => ({
+    name: `Favorite overflow ${index + 1} ${stamp}`,
+    slug: `favorite-overflow-${index + 1}-${stamp}`,
+  }));
+  for (const project of projects) {
+    const created = await request.post('/api/projects', { data: project });
+    expect(created.ok(), await created.text()).toBeTruthy();
+    const favorited = await request.patch(`/api/projects/${project.slug}`, {
+      data: { isFavorite: true },
+    });
+    expect(favorited.ok(), await favorited.text()).toBeTruthy();
+  }
+
+  await page.goto(`/projects/${projects[8]!.slug}`);
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Favorites' })
+      .getByRole('link', { name: projects[8]!.name }),
+  ).toBeVisible();
+});
