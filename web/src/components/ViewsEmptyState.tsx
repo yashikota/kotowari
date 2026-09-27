@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Button, Group, Kbd, Stack, Text } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
@@ -51,6 +51,9 @@ export function ViewsEmptyState({
       </Text>
       <Text c="dimmed" size="sm" maw={360}>
         {description}
+      </Text>
+      <Text c="dimmed" size="sm">
+        {t('views.shortcutHintBefore')} <Kbd>Alt</Kbd> <Kbd>V</Kbd> {t('views.shortcutHintAfter')}
       </Text>
       <Group gap={8} mt="xs" justify="flex-start" wrap="wrap">
         <Button

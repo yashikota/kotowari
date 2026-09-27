@@ -188,6 +188,8 @@
     },
     "emptyDescriptionIssues": "フィルターで必要なイシューだけを表示するカスタムビューを作成できます。よく使うビューは保存してお気に入りにできます。",
     "emptyDescriptionProjects": "フィルターやレイアウトを指定したプロジェクトビューを作成できます。よく使うビューは保存して、すぐに開けます。",
+    "shortcutHintBefore": "現在の表示は",
+    "shortcutHintAfter": "で保存できます。",
     "documentation": "ドキュメント",
     "notAvailable": "—"
   },

@@ -263,6 +263,50 @@ test('views empty state fits a narrow viewport without clipping its actions', as
   expect(contentFits).toBe(true);
 });
 
+test('Alt+V saves the current issue filters and display settings as a new view draft', async ({
+  page,
+}) => {
+  await page.goto('/issues?status=todo&layout=board&groupBy=project&orderBy=title&direction=desc');
+  await page.getByRole('button', { name: 'Add new view' }).focus();
+  await page.keyboard.press('Alt+v');
+
+  await expect(page).toHaveURL(/\/views\/new/);
+  const url = new URL(page.url());
+  expect(url.searchParams.get('status')).toBe('todo');
+  expect(url.searchParams.get('layout')).toBe('board');
+  expect(url.searchParams.get('groupBy')).toBe('project');
+  expect(url.searchParams.get('orderBy')).toBe('title');
+  expect(url.searchParams.get('direction')).toBe('desc');
+  await expect(page.getByRole('textbox', { name: 'View name' })).toHaveValue('All issues');
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByRole('radio', { name: 'Board' })).toBeChecked();
+  await expect(page.getByRole('combobox', { name: 'Grouping', exact: true })).toHaveValue(
+    'project',
+  );
+  await expect(page.getByRole('combobox', { name: 'Ordering' })).toHaveValue('title');
+});
+
+test('Alt+V saves the current project filters and layout as a project view draft', async ({
+  page,
+}) => {
+  await page.goto('/projects?status=started&view=timeline&groupBy=targetDate');
+  await page.getByRole('tab', { name: 'All projects' }).focus();
+  await page.keyboard.press('Alt+v');
+
+  await expect(page).toHaveURL(/\/views\/projects\/new/);
+  const url = new URL(page.url());
+  expect(url.searchParams.get('status')).toBe('["started"]');
+  expect(url.searchParams.get('view')).toBe('timeline');
+  expect(url.searchParams.get('groupBy')).toBe('targetDate');
+  await expect(page.getByRole('textbox', { name: 'View name' })).toBeVisible();
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByRole('tab', { name: 'Timeline' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+});
+
 test('views display options control order, direction, and visible date properties', async ({
   page,
 }) => {

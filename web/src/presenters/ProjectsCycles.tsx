@@ -332,6 +332,23 @@ export function useProjectsPagePresenter() {
     };
   }
 
+  useKeyboard((event) => {
+    if (
+      !event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      event.key.toLowerCase() !== 'v' ||
+      isTypingTarget(event.target)
+    ) {
+      return false;
+    }
+    event.preventDefault();
+    void navigate({ to: '/views/projects/new', search: projectViewSearch() });
+    return true;
+  }, true);
+
   function applyProjectView(view: ProjectSavedView) {
     return navigate({
       to: '/projects',

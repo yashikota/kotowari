@@ -188,6 +188,8 @@
     },
     "emptyDescriptionIssues": "Create custom views with filters to focus on the issues you want to see. Save and favorite views for quick access.",
     "emptyDescriptionProjects": "Create project views with filters and layout options. Save your favorite project views to return to them quickly.",
+    "shortcutHintBefore": "You can also save your current view by pressing",
+    "shortcutHintAfter": ".",
     "documentation": "Documentation",
     "notAvailable": "—"
   },

@@ -161,7 +161,42 @@ export function useIssuesPagePresenter() {
     return navigate({ to: '/issues', search: next, replace: true });
   };
 
+  function openNewView() {
+    return navigate({
+      to: '/views/new',
+      search: compactSearch(latestSearch.current),
+      state: {
+        autofocus: 'name',
+        viewDraft: {
+          display: layout,
+          groupBy,
+          subGroupBy,
+          orderBy,
+          direction,
+          completedIssues,
+          showSubIssues,
+          nestedSubIssues,
+          showEmptyGroups,
+          displayProperties,
+        },
+      },
+    });
+  }
+
   useKeyboard((event) => {
+    if (
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      !event.repeat &&
+      event.key.toLowerCase() === 'v' &&
+      !isTypingTarget(event.target)
+    ) {
+      event.preventDefault();
+      void openNewView();
+      return true;
+    }
     if (
       !(event.ctrlKey || event.metaKey) ||
       event.altKey ||
@@ -174,7 +209,7 @@ export function useIssuesPagePresenter() {
     event.preventDefault();
     void updateIssueDisplay({ layout: layout === 'list' ? 'board' : 'list' });
     return true;
-  });
+  }, true);
   const subscribedIds = new Set(subscriptionSnapshot.split('\0').filter(Boolean));
   const matchingIssues = (data.issues ?? [])
     .filter((issue) =>
@@ -285,26 +320,7 @@ export function useIssuesPagePresenter() {
         pendingSearch.current = next;
         return navigate({ to: '/issues', search: next, replace: true });
       },
-      onNewViewOpen: () =>
-        navigate({
-          to: '/views/new',
-          search: compactSearch(latestSearch.current),
-          state: {
-            autofocus: 'name',
-            viewDraft: {
-              display: layout,
-              groupBy,
-              subGroupBy,
-              orderBy,
-              direction,
-              completedIssues,
-              showSubIssues,
-              nestedSubIssues,
-              showEmptyGroups,
-              displayProperties,
-            },
-          },
-        }),
+      onNewViewOpen: openNewView,
       onFind2: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onFind']>>
       ) => {
