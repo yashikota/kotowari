@@ -2,11 +2,10 @@ import {
   ActionIcon,
   Box,
   Button,
-  Checkbox,
+  Divider,
   Group,
   Popover,
   Select,
-  SimpleGrid,
   Stack,
   Switch,
   Text,
@@ -17,13 +16,17 @@ import {
   IconChevronLeft,
   IconChevronUp,
   IconGripVertical,
+  IconArrowsSort,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useState, type ReactNode } from 'react';
 import type { Label } from '../types.ts';
 import { ProjectFilterPicker } from './ProjectFilterPicker.tsx';
-import { PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
-import type { ProjectDisplayProperty } from '../project-display.ts';
+import { ProjectDisplayPropertyOptions } from './ProjectDisplayPropertyOptions.tsx';
+import {
+  TIMELINE_PROJECT_DISPLAY_PROPERTIES,
+  type ProjectDisplayProperty,
+} from '../project-display.ts';
 import type { ProjectBoardGroup } from '../project-board.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
 import type {
@@ -152,7 +155,11 @@ export function ProjectListControls({
             </Button>
           )}
         </Popover.Target>
-        <Popover.Dropdown w={280}>
+        <Popover.Dropdown
+          w={330}
+          data-testid="project-display-options-dropdown"
+          style={{ maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}
+        >
           {model.view === 'board' && groupOrderingOpen ? (
             <ProjectBoardGroupOrdering
               groups={model.boardGroups}
@@ -178,11 +185,9 @@ export function ProjectListControls({
                 ))}
               </Group>
               {model.view === 'list' || model.view === 'timeline' ? (
-                <Select
-                  aria-label={t('projectList.groupBy')}
+                <ProjectListSelectRow
                   label={t('projectList.groupBy')}
                   value={model.groupBy}
-                  onChange={handlers.onGroupByChange}
                   data={[
                     { value: 'none', label: t('projectList.groupNone') },
                     { value: 'status', label: t('projectList.groupStatus') },
@@ -193,43 +198,33 @@ export function ProjectListControls({
                     { value: 'startDate', label: t('projectList.groupStartDate') },
                     { value: 'targetDate', label: t('projectList.groupTargetDate') },
                   ]}
-                  allowDeselect={false}
-                  comboboxProps={{ withinPortal: false }}
+                  onChange={(value) => handlers.onGroupByChange(value as ProjectGroupBy | null)}
                 />
               ) : (
                 <>
-                  <Group
-                    align="flex-end"
-                    gap="xs"
-                    wrap="nowrap"
-                    data-testid="project-board-column-controls"
+                  <ProjectListSelectRow
+                    label={t('projectList.columnsBy')}
+                    value={model.columnsBy}
+                    onChange={handlers.onColumnsByChange}
+                    data={PROJECT_BOARD_GROUPINGS.map((groupBy) => ({
+                      value: groupBy,
+                      label: t(`projectList.group${groupBy[0]?.toUpperCase()}${groupBy.slice(1)}`),
+                    }))}
+                    selectWidth={112}
+                    dataTestId="project-board-column-controls"
                   >
-                    <Select
-                      aria-label={t('projectList.columnsBy')}
-                      label={t('projectList.columnsBy')}
-                      value={model.columnsBy}
-                      onChange={handlers.onColumnsByChange}
-                      data={PROJECT_BOARD_GROUPINGS.map((groupBy) => ({
-                        value: groupBy,
-                        label: t(
-                          `projectList.group${groupBy[0]?.toUpperCase()}${groupBy.slice(1)}`,
-                        ),
-                      }))}
-                      allowDeselect={false}
-                      comboboxProps={{ withinPortal: false }}
-                      style={{ flex: 1 }}
-                    />
-                    <Button
+                    <ActionIcon
                       type="button"
                       variant="default"
-                      size="xs"
+                      size={28}
+                      aria-label={t('projectList.groupOrdering')}
+                      title={t('projectList.groupOrdering')}
                       onClick={() => setGroupOrderingOpen(true)}
                     >
-                      {t('projectList.groupOrdering')}
-                    </Button>
-                  </Group>
-                  <Select
-                    aria-label={t('projectList.rowsBy')}
+                      <IconArrowsSort size={15} stroke={1.7} aria-hidden="true" />
+                    </ActionIcon>
+                  </ProjectListSelectRow>
+                  <ProjectListSelectRow
                     label={t('projectList.rowsBy')}
                     value={model.rowsBy}
                     onChange={handlers.onRowsByChange}
@@ -244,101 +239,181 @@ export function ProjectListControls({
                         ),
                       })),
                     ]}
-                    allowDeselect={false}
-                    comboboxProps={{ withinPortal: false }}
-                  />
-                  <Switch
-                    label={t('projectList.showEmptyColumns')}
-                    checked={model.showEmptyColumns}
-                    onChange={(event) =>
-                      handlers.onShowEmptyColumnsChange(event.currentTarget.checked)
-                    }
                   />
                 </>
               )}
+              {model.view !== 'board' ? <ProjectListOrderControls model={model} /> : null}
+              {model.view !== 'board' ? <ShowClosedProjects model={model} /> : null}
+              {model.view === 'board' ? <ProjectListOrderControls model={model} /> : null}
+              {model.view === 'board' ? <ShowClosedProjects model={model} /> : null}
+              <Divider />
+              {model.view === 'list' ? (
+                <ProjectViewOptionsSection label={t('projectList.listOptions')}>
+                  <ProjectDisplayPropertyOptions
+                    selectedProperties={model.displayProperties}
+                    onToggle={handlers.onDisplayPropertyToggle}
+                  />
+                </ProjectViewOptionsSection>
+              ) : null}
+              {model.view === 'board' ? (
+                <ProjectViewOptionsSection label={t('projectList.boardOptions')}>
+                  <ProjectViewSwitchRow
+                    label={t('projectList.showEmptyColumns')}
+                    checked={model.showEmptyColumns}
+                    onChange={handlers.onShowEmptyColumnsChange}
+                  />
+                  <ProjectDisplayPropertyOptions
+                    selectedProperties={model.displayProperties}
+                    onToggle={handlers.onDisplayPropertyToggle}
+                  />
+                </ProjectViewOptionsSection>
+              ) : null}
               {model.view === 'timeline' ? (
-                <>
-                  <Switch
+                <ProjectViewOptionsSection label={t('projectList.timelineOptions')}>
+                  <ProjectViewSwitchRow
                     label={t('projectList.showProjectList')}
                     checked={model.showProjectList}
-                    onChange={(event) =>
-                      handlers.onShowProjectListChange(event.currentTarget.checked)
-                    }
+                    onChange={handlers.onShowProjectListChange}
                   />
-                  <Switch
+                  <ProjectViewSwitchRow
                     label={t('projectList.showWeekNumbers')}
                     checked={model.showWeekNumbers}
-                    onChange={(event) =>
-                      handlers.onShowWeekNumbersChange(event.currentTarget.checked)
-                    }
+                    onChange={handlers.onShowWeekNumbersChange}
                   />
-                </>
+                  <ProjectDisplayPropertyOptions
+                    selectedProperties={model.displayProperties}
+                    onToggle={handlers.onDisplayPropertyToggle}
+                    properties={TIMELINE_PROJECT_DISPLAY_PROPERTIES}
+                  />
+                </ProjectViewOptionsSection>
               ) : null}
-              <Stack gap={4}>
-                <Text size="xs" fw={600} c="dimmed">
-                  {t('projectList.displayProperties')}
-                </Text>
-                <SimpleGrid cols={2} spacing={4}>
-                  {PROJECT_DISPLAY_PROPERTIES.map((property) => (
-                    <Checkbox
-                      key={property}
-                      size="xs"
-                      label={t(`projectList.property.${property}`)}
-                      checked={model.displayProperties.includes(property)}
-                      onChange={() => handlers.onDisplayPropertyToggle(property)}
-                    />
-                  ))}
-                </SimpleGrid>
-              </Stack>
-              <Select
-                aria-label={t('projectList.orderBy')}
-                label={t('projectList.orderBy')}
-                value={model.orderBy}
-                onChange={handlers.onOrderByChange}
-                data={[
-                  { value: 'manual', label: t('projectList.orderManual') },
-                  { value: 'name', label: t('projectList.orderName') },
-                  { value: 'status', label: t('projectList.orderStatus') },
-                  { value: 'priority', label: t('projectList.orderPriority') },
-                  { value: 'healthUpdated', label: t('projectList.orderHealthUpdated') },
-                  { value: 'startDate', label: t('projectList.orderStartDate') },
-                  { value: 'targetDate', label: t('projectList.orderTargetDate') },
-                  { value: 'created', label: t('projectList.orderCreated') },
-                  { value: 'updated', label: t('projectList.orderUpdated') },
-                ]}
-                allowDeselect={false}
-                comboboxProps={{ withinPortal: false }}
-              />
-              <Select
-                aria-label={t('projectList.direction')}
-                label={t('projectList.direction')}
-                value={model.direction}
-                onChange={handlers.onDirectionChange}
-                data={[
-                  { value: 'asc', label: t('projectList.ascending') },
-                  { value: 'desc', label: t('projectList.descending') },
-                ]}
-                allowDeselect={false}
-                comboboxProps={{ withinPortal: false }}
-              />
-              <Select
-                aria-label={t('projectList.showClosed')}
-                label={t('projectList.showClosed')}
-                value={model.closed}
-                onChange={handlers.onClosedChange}
-                data={[
-                  { value: 'all', label: t('projectList.closedAll') },
-                  { value: 'open', label: t('projectList.closedOpen') },
-                  { value: 'closed', label: t('projectList.closedOnly') },
-                ]}
-                allowDeselect={false}
-                comboboxProps={{ withinPortal: false }}
-              />
+              <Divider />
+              <Group justify="space-between">
+                <Button
+                  type="button"
+                  variant="subtle"
+                  size="xs"
+                  aria-label={t('projectList.resetToViewDefault')}
+                  onClick={handlers.onReset}
+                >
+                  {t('projectList.reset')}
+                </Button>
+              </Group>
             </Stack>
           )}
         </Popover.Dropdown>
       </Popover>
     </Group>
+  );
+}
+
+function ProjectListOrderControls({ model }: { model: ProjectListControlsModel }) {
+  const { t } = useTranslation();
+  const { handlers } = model;
+  return (
+    <ProjectListSelectRow
+      label={t('projectList.orderBy')}
+      value={model.orderBy}
+      onChange={handlers.onOrderByChange}
+      data={[
+        { value: 'manual', label: t('projectList.orderManual') },
+        { value: 'name', label: t('projectList.orderName') },
+        { value: 'status', label: t('projectList.orderStatus') },
+        { value: 'priority', label: t('projectList.orderPriority') },
+        { value: 'healthUpdated', label: t('projectList.orderHealthUpdated') },
+        { value: 'startDate', label: t('projectList.orderStartDate') },
+        { value: 'targetDate', label: t('projectList.orderTargetDate') },
+        { value: 'created', label: t('projectList.orderCreated') },
+        { value: 'updated', label: t('projectList.orderUpdated') },
+      ]}
+    />
+  );
+}
+
+function ProjectListSelectRow({
+  label,
+  value,
+  onChange,
+  data,
+  selectWidth = 112,
+  dataTestId,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string | null) => void;
+  data: { value: string; label: string }[];
+  selectWidth?: number;
+  dataTestId?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <Group gap="sm" align="center" justify="space-between" wrap="nowrap" data-testid={dataTestId}>
+      <Text size="xs" style={{ flex: '1 1 auto', minWidth: 0 }}>
+        {label}
+      </Text>
+      <Group gap={6} align="center" justify="flex-end" wrap="nowrap" style={{ flexShrink: 0 }}>
+        {children}
+        <Select
+          aria-label={label}
+          size="xs"
+          value={value}
+          onChange={onChange}
+          data={data}
+          w={selectWidth}
+          allowDeselect={false}
+          comboboxProps={{ withinPortal: false }}
+        />
+      </Group>
+    </Group>
+  );
+}
+
+function ProjectViewSwitchRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <Group justify="space-between" wrap="nowrap">
+      <Switch
+        label={label}
+        labelPosition="left"
+        checked={checked}
+        onChange={(event) => onChange(event.currentTarget.checked)}
+      />
+    </Group>
+  );
+}
+
+function ProjectViewOptionsSection({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Stack gap="xs">
+      <Text size="xs" fw={600} c="dimmed">
+        {label}
+      </Text>
+      {children}
+    </Stack>
+  );
+}
+
+function ShowClosedProjects({ model }: { model: ProjectListControlsModel }) {
+  const { t } = useTranslation();
+  return (
+    <ProjectListSelectRow
+      label={t('projectList.showClosed')}
+      value={model.closed}
+      onChange={model.handlers.onClosedChange}
+      data={[
+        { value: 'all', label: t('projectList.closedAll') },
+        { value: 'open', label: t('projectList.closedOpen') },
+        { value: 'closed', label: t('projectList.closedOnly') },
+      ]}
+    />
   );
 }
 

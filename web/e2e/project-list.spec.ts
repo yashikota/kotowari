@@ -32,6 +32,59 @@ async function clearProjectFilters(page: Page) {
   await clearButton.click();
 }
 
+test('project display options match the active view structure', async ({ page }) => {
+  await page.setViewportSize({ width: 760, height: 800 });
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Display options' }).click();
+
+  const dropdown = page.getByTestId('project-display-options-dropdown');
+  await expect(dropdown).toBeVisible();
+  const bounds = await dropdown.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(760);
+  const listText = await dropdown.innerText();
+  expect(listText.indexOf('Grouping')).toBeLessThan(listText.indexOf('Ordering'));
+  expect(listText.indexOf('Ordering')).toBeLessThan(listText.indexOf('Show closed projects'));
+  expect(listText.indexOf('Show closed projects')).toBeLessThan(listText.indexOf('List options'));
+  await expect(dropdown.getByRole('button', { name: 'Summary', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await expect(dropdown.getByLabel('Direction')).toHaveCount(0);
+  await dropdown.getByRole('button', { name: 'Summary', exact: true }).click();
+  await expect(page).toHaveURL(/displayProperties=/);
+  await dropdown.getByRole('button', { name: 'Reset to view default' }).click();
+  await expect(page).not.toHaveURL(/displayProperties=/);
+  await expect(dropdown.getByRole('button', { name: 'Summary', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+
+  await dropdown.getByRole('tab', { name: 'Board' }).click();
+  const boardText = await dropdown.innerText();
+  expect(boardText.indexOf('Ordering')).toBeLessThan(boardText.indexOf('Show closed projects'));
+  expect(boardText.indexOf('Show closed projects')).toBeLessThan(
+    boardText.indexOf('Board options'),
+  );
+  expect(boardText.indexOf('Board options')).toBeLessThan(boardText.indexOf('Show empty columns'));
+  expect(boardText.indexOf('Show empty columns')).toBeLessThan(
+    boardText.indexOf('Display properties'),
+  );
+
+  await dropdown.getByRole('tab', { name: 'Timeline' }).click();
+  const timelineText = await dropdown.innerText();
+  expect(timelineText.indexOf('Ordering')).toBeLessThan(
+    timelineText.indexOf('Show closed projects'),
+  );
+  expect(timelineText.indexOf('Show closed projects')).toBeLessThan(
+    timelineText.indexOf('Timeline options'),
+  );
+  await expect(dropdown.getByRole('switch', { name: 'Show project list' })).toBeVisible();
+  await expect(dropdown.getByRole('switch', { name: 'Show week numbers' })).toBeVisible();
+  await expect(dropdown.getByRole('button', { name: 'Summary', exact: true })).toHaveCount(0);
+});
+
 test('project list filters, search, grouping, and ordering persist in the URL', async ({
   page,
   request,
@@ -206,17 +259,17 @@ test('project list filters, search, grouping, and ordering persist in the URL', 
   await expect(orderedRows.first()).toHaveAttribute('href', `/projects/${startedSlug}`);
 
   await page.getByRole('button', { name: 'Display options' }).click();
-  const summaryProperty = page.getByRole('checkbox', { name: 'Summary' });
-  const leadProperty = page.getByRole('checkbox', { name: 'Lead' });
-  await summaryProperty.check();
-  await leadProperty.check();
+  const summaryProperty = page.getByRole('button', { name: 'Summary', exact: true });
+  const leadProperty = page.getByRole('button', { name: 'Lead', exact: true });
+  await summaryProperty.click();
+  await leadProperty.click();
   const plannedRow = page.locator(`[data-project-list-row="${plannedSlug}"]`);
   await expect(plannedRow).toContainText(`Summary for ${plannedName}`);
   await expect(plannedRow.getByText('You', { exact: true })).toHaveCount(1);
   await expect(page).toHaveURL(/displayProperties=/);
   await page.reload();
   await page.getByRole('button', { name: 'Display options' }).click();
-  await expect(summaryProperty).toBeChecked();
+  await expect(summaryProperty).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Display options' }).click();
 
   await page.keyboard.press('Escape');
@@ -1185,7 +1238,7 @@ test('project health can be edited, filtered, and displayed in project views', a
 
   await clearProjectFilters(page);
   await page.getByRole('button', { name: 'Display options' }).click();
-  await page.getByRole('checkbox', { name: 'Health' }).check();
+  await page.getByRole('button', { name: 'Health', exact: true }).click();
   await expect(page.locator(`[data-project-list-row="${projects[0].slug}"]`)).toContainText(
     'On track',
   );
@@ -1238,7 +1291,7 @@ test('completion dates are recorded, displayed, and filterable', async ({ page, 
 
   await page.goto('/projects');
   await page.getByRole('button', { name: 'Display options' }).click();
-  await page.getByRole('checkbox', { name: 'Completed', exact: true }).check();
+  await page.getByRole('button', { name: 'Completed', exact: true }).click();
   await expect(page.locator(`[data-project-list-row="shipped-${stamp}"]`)).toContainText(
     'Completed',
   );

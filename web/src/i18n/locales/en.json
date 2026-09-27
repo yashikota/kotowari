@@ -889,6 +889,11 @@
     "updatedDate": "Updated {{date}}",
     "completedDate": "Completed {{date}}",
     "displayProperties": "Display properties",
+    "listOptions": "List options",
+    "boardOptions": "Board options",
+    "timelineOptions": "Timeline options",
+    "reset": "Reset",
+    "resetToViewDefault": "Reset to view default",
     "projectName": "Project",
     "sortByProperty": "Sort by {{property}}",
     "property": {

@@ -916,6 +916,7 @@ export function useProjectsPagePresenter() {
           showProjectList: undefined,
           showWeekNumbers: undefined,
           timelineStart: undefined,
+          displayProperties: undefined,
         }),
     },
   };

@@ -884,6 +884,11 @@
     "updatedDate": "更新 {{date}}",
     "completedDate": "完了 {{date}}",
     "displayProperties": "表示プロパティ",
+    "listOptions": "リストのオプション",
+    "boardOptions": "ボードのオプション",
+    "timelineOptions": "タイムラインのオプション",
+    "reset": "リセット",
+    "resetToViewDefault": "ビューのデフォルトに戻す",
     "projectName": "プロジェクト",
     "sortByProperty": "{{property}}で並べ替え",
     "property": {
