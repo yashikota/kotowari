@@ -155,11 +155,6 @@ export function IssueDetailView({
         projectConversionPriority,
         projectConversionStartDate,
         projectConversionTargetDate,
-        recurringOpen,
-        recurringName,
-        recurringFirstDueDate,
-        recurringInterval,
-        recurringUnit,
         children,
         linkedAdrs,
         unlinkedAdrs,
@@ -1479,70 +1474,6 @@ export function IssueDetailView({
                     {t('common.cancel')}
                   </Button>
                   <Button type="submit" disabled={!templateName.trim()}>
-                    {t('modal.create')}
-                  </Button>
-                </Group>
-              </Stack>
-            </form>
-          </Modal>
-          <Modal
-            opened={recurringOpen}
-            onClose={handlers.onCloseRecurringIssue}
-            title={t('issueActions.recurringIssue')}
-            centered
-          >
-            <form onSubmit={handlers.onCreateRecurringIssue}>
-              <Stack>
-                <TextInput
-                  autoFocus
-                  required
-                  maxLength={100}
-                  label={t('modal.recurringName')}
-                  value={recurringName}
-                  onChange={handlers.onRecurringNameChange}
-                />
-                <TextInput
-                  required
-                  type="date"
-                  label={t('modal.firstDueDate')}
-                  value={recurringFirstDueDate}
-                  onChange={handlers.onRecurringFirstDueDateChange}
-                />
-                <Group grow align="flex-end">
-                  <TextInput
-                    required
-                    type="number"
-                    min={1}
-                    max={365}
-                    label={t('modal.repeatEvery')}
-                    value={recurringInterval}
-                    onChange={handlers.onRecurringIntervalChange}
-                  />
-                  <NativeSelect
-                    aria-label={t('modal.repeatEvery')}
-                    value={recurringUnit}
-                    onChange={handlers.onRecurringUnitChange}
-                    data={(['day', 'week', 'month', 'year'] as const).map((unit) => ({
-                      value: unit,
-                      label: t(`modal.${unit}`),
-                    }))}
-                  />
-                </Group>
-                <Text size="sm" c="dimmed">
-                  {issue.identifier} · {issue.title}
-                </Text>
-                <Group justify="flex-end">
-                  <Button type="button" variant="default" onClick={handlers.onCloseRecurringIssue}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      !recurringName.trim() ||
-                      !recurringFirstDueDate ||
-                      Number(recurringInterval) < 1
-                    }
-                  >
                     {t('modal.create')}
                   </Button>
                 </Group>

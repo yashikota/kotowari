@@ -151,11 +151,6 @@ export function useIssueDetailPresenter({
   const [projectConversionPriority, setProjectConversionPriority] = useState(0);
   const [projectConversionStartDate, setProjectConversionStartDate] = useState('');
   const [projectConversionTargetDate, setProjectConversionTargetDate] = useState('');
-  const [recurringOpen, setRecurringOpen] = useState(false);
-  const [recurringName, setRecurringName] = useState('');
-  const [recurringFirstDueDate, setRecurringFirstDueDate] = useState('');
-  const [recurringInterval, setRecurringInterval] = useState('1');
-  const [recurringUnit, setRecurringUnit] = useState<'day' | 'week' | 'month' | 'year'>('week');
   const [error, setError] = useState('');
 
   async function reload() {
@@ -610,32 +605,6 @@ export function useIssueDetailPresenter({
     }
   }
 
-  async function createRecurringIssue() {
-    const name = recurringName.trim();
-    const interval = Number(recurringInterval);
-    if (!name || !recurringFirstDueDate || !Number.isInteger(interval) || interval < 1) return;
-    try {
-      const recurring = await api.createRecurringIssue(identifier, {
-        name,
-        firstDueDate: recurringFirstDueDate,
-        interval,
-        unit: recurringUnit,
-      });
-      setRecurringOpen(false);
-      await router.invalidate();
-      signals.dispatchEvent(new Event('kotowari:refresh'));
-      if (recurring.lastIssueIdentifier) {
-        await navigate({
-          to: '/issues/$identifier',
-          params: { identifier: recurring.lastIssueIdentifier },
-          state: { autofocus: 'title' },
-        });
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'failed to create recurring issue');
-    }
-  }
-
   async function submitComment() {
     const body = (preferences.convertEmoticons ? convertTextEmoticons(draft) : draft).trim();
     const files = commentFiles;
@@ -837,11 +806,6 @@ export function useIssueDetailPresenter({
     projectConversionPriority,
     projectConversionStartDate,
     projectConversionTargetDate,
-    recurringOpen,
-    recurringName,
-    recurringFirstDueDate,
-    recurringInterval,
-    recurringUnit,
     due,
     hasUpcomingCycle: cycles.some((cycle) => new Date(cycle.startsAt) > new Date()),
     selectedLabelIds,
@@ -1139,32 +1103,13 @@ export function useIssueDetailPresenter({
       },
       onOpenRecurringIssue: () => {
         setIssueOptionsOpen(false);
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        setRecurringName(issue.title);
-        setRecurringFirstDueDate(localDateValue(tomorrow));
-        setRecurringInterval('1');
-        setRecurringUnit('week');
-        setRecurringOpen(true);
-      },
-      onCloseRecurringIssue: () => setRecurringOpen(false),
-      onRecurringNameChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setRecurringName(e.target.value),
-      onRecurringFirstDueDateChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setRecurringFirstDueDate(e.target.value),
-      onRecurringIntervalChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setRecurringInterval(e.target.value),
-      onRecurringUnitChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setRecurringUnit(e.target.value as 'day' | 'week' | 'month' | 'year'),
-      onCreateRecurringIssue: (
-        e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
-      ) => {
-        e.preventDefault();
-        return createRecurringIssue();
+        return sendIntent('issue.createRecurring', {
+          title: issue.title,
+          body: issue.body,
+          priority: issue.priority,
+          assignee: issue.assignee,
+          links: issue.externalLinks.map(({ url, title, kind }) => ({ url, title, kind })),
+        });
       },
       Show_description_history_onClick50: () => setHistoryRequest((current) => current + 1),
       onSetReminder: (kind: 'hour' | 'tomorrow' | 'week' | 'month' | 'cycle') => {

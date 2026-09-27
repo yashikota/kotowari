@@ -23,6 +23,7 @@ import type {
   Label,
   Project,
   RecurringIssue,
+  RecurringIssueDraft,
   SearchHit,
   View,
 } from '../types.ts';
@@ -250,6 +251,42 @@ export function useShellPresenter() {
     setIssueCycleId(detail.cycleId ? String(detail.cycleId) : '');
     setIssuePriority(detail.priority ?? 0);
     openCreateIssue();
+  });
+  useIntentHandler('issue.createRecurring', (value) => {
+    const draft = value as RecurringIssueDraft;
+    const firstDueDate = localDateValue(new Date());
+    setIssueTitle(draft.title);
+    setIssueBody(draft.body);
+    setIssueStatus(
+      issueWorkflowStatuses.find((status) => status.category === 'backlog')?.id ?? 'backlog',
+    );
+    setIssuePriority(draft.priority);
+    setIssueAssignee(draft.assignee ?? '');
+    setIssueType('');
+    setIssueEstimate('');
+    setIssueAttachments([]);
+    setIssueAttachmentError('');
+    setIssueDueDate('');
+    setIssueDueDateOpen(false);
+    setIssueRecurringOpen(true);
+    setIssueRecurringFirstDueDate(firstDueDate);
+    setIssueRecurringInterval('1');
+    setIssueRecurringUnit('week');
+    setIssueExternalLinks(draft.links);
+    setIssueLinkOpen(false);
+    setIssueLinkURL('');
+    setIssueLinkTitle('');
+    setIssueLabelNames([]);
+    setIssueParentId(undefined);
+    setIssueParentOpen(false);
+    setIssueParentIdentifier('');
+    setIssueParentQuery('');
+    setSelectedParentIssue(null);
+    setIssueParentLoading(false);
+    setIssueTemplateSlug('');
+    setIssueProjectId('');
+    setIssueCycleId('');
+    setCreateIssue(true);
   });
   useIntentHandler('adr.create', (value) => {
     const detail = (value ?? {}) as { issueNumber?: number };

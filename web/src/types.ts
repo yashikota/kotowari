@@ -92,6 +92,10 @@ export type Issue = {
   archivedAt?: string | null;
 };
 
+export type RecurringIssueDraft = Pick<Issue, 'title' | 'body' | 'priority' | 'assignee'> & {
+  links: Pick<IssueLink, 'url' | 'title' | 'kind'>[];
+};
+
 export type IssueTemplate = {
   slug: string;
   name: string;

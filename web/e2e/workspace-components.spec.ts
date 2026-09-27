@@ -2266,11 +2266,18 @@ test('issues can become scheduled recurring issues with an initial instance', as
   request,
 }) => {
   const stamp = Date.now();
-  const title = `Weekly review ${stamp}`;
-  const name = `Review schedule ${stamp}`;
+  const sourceTitle = `Weekly review ${stamp}`;
+  const title = `Weekly review follow-up ${stamp}`;
+  const description = 'Review progress and blockers.\n';
   const firstDueDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const response = await request.post('/api/issues', {
-    data: { title, body: 'Review progress and blockers.', status: 'in_progress', priority: 2 },
+    data: {
+      title: sourceTitle,
+      body: description,
+      status: 'in_progress',
+      priority: 2,
+      assignee: 'self',
+    },
   });
   expect(response.ok()).toBeTruthy();
   const source = (await response.json()) as { identifier: string };
@@ -2279,21 +2286,47 @@ test('issues can become scheduled recurring issues with an initial instance', as
   await page.getByRole('button', { name: 'Issue options' }).click();
   await page.getByRole('menuitem', { name: 'Convert to' }).hover();
   await page.getByRole('menuitem', { name: 'Recurring issue…' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Recurring issue…' });
-  await dialog.getByRole('textbox', { name: 'Recurring issue name' }).fill(name);
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(dialog.getByRole('textbox', { name: 'Issue title' })).toHaveValue(sourceTitle);
+  await expect(dialog.getByRole('textbox', { name: 'Description' })).toHaveValue(description);
+  await expect(dialog.getByLabel('Status')).toHaveValue('backlog');
+  await expect(dialog.getByLabel('Priority')).toHaveValue('2');
+  await expect(dialog.getByLabel('Assignee')).toHaveValue('self');
+  await dialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
   await dialog.getByRole('textbox', { name: 'First due' }).fill(firstDueDate);
   await dialog.getByRole('spinbutton', { name: 'Repeats every' }).fill('2');
-  await dialog.getByRole('combobox', { name: 'Repeats every' }).selectOption('week');
+  await dialog.getByRole('combobox', { name: 'Repeat unit' }).selectOption('week');
   const createResponsePromise = page.waitForResponse((candidate) => {
     const request = candidate.request();
-    return (
-      request.method() === 'POST' &&
-      new URL(candidate.url()).pathname === `/api/issues/${source.identifier}/recurrences`
-    );
+    return request.method() === 'POST' && new URL(candidate.url()).pathname === '/api/issues';
   });
-  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Create recurring issue', exact: true }).click();
   const createResponse = await createResponsePromise;
-  const schedule = (await createResponse.json()) as {
+  const createBody = createResponse.request().postDataJSON() as {
+    title: string;
+    body: string;
+    status: string;
+    workflowStatus?: string;
+    priority: number;
+    assignee: string;
+    recurring: { name: string; firstDueDate: string; interval: number; unit: string };
+  };
+  expect(createResponse.ok(), JSON.stringify(createBody)).toBeTruthy();
+  expect(createBody).toMatchObject({
+    title,
+    body: description,
+    status: 'backlog',
+    priority: 2,
+    assignee: 'self',
+    recurring: {
+      name: title,
+      firstDueDate,
+      interval: 2,
+      unit: 'week',
+    },
+  });
+  const scheduleResponse = await request.get('/api/recurring-issues');
+  const schedules = (await scheduleResponse.json()) as {
     slug: string;
     name: string;
     title: string;
@@ -2303,13 +2336,13 @@ test('issues can become scheduled recurring issues with an initial instance', as
     unit: string;
     lastIssueIdentifier: string;
     enabled: boolean;
-  };
-  expect(createResponse.ok(), JSON.stringify(schedule)).toBeTruthy();
+  }[];
+  const schedule = schedules.find((candidate) => candidate.name === title);
   expect(schedule).toMatchObject({
     slug: expect.any(String),
-    name,
+    name: title,
     title,
-    body: expect.stringContaining('Review progress and blockers.'),
+    body: description,
     firstDueDate,
     nextDueDate: firstDueDate,
     interval: 2,
@@ -2321,14 +2354,21 @@ test('issues can become scheduled recurring issues with an initial instance', as
   const firstInstance = await request.get(`/api/issues/${schedule!.lastIssueIdentifier}`);
   expect(await firstInstance.json()).toMatchObject({
     title,
-    body: expect.stringContaining('Review progress and blockers.'),
+    body: description,
     status: 'backlog',
     priority: 2,
+    assignee: 'self',
     dueDate: firstDueDate,
+  });
+  expect(await (await request.get(`/api/issues/${source.identifier}`)).json()).toMatchObject({
+    identifier: source.identifier,
+    title: sourceTitle,
+    body: description,
+    status: 'in_progress',
   });
 
   await page.goto('/recurring');
-  const scheduleRow = page.getByRole('listitem').filter({ hasText: name });
+  const scheduleRow = page.getByRole('listitem').filter({ hasText: title });
   await expect(scheduleRow).toBeVisible();
   await scheduleRow.getByRole('button', { name: 'Pause' }).click();
   await expect(scheduleRow.getByText('Paused')).toBeVisible();
