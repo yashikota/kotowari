@@ -360,7 +360,7 @@ func validProjectIconColor(color string) bool {
 }
 
 var projectIcons = map[string]struct{}{
-	"folder": {}, "rocket": {}, "bolt": {}, "book": {}, "bug": {}, "briefcase": {}, "building": {},
+	"folder": {}, "cube": {}, "rocket": {}, "bolt": {}, "book": {}, "bug": {}, "briefcase": {}, "building": {},
 	"calendar": {}, "chart-bar": {}, "code": {}, "coffee": {}, "compass": {}, "cpu": {}, "database": {},
 	"desktop": {}, "diamond": {}, "flame": {}, "flask": {}, "heart": {}, "home": {}, "leaf": {}, "lock": {},
 	"map": {}, "message": {}, "moon": {}, "palette": {}, "puzzle": {}, "shield": {}, "sparkles": {},

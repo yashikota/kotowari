@@ -22,6 +22,7 @@ import {
   IconCoffee,
   IconCompass,
   IconCpu,
+  IconCube,
   IconDatabase,
   IconDeviceDesktop,
   IconDiamond,
@@ -53,6 +54,7 @@ import { useTranslation } from 'react-i18next';
 
 const PROJECT_ICONS = [
   { key: 'folder', Icon: IconFolder },
+  { key: 'cube', Icon: IconCube },
   { key: 'rocket', Icon: IconRocket },
   { key: 'bolt', Icon: IconBolt },
   { key: 'book', Icon: IconBook },
@@ -211,12 +213,13 @@ export function ProjectIconPicker({
       <Popover.Target>
         <ActionIcon
           type="button"
-          variant="default"
+          variant={icon === 'cube' && color === 'blue' ? 'light' : 'default'}
+          color={icon === 'cube' && color === 'blue' ? 'blue' : undefined}
           size={size}
           aria-label={t('projectIcons.choose')}
           onClick={() => setOpened((current) => !current)}
         >
-          <ProjectIconMark icon={icon} color={color} size={20} />
+          <ProjectIconMark icon={icon} color={color} size={size <= 28 ? 16 : 20} />
         </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown p="xs">

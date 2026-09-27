@@ -637,7 +637,7 @@
     "heading": "Draft a new project",
     "description": "Plan a clear outcome, scope, and milestones before creating the project.",
     "hide": "Hide assistant",
-    "show": "Show assistant",
+    "show": "Create with Agent",
     "promptPlaceholder": "Draft your project with Kotowari…",
     "outlineScope": "Outline the scope",
     "research": "Research related issues",
@@ -723,6 +723,7 @@
     },
     "names": {
       "folder": "Folder",
+      "cube": "Cube",
       "rocket": "Rocket",
       "bolt": "Bolt",
       "book": "Book",

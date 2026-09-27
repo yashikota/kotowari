@@ -6,6 +6,27 @@ import (
 	"testing"
 )
 
+func TestProjectCubeAppearancePersists(t *testing.T) {
+	s := openTest(t)
+	project, err := s.CreateProjectWithAppearance(
+		"Linear-style project", "linear-style-project", "", "cube", "blue", "", "planned", 0, nil, nil, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(s.Path())
+	if err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := reopened.GetProject(project.Slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if persisted.Icon != "cube" || persisted.IconColor != "blue" {
+		t.Fatalf("persisted project appearance = icon %q, color %q", persisted.Icon, persisted.IconColor)
+	}
+}
+
 func TestProjectWorkflowStatusesPersistAndProtectUsedStates(t *testing.T) {
 	s := openTest(t)
 	defaults, err := s.ProjectWorkflowStatuses()

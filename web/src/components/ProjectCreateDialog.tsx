@@ -12,7 +12,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconChevronDown, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconChevronDown, IconPlus, IconSparkles, IconTag, IconTrash } from '@tabler/icons-react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import type { RefObject } from 'react';
@@ -71,13 +71,41 @@ export function ProjectCreateDialog({
     <Modal
       opened={createOpen}
       onClose={handlers.onCloseCreateProject}
-      title={`${t('nav.projects')} › ${t('projectList.newProject')}`}
+      title={
+        <Group
+          justify="space-between"
+          gap="md"
+          wrap="nowrap"
+          style={{ flex: 1, width: '100%', minWidth: 0 }}
+        >
+          <Text size="sm">
+            {t('nav.projects')} › {t('projectList.newProject')}
+          </Text>
+          {desktopViewport && !projectAssistantOpen ? (
+            <Button
+              type="button"
+              variant="default"
+              size="compact-sm"
+              leftSection={<IconSparkles size={14} aria-hidden="true" />}
+              onClick={handlers.onToggleProjectAssistant}
+            >
+              {t('projectAssistant.show')}
+            </Button>
+          ) : null}
+        </Group>
+      }
       centered
       size="1080px"
       styles={{
         inner: { padding: 12 },
-        content: { height: 'min(88vh, 920px)', display: 'flex', flexDirection: 'column' },
-        header: { minHeight: 52 },
+        content: {
+          height: 'min(88vh, 920px)',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 16,
+        },
+        header: { minHeight: 52, paddingLeft: 22, paddingRight: 26 },
+        title: { flex: 1, minWidth: 0 },
         body: { flex: 1, minHeight: 0, padding: 0, overflow: 'hidden' },
       }}
     >
@@ -99,27 +127,15 @@ export function ProjectCreateDialog({
             flexDirection: 'column',
           }}
         >
-          {desktopViewport && !projectAssistantOpen ? (
-            <Group justify="flex-end" px="lg" pt="xs">
-              <Button
-                type="button"
-                variant="subtle"
-                size="compact-sm"
-                onClick={handlers.onToggleProjectAssistant}
-              >
-                {t('projectAssistant.show')}
-              </Button>
-            </Group>
-          ) : null}
           <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <Stack p="lg" pt={4} gap={4}>
+            <Stack px={26} pt={4} pb="xs" gap={4} style={{ minHeight: '100%' }}>
               <Group justify="space-between" align="center" gap="sm" wrap="nowrap">
                 <ProjectIconPicker
                   icon={icon}
                   color={iconColor}
                   onChange={handlers.onProjectIconChange}
                   onColorChange={handlers.onProjectIconColorChange}
-                  size={32}
+                  size={28}
                 />
                 <Group
                   align="center"
@@ -190,7 +206,7 @@ export function ProjectCreateDialog({
                   input: { fontSize: 16, height: 30, minHeight: 30, paddingInline: 0 },
                 }}
               />
-              <Group gap="xs" wrap="wrap" align="center">
+              <Group gap="xs" wrap="nowrap" align="center" mt={3}>
                 <Select
                   aria-label={t('field.status')}
                   value={status}
@@ -246,9 +262,13 @@ export function ProjectCreateDialog({
                   value={targetDate}
                   onChange={handlers.onProjectTargetDateChange}
                 />
+              </Group>
+              <Group gap="xs" wrap="wrap" align="center" mt={3}>
                 <MultiSelect
                   aria-label={t('filters.projectLabels')}
-                  placeholder={t('filters.projectLabels')}
+                  placeholder={selectedLabels.length ? t('filters.projectLabels') : ''}
+                  leftSection={<IconTag size={14} stroke={1.7} aria-hidden="true" />}
+                  leftSectionPointerEvents="none"
                   value={selectedLabels}
                   onChange={handlers.New_project_labels_onChange}
                   data={availableLabels.map((label) => ({
@@ -259,8 +279,11 @@ export function ProjectCreateDialog({
                   hidePickedOptions
                   maxDropdownHeight={240}
                   size="xs"
-                  style={{ minWidth: 180, maxWidth: 280 }}
-                  styles={{ input: { borderRadius: 999 } }}
+                  style={{ width: selectedLabels.length ? 180 : 34 }}
+                  styles={{
+                    input: { borderRadius: 999, paddingInlineStart: 28 },
+                    section: { width: 25 },
+                  }}
                 />
                 <ProjectCreateDependencyQuickAdd
                   available={availableDependencyProjects.length > 0}
@@ -274,12 +297,33 @@ export function ProjectCreateDialog({
                 value={description}
                 onChange={handlers.New_project_description_onChange}
                 minRows={16}
-                autosize
+                style={{ flex: '1 1 320px', minHeight: 320, display: 'flex' }}
                 variant="unstyled"
-                styles={{ input: { borderTop: '1px solid var(--mantine-color-default-border)' } }}
+                styles={{
+                  root: { flex: '1 1 320px', minHeight: 320, display: 'flex' },
+                  wrapper: { flex: '1 1 auto', display: 'flex' },
+                  input: {
+                    flex: '1 1 auto',
+                    height: '100%',
+                    minHeight: 320,
+                    paddingTop: 23,
+                    resize: 'none',
+                    borderTop: '1px solid var(--mantine-color-default-border)',
+                  },
+                }}
+                mt={10}
               />
-              <Stack gap="xs" aria-label={t('projectMilestones.heading')}>
-                <Group justify="space-between" mih={32}>
+              <Stack
+                gap="xs"
+                aria-label={t('projectMilestones.heading')}
+                p="xs"
+                style={{
+                  marginInline: -5,
+                  border: '1px solid var(--mantine-color-default-border)',
+                  borderRadius: 'var(--mantine-radius-md)',
+                }}
+              >
+                <Group justify="space-between" mih={28}>
                   <Button
                     type="button"
                     variant="subtle"
@@ -407,13 +451,16 @@ export function ProjectCreateDialog({
           <Group
             justify="flex-end"
             px="lg"
-            py="md"
+            pt={11}
+            pb={23}
             style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
           >
-            <Button type="button" variant="default" onClick={handlers.onCloseCreateProject}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={!name.trim()}>
+            <Button
+              type="submit"
+              size="compact-sm"
+              styles={{ root: { paddingInline: 13 } }}
+              disabled={!name.trim()}
+            >
               {t('projectList.createTitle')}
             </Button>
           </Group>

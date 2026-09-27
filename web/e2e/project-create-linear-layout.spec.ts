@@ -9,6 +9,11 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
 
   const dialog = page.getByRole('dialog', { name: 'New project' });
   await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole('complementary', { name: 'Project creation assistant' }),
+  ).toBeHidden();
+  const createWithAgent = dialog.getByRole('button', { name: 'Create with Agent' });
+  await expect(createWithAgent).toBeVisible();
 
   const bounds = await dialog.boundingBox();
   expect(bounds).not.toBeNull();
@@ -28,6 +33,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   const milestones = dialog.getByText('Milestones', { exact: true });
   const [
     nameBounds,
+    agentBounds,
     templateBounds,
     iconBounds,
     summaryBounds,
@@ -40,6 +46,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
     milestonesBounds,
   ] = await Promise.all([
     name.boundingBox(),
+    createWithAgent.boundingBox(),
     template.boundingBox(),
     icon.boundingBox(),
     summary.boundingBox(),
@@ -53,6 +60,8 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   ]);
 
   expect(nameBounds).not.toBeNull();
+  expect(agentBounds).not.toBeNull();
+  expect(agentBounds!.x).toBeGreaterThan(bounds!.x + bounds!.width / 2);
   expect(templateBounds).not.toBeNull();
   expect(iconBounds).not.toBeNull();
   expect(summaryBounds).not.toBeNull();
@@ -64,11 +73,14 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   expect(descriptionBounds).not.toBeNull();
   expect(milestonesBounds).not.toBeNull();
   expect(Math.abs(iconBounds!.y - templateBounds!.y)).toBeLessThanOrEqual(4);
+  expect(agentBounds!.y).toBeLessThan(iconBounds!.y);
   expect(nameBounds!.y).toBeGreaterThan(iconBounds!.y);
   expect(nameBounds!.y).toBeLessThan(summaryBounds!.y);
   expect(summaryBounds!.y).toBeLessThan(statusBounds!.y);
   expect(Math.abs(statusBounds!.y - startDateBounds!.y)).toBeLessThanOrEqual(8);
+  expect(Math.abs(startDateBounds!.y - targetDateBounds!.y)).toBeLessThanOrEqual(8);
   expect(labelsBounds!.y).toBeGreaterThan(statusBounds!.y);
+  expect(Math.abs(labelsBounds!.y - dependenciesBounds!.y)).toBeLessThanOrEqual(8);
   expect(targetDateBounds!.y).toBeGreaterThanOrEqual(statusBounds!.y);
   expect(targetDateBounds!.y).toBeLessThan(descriptionBounds!.y);
   expect(dependenciesBounds!.y).toBeGreaterThanOrEqual(statusBounds!.y);
@@ -77,6 +89,7 @@ test('project creation uses a spacious Linear-style canvas with a persistent act
   expect(milestonesBounds!.y).toBeGreaterThanOrEqual(
     descriptionBounds!.y + descriptionBounds!.height,
   );
+  expect(milestonesBounds!.y).toBeGreaterThan(bounds!.y + bounds!.height * 0.75);
   await expect(dialog.getByRole('heading', { name: 'Dependencies' })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Create project' })).toBeInViewport();
 });

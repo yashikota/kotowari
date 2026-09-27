@@ -632,7 +632,7 @@
     "heading": "新しいプロジェクトを下書き",
     "description": "作成前に、目的・範囲・マイルストーンを整理します。",
     "hide": "アシスタントを隠す",
-    "show": "アシスタントを表示",
+    "show": "Agentで作成",
     "promptPlaceholder": "Kotowari とプロジェクト案を作成…",
     "outlineScope": "作業範囲を整理",
     "research": "関連するイシューを調査",
@@ -718,6 +718,7 @@
     },
     "names": {
       "folder": "フォルダー",
+      "cube": "立方体",
       "rocket": "ロケット",
       "bolt": "稲妻",
       "book": "本",

@@ -33,16 +33,17 @@ export function ProjectCreateDependencyQuickAdd({
   const { t } = useTranslation();
 
   return (
-    <Button
+    <ActionIcon
       type="button"
       variant="default"
-      size="xs"
-      leftSection={<IconLink size={14} stroke={1.7} aria-hidden="true" />}
+      size="md"
+      aria-label={t('projectDependencies.addFromCreate')}
+      title={t('projectDependencies.addFromCreate')}
       disabled={!available}
       onClick={onOpen}
     >
-      {t('projectDependencies.addFromCreate')}
-    </Button>
+      <IconLink size={14} stroke={1.7} aria-hidden="true" />
+    </ActionIcon>
   );
 }
 

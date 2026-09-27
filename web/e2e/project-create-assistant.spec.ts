@@ -7,6 +7,10 @@ test('project creation includes a working assistant pane with draft prompts', as
 
   const dialog = page.getByRole('dialog', { name: 'New project' });
   const assistant = dialog.getByRole('complementary', { name: 'Project creation assistant' });
+  await expect(assistant).toBeHidden();
+  const createWithAgent = dialog.getByRole('button', { name: 'Create with Agent' });
+  await expect(createWithAgent).toBeVisible();
+  await createWithAgent.click();
   await expect(assistant).toBeVisible();
   await expect(assistant.getByRole('heading', { name: 'Draft a new project' })).toBeVisible();
   await assistant.getByRole('button', { name: 'Plan timeline' }).click();
@@ -16,7 +20,7 @@ test('project creation includes a working assistant pane with draft prompts', as
 
   await assistant.getByRole('button', { name: 'Hide assistant' }).click();
   await expect(assistant).toBeHidden();
-  await dialog.getByRole('button', { name: 'Show assistant' }).click();
+  await createWithAgent.click();
   await expect(assistant).toBeVisible();
 });
 

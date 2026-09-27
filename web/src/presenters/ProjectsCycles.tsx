@@ -247,8 +247,8 @@ export function useProjectsPagePresenter() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
-  const [icon, setIcon] = useState('');
-  const [iconColor, setIconColor] = useState('grey');
+  const [icon, setIcon] = useState('cube');
+  const [iconColor, setIconColor] = useState('blue');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('planned');
   const [lead, setLead] = useState<'' | 'self'>('');
@@ -269,7 +269,7 @@ export function useProjectsPagePresenter() {
   const [dependencyDraftKind, setDependencyDraftKind] =
     useState<ProjectDependency['kind']>('blocks');
   const [createOpen, setCreateOpen] = useRootMachineFlag('project.create');
-  const [projectAssistantOpen, setProjectAssistantOpen] = useState(true);
+  const [projectAssistantOpen, setProjectAssistantOpen] = useState(false);
   const [projectAssistantId, setProjectAssistantId] = useState('');
   const projectViews = useProjectViews();
   const navigate = useNavigate({ from: '/projects' });
@@ -1104,13 +1104,13 @@ export function useProjectsPagePresenter() {
         return createProject(e);
       },
       onOpenCreateProject: () => {
-        setProjectAssistantOpen(true);
+        setProjectAssistantOpen(false);
         setProjectAssistantId(`project-draft-${crypto.randomUUID()}`);
         setSelectedProjectTemplate(null);
         setName('');
         setSummary('');
-        setIcon('');
-        setIconColor('grey');
+        setIcon('cube');
+        setIconColor('blue');
         setDescription('');
         setStatus('planned');
         setLead('');
