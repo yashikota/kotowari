@@ -330,6 +330,8 @@ type View struct {
 	Priorities          []int            `json:"priorities,omitempty" toml:"priorities,omitempty"`
 	Type                *string          `json:"type" toml:"type,omitempty"`
 	Estimate            *int             `json:"estimate" toml:"estimate,omitempty"`
+	Estimates           []int            `json:"estimates,omitempty" toml:"estimates,omitempty"`
+	NoEstimate          bool             `json:"noEstimate,omitempty" toml:"no_estimate,omitempty"`
 	DueDate             string           `json:"dueDate,omitempty" toml:"due_date,omitempty"`
 	Relation            *string          `json:"relation,omitempty" toml:"relation,omitempty"`
 	LinkSources         []string         `json:"linkSources,omitempty" toml:"link_sources,omitempty"`
@@ -357,7 +359,7 @@ type IssueFilterNode struct {
 }
 
 func (v View) Filter() IssueFilter {
-	f := IssueFilter{Labels: v.Labels, Priority: v.Priority, Priorities: v.Priorities, DueDate: v.DueDate, Statuses: v.Statuses}
+	f := IssueFilter{Labels: v.Labels, Priority: v.Priority, Priorities: v.Priorities, DueDate: v.DueDate, Statuses: v.Statuses, Estimates: v.Estimates, NoEstimate: v.NoEstimate}
 	if v.Assignee != nil {
 		f.Assignee = *v.Assignee
 	}
@@ -389,6 +391,9 @@ func (v View) Filter() IssueFilter {
 	}
 	if len(v.Priorities) > 0 {
 		f.Priority = nil
+	}
+	if len(v.Estimates) > 0 || v.NoEstimate {
+		f.Estimate = nil
 	}
 	if v.Project != nil {
 		f.ProjectSlug = *v.Project
@@ -470,6 +475,8 @@ type IssueFilter struct {
 	Priorities      []int
 	Type            string
 	Estimate        *int
+	Estimates       []int
+	NoEstimate      bool
 	DueDate         string
 	DueDateAsOf     string
 	Relation        string
@@ -554,6 +561,8 @@ type CreateViewInput struct {
 	Priorities          []int
 	Type                *string
 	Estimate            *int
+	Estimates           []int
+	NoEstimate          *bool
 	DueDate             *string
 	Relation            *string
 	LinkSources         []string

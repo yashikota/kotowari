@@ -62,6 +62,14 @@ describe('issuesQuery', () => {
     expect(issuesQuery({ priorities: [1, 2] })).toBe('?priorities=1%2C2');
   });
 
+  it('encodes multiple estimates and an explicit no-estimate selection', () => {
+    expect(issuesQuery({ estimates: [1, 3], noEstimate: true })).toBe(
+      '?estimates=1%2C3&noEstimate=true',
+    );
+    expect(issuesQuery({ estimate: 8, noEstimate: true })).toBe('?estimates=8&noEstimate=true');
+    expect(issuesQuery({ noEstimate: true })).toBe('?noEstimate=true');
+  });
+
   it('encodes multiple link-source filters', () => {
     expect(issuesQuery({ linkSources: ['github', 'slack'] })).toBe('?linkSources=github%2Cslack');
   });
@@ -226,6 +234,30 @@ describe('parseIssueSearch', () => {
     expect(searchToFilter({ priority: 4, priorities: [1, 2] })).toMatchObject({
       priority: undefined,
       priorities: [1, 2],
+    });
+  });
+
+  it('normalizes estimate any-of filters including issues without an estimate', () => {
+    expect(parseIssueSearch({ estimates: [1, 3, 1] })).toEqual({ estimates: [1, 3] });
+    expect(parseIssueSearch({ estimates: '1,3', noEstimate: 'true' })).toEqual({
+      estimates: [1, 3],
+      noEstimate: true,
+    });
+    expect(parseIssueSearch({ estimate: '8', noEstimate: true })).toEqual({
+      estimates: [8],
+      noEstimate: true,
+    });
+    expect(parseIssueSearch({ noEstimate: 'true' })).toEqual({ noEstimate: true });
+    expect(parseIssueSearch({ estimates: '1,1000' })).toEqual({});
+    expect(searchToFilter({ estimate: 8, estimates: [1], noEstimate: true })).toMatchObject({
+      estimate: undefined,
+      estimates: [1],
+      noEstimate: true,
+    });
+    expect(searchToFilter({ estimate: 8, noEstimate: true })).toMatchObject({
+      estimate: undefined,
+      estimates: [8],
+      noEstimate: true,
     });
   });
 

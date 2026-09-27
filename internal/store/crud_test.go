@@ -315,6 +315,86 @@ func TestIssuePriorityFilterMatchesAnySelectedPriorityAndPersistsOnViews(t *test
 	}
 }
 
+func TestIssueEstimateFilterIncludesUnestimatedIssuesAndPersistsOnViews(t *testing.T) {
+	s := openTest(t)
+	estimateOne, estimateThree, estimateFive := 1, 3, 5
+	noEstimateIssue, err := s.CreateIssue(CreateIssueInput{Title: "no estimate"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	estimateOneIssue, err := s.CreateIssue(CreateIssueInput{Title: "estimate one", Estimate: &estimateOne})
+	if err != nil {
+		t.Fatal(err)
+	}
+	estimateThreeIssue, err := s.CreateIssue(CreateIssueInput{Title: "estimate three", Estimate: &estimateThree})
+	if err != nil {
+		t.Fatal(err)
+	}
+	estimateFiveIssue, err := s.CreateIssue(CreateIssueInput{Title: "estimate five", Estimate: &estimateFive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	filtered, err := s.ListIssues(IssueFilter{Estimates: []int{1, 3, 3}, NoEstimate: true})
+	if err != nil || len(filtered) != 3 {
+		t.Fatalf("estimate-filtered issues = %#v, err = %v", filtered, err)
+	}
+	identifiers := map[string]bool{}
+	for _, issue := range filtered {
+		identifiers[issue.Identifier] = true
+	}
+	if !identifiers[noEstimateIssue.Identifier] || !identifiers[estimateOneIssue.Identifier] || !identifiers[estimateThreeIssue.Identifier] || identifiers[estimateFiveIssue.Identifier] {
+		t.Fatalf("estimate any-of filter returned wrong issues: %#v", filtered)
+	}
+	legacyEstimateFilter, err := s.ListIssues(IssueFilter{Estimate: &estimateOne, NoEstimate: true})
+	if err != nil || len(legacyEstimateFilter) != 2 {
+		t.Fatalf("legacy estimate plus no-estimate filter = %#v, err = %v", legacyEstimateFilter, err)
+	}
+	if _, err := s.ListIssues(IssueFilter{Estimates: []int{1000}}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid estimate filter error = %v", err)
+	}
+
+	legacyEstimate := 8
+	includeNoEstimate := true
+	view, err := s.CreateView(CreateViewInput{
+		Name: "No estimate or estimate one", Slug: "no-estimate-or-one", Estimate: &legacyEstimate,
+		Estimates: []int{1}, NoEstimate: &includeNoEstimate,
+	})
+	if err != nil || view.Estimate != nil || len(view.Estimates) != 1 || !view.NoEstimate || len(view.Filter().Estimates) != 1 || !view.Filter().NoEstimate {
+		t.Fatalf("created estimate any-of view = %#v, err = %v", view, err)
+	}
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupReopenedStore(t, reopened)
+	persisted, err := reopened.GetView(view.Slug)
+	if err != nil || len(persisted.Estimates) != 1 || !persisted.NoEstimate {
+		t.Fatalf("persisted estimate view = %#v, err = %v", persisted, err)
+	}
+	legacyView, err := reopened.CreateView(CreateViewInput{
+		Name: "Estimate one or none", Slug: "estimate-one-or-none", Estimate: &estimateOne,
+		NoEstimate: &includeNoEstimate,
+	})
+	if err != nil || legacyView.Estimate != nil || len(legacyView.Estimates) != 1 || legacyView.Estimates[0] != 1 || !legacyView.NoEstimate {
+		t.Fatalf("legacy estimate plus no-estimate view = %#v, err = %v", legacyView, err)
+	}
+
+	updated, err := reopened.UpdateView(view.Slug, CreateViewInput{Estimate: &legacyEstimate, Estimates: []int{}, NoEstimate: new(bool)})
+	if err != nil || updated.Estimate == nil || *updated.Estimate != legacyEstimate || len(updated.Estimates) != 0 || updated.NoEstimate {
+		t.Fatalf("single estimate update = %#v, err = %v", updated, err)
+	}
+	clearEstimate := -1
+	updated, err = reopened.UpdateView(view.Slug, CreateViewInput{Estimate: &clearEstimate, Estimates: []int{}, NoEstimate: &includeNoEstimate})
+	if err != nil || updated.Estimate != nil || len(updated.Estimates) != 0 || !updated.NoEstimate {
+		t.Fatalf("no-estimate-only view update = %#v, err = %v", updated, err)
+	}
+	excludeNoEstimate := false
+	updated, err = reopened.UpdateView(view.Slug, CreateViewInput{Estimate: &clearEstimate, Estimates: []int{}, NoEstimate: &excludeNoEstimate})
+	if err != nil || updated.Estimate != nil || len(updated.Estimates) != 0 || updated.NoEstimate {
+		t.Fatalf("cleared estimate view = %#v, err = %v", updated, err)
+	}
+}
+
 func TestIssueArchiveLifecycle(t *testing.T) {
 	s := openTest(t)
 	created, err := s.CreateIssue(CreateIssueInput{Title: "archive me"})

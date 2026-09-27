@@ -860,6 +860,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const priorities = url.searchParams.get('priorities')?.split(',').map(Number) ?? [];
     const type = url.searchParams.get('type');
     const estimate = url.searchParams.get('estimate');
+    const estimates = url.searchParams.get('estimates')?.split(',').map(Number) ?? [];
+    const noEstimate = url.searchParams.get('noEstimate') === 'true';
     const dueDateFilter = url.searchParams.get('dueDate');
     const relationFilter = url.searchParams.get('relation');
     const linkSourcesFilter =
@@ -943,7 +945,11 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     if (priorities.length > 0) result = result.filter((item) => priorities.includes(item.priority));
     else if (priority != null) result = result.filter((item) => item.priority === Number(priority));
     if (type) result = result.filter((i) => i.type === type);
-    if (estimate != null) result = result.filter((i) => i.estimate === Number(estimate));
+    if (estimates.length > 0 || noEstimate) {
+      result = result.filter(
+        (item) => (noEstimate && item.estimate == null) || estimates.includes(item.estimate ?? -1),
+      );
+    } else if (estimate != null) result = result.filter((i) => i.estimate === Number(estimate));
     if (dueDateFilter) {
       const today = new Date(`${asOf}T00:00:00`);
       const rangeDays: Record<string, number> = {
@@ -1716,6 +1722,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         priorities: value.priorities ?? [],
         type: value.type ?? null,
         estimate: value.estimate ?? null,
+        estimates: value.estimates ?? [],
+        noEstimate: value.noEstimate ?? false,
         projectStatus: value.projectStatus ?? null,
         projectPriority: value.projectPriority ?? null,
         projectLabels: value.projectLabels ?? [],

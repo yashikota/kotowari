@@ -1287,6 +1287,7 @@
     "filterStatus": "ステータスで絞り込む",
     "statusesSelected": "{{count}} 件のステータス",
     "prioritiesSelected": "{{count}} 件の優先度",
+    "estimatesSelected": "{{count}} 件の見積もり",
     "filterAssignee": "担当者で絞り込む",
     "anyStatus": "すべてのステータス",
     "filterType": "種別で絞り込む",

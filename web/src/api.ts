@@ -423,6 +423,8 @@ export const api = {
     priorities?: number[];
     type?: string | null;
     estimate?: number | null;
+    estimates?: number[];
+    noEstimate?: boolean;
     dueDate?: string;
     relation?: string;
     linkSources?: string[];
@@ -458,6 +460,8 @@ export function issuesQuery(filter: {
   priorities?: number[] | null;
   type?: string | null;
   estimate?: number | null;
+  estimates?: number[] | null;
+  noEstimate?: boolean | null;
   dueDate?: string | null;
   asOf?: string | null;
   relation?: string | null;
@@ -475,6 +479,11 @@ export function issuesQuery(filter: {
   archived?: boolean;
 }): string {
   const q = new URLSearchParams();
+  const selectedEstimates = filter.estimates?.length
+    ? filter.estimates
+    : filter.noEstimate && filter.estimate != null
+      ? [filter.estimate]
+      : undefined;
   if (filter.status) {
     q.set('status', filter.status);
   }
@@ -496,9 +505,16 @@ export function issuesQuery(filter: {
   if (filter.type) {
     q.set('type', filter.type);
   }
-  if (filter.estimate != null && filter.estimate >= 0) {
+  if (
+    !selectedEstimates?.length &&
+    !filter.noEstimate &&
+    filter.estimate != null &&
+    filter.estimate >= 0
+  ) {
     q.set('estimate', String(filter.estimate));
   }
+  if (selectedEstimates?.length) q.set('estimates', selectedEstimates.join(','));
+  if (filter.noEstimate) q.set('noEstimate', 'true');
   if (filter.dueDate) {
     q.set('dueDate', filter.dueDate);
     q.set('asOf', filter.asOf ?? localDateValue(new Date()));
@@ -537,6 +553,8 @@ export type IssueSearch = {
   priorities?: number[];
   type?: string;
   estimate?: number;
+  estimates?: number[];
+  noEstimate?: boolean;
   labels?: string;
   dueDate?:
     | 'overdue'
@@ -776,9 +794,26 @@ export function parseIssueSearch(raw: Record<string, unknown>): IssueSearch {
   ) {
     out.type = raw.type;
   }
-  if (raw.estimate !== undefined && raw.estimate !== '') {
+  const selectedEstimates = [...new Set(parseNumberList(raw.estimates))];
+  const noEstimate = raw.noEstimate === true || raw.noEstimate === 'true';
+  if (
+    selectedEstimates.length <= 50 &&
+    selectedEstimates.every((value) => Number.isInteger(value) && value >= 0 && value <= 999)
+  ) {
+    if (selectedEstimates.length === 1 && !noEstimate) out.estimate = selectedEstimates[0];
+    else if (selectedEstimates.length > 0) out.estimates = selectedEstimates;
+    if (noEstimate) out.noEstimate = true;
+  }
+  if (raw.estimate !== undefined && raw.estimate !== '' && out.estimate === undefined) {
     const n = Number(raw.estimate);
-    if (Number.isInteger(n) && n >= 0 && n <= 999) out.estimate = n;
+    if (Number.isInteger(n) && n >= 0 && n <= 999) {
+      if (noEstimate) {
+        out.estimates = [...(out.estimates ?? []), n];
+        out.noEstimate = true;
+      } else if (!out.estimates) {
+        out.estimate = n;
+      }
+    }
   }
   return out;
 }
@@ -840,6 +875,8 @@ export function searchToFilter(search: IssueSearch): {
   priorities?: number[];
   type?: string;
   estimate?: number;
+  estimates?: number[];
+  noEstimate?: boolean;
   dueDate?: string;
   relation?: string;
   linkSources?: string[];
@@ -853,6 +890,9 @@ export function searchToFilter(search: IssueSearch): {
   projectLabels?: string[];
   addedToCycle?: ('planned' | 'during' | 'after')[];
 } {
+  const estimates =
+    search.estimates ??
+    (search.noEstimate && search.estimate !== undefined ? [search.estimate] : undefined);
   return {
     archived: search.archived,
     assignee: search.assignee,
@@ -869,7 +909,9 @@ export function searchToFilter(search: IssueSearch): {
     priority: search.priorities?.length ? undefined : search.priority,
     ...(search.priorities?.length ? { priorities: search.priorities } : {}),
     type: search.type,
-    estimate: search.estimate,
+    estimate: estimates?.length || search.noEstimate ? undefined : search.estimate,
+    ...(estimates?.length ? { estimates } : {}),
+    ...(search.noEstimate ? { noEstimate: true } : {}),
     dueDate: search.dueDate,
     relation: search.relation,
     linkSources: search.linkSources,

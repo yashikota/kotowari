@@ -153,6 +153,56 @@ test('priority filters match any selected priority and save into a view', async 
   expect(await savedView.json()).toMatchObject({ priorities: [1, 2], priority: null });
 });
 
+test('estimate filters include no-estimate issues and save the any-of selection', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const titles = {
+    none: `No estimate ${stamp}`,
+    small: `Estimate one ${stamp}`,
+    medium: `Estimate three ${stamp}`,
+  };
+  for (const data of [
+    { title: titles.none },
+    { title: titles.small, estimate: 1 },
+    { title: titles.medium, estimate: 3 },
+  ]) {
+    const response = await request.post('/api/issues', { data });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  const searchFilters = page.getByRole('textbox', { name: 'Search filters' });
+  await searchFilters.fill('estimate');
+  await page.getByRole('menuitem', { name: 'Estimate', exact: true }).click();
+  const estimateOptions = page.getByRole('group', { name: 'Filter estimate' });
+  await estimateOptions.getByRole('button', { name: 'No estimate', exact: true }).click();
+  await estimateOptions.getByRole('button', { name: '1', exact: true }).click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get('noEstimate')).toBe('true');
+  await expect
+    .poll(() => JSON.parse(new URL(page.url()).searchParams.get('estimates') ?? '[]'))
+    .toEqual([1]);
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.none) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.small) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(titles.medium) })).toHaveCount(0);
+
+  const viewName = `Estimate any-of ${stamp}`;
+  await createIssueView(page, viewName);
+  const slug = viewName.toLowerCase().replaceAll(' ', '-');
+  const savedView = await request.get(`/api/views/${slug}`);
+  expect(savedView.ok()).toBeTruthy();
+  expect(await savedView.json()).toMatchObject({
+    estimates: [1],
+    noEstimate: true,
+    estimate: null,
+  });
+});
+
 test('filter picker keeps its scoped editor inside a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/issues');

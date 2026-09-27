@@ -1191,6 +1191,25 @@ func normalizeIssuePriorities(selected []int) ([]int, error) {
 	return out, nil
 }
 
+func normalizeIssueEstimates(selected []int) ([]int, error) {
+	if len(selected) > 50 {
+		return nil, validationf("too many issue estimates in filter")
+	}
+	seen := make(map[int]struct{}, len(selected))
+	out := make([]int, 0, len(selected))
+	for _, estimate := range selected {
+		if !domain.ValidEstimate(&estimate) {
+			return nil, validationf("invalid issue estimate filter")
+		}
+		if _, exists := seen[estimate]; exists {
+			continue
+		}
+		seen[estimate] = struct{}{}
+		out = append(out, estimate)
+	}
+	return out, nil
+}
+
 func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 	var out []Issue
 	if len(f.Statuses) > 0 {
@@ -1212,6 +1231,17 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 		}
 		f.Priorities = normalized
 		f.Priority = nil
+	}
+	if f.NoEstimate && f.Estimate != nil && len(f.Estimates) == 0 {
+		f.Estimates = []int{*f.Estimate}
+	}
+	if len(f.Estimates) > 0 || f.NoEstimate {
+		normalized, err := normalizeIssueEstimates(f.Estimates)
+		if err != nil {
+			return nil, err
+		}
+		f.Estimates = normalized
+		f.Estimate = nil
 	}
 	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		return nil, validationf("invalid issue assignee")
@@ -1502,7 +1532,18 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 			if f.Type != "" && iss.Type != f.Type {
 				continue
 			}
-			if f.Estimate != nil && (iss.Estimate == nil || *iss.Estimate != *f.Estimate) {
+			if len(f.Estimates) > 0 || f.NoEstimate {
+				matches := f.NoEstimate && iss.Estimate == nil
+				for _, estimate := range f.Estimates {
+					if iss.Estimate != nil && *iss.Estimate == estimate {
+						matches = true
+						break
+					}
+				}
+				if !matches {
+					continue
+				}
+			} else if f.Estimate != nil && (iss.Estimate == nil || *iss.Estimate != *f.Estimate) {
 				continue
 			}
 			if f.IsFavorite != nil && iss.IsFavorite != *f.IsFavorite {
@@ -3070,6 +3111,17 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if !domain.ValidEstimate(in.Estimate) {
 		return View{}, validationf("invalid estimate")
 	}
+	if len(in.Estimates) > 0 || (in.NoEstimate != nil && *in.NoEstimate) {
+		if in.NoEstimate != nil && *in.NoEstimate && in.Estimate != nil && len(in.Estimates) == 0 {
+			in.Estimates = []int{*in.Estimate}
+		}
+		estimates, err := normalizeIssueEstimates(in.Estimates)
+		if err != nil {
+			return View{}, err
+		}
+		in.Estimates = estimates
+		in.Estimate = nil
+	}
 	if in.DueDate != nil && !domain.ValidDueDateFilter(*in.DueDate) {
 		return View{}, validationf("invalid due date filter")
 	}
@@ -3164,7 +3216,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 			CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues, NestedSubIssues: in.NestedSubIssues,
 			ShowEmptyGroups: in.ShowEmptyGroups != nil && *in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 			Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Project: in.Project, Cycle: in.Cycle, Labels: in.Labels,
-			Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
+			Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Estimates: in.Estimates, NoEstimate: in.NoEstimate != nil && *in.NoEstimate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, DateField: dateField, DateRange: dateRange,
 			ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle, MilestoneName: in.MilestoneName, CreatedAt: now, UpdatedAt: now,
 			AdvancedFilter: in.AdvancedFilter != nil && *in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 		}
@@ -3380,6 +3432,24 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 					return validationf("invalid estimate")
 				}
 				v.Estimate = in.Estimate
+			}
+			v.Estimates = nil
+			v.NoEstimate = false
+		}
+		if in.Estimates != nil || in.NoEstimate != nil {
+			noEstimate := in.NoEstimate != nil && *in.NoEstimate
+			selectedEstimates := in.Estimates
+			if noEstimate && in.Estimate != nil && *in.Estimate >= 0 && len(selectedEstimates) == 0 {
+				selectedEstimates = []int{*in.Estimate}
+			}
+			if len(selectedEstimates) > 0 || noEstimate || in.Estimate == nil {
+				estimates, err := normalizeIssueEstimates(selectedEstimates)
+				if err != nil {
+					return err
+				}
+				v.Estimates = estimates
+				v.NoEstimate = noEstimate
+				v.Estimate = nil
 			}
 		}
 		if in.DueDate != nil {

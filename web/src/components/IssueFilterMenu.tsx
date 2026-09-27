@@ -53,7 +53,7 @@ const FILTER_CATEGORIES = [
   { id: 'status', group: 'issue', chips: ['status', 'statuses'] },
   { id: 'assignee', group: 'issue', chips: ['assignee'] },
   { id: 'priority', group: 'issue', chips: ['priority', 'priorities'] },
-  { id: 'estimate', group: 'issue', chips: ['estimate'] },
+  { id: 'estimate', group: 'issue', chips: ['estimate', 'estimates', 'noEstimate'] },
   { id: 'labels', group: 'issue', chips: ['label:'] },
   { id: 'relations', group: 'issue', chips: ['relation'] },
   { id: 'links', group: 'issue', chips: ['linkSource:'] },
@@ -470,11 +470,20 @@ export function IssueFilterMenu({
         return (
           <FilterOptionList
             label={t('filters.filterEstimate')}
-            value={search.estimate === undefined ? null : String(search.estimate)}
-            options={[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
-              value: String(estimate),
-              label: String(estimate),
-            }))}
+            value={null}
+            selectedValues={[
+              ...(search.estimates ?? (search.estimate === undefined ? [] : [search.estimate])).map(
+                String,
+              ),
+              ...(search.noEstimate ? ['none'] : []),
+            ]}
+            options={[
+              { value: 'none', label: t('issueProperties.noEstimate') },
+              ...[0, 1, 2, 3, 5, 8, 13, 21, 34].map((estimate) => ({
+                value: String(estimate),
+                label: String(estimate),
+              })),
+            ]}
             onChange={onEstimateChange}
           />
         );

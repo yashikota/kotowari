@@ -571,6 +571,8 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Priorities          []int                  `json:"priorities"`
 		Type                *string                `json:"type"`
 		Estimate            *int                   `json:"estimate"`
+		Estimates           []int                  `json:"estimates"`
+		NoEstimate          *bool                  `json:"noEstimate"`
 		DueDate             *string                `json:"dueDate"`
 		Relation            *string                `json:"relation"`
 		LinkSources         []string               `json:"linkSources"`
@@ -594,7 +596,7 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
 		Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee,
-		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, DueDate: in.DueDate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
+		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Estimates: in.Estimates, NoEstimate: in.NoEstimate, DueDate: in.DueDate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
 		AdvancedFilter: in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
 	}, nil
 }
@@ -700,7 +702,18 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 			priorities = append(priorities, priority)
 		}
 	}
-	f := store.IssueFilter{Status: q.Get("status"), Statuses: statuses, Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus"), Priorities: priorities}
+	estimates := []int(nil)
+	if value := q.Get("estimates"); value != "" {
+		for _, raw := range strings.Split(value, ",") {
+			estimate, err := strconv.Atoi(raw)
+			if err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid estimates filter"})
+				return
+			}
+			estimates = append(estimates, estimate)
+		}
+	}
+	f := store.IssueFilter{Status: q.Get("status"), Statuses: statuses, Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus"), Priorities: priorities, Estimates: estimates}
 	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid assignee filter"})
 		return
@@ -774,6 +787,14 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		f.Estimate = &n
+	}
+	if raw := q.Get("noEstimate"); raw != "" {
+		value, err := strconv.ParseBool(raw)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid no-estimate filter"})
+			return
+		}
+		f.NoEstimate = value
 	}
 	if favorite := q.Get("favorite"); favorite != "" {
 		value, err := strconv.ParseBool(favorite)

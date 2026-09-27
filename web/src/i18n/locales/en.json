@@ -1291,6 +1291,7 @@
     "filterStatus": "Filter status",
     "statusesSelected": "{{count}} statuses",
     "prioritiesSelected": "{{count}} priorities",
+    "estimatesSelected": "{{count}} estimates",
     "filterAssignee": "Filter assignee",
     "anyStatus": "Any status",
     "filterType": "Filter type",

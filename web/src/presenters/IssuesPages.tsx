@@ -60,6 +60,8 @@ function compactSearch(next: IssueSearch): IssueSearch {
     priorities: next.priorities?.join(',') ?? '',
     type: next.type ?? '',
     estimate: next.estimate ?? '',
+    estimates: next.estimates?.join(',') ?? '',
+    noEstimate: next.noEstimate ?? false,
     dueDate: next.dueDate ?? '',
     relation: next.relation ?? '',
     linkSources: next.linkSources?.join(',') ?? '',

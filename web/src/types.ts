@@ -297,6 +297,8 @@ export type View = {
   priorities?: number[];
   type: IssueType | null;
   estimate: number | null;
+  estimates?: number[];
+  noEstimate?: boolean;
   dueDate?: string;
   relation?: string | null;
   linkSources?: string[];

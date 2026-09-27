@@ -173,6 +173,8 @@ export function useIssueFiltersPresenter({
   const selectedStatuses = search.statuses ?? (search.status ? [search.status] : []);
   const selectedPriorities =
     search.priorities ?? (search.priority === undefined ? [] : [search.priority]);
+  const selectedEstimates =
+    search.estimates ?? (search.estimate === undefined ? [] : [search.estimate]);
   const selectedLinkSources = search.linkSources ?? [];
   const selectedTemplateSlugs = search.templateSlugs ?? [];
   const selectedAddedToCycle = search.addedToCycle ?? [];
@@ -296,8 +298,16 @@ export function useIssueFiltersPresenter({
           },
         ]
       : []),
-    ...(search.estimate !== undefined
-      ? [{ key: 'estimate', label: `${t('field.estimate')} · ${search.estimate}` }]
+    ...(selectedEstimates.length > 0 || search.noEstimate
+      ? [
+          {
+            key: 'estimates',
+            label:
+              selectedEstimates.length + Number(Boolean(search.noEstimate)) === 1
+                ? `${t('field.estimate')} · ${search.noEstimate ? t('issueProperties.noEstimate') : selectedEstimates[0]}`
+                : `${t('field.estimate')} · ${t('filters.estimatesSelected', { count: selectedEstimates.length + Number(Boolean(search.noEstimate)) })}`,
+          },
+        ]
       : []),
     ...(search.dueDate
       ? [
@@ -462,8 +472,25 @@ export function useIssueFiltersPresenter({
         });
       },
       onTypeChange: (value: string) => set({ type: value || undefined }),
-      onEstimateChange: (value: string) =>
-        set({ estimate: value === '' ? undefined : Number(value) }),
+      onEstimateChange: (value: string) => {
+        const current =
+          searchRef.current.estimates ??
+          (searchRef.current.estimate === undefined ? [] : [searchRef.current.estimate]);
+        const nextNoEstimate =
+          value === 'none' ? !searchRef.current.noEstimate : Boolean(searchRef.current.noEstimate);
+        const nextEstimates =
+          value === 'none'
+            ? current
+            : current.includes(Number(value))
+              ? current.filter((estimate) => estimate !== Number(value))
+              : [...current, Number(value)];
+        const selectionCount = nextEstimates.length + Number(nextNoEstimate);
+        set({
+          estimate: selectionCount === 1 && !nextNoEstimate ? nextEstimates[0] : undefined,
+          estimates: selectionCount > 1 && nextEstimates.length > 0 ? nextEstimates : undefined,
+          noEstimate: nextNoEstimate || undefined,
+        });
+      },
       onDueDateChange: (value: string) =>
         set({ dueDate: value ? (value as NonNullable<IssueSearch['dueDate']>) : undefined }),
       onRelationChange: (value: string) =>
@@ -550,6 +577,8 @@ export function useIssueFiltersPresenter({
           cycle: undefined,
           type: undefined,
           estimate: undefined,
+          estimates: undefined,
+          noEstimate: undefined,
           dueDate: undefined,
           relation: undefined,
           linkSources: undefined,
@@ -607,6 +636,8 @@ export function useIssueFiltersPresenter({
           key === 'priority' ||
           key === 'type' ||
           key === 'estimate' ||
+          key === 'estimates' ||
+          key === 'noEstimate' ||
           key === 'dueDate' ||
           key === 'relation' ||
           key === 'content' ||
@@ -622,6 +653,8 @@ export function useIssueFiltersPresenter({
             set({ status: undefined, statuses: undefined });
           } else if (key === 'priority' || key === 'priorities') {
             set({ priority: undefined, priorities: undefined });
+          } else if (key === 'estimate' || key === 'estimates' || key === 'noEstimate') {
+            set({ estimate: undefined, estimates: undefined, noEstimate: undefined });
           } else {
             set({ [key]: undefined });
           }
