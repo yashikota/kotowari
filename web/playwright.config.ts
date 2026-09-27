@@ -29,7 +29,10 @@ export default defineConfig({
   webServer: {
     command: 'node e2e/serve.mjs',
     url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: !ci,
+    // The E2E server gets its own temporary KOTOWARI_HOME. Reusing a running
+    // dev server would silently bypass that isolation and leave fixture data
+    // in the user's workspace.
+    reuseExistingServer: false,
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',
