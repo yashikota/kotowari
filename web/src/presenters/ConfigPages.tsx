@@ -283,6 +283,28 @@ export function useConfigPagePresenter() {
           statusProgressionOrder: value,
         }));
       },
+      onAutoCloseStaleIssuesAfterMonthsChange: (value: string | null) => {
+        const months = Number(value);
+        if (value === null || ![0, 1, 3, 6, 12].includes(months)) {
+          return;
+        }
+        setIssueAutomationSettingsSaved(false);
+        setIssueAutomationSettings((current) => ({
+          ...current,
+          autoCloseStaleIssuesAfterMonths: months,
+        }));
+      },
+      onAutoArchiveClosedIssuesAfterMonthsChange: (value: string | null) => {
+        const months = Number(value);
+        if (value === null || ![0, 1, 3, 6, 12].includes(months)) {
+          return;
+        }
+        setIssueAutomationSettingsSaved(false);
+        setIssueAutomationSettings((current) => ({
+          ...current,
+          autoArchiveClosedIssuesAfterMonths: months,
+        }));
+      },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setWorkspace({ ...workspace, name: e.target.value }),

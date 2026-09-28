@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 var (
@@ -16,9 +17,11 @@ var (
 )
 
 type Store struct {
-	mu          sync.Mutex
-	recurringMu sync.Mutex
-	root        string
+	mu                  sync.Mutex
+	recurringMu         sync.Mutex
+	issueAutomationMu   sync.Mutex
+	lastIssueAutomation time.Time
+	root                string
 }
 
 type Workspace struct {
@@ -45,9 +48,11 @@ type CycleSettings struct {
 }
 
 type IssueAutomationSettings struct {
-	AutoCloseParentIssues  bool   `json:"autoCloseParentIssues" toml:"autoCloseParentIssues"`
-	AutoCloseSubIssues     bool   `json:"autoCloseSubIssues" toml:"autoCloseSubIssues"`
-	StatusProgressionOrder string `json:"statusProgressionOrder" toml:"statusProgressionOrder"`
+	AutoCloseParentIssues              bool   `json:"autoCloseParentIssues" toml:"autoCloseParentIssues"`
+	AutoCloseSubIssues                 bool   `json:"autoCloseSubIssues" toml:"autoCloseSubIssues"`
+	StatusProgressionOrder             string `json:"statusProgressionOrder" toml:"statusProgressionOrder"`
+	AutoCloseStaleIssuesAfterMonths    int    `json:"autoCloseStaleIssuesAfterMonths" toml:"autoCloseStaleIssuesAfterMonths"`
+	AutoArchiveClosedIssuesAfterMonths int    `json:"autoArchiveClosedIssuesAfterMonths" toml:"autoArchiveClosedIssuesAfterMonths"`
 }
 
 func defaultCycleSettings() CycleSettings {

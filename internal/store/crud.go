@@ -84,8 +84,10 @@ func (s *Store) UpdateWorkspace(
 		}
 		if issueAutomationSettings != nil {
 			settings := normalizedIssueAutomationSettings(issueAutomationSettings)
-			if !validStatusProgressionOrder(settings.StatusProgressionOrder) {
-				return validationf("invalid status progression order")
+			if !validStatusProgressionOrder(settings.StatusProgressionOrder) ||
+				settings.AutoCloseStaleIssuesAfterMonths < 0 || settings.AutoCloseStaleIssuesAfterMonths > 60 ||
+				settings.AutoArchiveClosedIssuesAfterMonths < 0 || settings.AutoArchiveClosedIssuesAfterMonths > 60 {
+				return validationf("invalid issue automation settings")
 			}
 			m.Workspace.IssueAutomationSettings = &settings
 		}
@@ -124,6 +126,11 @@ func (s *Store) UpdateWorkspace(
 		ws = workspaceFrom(m)
 		return nil
 	})
+	if err == nil && issueAutomationSettings != nil {
+		s.issueAutomationMu.Lock()
+		s.lastIssueAutomation = time.Time{}
+		s.issueAutomationMu.Unlock()
+	}
 	return ws, err
 }
 

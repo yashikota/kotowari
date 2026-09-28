@@ -242,6 +242,32 @@ export function ConfigPageView({
                         { value: 'no_action', label: t('config.statusProgressionNoAction') },
                       ]}
                     />
+                    <Select
+                      label={t('config.autoCloseStaleIssues')}
+                      description={t('config.autoCloseStaleIssuesDescription')}
+                      value={String(issueAutomationSettings.autoCloseStaleIssuesAfterMonths)}
+                      onChange={handlers.onAutoCloseStaleIssuesAfterMonthsChange}
+                      data={[0, 1, 3, 6, 12].map((months) => ({
+                        value: String(months),
+                        label:
+                          months === 0
+                            ? t('config.automationOff')
+                            : t('config.automationMonths', { count: months }),
+                      }))}
+                    />
+                    <Select
+                      label={t('config.autoArchiveClosedIssues')}
+                      description={t('config.autoArchiveClosedIssuesDescription')}
+                      value={String(issueAutomationSettings.autoArchiveClosedIssuesAfterMonths)}
+                      onChange={handlers.onAutoArchiveClosedIssuesAfterMonthsChange}
+                      data={[0, 1, 3, 6, 12].map((months) => ({
+                        value: String(months),
+                        label:
+                          months === 0
+                            ? t('config.automationOff')
+                            : t('config.automationMonths', { count: months }),
+                      }))}
+                    />
                     <Group>
                       <Button type="submit">{t('config.saveIssueAutomationSettings')}</Button>
                     </Group>

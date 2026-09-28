@@ -68,6 +68,8 @@ let workspace: Workspace = {
     autoCloseParentIssues: false,
     autoCloseSubIssues: false,
     statusProgressionOrder: 'first',
+    autoCloseStaleIssuesAfterMonths: 0,
+    autoArchiveClosedIssuesAfterMonths: 0,
   },
   issueStatuses: issueWorkflowStatuses,
   projectStatuses: projectWorkflowStatuses,

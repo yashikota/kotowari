@@ -24,6 +24,10 @@ export function normalizeWorkspace(workspace: Workspace): Workspace {
       autoCloseParentIssues: workspace.issueAutomationSettings?.autoCloseParentIssues ?? false,
       autoCloseSubIssues: workspace.issueAutomationSettings?.autoCloseSubIssues ?? false,
       statusProgressionOrder: workspace.issueAutomationSettings?.statusProgressionOrder ?? 'first',
+      autoCloseStaleIssuesAfterMonths:
+        workspace.issueAutomationSettings?.autoCloseStaleIssuesAfterMonths ?? 0,
+      autoArchiveClosedIssuesAfterMonths:
+        workspace.issueAutomationSettings?.autoArchiveClosedIssuesAfterMonths ?? 0,
     },
   };
 }

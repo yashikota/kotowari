@@ -65,6 +65,10 @@ func (s *Server) routes() {
 			writeError(w, err)
 			return
 		}
+		if err := s.store.ProcessIssueAutomations(); err != nil {
+			writeError(w, err)
+			return
+		}
 		hash, err := s.store.ContentHash()
 		if err != nil {
 			writeError(w, err)
