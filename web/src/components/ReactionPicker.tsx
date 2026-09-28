@@ -75,11 +75,13 @@ function reactionName(emoji: string, t: (key: string) => string) {
 export function ReactionPicker({
   target,
   openedTarget,
+  buttonSize = 'sm',
   onOpenChange,
   onSelect,
 }: {
   target: string;
   openedTarget: string | null;
+  buttonSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   onOpenChange: (target: string, opened: boolean) => void;
   onSelect: (target: string, emoji: string) => void;
 }) {
@@ -140,7 +142,7 @@ export function ReactionPicker({
           type="button"
           variant="subtle"
           color="gray"
-          size="sm"
+          size={buttonSize}
           aria-label={t('reactions.add')}
           onClick={() => onOpenChange(target, !opened)}
         >

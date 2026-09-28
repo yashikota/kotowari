@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
+import '@fontsource-variable/inter/wght.css';
 import './i18n/index.ts';
 import '@mantine/core/styles.css';
 import './global.css';

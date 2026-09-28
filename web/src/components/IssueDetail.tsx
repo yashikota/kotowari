@@ -720,120 +720,126 @@ export function IssueDetailView({
                 onChange={handlers.onIssueFilesChange}
                 style={{ display: 'none' }}
               />
-              <Group gap="xs">
-                <ReactionPicker
-                  target="issue"
-                  openedTarget={reactionPickerTarget}
-                  onOpenChange={handlers.onReactionPickerChange}
-                  onSelect={handlers.onSelectReaction}
-                />
-                <ReactionSummary
-                  reactions={issue.reactions ?? []}
-                  onToggle={(emoji) => handlers.onToggleReaction('issue', emoji)}
-                />
-                <ActionIcon
-                  type="button"
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  aria-label={t(
-                    issueAttachmentBusy
-                      ? 'issueAttachments.uploading'
-                      : 'issueAttachments.addToIssue',
-                  )}
-                  disabled={issueAttachmentBusy}
-                  onClick={handlers.onChooseIssueFiles}
-                >
-                  <IconPaperclip size={15} aria-hidden="true" />
-                </ActionIcon>
-              </Group>
-              {issueAttachmentError ? (
-                <Alert color="red" role="alert">
-                  {issueAttachmentError}
-                </Alert>
-              ) : null}
-              {reactionError ? (
-                <Alert color="red" role="alert">
-                  {reactionError}
-                </Alert>
-              ) : null}
-              {issue.attachments?.length ? (
-                <Section title={t('issueAttachments.issueHeading')}>
-                  <IssueAttachmentList
-                    identifier={identifier}
-                    attachments={issue.attachments}
-                    onRemove={handlers.onRemoveIssueAttachment}
+              <Stack gap="md">
+                <Group gap={0} ml={-5} mt={12}>
+                  <ReactionPicker
+                    target="issue"
+                    openedTarget={reactionPickerTarget}
+                    buttonSize="md"
+                    onOpenChange={handlers.onReactionPickerChange}
+                    onSelect={handlers.onSelectReaction}
                   />
-                </Section>
-              ) : null}
-
-              <Box component="section" aria-label={t('ui.subIssues')} py="xs">
-                {children.length > 0 ? (
-                  <Stack gap="xs">
-                    {children.map((c) => (
-                      <Button
-                        type="button"
-                        variant="subtle"
-                        key={c.identifier}
-                        onClick={() => handlers.onClick18(c)}
-                        fullWidth
-                        styles={{ inner: { justifyContent: 'flex-start' } }}
-                      >
-                        <Group justify="space-between" wrap="nowrap" w="100%">
-                          <Group gap="sm" wrap="nowrap">
-                            <Text fw={500}>{c.identifier}</Text>
-                            <Text>{c.title}</Text>
-                          </Group>
-                          <MetaBadge>
-                            {workflowStatusLabel(c.workflowStatus ?? c.status, workflowStatuses)}
-                          </MetaBadge>
-                        </Group>
-                      </Button>
-                    ))}
-                  </Stack>
-                ) : null}
-                {subIssueEditorOpen ? (
-                  <Stack gap="xs" mt={children.length > 0 ? 'xs' : 0}>
-                    <Textarea
-                      ref={subRef}
-                      rows={2}
-                      aria-label={t('ui.newSubIssue')}
-                      placeholder={t('ui.addSubIssue')}
-                      value={subTitle}
-                      onChange={handlers.New_sub_issue_onChange19}
-                      onKeyDown={handlers.New_sub_issue_onKeyDown20}
-                    />
-                    <Group justify="flex-end" gap="xs">
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="xs"
-                        onClick={handlers.onCloseSubIssueEditor}
-                      >
-                        {t('issueSubIssues.cancel')}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="xs"
-                        disabled={!subTitle.trim()}
-                        onClick={handlers.onCreateSubIssue}
-                      >
-                        {t('issueSubIssues.create')}
-                      </Button>
-                    </Group>
-                  </Stack>
-                ) : (
-                  <Button
+                  <ReactionSummary
+                    reactions={issue.reactions ?? []}
+                    onToggle={(emoji) => handlers.onToggleReaction('issue', emoji)}
+                  />
+                  <ActionIcon
                     type="button"
                     variant="subtle"
-                    size="sm"
-                    leftSection={<IconPlus size={14} stroke={1.8} aria-hidden="true" />}
-                    onClick={handlers.onOpenSubIssueEditor}
+                    color="gray"
+                    size="md"
+                    aria-label={t(
+                      issueAttachmentBusy
+                        ? 'issueAttachments.uploading'
+                        : 'issueAttachments.addToIssue',
+                    )}
+                    disabled={issueAttachmentBusy}
+                    onClick={handlers.onChooseIssueFiles}
                   >
-                    {t('issueSubIssues.add')}
-                  </Button>
-                )}
-              </Box>
+                    <IconPaperclip size={15} aria-hidden="true" />
+                  </ActionIcon>
+                </Group>
+                {issueAttachmentError ? (
+                  <Alert color="red" role="alert">
+                    {issueAttachmentError}
+                  </Alert>
+                ) : null}
+                {reactionError ? (
+                  <Alert color="red" role="alert">
+                    {reactionError}
+                  </Alert>
+                ) : null}
+                {issue.attachments?.length ? (
+                  <Section title={t('issueAttachments.issueHeading')}>
+                    <IssueAttachmentList
+                      identifier={identifier}
+                      attachments={issue.attachments}
+                      onRemove={handlers.onRemoveIssueAttachment}
+                    />
+                  </Section>
+                ) : null}
+
+                <Box component="section" aria-label={t('ui.subIssues')} ml={-5} pt={0} pb={10}>
+                  {children.length > 0 ? (
+                    <Stack gap="xs">
+                      {children.map((c) => (
+                        <Button
+                          type="button"
+                          variant="subtle"
+                          key={c.identifier}
+                          onClick={() => handlers.onClick18(c)}
+                          fullWidth
+                          styles={{ inner: { justifyContent: 'flex-start' } }}
+                        >
+                          <Group justify="space-between" wrap="nowrap" w="100%">
+                            <Group gap="sm" wrap="nowrap">
+                              <Text fw={500}>{c.identifier}</Text>
+                              <Text>{c.title}</Text>
+                            </Group>
+                            <MetaBadge>
+                              {workflowStatusLabel(c.workflowStatus ?? c.status, workflowStatuses)}
+                            </MetaBadge>
+                          </Group>
+                        </Button>
+                      ))}
+                    </Stack>
+                  ) : null}
+                  {subIssueEditorOpen ? (
+                    <Stack gap="xs" mt={children.length > 0 ? 'xs' : 0}>
+                      <Textarea
+                        ref={subRef}
+                        rows={2}
+                        aria-label={t('ui.newSubIssue')}
+                        placeholder={t('ui.addSubIssue')}
+                        value={subTitle}
+                        onChange={handlers.New_sub_issue_onChange19}
+                        onKeyDown={handlers.New_sub_issue_onKeyDown20}
+                      />
+                      <Group justify="flex-end" gap="xs">
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="xs"
+                          onClick={handlers.onCloseSubIssueEditor}
+                        >
+                          {t('issueSubIssues.cancel')}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="xs"
+                          disabled={!subTitle.trim()}
+                          onClick={handlers.onCreateSubIssue}
+                        >
+                          {t('issueSubIssues.create')}
+                        </Button>
+                      </Group>
+                    </Stack>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      size="compact-sm"
+                      h={24}
+                      pr={13}
+                      styles={{ section: { marginInlineEnd: 3 } }}
+                      leftSection={<IconPlus size={14} stroke={1.8} aria-hidden="true" />}
+                      onClick={handlers.onOpenSubIssueEditor}
+                    >
+                      {t('issueSubIssues.add')}
+                    </Button>
+                  )}
+                </Box>
+              </Stack>
 
               {relationIssues.length > 0 || relationsEditorOpen ? (
                 <Box component="section" aria-label={t('issueRelations.heading')} py="xs">
@@ -1039,6 +1045,7 @@ export function IssueDetailView({
               <Section
                 title={t('ui.activity')}
                 ariaLabel={t('ui.activity')}
+                titleVariant="heading"
                 action={
                   <ActionIcon
                     type="button"

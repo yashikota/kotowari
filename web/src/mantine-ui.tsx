@@ -3,6 +3,7 @@ import {
   Badge,
   Box,
   Chip,
+  Divider,
   Group,
   Kbd,
   NavLink,
@@ -117,26 +118,43 @@ export function Section({
   action,
   children,
   ariaLabel,
+  titleVariant = 'default',
 }: {
   title: ReactNode;
   action?: ReactNode;
   children: ReactNode;
   ariaLabel?: string;
+  titleVariant?: 'default' | 'heading';
 }) {
+  const heading = titleVariant === 'heading';
   return (
     <Stack
       component="section"
       aria-label={ariaLabel}
-      gap="xs"
-      pt="sm"
+      gap={heading ? 0 : 'xs'}
+      pt={heading ? 0 : 'sm'}
+      mt={heading ? -4 : undefined}
       style={{
-        borderTop: '1px solid var(--mantine-color-default-border)',
+        borderTop: heading ? undefined : '1px solid var(--mantine-color-default-border)',
       }}
     >
-      <Group justify="space-between" align="center" gap="sm">
-        <Text size="sm" fw={550} c="dimmed">
-          {title}
-        </Text>
+      {heading ? (
+        <Divider
+          mb={18}
+          color="var(--mantine-color-default-border)"
+          data-testid="issue-activity-divider"
+        />
+      ) : null}
+      <Group justify="space-between" align="center" gap="sm" mih={heading ? 32 : undefined}>
+        {titleVariant === 'heading' ? (
+          <Text component="h3" fz={15} lh="23px" fw={600} m={0}>
+            {title}
+          </Text>
+        ) : (
+          <Text size="sm" fw={550} c="dimmed">
+            {title}
+          </Text>
+        )}
         {action}
       </Group>
       {children}

@@ -75,6 +75,15 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   await expect(row).toHaveAttribute('aria-setsize', '1');
   await row.click();
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}$`));
+  const fontState = await page.evaluate(async () => {
+    await document.fonts.load('12px "Inter Variable"', 'Kotowari linear');
+    return {
+      family: getComputedStyle(document.body).fontFamily,
+      loaded: document.fonts.check('12px "Inter Variable"', 'Kotowari linear'),
+    };
+  });
+  expect(fontState.family).toContain('Inter Variable');
+  expect(fontState.loaded).toBe(true);
   await expect(page.getByLabel('1 / 1')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Navigate to previous issue' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Navigate to next issue' })).toBeDisabled();
@@ -84,6 +93,10 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   const activity = page.getByRole('region', { name: 'Activity' });
   await expect(properties).toBeVisible();
   await expect(properties.getByRole('heading', { name: 'Properties', level: 3 })).toBeVisible();
+  const propertyHeading = properties.getByRole('heading', { name: 'Properties', level: 3 });
+  await expect(propertyHeading).toHaveCSS('font-size', '13px');
+  await expect(propertyHeading).toHaveCSS('font-weight', '500');
+  await expect(propertyHeading).toHaveCSS('padding-left', '8px');
   await expect(properties.getByRole('group', { name: 'Project' })).toBeVisible();
   await expect(activity.getByText(commentBody, { exact: true })).toBeVisible();
   await expect(activity.getByText(/Added a note/)).toHaveCount(0);
@@ -118,6 +131,23 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   expect(propertiesBounds!.x).toBeGreaterThan(editorBounds!.x + editorBounds!.width);
   expect(Math.abs(titleBounds!.x - editorBounds!.x)).toBeLessThanOrEqual(1);
   expect(labelsBounds).not.toBeNull();
+  const [statusValueBounds, labelsHeadingBounds, projectHeadingBounds, projectValueBounds] =
+    await Promise.all([
+      properties.getByRole('combobox', { name: 'Status' }).boundingBox(),
+      properties.getByRole('heading', { name: 'Labels', level: 3 }).boundingBox(),
+      properties.getByRole('heading', { name: 'Project', level: 3 }).boundingBox(),
+      projectPicker.boundingBox(),
+    ]);
+  expect(statusValueBounds).not.toBeNull();
+  expect(labelsHeadingBounds).not.toBeNull();
+  expect(projectHeadingBounds).not.toBeNull();
+  expect(projectValueBounds).not.toBeNull();
+  expect(statusValueBounds!.x - propertiesBounds!.x).toBeGreaterThanOrEqual(29);
+  expect(statusValueBounds!.x - propertiesBounds!.x).toBeLessThanOrEqual(31);
+  expect(labelsBounds!.y - labelsHeadingBounds!.y).toBeGreaterThanOrEqual(25);
+  expect(labelsBounds!.y - labelsHeadingBounds!.y).toBeLessThanOrEqual(27);
+  expect(projectValueBounds!.y - projectHeadingBounds!.y).toBeGreaterThanOrEqual(25);
+  expect(projectValueBounds!.y - projectHeadingBounds!.y).toBeLessThanOrEqual(27);
   const orderedProperties = [
     properties.getByRole('combobox', { name: 'Status' }),
     properties.getByRole('combobox', { name: 'Priority' }),
@@ -155,15 +185,62 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   expect(narrowPanel.scrollWidth).toBeLessThanOrEqual(narrowPanel.clientWidth);
   await page.setViewportSize({ width: 1280, height: 720 });
 
-  const [subIssuesBounds, activityBounds, composerBounds] = await Promise.all([
+  const [
+    reactionBounds,
+    attachmentButtonBounds,
+    subIssueButtonBounds,
+    subIssuesBounds,
+    activityDividerBounds,
+    activityBounds,
+    activityHeadingBounds,
+    composerBounds,
+  ] = await Promise.all([
+    page.getByRole('button', { name: 'Add reaction' }).first().boundingBox(),
+    page.getByRole('button', { name: 'Attach files to issue' }).boundingBox(),
+    page.getByRole('button', { name: 'Add sub-issues' }).boundingBox(),
     page.getByRole('region', { name: 'Sub-issues' }).boundingBox(),
+    page.getByTestId('issue-activity-divider').boundingBox(),
     page.getByRole('region', { name: 'Activity' }).boundingBox(),
+    page.getByRole('heading', { name: 'Activity', level: 3 }).boundingBox(),
     page.getByRole('textbox', { name: 'New note' }).boundingBox(),
   ]);
+  expect(reactionBounds).not.toBeNull();
+  expect(attachmentButtonBounds).not.toBeNull();
+  expect(subIssueButtonBounds).not.toBeNull();
   expect(subIssuesBounds).not.toBeNull();
+  expect(activityDividerBounds).not.toBeNull();
   expect(activityBounds).not.toBeNull();
+  expect(activityHeadingBounds).not.toBeNull();
   expect(composerBounds).not.toBeNull();
   await expect(page.getByRole('region', { name: 'Resources' })).toHaveCount(0);
+  expect(reactionBounds!.height).toBeGreaterThanOrEqual(28);
+  expect(
+    Math.abs(attachmentButtonBounds!.x - (reactionBounds!.x + reactionBounds!.width)),
+  ).toBeLessThanOrEqual(1);
+  expect(Math.abs(subIssueButtonBounds!.x - reactionBounds!.x)).toBeLessThanOrEqual(1);
+  expect(subIssueButtonBounds!.height).toBe(24);
+  expect(subIssueButtonBounds!.width).toBeGreaterThanOrEqual(126);
+  expect(subIssueButtonBounds!.width).toBeLessThanOrEqual(128);
+  expect(
+    subIssueButtonBounds!.y - (reactionBounds!.y + reactionBounds!.height),
+  ).toBeLessThanOrEqual(18);
+  expect(activityHeadingBounds!.height).toBeGreaterThanOrEqual(22);
+  expect(activityHeadingBounds!.height).toBeLessThanOrEqual(24);
+  expect(
+    activityHeadingBounds!.y - (subIssueButtonBounds!.y + subIssueButtonBounds!.height),
+  ).toBeGreaterThanOrEqual(40);
+  expect(
+    activityHeadingBounds!.y - (subIssueButtonBounds!.y + subIssueButtonBounds!.height),
+  ).toBeLessThanOrEqual(60);
+  expect(activityDividerBounds!.height).toBe(1);
+  expect(
+    activityDividerBounds!.y - (subIssueButtonBounds!.y + subIssueButtonBounds!.height),
+  ).toBeGreaterThanOrEqual(25);
+  expect(
+    activityDividerBounds!.y - (subIssueButtonBounds!.y + subIssueButtonBounds!.height),
+  ).toBeLessThanOrEqual(27);
+  expect(activityHeadingBounds!.y - activityDividerBounds!.y).toBeGreaterThanOrEqual(23);
+  expect(activityHeadingBounds!.y - activityDividerBounds!.y).toBeLessThanOrEqual(25);
   expect(subIssuesBounds!.y).toBeLessThan(activityBounds!.y);
   expect(activityBounds!.y).toBeLessThan(composerBounds!.y);
   await expect(page.getByText('Comments', { exact: true })).toHaveCount(0);
