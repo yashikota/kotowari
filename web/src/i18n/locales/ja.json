@@ -1646,7 +1646,6 @@
   },
   "inbox": {
     "heading": "受信トレイ",
-    "menu": "メニュー",
     "goToSettings": "設定へ移動",
     "settingsHeading": "受信トレイの通知",
     "settingsDescription": "受信トレイでの通知の整理方法を設定します。",
@@ -1731,6 +1730,7 @@
     "deleteConfirm": "通知を削除",
     "cancel": "キャンセル",
     "snooze": "通知をスヌーズ",
+    "deleteNotification": "通知を削除",
     "snoozeUntil": "再表示する時間",
     "snoozeOneHour": "1時間後",
     "snoozeLaterToday": "今日の後で",

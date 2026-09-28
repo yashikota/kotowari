@@ -303,6 +303,14 @@ export function useInboxPresenter() {
     onArchiveSelected: () => {
       if (selectedId !== null) archive([selectedId]);
     },
+    onDeleteSelected: () => {
+      if (selectedId === null) return;
+      updateInboxState((current) => ({
+        ...current,
+        deletedIds: [...new Set([...current.deletedIds, selectedId])],
+      }));
+      setSelectedId(null);
+    },
     onSetSnoozeMenuOpen: (opened: boolean) => setSnoozeMenuOpen(opened),
     onSnoozeSelected: (preset: InboxSnoozePreset) => {
       if (selectedId === null) return;

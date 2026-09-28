@@ -25,7 +25,6 @@ import {
   IconMessage,
   IconPaperclip,
   IconAdjustments,
-  IconMenu2,
   IconSettings,
   IconTrash,
 } from '@tabler/icons-react';
@@ -136,10 +135,18 @@ function InboxPageView({ model }: { model: InboxModel }) {
         className={styles.toolbar}
       >
         <Group gap="xs" wrap="nowrap">
+          <Title order={2} size="sm" fw={550} className={styles.heading}>
+            {t('inbox.heading')}
+          </Title>
           <Menu position="bottom-start" withinPortal>
             <Menu.Target>
-              <ActionIcon type="button" variant="subtle" color="gray" aria-label={t('inbox.menu')}>
-                <IconMenu2 size={16} aria-hidden />
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                color="gray"
+                aria-label={t('inbox.notificationActions')}
+              >
+                <IconDots size={16} aria-hidden />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
@@ -159,26 +166,6 @@ function InboxPageView({ model }: { model: InboxModel }) {
                 {t('inbox.deleteAllRead')}
               </Menu.Item>
               <Menu.Divider />
-              <Menu.Item component={Link} to="/config" leftSection={<IconSettings size={14} />}>
-                {t('inbox.goToSettings')}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-          <Title order={2} size="sm" fw={550} className={styles.heading}>
-            {t('inbox.heading')}
-          </Title>
-          <Menu position="bottom-start" withinPortal>
-            <Menu.Target>
-              <ActionIcon
-                type="button"
-                variant="subtle"
-                color="gray"
-                aria-label={t('inbox.notificationActions')}
-              >
-                <IconDots size={16} aria-hidden />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
               <Menu.Item
                 leftSection={<IconCheck size={14} />}
                 onClick={model.handlers.onMarkAllRead}
@@ -190,6 +177,10 @@ function InboxPageView({ model }: { model: InboxModel }) {
                 onClick={model.handlers.onArchiveReadActivities}
               >
                 {t('inbox.archiveReadActivities')}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item component={Link} to="/config" leftSection={<IconSettings size={14} />}>
+                {t('inbox.goToSettings')}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -580,6 +571,15 @@ function InboxPageView({ model }: { model: InboxModel }) {
                       </Menu.Item>
                     </Menu.Dropdown>
                   </Menu>
+                  <ActionIcon
+                    type="button"
+                    variant="subtle"
+                    color="gray"
+                    aria-label={t('inbox.deleteNotification')}
+                    onClick={model.handlers.onDeleteSelected}
+                  >
+                    <IconTrash size={15} aria-hidden />
+                  </ActionIcon>
                   <ActionIcon
                     type="button"
                     variant="subtle"

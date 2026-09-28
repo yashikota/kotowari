@@ -1654,7 +1654,6 @@
   },
   "inbox": {
     "heading": "Inbox",
-    "menu": "Menu",
     "goToSettings": "Go to settings",
     "settingsHeading": "Inbox notifications",
     "settingsDescription": "Manage how notifications are organized in your inbox.",
@@ -1739,6 +1738,7 @@
     "deleteConfirm": "Delete notifications",
     "cancel": "Cancel",
     "snooze": "Snooze notification",
+    "deleteNotification": "Delete notification",
     "snoozeUntil": "Snooze until",
     "snoozeOneHour": "In 1 hour",
     "snoozeLaterToday": "Later today",

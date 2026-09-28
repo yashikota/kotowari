@@ -133,6 +133,61 @@ test('inbox combines project, issue priority, and status filters', async ({ page
   await expect(otherRows).toHaveCount(1);
 });
 
+test('inbox deletes one notification without deleting its issue or comment', async ({
+  page,
+  request,
+}) => {
+  const title = `Inbox single delete ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  const commentBody = 'The comment remains after its notification is removed.';
+  const comment = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body: commentBody },
+  });
+  expect(comment.ok()).toBeTruthy();
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('kotowari.inbox.v1'));
+  await page.goto('/inbox');
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  const issueNotifications = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}`),
+  });
+  await expect(issueNotifications).toHaveCount(2);
+  const commentNotification = notifications.getByRole('button', {
+    name: new RegExp(`${issue.identifier}: ${title}\\. Added a note`),
+  });
+  await commentNotification.click();
+
+  const details = page.getByRole('region', { name: 'Notification details' });
+  await details.getByRole('button', { name: 'Delete notification' }).click();
+  await expect(issueNotifications).toHaveCount(1);
+  await expect(details).toContainText('Select an activity to see its details');
+  await page.reload();
+  await expect(issueNotifications).toHaveCount(1);
+
+  const persistedIssue = await request.get(`/api/issues/${issue.identifier}`);
+  expect(persistedIssue.ok()).toBeTruthy();
+  const persistedComments = (await (
+    await request.get(`/api/issues/${issue.identifier}/comments`)
+  ).json()) as { body: string }[];
+  expect(persistedComments).toEqual(
+    expect.arrayContaining([expect.objectContaining({ body: commentBody })]),
+  );
+  const persistedActivities = (await (await request.get('/api/inbox/activities')).json()) as {
+    action: string;
+    identifier: string;
+  }[];
+  expect(
+    persistedActivities.filter(
+      (activity) => activity.identifier === issue.identifier && activity.action === 'commented',
+    ),
+  ).toHaveLength(1);
+});
+
 test('inbox bulk actions mark all as read, delete read notifications, and archive read activities', async ({
   page,
   request,
@@ -215,7 +270,7 @@ test('inbox delete actions require confirmation and never delete issue data', as
   );
 
   await issueNotifications.first().click();
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('button', { name: 'Notification actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete all read' }).click();
   const dialog = page.getByRole('dialog');
   await expect(
@@ -238,13 +293,13 @@ test('inbox delete actions require confirmation and never delete issue data', as
   await page.reload();
   await expect(issueNotifications).toHaveCount(1);
 
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('button', { name: 'Notification actions' }).click();
   await page.getByRole('menuitem', { name: 'Go to settings' }).click();
   await expect(page).toHaveURL(/\/config$/);
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Inbox', level: 2 })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('button', { name: 'Notification actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete all', exact: true }).click();
   const deleteAllDialog = page.getByRole('dialog');
   await expect(
@@ -253,7 +308,7 @@ test('inbox delete actions require confirmation and never delete issue data', as
   await deleteAllDialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(issueNotifications).toHaveCount(1);
 
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('button', { name: 'Notification actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete all', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete notifications' }).click();
   await expect(issueNotifications).toHaveCount(0);
