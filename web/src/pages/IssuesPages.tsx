@@ -1,4 +1,4 @@
-import { Box, Group, VisuallyHidden } from '@mantine/core';
+import { Box, Group } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
@@ -89,9 +89,6 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
       if (myIssuesTab === 'activity') {
         return (
           <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <VisuallyHidden>
-              <h2>{t('nav.myIssues')}</h2>
-            </VisuallyHidden>
             <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
             <MyIssuesActivity items={data.activityItems ?? []} />
           </Box>
@@ -99,11 +96,6 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
       }
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {myIssuesTab ? (
-            <VisuallyHidden>
-              <h2>{t('nav.myIssues')}</h2>
-            </VisuallyHidden>
-          ) : null}
           {myIssuesTab ? (
             <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
           ) : null}

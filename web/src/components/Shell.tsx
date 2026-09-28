@@ -183,6 +183,7 @@ export function ShellView({
       const {
         workspaceName,
         routeTitle,
+        isMyIssues,
         isIssueDetail,
         showIssueViewFavorite,
         issueViewFavorite,
@@ -625,8 +626,8 @@ export function ShellView({
                   <IconMenu2 size={16} stroke={1.7} aria-hidden />
                 </ActionIcon>
                 <Group
-                  component="nav"
-                  aria-label={t('nav.breadcrumb')}
+                  component={isMyIssues ? 'div' : 'nav'}
+                  aria-label={isMyIssues ? undefined : t('nav.breadcrumb')}
                   gap="sm"
                   wrap="nowrap"
                   className={
@@ -638,15 +639,19 @@ export function ShellView({
                   }
                   style={{ minWidth: 0 }}
                 >
-                  <Text size="sm" c="dimmed" truncate maw={180}>
-                    {workspaceName || t('workspace.defaultName')}
-                  </Text>
-                  <IconChevronRight
-                    size={14}
-                    stroke={1.6}
-                    aria-hidden
-                    color="var(--mantine-color-dimmed)"
-                  />
+                  {isMyIssues ? null : (
+                    <>
+                      <Text size="sm" c="dimmed" truncate maw={180}>
+                        {workspaceName || t('workspace.defaultName')}
+                      </Text>
+                      <IconChevronRight
+                        size={14}
+                        stroke={1.6}
+                        aria-hidden
+                        color="var(--mantine-color-dimmed)"
+                      />
+                    </>
+                  )}
                   {isCycleDetail ? (
                     <>
                       <Link
@@ -680,9 +685,9 @@ export function ShellView({
                     </>
                   ) : (
                     <Text
-                      component={showIssueViewFavorite ? 'h2' : 'span'}
+                      component={isMyIssues || showIssueViewFavorite ? 'h2' : 'span'}
                       size="sm"
-                      fw={showIssueViewFavorite ? 550 : 500}
+                      fw={isMyIssues || showIssueViewFavorite ? 550 : 500}
                       truncate
                     >
                       {routeTitle}

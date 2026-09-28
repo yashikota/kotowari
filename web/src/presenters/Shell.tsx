@@ -121,6 +121,9 @@ export function useShellPresenter() {
   }, [router]);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const routeSearch = useRouterState({ select: (s) => s.location.search });
+  const isMyIssues =
+    pathname === '/issues' &&
+    (routeSearch.myIssuesTab !== undefined || routeSearch.assignee === 'self');
   const issueView: FavoriteIssueView | undefined =
     pathname !== '/issues' || routeSearch.myIssuesTab || routeSearch.assignee === 'self'
       ? undefined
@@ -969,6 +972,7 @@ export function useShellPresenter() {
     _view: 0 as const,
     workspaceName,
     routeTitle,
+    isMyIssues,
     isIssueDetail,
     showIssueViewFavorite: issueView !== undefined,
     issueViewFavorite,

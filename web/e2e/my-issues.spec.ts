@@ -1,0 +1,41 @@
+import { expect, test } from '@playwright/test';
+
+test('My issues uses a focused header and Linear-style personal tabs', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const assignedTitle = `My assigned ${stamp}`;
+  const unassignedTitle = `Not assigned to me ${stamp}`;
+  for (const data of [
+    { title: assignedTitle, status: 'todo', assignee: 'self' },
+    { title: unassignedTitle, status: 'todo' },
+  ]) {
+    const response = await request.post('/api/issues', { data });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues?assignee=self&myIssuesTab=assigned');
+  await expect(page.getByRole('heading', { name: 'My issues' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
+
+  const tabs = page.getByRole('tablist', { name: 'My issues' });
+  await expect(tabs).toBeVisible();
+  const issues = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issues.getByRole('option', { name: new RegExp(assignedTitle) })).toBeVisible();
+  await expect(issues.getByRole('option', { name: new RegExp(unassignedTitle) })).toHaveCount(0);
+
+  await tabs.getByRole('tab', { name: 'Created' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe('created');
+  // Kotowari is a single-user workspace, so every stored issue belongs to the current user.
+  await expect(issues.getByRole('option', { name: new RegExp(assignedTitle) })).toBeVisible();
+  await expect(issues.getByRole('option', { name: new RegExp(unassignedTitle) })).toBeVisible();
+
+  await tabs.getByRole('tab', { name: 'Subscribed' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe('subscribed');
+  await expect(issues.getByRole('option', { name: new RegExp(assignedTitle) })).toHaveCount(0);
+
+  await tabs.getByRole('tab', { name: 'Activity' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe('activity');
+  await expect(page.getByText(/No issues with activity from you|My assigned/)).toBeVisible();
+});
