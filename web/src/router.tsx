@@ -501,10 +501,15 @@ const cyclesRoute = createRoute({
         : undefined,
   }),
   loader: async () => {
-    const [cycles, issues] = await Promise.all([api.cycles(), api.issues()]);
+    await api.ensureCycleSchedule();
+    const [cycles, issues, workspace] = await Promise.all([
+      api.cycles(),
+      api.issues(),
+      api.workspace(),
+    ]);
     const activeCycle = cycles.find((cycle) => cycle.status === 'active');
     const activeCycleActivities = activeCycle ? await api.cycleActivities(activeCycle.number) : [];
-    return { cycles, issues, activeCycleActivities };
+    return { cycles, issues, activeCycleActivities, workspace };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CyclesPage'),
 });
@@ -517,6 +522,7 @@ const cycleRoute = createRoute({
   loader: async ({ params, deps }) => {
     let number = Number(params.number);
     if (params.number === 'active' || params.number === 'upcoming') {
+      await api.ensureCycleSchedule();
       const status = params.number;
       const candidates = (await api.cycles())
         .filter((cycle) => cycle.status === status)

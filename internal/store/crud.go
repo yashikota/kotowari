@@ -51,6 +51,7 @@ func workspaceFrom(m *mem) Workspace {
 		URL:             strings.TrimSpace(m.Workspace.URL),
 		Description:     m.Workspace.Description,
 		GitHubURL:       strings.TrimSpace(m.Workspace.GitHubURL),
+		CycleSettings:   normalizedCycleSettings(m.Workspace.CycleSettings),
 		IssueStatuses:   issueWorkflowStatuses(m.Workspace),
 		ProjectStatuses: projectWorkflowStatuses(m.Workspace),
 		UpdatedAt:       m.Workspace.UpdatedAt,
@@ -66,9 +67,19 @@ func validLocale(locale string) bool {
 	}
 }
 
-func (s *Store) UpdateWorkspace(name, timezone, locale, url, description, githubURL *string) (Workspace, error) {
+func (s *Store) UpdateWorkspace(
+	name, timezone, locale, url, description, githubURL *string,
+	cycleSettings *CycleSettings,
+) (Workspace, error) {
 	var ws Workspace
 	err := s.mutate(func(m *mem) error {
+		if cycleSettings != nil {
+			if !validCycleSettings(*cycleSettings) {
+				return validationf("invalid cycle settings")
+			}
+			settings := *cycleSettings
+			m.Workspace.CycleSettings = &settings
+		}
 		if name != nil {
 			if strings.TrimSpace(*name) == "" {
 				return validationf("name required")

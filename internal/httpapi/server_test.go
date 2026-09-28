@@ -312,6 +312,36 @@ func TestCycleActivityEndpointReturnsStatusHistoryForCurrentMembers(t *testing.T
 	}
 }
 
+func TestCycleScheduleSettingsAndEnsureEndpoint(t *testing.T) {
+	s := testAPI(t)
+	created := doJSON(t, s, http.MethodPost, "/api/cycles", `{"startsAt":"2090-09-02T00:00:00Z","endsAt":"2090-09-09T00:00:00Z","status":"active"}`)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create cycle %d %s", created.Code, created.Body.String())
+	}
+	updated := doJSON(t, s, http.MethodPatch, "/api/workspace", `{"cycleSettings":{"durationDays":14,"cooldownDays":0,"startDay":"monday","autoCreateAhead":2}}`)
+	if updated.Code != http.StatusOK || !strings.Contains(updated.Body.String(), `"autoCreateAhead":2`) {
+		t.Fatalf("update cycle schedule settings %d %s", updated.Code, updated.Body.String())
+	}
+
+	ensured := doJSON(t, s, http.MethodPost, "/api/cycles/ensure", "")
+	var cycles []store.Cycle
+	if ensured.Code != http.StatusOK || json.Unmarshal(ensured.Body.Bytes(), &cycles) != nil {
+		t.Fatalf("ensure cycle schedule %d %s", ensured.Code, ensured.Body.String())
+	}
+	if len(cycles) != 3 || cycles[1].Status != "upcoming" || cycles[2].Status != "upcoming" {
+		t.Fatalf("ensured cycles = %#v", cycles)
+	}
+
+	repeated := doJSON(t, s, http.MethodPost, "/api/cycles/ensure", "")
+	if repeated.Code != http.StatusOK || json.Unmarshal(repeated.Body.Bytes(), &cycles) != nil || len(cycles) != 3 {
+		t.Fatalf("repeated ensure should remain idempotent: %d %s", repeated.Code, repeated.Body.String())
+	}
+	invalid := doJSON(t, s, http.MethodPatch, "/api/workspace", `{"cycleSettings":{"durationDays":0,"cooldownDays":0,"startDay":"monday","autoCreateAhead":2}}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid cycle schedule settings status %d %s", invalid.Code, invalid.Body.String())
+	}
+}
+
 func TestCycleCalendarFeedIsLiveAndCacheable(t *testing.T) {
 	s := testAPI(t)
 	created := doJSON(t, s, http.MethodPost, "/api/cycles", `{"startsAt":"2034-02-01T00:00:00Z","endsAt":"2034-02-14T00:00:00Z","status":"active"}`)

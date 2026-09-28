@@ -40,4 +40,18 @@ describe('nextCycleRange', () => {
       endsAt: '2026-10-19T00:00:00.000Z',
     });
   });
+
+  it('uses the configured duration, cooldown, and start weekday', () => {
+    expect(
+      nextCycleRange([{ startsAt: '2026-09-28T00:00:00Z', endsAt: '2026-10-05T00:00:00Z' }], now, {
+        durationDays: 14,
+        cooldownDays: 2,
+        startDay: 'monday',
+        autoCreateAhead: 2,
+      }),
+    ).toEqual({
+      startsAt: '2026-10-12T00:00:00.000Z',
+      endsAt: '2026-10-26T00:00:00.000Z',
+    });
+  });
 });

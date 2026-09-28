@@ -375,9 +375,17 @@ export type Workspace = {
   url: string;
   description: string;
   githubUrl: string;
+  cycleSettings: CycleSettings;
   issueStatuses?: IssueWorkflowStatus[];
   projectStatuses?: ProjectWorkflowStatus[];
   updatedAt: string;
+};
+
+export type CycleSettings = {
+  durationDays: number;
+  cooldownDays: number;
+  startDay: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+  autoCreateAhead: number;
 };
 
 export type SearchHit = {

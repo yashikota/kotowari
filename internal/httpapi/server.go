@@ -112,6 +112,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("PATCH /api/projects/{slug}/milestones/{milestoneId}", s.patchMilestone)
 	s.mux.HandleFunc("DELETE /api/projects/{slug}/milestones/{milestoneId}", s.deleteMilestone)
 	s.mux.HandleFunc("GET /api/cycles", s.listCycles)
+	s.mux.HandleFunc("POST /api/cycles/ensure", s.ensureCycleSchedule)
 	s.mux.HandleFunc("POST /api/cycles", s.createCycle)
 	s.mux.HandleFunc("GET /api/cycles/{number}/activities", s.listCycleActivities)
 	s.mux.HandleFunc("GET /api/cycles/{number}/calendar.ics", s.cycleCalendarFeed)
@@ -287,18 +288,21 @@ func (s *Server) listDiagnostics(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) patchWorkspace(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name        *string `json:"name"`
-		Timezone    *string `json:"timezone"`
-		Locale      *string `json:"locale"`
-		URL         *string `json:"url"`
-		Description *string `json:"description"`
-		GitHubURL   *string `json:"githubUrl"`
+		Name          *string              `json:"name"`
+		Timezone      *string              `json:"timezone"`
+		Locale        *string              `json:"locale"`
+		URL           *string              `json:"url"`
+		Description   *string              `json:"description"`
+		GitHubURL     *string              `json:"githubUrl"`
+		CycleSettings *store.CycleSettings `json:"cycleSettings"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	ws, err := s.store.UpdateWorkspace(in.Name, in.Timezone, in.Locale, in.URL, in.Description, in.GitHubURL)
+	ws, err := s.store.UpdateWorkspace(
+		in.Name, in.Timezone, in.Locale, in.URL, in.Description, in.GitHubURL, in.CycleSettings,
+	)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -490,6 +494,15 @@ func (s *Server) deleteProjectDependency(w http.ResponseWriter, r *http.Request)
 
 func (s *Server) listCycles(w http.ResponseWriter, _ *http.Request) {
 	out, err := s.store.ListCycles()
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) ensureCycleSchedule(w http.ResponseWriter, _ *http.Request) {
+	out, err := s.store.EnsureCycleSchedule()
 	if err != nil {
 		writeError(w, err)
 		return

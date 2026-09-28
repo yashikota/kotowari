@@ -1598,6 +1598,7 @@ export function useCyclesPagePresenter() {
     cycles: Cycle[];
     issues: Issue[];
     activeCycleActivities: Activity[];
+    workspace: Workspace;
   };
   const { scope } = useSearch({ from: '/cycles' });
   const router = useRouter();
@@ -1764,7 +1765,7 @@ export function useCyclesPagePresenter() {
       onEndDateChange: (e: React.ChangeEvent<HTMLInputElement>) => setEndDateDraft(e.target.value),
       onSaveDates: saveCycleDates,
       onClick0: () => {
-        const range = nextCycleRange(data.cycles);
+        const range = nextCycleRange(data.cycles, new Date(), data.workspace.cycleSettings);
         return api.createCycle(range).then((c) =>
           navigate({
             to: '/cycles/$number',

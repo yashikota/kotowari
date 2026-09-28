@@ -28,9 +28,42 @@ type Workspace struct {
 	URL             string                  `json:"url"`
 	Description     string                  `json:"description"`
 	GitHubURL       string                  `json:"githubUrl"`
+	CycleSettings   CycleSettings           `json:"cycleSettings"`
 	IssueStatuses   []IssueWorkflowStatus   `json:"issueStatuses"`
 	ProjectStatuses []ProjectWorkflowStatus `json:"projectStatuses"`
 	UpdatedAt       string                  `json:"updatedAt"`
+}
+
+type CycleSettings struct {
+	DurationDays    int    `json:"durationDays" toml:"durationDays"`
+	CooldownDays    int    `json:"cooldownDays" toml:"cooldownDays"`
+	StartDay        string `json:"startDay" toml:"startDay"`
+	AutoCreateAhead int    `json:"autoCreateAhead" toml:"autoCreateAhead"`
+}
+
+func defaultCycleSettings() CycleSettings {
+	return CycleSettings{DurationDays: 7, StartDay: "monday"}
+}
+
+func normalizedCycleSettings(settings *CycleSettings) CycleSettings {
+	if settings == nil {
+		return defaultCycleSettings()
+	}
+	return *settings
+}
+
+func validCycleSettings(settings CycleSettings) bool {
+	if settings.DurationDays < 1 || settings.DurationDays > 56 ||
+		settings.CooldownDays < 0 || settings.CooldownDays > 14 ||
+		settings.AutoCreateAhead < 0 || settings.AutoCreateAhead > 6 {
+		return false
+	}
+	switch settings.StartDay {
+	case "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday":
+		return true
+	default:
+		return false
+	}
 }
 
 // IssueWorkflowStatus is a user-configurable workflow state grouped under one
@@ -611,6 +644,7 @@ type workspaceFile struct {
 	URL             string                  `toml:"url,omitempty"`
 	Description     string                  `toml:"description,omitempty"`
 	GitHubURL       string                  `toml:"githubUrl,omitempty"`
+	CycleSettings   *CycleSettings          `toml:"cycleSettings,omitempty"`
 	IssueStatuses   []IssueWorkflowStatus   `toml:"issueStatuses,omitempty"`
 	ProjectStatuses []ProjectWorkflowStatus `toml:"projectStatuses,omitempty"`
 	IssuePrefix     string                  `toml:"issuePrefix,omitempty"`

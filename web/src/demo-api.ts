@@ -56,6 +56,12 @@ let workspace: Workspace = {
   url: 'https://yashikota.github.io/kotowari/',
   description: 'Markdownで管理する、軽量なプロジェクトワークスペース',
   githubUrl: 'https://github.com/yashikota/kotowari',
+  cycleSettings: {
+    durationDays: 14,
+    cooldownDays: 0,
+    startDay: 'monday',
+    autoCreateAhead: 0,
+  },
   issueStatuses: issueWorkflowStatuses,
   projectStatuses: projectWorkflowStatuses,
   updatedAt: now,
@@ -680,6 +686,57 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   if (path === '/api/workspace') {
     if (method === 'PATCH') workspace = patch(workspace, body(init));
     return json(workspace);
+  }
+  if (path === '/api/cycles/ensure' && method === 'POST') {
+    const settings = workspace.cycleSettings;
+    if (settings.autoCreateAhead > 0 && cycles.length > 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      const valid = cycles.filter((cycle) => /^\d{4}-\d{2}-\d{2}/.test(cycle.endsAt));
+      const latest = valid.reduce((current, cycle) =>
+        cycle.endsAt > current.endsAt ? cycle : current,
+      );
+      let start = new Date(`${latest.endsAt.slice(0, 10)}T00:00:00.000Z`);
+      start.setUTCDate(start.getUTCDate() + settings.cooldownDays);
+      if (start.toISOString().slice(0, 10) < today) start = new Date(`${today}T00:00:00.000Z`);
+      const targetDay = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ].indexOf(settings.startDay);
+      const upcoming = cycles.filter(
+        (cycle) => cycle.status === 'upcoming' && cycle.endsAt.slice(0, 10) > today,
+      ).length;
+      let number = Math.max(0, ...cycles.map((cycle) => cycle.number));
+      let id = Math.max(0, ...cycles.map((cycle) => cycle.id));
+      for (let count = upcoming; count < settings.autoCreateAhead; count += 1) {
+        const offset = (targetDay - start.getUTCDay() + 7) % 7;
+        start.setUTCDate(start.getUTCDate() + offset);
+        const startsAt = start.toISOString().slice(0, 10);
+        start.setUTCDate(start.getUTCDate() + settings.durationDays);
+        const endsAt = start.toISOString().slice(0, 10);
+        number += 1;
+        id += 1;
+        cycles.push({
+          id,
+          number,
+          name: `Cycle ${number}`,
+          description: '',
+          startsAt,
+          endsAt,
+          status: 'upcoming',
+          isFavorite: false,
+          resources: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      if (upcoming < settings.autoCreateAhead) revision += 1;
+    }
+    return json(cycles);
   }
   if (path === '/api/issue-workflow-statuses') {
     if (method === 'GET') return json(issueWorkflowStatuses);

@@ -313,3 +313,35 @@ test('issue list tabs are addressable and retain their Linear-style status scope
     await expect(issueTitle(fixture.title)).toBeVisible();
   }
 });
+
+test('cycle schedule settings persist in the workspace', async ({ page, request }) => {
+  await page.goto('/config');
+  await choose(page, 'Cycle duration', '2 weeks');
+  await choose(page, 'Cooldown between cycles', '1 week');
+  await choose(page, 'Cycle start day', 'Tuesday');
+  await choose(page, 'Automatically create upcoming cycles', 'Off');
+  await page.getByRole('button', { name: 'Save cycle schedule' }).click();
+  await expect(page.getByText('Cycle schedule saved')).toBeVisible();
+
+  const response = await request.get('/api/workspace');
+  expect(response.ok()).toBeTruthy();
+  expect(await response.json()).toMatchObject({
+    cycleSettings: {
+      durationDays: 14,
+      cooldownDays: 7,
+      startDay: 'tuesday',
+      autoCreateAhead: 0,
+    },
+  });
+
+  await request.patch('/api/workspace', {
+    data: {
+      cycleSettings: {
+        durationDays: 7,
+        cooldownDays: 0,
+        startDay: 'monday',
+        autoCreateAhead: 0,
+      },
+    },
+  });
+});

@@ -841,8 +841,8 @@ test('cycle group quick-create inherits the group cycle', async ({ page, request
 test('new cycle continues the latest cycle schedule', async ({ page, request }) => {
   const cycleResponse = await request.post('/api/cycles', {
     data: {
-      startsAt: '2090-09-02T00:00:00.000Z',
-      endsAt: '2090-09-09T00:00:00.000Z',
+      startsAt: '2090-09-04T00:00:00.000Z',
+      endsAt: '2090-09-11T00:00:00.000Z',
       status: 'upcoming',
     },
   });
@@ -856,8 +856,8 @@ test('new cycle continues the latest cycle schedule', async ({ page, request }) 
   const nextCycleResponse = await request.get(`/api/cycles/${cycle.number + 1}`);
   expect(nextCycleResponse.ok()).toBeTruthy();
   expect(await nextCycleResponse.json()).toMatchObject({
-    startsAt: '2090-09-09T00:00:00.000Z',
-    endsAt: '2090-09-16T00:00:00.000Z',
+    startsAt: '2090-09-11T00:00:00.000Z',
+    endsAt: '2090-09-18T00:00:00.000Z',
   });
 });
 

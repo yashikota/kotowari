@@ -45,6 +45,11 @@ export function useConfigPagePresenter() {
   const [sidebarCustomizationOpen, setSidebarCustomizationOpen] =
     useMachineFlag('sidebar-customization');
   const [workspace, setWorkspace] = useState(() => normalizeWorkspace(data.workspace));
+  const [cycleSettings, setCycleSettings] = useState(
+    () => normalizeWorkspace(data.workspace).cycleSettings,
+  );
+  const [cycleSettingsError, setCycleSettingsError] = useState('');
+  const [cycleSettingsSaved, setCycleSettingsSaved] = useState(false);
   const { preferences, update: updatePreferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences, update: updateCodingToolPreferences } =
     useCodingToolPreferences();
@@ -74,6 +79,7 @@ export function useConfigPagePresenter() {
 
   useEffect(() => {
     setWorkspace(normalizeWorkspace(data.workspace));
+    setCycleSettings(normalizeWorkspace(data.workspace).cycleSettings);
   }, [data.workspace]);
 
   useEffect(() => {
@@ -97,6 +103,9 @@ export function useConfigPagePresenter() {
   return {
     _view: 0 as const,
     workspace,
+    cycleSettings,
+    cycleSettingsError,
+    cycleSettingsSaved,
     timeZones,
     languages,
     preferences,
@@ -147,6 +156,58 @@ export function useConfigPagePresenter() {
             await router.invalidate();
           })
           .catch((err: unknown) => setError(err instanceof Error ? err.message : 'save failed'));
+      },
+      onSaveCycleSettings: (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setCycleSettingsError('');
+        setCycleSettingsSaved(false);
+        void api
+          .patchWorkspace({ cycleSettings })
+          .then(async (next) => {
+            const normalized = normalizeWorkspace(next);
+            setCycleSettings(normalized.cycleSettings);
+            await api.ensureCycleSchedule();
+            setCycleSettingsSaved(true);
+            signals.dispatchEvent(new Event('kotowari:refresh'));
+            await router.invalidate();
+          })
+          .catch((err: unknown) =>
+            setCycleSettingsError(
+              err instanceof Error ? err.message : t('config.cycleSettingsSaveFailed'),
+            ),
+          );
+      },
+      onCycleDurationChange: (value: string | null) => {
+        if (value && Number.isInteger(Number(value))) {
+          setCycleSettingsSaved(false);
+          setCycleSettings((current) => ({ ...current, durationDays: Number(value) }));
+        }
+      },
+      onCycleCooldownChange: (value: string | null) => {
+        if (value && Number.isInteger(Number(value))) {
+          setCycleSettingsSaved(false);
+          setCycleSettings((current) => ({ ...current, cooldownDays: Number(value) }));
+        }
+      },
+      onCycleStartDayChange: (value: string | null) => {
+        if (
+          value === 'sunday' ||
+          value === 'monday' ||
+          value === 'tuesday' ||
+          value === 'wednesday' ||
+          value === 'thursday' ||
+          value === 'friday' ||
+          value === 'saturday'
+        ) {
+          setCycleSettingsSaved(false);
+          setCycleSettings((current) => ({ ...current, startDay: value }));
+        }
+      },
+      onCycleAutoCreateAheadChange: (value: string | null) => {
+        if (value && Number.isInteger(Number(value))) {
+          setCycleSettingsSaved(false);
+          setCycleSettings((current) => ({ ...current, autoCreateAhead: Number(value) }));
+        }
       },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

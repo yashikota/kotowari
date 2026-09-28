@@ -6,6 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const port = process.env.E2E_PORT ?? '5108';
 const ci = Boolean(process.env.CI);
+const chromiumExecutable = process.env.E2E_CHROMIUM_EXECUTABLE;
 process.env.E2E_KOTOWARI_HOME ??= mkdtempSync(join(tmpdir(), 'kotowari-e2e-'));
 process.env.KOTOWARI_ACP_COMMAND = JSON.stringify([
   process.execPath,
@@ -25,7 +26,15 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: chromiumExecutable ? { executablePath: chromiumExecutable } : undefined,
+      },
+    },
+  ],
   webServer: {
     command: 'node e2e/serve.mjs',
     url: `http://127.0.0.1:${port}`,
