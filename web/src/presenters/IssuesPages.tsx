@@ -23,7 +23,7 @@ import {
 } from '../issue-list.ts';
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
-import { isTypingTarget } from '../keymap.ts';
+import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
@@ -184,6 +184,11 @@ export function useIssuesPagePresenter() {
   }
 
   useKeyboard((event) => {
+    if (actionFromKeyboard(event) === 'toggle-right-sidebar') {
+      event.preventDefault();
+      setDetailsOpen((open) => !open);
+      return true;
+    }
     if (
       event.altKey &&
       !event.ctrlKey &&

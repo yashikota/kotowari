@@ -54,7 +54,7 @@ import {
   projectBoardSearchHidden,
   projectBoardSearchOrder,
 } from '../project-board.ts';
-import { isTypingTarget } from '../keymap.ts';
+import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import type {
   Activity,
@@ -1820,6 +1820,11 @@ export function useCycleDetailPagePresenter() {
   }
 
   useKeyboard((event) => {
+    if (actionFromKeyboard(event) === 'toggle-right-sidebar') {
+      event.preventDefault();
+      setCycleDetailsOpen((open) => !open);
+      return true;
+    }
     if (
       !event.altKey ||
       event.ctrlKey ||

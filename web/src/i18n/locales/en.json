@@ -1997,6 +1997,8 @@
     "shortcutGoSettingsKeys": "G, then S",
     "shortcutToggleSidebarKeys": "[",
     "shortcutToggleSidebar": "Toggle left sidebar",
+    "shortcutToggleRightSidebarKeys": "]",
+    "shortcutToggleRightSidebar": "Toggle right sidebar",
     "shortcutQuickOpenIssueKeys": "O, then I",
     "shortcutQuickOpenIssue": "Open an issue",
     "shortcutQuickOpenFavoriteKeys": "O, then F",

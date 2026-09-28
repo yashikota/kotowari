@@ -1988,6 +1988,8 @@
     "shortcutGoSettingsKeys": "G、続けてS",
     "shortcutToggleSidebarKeys": "[",
     "shortcutToggleSidebar": "左サイドバーを切り替え",
+    "shortcutToggleRightSidebarKeys": "]",
+    "shortcutToggleRightSidebar": "右サイドバーを切り替え",
     "shortcutQuickOpenIssueKeys": "O、続けてI",
     "shortcutQuickOpenIssue": "イシューを開く",
     "shortcutQuickOpenFavoriteKeys": "O、続けてF",

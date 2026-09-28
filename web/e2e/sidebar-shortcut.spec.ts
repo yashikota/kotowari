@@ -7,20 +7,21 @@ test('the Linear left-sidebar shortcut collapses, restores, and persists navigat
   await page.goto('/');
 
   await expect(page.getByRole('button', { name: 'Collapse navigation' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Inbox', exact: true })).toBeVisible();
+  const inboxLink = page.locator('a[href="/inbox"]');
+  await expect(inboxLink).toBeVisible();
 
   await page.keyboard.press('[');
 
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Collapse navigation' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Inbox', exact: true })).toHaveCount(0);
+  await expect(inboxLink).toBeHidden();
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toBeVisible();
   await page.getByRole('button', { name: 'Expand navigation' }).click();
 
   await expect(page.getByRole('button', { name: 'Collapse navigation' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Inbox', exact: true })).toBeVisible();
+  await expect(inboxLink).toBeVisible();
 });
 
 test('the sidebar shortcut does not intercept text entry', async ({ page }) => {

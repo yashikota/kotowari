@@ -8,6 +8,7 @@ import {
 import type * as React from 'react';
 import { useState, useSyncExternalStore } from 'react';
 import { api, type IssueSearch } from '../api.ts';
+import { useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 import {
@@ -25,6 +26,7 @@ import type { IssueNavigationState } from '../focus.ts';
 import type { Cycle, Issue, Label, Project, View } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
+import { actionFromKeyboard } from '../keymap.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { matchesIssueFilterGroup, parseIssueFilterGroup } from '../issue-advanced-filter.ts';
@@ -90,6 +92,14 @@ export function useViewPagePresenter() {
   );
   const [detailsOpen, setDetailsOpen] = useState(locationState.issueListSelectedId != null);
   const restoreScrollTop = locationState.issueListScrollTop ?? 0;
+
+  useKeyboard((event) => {
+    if (view.display !== 'list' || actionFromKeyboard(event) !== 'toggle-right-sidebar')
+      return false;
+    event.preventDefault();
+    setDetailsOpen((open) => !open);
+    return true;
+  }, true);
 
   if (view.slug !== data.view.slug || view.updatedAt !== data.view.updatedAt) {
     setView(data.view);

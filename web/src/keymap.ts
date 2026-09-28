@@ -18,7 +18,8 @@ export type KeyAction =
   | NavShortcutAction
   | 'help'
   | 'find'
-  | 'toggle-sidebar';
+  | 'toggle-sidebar'
+  | 'toggle-right-sidebar';
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
@@ -491,6 +492,9 @@ export function actionFromKeyboard(event: {
   }
   if (event.key === '[') {
     return 'toggle-sidebar';
+  }
+  if (event.key === ']') {
+    return 'toggle-right-sidebar';
   }
   if (event.shiftKey) {
     switch (event.key) {
