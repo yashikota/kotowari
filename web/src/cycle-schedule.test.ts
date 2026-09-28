@@ -48,6 +48,8 @@ describe('nextCycleRange', () => {
         cooldownDays: 2,
         startDay: 'monday',
         autoCreateAhead: 2,
+        autoAddActiveIssues: false,
+        autoAddCompletedIssues: false,
       }),
     ).toEqual({
       startsAt: '2026-10-12T00:00:00.000Z',

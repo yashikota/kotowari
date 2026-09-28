@@ -209,6 +209,24 @@ export function useConfigPagePresenter() {
           setCycleSettings((current) => ({ ...current, autoCreateAhead: Number(value) }));
         }
       },
+      onCycleAutoAddActiveIssuesChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        setCycleSettingsSaved(false);
+        setCycleSettings((current) => ({
+          ...current,
+          autoAddActiveIssues: e.currentTarget.checked,
+        }));
+      },
+      onCycleAutoAddCompletedIssuesChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        setCycleSettingsSaved(false);
+        setCycleSettings((current) => ({
+          ...current,
+          autoAddCompletedIssues: e.currentTarget.checked,
+        }));
+      },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setWorkspace({ ...workspace, name: e.target.value }),

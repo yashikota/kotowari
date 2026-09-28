@@ -1772,6 +1772,7 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		}
 	}
 	now := domain.Now()
+	automationNow, _ := time.Parse(time.RFC3339, now)
 	normalizedLinks, err := normalizeIssueLinks(in.ExternalLinks)
 	if err != nil {
 		return Issue{}, err
@@ -1854,6 +1855,9 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 			ident := p.Identifier
 			out.ParentIdentifier = &ident
 		}
+		if in.CycleID == nil {
+			autoAssignIssueCycle(m, &out, automationNow)
+		}
 		for _, id := range in.LabelIDs {
 			if l, ok := labelByID(m, id); ok {
 				out.Labels = append(out.Labels, l)
@@ -1888,6 +1892,7 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 		oldFavorite := iss.IsFavorite
 		oldArchived := iss.ArchivedAt != nil
 		oldReminderAt := iss.ReminderAt
+		oldDueDate := iss.DueDate
 		oldMilestoneID := iss.MilestoneID
 		oldMilestoneName := iss.MilestoneName
 		oldCycleID := iss.CycleID
@@ -2020,12 +2025,18 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 			iss.IsFavorite = *in.IsFavorite
 		}
 		now := domain.Now()
+		automationNow, _ := time.Parse(time.RFC3339, now)
 		if in.Archived != nil && *in.Archived != oldArchived {
 			if *in.Archived {
 				iss.ArchivedAt = &now
 			} else {
 				iss.ArchivedAt = nil
 			}
+		}
+		if in.CycleID == nil && oldCycleID == nil && iss.CycleID == nil && iss.ArchivedAt == nil &&
+			(iss.Status != oldStatus || iss.WorkflowStatus != oldWorkflowStatus ||
+				(iss.DueDate != nil && !sameString(oldDueDate, iss.DueDate))) {
+			autoAssignIssueCycle(m, &iss, automationNow)
 		}
 		if !sameInt64(oldCycleID, iss.CycleID) {
 			if iss.CycleID == nil {

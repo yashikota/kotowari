@@ -386,6 +386,8 @@ export type CycleSettings = {
   cooldownDays: number;
   startDay: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
   autoCreateAhead: number;
+  autoAddActiveIssues: boolean;
+  autoAddCompletedIssues: boolean;
 };
 
 export type SearchHit = {

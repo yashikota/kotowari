@@ -320,6 +320,8 @@ test('cycle schedule settings persist in the workspace', async ({ page, request 
   await choose(page, 'Cooldown between cycles', '1 week');
   await choose(page, 'Cycle start day', 'Tuesday');
   await choose(page, 'Automatically create upcoming cycles', 'Off');
+  await page.getByLabel('Active issues & due date').check();
+  await page.getByLabel('Completed issues').check();
   await page.getByRole('button', { name: 'Save cycle schedule' }).click();
   await expect(page.getByText('Cycle schedule saved')).toBeVisible();
 
@@ -331,6 +333,8 @@ test('cycle schedule settings persist in the workspace', async ({ page, request 
       cooldownDays: 7,
       startDay: 'tuesday',
       autoCreateAhead: 0,
+      autoAddActiveIssues: true,
+      autoAddCompletedIssues: true,
     },
   });
 
@@ -341,6 +345,8 @@ test('cycle schedule settings persist in the workspace', async ({ page, request 
         cooldownDays: 0,
         startDay: 'monday',
         autoCreateAhead: 0,
+        autoAddActiveIssues: false,
+        autoAddCompletedIssues: false,
       },
     },
   });

@@ -61,6 +61,8 @@ let workspace: Workspace = {
     cooldownDays: 0,
     startDay: 'monday',
     autoCreateAhead: 0,
+    autoAddActiveIssues: false,
+    autoAddCompletedIssues: false,
   },
   issueStatuses: issueWorkflowStatuses,
   projectStatuses: projectWorkflowStatuses,

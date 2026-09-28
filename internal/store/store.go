@@ -35,10 +35,12 @@ type Workspace struct {
 }
 
 type CycleSettings struct {
-	DurationDays    int    `json:"durationDays" toml:"durationDays"`
-	CooldownDays    int    `json:"cooldownDays" toml:"cooldownDays"`
-	StartDay        string `json:"startDay" toml:"startDay"`
-	AutoCreateAhead int    `json:"autoCreateAhead" toml:"autoCreateAhead"`
+	DurationDays           int    `json:"durationDays" toml:"durationDays"`
+	CooldownDays           int    `json:"cooldownDays" toml:"cooldownDays"`
+	StartDay               string `json:"startDay" toml:"startDay"`
+	AutoCreateAhead        int    `json:"autoCreateAhead" toml:"autoCreateAhead"`
+	AutoAddActiveIssues    bool   `json:"autoAddActiveIssues" toml:"autoAddActiveIssues"`
+	AutoAddCompletedIssues bool   `json:"autoAddCompletedIssues" toml:"autoAddCompletedIssues"`
 }
 
 func defaultCycleSettings() CycleSettings {

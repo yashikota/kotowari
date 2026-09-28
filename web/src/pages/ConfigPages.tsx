@@ -180,6 +180,18 @@ export function ConfigPageView({
                             : t('config.cyclesAhead', { count }),
                       }))}
                     />
+                    <Checkbox
+                      label={t('config.autoAddActiveIssues')}
+                      description={t('config.autoAddActiveIssuesDescription')}
+                      checked={cycleSettings.autoAddActiveIssues}
+                      onChange={handlers.onCycleAutoAddActiveIssuesChange}
+                    />
+                    <Checkbox
+                      label={t('config.autoAddCompletedIssues')}
+                      description={t('config.autoAddCompletedIssuesDescription')}
+                      checked={cycleSettings.autoAddCompletedIssues}
+                      onChange={handlers.onCycleAutoAddCompletedIssuesChange}
+                    />
                     <Group>
                       <Button type="submit">{t('config.saveCycleSettings')}</Button>
                     </Group>
