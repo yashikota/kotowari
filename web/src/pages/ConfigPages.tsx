@@ -231,6 +231,17 @@ export function ConfigPageView({
                       checked={issueAutomationSettings.autoCloseSubIssues}
                       onChange={handlers.onAutoCloseSubIssuesChange}
                     />
+                    <Select
+                      label={t('config.statusProgressionOrder')}
+                      description={t('config.statusProgressionOrderDescription')}
+                      value={issueAutomationSettings.statusProgressionOrder}
+                      onChange={handlers.onStatusProgressionOrderChange}
+                      data={[
+                        { value: 'first', label: t('config.statusProgressionFirst') },
+                        { value: 'last', label: t('config.statusProgressionLast') },
+                        { value: 'no_action', label: t('config.statusProgressionNoAction') },
+                      ]}
+                    />
                     <Group>
                       <Button type="submit">{t('config.saveIssueAutomationSettings')}</Button>
                     </Group>

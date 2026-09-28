@@ -131,7 +131,11 @@ func TestIssueCloseAutomationDefaultsOff(t *testing.T) {
 
 func TestIssueAutomationSettingsPersist(t *testing.T) {
 	s := openTest(t)
-	want := IssueAutomationSettings{AutoCloseParentIssues: true, AutoCloseSubIssues: true}
+	want := IssueAutomationSettings{
+		AutoCloseParentIssues:  true,
+		AutoCloseSubIssues:     true,
+		StatusProgressionOrder: "first",
+	}
 	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, nil, &want); err != nil {
 		t.Fatal(err)
 	}

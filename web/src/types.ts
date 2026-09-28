@@ -385,6 +385,7 @@ export type Workspace = {
 export type IssueAutomationSettings = {
   autoCloseParentIssues: boolean;
   autoCloseSubIssues: boolean;
+  statusProgressionOrder: 'first' | 'last' | 'no_action';
 };
 
 export type CycleSettings = {

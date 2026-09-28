@@ -89,6 +89,7 @@ func closeIssueForAutomation(m *mem, issueID int64, now string) bool {
 	issue.StatusChangedAt = now
 	issue.CompletedAt = completedAt(issue.Status, now, issue.CompletedAt)
 	issue.UpdatedAt = now
+	applyStatusProgressionOrder(m, &issue, oldWorkflowStatus)
 	m.Issues[index] = issue
 	if issue.WorkflowStatus != oldWorkflowStatus {
 		addActivity(m, "issue", issue.ID, "status_changed", map[string]any{"from": oldWorkflowStatus, "to": issue.WorkflowStatus}, now)

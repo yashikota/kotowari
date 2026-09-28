@@ -45,8 +45,9 @@ type CycleSettings struct {
 }
 
 type IssueAutomationSettings struct {
-	AutoCloseParentIssues bool `json:"autoCloseParentIssues" toml:"autoCloseParentIssues"`
-	AutoCloseSubIssues    bool `json:"autoCloseSubIssues" toml:"autoCloseSubIssues"`
+	AutoCloseParentIssues  bool   `json:"autoCloseParentIssues" toml:"autoCloseParentIssues"`
+	AutoCloseSubIssues     bool   `json:"autoCloseSubIssues" toml:"autoCloseSubIssues"`
+	StatusProgressionOrder string `json:"statusProgressionOrder" toml:"statusProgressionOrder"`
 }
 
 func defaultCycleSettings() CycleSettings {
@@ -62,9 +63,22 @@ func normalizedCycleSettings(settings *CycleSettings) CycleSettings {
 
 func normalizedIssueAutomationSettings(settings *IssueAutomationSettings) IssueAutomationSettings {
 	if settings == nil {
-		return IssueAutomationSettings{}
+		return IssueAutomationSettings{StatusProgressionOrder: "first"}
 	}
-	return *settings
+	normalized := *settings
+	if normalized.StatusProgressionOrder == "" {
+		normalized.StatusProgressionOrder = "first"
+	}
+	return normalized
+}
+
+func validStatusProgressionOrder(order string) bool {
+	switch order {
+	case "first", "last", "no_action":
+		return true
+	default:
+		return false
+	}
 }
 
 func validCycleSettings(settings CycleSettings) bool {

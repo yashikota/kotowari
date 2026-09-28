@@ -83,7 +83,10 @@ func (s *Store) UpdateWorkspace(
 			m.Workspace.CycleSettings = &settings
 		}
 		if issueAutomationSettings != nil {
-			settings := *issueAutomationSettings
+			settings := normalizedIssueAutomationSettings(issueAutomationSettings)
+			if !validStatusProgressionOrder(settings.StatusProgressionOrder) {
+				return validationf("invalid status progression order")
+			}
 			m.Workspace.IssueAutomationSettings = &settings
 		}
 		if name != nil {
@@ -2069,6 +2072,9 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 					iss.Labels = append(iss.Labels, l)
 				}
 			}
+		}
+		if in.SortOrder == nil && iss.WorkflowStatus != oldWorkflowStatus {
+			applyStatusProgressionOrder(m, &iss, oldWorkflowStatus)
 		}
 		m.Issues[i] = iss
 		if iss.WorkflowStatus != oldWorkflowStatus {

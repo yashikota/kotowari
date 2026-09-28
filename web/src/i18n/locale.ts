@@ -20,9 +20,10 @@ export function normalizeWorkspace(workspace: Workspace): Workspace {
       autoAddActiveIssues: false,
       autoAddCompletedIssues: false,
     },
-    issueAutomationSettings: workspace.issueAutomationSettings ?? {
-      autoCloseParentIssues: false,
-      autoCloseSubIssues: false,
+    issueAutomationSettings: {
+      autoCloseParentIssues: workspace.issueAutomationSettings?.autoCloseParentIssues ?? false,
+      autoCloseSubIssues: workspace.issueAutomationSettings?.autoCloseSubIssues ?? false,
+      statusProgressionOrder: workspace.issueAutomationSettings?.statusProgressionOrder ?? 'first',
     },
   };
 }

@@ -273,6 +273,16 @@ export function useConfigPagePresenter() {
           autoCloseSubIssues: e.currentTarget.checked,
         }));
       },
+      onStatusProgressionOrderChange: (value: string | null) => {
+        if (value !== 'first' && value !== 'last' && value !== 'no_action') {
+          return;
+        }
+        setIssueAutomationSettingsSaved(false);
+        setIssueAutomationSettings((current) => ({
+          ...current,
+          statusProgressionOrder: value,
+        }));
+      },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setWorkspace({ ...workspace, name: e.target.value }),

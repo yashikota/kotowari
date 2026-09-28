@@ -67,6 +67,7 @@ let workspace: Workspace = {
   issueAutomationSettings: {
     autoCloseParentIssues: false,
     autoCloseSubIssues: false,
+    statusProgressionOrder: 'first',
   },
   issueStatuses: issueWorkflowStatuses,
   projectStatuses: projectWorkflowStatuses,
