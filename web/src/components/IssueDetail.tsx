@@ -41,7 +41,7 @@ import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { formatActivity } from '../activity.ts';
 import { MarkdownContent, MetaBadge, Section } from '../mantine-ui.tsx';
 import { renderMarkdown } from '../markdown.ts';
-import { formatStamp } from '../time.ts';
+import { formatRelativeTime } from '../time.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
@@ -110,7 +110,7 @@ export function IssueDetailView({
   subRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const isApplePlatform =
     typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -155,7 +155,6 @@ export function IssueDetailView({
         draft,
         subTitle,
         adrPick,
-        timeZone,
         copied,
         historyRequest,
         customReminderOpen,
@@ -1103,6 +1102,12 @@ export function IssueDetailView({
                   {timeline.map((entry) => {
                     if (entry.kind === 'activity') {
                       const { activity } = entry;
+                      const locale = i18n.resolvedLanguage ?? i18n.language;
+                      const action = formatActivity(
+                        activity.action,
+                        activity.payload,
+                        workflowStatuses,
+                      ).replace(/^\p{Lu}/u, (letter) => letter.toLocaleLowerCase(locale));
                       return (
                         <Group
                           key={`activity-${entry.id}`}
@@ -1116,9 +1121,13 @@ export function IssueDetailView({
                             <Text span fw={550}>
                               {t('issueComments.you')}
                             </Text>{' '}
-                            {formatActivity(activity.action, activity.payload, workflowStatuses)}{' '}
+                            {action}{' '}
                             <Text span c="dimmed" size="sm">
-                              {formatStamp(activity.createdAt, timeZone)}
+                              ·{' '}
+                              {formatRelativeTime(activity.createdAt, locale, {
+                                numeric: 'always',
+                                style: 'narrow',
+                              })}
                             </Text>
                           </Text>
                         </Group>
@@ -1142,7 +1151,14 @@ export function IssueDetailView({
                                 {t('issueComments.you')}
                               </Text>
                               {' · '}
-                              {formatStamp(c.createdAt, timeZone)}
+                              {formatRelativeTime(
+                                c.createdAt,
+                                i18n.resolvedLanguage ?? i18n.language,
+                                {
+                                  numeric: 'always',
+                                  style: 'narrow',
+                                },
+                              )}
                               {c.updatedAt ? (
                                 <Text span ml={6}>
                                   · {t('issueComments.edited')}

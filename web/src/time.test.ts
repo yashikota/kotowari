@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   formatCalendarDate,
+  formatRelativeTime,
   formatStamp,
   formatTimeZoneLabel,
   listTimeZones,
@@ -39,6 +40,32 @@ describe('formatStamp', () => {
     const out = formatStamp('2026-09-01T00:00:00Z', 'America/New_York');
     expect(out).toContain('2026-08-31');
     expect(out).toContain('20:00');
+  });
+});
+
+describe('formatRelativeTime', () => {
+  const now = Date.parse('2026-09-28T12:00:00Z');
+
+  it('formats compact issue activity time in English and Japanese', () => {
+    const value = '2026-09-28T10:00:00Z';
+    expect(formatRelativeTime(value, 'en', { now, numeric: 'always', style: 'narrow' })).toBe(
+      '2h ago',
+    );
+    expect(formatRelativeTime(value, 'ja', { now, numeric: 'always', style: 'narrow' })).toMatch(
+      /2.*前$/,
+    );
+  });
+
+  it('uses the localized immediate label for recent events', () => {
+    const value = '2026-09-28T12:00:02Z';
+    expect(formatRelativeTime(value, 'en', { now, numeric: 'always', style: 'narrow' })).toBe(
+      'now',
+    );
+    expect(formatRelativeTime(value, 'ja', { now, numeric: 'always', style: 'narrow' })).toBe('今');
+  });
+
+  it('keeps invalid timestamps readable', () => {
+    expect(formatRelativeTime('not-a-date', 'en', { now })).toBe('not-a-date');
   });
 });
 

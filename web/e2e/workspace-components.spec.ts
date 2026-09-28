@@ -124,8 +124,14 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   await expect(activity.getByText(/Added a note/)).toHaveCount(0);
   await expect(activity.getByTestId('issue-activity-entry')).toHaveCount(2);
   await expect(activity.getByTestId('issue-activity-avatar')).toHaveCount(2);
+  await expect(activity.getByTestId('issue-activity-entry').first()).toContainText(
+    `You created ${issue.identifier}`,
+  );
+  await expect(activity.getByTestId('issue-activity-entry').first()).toContainText(
+    /· (?:now|\d+[a-z]+ ago)$/,
+  );
   const [createdActivityBounds, commentBounds] = await Promise.all([
-    activity.getByText(new RegExp(`You Created ${issue.identifier}`)).boundingBox(),
+    activity.getByText(new RegExp(`You created ${issue.identifier}`)).boundingBox(),
     activity.getByText(commentBody, { exact: true }).boundingBox(),
   ]);
   expect(createdActivityBounds).not.toBeNull();

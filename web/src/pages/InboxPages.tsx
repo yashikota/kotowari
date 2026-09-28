@@ -32,6 +32,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope } from '../application/Root.tsx';
 import { formatActivity } from '../activity.ts';
+import { formatRelativeTime } from '../time.ts';
 import { InboxFilterChips, InboxFilterMenu } from '../components/InboxFilterControls.tsx';
 import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 import { useInboxPresenter } from '../presenters/Inbox.tsx';
@@ -40,22 +41,6 @@ import { INBOX_PRIORITY_TYPES, type InboxPriorityType } from '../inbox-state.ts'
 import styles from './InboxPages.module.css';
 
 type InboxModel = ReturnType<typeof useInboxPresenter>;
-
-function relativeTime(value: string, locale: string): string {
-  const elapsedSeconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
-  const absoluteSeconds = Math.abs(elapsedSeconds);
-  const [amount, unit]: [number, Intl.RelativeTimeFormatUnit] =
-    absoluteSeconds < 60
-      ? [Math.round(elapsedSeconds), 'second']
-      : absoluteSeconds < 3600
-        ? [Math.round(elapsedSeconds / 60), 'minute']
-        : absoluteSeconds < 86400
-          ? [Math.round(elapsedSeconds / 3600), 'hour']
-          : absoluteSeconds < 604800
-            ? [Math.round(elapsedSeconds / 86400), 'day']
-            : [Math.round(elapsedSeconds / 604800), 'week'];
-  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(amount, unit);
-}
 
 function activityGroup(
   activity: InboxActivity,
@@ -479,7 +464,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
                               className={`${styles.activity} ${isSelected ? styles.selected : ''} ${activity.isRead ? '' : styles.unread} ${model.density === 'compact' ? styles.compact : ''}`}
                               data-inbox-activity-id={activity.id}
                               aria-current={isSelected ? 'true' : undefined}
-                              aria-label={`${activity.identifier}: ${activity.title}. ${description}. ${relativeTime(activity.createdAt, i18n.language)}`}
+                              aria-label={`${activity.identifier}: ${activity.title}. ${description}. ${formatRelativeTime(activity.createdAt, i18n.language)}`}
                               onClick={() => model.handlers.onSelect(activity.id)}
                             >
                               <span className={styles.activityIcon} aria-hidden>
@@ -489,7 +474,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
                                 <span className={styles.activityTitle}>
                                   <span className={styles.identifier}>{activity.identifier}</span>
                                   <span className={styles.activityTime}>
-                                    {relativeTime(activity.createdAt, i18n.language)}
+                                    {formatRelativeTime(activity.createdAt, i18n.language)}
                                   </span>
                                 </span>
                                 <span className={styles.issueTitle}>{activity.title}</span>
@@ -604,7 +589,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
                 <Group gap="xs" c="dimmed">
                   {activityIcon(selected.action)}
                   <Text size="xs">
-                    {selected.identifier} · {relativeTime(selected.createdAt, i18n.language)}
+                    {selected.identifier} · {formatRelativeTime(selected.createdAt, i18n.language)}
                   </Text>
                 </Group>
                 <Title order={2} size="lg" fw={550}>

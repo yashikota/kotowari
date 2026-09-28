@@ -66,6 +66,41 @@ export function formatStamp(iso: string, timeZone: string): string {
   }
 }
 
+export function formatRelativeTime(
+  value: string,
+  locale: string,
+  options: {
+    now?: number;
+    numeric?: Intl.RelativeTimeFormatNumeric;
+    style?: Intl.RelativeTimeFormatStyle;
+  } = {},
+): string {
+  const instant = new Date(value).getTime();
+  if (!Number.isFinite(instant)) return value;
+
+  const elapsedSeconds = Math.round((instant - (options.now ?? Date.now())) / 1000);
+  const absoluteSeconds = Math.abs(elapsedSeconds);
+  const style = options.style ?? 'long';
+  if (absoluteSeconds < 5) {
+    return new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style }).format(0, 'second');
+  }
+
+  const [amount, unit]: [number, Intl.RelativeTimeFormatUnit] =
+    absoluteSeconds < 60
+      ? [elapsedSeconds, 'second']
+      : absoluteSeconds < 3600
+        ? [Math.round(elapsedSeconds / 60), 'minute']
+        : absoluteSeconds < 86400
+          ? [Math.round(elapsedSeconds / 3600), 'hour']
+          : absoluteSeconds < 604800
+            ? [Math.round(elapsedSeconds / 86400), 'day']
+            : [Math.round(elapsedSeconds / 604800), 'week'];
+  return new Intl.RelativeTimeFormat(locale, {
+    numeric: options.numeric ?? 'auto',
+    style,
+  }).format(amount, unit);
+}
+
 export function formatCalendarDate(value: string, locale = 'en'): string {
   const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return value;
