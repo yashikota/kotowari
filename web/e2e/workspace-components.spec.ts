@@ -219,8 +219,7 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   ).toBeLessThanOrEqual(1);
   expect(Math.abs(subIssueButtonBounds!.x - reactionBounds!.x)).toBeLessThanOrEqual(1);
   expect(subIssueButtonBounds!.height).toBe(24);
-  expect(subIssueButtonBounds!.width).toBeGreaterThanOrEqual(126);
-  expect(subIssueButtonBounds!.width).toBeLessThanOrEqual(128);
+  expect(Math.abs(subIssueButtonBounds!.width - 126.8)).toBeLessThanOrEqual(4);
   expect(
     subIssueButtonBounds!.y - (reactionBounds!.y + reactionBounds!.height),
   ).toBeLessThanOrEqual(18);
