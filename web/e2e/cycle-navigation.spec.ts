@@ -100,6 +100,47 @@ test('cycle header navigates to adjacent cycles by search and keyboard shortcuts
   await expect(page).toHaveURL(new RegExp(`/cycles/${previous.number}$`));
 });
 
+test('sidebar Current and Upcoming open their cycle details directly', async ({
+  page,
+  request,
+}) => {
+  const now = Date.now();
+  const currentResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: new Date(now - 2 * 86_400_000).toISOString(),
+      endsAt: new Date(now + 5 * 86_400_000).toISOString(),
+      status: 'active',
+    },
+  });
+  expect(currentResponse.ok(), await currentResponse.text()).toBeTruthy();
+  const current = (await currentResponse.json()) as { number: number };
+
+  const upcomingResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: new Date(now + 86_400_000).toISOString(),
+      endsAt: new Date(now + 8 * 86_400_000).toISOString(),
+      status: 'upcoming',
+    },
+  });
+  expect(upcomingResponse.ok(), await upcomingResponse.text()).toBeTruthy();
+  const upcoming = (await upcomingResponse.json()) as { number: number };
+
+  await page.goto('/cycles');
+  const cycleNavigation = page.getByRole('group', { name: 'Cycle navigation' });
+  const currentLink = cycleNavigation.getByRole('link', { name: 'Current', exact: true });
+  const upcomingLink = cycleNavigation.getByRole('link', { name: 'Upcoming', exact: true });
+  await expect(currentLink).toHaveAttribute('href', '/cycles/active');
+  await expect(upcomingLink).toHaveAttribute('href', '/cycles/upcoming');
+
+  await currentLink.click();
+  await expect(page).toHaveURL(new RegExp(`/cycles/${current.number}$`));
+  await expect(page.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
+
+  await upcomingLink.click();
+  await expect(page).toHaveURL(new RegExp(`/cycles/${upcoming.number}$`));
+  await expect(page.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
+});
+
 test('cycle notification subscriptions persist and deliver matching events to the inbox', async ({
   page,
   request,

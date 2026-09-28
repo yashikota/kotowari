@@ -613,6 +613,10 @@ export function useShellPresenter() {
   const currentCycleNumber = isCycleDetail ? Number(pathname.slice('/cycles/'.length)) : 0;
   const currentCycle = cycles.find((cycle) => cycle.number === currentCycleNumber);
   const currentCycleName = currentCycle?.name || t('field.cycleN', { number: currentCycleNumber });
+  const cycleListScope =
+    pathname === '/cycles' && (routeSearch.scope === 'current' || routeSearch.scope === 'upcoming')
+      ? routeSearch.scope
+      : undefined;
   const cycleNavigationOptions = (() => {
     const query = cycleNavigationQuery.trim().toLocaleLowerCase(i18n.language);
     const matches = cycles.filter((candidate) => {
@@ -1193,6 +1197,8 @@ export function useShellPresenter() {
     issueViewFavorite,
     isCycleDetail,
     currentCycleName,
+    currentCycleStatus: currentCycle?.status,
+    cycleListScope,
     cycleNavigationOpen,
     cycleNavigationQuery,
     nextCycles: cycleNavigationOptions.next,

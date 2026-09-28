@@ -192,6 +192,8 @@ export function ShellView({
         issueViewFavorite,
         isCycleDetail,
         currentCycleName,
+        currentCycleStatus,
+        cycleListScope,
         cycleNavigationOpen,
         cycleNavigationQuery,
         nextCycles,
@@ -525,14 +527,22 @@ export function ShellView({
                                   pl="xl"
                                 >
                                   <RouterNavLink
-                                    to="/cycles"
-                                    search={{ scope: 'current' }}
+                                    to="/cycles/$number"
+                                    params={{ number: 'active' }}
                                     label={t('nav.cycleCurrent')}
+                                    active={
+                                      currentCycleStatus === 'active' ||
+                                      cycleListScope === 'current'
+                                    }
                                   />
                                   <RouterNavLink
-                                    to="/cycles"
-                                    search={{ scope: 'upcoming' }}
+                                    to="/cycles/$number"
+                                    params={{ number: 'upcoming' }}
                                     label={t('nav.cycleUpcoming')}
+                                    active={
+                                      currentCycleStatus === 'upcoming' ||
+                                      cycleListScope === 'upcoming'
+                                    }
                                   />
                                 </Stack>
                               </Stack>

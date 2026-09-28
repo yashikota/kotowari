@@ -289,7 +289,7 @@ export function defaultHomeHref(home: DefaultHome): string {
     case 'issues':
       return '/issues';
     case 'currentCycle':
-      return '/cycles?scope=current';
+      return '/cycles/active';
     case 'projects':
       return '/projects';
     case 'cycles':

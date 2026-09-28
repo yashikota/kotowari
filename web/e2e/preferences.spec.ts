@@ -239,7 +239,7 @@ test('default home view supports Linear inbox, My issues, and current cycle dest
   await page.goto('/config');
   await choose(page, 'Default home view', 'Current cycle');
   await page.goto('/');
-  await expect(page).toHaveURL(/\/cycles\?scope=current$/);
+  await expect(page).toHaveURL(/\/cycles(?:\/\d+|\?scope=current)$/);
 });
 
 test('Reviews lists linked pull requests with their issue context', async ({ page, request }) => {

@@ -2772,27 +2772,36 @@ test('cycle navigation stays under the team and the list follows Linear chronolo
   const cycleNavigation = teamNavigation.getByRole('group', { name: 'Cycle navigation' });
   const currentLink = cycleNavigation.getByRole('link', { name: 'Current', exact: true });
   const upcomingLink = cycleNavigation.getByRole('link', { name: 'Upcoming', exact: true });
+  const allCyclesResponse = await request.get('/api/cycles');
+  expect(allCyclesResponse.ok()).toBeTruthy();
+  const allCycles = (await allCyclesResponse.json()) as {
+    number: number;
+    startsAt: string;
+    status: string;
+  }[];
+  const activeCycleShortcut = allCycles
+    .filter((cycle) => cycle.status === 'active')
+    .sort((left, right) => right.startsAt.localeCompare(left.startsAt))[0];
+  const upcomingCycleShortcut = allCycles
+    .filter((cycle) => cycle.status === 'upcoming')
+    .sort((left, right) => left.startsAt.localeCompare(right.startsAt))[0];
+  expect(activeCycleShortcut).toBeDefined();
+  expect(upcomingCycleShortcut).toBeDefined();
   await expect(currentLink).toBeVisible();
   await expect(upcomingLink).toBeVisible();
   await expect(teamNavigation.getByRole('link', { name: /^Cycle \d+ Current$/ })).toHaveCount(0);
 
   await currentLink.click();
-  await expect(page).toHaveURL(/\/cycles\?scope=current$/);
-  await expect(
-    main.getByRole('link', { name: new RegExp(`Cycle ${activeCycle.number}\\b`) }),
-  ).toBeVisible();
-  await expect(
-    main.getByRole('link', { name: new RegExp(`Cycle ${upcomingCycle.number}\\b`) }),
-  ).toHaveCount(0);
+  await expect(page).toHaveURL(`/cycles/${activeCycleShortcut!.number}`);
+  await expect(main.getByRole('button', { name: 'Open cycle', exact: true })).toContainText(
+    `Cycle ${activeCycleShortcut!.number}`,
+  );
 
   await upcomingLink.click();
-  await expect(page).toHaveURL(/\/cycles\?scope=upcoming$/);
-  await expect(
-    main.getByRole('link', { name: new RegExp(`Cycle ${upcomingCycle.number}\\b`) }),
-  ).toBeVisible();
-  await expect(
-    main.getByRole('link', { name: new RegExp(`Cycle ${activeCycle.number}\\b`) }),
-  ).toHaveCount(0);
+  await expect(page).toHaveURL(`/cycles/${upcomingCycleShortcut!.number}`);
+  await expect(main.getByRole('button', { name: 'Open cycle', exact: true })).toContainText(
+    `Cycle ${upcomingCycleShortcut!.number}`,
+  );
 });
 
 test('cycle details edit metadata and dates, favorite the cycle, and export issues', async ({

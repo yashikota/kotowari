@@ -91,7 +91,7 @@ describe('personal preferences', () => {
     expect(defaultHomeHref('activeIssues')).toBe('/issues?view=active');
     expect(defaultHomeHref('agent')).toBe('/agent');
     expect(defaultHomeHref('issues')).toBe('/issues');
-    expect(defaultHomeHref('currentCycle')).toBe('/cycles?scope=current');
+    expect(defaultHomeHref('currentCycle')).toBe('/cycles/active');
   });
 
   it('restores the saved desktop sidebar state and defaults invalid values to expanded', () => {

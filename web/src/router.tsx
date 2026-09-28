@@ -515,7 +515,31 @@ const cycleRoute = createRoute({
   validateSearch: (raw: Record<string, unknown>) => parseIssueSearch(raw),
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {
-    const number = Number(params.number);
+    let number = Number(params.number);
+    if (params.number === 'active' || params.number === 'upcoming') {
+      const status = params.number;
+      const candidates = (await api.cycles())
+        .filter((cycle) => cycle.status === status)
+        .sort((left, right) =>
+          status === 'active'
+            ? right.startsAt.localeCompare(left.startsAt)
+            : left.startsAt.localeCompare(right.startsAt),
+        );
+      const cycle = candidates[0];
+      if (cycle) {
+        throw redirect({
+          to: '/cycles/$number',
+          params: { number: String(cycle.number) },
+          search: deps,
+          replace: true,
+        });
+      }
+      throw redirect({
+        to: '/cycles',
+        search: { scope: status === 'active' ? 'current' : 'upcoming' },
+        replace: true,
+      });
+    }
     const [
       cycle,
       issues,
