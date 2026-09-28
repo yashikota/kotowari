@@ -39,6 +39,9 @@ export function ConfigPageView({
         cycleSettings,
         cycleSettingsError,
         cycleSettingsSaved,
+        issueAutomationSettings,
+        issueAutomationSettingsError,
+        issueAutomationSettingsSaved,
         timeZones,
         languages,
         preferences,
@@ -194,6 +197,42 @@ export function ConfigPageView({
                     />
                     <Group>
                       <Button type="submit">{t('config.saveCycleSettings')}</Button>
+                    </Group>
+                  </Stack>
+                </Box>
+              </Stack>
+
+              <Stack gap="md" component="section" aria-label={t('config.issueAutomationSettings')}>
+                <Title order={4}>{t('config.issueAutomationSettings')}</Title>
+                <Text size="sm" c="dimmed">
+                  {t('config.issueAutomationSettingsDescription')}
+                </Text>
+                {issueAutomationSettingsError ? (
+                  <Alert color="red" variant="light">
+                    {issueAutomationSettingsError}
+                  </Alert>
+                ) : null}
+                {issueAutomationSettingsSaved ? (
+                  <Alert color="green" variant="light">
+                    {t('config.issueAutomationSettingsSaved')}
+                  </Alert>
+                ) : null}
+                <Box component="form" onSubmit={handlers.onSaveIssueAutomationSettings}>
+                  <Stack gap="md" maw={480}>
+                    <Checkbox
+                      label={t('config.autoCloseParentIssues')}
+                      description={t('config.autoCloseParentIssuesDescription')}
+                      checked={issueAutomationSettings.autoCloseParentIssues}
+                      onChange={handlers.onAutoCloseParentIssuesChange}
+                    />
+                    <Checkbox
+                      label={t('config.autoCloseSubIssues')}
+                      description={t('config.autoCloseSubIssuesDescription')}
+                      checked={issueAutomationSettings.autoCloseSubIssues}
+                      onChange={handlers.onAutoCloseSubIssuesChange}
+                    />
+                    <Group>
+                      <Button type="submit">{t('config.saveIssueAutomationSettings')}</Button>
                     </Group>
                   </Stack>
                 </Box>

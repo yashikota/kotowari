@@ -64,6 +64,10 @@ let workspace: Workspace = {
     autoAddActiveIssues: false,
     autoAddCompletedIssues: false,
   },
+  issueAutomationSettings: {
+    autoCloseParentIssues: false,
+    autoCloseSubIssues: false,
+  },
   issueStatuses: issueWorkflowStatuses,
   projectStatuses: projectWorkflowStatuses,
   updatedAt: now,

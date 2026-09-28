@@ -45,16 +45,17 @@ func workspaceFrom(m *mem) Workspace {
 		locale = "en"
 	}
 	return Workspace{
-		Name:            m.Workspace.Name,
-		Timezone:        m.Workspace.Timezone,
-		Locale:          locale,
-		URL:             strings.TrimSpace(m.Workspace.URL),
-		Description:     m.Workspace.Description,
-		GitHubURL:       strings.TrimSpace(m.Workspace.GitHubURL),
-		CycleSettings:   normalizedCycleSettings(m.Workspace.CycleSettings),
-		IssueStatuses:   issueWorkflowStatuses(m.Workspace),
-		ProjectStatuses: projectWorkflowStatuses(m.Workspace),
-		UpdatedAt:       m.Workspace.UpdatedAt,
+		Name:                    m.Workspace.Name,
+		Timezone:                m.Workspace.Timezone,
+		Locale:                  locale,
+		URL:                     strings.TrimSpace(m.Workspace.URL),
+		Description:             m.Workspace.Description,
+		GitHubURL:               strings.TrimSpace(m.Workspace.GitHubURL),
+		CycleSettings:           normalizedCycleSettings(m.Workspace.CycleSettings),
+		IssueAutomationSettings: normalizedIssueAutomationSettings(m.Workspace.IssueAutomationSettings),
+		IssueStatuses:           issueWorkflowStatuses(m.Workspace),
+		ProjectStatuses:         projectWorkflowStatuses(m.Workspace),
+		UpdatedAt:               m.Workspace.UpdatedAt,
 	}
 }
 
@@ -70,6 +71,7 @@ func validLocale(locale string) bool {
 func (s *Store) UpdateWorkspace(
 	name, timezone, locale, url, description, githubURL *string,
 	cycleSettings *CycleSettings,
+	issueAutomationSettings *IssueAutomationSettings,
 ) (Workspace, error) {
 	var ws Workspace
 	err := s.mutate(func(m *mem) error {
@@ -79,6 +81,10 @@ func (s *Store) UpdateWorkspace(
 			}
 			settings := *cycleSettings
 			m.Workspace.CycleSettings = &settings
+		}
+		if issueAutomationSettings != nil {
+			settings := *issueAutomationSettings
+			m.Workspace.IssueAutomationSettings = &settings
 		}
 		if name != nil {
 			if strings.TrimSpace(*name) == "" {
@@ -1867,6 +1873,9 @@ func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
 		m.Comments[ident] = []Comment{}
 		addActivity(m, "issue", out.ID, "created", map[string]any{"identifier": ident}, now)
 		addCycleNotification(m, out.CycleID, out, "cycle_issue_added", now)
+		if issueIsClosed(out) {
+			applyIssueCloseAutomation(m, out.ID, now)
+		}
 		m.bump(now)
 		return nil
 	})
@@ -2109,6 +2118,9 @@ func (s *Store) UpdateIssue(identifier string, in PatchIssueInput) (Issue, error
 				to = *iss.MilestoneName
 			}
 			addActivity(m, "issue", iss.ID, "milestone_changed", map[string]any{"from": from, "to": to}, now)
+		}
+		if iss.Status != oldStatus || iss.WorkflowStatus != oldWorkflowStatus {
+			applyIssueCloseAutomation(m, iss.ID, now)
 		}
 		m.bump(now)
 		out = iss

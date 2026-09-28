@@ -376,9 +376,15 @@ export type Workspace = {
   description: string;
   githubUrl: string;
   cycleSettings: CycleSettings;
+  issueAutomationSettings: IssueAutomationSettings;
   issueStatuses?: IssueWorkflowStatus[];
   projectStatuses?: ProjectWorkflowStatus[];
   updatedAt: string;
+};
+
+export type IssueAutomationSettings = {
+  autoCloseParentIssues: boolean;
+  autoCloseSubIssues: boolean;
 };
 
 export type CycleSettings = {

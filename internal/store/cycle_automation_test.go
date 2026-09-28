@@ -99,7 +99,7 @@ func TestIssueCycleAutomationOnCreateAndUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	settings := CycleSettings{DurationDays: 7, StartDay: "monday"}
-	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, &settings); err != nil {
+	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, &settings, nil); err != nil {
 		t.Fatal(err)
 	}
 	dueDate := today.AddDate(0, 0, 9).Format("2006-01-02")
@@ -113,7 +113,7 @@ func TestIssueCycleAutomationOnCreateAndUpdate(t *testing.T) {
 	}
 
 	settings.AutoAddActiveIssues = true
-	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, &settings); err != nil {
+	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, &settings, nil); err != nil {
 		t.Fatal(err)
 	}
 	var clearDueDate *string
@@ -159,7 +159,7 @@ func TestIssueCycleAutomationOnCreateAndUpdate(t *testing.T) {
 	doneSettings := settings
 	doneSettings.AutoAddActiveIssues = false
 	doneSettings.AutoAddCompletedIssues = true
-	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, &doneSettings); err != nil {
+	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, &doneSettings, nil); err != nil {
 		t.Fatal(err)
 	}
 	done, err := s.CreateIssue(CreateIssueInput{Title: "completed issue", Status: "done"})

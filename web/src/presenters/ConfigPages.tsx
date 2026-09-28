@@ -50,6 +50,11 @@ export function useConfigPagePresenter() {
   );
   const [cycleSettingsError, setCycleSettingsError] = useState('');
   const [cycleSettingsSaved, setCycleSettingsSaved] = useState(false);
+  const [issueAutomationSettings, setIssueAutomationSettings] = useState(
+    () => normalizeWorkspace(data.workspace).issueAutomationSettings,
+  );
+  const [issueAutomationSettingsError, setIssueAutomationSettingsError] = useState('');
+  const [issueAutomationSettingsSaved, setIssueAutomationSettingsSaved] = useState(false);
   const { preferences, update: updatePreferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences, update: updateCodingToolPreferences } =
     useCodingToolPreferences();
@@ -80,6 +85,7 @@ export function useConfigPagePresenter() {
   useEffect(() => {
     setWorkspace(normalizeWorkspace(data.workspace));
     setCycleSettings(normalizeWorkspace(data.workspace).cycleSettings);
+    setIssueAutomationSettings(normalizeWorkspace(data.workspace).issueAutomationSettings);
   }, [data.workspace]);
 
   useEffect(() => {
@@ -106,6 +112,9 @@ export function useConfigPagePresenter() {
     cycleSettings,
     cycleSettingsError,
     cycleSettingsSaved,
+    issueAutomationSettings,
+    issueAutomationSettingsError,
+    issueAutomationSettingsSaved,
     timeZones,
     languages,
     preferences,
@@ -225,6 +234,43 @@ export function useConfigPagePresenter() {
         setCycleSettings((current) => ({
           ...current,
           autoAddCompletedIssues: e.currentTarget.checked,
+        }));
+      },
+      onSaveIssueAutomationSettings: (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIssueAutomationSettingsError('');
+        setIssueAutomationSettingsSaved(false);
+        void api
+          .patchWorkspace({ issueAutomationSettings })
+          .then(async (next) => {
+            const normalized = normalizeWorkspace(next);
+            setIssueAutomationSettings(normalized.issueAutomationSettings);
+            setIssueAutomationSettingsSaved(true);
+            signals.dispatchEvent(new Event('kotowari:refresh'));
+            await router.invalidate();
+          })
+          .catch((err: unknown) =>
+            setIssueAutomationSettingsError(
+              err instanceof Error ? err.message : t('config.issueAutomationSettingsSaveFailed'),
+            ),
+          );
+      },
+      onAutoCloseParentIssuesChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        setIssueAutomationSettingsSaved(false);
+        setIssueAutomationSettings((current) => ({
+          ...current,
+          autoCloseParentIssues: e.currentTarget.checked,
+        }));
+      },
+      onAutoCloseSubIssuesChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        setIssueAutomationSettingsSaved(false);
+        setIssueAutomationSettings((current) => ({
+          ...current,
+          autoCloseSubIssues: e.currentTarget.checked,
         }));
       },
       Workspace_name_onChange1: (

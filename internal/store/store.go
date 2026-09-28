@@ -22,16 +22,17 @@ type Store struct {
 }
 
 type Workspace struct {
-	Name            string                  `json:"name"`
-	Timezone        string                  `json:"timezone"`
-	Locale          string                  `json:"locale"`
-	URL             string                  `json:"url"`
-	Description     string                  `json:"description"`
-	GitHubURL       string                  `json:"githubUrl"`
-	CycleSettings   CycleSettings           `json:"cycleSettings"`
-	IssueStatuses   []IssueWorkflowStatus   `json:"issueStatuses"`
-	ProjectStatuses []ProjectWorkflowStatus `json:"projectStatuses"`
-	UpdatedAt       string                  `json:"updatedAt"`
+	Name                    string                  `json:"name"`
+	Timezone                string                  `json:"timezone"`
+	Locale                  string                  `json:"locale"`
+	URL                     string                  `json:"url"`
+	Description             string                  `json:"description"`
+	GitHubURL               string                  `json:"githubUrl"`
+	CycleSettings           CycleSettings           `json:"cycleSettings"`
+	IssueAutomationSettings IssueAutomationSettings `json:"issueAutomationSettings"`
+	IssueStatuses           []IssueWorkflowStatus   `json:"issueStatuses"`
+	ProjectStatuses         []ProjectWorkflowStatus `json:"projectStatuses"`
+	UpdatedAt               string                  `json:"updatedAt"`
 }
 
 type CycleSettings struct {
@@ -43,6 +44,11 @@ type CycleSettings struct {
 	AutoAddCompletedIssues bool   `json:"autoAddCompletedIssues" toml:"autoAddCompletedIssues"`
 }
 
+type IssueAutomationSettings struct {
+	AutoCloseParentIssues bool `json:"autoCloseParentIssues" toml:"autoCloseParentIssues"`
+	AutoCloseSubIssues    bool `json:"autoCloseSubIssues" toml:"autoCloseSubIssues"`
+}
+
 func defaultCycleSettings() CycleSettings {
 	return CycleSettings{DurationDays: 7, StartDay: "monday"}
 }
@@ -50,6 +56,13 @@ func defaultCycleSettings() CycleSettings {
 func normalizedCycleSettings(settings *CycleSettings) CycleSettings {
 	if settings == nil {
 		return defaultCycleSettings()
+	}
+	return *settings
+}
+
+func normalizedIssueAutomationSettings(settings *IssueAutomationSettings) IssueAutomationSettings {
+	if settings == nil {
+		return IssueAutomationSettings{}
 	}
 	return *settings
 }
@@ -640,21 +653,22 @@ type mem struct {
 }
 
 type workspaceFile struct {
-	Name            string                  `toml:"name"`
-	Timezone        string                  `toml:"timezone"`
-	Locale          string                  `toml:"locale,omitempty"`
-	URL             string                  `toml:"url,omitempty"`
-	Description     string                  `toml:"description,omitempty"`
-	GitHubURL       string                  `toml:"githubUrl,omitempty"`
-	CycleSettings   *CycleSettings          `toml:"cycleSettings,omitempty"`
-	IssueStatuses   []IssueWorkflowStatus   `toml:"issueStatuses,omitempty"`
-	ProjectStatuses []ProjectWorkflowStatus `toml:"projectStatuses,omitempty"`
-	IssuePrefix     string                  `toml:"issuePrefix,omitempty"`
-	ADRPrefix       string                  `toml:"adrPrefix,omitempty"`
-	IssueCounter    int                     `toml:"issueCounter"`
-	ADRCounter      int                     `toml:"adrCounter"`
-	NextID          int64                   `toml:"nextID"`
-	UpdatedAt       string                  `toml:"updatedAt"`
+	Name                    string                   `toml:"name"`
+	Timezone                string                   `toml:"timezone"`
+	Locale                  string                   `toml:"locale,omitempty"`
+	URL                     string                   `toml:"url,omitempty"`
+	Description             string                   `toml:"description,omitempty"`
+	GitHubURL               string                   `toml:"githubUrl,omitempty"`
+	CycleSettings           *CycleSettings           `toml:"cycleSettings,omitempty"`
+	IssueAutomationSettings *IssueAutomationSettings `toml:"issueAutomationSettings,omitempty"`
+	IssueStatuses           []IssueWorkflowStatus    `toml:"issueStatuses,omitempty"`
+	ProjectStatuses         []ProjectWorkflowStatus  `toml:"projectStatuses,omitempty"`
+	IssuePrefix             string                   `toml:"issuePrefix,omitempty"`
+	ADRPrefix               string                   `toml:"adrPrefix,omitempty"`
+	IssueCounter            int                      `toml:"issueCounter"`
+	ADRCounter              int                      `toml:"adrCounter"`
+	NextID                  int64                    `toml:"nextID"`
+	UpdatedAt               string                   `toml:"updatedAt"`
 }
 
 type labelsFile struct {

@@ -351,3 +351,29 @@ test('cycle schedule settings persist in the workspace', async ({ page, request 
     },
   });
 });
+
+test('issue automation settings persist in the workspace', async ({ page, request }) => {
+  await page.goto('/config');
+  await page.getByLabel('Auto-close parent issues').check();
+  await page.getByLabel('Auto-close sub-issues').check();
+  await page.getByRole('button', { name: 'Save issue automations' }).click();
+  await expect(page.getByText('Issue automations saved')).toBeVisible();
+
+  const response = await request.get('/api/workspace');
+  expect(response.ok()).toBeTruthy();
+  expect(await response.json()).toMatchObject({
+    issueAutomationSettings: {
+      autoCloseParentIssues: true,
+      autoCloseSubIssues: true,
+    },
+  });
+
+  await request.patch('/api/workspace', {
+    data: {
+      issueAutomationSettings: {
+        autoCloseParentIssues: false,
+        autoCloseSubIssues: false,
+      },
+    },
+  });
+});

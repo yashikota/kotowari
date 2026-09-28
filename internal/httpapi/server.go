@@ -288,20 +288,21 @@ func (s *Server) listDiagnostics(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) patchWorkspace(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name          *string              `json:"name"`
-		Timezone      *string              `json:"timezone"`
-		Locale        *string              `json:"locale"`
-		URL           *string              `json:"url"`
-		Description   *string              `json:"description"`
-		GitHubURL     *string              `json:"githubUrl"`
-		CycleSettings *store.CycleSettings `json:"cycleSettings"`
+		Name                    *string                        `json:"name"`
+		Timezone                *string                        `json:"timezone"`
+		Locale                  *string                        `json:"locale"`
+		URL                     *string                        `json:"url"`
+		Description             *string                        `json:"description"`
+		GitHubURL               *string                        `json:"githubUrl"`
+		CycleSettings           *store.CycleSettings           `json:"cycleSettings"`
+		IssueAutomationSettings *store.IssueAutomationSettings `json:"issueAutomationSettings"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
 	ws, err := s.store.UpdateWorkspace(
-		in.Name, in.Timezone, in.Locale, in.URL, in.Description, in.GitHubURL, in.CycleSettings,
+		in.Name, in.Timezone, in.Locale, in.URL, in.Description, in.GitHubURL, in.CycleSettings, in.IssueAutomationSettings,
 	)
 	if err != nil {
 		writeError(w, err)

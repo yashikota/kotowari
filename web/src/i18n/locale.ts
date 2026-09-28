@@ -20,6 +20,10 @@ export function normalizeWorkspace(workspace: Workspace): Workspace {
       autoAddActiveIssues: false,
       autoAddCompletedIssues: false,
     },
+    issueAutomationSettings: workspace.issueAutomationSettings ?? {
+      autoCloseParentIssues: false,
+      autoCloseSubIssues: false,
+    },
   };
 }
 
