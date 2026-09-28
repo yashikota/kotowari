@@ -1870,6 +1870,7 @@
     "openDetails": "詳細を開く",
     "closeDetails": "詳細を閉じる",
     "issueDetails": "イシューの詳細",
+    "issueAssignees": "担当者",
     "detailBy": "内訳",
     "noFacetValues": "一致する項目はありません。",
     "facetOptionCount": "{{label}}、{{countLabel}}",

@@ -1878,6 +1878,7 @@
     "openDetails": "Open details",
     "closeDetails": "Close details",
     "issueDetails": "Issue details",
+    "issueAssignees": "Assignees",
     "detailBy": "Details by",
     "noFacetValues": "No matching values.",
     "facetOptionCount": "{{label}}, {{countLabel}}",

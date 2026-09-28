@@ -64,13 +64,18 @@ describe('issue list display defaults', () => {
 });
 
 describe('issue list facets', () => {
-  it('counts unique labels, projects, and priorities in Linear order', () => {
+  it('counts assignees, unique labels, projects, and priorities in Linear order', () => {
     const feature = { id: 1, name: 'Feature', color: '#7c3aed' };
     const improvement = { id: 2, name: 'Improvement', color: '#2563eb' };
     const issues = [
-      { ...issue(1, 2), projectSlug: 'core', labels: [feature, improvement] },
-      { ...issue(2, 2), projectSlug: 'core', labels: [feature] },
-      { ...issue(3, 4), projectSlug: 'docs', labels: [improvement] },
+      {
+        ...issue(1, 2),
+        assignee: 'self' as const,
+        projectSlug: 'core',
+        labels: [feature, improvement],
+      },
+      { ...issue(2, 2), assignee: 'agent' as const, projectSlug: 'core', labels: [feature] },
+      { ...issue(3, 4), assignee: 'self' as const, projectSlug: 'docs', labels: [improvement] },
       { ...issue(4, 0), projectSlug: null, labels: [] },
     ];
     const projects = [
@@ -78,6 +83,11 @@ describe('issue list facets', () => {
       { slug: 'docs', name: 'Docs' },
     ] as Project[];
 
+    expect(buildIssueFacetOptions('assignees', issues, projects)).toEqual([
+      { value: 'self', label: 'self', count: 2 },
+      { value: 'agent', label: 'agent', count: 1 },
+      { value: 'none', label: 'none', count: 1 },
+    ]);
     expect(buildIssueFacetOptions('priority', issues, projects)).toEqual([
       { value: '2', label: '2', count: 2 },
       { value: '4', label: '4', count: 1 },

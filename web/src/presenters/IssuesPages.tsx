@@ -145,7 +145,7 @@ export function useIssuesPagePresenter() {
   const showEmptyGroups = search.showEmptyGroups ?? false;
   const displayProperties = search.displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES];
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [facet, setFacet] = useState<IssueFacetType>('priority');
+  const [facet, setFacet] = useState<IssueFacetType>('assignees');
   const [selected, setSelected] = useState<string | null>(
     locationState.issueListSelectedId ?? null,
   );
@@ -250,19 +250,23 @@ export function useIssuesPagePresenter() {
     completedIssues,
     data.cycles,
   );
-  const selectedFacetValues =
-    facet === 'labels'
-      ? (search.labels ?? '')
+  const selectedFacetValues: string[] = (() => {
+    switch (facet) {
+      case 'assignees':
+        return search.assignee ? [search.assignee] : [];
+      case 'labels':
+        return (search.labels ?? '')
           .split(',')
           .map((label) => label.trim())
-          .filter(Boolean)
-      : facet === 'priority'
-        ? (search.priorities ?? (search.priority === undefined ? [] : [search.priority])).map(
-            String,
-          )
-        : search.project
-          ? [search.project]
-          : [];
+          .filter(Boolean);
+      case 'priority':
+        return (search.priorities ?? (search.priority === undefined ? [] : [search.priority])).map(
+          String,
+        );
+      case 'projects':
+        return search.project ? [search.project] : [];
+    }
+  })();
   const selectedId = selected && issues.some((i) => i.identifier === selected) ? selected : null;
 
   return {
@@ -398,6 +402,16 @@ export function useIssuesPagePresenter() {
       onDetailsToggle: () => setDetailsOpen((current) => !current),
       onFacetChange: (next: IssueFacetType) => setFacet(next),
       onFacetFilterToggle: (value: string) => {
+        if (facet === 'assignees') {
+          if (value !== 'self' && value !== 'agent' && value !== 'none') return;
+          return navigate({
+            to: '/issues',
+            search: compactSearch({
+              ...search,
+              assignee: search.assignee === value ? undefined : value,
+            }),
+          });
+        }
         if (facet === 'priority') {
           const priority = Number(value);
           const current =

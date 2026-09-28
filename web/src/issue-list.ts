@@ -43,7 +43,7 @@ export const ISSUE_ORDER_BY_VALUES = [
 ] as const;
 export type IssueOrderBy = (typeof ISSUE_ORDER_BY_VALUES)[number];
 export type IssueLayout = 'list' | 'board';
-export type IssueFacetType = 'labels' | 'priority' | 'projects';
+export type IssueFacetType = 'assignees' | 'labels' | 'priority' | 'projects';
 export type IssueFacetOption = { value: string; label: string; count: number; color?: string };
 export type IssueDisplayProperty =
   | 'id'
@@ -122,6 +122,21 @@ export function buildIssueFacetOptions(
   issues: Issue[],
   projects: Project[],
 ): IssueFacetOption[] {
+  if (facet === 'assignees') {
+    const counts = new Map<string, number>();
+    for (const issue of issues) {
+      const assignee = issue.assignee ?? 'none';
+      counts.set(assignee, (counts.get(assignee) ?? 0) + 1);
+    }
+    return ['self', 'agent', 'none']
+      .filter((assignee) => (counts.get(assignee) ?? 0) > 0)
+      .map((assignee) => ({
+        value: assignee,
+        label: assignee,
+        count: counts.get(assignee) ?? 0,
+      }));
+  }
+
   if (facet === 'priority') {
     const counts = new Map<number, number>();
     for (const issue of issues) counts.set(issue.priority, (counts.get(issue.priority) ?? 0) + 1);

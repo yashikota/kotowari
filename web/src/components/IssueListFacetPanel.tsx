@@ -1,12 +1,12 @@
 import { Box, Button, Group, Paper, Select, Stack, Text } from '@mantine/core';
-import { IconCircleDashed, IconFolder } from '@tabler/icons-react';
+import { IconCircleDashed, IconFolder, IconUser } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { priorityLabel } from '../i18n/labels.ts';
 import type { IssueFacetOption, IssueFacetType } from '../issue-list.ts';
 import { IssuePriorityIcon } from './issue-ui.tsx';
 
-const FACET_TYPES: IssueFacetType[] = ['labels', 'priority', 'projects'];
+const FACET_TYPES: IssueFacetType[] = ['assignees', 'labels', 'priority', 'projects'];
 
 export function IssueListFacetPanel({
   facet,
@@ -23,12 +23,20 @@ export function IssueListFacetPanel({
 }) {
   const { t } = useTranslation();
   const facetLabels = {
+    assignees: t('ui.issueAssignees'),
     labels: t('issueProperties.labels'),
     priority: t('field.priority'),
     projects: t('nav.projects'),
   } satisfies Record<IssueFacetType, string>;
+  const assigneeLabels = {
+    self: t('issueAssignment.you'),
+    agent: t('issueAssignment.agent'),
+    none: t('issueAssignment.unassigned'),
+  };
 
   function labelFor(option: IssueFacetOption): string {
+    if (facet === 'assignees')
+      return assigneeLabels[option.value as keyof typeof assigneeLabels] ?? option.label;
     return facet === 'priority' ? priorityLabel(Number(option.value)) : option.label;
   }
 
@@ -87,7 +95,23 @@ export function IssueListFacetPanel({
               >
                 <Group justify="space-between" wrap="nowrap" w="100%" gap="xs">
                   <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                    {facet === 'priority' ? (
+                    {facet === 'assignees' ? (
+                      option.value === 'none' ? (
+                        <IconCircleDashed
+                          size={14}
+                          stroke={1.7}
+                          color="var(--mantine-color-gray-6)"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <IconUser
+                          size={14}
+                          stroke={1.7}
+                          color="var(--mantine-color-dimmed)"
+                          aria-hidden="true"
+                        />
+                      )
+                    ) : facet === 'priority' ? (
                       Number(option.value) === 0 ? (
                         <IconCircleDashed
                           size={14}
