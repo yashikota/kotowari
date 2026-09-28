@@ -15,7 +15,7 @@ import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import i18n from '../i18n/index.ts';
 import type { IssueListRow as IssueListRowModel } from '../issue-list.ts';
 import { formatIssueCreatedDate, type IssueDisplayProperty } from '../issue-list.ts';
-import type { Issue, IssueType, Project } from '../types.ts';
+import type { Cycle, Issue, IssueType, Project } from '../types.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssueListRow.module.css';
@@ -23,15 +23,19 @@ import styles from './IssueListRow.module.css';
 export function IssueGroupRow({
   row,
   projects = [],
+  cycles = [],
   onToggle,
   onCreate,
 }: {
   row: Extract<IssueListRowModel, { kind: 'group' }>;
   projects?: Project[];
+  cycles?: Cycle[];
   onToggle: (key: string) => void;
   onCreate?: (row: Extract<IssueListRowModel, { kind: 'group' }>) => void;
 }) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
+  const cycleNumber = row.groupBy === 'cycle' ? Number(row.key.slice('cycle:'.length)) : 0;
+  const cycleName = cycles.find((cycle) => cycle.number === cycleNumber)?.name?.trim();
   const label =
     row.groupBy === 'type'
       ? row.label
@@ -60,8 +64,8 @@ export function IssueGroupRow({
                         ?.name ?? row.label)
                   : row.groupBy === 'cycle' && row.label === 'No cycle'
                     ? i18n.t('field.noCycle')
-                    : row.groupBy === 'cycle' && row.label.startsWith('Cycle ')
-                      ? i18n.t('field.cycleN', { number: row.label.slice(6) })
+                    : row.groupBy === 'cycle'
+                      ? cycleName || i18n.t('field.cycleN', { number: cycleNumber })
                       : row.groupBy === 'label' && row.label === 'No label'
                         ? i18n.t('issueProperties.noLabels')
                         : row.groupBy === 'parent' && row.label === 'No parent'

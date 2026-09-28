@@ -65,6 +65,7 @@ export function IssueListView({
                     <IssueGroupRow
                       row={row}
                       projects={projects}
+                      cycles={cycles}
                       onToggle={handlers.onToggleGroup1}
                       onCreate={handlers.onCreateInGroup2}
                     />

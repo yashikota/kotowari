@@ -796,6 +796,11 @@ test('cycle group quick-create inherits the group cycle', async ({ page, request
   });
   expect(cycleResponse.ok()).toBeTruthy();
   const cycle = (await cycleResponse.json()) as { id: number; number: number };
+  const cycleName = `Planning cycle ${cycle.number}`;
+  const renameResponse = await request.patch(`/api/cycles/${cycle.number}`, {
+    data: { name: cycleName },
+  });
+  expect(renameResponse.ok()).toBeTruthy();
   const stamp = Date.now();
   const seed = await request.post('/api/issues', {
     data: { title: `Cycle group seed ${stamp}`, status: 'todo', cycleId: cycle.id },
@@ -807,14 +812,10 @@ test('cycle group quick-create inherits the group cycle', async ({ page, request
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByLabel('Grouping', { exact: true }).selectOption('cycle');
   await page.keyboard.press('Escape');
-  await page
-    .getByRole('button', { name: `Create new issue in Cycle ${cycle.number} group` })
-    .click();
+  await page.getByRole('button', { name: `Create new issue in ${cycleName} group` }).click();
 
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
-  await expect(dialog.getByRole('combobox', { name: 'Add to cycle' })).toHaveValue(
-    `Cycle ${cycle.number}`,
-  );
+  await expect(dialog.getByRole('combobox', { name: 'Add to cycle' })).toHaveValue(cycleName);
   const title = dialog.getByPlaceholder('Issue title');
   await title.fill(`Created from cycle group ${stamp}`);
   await title.press('ControlOrMeta+Enter');
