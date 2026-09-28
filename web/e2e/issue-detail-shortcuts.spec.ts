@@ -93,8 +93,14 @@ test('issue shortcuts create a sub-issue, toggle resources, and open the link fo
   page,
   request,
 }) => {
+  const resourceURL = `https://example.test/shortcut-resource/${Date.now()}`;
+  const resourceTitle = 'Shortcut resource';
   const created = await request.post('/api/issues', {
-    data: { title: `Issue structure shortcuts ${Date.now()}`, status: 'todo' },
+    data: {
+      title: `Issue structure shortcuts ${Date.now()}`,
+      status: 'todo',
+      links: [{ url: resourceURL, title: resourceTitle, kind: 'link' }],
+    },
   });
   expect(created.ok()).toBeTruthy();
   const issue = (await created.json()) as { identifier: string };
@@ -105,9 +111,14 @@ test('issue shortcuts create a sub-issue, toggle resources, and open the link fo
   await page.keyboard.press('ControlOrMeta+Shift+o');
   await expect(page.getByRole('textbox', { name: 'New sub-issue' })).toBeVisible();
 
+  const resourceLink = page.getByRole('link', { name: resourceTitle, exact: true });
+  await expect(resourceLink).toBeVisible();
   await issueOptions.focus();
   await page.keyboard.press('ControlOrMeta+Shift+l');
-  await expect(page.getByRole('button', { name: 'Expand resources section' })).toBeVisible();
+  await expect(resourceLink).toBeHidden();
+  await issueOptions.focus();
+  await page.keyboard.press('ControlOrMeta+Shift+l');
+  await expect(resourceLink).toBeVisible();
 
   await issueOptions.focus();
   await page.keyboard.press('ControlOrMeta+Alt+l');

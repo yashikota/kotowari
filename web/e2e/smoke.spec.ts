@@ -97,6 +97,8 @@ test('create issue, comment, and page', async ({ page, request }) => {
     'aria-checked',
     'true',
   );
+  await page.keyboard.press('Escape');
+  await expect(labelPicker).toBeHidden();
 
   await ensureIssuePropertyVisible(page, 'Due date');
   await page.getByLabel('Due date').fill('2026-09-01');
