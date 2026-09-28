@@ -15,17 +15,19 @@ import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import i18n from '../i18n/index.ts';
 import type { IssueListRow as IssueListRowModel } from '../issue-list.ts';
 import { formatIssueCreatedDate, type IssueDisplayProperty } from '../issue-list.ts';
-import type { Issue, IssueType } from '../types.ts';
+import type { Issue, IssueType, Project } from '../types.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssueListRow.module.css';
 
 export function IssueGroupRow({
   row,
+  projects = [],
   onToggle,
   onCreate,
 }: {
   row: Extract<IssueListRowModel, { kind: 'group' }>;
+  projects?: Project[];
   onToggle: (key: string) => void;
   onCreate?: (row: Extract<IssueListRowModel, { kind: 'group' }>) => void;
 }) {
@@ -51,8 +53,11 @@ export function IssueGroupRow({
               ? priorityLabel(row.priority ?? 0)
               : row.groupBy === 'status' && row.status
                 ? workflowStatusLabel(row.status, workflowStatuses)
-                : row.groupBy === 'project' && row.label === 'No project'
-                  ? i18n.t('issueProperties.noProject')
+                : row.groupBy === 'project'
+                  ? row.key === 'project:none'
+                    ? i18n.t('issueProperties.noProject')
+                    : (projects.find((project) => project.slug === row.key.slice('project:'.length))
+                        ?.name ?? row.label)
                   : row.groupBy === 'cycle' && row.label === 'No cycle'
                     ? i18n.t('field.noCycle')
                     : row.groupBy === 'cycle' && row.label.startsWith('Cycle ')

@@ -873,3 +873,43 @@ test('parent group quick-create creates a sub-issue under that parent', async ({
     parentIdentifier: parent.identifier,
   });
 });
+
+test('project group quick-create shows the project name and keeps the project', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projectName = `Project group ${stamp}`;
+  const projectResponse = await request.post('/api/projects', {
+    data: { name: projectName, slug: `project-group-${stamp}` },
+  });
+  expect(projectResponse.ok()).toBeTruthy();
+  const project = (await projectResponse.json()) as { id: number };
+  const seed = await request.post('/api/issues', {
+    data: { title: `Project group seed ${stamp}`, status: 'todo', projectId: project.id },
+  });
+  expect(seed.ok()).toBeTruthy();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, stamp.toString());
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Grouping', { exact: true }).selectOption('project');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: `Create new issue in ${projectName} group` }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(dialog.getByRole('combobox', { name: 'Project' })).toHaveValue(projectName);
+  const title = dialog.getByPlaceholder('Issue title');
+  await title.fill(`Created from project group ${stamp}`);
+  await title.press('ControlOrMeta+Enter');
+  await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
+
+  const identifier = new URL(page.url()).pathname.match(/\/issues\/([^/]+)/)?.[1];
+  expect(identifier).toBeTruthy();
+  const created = await request.get(`/api/issues/${identifier}`);
+  expect(created.ok()).toBeTruthy();
+  expect(await created.json()).toMatchObject({
+    title: `Created from project group ${stamp}`,
+    projectId: project.id,
+  });
+});
