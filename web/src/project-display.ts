@@ -10,7 +10,6 @@ export const PROJECT_DISPLAY_PROPERTIES = [
   'startDate',
   'targetDate',
   'issues',
-  'progress',
   'created',
   'updated',
   'completed',
@@ -31,6 +30,5 @@ export type ProjectDisplayProperty = (typeof PROJECT_DISPLAY_PROPERTIES)[number]
 
 export const DEFAULT_PROJECT_DISPLAY_PROPERTIES: ProjectDisplayProperty[] = [
   'status',
-  'progress',
   'targetDate',
 ];

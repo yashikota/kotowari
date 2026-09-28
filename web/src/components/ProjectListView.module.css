@@ -89,14 +89,6 @@
   min-width: 0;
 }
 
-.progressCell {
-  min-width: 108px;
-}
-
-.progressCell > div:first-child {
-  width: 70px;
-}
-
 .labelsCell {
   max-width: 190px;
   overflow: hidden;

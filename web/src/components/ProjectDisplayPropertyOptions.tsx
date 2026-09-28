@@ -1,6 +1,7 @@
 import { Button, Group, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { PROJECT_DISPLAY_PROPERTIES, type ProjectDisplayProperty } from '../project-display.ts';
+import styles from './ProjectDisplayPropertyOptions.module.css';
 
 export function ProjectDisplayPropertyOptions({
   selectedProperties,
@@ -26,9 +27,10 @@ export function ProjectDisplayPropertyOptions({
               key={property}
               type="button"
               size="compact-xs"
-              variant={selected ? 'default' : 'subtle'}
+              variant="default"
               color="gray"
               radius="xl"
+              className={`${styles.propertyButton} ${selected ? styles.selected : ''}`}
               aria-pressed={selected}
               onClick={() => onToggle(property)}
             >

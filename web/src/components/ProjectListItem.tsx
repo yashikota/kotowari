@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Group, Progress, Text } from '@mantine/core';
+import { ActionIcon, Badge, Group, Text } from '@mantine/core';
 import { IconGripVertical } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ProjectDisplayProperty } from '../project-display.ts';
@@ -39,7 +39,6 @@ export function ProjectListItem({
 }) {
   const { t, i18n } = useTranslation();
   const { statuses } = useProjectWorkflow();
-  const progress = Math.round(project.progress * 100);
   const status = project.workflowStatus ?? project.status;
   const reorderable = Boolean(onReorder);
   const reorderAt = (direction: -1 | 1) => {
@@ -151,17 +150,6 @@ export function ProjectListItem({
             <Text size="xs" c="dimmed">
               {project.lead === 'self' ? t('projectList.leadYou') : t('projectList.leadUnassigned')}
             </Text>
-          ) : property === 'progress' ? (
-            <Group gap={6} wrap="nowrap" className={styles.progressCell}>
-              <Progress
-                aria-label={t('ui.projectProgress', { progress })}
-                value={progress}
-                size="sm"
-              />
-              <Text size="xs" c="dimmed">
-                {progress}%
-              </Text>
-            </Group>
           ) : property === 'startDate' ? (
             <Text size="xs" c="dimmed">
               {date(project.startDate)}

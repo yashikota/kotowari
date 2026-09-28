@@ -433,7 +433,6 @@ function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch
       'startDate',
       'targetDate',
       'issues',
-      'progress',
       'created',
       'updated',
       'completed',

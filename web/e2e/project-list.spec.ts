@@ -51,6 +51,7 @@ test('project display options match the active view structure', async ({ page })
     'aria-pressed',
     'false',
   );
+  await expect(dropdown.getByRole('button', { name: 'Progress', exact: true })).toHaveCount(0);
   await expect(dropdown.getByLabel('Direction')).toHaveCount(0);
   await dropdown.getByRole('button', { name: 'Summary', exact: true }).click();
   await expect(page).toHaveURL(/displayProperties=/);
@@ -83,6 +84,16 @@ test('project display options match the active view structure', async ({ page })
   await expect(dropdown.getByRole('switch', { name: 'Show project list' })).toBeVisible();
   await expect(dropdown.getByRole('switch', { name: 'Show week numbers' })).toBeVisible();
   await expect(dropdown.getByRole('button', { name: 'Summary', exact: true })).toHaveCount(0);
+});
+
+test('empty project state links to workspace documentation', async ({ page }) => {
+  await page.goto('/projects');
+  const createButton = page.getByRole('button', { name: 'Create new project' });
+  await expect(createButton).toBeVisible();
+  const documentationLink = page.getByRole('link', { name: 'Documentation', exact: true });
+  await expect(documentationLink).toHaveAttribute('href', '/pages');
+  await documentationLink.click();
+  await expect(page).toHaveURL(/\/pages$/);
 });
 
 test('project list filters, search, grouping, and ordering persist in the URL', async ({

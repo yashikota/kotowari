@@ -862,7 +862,7 @@
     "viewTimeline": "Timeline",
     "projectBoard": "Project board",
     "projectTimeline": "Project timeline",
-    "empty": "Projects are larger units of work with a clear outcome, such as a new feature you want to ship. Group related issues and optional documents so progress is easy to follow.",
+    "empty": "Projects are larger units of work with a clear outcome, such as a new feature you want to ship. Keep related issues and optional documents together so progress is easy to follow.",
     "emptyCreate": "Create new project",
     "emptyDocumentation": "Documentation",
     "addFilter": "Add filter",
@@ -973,7 +973,6 @@
       "startDate": "Start date",
       "targetDate": "Target date",
       "issues": "Issues",
-      "progress": "Progress",
       "created": "Created",
       "updated": "Updated",
       "labels": "Labels"

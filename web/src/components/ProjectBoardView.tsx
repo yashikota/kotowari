@@ -1,4 +1,4 @@
-import { Badge, Box, Card, Group, Progress, Stack, Text } from '@mantine/core';
+import { Badge, Box, Card, Group, Stack, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { priorityLabel } from '../i18n/labels.ts';
@@ -190,7 +190,6 @@ function ProjectBoardCard({
   const { t, i18n } = useTranslation();
   const { statuses } = useProjectWorkflow();
   const shows = (property: ProjectDisplayProperty) => displayProperties.includes(property);
-  const progress = Math.round(project.progress * 100);
   return (
     <Link
       to="/projects/$slug"
@@ -327,19 +326,6 @@ function ProjectBoardCard({
                   {t('projectList.issuesCount', { count: issueCount })}
                 </Badge>
               ) : null}
-            </Group>
-          ) : null}
-          {shows('progress') ? (
-            <Group gap="xs" wrap="nowrap" align="center">
-              <Progress
-                aria-label={t('ui.projectProgress', { progress })}
-                value={progress}
-                size="xs"
-                flex={1}
-              />
-              <Text size="xs" c="dimmed" w={32} ta="right">
-                {progress}%
-              </Text>
             </Group>
           ) : null}
           {shows('startDate') && project.startDate ? (

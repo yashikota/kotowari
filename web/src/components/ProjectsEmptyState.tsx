@@ -1,4 +1,5 @@
 import { Button, Group, Kbd, Stack, Text } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import styles from './ProjectsEmptyState.module.css';
 
@@ -81,6 +82,9 @@ export function ProjectsEmptyState({ onCreateProject }: { onCreateProject: () =>
             </Group>
           </Group>
         </Button>
+        <Link to="/pages" className={styles.documentationLink}>
+          {t('projectList.emptyDocumentation')}
+        </Link>
       </Group>
     </Stack>
   );

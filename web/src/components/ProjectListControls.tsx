@@ -17,6 +17,9 @@ import {
   IconChevronUp,
   IconGripVertical,
   IconArrowsSort,
+  IconList,
+  IconLayoutBoard,
+  IconTimeline,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useState, type ReactNode } from 'react';
@@ -36,6 +39,7 @@ import type {
   ProjectViewSearch,
 } from '../project-views.ts';
 import { PROJECT_BOARD_GROUPINGS } from '../project-board.ts';
+import styles from './ProjectListControls.module.css';
 
 export type ProjectListControlsModel = {
   search: string;
@@ -159,6 +163,7 @@ export function ProjectListControls({
         </Popover.Target>
         <Popover.Dropdown
           w={330}
+          className={styles.dropdown}
           data-testid="project-display-options-dropdown"
           style={{ maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}
         >
@@ -171,15 +176,31 @@ export function ProjectListControls({
             />
           ) : (
             <Stack gap="sm">
-              <Group gap={0} role="tablist" aria-label={t('projectList.view')}>
+              <Group
+                gap={4}
+                role="tablist"
+                aria-label={t('projectList.view')}
+                className={styles.viewTabs}
+              >
                 {(['list', 'board', 'timeline'] as const).map((view) => (
                   <Button
                     key={view}
                     type="button"
                     role="tab"
                     size="xs"
-                    variant={model.view === view ? 'filled' : 'subtle'}
+                    variant="subtle"
+                    color="gray"
+                    leftSection={
+                      view === 'list' ? (
+                        <IconList size={15} aria-hidden="true" />
+                      ) : view === 'board' ? (
+                        <IconLayoutBoard size={15} aria-hidden="true" />
+                      ) : (
+                        <IconTimeline size={15} aria-hidden="true" />
+                      )
+                    }
                     aria-selected={model.view === view}
+                    className={styles.viewTab}
                     onClick={() => handlers.onViewChange(view)}
                   >
                     {t(`projectList.view${view[0].toUpperCase()}${view.slice(1)}`)}
@@ -245,8 +266,10 @@ export function ProjectListControls({
                 </>
               )}
               {model.view !== 'board' ? <ProjectListOrderControls model={model} /> : null}
+              <Divider />
               {model.view !== 'board' ? <ShowClosedProjects model={model} /> : null}
               {model.view === 'board' ? <ProjectListOrderControls model={model} /> : null}
+              {model.view === 'board' ? <Divider /> : null}
               {model.view === 'board' ? <ShowClosedProjects model={model} /> : null}
               <Divider />
               {model.view === 'list' ? (

@@ -42,6 +42,31 @@
   line-height: normal;
 }
 
+.documentationLink {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 999px;
+  color: var(--mantine-color-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color 120ms ease;
+}
+
+.documentationLink:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.documentationLink:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
 .buttonLabel {
   font-size: 12px;
   line-height: normal;

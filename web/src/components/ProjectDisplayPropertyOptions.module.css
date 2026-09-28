@@ -1,0 +1,15 @@
+.propertyButton {
+  border-color: var(--mantine-color-default-border);
+  background-color: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+}
+
+.propertyButton:hover {
+  background-color: var(--mantine-color-default-hover);
+}
+
+.selected {
+  background-color: var(--mantine-color-default-hover);
+  border-color: var(--mantine-color-default-border);
+  color: var(--mantine-color-text);
+}
