@@ -616,6 +616,10 @@ export function useShellPresenter() {
     [currentIdentifier, cycles, navigate, router, pathname, defaultIssueAssignee],
   );
 
+  useIntentHandler('navigation.sidebar.toggle', () =>
+    updatePreferences({ sidebarCollapsed: !preferences.sidebarCollapsed }),
+  );
+
   useKeyboard((e) => {
     const action = actionFromKeyboard(e);
     if (!action) {
@@ -645,6 +649,11 @@ export function useShellPresenter() {
     if (action === 'find') {
       e.preventDefault();
       send('issues.find.open');
+      return true;
+    }
+    if (action === 'toggle-sidebar') {
+      e.preventDefault();
+      send('navigation.sidebar.toggle');
       return true;
     }
     if (action.startsWith('nav-')) {
@@ -959,6 +968,7 @@ export function useShellPresenter() {
     previousCycles: cycleNavigationOptions.previous,
     isPageOwnedHeader,
     mobileNavigationOpen,
+    sidebarCollapsed: preferences.sidebarCollapsed,
     workspaceNavigationOpen,
     moreLinksOpen,
     favoritesOpen,
@@ -1081,6 +1091,7 @@ export function useShellPresenter() {
       onCreateIssue: openCreateIssue,
       onDismissError: () => setError(''),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
+      onToggleSidebar: () => send('navigation.sidebar.toggle'),
       onToggleWorkspaceNavigation: () => setWorkspaceNavigationOpen((open) => !open),
       onToggleMoreLinks: () => setMoreLinksOpen((open) => !open),
       onOpenSidebarCustomization: () => setSidebarCustomizationOpen(true),

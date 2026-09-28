@@ -73,6 +73,7 @@ export type PersonalPreferences = {
   sidebarLocations: Record<SidebarItemId, SidebarLocation>;
   sidebarOrder: SidebarItemId[];
   sidebarBadgeStyle: SidebarBadgeStyle;
+  sidebarCollapsed: boolean;
   convertEmoticons: boolean;
   underlineLinks: boolean;
   pointerCursors: boolean;
@@ -106,6 +107,7 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
   },
   sidebarOrder: [...SIDEBAR_ITEM_IDS],
   sidebarBadgeStyle: 'count',
+  sidebarCollapsed: false,
   convertEmoticons: true,
   underlineLinks: false,
   pointerCursors: false,
@@ -184,6 +186,10 @@ export function parsePersonalPreferences(value: string | null): PersonalPreferen
       )
         ? (parsed.sidebarBadgeStyle as SidebarBadgeStyle)
         : DEFAULT_PERSONAL_PREFERENCES.sidebarBadgeStyle,
+      sidebarCollapsed:
+        typeof parsed.sidebarCollapsed === 'boolean'
+          ? parsed.sidebarCollapsed
+          : DEFAULT_PERSONAL_PREFERENCES.sidebarCollapsed,
       convertEmoticons:
         typeof parsed.convertEmoticons === 'boolean'
           ? parsed.convertEmoticons

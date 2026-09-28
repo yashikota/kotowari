@@ -192,6 +192,7 @@ export function ShellView({
         previousCycles,
         isPageOwnedHeader,
         mobileNavigationOpen,
+        sidebarCollapsed,
         moreLinksOpen,
         sidebarNavigation,
         sidebarBadgeCounts,
@@ -240,7 +241,7 @@ export function ShellView({
           <AppShell
             navbar={{ width: 244, breakpoint: 0 }}
             padding={0}
-            className={`${styles.shell} ${mobileNavigationOpen ? styles.navigationOpen : ''}`}
+            className={`${styles.shell} ${mobileNavigationOpen ? styles.navigationOpen : ''} ${sidebarCollapsed ? styles.sidebarCollapsed : ''}`}
             styles={{ root: { height: '100dvh', overflow: 'hidden' } }}
           >
             <AppShell.Navbar
@@ -307,6 +308,17 @@ export function ShellView({
                     </Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
+                <ActionIcon
+                  type="button"
+                  variant="subtle"
+                  color="gray"
+                  className={styles.sidebarToggleButton}
+                  aria-label={t('nav.collapseNavigation')}
+                  title={t('nav.collapseNavigation')}
+                  onClick={handlers.onToggleSidebar}
+                >
+                  <IconMenu2 size={16} stroke={1.7} aria-hidden />
+                </ActionIcon>
                 <Group gap={2} wrap="nowrap">
                   <ActionIcon
                     type="button"
@@ -599,6 +611,17 @@ export function ShellView({
                 }
                 style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
               >
+                <ActionIcon
+                  type="button"
+                  variant="subtle"
+                  color="gray"
+                  className={styles.collapsedSidebarToggle}
+                  aria-label={t('nav.expandNavigation')}
+                  title={t('nav.expandNavigation')}
+                  onClick={handlers.onToggleSidebar}
+                >
+                  <IconMenu2 size={16} stroke={1.7} aria-hidden />
+                </ActionIcon>
                 <Group
                   component="nav"
                   aria-label={t('nav.breadcrumb')}

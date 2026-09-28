@@ -269,6 +269,15 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
   });
 
+  it('toggles the left sidebar with [ outside editable controls', () => {
+    expect(
+      actionFromKeyboard({ key: '[', metaKey: false, ctrlKey: false, target: el('BODY') }),
+    ).toBe('toggle-sidebar');
+    expect(
+      actionFromKeyboard({ key: '[', metaKey: false, ctrlKey: false, target: el('INPUT') }),
+    ).toBeNull();
+  });
+
   it('treats contenteditable as a typing target', () => {
     const editor = { tagName: 'DIV', isContentEditable: true } as unknown as EventTarget;
     expect(isTypingTarget(editor)).toBe(true);

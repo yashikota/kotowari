@@ -38,6 +38,8 @@
     "search": "検索",
     "openNavigation": "ナビゲーションを開く",
     "closeNavigation": "ナビゲーションを閉じる",
+    "collapseNavigation": "ナビゲーションを折りたたむ",
+    "expandNavigation": "ナビゲーションを展開",
     "favorites": "お気に入り",
     "favoriteHint": "星を付けたイシューやサイクルがここに表示されます"
   },
@@ -1984,6 +1986,8 @@
     "shortcutGoProjectsKeys": "G、続けてP",
     "shortcutGoInitiativesKeys": "G、続けてN",
     "shortcutGoSettingsKeys": "G、続けてS",
+    "shortcutToggleSidebarKeys": "[",
+    "shortcutToggleSidebar": "左サイドバーを切り替え",
     "shortcutQuickOpenIssueKeys": "O、続けてI",
     "shortcutQuickOpenIssue": "イシューを開く",
     "shortcutQuickOpenFavoriteKeys": "O、続けてF",

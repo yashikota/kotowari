@@ -38,6 +38,8 @@
     "search": "Search",
     "openNavigation": "Open navigation",
     "closeNavigation": "Close navigation",
+    "collapseNavigation": "Collapse navigation",
+    "expandNavigation": "Expand navigation",
     "favorites": "Favorites",
     "favoriteHint": "Star an issue or cycle to keep it here"
   },
@@ -1993,6 +1995,8 @@
     "shortcutGoProjectsKeys": "G, then P",
     "shortcutGoInitiativesKeys": "G, then N",
     "shortcutGoSettingsKeys": "G, then S",
+    "shortcutToggleSidebarKeys": "[",
+    "shortcutToggleSidebar": "Toggle left sidebar",
     "shortcutQuickOpenIssueKeys": "O, then I",
     "shortcutQuickOpenIssue": "Open an issue",
     "shortcutQuickOpenFavoriteKeys": "O, then F",

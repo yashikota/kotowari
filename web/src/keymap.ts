@@ -17,7 +17,8 @@ export type KeyAction =
   | 'priority-4'
   | NavShortcutAction
   | 'help'
-  | 'find';
+  | 'find'
+  | 'toggle-sidebar';
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
@@ -487,6 +488,9 @@ export function actionFromKeyboard(event: {
   }
   if (isTypingTarget(event.target)) {
     return null;
+  }
+  if (event.key === '[') {
+    return 'toggle-sidebar';
   }
   if (event.shiftKey) {
     switch (event.key) {

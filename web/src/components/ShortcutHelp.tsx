@@ -30,6 +30,7 @@ export function ShortcutHelpView({
     { keys: t('ui.shortcutGoProjectsKeys'), action: t('nav.projects') },
     { keys: t('ui.shortcutGoInitiativesKeys'), action: t('nav.initiatives') },
     { keys: t('ui.shortcutGoSettingsKeys'), action: t('nav.config') },
+    { keys: t('ui.shortcutToggleSidebarKeys'), action: t('ui.shortcutToggleSidebar') },
     { keys: t('ui.shortcutQuickOpenIssueKeys'), action: t('ui.shortcutQuickOpenIssue') },
     { keys: t('ui.shortcutQuickOpenFavoriteKeys'), action: t('ui.shortcutQuickOpenFavorite') },
     { keys: t('ui.shortcutQuickOpenProjectKeys'), action: t('ui.shortcutQuickOpenProject') },

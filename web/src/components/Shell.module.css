@@ -13,6 +13,36 @@
   background: var(--mantine-color-body);
 }
 
+.sidebarCollapsed .sidebar {
+  display: none;
+}
+
+.sidebarCollapsed .main {
+  padding-inline-start: 0 !important;
+}
+
+.sidebarToggleButton {
+  display: inline-flex;
+}
+
+.collapsedSidebarToggle {
+  display: none;
+}
+
+.sidebarCollapsed .collapsedSidebarToggle {
+  display: inline-flex;
+}
+
+.sidebarCollapsed .issueDetailHeader,
+.sidebarCollapsed .pageOwnedHeader {
+  display: flex;
+}
+
+.sidebarCollapsed .issueDetailBreadcrumb,
+.sidebarCollapsed .pageOwnedBreadcrumb {
+  display: none;
+}
+
 .issueDetailHeader {
   display: none;
 }
@@ -70,6 +100,11 @@
 
   .mobileMenuButton {
     display: inline-flex;
+  }
+
+  .sidebarToggleButton,
+  .collapsedSidebarToggle {
+    display: none !important;
   }
 
   .main {
