@@ -594,6 +594,9 @@ export function IssueDetailView({
                         ) : null}
                       </Menu.Sub.Dropdown>
                     </Menu.Sub>
+                    <Menu.Item onClick={handlers.onOpenIssueAgentPage}>
+                      {t('issueActions.openInAgent')}
+                    </Menu.Item>
                     <Menu.Item onClick={handlers.Show_description_history_onClick50}>
                       {t('issueActions.descriptionHistory')}
                     </Menu.Item>

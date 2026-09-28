@@ -1305,6 +1305,7 @@
     "template": "Template…",
     "recurringIssue": "Recurring issue…",
     "remindMe": "Remind me",
+    "openInAgent": "Open in Agent…",
     "reminderScheduled": "Remind {{date}}",
     "reminder": {
       "hour": "An hour from now",

@@ -1298,6 +1298,7 @@
     "template": "テンプレート…",
     "recurringIssue": "定期イシュー…",
     "remindMe": "リマインダーを設定",
+    "openInAgent": "Agentで開く…",
     "reminderScheduled": "リマインダー: {{date}}",
     "reminder": {
       "hour": "1時間後",
