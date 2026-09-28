@@ -312,6 +312,7 @@ export function IssueFilterMenu({
   onLabelOperatorChange,
   onToggleProjectLabel,
   onToggleAddedToCycle,
+  onToggleAdvancedFilter,
   onRemoveFilter,
   onClear,
 }: {
@@ -351,6 +352,7 @@ export function IssueFilterMenu({
   onLabelOperatorChange: (value: string) => void;
   onToggleProjectLabel: (name: string) => void;
   onToggleAddedToCycle: (phase: 'planned' | 'during' | 'after') => void;
+  onToggleAdvancedFilter?: () => void;
   onRemoveFilter: (key: string) => void;
   onClear: () => void;
 }) {
@@ -827,6 +829,21 @@ export function IssueFilterMenu({
             />
             <Divider />
             <Stack gap="xs" p="xs" mah="calc(80vh - 42px)" style={{ overflowY: 'auto' }}>
+              {onToggleAdvancedFilter ? (
+                <>
+                  <Menu.Item
+                    leftSection={<IconFilter size={15} stroke={1.7} aria-hidden="true" />}
+                    aria-pressed={Boolean(search.advancedFilter)}
+                    onClick={() => {
+                      onToggleAdvancedFilter();
+                      onOpenChange(false);
+                    }}
+                  >
+                    {t('issueFilters.advancedFilter')}
+                  </Menu.Item>
+                  <Divider my={4} />
+                </>
+              ) : null}
               {visibleGroups.map(({ categories: groupCategories, group }, groupIndex) => (
                 <Stack key={group} gap={2}>
                   {groupIndex > 0 ? <Divider my={4} /> : null}

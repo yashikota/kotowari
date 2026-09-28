@@ -1,5 +1,5 @@
-import { ActionIcon, Box, Button, Group, TextInput } from '@mantine/core';
-import { IconFilter, IconLayoutSidebarRight, IconSearch } from '@tabler/icons-react';
+import { ActionIcon, Box, Group, TextInput } from '@mantine/core';
+import { IconLayoutSidebarRight, IconSearch } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { IssueDisplayOptions } from './IssueDisplayOptions.tsx';
@@ -75,21 +75,6 @@ export function IssueFiltersView({
             align="center"
           >
             {leading}
-            {onAdvancedFilterToggle ? (
-              <Button
-                type="button"
-                variant={advancedFilter ? 'light' : 'subtle'}
-                color="gray"
-                size="compact-xs"
-                leftSection={<IconFilter size={14} aria-hidden="true" />}
-                aria-label={t('issueFilters.toggleAdvancedFilter')}
-                aria-expanded={advancedFilter}
-                aria-controls="issue-advanced-filter-builder"
-                onClick={handlers.onAdvancedFilterToggle}
-              >
-                {t('issueFilters.advancedFilter')}
-              </Button>
-            ) : null}
             <IssueFilterMenu
               search={search}
               projects={projects}
@@ -127,6 +112,9 @@ export function IssueFiltersView({
               onLabelOperatorChange={handlers.onLabelOperatorChange}
               onToggleProjectLabel={handlers.onToggleProjectLabel}
               onToggleAddedToCycle={handlers.onToggleAddedToCycle}
+              onToggleAdvancedFilter={
+                onAdvancedFilterToggle ? handlers.onAdvancedFilterToggle : undefined
+              }
               onRemoveFilter={handlers.onRemoveFilter}
               onClear={handlers.onClearFilters}
             />

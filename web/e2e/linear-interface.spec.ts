@@ -270,7 +270,8 @@ test('advanced issue filters combine nested conditions and survive reload', asyn
 
   await page.goto('/issues');
   await fillIssueSearch(page, String(stamp));
-  await page.getByRole('button', { name: 'Toggle advanced filter' }).click();
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Advanced filter', exact: true }).click();
   const builder = page.locator('#issue-advanced-filter-builder');
   const root = builder.locator('[aria-label="Filter group 1"]');
   await root.getByText('Any', { exact: true }).click();
@@ -372,7 +373,8 @@ test('advanced issue filters compare dates and search issue content', async ({ p
   }
 
   await page.goto('/issues');
-  await page.getByRole('button', { name: 'Toggle advanced filter' }).click();
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitem', { name: 'Advanced filter', exact: true }).click();
   const root = page.locator('#issue-advanced-filter-builder [aria-label="Filter group 1"]');
   await root.getByRole('button', { name: 'Add condition' }).click();
   await root.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
@@ -446,6 +448,9 @@ test('issue details facets show counts and filter the visible issue list', async
   expect(panelBounds).not.toBeNull();
   expect(panelBounds!.width).toBeGreaterThanOrEqual(300);
   expect(panelBounds!.width).toBeLessThanOrEqual(340);
+  const detailBy = details.getByRole('combobox', { name: 'Details by' });
+  await detailBy.click();
+  await page.getByRole('option', { name: 'Priority' }).click();
   const high = details.getByRole('button', { name: 'High, 1 issue' });
   await expect(high).toBeVisible();
   await expect(details.getByRole('button', { name: 'Low, 1 issue' })).toBeVisible();
@@ -460,7 +465,6 @@ test('issue details facets show counts and filter the visible issue list', async
     'true',
   );
 
-  const detailBy = details.getByRole('combobox', { name: 'Details by' });
   await detailBy.click();
   await page.getByRole('option', { name: 'Labels' }).click();
   const labelFacet = details.getByRole('button', { name: `${labelName}, 1 issue` });
