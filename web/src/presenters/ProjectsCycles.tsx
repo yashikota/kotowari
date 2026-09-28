@@ -1098,6 +1098,7 @@ export function useProjectsPagePresenter() {
 
   return {
     _view: 0 as const,
+    archived: !!search.archived,
     projectGroups,
     projectBoard,
     projectTimeline,
@@ -1152,6 +1153,11 @@ export function useProjectsPagePresenter() {
         }),
       onApplyProjectView: (view: ProjectSavedView) => applyProjectView(view),
       onShowAllProjects: showAllProjects,
+      onToggleArchivedProjects: () =>
+        updateProjectSearch({
+          archived: search.archived ? undefined : true,
+          projectView: undefined,
+        }),
       onUpdateActiveProjectView: updateActiveProjectView,
       onDeleteActiveProjectView: deleteActiveProjectView,
       onTimelinePrevious: () =>
@@ -1494,6 +1500,12 @@ export function useProjectDetailPagePresenter() {
         await refreshProject();
       },
       onClick1: () => sendIntent('issue.create', { projectId: project.id }),
+      onToggleProjectArchived: async () => {
+        const archived = !project.archivedAt;
+        await api.patchProject(slug, { archived });
+        signals.dispatchEvent(new Event('kotowari:refresh'));
+        await navigate({ to: '/projects', search: { archived } });
+      },
       onClick2: () => {
         if (!window.confirm(i18n.t('ui.deleteProjectConfirmation', { name: project.name }))) {
           return;
@@ -1773,6 +1785,8 @@ export function useCyclesPagePresenter() {
           }),
         );
       },
+      onToggleArchivedCycles: () =>
+        navigate({ to: '/cycles', search: { scope: scope === 'archived' ? 'all' : 'archived' } }),
     },
   };
 }
@@ -2247,6 +2261,11 @@ export function useCycleDetailPagePresenter() {
         setDatesOpen(false);
       },
       onToggleFavorite: () => save({ isFavorite: !cycle.isFavorite }),
+      onToggleCycleArchived: async () => {
+        const archived = !cycle.archivedAt;
+        await save({ archived });
+        await navigate({ to: '/cycles', search: { scope: archived ? 'archived' : 'all' } });
+      },
       onToggleIssueAddedNotifications: () =>
         save({ notifyOnIssueAdded: !cycle.notifyOnIssueAdded }),
       onToggleIssueCompletedNotifications: () =>

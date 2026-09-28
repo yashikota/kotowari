@@ -88,6 +88,7 @@ export function ProjectsPageView({
         displayProperties,
         projectIssueCounts,
         projectViews,
+        archived,
         activeProjectView,
         visibleProjectCount,
         isGrouped,
@@ -106,15 +107,27 @@ export function ProjectsPageView({
               titleLineHeight="normal"
               paddingX={19}
               actions={
-                <ActionIcon
-                  type="button"
-                  variant="default"
-                  aria-label={t('projectList.newProject')}
-                  title={`${t('projectList.newProject')} · ${t('ui.shortcutCreateProject')}`}
-                  onClick={handlers.onOpenCreateProject}
-                >
-                  <IconPlus size={16} stroke={1.7} aria-hidden="true" />
-                </ActionIcon>
+                <Group gap="xs">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="subtle"
+                    onClick={handlers.onToggleArchivedProjects}
+                  >
+                    {t(archived ? 'projectList.showActive' : 'projectList.showArchived')}
+                  </Button>
+                  {!archived ? (
+                    <ActionIcon
+                      type="button"
+                      variant="default"
+                      aria-label={t('projectList.newProject')}
+                      title={`${t('projectList.newProject')} · ${t('ui.shortcutCreateProject')}`}
+                      onClick={handlers.onOpenCreateProject}
+                    >
+                      <IconPlus size={16} stroke={1.7} aria-hidden="true" />
+                    </ActionIcon>
+                  ) : null}
+                </Group>
               }
             />
             <ProjectViewsBar
@@ -395,6 +408,13 @@ export function ProjectDetailPageView({
                     </Button>
                     <Button type="button" variant="subtle" onClick={handlers.onOpenProjectTemplate}>
                       {t('projectTemplates.saveAsTemplate')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      onClick={handlers.onToggleProjectArchived}
+                    >
+                      {t(project.archivedAt ? 'projectList.restore' : 'projectList.archive')}
                     </Button>
                     <Button type="button" variant="subtle" color="red" onClick={handlers.onClick2}>
                       {t('ui.delete')}
@@ -849,6 +869,7 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
     case 0: {
       const {
         cycles,
+        scope,
         currentCycleOverview,
         metadataCycle,
         datesCycle,
@@ -868,15 +889,27 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
               titleSize="md"
               paddingX={19}
               actions={
-                <ActionIcon
-                  type="button"
-                  variant="default"
-                  aria-label={t('cycle.newCycle')}
-                  title={t('cycle.newCycle')}
-                  onClick={handlers.onClick0}
-                >
-                  <IconPlus size={16} stroke={1.7} aria-hidden="true" />
-                </ActionIcon>
+                <Group gap="xs">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="subtle"
+                    onClick={handlers.onToggleArchivedCycles}
+                  >
+                    {t(scope === 'archived' ? 'cycle.showActive' : 'cycle.showArchived')}
+                  </Button>
+                  {scope !== 'archived' ? (
+                    <ActionIcon
+                      type="button"
+                      variant="default"
+                      aria-label={t('cycle.newCycle')}
+                      title={t('cycle.newCycle')}
+                      onClick={handlers.onClick0}
+                    >
+                      <IconPlus size={16} stroke={1.7} aria-hidden="true" />
+                    </ActionIcon>
+                  ) : null}
+                </Group>
               }
             />
             {cycles.length === 0 ? (
@@ -1223,6 +1256,9 @@ export function CycleDetailPageView({
                               </Menu.Sub>
                               <Menu.Item onClick={handlers.onOpenMetadata}>
                                 {t('cycle.editNameAndDescription')}
+                              </Menu.Item>
+                              <Menu.Item onClick={handlers.onToggleCycleArchived}>
+                                {t(cycle.archivedAt ? 'cycle.restore' : 'cycle.archive')}
                               </Menu.Item>
                               {cycle.status !== 'completed' ? (
                                 <Menu.Item onClick={handlers.onOpenDates}>

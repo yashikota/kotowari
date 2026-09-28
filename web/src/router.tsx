@@ -231,9 +231,10 @@ const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects',
   validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
-  loader: async () => {
+  loaderDeps: ({ search }) => ({ archived: search.archived ?? false }),
+  loader: async ({ deps }) => {
     const [projects, labels, issues, projectTemplates, initiatives, workspace] = await Promise.all([
-      api.projects(),
+      api.projects(deps.archived),
       api.labels(),
       api.issues(),
       api.projectTemplates(),
@@ -278,7 +279,7 @@ const initiativeRoute = createRoute({
   ),
 });
 
-type ProjectListSearch = ProjectViewSearch & { projectView?: string };
+type ProjectListSearch = ProjectViewSearch & { projectView?: string; archived?: boolean };
 
 function searchStringList(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
@@ -300,6 +301,7 @@ function searchStringList(value: unknown): string[] {
 
 function parseProjectListSearch(raw: Record<string, unknown>): ProjectListSearch {
   const result: ProjectListSearch = {};
+  if (raw.archived === true || raw.archived === 'true') result.archived = true;
   if (typeof raw.q === 'string' && raw.q.trim()) result.q = raw.q;
   if (raw.qOperator === 'doesNotContain') result.qOperator = raw.qOperator;
   if (raw.advancedFilter === true || raw.advancedFilter === 'true') result.advancedFilter = true;
@@ -496,14 +498,18 @@ const cyclesRoute = createRoute({
   path: '/cycles',
   validateSearch: (raw: Record<string, unknown>) => ({
     scope:
-      raw.scope === 'current' || raw.scope === 'upcoming' || raw.scope === 'all'
+      raw.scope === 'current' ||
+      raw.scope === 'upcoming' ||
+      raw.scope === 'all' ||
+      raw.scope === 'archived'
         ? raw.scope
         : undefined,
   }),
-  loader: async () => {
-    await api.ensureCycleSchedule();
+  loaderDeps: ({ search }) => ({ scope: search.scope }),
+  loader: async ({ deps }) => {
+    if (deps.scope !== 'archived') await api.ensureCycleSchedule();
     const [cycles, issues, workspace] = await Promise.all([
-      api.cycles(),
+      api.cycles(deps.scope === 'archived'),
       api.issues(),
       api.workspace(),
     ]);

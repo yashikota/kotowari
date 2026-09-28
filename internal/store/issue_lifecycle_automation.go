@@ -23,7 +23,8 @@ func (s *Store) ProcessIssueAutomations() error {
 
 	return s.mutate(func(m *mem) error {
 		settings := normalizedIssueAutomationSettings(m.Workspace.IssueAutomationSettings)
-		if settings.AutoCloseStaleIssuesAfterMonths == 0 && settings.AutoArchiveClosedIssuesAfterMonths == 0 {
+		if settings.AutoCloseStaleIssuesAfterMonths == 0 && settings.AutoArchiveClosedIssuesAfterMonths == 0 &&
+			settings.AutoArchiveCompletedProjectsAfterMonths == 0 && settings.AutoArchiveCompletedCyclesAfterMonths == 0 {
 			return nil
 		}
 
@@ -74,6 +75,50 @@ func (s *Store) ProcessIssueAutomations() error {
 			m.Issues[index] = issue
 			addActivity(m, "issue", issue.ID, "archived", map[string]any{}, nowStamp)
 			changed = true
+		}
+
+		if settings.AutoArchiveCompletedProjectsAfterMonths > 0 {
+			cutoff := now.AddDate(0, -settings.AutoArchiveCompletedProjectsAfterMonths, 0)
+			for index := range m.Projects {
+				project := m.Projects[index]
+				if project.Status != "completed" || project.ArchivedAt != nil {
+					continue
+				}
+				completedAt := parseIssueAutomationTime(valueOrEmpty(project.CompletedAt))
+				if completedAt.IsZero() {
+					completedAt = parseIssueAutomationTime(project.UpdatedAt)
+				}
+				if completedAt.IsZero() || completedAt.After(cutoff) {
+					continue
+				}
+				project.ArchivedAt = &nowStamp
+				project.UpdatedAt = nowStamp
+				m.Projects[index] = project
+				addActivity(m, "project", project.ID, "archived", map[string]any{}, nowStamp)
+				changed = true
+			}
+		}
+
+		if settings.AutoArchiveCompletedCyclesAfterMonths > 0 {
+			cutoff := now.AddDate(0, -settings.AutoArchiveCompletedCyclesAfterMonths, 0)
+			for index := range m.Cycles {
+				cycle := m.Cycles[index]
+				if cycle.Status != "completed" || cycle.ArchivedAt != nil {
+					continue
+				}
+				completedAt := parseIssueAutomationTime(valueOrEmpty(cycle.CompletedAt))
+				if completedAt.IsZero() {
+					completedAt = parseIssueAutomationTime(cycle.UpdatedAt)
+				}
+				if completedAt.IsZero() || completedAt.After(cutoff) {
+					continue
+				}
+				cycle.ArchivedAt = &nowStamp
+				cycle.UpdatedAt = nowStamp
+				m.Cycles[index] = cycle
+				addActivity(m, "cycle", cycle.ID, "archived", map[string]any{}, nowStamp)
+				changed = true
+			}
 		}
 
 		if changed {

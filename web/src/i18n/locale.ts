@@ -28,6 +28,14 @@ export function normalizeWorkspace(workspace: Workspace): Workspace {
         workspace.issueAutomationSettings?.autoCloseStaleIssuesAfterMonths ?? 0,
       autoArchiveClosedIssuesAfterMonths:
         workspace.issueAutomationSettings?.autoArchiveClosedIssuesAfterMonths ?? 0,
+      autoArchiveCompletedProjectsAfterMonths:
+        workspace.issueAutomationSettings?.autoArchiveCompletedProjectsAfterMonths ??
+        workspace.issueAutomationSettings?.autoArchiveClosedIssuesAfterMonths ??
+        0,
+      autoArchiveCompletedCyclesAfterMonths:
+        workspace.issueAutomationSettings?.autoArchiveCompletedCyclesAfterMonths ??
+        workspace.issueAutomationSettings?.autoArchiveClosedIssuesAfterMonths ??
+        0,
     },
   };
 }

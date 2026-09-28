@@ -86,7 +86,9 @@ func (s *Store) UpdateWorkspace(
 			settings := normalizedIssueAutomationSettings(issueAutomationSettings)
 			if !validStatusProgressionOrder(settings.StatusProgressionOrder) ||
 				settings.AutoCloseStaleIssuesAfterMonths < 0 || settings.AutoCloseStaleIssuesAfterMonths > 60 ||
-				settings.AutoArchiveClosedIssuesAfterMonths < 0 || settings.AutoArchiveClosedIssuesAfterMonths > 60 {
+				settings.AutoArchiveClosedIssuesAfterMonths < 0 || settings.AutoArchiveClosedIssuesAfterMonths > 60 ||
+				settings.AutoArchiveCompletedProjectsAfterMonths < 0 || settings.AutoArchiveCompletedProjectsAfterMonths > 60 ||
+				settings.AutoArchiveCompletedCyclesAfterMonths < 0 || settings.AutoArchiveCompletedCyclesAfterMonths > 60 {
 				return validationf("invalid issue automation settings")
 			}
 			m.Workspace.IssueAutomationSettings = &settings
@@ -165,10 +167,22 @@ func (s *Store) CreateLabel(name, color string) (Label, error) {
 }
 
 func (s *Store) ListProjects() ([]Project, error) {
+	return s.listProjects(nil)
+}
+
+func (s *Store) ListProjectsByArchived(archived bool) ([]Project, error) {
+	return s.listProjects(&archived)
+}
+
+func (s *Store) listProjects(archived *bool) ([]Project, error) {
 	var out []Project
 	err := s.snapshot(func(m *mem) error {
-		out = make([]Project, len(m.Projects))
-		copy(out, m.Projects)
+		for _, project := range m.Projects {
+			if archived != nil && (*archived != (project.ArchivedAt != nil)) {
+				continue
+			}
+			out = append(out, project)
+		}
 		for i := range out {
 			out[i] = normalizeProjectWorkflowStatus(out[i], m.Workspace)
 			out[i].Progress = projectProgress(m, out[i].ID)
@@ -179,6 +193,40 @@ func (s *Store) ListProjects() ([]Project, error) {
 				out[i].Dependencies = []ProjectDependency{}
 			}
 		}
+		return nil
+	})
+	return out, err
+}
+
+func (s *Store) SetProjectArchived(slug string, archived bool) (Project, error) {
+	var out Project
+	err := s.mutate(func(m *mem) error {
+		index := indexProject(m, slug)
+		if index < 0 {
+			return ErrNotFound
+		}
+		project := m.Projects[index]
+		if archived == (project.ArchivedAt != nil) {
+			out = normalizeProjectWorkflowStatus(project, m.Workspace)
+			out.Progress = projectProgress(m, project.ID)
+			return nil
+		}
+		now := domain.Now()
+		if archived {
+			project.ArchivedAt = &now
+		} else {
+			project.ArchivedAt = nil
+		}
+		project.UpdatedAt = now
+		m.Projects[index] = project
+		action := "archived"
+		if !archived {
+			action = "unarchived"
+		}
+		addActivity(m, "project", project.ID, action, map[string]any{}, now)
+		m.bump(now)
+		out = normalizeProjectWorkflowStatus(project, m.Workspace)
+		out.Progress = projectProgress(m, project.ID)
 		return nil
 	})
 	return out, err
@@ -976,9 +1024,22 @@ func (s *Store) DeleteProject(slug string) error {
 }
 
 func (s *Store) ListCycles() ([]Cycle, error) {
+	return s.listCycles(nil)
+}
+
+func (s *Store) ListCyclesByArchived(archived bool) ([]Cycle, error) {
+	return s.listCycles(&archived)
+}
+
+func (s *Store) listCycles(archived *bool) ([]Cycle, error) {
 	var out []Cycle
 	err := s.snapshot(func(m *mem) error {
-		out = append([]Cycle{}, m.Cycles...)
+		for _, cycle := range m.Cycles {
+			if archived != nil && (*archived != (cycle.ArchivedAt != nil)) {
+				continue
+			}
+			out = append(out, cycle)
+		}
 		for i := range out {
 			if out[i].Resources == nil {
 				out[i].Resources = []IssueLink{}
@@ -1036,7 +1097,11 @@ func (s *Store) CreateCycle(startsAt, endsAt, status string) (Cycle, error) {
 		if !end.After(start) {
 			return validationf("cycle end must be after start")
 		}
-		out = Cycle{ID: m.nextID(), Number: next, Name: fmt.Sprintf("Cycle %d", next), StartsAt: startsAt, EndsAt: endsAt, Status: status, Resources: []IssueLink{}, CreatedAt: now, UpdatedAt: now}
+		var completedAt *string
+		if status == "completed" {
+			completedAt = &now
+		}
+		out = Cycle{ID: m.nextID(), Number: next, Name: fmt.Sprintf("Cycle %d", next), StartsAt: startsAt, EndsAt: endsAt, Status: status, CompletedAt: completedAt, Resources: []IssueLink{}, CreatedAt: now, UpdatedAt: now}
 		m.Cycles = append(m.Cycles, out)
 		addActivity(m, "cycle", out.ID, "created", map[string]any{"number": next}, now)
 		m.bump(now)
@@ -1120,6 +1185,7 @@ func (s *Store) UpdateCycle(number int, in UpdateCycleInput) (Cycle, error) {
 			return ErrNotFound
 		}
 		c := m.Cycles[i]
+		previousStatus := c.Status
 		if c.Name == "" {
 			c.Name = fmt.Sprintf("Cycle %d", c.Number)
 		}
@@ -1169,6 +1235,23 @@ func (s *Store) UpdateCycle(number int, in UpdateCycleInput) (Cycle, error) {
 			c.NotifyOnIssueCompleted = *in.NotifyOnIssueCompleted
 		}
 		now := domain.Now()
+		if c.Status == "completed" && previousStatus != "completed" {
+			c.CompletedAt = &now
+		} else if c.Status != "completed" && previousStatus == "completed" {
+			c.CompletedAt = nil
+		}
+		if in.Archived != nil && *in.Archived != (c.ArchivedAt != nil) {
+			if *in.Archived {
+				c.ArchivedAt = &now
+			} else {
+				c.ArchivedAt = nil
+			}
+			action := "archived"
+			if !*in.Archived {
+				action = "unarchived"
+			}
+			addActivity(m, "cycle", c.ID, action, map[string]any{}, now)
+		}
 		ensureSingleActive(m, c.ID, c.Status)
 		c.UpdatedAt = now
 		m.Cycles[i] = c
@@ -1211,6 +1294,7 @@ func ensureSingleActive(m *mem, id int64, status string) {
 		if m.Cycles[i].Status == "active" && m.Cycles[i].ID != id {
 			m.Cycles[i].Status = "completed"
 			m.Cycles[i].UpdatedAt = now
+			m.Cycles[i].CompletedAt = &now
 		}
 	}
 }

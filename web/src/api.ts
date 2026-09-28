@@ -258,7 +258,8 @@ export const api = {
       };
     });
   },
-  projects: () => req<Project[]>('/api/projects'),
+  projects: (archived = false) =>
+    req<Project[]>(`/api/projects${archived ? '?archived=true' : ''}`),
   initiatives: () => req<Initiative[]>('/api/initiatives'),
   initiative: (slug: string) => req<Initiative>(`/api/initiatives/${encodeURIComponent(slug)}`),
   initiativeActivities: (slug: string) =>
@@ -348,7 +349,7 @@ export const api = {
   deleteMilestone: (slug: string, id: number) =>
     req<void>(`/api/projects/${slug}/milestones/${id}`, { method: 'DELETE' }),
   deleteProject: (slug: string) => req<void>(`/api/projects/${slug}`, { method: 'DELETE' }),
-  cycles: () => req<Cycle[]>('/api/cycles'),
+  cycles: (archived = false) => req<Cycle[]>(`/api/cycles${archived ? '?archived=true' : ''}`),
   ensureCycleSchedule: () => req<Cycle[]>('/api/cycles/ensure', { method: 'POST' }),
   cycle: (n: number) => req<Cycle>(`/api/cycles/${n}`),
   cycleActivities: (n: number) => req<Activity[]>(`/api/cycles/${n}/activities`),

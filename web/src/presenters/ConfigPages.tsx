@@ -303,6 +303,8 @@ export function useConfigPagePresenter() {
         setIssueAutomationSettings((current) => ({
           ...current,
           autoArchiveClosedIssuesAfterMonths: months,
+          autoArchiveCompletedProjectsAfterMonths: months,
+          autoArchiveCompletedCyclesAfterMonths: months,
         }));
       },
       Workspace_name_onChange1: (

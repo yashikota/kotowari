@@ -256,8 +256,8 @@ export function ConfigPageView({
                       }))}
                     />
                     <Select
-                      label={t('config.autoArchiveClosedIssues')}
-                      description={t('config.autoArchiveClosedIssuesDescription')}
+                      label={t('config.autoArchiveCompletedItems')}
+                      description={t('config.autoArchiveCompletedItemsDescription')}
                       value={String(issueAutomationSettings.autoArchiveClosedIssuesAfterMonths)}
                       onChange={handlers.onAutoArchiveClosedIssuesAfterMonthsChange}
                       data={[0, 1, 3, 6, 12].map((months) => ({

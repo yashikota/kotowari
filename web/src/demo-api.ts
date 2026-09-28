@@ -70,6 +70,8 @@ let workspace: Workspace = {
     statusProgressionOrder: 'first',
     autoCloseStaleIssuesAfterMonths: 0,
     autoArchiveClosedIssuesAfterMonths: 0,
+    autoArchiveCompletedProjectsAfterMonths: 0,
+    autoArchiveCompletedCyclesAfterMonths: 0,
   },
   issueStatuses: issueWorkflowStatuses,
   projectStatuses: projectWorkflowStatuses,
@@ -1681,7 +1683,17 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
             : path === '/api/views'
               ? views
               : null;
-  if (collection && method === 'GET') return json(collection);
+  if (collection && method === 'GET') {
+    if (path === '/api/projects' || path === '/api/cycles') {
+      const archived = url.searchParams.get('archived') === 'true';
+      return json(
+        collection.filter(
+          (item) => Boolean((item as { archivedAt?: string }).archivedAt) === archived,
+        ),
+      );
+    }
+    return json(collection);
+  }
   if (collection && method === 'POST') {
     const value = body(init);
     const id = Math.max(0, ...collection.map((x) => x.id)) + 1;

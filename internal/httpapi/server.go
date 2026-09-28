@@ -341,8 +341,8 @@ func (s *Server) createLabel(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, out)
 }
 
-func (s *Server) listProjects(w http.ResponseWriter, _ *http.Request) {
-	out, err := s.store.ListProjects()
+func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
+	out, err := s.store.ListProjectsByArchived(r.URL.Query().Get("archived") == "true")
 	if err != nil {
 		writeError(w, err)
 		return
@@ -407,6 +407,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		TargetDate      *string   `json:"targetDate"`
 		Labels          *[]string `json:"labels"`
 		InitiativeSlugs *[]string `json:"initiativeSlugs"`
+		Archived        *bool     `json:"archived"`
 		ClearStart      bool      `json:"clearStartDate"`
 		ClearTarget     bool      `json:"clearTargetDate"`
 	}
@@ -414,10 +415,24 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
+	archiveOnly := in.Archived != nil && in.Name == nil && in.Summary == nil && in.Icon == nil &&
+		in.IconColor == nil && in.Description == nil && in.Status == nil && in.WorkflowStatus == nil &&
+		in.IsFavorite == nil && in.Lead == nil && in.Health == nil && in.Priority == nil &&
+		in.StartDate == nil && in.TargetDate == nil && in.Labels == nil && in.InitiativeSlugs == nil &&
+		!in.ClearStart && !in.ClearTarget
+	if archiveOnly {
+		out, err := s.store.SetProjectArchived(r.PathValue("slug"), *in.Archived)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, out)
+		return
+	}
 	hasContentPatch := in.Name != nil || in.Summary != nil || in.Icon != nil || in.IconColor != nil ||
 		in.Description != nil || in.Status != nil || in.WorkflowStatus != nil || in.Lead != nil ||
 		in.Health != nil || in.Priority != nil || in.StartDate != nil || in.TargetDate != nil ||
-		in.Labels != nil || in.InitiativeSlugs != nil || in.ClearStart || in.ClearTarget
+		in.Labels != nil || in.InitiativeSlugs != nil || in.Archived != nil || in.ClearStart || in.ClearTarget
 	if in.IsFavorite != nil && !hasContentPatch {
 		out, err := s.store.UpdateProjectFavorite(r.PathValue("slug"), *in.IsFavorite)
 		if err == nil {
@@ -447,6 +462,13 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+	if in.Archived != nil {
+		out, err = s.store.SetProjectArchived(r.PathValue("slug"), *in.Archived)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
 	}
 	if in.IsFavorite != nil {
 		_, err = s.store.UpdateProjectFavorite(r.PathValue("slug"), *in.IsFavorite)
@@ -497,8 +519,8 @@ func (s *Server) deleteProjectDependency(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusOK, out)
 }
 
-func (s *Server) listCycles(w http.ResponseWriter, _ *http.Request) {
-	out, err := s.store.ListCycles()
+func (s *Server) listCycles(w http.ResponseWriter, r *http.Request) {
+	out, err := s.store.ListCyclesByArchived(r.URL.Query().Get("archived") == "true")
 	if err != nil {
 		writeError(w, err)
 		return
@@ -576,6 +598,7 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 		IsFavorite             *bool   `json:"isFavorite"`
 		NotifyOnIssueAdded     *bool   `json:"notifyOnIssueAdded"`
 		NotifyOnIssueCompleted *bool   `json:"notifyOnIssueCompleted"`
+		Archived               *bool   `json:"archived"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
@@ -584,7 +607,7 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 	out, err := s.store.UpdateCycle(n, store.UpdateCycleInput{
 		Name: in.Name, Description: in.Description, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
 		Status: in.Status, IsFavorite: in.IsFavorite,
-		NotifyOnIssueAdded: in.NotifyOnIssueAdded, NotifyOnIssueCompleted: in.NotifyOnIssueCompleted,
+		NotifyOnIssueAdded: in.NotifyOnIssueAdded, NotifyOnIssueCompleted: in.NotifyOnIssueCompleted, Archived: in.Archived,
 	})
 	if err != nil {
 		writeError(w, err)

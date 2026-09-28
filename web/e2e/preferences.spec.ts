@@ -358,7 +358,9 @@ test('issue automation settings persist in the workspace', async ({ page, reques
   await page.getByLabel('Auto-close sub-issues').check();
   await page.getByLabel('When progressing status, place issues').selectOption('last');
   await page.getByLabel('Auto-close stale issues after').selectOption('6');
-  await page.getByLabel('Auto-archive closed issues after').selectOption('6');
+  await page
+    .getByLabel('Auto-archive completed issues, cycles, and projects after')
+    .selectOption('6');
   await page.getByRole('button', { name: 'Save issue automations' }).click();
   await expect(page.getByText('Issue automations saved')).toBeVisible();
 
@@ -371,6 +373,8 @@ test('issue automation settings persist in the workspace', async ({ page, reques
       statusProgressionOrder: 'last',
       autoCloseStaleIssuesAfterMonths: 6,
       autoArchiveClosedIssuesAfterMonths: 6,
+      autoArchiveCompletedProjectsAfterMonths: 6,
+      autoArchiveCompletedCyclesAfterMonths: 6,
     },
   });
 
@@ -382,6 +386,8 @@ test('issue automation settings persist in the workspace', async ({ page, reques
         statusProgressionOrder: 'first',
         autoCloseStaleIssuesAfterMonths: 0,
         autoArchiveClosedIssuesAfterMonths: 0,
+        autoArchiveCompletedProjectsAfterMonths: 0,
+        autoArchiveCompletedCyclesAfterMonths: 0,
       },
     },
   });

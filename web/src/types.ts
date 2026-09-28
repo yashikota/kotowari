@@ -147,6 +147,7 @@ export type Project = {
   health?: ProjectHealth | null;
   healthUpdatedAt?: string | null;
   completedAt?: string | null;
+  archivedAt?: string | null;
   priority: number;
   startDate: string | null;
   targetDate: string | null;
@@ -220,6 +221,8 @@ export type Cycle = {
   startsAt: string;
   endsAt: string;
   status: string;
+  completedAt?: string | null;
+  archivedAt?: string | null;
   isFavorite?: boolean;
   notifyOnIssueAdded?: boolean;
   notifyOnIssueCompleted?: boolean;
@@ -388,6 +391,8 @@ export type IssueAutomationSettings = {
   statusProgressionOrder: 'first' | 'last' | 'no_action';
   autoCloseStaleIssuesAfterMonths: number;
   autoArchiveClosedIssuesAfterMonths: number;
+  autoArchiveCompletedProjectsAfterMonths: number;
+  autoArchiveCompletedCyclesAfterMonths: number;
 };
 
 export type CycleSettings = {

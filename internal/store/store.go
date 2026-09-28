@@ -48,11 +48,13 @@ type CycleSettings struct {
 }
 
 type IssueAutomationSettings struct {
-	AutoCloseParentIssues              bool   `json:"autoCloseParentIssues" toml:"autoCloseParentIssues"`
-	AutoCloseSubIssues                 bool   `json:"autoCloseSubIssues" toml:"autoCloseSubIssues"`
-	StatusProgressionOrder             string `json:"statusProgressionOrder" toml:"statusProgressionOrder"`
-	AutoCloseStaleIssuesAfterMonths    int    `json:"autoCloseStaleIssuesAfterMonths" toml:"autoCloseStaleIssuesAfterMonths"`
-	AutoArchiveClosedIssuesAfterMonths int    `json:"autoArchiveClosedIssuesAfterMonths" toml:"autoArchiveClosedIssuesAfterMonths"`
+	AutoCloseParentIssues                   bool   `json:"autoCloseParentIssues" toml:"autoCloseParentIssues"`
+	AutoCloseSubIssues                      bool   `json:"autoCloseSubIssues" toml:"autoCloseSubIssues"`
+	StatusProgressionOrder                  string `json:"statusProgressionOrder" toml:"statusProgressionOrder"`
+	AutoCloseStaleIssuesAfterMonths         int    `json:"autoCloseStaleIssuesAfterMonths" toml:"autoCloseStaleIssuesAfterMonths"`
+	AutoArchiveClosedIssuesAfterMonths      int    `json:"autoArchiveClosedIssuesAfterMonths" toml:"autoArchiveClosedIssuesAfterMonths"`
+	AutoArchiveCompletedProjectsAfterMonths int    `json:"autoArchiveCompletedProjectsAfterMonths" toml:"autoArchiveCompletedProjectsAfterMonths"`
+	AutoArchiveCompletedCyclesAfterMonths   int    `json:"autoArchiveCompletedCyclesAfterMonths" toml:"autoArchiveCompletedCyclesAfterMonths"`
 }
 
 func defaultCycleSettings() CycleSettings {
@@ -73,6 +75,12 @@ func normalizedIssueAutomationSettings(settings *IssueAutomationSettings) IssueA
 	normalized := *settings
 	if normalized.StatusProgressionOrder == "" {
 		normalized.StatusProgressionOrder = "first"
+	}
+	if normalized.AutoArchiveCompletedProjectsAfterMonths == 0 {
+		normalized.AutoArchiveCompletedProjectsAfterMonths = normalized.AutoArchiveClosedIssuesAfterMonths
+	}
+	if normalized.AutoArchiveCompletedCyclesAfterMonths == 0 {
+		normalized.AutoArchiveCompletedCyclesAfterMonths = normalized.AutoArchiveClosedIssuesAfterMonths
 	}
 	return normalized
 }
@@ -150,6 +158,7 @@ type Project struct {
 	Health          string              `json:"health,omitempty" toml:"health,omitempty"`
 	HealthUpdatedAt *string             `json:"healthUpdatedAt,omitempty" toml:"health_updated_at,omitempty"`
 	CompletedAt     *string             `json:"completedAt,omitempty" toml:"completedAt,omitempty"`
+	ArchivedAt      *string             `json:"archivedAt,omitempty" toml:"archived_at,omitempty"`
 	Priority        int                 `json:"priority" toml:"priority"`
 	StartDate       *string             `json:"startDate" toml:"startDate,omitempty"`
 	TargetDate      *string             `json:"targetDate" toml:"targetDate,omitempty"`
@@ -229,6 +238,8 @@ type Cycle struct {
 	StartsAt               string      `json:"startsAt" toml:"startsAt"`
 	EndsAt                 string      `json:"endsAt" toml:"endsAt"`
 	Status                 string      `json:"status" toml:"status"`
+	CompletedAt            *string     `json:"completedAt,omitempty" toml:"completed_at,omitempty"`
+	ArchivedAt             *string     `json:"archivedAt,omitempty" toml:"archived_at,omitempty"`
 	IsFavorite             bool        `json:"isFavorite,omitempty" toml:"is_favorite,omitempty"`
 	NotifyOnIssueAdded     bool        `json:"notifyOnIssueAdded,omitempty" toml:"notify_on_issue_added,omitempty"`
 	NotifyOnIssueCompleted bool        `json:"notifyOnIssueCompleted,omitempty" toml:"notify_on_issue_completed,omitempty"`
@@ -246,6 +257,7 @@ type UpdateCycleInput struct {
 	IsFavorite             *bool
 	NotifyOnIssueAdded     *bool
 	NotifyOnIssueCompleted *bool
+	Archived               *bool
 }
 
 type Issue struct {
