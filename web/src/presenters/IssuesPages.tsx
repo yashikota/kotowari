@@ -134,11 +134,16 @@ export function useIssuesPagePresenter() {
   );
   const myIssuesTab = search.myIssuesTab ?? (search.assignee === 'self' ? 'assigned' : undefined);
   const [find, setFind] = useState(locationState.issueListFind ?? '');
-  const groupBy = search.groupBy ?? (myIssuesTab ? 'cycle' : 'priority');
+  const personalRecentIssues = myIssuesTab === 'created' || myIssuesTab === 'subscribed';
+  const groupBy =
+    search.groupBy ??
+    (myIssuesTab === 'assigned' ? 'cycle' : personalRecentIssues ? 'none' : 'priority');
   const layout = search.layout ?? locationState.issueListLayout ?? 'list';
-  const orderBy = search.orderBy ?? 'manual';
+  const orderBy = search.orderBy ?? (personalRecentIssues ? 'created' : 'manual');
   const subGroupBy = search.subGroupBy ?? 'none';
-  const direction = search.direction ?? 'asc';
+  const direction =
+    search.direction ??
+    (orderBy === 'updated' || orderBy === 'created' || orderBy === 'timeInStatus' ? 'desc' : 'asc');
   const completedIssues = search.completedIssues ?? 'all';
   const showSubIssues = search.showSubIssues ?? true;
   const nestedSubIssues = search.nestedSubIssues ?? 'showMatching';

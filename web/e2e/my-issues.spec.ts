@@ -30,6 +30,12 @@ test('My issues uses a focused header and Linear-style personal tabs', async ({
   // Kotowari is a single-user workspace, so every stored issue belongs to the current user.
   await expect(issues.getByRole('option', { name: new RegExp(assignedTitle) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(unassignedTitle) })).toBeVisible();
+  await expect(issues.getByRole('button', { name: /No cycle/ })).toHaveCount(0);
+  await expect(issues.getByRole('option').first()).toContainText(unassignedTitle);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByLabel('Grouping', { exact: true })).toHaveValue('none');
+  await expect(page.getByLabel('Ordering', { exact: true })).toHaveValue('created');
+  await page.keyboard.press('Escape');
 
   await tabs.getByRole('tab', { name: 'Subscribed' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe('subscribed');
