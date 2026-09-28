@@ -1276,7 +1276,10 @@ test('project health can be edited, filtered, and displayed in project views', a
 
   await clearProjectFilters(page);
   await page.getByRole('button', { name: 'Display options' }).click();
-  await page.getByRole('button', { name: 'Health', exact: true }).click();
+  await page
+    .getByTestId('project-display-options-dropdown')
+    .getByRole('button', { name: 'Health', exact: true })
+    .click();
   await expect(page.locator(`[data-project-list-row="${projects[0].slug}"]`)).toContainText(
     'On track',
   );
