@@ -55,8 +55,8 @@ test('a project can be saved as a template and reused without stale dates', asyn
   const createDialog = page.getByRole('dialog', { name: 'New project' });
   await createDialog.getByRole('combobox', { name: 'Project template' }).click();
   await page.getByRole('option', { name: templateName }).click();
-  await expect(createDialog.getByLabel('Summary')).toHaveValue('Reusable launch plan');
-  await expect(createDialog.getByLabel('Description')).toHaveValue(
+  await expect(createDialog.getByLabel('Project summary')).toHaveValue('Reusable launch plan');
+  await expect(createDialog.getByLabel('Project description')).toHaveValue(
     '## Launch\nShip a reliable release.',
   );
   await expect(createDialog.getByRole('combobox', { name: 'Status' })).toHaveValue('In progress');

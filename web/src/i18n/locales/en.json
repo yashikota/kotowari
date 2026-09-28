@@ -504,8 +504,10 @@
     "createMore": "Create more",
     "create": "Create",
     "projectName": "Project name",
-    "projectSummary": "Summary",
-    "projectDescription": "Description",
+    "projectSummary": "Project summary",
+    "projectSummaryPlaceholder": "Add a short summary…",
+    "projectDescription": "Project description",
+    "projectDescriptionPlaceholder": "Write a description, a project brief, or collect ideas…",
     "projectStartDate": "Start date",
     "projectTargetDate": "Target date",
     "projectIssuePreserved": "{{issue}} will remain as an issue in this project.",
@@ -672,6 +674,7 @@
     "description": "Milestone description",
     "descriptionPlaceholder": "Add a description…",
     "targetDate": "Target date",
+    "chooseDate": "Choose date",
     "add": "Add milestone",
     "remove": "Delete milestone {{name}}",
     "removeConfirmation": "Delete milestone {{name}}? Issues assigned to it will be unassigned."
@@ -722,6 +725,11 @@
     "list": "Project dependencies",
     "empty": "No project dependencies yet.",
     "remove": "Remove dependency on {{project}}"
+  },
+  "projectLabelPicker": {
+    "create": "Create label “{{name}}”",
+    "startTypingToCreate": "Start typing to create a new label",
+    "createFailed": "Could not create this label."
   },
   "projectActivity": {
     "heading": "Activity",
@@ -1818,6 +1826,8 @@
   "projectDate": {
     "change": "Change {{field}}",
     "set": "Set {{field}}",
+    "startShort": "Start",
+    "targetShort": "Target",
     "clear": "Clear date",
     "try": "Try: May 2027, Q4, 2027/05/20",
     "invalid": "Enter a date such as May 2027, Q4, or 2027/05/20.",

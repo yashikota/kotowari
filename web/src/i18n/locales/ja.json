@@ -498,8 +498,10 @@
     "createMore": "続けて作成",
     "create": "作成",
     "projectName": "プロジェクト名",
-    "projectSummary": "概要",
-    "projectDescription": "説明",
+    "projectSummary": "プロジェクトの概要",
+    "projectSummaryPlaceholder": "短い概要を追加…",
+    "projectDescription": "プロジェクトの説明",
+    "projectDescriptionPlaceholder": "説明やプロジェクトの概要を書いたり、アイデアをまとめたりできます…",
     "projectStartDate": "開始日",
     "projectTargetDate": "目標日",
     "projectIssuePreserved": "{{issue}} はこのプロジェクトのイシューとして残ります。",
@@ -666,6 +668,7 @@
     "description": "マイルストーンの説明",
     "descriptionPlaceholder": "説明を追加…",
     "targetDate": "目標日",
+    "chooseDate": "日付を選択",
     "add": "マイルストーンを追加",
     "remove": "マイルストーン {{name}} を削除",
     "removeConfirmation": "マイルストーン {{name}} を削除しますか？割り当て済みのイシューからも解除されます。"
@@ -716,6 +719,11 @@
     "list": "プロジェクト依存関係",
     "empty": "プロジェクト依存関係はありません。",
     "remove": "{{project}}への依存関係を削除"
+  },
+  "projectLabelPicker": {
+    "create": "ラベル「{{name}}」を作成",
+    "startTypingToCreate": "入力して新しいラベルを作成",
+    "createFailed": "ラベルを作成できませんでした。"
   },
   "projectActivity": {
     "heading": "アクティビティ",
@@ -1809,6 +1817,8 @@
   "projectDate": {
     "change": "{{field}}を変更",
     "set": "{{field}}を設定",
+    "startShort": "開始",
+    "targetShort": "目標",
     "clear": "日付をクリア",
     "try": "例: 2027年5月, Q4, 2027/05/20",
     "invalid": "2027年5月、Q4、2027/05/20 のような日付を入力してください。",

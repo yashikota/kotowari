@@ -23,27 +23,22 @@ type DependencyHandlers = Pick<
   | 'onRemoveInitialDependency'
 >;
 
-export function ProjectCreateDependencyQuickAdd({
-  available,
-  onOpen,
-}: {
-  available: boolean;
-  onOpen: () => void;
-}) {
+export function ProjectCreateDependencyQuickAdd({ onOpen }: { onOpen: () => void }) {
   const { t } = useTranslation();
 
   return (
-    <ActionIcon
+    <Button
       type="button"
       variant="default"
-      size="md"
+      size="compact-xs"
       aria-label={t('projectDependencies.addFromCreate')}
       title={t('projectDependencies.addFromCreate')}
-      disabled={!available}
+      leftSection={<IconLink size={14} stroke={1.7} aria-hidden="true" />}
+      styles={{ root: { height: 24, minHeight: 24, paddingInline: 8, borderRadius: 999 } }}
       onClick={onOpen}
     >
-      <IconLink size={14} stroke={1.7} aria-hidden="true" />
-    </ActionIcon>
+      {t('projectDependencies.heading')}
+    </Button>
   );
 }
 
@@ -57,6 +52,24 @@ export function ProjectCreateDependencySummary({
   const { t } = useTranslation();
 
   if (model.initialDependencies.length === 0 && !model.dependencyDraftOpen) return null;
+
+  if (model.dependencyDraftOpen && model.availableDependencyProjects.length === 0) {
+    return (
+      <Group justify="space-between" gap="xs" aria-label={t('projectDependencies.form')}>
+        <Badge variant="light" color="gray" size="sm">
+          {t('projectDependencies.noProjects')}
+        </Badge>
+        <Button
+          type="button"
+          variant="subtle"
+          size="compact-sm"
+          onClick={handlers.onCancelDependencyDraft}
+        >
+          {t('common.cancel')}
+        </Button>
+      </Group>
+    );
+  }
 
   return (
     <Stack gap="xs">

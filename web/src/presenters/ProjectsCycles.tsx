@@ -70,6 +70,7 @@ import type {
   ProjectDependency,
   ProjectHealth,
   ProjectTemplate,
+  Workspace,
 } from '../types.ts';
 import {
   useProjectWorkflow,
@@ -79,6 +80,7 @@ import {
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import { LABEL_COLORS } from '../label-colors.ts';
 
 const CYCLE_PROGRESS_OPEN_KEY = 'kotowari.cycle-progress-open.v1';
 
@@ -240,6 +242,7 @@ export function useProjectsPagePresenter() {
     issues: Issue[];
     projectTemplates: ProjectTemplate[];
     initiatives: Initiative[];
+    workspace: Workspace;
   };
   const { projects } = data;
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
@@ -256,6 +259,10 @@ export function useProjectsPagePresenter() {
   const [startDate, setStartDate] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [createdProjectLabels, setCreatedProjectLabels] = useState<Label[]>([]);
+  const [projectLabelQuery, setProjectLabelQuery] = useState('');
+  const [projectLabelCreatePending, setProjectLabelCreatePending] = useState(false);
+  const [projectLabelCreateError, setProjectLabelCreateError] = useState('');
   const [selectedProjectTemplate, setSelectedProjectTemplate] = useState<string | null>(null);
   const [initialMilestones, setInitialMilestones] = useState<ProjectMilestoneDraft[]>([]);
   const [milestonesExpanded, setMilestonesExpanded] = useState(false);
@@ -273,6 +280,11 @@ export function useProjectsPagePresenter() {
   const [projectAssistantId, setProjectAssistantId] = useState('');
   const projectViews = useProjectViews();
   const navigate = useNavigate({ from: '/projects' });
+  const availableProjectLabels = useMemo(() => {
+    const labelsById = new Map(data.labels.map((label) => [label.id, label]));
+    for (const label of createdProjectLabels) labelsById.set(label.id, label);
+    return [...labelsById.values()];
+  }, [createdProjectLabels, data.labels]);
 
   function updateProjectSearch(patch: Partial<typeof search>) {
     return navigate({
@@ -530,7 +542,7 @@ export function useProjectsPagePresenter() {
         columnsBy,
         rowsBy,
         statuses: projectWorkflowStatuses.map((status) => status.id),
-        labels: data.labels.map((label) => label.name),
+        labels: availableProjectLabels.map((label) => label.name),
         showEmpty: showEmptyColumns,
         preferredOrder: projectBoardSearchOrder(search, columnsBy),
         hiddenKeys: projectBoardSearchHidden(search, columnsBy),
@@ -558,7 +570,7 @@ export function useProjectsPagePresenter() {
       }),
     [
       columnsBy,
-      data.labels,
+      availableProjectLabels,
       filteredProjects,
       projectWorkflowStatuses,
       rowsBy,
@@ -753,7 +765,7 @@ export function useProjectsPagePresenter() {
     availableInitiatives,
     availableProjects: projects.map((project) => ({ value: project.slug, label: project.name })),
     specificProject: search.specificProject ?? '',
-    availableLabels: data.labels,
+    availableLabels: availableProjectLabels,
     filterCount,
     handlers: {
       onAdvancedFilterToggle: () =>
@@ -970,6 +982,41 @@ export function useProjectsPagePresenter() {
     });
   }
 
+  async function createProjectLabel(value: string) {
+    const labelName = value.trim();
+    if (!labelName || projectLabelCreatePending) return;
+    const existingLabel = availableProjectLabels.find(
+      (label) => label.name.toLocaleLowerCase() === labelName.toLocaleLowerCase(),
+    );
+    if (existingLabel) {
+      setSelectedLabels((current) =>
+        current.includes(existingLabel.name) ? current : [...current, existingLabel.name],
+      );
+      setProjectLabelQuery('');
+      return;
+    }
+
+    setProjectLabelCreatePending(true);
+    setProjectLabelCreateError('');
+    try {
+      const created = await api.createLabel({
+        name: labelName,
+        color: LABEL_COLORS[availableProjectLabels.length % LABEL_COLORS.length] ?? '#c4a574',
+      });
+      setCreatedProjectLabels((current) => [...current, created]);
+      setSelectedLabels((current) =>
+        current.includes(created.name) ? current : [...current, created.name],
+      );
+      setProjectLabelQuery('');
+      signals.dispatchEvent(new Event('kotowari:refresh'));
+      await router.invalidate();
+    } catch {
+      setProjectLabelCreateError(i18n.t('projectLabelPicker.createFailed'));
+    } finally {
+      setProjectLabelCreatePending(false);
+    }
+  }
+
   function applyProjectTemplate(slug: string | null) {
     setSelectedProjectTemplate(slug);
     const template = data.projectTemplates.find((candidate) => candidate.slug === slug);
@@ -987,7 +1034,9 @@ export function useProjectsPagePresenter() {
     setLead(template.lead ?? '');
     setPriority(template.priority);
     setSelectedLabels(
-      template.labels.filter((label) => data.labels.some((available) => available.name === label)),
+      template.labels.filter((label) =>
+        availableProjectLabels.some((available) => available.name === label),
+      ),
     );
     setInitialMilestones(
       template.milestones.map((milestone) => ({
@@ -1060,7 +1109,8 @@ export function useProjectsPagePresenter() {
     isGrouped: groupBy !== 'none',
     hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,
     controls,
-    availableLabels: data.labels,
+    availableLabels: availableProjectLabels,
+    workspace: data.workspace,
     projectTemplates: data.projectTemplates,
     selectedProjectTemplate,
     projectWorkflowStatuses,
@@ -1075,6 +1125,9 @@ export function useProjectsPagePresenter() {
     startDate,
     targetDate,
     selectedLabels,
+    projectLabelQuery,
+    projectLabelCreatePending,
+    projectLabelCreateError,
     initialMilestones,
     milestonesExpanded,
     milestoneDraftOpen,
@@ -1125,6 +1178,8 @@ export function useProjectsPagePresenter() {
         setStartDate('');
         setTargetDate('');
         setSelectedLabels([]);
+        setProjectLabelQuery('');
+        setProjectLabelCreateError('');
         setInitialMilestones([]);
         setMilestonesExpanded(false);
         setMilestoneDraftOpen(false);
@@ -1162,8 +1217,7 @@ export function useProjectsPagePresenter() {
       },
       onMilestoneDraftDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
         setMilestoneDraftDescription(e.target.value),
-      onMilestoneDraftTargetDateChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setMilestoneDraftTargetDate(e.target.value),
+      onMilestoneDraftTargetDateChange: (value: string) => setMilestoneDraftTargetDate(value),
       onAddInitialMilestone: addInitialMilestone,
       onRemoveInitialMilestone: (index: number) =>
         setInitialMilestones((current) => current.filter((_, itemIndex) => itemIndex !== index)),
@@ -1199,6 +1253,11 @@ export function useProjectsPagePresenter() {
       onProjectStartDateChange: (value: string) => setStartDate(value),
       onProjectTargetDateChange: (value: string) => setTargetDate(value),
       New_project_labels_onChange: (value: string[]) => setSelectedLabels(value),
+      onProjectLabelsSearchChange: (value: string) => {
+        setProjectLabelQuery(value);
+        setProjectLabelCreateError('');
+      },
+      onCreateProjectLabel: createProjectLabel,
     },
   };
 }

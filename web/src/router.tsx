@@ -232,14 +232,15 @@ const projectsRoute = createRoute({
   path: '/projects',
   validateSearch: (raw: Record<string, unknown>) => parseProjectListSearch(raw),
   loader: async () => {
-    const [projects, labels, issues, projectTemplates, initiatives] = await Promise.all([
+    const [projects, labels, issues, projectTemplates, initiatives, workspace] = await Promise.all([
       api.projects(),
       api.labels(),
       api.issues(),
       api.projectTemplates(),
       api.initiatives(),
+      api.workspace(),
     ]);
-    return { projects, labels, issues: issues ?? [], projectTemplates, initiatives };
+    return { projects, labels, issues: issues ?? [], projectTemplates, initiatives, workspace };
   },
   component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
 });

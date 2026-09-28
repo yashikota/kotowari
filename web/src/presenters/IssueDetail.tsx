@@ -32,8 +32,8 @@ import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts'
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
+import { LABEL_COLORS } from '../label-colors.ts';
 
-const LABEL_COLORS = ['#d4725a', '#6b9bd1', '#c4a574', '#7a9e7e', '#d4a05a'];
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
 
 type RelatedIssueKind = 'issue' | 'subIssue' | 'parent' | 'blocked' | 'blocking';

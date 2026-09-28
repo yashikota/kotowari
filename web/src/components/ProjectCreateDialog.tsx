@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Box,
   Button,
-  Collapse,
   Group,
   Modal,
   MultiSelect,
@@ -15,8 +14,6 @@ import {
 import {
   IconAntennaBars1,
   IconCircleDashed,
-  IconChevronDown,
-  IconPlus,
   IconSparkles,
   IconTag,
   IconTrash,
@@ -34,8 +31,8 @@ import { ProjectIconPicker } from './ProjectIcon.tsx';
 import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import { projectWorkflowStatusCategory, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { priorityLabel } from '../i18n/labels.ts';
-import { formatCalendarDate } from '../time.ts';
 import { ProjectCreationAssistant } from './ProjectCreationAssistant.tsx';
+import { ProjectCreateMilestones } from './ProjectCreateMilestones.tsx';
 import type { useProjectsPagePresenter } from '../presenters/ProjectsCycles.tsx';
 import type { IssueStatus, ProjectStatus } from '../types.ts';
 
@@ -59,7 +56,6 @@ export function ProjectCreateDialog({
   const { t } = useTranslation();
   const desktopViewport = useMediaQuery('(min-width: 800px)');
   const {
-    availableDependencyProjects,
     availableLabels,
     createOpen,
     description,
@@ -77,6 +73,9 @@ export function ProjectCreateDialog({
     priority,
     projectAssistantId,
     projectAssistantOpen,
+    projectLabelCreateError,
+    projectLabelCreatePending,
+    projectLabelQuery,
     projectTemplates,
     selectedLabels,
     selectedProjectTemplate,
@@ -98,9 +97,43 @@ export function ProjectCreateDialog({
           wrap="nowrap"
           style={{ flex: 1, width: '100%', minWidth: 0 }}
         >
-          <Text size="sm">
-            {t('nav.projects')} › {t('projectList.newProject')}
-          </Text>
+          <Group gap={7} wrap="nowrap" aria-label={t('projectList.newProject')}>
+            <Group
+              gap={6}
+              wrap="nowrap"
+              px={7}
+              py={3}
+              style={{
+                border: '1px solid var(--mantine-color-default-border)',
+                borderRadius: 999,
+              }}
+            >
+              <Box
+                component="span"
+                aria-hidden="true"
+                style={{
+                  display: 'grid',
+                  width: 14,
+                  height: 14,
+                  placeItems: 'center',
+                  borderRadius: 999,
+                  background: 'var(--mantine-primary-color-filled)',
+                  color: 'white',
+                  fontSize: 9,
+                  fontWeight: 700,
+                }}
+              >
+                {model.workspace.name.slice(0, 1).toUpperCase() || 'K'}
+              </Box>
+              <Text size="xs" fw={500}>
+                {model.workspace.name || t('workspace.defaultName')}
+              </Text>
+            </Group>
+            <Text size="sm" c="dimmed" aria-hidden="true">
+              ›
+            </Text>
+            <Text size="sm">{t('projectList.newProject')}</Text>
+          </Group>
           {desktopViewport && !projectAssistantOpen ? (
             <Button
               type="button"
@@ -115,14 +148,14 @@ export function ProjectCreateDialog({
         </Group>
       }
       centered
-      size="1080px"
+      size={desktopViewport && projectAssistantOpen ? '1120px' : '920px'}
       styles={{
         inner: { padding: 12 },
         content: {
           height: 'min(88vh, 920px)',
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: 16,
+          borderRadius: 20,
         },
         header: { minHeight: 52, paddingLeft: 22, paddingRight: 26 },
         title: { flex: 1, minWidth: 0 },
@@ -148,8 +181,8 @@ export function ProjectCreateDialog({
           }}
         >
           <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <Stack px={26} pt={4} pb="xs" gap={4} style={{ minHeight: '100%' }}>
-              <Group justify="space-between" align="center" gap="sm" wrap="nowrap">
+            <Stack px={26} pt={0} pb="xs" gap={4} style={{ minHeight: '100%' }}>
+              <Group justify="space-between" align="center" gap="sm" wrap="nowrap" mb={7}>
                 <ProjectIconPicker
                   icon={icon}
                   color={iconColor}
@@ -157,40 +190,42 @@ export function ProjectCreateDialog({
                   onColorChange={handlers.onProjectIconColorChange}
                   size={28}
                 />
-                <Group
-                  align="center"
-                  gap="xs"
-                  wrap="nowrap"
-                  style={{ flex: '0 1 190px', minWidth: 170 }}
-                >
-                  <Select
-                    aria-label={t('projectTemplates.chooseTemplate')}
-                    placeholder={t('projectTemplates.startBlank')}
-                    value={selectedProjectTemplate}
-                    onChange={handlers.onProjectTemplateChange}
-                    data={projectTemplates.map((template) => ({
-                      value: template.slug,
-                      label: template.name,
-                    }))}
-                    searchable
-                    clearable
-                    size="xs"
-                    style={{ flex: 1, minWidth: 0 }}
-                    comboboxProps={{ withinPortal: false }}
-                  />
-                  {selectedProjectTemplate && (
-                    <ActionIcon
-                      type="button"
-                      variant="default"
-                      color="red"
-                      aria-label={t('projectTemplates.deleteSelected')}
-                      title={t('projectTemplates.deleteSelected')}
-                      onClick={handlers.onDeleteProjectTemplate}
-                    >
-                      <IconTrash size={15} stroke={1.7} aria-hidden="true" />
-                    </ActionIcon>
-                  )}
-                </Group>
+                {projectTemplates.length > 0 ? (
+                  <Group
+                    align="center"
+                    gap="xs"
+                    wrap="nowrap"
+                    style={{ flex: '0 1 190px', minWidth: 170 }}
+                  >
+                    <Select
+                      aria-label={t('projectTemplates.chooseTemplate')}
+                      placeholder={t('projectTemplates.startBlank')}
+                      value={selectedProjectTemplate}
+                      onChange={handlers.onProjectTemplateChange}
+                      data={projectTemplates.map((template) => ({
+                        value: template.slug,
+                        label: template.name,
+                      }))}
+                      searchable
+                      clearable
+                      size="xs"
+                      style={{ flex: 1, minWidth: 0 }}
+                      comboboxProps={{ withinPortal: false }}
+                    />
+                    {selectedProjectTemplate && (
+                      <ActionIcon
+                        type="button"
+                        variant="default"
+                        color="red"
+                        aria-label={t('projectTemplates.deleteSelected')}
+                        title={t('projectTemplates.deleteSelected')}
+                        onClick={handlers.onDeleteProjectTemplate}
+                      >
+                        <IconTrash size={15} stroke={1.7} aria-hidden="true" />
+                      </ActionIcon>
+                    )}
+                  </Group>
+                ) : null}
               </Group>
               <TextInput
                 ref={projectNameRef}
@@ -217,7 +252,7 @@ export function ProjectCreateDialog({
               />
               <TextInput
                 aria-label={t('modal.projectSummary')}
-                placeholder={t('modal.projectSummary')}
+                placeholder={t('modal.projectSummaryPlaceholder')}
                 value={summary}
                 onChange={handlers.New_project_summary_onChange}
                 variant="unstyled"
@@ -226,7 +261,7 @@ export function ProjectCreateDialog({
                   input: { fontSize: 16, height: 30, minHeight: 30, paddingInline: 0 },
                 }}
               />
-              <Group gap="xs" wrap="nowrap" align="center" mt={3}>
+              <Group gap={8} wrap="nowrap" align="center" mt={3}>
                 <Select
                   aria-label={t('field.status')}
                   value={status}
@@ -245,8 +280,18 @@ export function ProjectCreateDialog({
                   }
                   leftSectionPointerEvents="none"
                   size="xs"
-                  style={{ width: 110 }}
-                  styles={{ input: { borderRadius: 999 }, section: { width: 24 } }}
+                  style={{ width: 80, flex: '0 0 80px' }}
+                  styles={{
+                    input: {
+                      height: 24,
+                      minHeight: 24,
+                      borderRadius: 999,
+                      paddingInlineEnd: 6,
+                      color: 'var(--mantine-color-text)',
+                      '&::placeholder': { opacity: 1, color: 'var(--mantine-color-text)' },
+                    },
+                    section: { width: 24 },
+                  }}
                   searchable
                   comboboxProps={{ withinPortal: false }}
                   data={model.projectWorkflowStatuses.map((workflowStatus) => ({
@@ -276,8 +321,18 @@ export function ProjectCreateDialog({
                   }
                   leftSectionPointerEvents="none"
                   size="xs"
-                  style={{ width: 112 }}
-                  styles={{ input: { borderRadius: 999 }, section: { width: 24 } }}
+                  style={{ width: 95, flex: '0 0 95px' }}
+                  styles={{
+                    input: {
+                      height: 24,
+                      minHeight: 24,
+                      borderRadius: 999,
+                      paddingInlineEnd: 6,
+                      color: 'var(--mantine-color-text)',
+                      '&::placeholder': { opacity: 1, color: 'var(--mantine-color-text)' },
+                    },
+                    section: { width: 24 },
+                  }}
                   searchable
                   comboboxProps={{ withinPortal: false }}
                   data={[0, 1, 2, 3, 4].map((value) => ({
@@ -300,8 +355,18 @@ export function ProjectCreateDialog({
                   }
                   leftSectionPointerEvents="none"
                   size="xs"
-                  style={{ width: 110 }}
-                  styles={{ input: { borderRadius: 999 }, section: { width: 24 } }}
+                  style={{ width: 62, flex: '0 0 62px' }}
+                  styles={{
+                    input: {
+                      height: 24,
+                      minHeight: 24,
+                      borderRadius: 999,
+                      paddingInlineEnd: 6,
+                      color: 'var(--mantine-color-text)',
+                      '&::placeholder': { opacity: 1, color: 'var(--mantine-color-text)' },
+                    },
+                    section: { width: 24 },
+                  }}
                   searchable
                   clearable
                   comboboxProps={{ withinPortal: false }}
@@ -309,25 +374,53 @@ export function ProjectCreateDialog({
                 />
                 <ProjectDateProperty
                   label={t('modal.projectStartDate')}
+                  displayLabel={desktopViewport ? t('projectDate.startShort') : undefined}
+                  compactWidth={desktopViewport ? 62 : undefined}
                   value={startDate}
                   onChange={handlers.onProjectStartDateChange}
                   compact={desktopViewport}
                 />
                 <ProjectDateProperty
                   label={t('modal.projectTargetDate')}
+                  displayLabel={desktopViewport ? t('projectDate.targetShort') : undefined}
+                  compactWidth={desktopViewport ? 70 : undefined}
                   value={targetDate}
                   onChange={handlers.onProjectTargetDateChange}
                   compact={desktopViewport}
                 />
               </Group>
-              <Group gap="xs" wrap="wrap" align="center" mt={3}>
+              <Group gap={8} wrap="wrap" align="center" mt={8}>
                 <MultiSelect
                   aria-label={t('filters.projectLabels')}
-                  placeholder={selectedLabels.length ? t('filters.projectLabels') : ''}
+                  placeholder={t('projectList.filterLabels')}
                   leftSection={<IconTag size={14} stroke={1.7} aria-hidden="true" />}
                   leftSectionPointerEvents="none"
                   value={selectedLabels}
                   onChange={handlers.New_project_labels_onChange}
+                  searchValue={projectLabelQuery}
+                  onSearchChange={handlers.onProjectLabelsSearchChange}
+                  nothingFoundMessage={
+                    projectLabelCreateError ? (
+                      <Text size="xs" c="red">
+                        {projectLabelCreateError}
+                      </Text>
+                    ) : projectLabelQuery.trim() ? (
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        size="compact-sm"
+                        fullWidth
+                        justify="flex-start"
+                        disabled={projectLabelCreatePending}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => void handlers.onCreateProjectLabel(projectLabelQuery)}
+                      >
+                        {t('projectLabelPicker.create', { name: projectLabelQuery.trim() })}
+                      </Button>
+                    ) : (
+                      t('projectLabelPicker.startTypingToCreate')
+                    )
+                  }
                   data={availableLabels.map((label) => ({
                     value: label.name,
                     label: label.name,
@@ -336,173 +429,55 @@ export function ProjectCreateDialog({
                   hidePickedOptions
                   maxDropdownHeight={240}
                   size="xs"
-                  style={{ width: selectedLabels.length ? 180 : 34 }}
+                  style={{ width: selectedLabels.length ? 180 : 82 }}
                   styles={{
-                    input: { borderRadius: 999, paddingInlineStart: 28 },
+                    input: {
+                      minHeight: 24,
+                      height: selectedLabels.length ? undefined : 24,
+                      borderRadius: 999,
+                      paddingInlineStart: 28,
+                      color: 'var(--mantine-color-text)',
+                      '&::placeholder': { opacity: 1, color: 'var(--mantine-color-text)' },
+                    },
                     section: { width: 25 },
                   }}
                 />
-                <ProjectCreateDependencyQuickAdd
-                  available={availableDependencyProjects.length > 0}
-                  onOpen={handlers.onOpenDependencyDraft}
-                />
+                <ProjectCreateDependencyQuickAdd onOpen={handlers.onOpenDependencyDraft} />
               </Group>
               <ProjectCreateDependencySummary model={model} handlers={handlers} />
               <Textarea
                 aria-label={t('modal.projectDescription')}
-                placeholder={t('modal.projectDescription')}
+                placeholder={t('modal.projectDescriptionPlaceholder')}
                 value={description}
                 onChange={handlers.New_project_description_onChange}
-                minRows={16}
-                style={{ flex: '1 1 320px', minHeight: 320, display: 'flex' }}
+                minRows={6}
+                style={{ flex: '1 1 120px', minHeight: 120, display: 'flex' }}
                 variant="unstyled"
                 styles={{
-                  root: { flex: '1 1 320px', minHeight: 320, display: 'flex' },
+                  root: { flex: '1 1 120px', minHeight: 120, display: 'flex' },
                   wrapper: { flex: '1 1 auto', display: 'flex' },
                   input: {
                     flex: '1 1 auto',
                     height: '100%',
-                    minHeight: 320,
-                    paddingTop: 23,
+                    minHeight: 120,
+                    paddingTop: 29,
                     resize: 'none',
                     borderTop: '1px solid var(--mantine-color-default-border)',
                   },
                 }}
-                mt={10}
+                mt={17}
               />
-              <Stack
-                gap="xs"
-                aria-label={t('projectMilestones.heading')}
-                p="xs"
-                style={{
-                  marginInline: -5,
-                  border: '1px solid var(--mantine-color-default-border)',
-                  borderRadius: 'var(--mantine-radius-md)',
+              <ProjectCreateMilestones
+                milestones={initialMilestones}
+                expanded={milestonesExpanded}
+                draftOpen={milestoneDraftOpen}
+                draft={{
+                  name: milestoneDraftName,
+                  description: milestoneDraftDescription,
+                  targetDate: milestoneDraftTargetDate,
                 }}
-              >
-                <Group justify="space-between" mih={28}>
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    size="compact-sm"
-                    leftSection={
-                      <IconChevronDown
-                        size={14}
-                        stroke={1.8}
-                        aria-hidden="true"
-                        style={{
-                          transform: milestonesExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                          transition: 'transform 120ms ease',
-                        }}
-                      />
-                    }
-                    aria-expanded={milestonesExpanded}
-                    aria-controls="project-create-milestones-content"
-                    onClick={handlers.onToggleMilestones}
-                  >
-                    {t('projectMilestones.heading')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    size="compact-sm"
-                    leftSection={<IconPlus size={14} stroke={1.7} aria-hidden="true" />}
-                    onClick={handlers.onOpenMilestoneDraft}
-                  >
-                    {t('projectMilestones.addToProject')}
-                  </Button>
-                </Group>
-                <Collapse expanded={milestonesExpanded} transitionDuration={140} animateOpacity>
-                  <Stack id="project-create-milestones-content" gap="xs">
-                    {initialMilestones.map((milestone, index) => (
-                      <Group key={`${milestone.name}-${index}`} justify="space-between" gap="xs">
-                        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                          <Text size="sm" fw={500}>
-                            {milestone.name}
-                          </Text>
-                          {milestone.description && (
-                            <Text size="xs" c="dimmed">
-                              {milestone.description}
-                            </Text>
-                          )}
-                          {milestone.targetDate && (
-                            <Text size="xs" c="dimmed">
-                              {formatCalendarDate(milestone.targetDate)}
-                            </Text>
-                          )}
-                        </Stack>
-                        <ActionIcon
-                          type="button"
-                          variant="subtle"
-                          color="gray"
-                          aria-label={t('projectMilestones.remove', { name: milestone.name })}
-                          onClick={() => handlers.onRemoveInitialMilestone(index)}
-                        >
-                          <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                        </ActionIcon>
-                      </Group>
-                    ))}
-                    {milestoneDraftOpen && (
-                      <Box
-                        p="sm"
-                        style={{
-                          border: '1px solid var(--mantine-color-default-border)',
-                          borderRadius: 'var(--mantine-radius-sm)',
-                        }}
-                      >
-                        <Stack gap="xs">
-                          <Text size="sm" fw={500}>
-                            {t('projectMilestones.createMilestone')}
-                          </Text>
-                          <TextInput
-                            autoFocus
-                            required
-                            maxLength={120}
-                            label={t('projectMilestones.name')}
-                            placeholder={t('projectMilestones.namePlaceholder')}
-                            value={milestoneDraftName}
-                            onChange={handlers.onMilestoneDraftNameChange}
-                            onKeyDown={handlers.onMilestoneDraftNameKeyDown}
-                          />
-                          <Group grow align="flex-start">
-                            <Textarea
-                              label={t('projectMilestones.description')}
-                              placeholder={t('projectMilestones.descriptionPlaceholder')}
-                              value={milestoneDraftDescription}
-                              onChange={handlers.onMilestoneDraftDescriptionChange}
-                              minRows={2}
-                              autosize
-                            />
-                            <TextInput
-                              type="date"
-                              label={t('projectMilestones.targetDate')}
-                              value={milestoneDraftTargetDate}
-                              onChange={handlers.onMilestoneDraftTargetDateChange}
-                            />
-                          </Group>
-                          <Group justify="flex-end">
-                            <Button
-                              type="button"
-                              variant="default"
-                              onClick={handlers.onCancelMilestoneDraft}
-                            >
-                              {t('common.cancel')}
-                            </Button>
-                            <Button
-                              type="button"
-                              disabled={!milestoneDraftName.trim()}
-                              onClick={handlers.onAddInitialMilestone}
-                            >
-                              {t('projectMilestones.add')}
-                            </Button>
-                          </Group>
-                        </Stack>
-                      </Box>
-                    )}
-                  </Stack>
-                </Collapse>
-              </Stack>
+                handlers={handlers}
+              />
             </Stack>
           </Box>
           <Group
@@ -515,8 +490,7 @@ export function ProjectCreateDialog({
             <Button
               type="submit"
               size="compact-sm"
-              styles={{ root: { paddingInline: 13 } }}
-              disabled={!name.trim()}
+              styles={{ root: { height: 28, minHeight: 28, paddingInline: 10 } }}
             >
               {t('projectList.createTitle')}
             </Button>

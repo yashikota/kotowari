@@ -1,3 +1,4 @@
+import type { ButtonProps } from '@mantine/core';
 import {
   ActionIcon,
   Button,
@@ -50,11 +51,23 @@ function monthLabel(date: Date, locale: string): string {
 
 export function ProjectDateProperty({
   label,
+  displayLabel,
+  compactWidth,
+  ariaLabel,
+  iconOnly = false,
+  color,
+  variant,
   value,
   onChange,
   compact = false,
 }: {
   label: string;
+  displayLabel?: string;
+  compactWidth?: number;
+  ariaLabel?: string;
+  iconOnly?: boolean;
+  color?: ButtonProps['color'];
+  variant?: ButtonProps['variant'];
   value: string;
   onChange: (value: string) => void;
   compact?: boolean;
@@ -161,33 +174,52 @@ export function ProjectDateProperty({
       <Popover.Target>
         <Button
           type="button"
-          variant="default"
+          variant={variant ?? 'default'}
+          color={color}
           size="xs"
           leftSection={
-            compact && !value ? undefined : (
+            compact && displayLabel ? undefined : compact && !value ? undefined : (
               <IconCalendarEvent size={14} stroke={1.7} aria-hidden="true" />
             )
           }
-          aria-label={t('projectDate.change', { field: label })}
+          aria-label={ariaLabel ?? t('projectDate.change', { field: label })}
           title={label}
-          onPointerDown={() => {
-            if (!opened) openPicker();
-          }}
           onClick={() => (opened ? setOpened(false) : openPicker())}
           styles={{
             root: {
-              borderRadius: compact ? 'var(--mantine-radius-sm)' : 999,
-              width: compact && !value ? 30 : undefined,
-              paddingInline: compact && !value ? 6 : undefined,
+              height: compact ? (iconOnly ? 28 : 24) : undefined,
+              minHeight: compact ? (iconOnly ? 28 : 24) : undefined,
+              borderRadius: compact && !iconOnly ? 999 : undefined,
+              width:
+                compact && iconOnly
+                  ? 28
+                  : compact && displayLabel && !value
+                    ? compactWidth
+                    : compact && !value
+                      ? 30
+                      : undefined,
+              paddingInline:
+                compact && iconOnly
+                  ? 0
+                  : compact && displayLabel && !value
+                    ? 6
+                    : compact && !value && !displayLabel
+                      ? 6
+                      : undefined,
             },
           }}
         >
-          {compact && !value ? (
+          {compact && displayLabel ? (
+            <Group component="span" gap={4} wrap="nowrap">
+              <IconCalendarEvent size={14} stroke={1.7} aria-hidden="true" />
+              <span>{value ? formatCalendarDate(value, locale) : displayLabel}</span>
+            </Group>
+          ) : compact && !value ? (
             <IconCalendarEvent size={14} stroke={1.7} aria-hidden="true" />
           ) : value ? (
             formatCalendarDate(value, locale)
           ) : (
-            label
+            (displayLabel ?? label)
           )}
         </Button>
       </Popover.Target>
