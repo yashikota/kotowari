@@ -86,7 +86,15 @@ test('project display options match the active view structure', async ({ page })
   await expect(dropdown.getByRole('button', { name: 'Summary', exact: true })).toHaveCount(0);
 });
 
-test('empty project state links to workspace documentation', async ({ page }) => {
+test('empty project state links to workspace documentation', async ({ page, request }) => {
+  const response = await request.get('/api/projects');
+  expect(response.ok()).toBeTruthy();
+  const projects: Array<{ slug: string }> = await response.json();
+  for (const project of projects) {
+    const deleted = await request.delete(`/api/projects/${project.slug}`);
+    expect(deleted.ok()).toBeTruthy();
+  }
+
   await page.goto('/projects');
   const createButton = page.getByRole('button', { name: 'Create new project' });
   await expect(createButton).toBeVisible();

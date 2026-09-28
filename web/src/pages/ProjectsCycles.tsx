@@ -864,7 +864,7 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
           <Pane single flush>
             <PageHeader
               title={t('nav.cycles')}
-              minHeight={62}
+              minHeight={44}
               titleSize="md"
               paddingX={19}
               actions={
@@ -883,7 +883,7 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
               <EmptyState>{t('cycle.emptyState')}</EmptyState>
             ) : (
               <Box className={timelineStyles.timeline}>
-                <Stack gap={0} p="md" pb="xl">
+                <Stack gap={0} px="md" pb="xl">
                   {cycles.map((cycle) => (
                     <Box key={cycle.number}>
                       <CycleListItem cycle={cycle} />

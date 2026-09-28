@@ -285,6 +285,8 @@
     },
     "issuesCount_one": "{{count}} issue",
     "issuesCount_other": "{{count}} issues",
+    "scopeCount": "{{count}} scope",
+    "completedCount": "{{count}} completed",
     "progress": "Cycle completion",
     "progressHeading": "Progress",
     "collapseProgress": "Collapse progress section",

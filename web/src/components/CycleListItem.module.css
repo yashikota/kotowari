@@ -2,6 +2,14 @@
   position: relative;
 }
 
+.summary {
+  flex-shrink: 0;
+}
+
+.summaryMetric {
+  white-space: nowrap;
+}
+
 .row::after {
   position: absolute;
   right: 0;

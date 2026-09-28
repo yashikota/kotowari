@@ -2797,7 +2797,7 @@ test('cycle navigation stays under the team and the list follows Linear chronolo
     },
   });
   expect(activeResponse.ok()).toBeTruthy();
-  const activeCycle = (await activeResponse.json()) as { number: number };
+  const activeCycle = (await activeResponse.json()) as { id: number; number: number };
   const upcomingStart = new Date(now + 7 * 24 * 60 * 60 * 1000);
   const upcomingResponse = await request.post('/api/cycles', {
     data: {
@@ -2817,7 +2817,20 @@ test('cycle navigation stays under the team and the list follows Linear chronolo
     },
   });
   expect(completedResponse.ok()).toBeTruthy();
-  const completedCycle = (await completedResponse.json()) as { number: number };
+  const completedCycle = (await completedResponse.json()) as { id: number; number: number };
+
+  const activeIssueResponse = await request.post('/api/issues', {
+    data: { title: `Cycle scope ${activeCycle.number}`, status: 'todo', cycleId: activeCycle.id },
+  });
+  expect(activeIssueResponse.ok()).toBeTruthy();
+  const completedIssueResponse = await request.post('/api/issues', {
+    data: {
+      title: `Cycle completion ${completedCycle.number}`,
+      status: 'done',
+      cycleId: completedCycle.id,
+    },
+  });
+  expect(completedIssueResponse.ok()).toBeTruthy();
 
   await page.goto('/cycles');
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeHidden();
@@ -2833,6 +2846,17 @@ test('cycle navigation stays under the team and the list follows Linear chronolo
   }).format(upcomingStart);
   await expect(currentOverview).toBeVisible();
   await expect(currentOverview.getByRole('img')).toBeVisible();
+  const overviewBounds = await currentOverview.boundingBox();
+  const chartBounds = await currentOverview.getByRole('img').boundingBox();
+  const progressBounds = await currentOverview
+    .getByRole('region', { name: 'Progress', exact: true })
+    .boundingBox();
+  expect(overviewBounds).not.toBeNull();
+  expect(chartBounds).not.toBeNull();
+  expect(progressBounds).not.toBeNull();
+  expect(chartBounds!.x - overviewBounds!.x).toBeGreaterThan(80);
+  expect(chartBounds!.width).toBeGreaterThan(400);
+  expect(progressBounds!.x).toBeGreaterThan(chartBounds!.x + chartBounds!.width);
   await expect(
     upcomingRow.getByRole('link').getByText(upcomingDate, { exact: true }),
   ).toBeVisible();
@@ -2859,6 +2883,9 @@ test('cycle navigation stays under the team and the list follows Linear chronolo
   await expect(upcomingRow.getByText('Upcoming', { exact: true })).toHaveCount(1);
   await expect(activeRow.getByText('Current', { exact: true })).toHaveCount(1);
   await expect(completedRow.getByText('Completed', { exact: true })).toHaveCount(1);
+  await expect(activeRow.getByText('1 scope', { exact: true })).toBeVisible();
+  await expect(completedRow.getByText('1 completed', { exact: true })).toBeVisible();
+  await expect(completedRow.getByText('1 scope', { exact: true })).toBeVisible();
 
   await page.goto('/issues');
   const teamNavigation = page.getByRole('navigation', { name: 'Team navigation' });

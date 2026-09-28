@@ -280,6 +280,8 @@
       "project": "プロジェクト"
     },
     "issuesCount": "{{count}} 件のイシュー",
+    "scopeCount": "対象 {{count}} 件",
+    "completedCount": "{{count}} 件完了",
     "progress": "サイクルの進捗",
     "progressHeading": "進捗",
     "collapseProgress": "進捗セクションを折りたたむ",

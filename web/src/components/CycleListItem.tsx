@@ -7,6 +7,8 @@ import { formatCalendarDate } from '../time.ts';
 import styles from './CycleListItem.module.css';
 
 type CycleSummary = Cycle & {
+  issueCount: number;
+  completedCount: number;
   googleCalendarURL: string;
   linkCopied: boolean;
   calendarFeedCopied: boolean;
@@ -59,9 +61,19 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
           </Box>
         }
         rightSection={
-          <Badge variant="light" color={cycle.status === 'active' ? 'indigo' : 'gray'} size="sm">
-            {t(`cycle.status.${cycle.status}`)}
-          </Badge>
+          <Group gap="sm" wrap="nowrap" className={styles.summary}>
+            <Badge variant="light" color={cycle.status === 'active' ? 'indigo' : 'gray'} size="sm">
+              {t(`cycle.status.${cycle.status}`)}
+            </Badge>
+            {cycle.status === 'completed' ? (
+              <Text size="xs" c="dimmed" className={styles.summaryMetric}>
+                {t('cycle.completedCount', { count: cycle.completedCount })}
+              </Text>
+            ) : null}
+            <Text size="xs" c="dimmed" className={styles.summaryMetric}>
+              {t('cycle.scopeCount', { count: cycle.issueCount })}
+            </Text>
+          </Group>
         }
         styles={{
           root: {

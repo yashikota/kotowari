@@ -39,7 +39,7 @@ test('empty projects page explains projects and opens project creation', async (
   await expect(emptyState).toBeVisible();
   await expect(emptyState.getByRole('heading', { name: 'Projects', level: 2 })).toBeVisible();
   await expect(emptyState).toContainText(
-    'Projects are larger units of work with a clear outcome, such as a new feature you want to ship. Group related issues and optional documents so progress is easy to follow.',
+    'Projects are larger units of work with a clear outcome, such as a new feature you want to ship. Keep related issues and optional documents together so progress is easy to follow.',
   );
   const illustration = emptyState.locator('svg');
   const [emptyBounds, illustrationBounds, headingBounds, descriptionBounds] = await Promise.all([
@@ -48,7 +48,7 @@ test('empty projects page explains projects and opens project creation', async (
     emptyState.getByRole('heading', { name: 'Projects', level: 2 }).boundingBox(),
     emptyState
       .getByText(
-        'Projects are larger units of work with a clear outcome, such as a new feature you want to ship. Group related issues and optional documents so progress is easy to follow.',
+        'Projects are larger units of work with a clear outcome, such as a new feature you want to ship. Keep related issues and optional documents together so progress is easy to follow.',
       )
       .boundingBox(),
   ]);

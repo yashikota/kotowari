@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import type { Cycle } from '../types.ts';
 import type { CycleProgressPoint } from '../cycle-progress.ts';
 
-const width = 320;
+const width = 660;
 const height = 164;
-const plot = { left: 8, top: 8, width: 304, height: 112 };
+const plot = { left: 8, top: 8, width: 644, height: 144 };
 
 function xAt(at: number, start: number, end: number) {
   return plot.left + ((at - start) / (end - start)) * plot.width;
