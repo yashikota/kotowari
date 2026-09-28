@@ -1196,6 +1196,7 @@ export function useShellPresenter() {
     showIssueViewFavorite: issueView !== undefined,
     issueViewFavorite,
     isCycleDetail,
+    isCycleList: pathname === '/cycles',
     currentCycleName,
     currentCycleStatus: currentCycle?.status,
     cycleListScope,

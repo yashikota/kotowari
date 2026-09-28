@@ -135,10 +135,18 @@ test('sidebar Current and Upcoming open their cycle details directly', async ({
   await currentLink.click();
   await expect(page).toHaveURL(new RegExp(`/cycles/${current.number}$`));
   await expect(page.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
+  await expect(currentLink).toHaveAttribute('data-active', 'true');
+  await expect(upcomingLink).not.toHaveAttribute('data-active');
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Team navigation' })
+      .getByRole('link', { name: 'Cycles', exact: true }),
+  ).not.toHaveAttribute('data-active');
 
   await upcomingLink.click();
   await expect(page).toHaveURL(new RegExp(`/cycles/${upcoming.number}$`));
   await expect(page.getByRole('button', { name: 'Open cycle', exact: true })).toBeVisible();
+  await expect(upcomingLink).toHaveAttribute('data-active', 'true');
 });
 
 test('cycle notification subscriptions persist and deliver matching events to the inbox', async ({

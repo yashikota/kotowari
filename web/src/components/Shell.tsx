@@ -191,6 +191,7 @@ export function ShellView({
         showIssueViewFavorite,
         issueViewFavorite,
         isCycleDetail,
+        isCycleList,
         currentCycleName,
         currentCycleStatus,
         cycleListScope,
@@ -518,6 +519,7 @@ export function ShellView({
                                   label={t(item.labelKey)}
                                   leftSection={NAV_ICONS[item.to as string]}
                                   rightSection={sidebarBadge(item.id)}
+                                  active={isCycleList}
                                 />
                                 <Stack
                                   component="div"
