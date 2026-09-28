@@ -1,5 +1,4 @@
-import { ActionIcon, Box, Group, VisuallyHidden } from '@mantine/core';
-import { IconStar } from '@tabler/icons-react';
+import { Box, Group, VisuallyHidden } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 import { IssueDetail } from '../components/IssueDetail.tsx';
@@ -47,6 +46,46 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         selectedFacetValues,
         handlers,
       } = model;
+      const issueFilters = (
+        <IssueFilters
+          search={search}
+          projects={data.projects}
+          cycles={data.cycles}
+          labels={data.labels}
+          linkSources={data.linkSources}
+          templateOptions={data.templateOptions}
+          onChange={handlers.onChange0}
+          compactToolbar={!myIssuesTab}
+          advancedFilter={search.advancedFilter}
+          advancedFilterGroup={search.advancedFilterGroup}
+          onAdvancedFilterToggle={handlers.onAdvancedFilterToggle}
+          onAdvancedFilterChange={handlers.onAdvancedFilterChange}
+          find={find}
+          onFind={handlers.onFind2}
+          groupBy={groupBy}
+          onGroupBy={handlers.onGroupBy5}
+          layout={layout}
+          onLayout={handlers.onLayout6}
+          orderBy={orderBy}
+          onOrderBy={handlers.onOrderBy7}
+          subGroupBy={subGroupBy}
+          onSubGroupBy={handlers.onSubGroupBy17}
+          direction={direction}
+          onDirection={handlers.onDirection18}
+          completedIssues={completedIssues}
+          onCompletedIssues={handlers.onCompletedIssues19}
+          showSubIssues={showSubIssues}
+          onShowSubIssues={handlers.onShowSubIssues20}
+          nestedSubIssues={nestedSubIssues}
+          onNestedSubIssues={handlers.onNestedSubIssues21}
+          showEmptyGroups={showEmptyGroups}
+          onShowEmptyGroups={handlers.onShowEmptyGroups22}
+          displayProperties={displayProperties}
+          onDisplayPropertyToggle={handlers.onDisplayPropertyToggle23}
+          detailsOpen={detailsOpen}
+          onDetailsToggle={handlers.onDetailsToggle}
+        />
+      );
       if (myIssuesTab === 'activity') {
         return (
           <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -65,34 +104,6 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               <h2>{t('nav.myIssues')}</h2>
             </VisuallyHidden>
           ) : null}
-          {!myIssuesTab ? (
-            <PageHeader
-              title={t('nav.issues')}
-              actions={
-                <ActionIcon
-                  type="button"
-                  variant="subtle"
-                  color={model.viewFavorite ? 'yellow' : 'gray'}
-                  role="switch"
-                  aria-label={t(
-                    model.viewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
-                  )}
-                  aria-checked={model.viewFavorite}
-                  title={t(
-                    model.viewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
-                  )}
-                  onClick={handlers.onToggleViewFavorite}
-                >
-                  <IconStar
-                    size={15}
-                    stroke={1.7}
-                    fill={model.viewFavorite ? 'currentColor' : 'none'}
-                    aria-hidden="true"
-                  />
-                </ActionIcon>
-              }
-            />
-          ) : null}
           {myIssuesTab ? (
             <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
           ) : null}
@@ -101,46 +112,11 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
               value={view}
               onChange={handlers.onView4}
               onAddNewView={handlers.onNewViewOpen}
+              actions={issueFilters}
             />
           )}
           <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
-            <IssueFilters
-              search={search}
-              projects={data.projects}
-              cycles={data.cycles}
-              labels={data.labels}
-              linkSources={data.linkSources}
-              templateOptions={data.templateOptions}
-              onChange={handlers.onChange0}
-              advancedFilter={search.advancedFilter}
-              advancedFilterGroup={search.advancedFilterGroup}
-              onAdvancedFilterToggle={handlers.onAdvancedFilterToggle}
-              onAdvancedFilterChange={handlers.onAdvancedFilterChange}
-              find={find}
-              onFind={handlers.onFind2}
-              groupBy={groupBy}
-              onGroupBy={handlers.onGroupBy5}
-              layout={layout}
-              onLayout={handlers.onLayout6}
-              orderBy={orderBy}
-              onOrderBy={handlers.onOrderBy7}
-              subGroupBy={subGroupBy}
-              onSubGroupBy={handlers.onSubGroupBy17}
-              direction={direction}
-              onDirection={handlers.onDirection18}
-              completedIssues={completedIssues}
-              onCompletedIssues={handlers.onCompletedIssues19}
-              showSubIssues={showSubIssues}
-              onShowSubIssues={handlers.onShowSubIssues20}
-              nestedSubIssues={nestedSubIssues}
-              onNestedSubIssues={handlers.onNestedSubIssues21}
-              showEmptyGroups={showEmptyGroups}
-              onShowEmptyGroups={handlers.onShowEmptyGroups22}
-              displayProperties={displayProperties}
-              onDisplayPropertyToggle={handlers.onDisplayPropertyToggle23}
-              detailsOpen={detailsOpen}
-              onDetailsToggle={handlers.onDetailsToggle}
-            />
+            {myIssuesTab ? issueFilters : null}
             <Group
               align="stretch"
               gap={0}

@@ -49,7 +49,7 @@ export function IssueListFacetPanel({
       radius="sm"
       p="xs"
       style={{
-        width: 320,
+        width: 336,
         height: '100%',
         flexShrink: 0,
         overflowY: 'auto',

@@ -1,6 +1,37 @@
 import { expect, test } from '@playwright/test';
 import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
+test('issue views and controls share a toolbar that wraps on narrow screens', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/issues');
+
+  const selectedView = page.getByRole('tab', { name: 'All issues' });
+  const filters = page.getByRole('search', { name: 'Issue filters' });
+  const [desktopTabBounds, desktopFilterBounds, desktopAddFilterBounds] = await Promise.all([
+    selectedView.boundingBox(),
+    filters.boundingBox(),
+    page.getByRole('button', { name: 'Add filter', exact: true }).boundingBox(),
+  ]);
+  expect(desktopTabBounds).not.toBeNull();
+  expect(desktopFilterBounds).not.toBeNull();
+  expect(desktopAddFilterBounds).not.toBeNull();
+  const tabCenter = desktopTabBounds!.y + desktopTabBounds!.height / 2;
+  const filterCenter = desktopFilterBounds!.y + desktopFilterBounds!.height / 2;
+  expect(Math.abs(tabCenter - filterCenter)).toBeLessThan(4);
+  expect(desktopAddFilterBounds!.x).toBeGreaterThan(1280 * 0.65);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const [mobileTabBounds, mobileFilterBounds, documentWidth] = await Promise.all([
+    selectedView.boundingBox(),
+    filters.boundingBox(),
+    page.evaluate(() => document.documentElement.scrollWidth),
+  ]);
+  expect(mobileTabBounds).not.toBeNull();
+  expect(mobileFilterBounds).not.toBeNull();
+  expect(mobileFilterBounds!.y).toBeGreaterThan(mobileTabBounds!.y);
+  expect(documentWidth).toBeLessThanOrEqual(390);
+});
+
 test('issue display property chips persist as personal view state', async ({ page }) => {
   await page.goto('/issues');
   await page.getByRole('button', { name: 'Display options' }).click();
@@ -525,6 +556,9 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await expect(teamNavigation.getByRole('link', { name: 'Cycles' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Issues', level: 2 })).toBeAttached();
   await expect(page.getByRole('tablist', { name: 'Issue views' })).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('heading', { name: 'Issues' }),
+  ).toBeVisible();
   await expect(page.getByRole('tab', { name: 'All issues' })).toHaveAttribute(
     'aria-selected',
     'true',

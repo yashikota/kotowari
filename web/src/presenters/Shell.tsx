@@ -22,6 +22,7 @@ import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
 import { sidebarSettingsGroups, visibleSidebarNavigation } from '../sidebar.ts';
 import {
   usePersonalPreferences,
+  type FavoriteIssueView,
   type SidebarBadgeStyle,
   type SidebarItemId,
   type SidebarLocation,
@@ -120,6 +121,15 @@ export function useShellPresenter() {
   }, [router]);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const routeSearch = useRouterState({ select: (s) => s.location.search });
+  const issueView: FavoriteIssueView | undefined =
+    pathname !== '/issues' || routeSearch.myIssuesTab || routeSearch.assignee === 'self'
+      ? undefined
+      : routeSearch.archived
+        ? 'archived'
+        : routeSearch.view === 'active' || routeSearch.view === 'backlog'
+          ? routeSearch.view
+          : 'all';
+  const issueViewFavorite = issueView ? preferences.favoriteIssueViews.includes(issueView) : false;
   const isIssueDetail = pathname.startsWith('/issues/');
   const isCycleDetail = pathname.startsWith('/cycles/');
   const isPageOwnedHeader =
@@ -960,6 +970,8 @@ export function useShellPresenter() {
     workspaceName,
     routeTitle,
     isIssueDetail,
+    showIssueViewFavorite: issueView !== undefined,
+    issueViewFavorite,
     isCycleDetail,
     currentCycleName,
     cycleNavigationOpen,
@@ -1070,6 +1082,15 @@ export function useShellPresenter() {
       },
       onCycleNavigationQueryChange: (query: string) => setCycleNavigationQuery(query),
       onNavigateCycle: navigateToCycle,
+      onToggleIssueViewFavorite: () => {
+        if (!issueView) return;
+        const favorites = preferences.favoriteIssueViews;
+        updatePreferences({
+          favoriteIssueViews: favorites.includes(issueView)
+            ? favorites.filter((view) => view !== issueView)
+            : [...favorites, issueView],
+        });
+      },
       submitIssue: () => send('submit:Issue'),
       Issue_createMore_onChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

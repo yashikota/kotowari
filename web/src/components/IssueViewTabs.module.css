@@ -1,3 +1,22 @@
+.toolbar {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-sm);
+  padding-inline: var(--mantine-spacing-sm);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.views {
+  flex: 0 0 auto;
+}
+
+.actions {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .tab {
   height: 28px;
   padding-inline: 10px;
@@ -16,4 +35,16 @@
 .tab:hover:not([data-active='true']) {
   background-color: var(--mantine-color-default-hover);
   color: var(--mantine-color-text);
+}
+
+@media (max-width: 760px) {
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 0;
+    padding-block: 4px;
+  }
+
+  .actions {
+    flex-basis: 100%;
+  }
 }

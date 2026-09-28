@@ -13,9 +13,11 @@ import { useIssueFiltersPresenter } from '../presenters/IssueFilters.tsx';
 export function IssueFiltersView({
   model,
   leading,
+  compactToolbar = false,
 }: {
   model: ReturnType<typeof useIssueFiltersPresenter>;
   leading?: ReactNode;
+  compactToolbar?: boolean;
 }) {
   const { t } = useTranslation();
   switch (model._view) {
@@ -63,9 +65,14 @@ export function IssueFiltersView({
       } = model;
       return (
         <Box
-          px="sm"
-          py={6}
-          style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+          w={compactToolbar ? '100%' : undefined}
+          px={compactToolbar ? 0 : 'sm'}
+          py={compactToolbar ? 0 : 6}
+          style={
+            compactToolbar
+              ? undefined
+              : { borderBottom: '1px solid var(--mantine-color-default-border)' }
+          }
         >
           <Group
             role="search"
@@ -75,76 +82,78 @@ export function IssueFiltersView({
             align="center"
           >
             {leading}
-            <IssueFilterMenu
-              search={search}
-              projects={projects}
-              cycles={cycles}
-              labels={labels}
-              linkSources={model.linkSources}
-              selectedLabels={selectedLabels}
-              selectedLinkSources={model.selectedLinkSources}
-              templateOptions={model.templateOptions}
-              selectedTemplateSlugs={model.selectedTemplateSlugs}
-              selectedProjectLabels={selectedProjectLabels}
-              selectedAddedToCycle={selectedAddedToCycle}
-              opened={filterOpened}
-              chips={chips}
-              onOpenChange={handlers.onFilterOpenChange}
-              onStatusChange={handlers.onStatusChange}
-              onAssigneeChange={handlers.onAssigneeChange}
-              onSubscribersChange={handlers.onSubscribersChange}
-              onProjectChange={handlers.onProjectChange}
-              onCycleChange={handlers.onCycleChange}
-              onPriorityChange={handlers.onPriorityChange}
-              onTypeChange={handlers.onTypeChange}
-              onEstimateChange={handlers.onEstimateChange}
-              onDueDateChange={handlers.onDueDateChange}
-              onRelationChange={handlers.onRelationChange}
-              onToggleLinkSource={handlers.onToggleLinkSource}
-              onToggleTemplateSlug={handlers.onToggleTemplateSlug}
-              onContentChange={handlers.onContentChange}
-              onMilestoneNameChange={handlers.onMilestoneNameChange}
-              onDateFieldChange={handlers.onDateFieldChange}
-              onDateRangeChange={handlers.onDateRangeChange}
-              onProjectStatusChange={handlers.onProjectStatusChange}
-              onProjectPriorityChange={handlers.onProjectPriorityChange}
-              onToggleLabel={handlers.onToggleLabel}
-              onLabelOperatorChange={handlers.onLabelOperatorChange}
-              onToggleProjectLabel={handlers.onToggleProjectLabel}
-              onToggleAddedToCycle={handlers.onToggleAddedToCycle}
-              onToggleAdvancedFilter={
-                onAdvancedFilterToggle ? handlers.onAdvancedFilterToggle : undefined
-              }
-              onRemoveFilter={handlers.onRemoveFilter}
-              onClear={handlers.onClearFilters}
-            />
-            {onFind ? (
-              <ActionIcon
-                type="button"
-                variant={findOpen ? 'light' : 'subtle'}
-                color="gray"
-                aria-label={t('ui.findIssues')}
-                title={t('ui.findIssues')}
-                aria-expanded={findOpen}
-                onClick={handlers.onFindToggle}
-              >
-                <IconSearch size={16} stroke={1.7} aria-hidden="true" />
-              </ActionIcon>
-            ) : null}
-            {onFind && findOpen ? (
-              <TextInput
-                ref={findRef}
-                aria-label={t('ui.findIssues')}
-                placeholder={t('ui.find')}
-                value={find ?? ''}
-                onChange={handlers.onFindChange}
-                size="xs"
-                w={190}
-                styles={{ input: { height: 28, minHeight: 28, backgroundColor: 'transparent' } }}
+            <Group ml={compactToolbar ? 'auto' : undefined} gap={4} wrap="nowrap">
+              <IssueFilterMenu
+                search={search}
+                projects={projects}
+                cycles={cycles}
+                labels={labels}
+                linkSources={model.linkSources}
+                selectedLabels={selectedLabels}
+                selectedLinkSources={model.selectedLinkSources}
+                templateOptions={model.templateOptions}
+                selectedTemplateSlugs={model.selectedTemplateSlugs}
+                selectedProjectLabels={selectedProjectLabels}
+                selectedAddedToCycle={selectedAddedToCycle}
+                opened={filterOpened}
+                chips={chips}
+                onOpenChange={handlers.onFilterOpenChange}
+                onStatusChange={handlers.onStatusChange}
+                onAssigneeChange={handlers.onAssigneeChange}
+                onSubscribersChange={handlers.onSubscribersChange}
+                onProjectChange={handlers.onProjectChange}
+                onCycleChange={handlers.onCycleChange}
+                onPriorityChange={handlers.onPriorityChange}
+                onTypeChange={handlers.onTypeChange}
+                onEstimateChange={handlers.onEstimateChange}
+                onDueDateChange={handlers.onDueDateChange}
+                onRelationChange={handlers.onRelationChange}
+                onToggleLinkSource={handlers.onToggleLinkSource}
+                onToggleTemplateSlug={handlers.onToggleTemplateSlug}
+                onContentChange={handlers.onContentChange}
+                onMilestoneNameChange={handlers.onMilestoneNameChange}
+                onDateFieldChange={handlers.onDateFieldChange}
+                onDateRangeChange={handlers.onDateRangeChange}
+                onProjectStatusChange={handlers.onProjectStatusChange}
+                onProjectPriorityChange={handlers.onProjectPriorityChange}
+                onToggleLabel={handlers.onToggleLabel}
+                onLabelOperatorChange={handlers.onLabelOperatorChange}
+                onToggleProjectLabel={handlers.onToggleProjectLabel}
+                onToggleAddedToCycle={handlers.onToggleAddedToCycle}
+                onToggleAdvancedFilter={
+                  onAdvancedFilterToggle ? handlers.onAdvancedFilterToggle : undefined
+                }
+                onRemoveFilter={handlers.onRemoveFilter}
+                onClear={handlers.onClearFilters}
               />
-            ) : null}
+              {onFind ? (
+                <ActionIcon
+                  type="button"
+                  variant={findOpen ? 'light' : 'subtle'}
+                  color="gray"
+                  aria-label={t('ui.findIssues')}
+                  title={t('ui.findIssues')}
+                  aria-expanded={findOpen}
+                  onClick={handlers.onFindToggle}
+                >
+                  <IconSearch size={16} stroke={1.7} aria-hidden="true" />
+                </ActionIcon>
+              ) : null}
+              {onFind && findOpen ? (
+                <TextInput
+                  ref={findRef}
+                  aria-label={t('ui.findIssues')}
+                  placeholder={t('ui.find')}
+                  value={find ?? ''}
+                  onChange={handlers.onFindChange}
+                  size="xs"
+                  w={190}
+                  styles={{ input: { height: 28, minHeight: 28, backgroundColor: 'transparent' } }}
+                />
+              ) : null}
+            </Group>
             {model.onGroupBy && model.onLayout && model.onOrderBy ? (
-              <Group ml="auto" gap={2} wrap="nowrap">
+              <Group ml={compactToolbar ? undefined : 'auto'} gap={2} wrap="nowrap">
                 <IssueDisplayOptions
                   layout={layout ?? 'list'}
                   groupBy={groupBy ?? 'priority'}
@@ -221,20 +230,33 @@ export function IssueFiltersView({
 
 export function IssueFilters({
   leading,
+  compactToolbar,
   ...props
-}: Parameters<typeof useIssueFiltersPresenter>[0] & { leading?: ReactNode }) {
+}: Parameters<typeof useIssueFiltersPresenter>[0] & {
+  leading?: ReactNode;
+  compactToolbar?: boolean;
+}) {
   return (
     <PresenterScope name="IssueFilters">
-      <IssueFiltersBinding {...props} leading={leading} />
+      <IssueFiltersBinding {...props} leading={leading} compactToolbar={compactToolbar} />
     </PresenterScope>
   );
 }
 
 function IssueFiltersBinding(
-  props: Parameters<typeof useIssueFiltersPresenter>[0] & { leading?: ReactNode },
+  props: Parameters<typeof useIssueFiltersPresenter>[0] & {
+    leading?: ReactNode;
+    compactToolbar?: boolean;
+  },
 ) {
-  const { leading, ...presenterProps } = props;
+  const { leading, compactToolbar, ...presenterProps } = props;
   const model = useIssueFiltersPresenter(presenterProps);
   const handlers = useActions(model.handlers);
-  return <IssueFiltersView model={{ ...model, handlers } as typeof model} leading={leading} />;
+  return (
+    <IssueFiltersView
+      model={{ ...model, handlers } as typeof model}
+      leading={leading}
+      compactToolbar={compactToolbar}
+    />
+  );
 }

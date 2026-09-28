@@ -184,6 +184,8 @@ export function ShellView({
         workspaceName,
         routeTitle,
         isIssueDetail,
+        showIssueViewFavorite,
+        issueViewFavorite,
         isCycleDetail,
         currentCycleName,
         cycleNavigationOpen,
@@ -599,7 +601,7 @@ export function ShellView({
                 component="header"
                 justify="space-between"
                 gap="md"
-                h={44}
+                h={52}
                 px="md"
                 wrap="nowrap"
                 className={
@@ -677,10 +679,38 @@ export function ShellView({
                       />
                     </>
                   ) : (
-                    <Text size="sm" fw={500} truncate>
+                    <Text
+                      component={showIssueViewFavorite ? 'h2' : 'span'}
+                      size="sm"
+                      fw={showIssueViewFavorite ? 550 : 500}
+                      truncate
+                    >
                       {routeTitle}
                     </Text>
                   )}
+                  {showIssueViewFavorite ? (
+                    <ActionIcon
+                      type="button"
+                      variant="subtle"
+                      color={issueViewFavorite ? 'yellow' : 'gray'}
+                      role="switch"
+                      aria-label={t(
+                        issueViewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
+                      )}
+                      aria-checked={issueViewFavorite}
+                      title={t(
+                        issueViewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
+                      )}
+                      onClick={handlers.onToggleIssueViewFavorite}
+                    >
+                      <IconStar
+                        size={15}
+                        stroke={1.7}
+                        fill={issueViewFavorite ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                      />
+                    </ActionIcon>
+                  ) : null}
                 </Group>
                 <Group gap={4} wrap="nowrap">
                   <ActionIcon
