@@ -7,6 +7,7 @@ import {
   expandMoreNavigation,
   fillIssueSearch,
   openIssueFilterCategory,
+  returnToIssues,
 } from './issue-list-controls.ts';
 
 test('archive and restore an issue', async ({ page, request }) => {
@@ -19,9 +20,9 @@ test('archive and restore an issue', async ({ page, request }) => {
   await issueTitle.press('ControlOrMeta+Enter');
   await expect(page.getByPlaceholder('Issue title')).toHaveCount(0);
   await expect(page.getByLabel('Issue title')).toHaveValue(title);
-  const identifier = (
-    await page.getByRole('button', { name: 'Copy identifier' }).textContent()
-  )?.trim();
+  const identifier = (await page.getByTestId('issue-header-title').textContent())?.match(
+    /[A-Z]+-\d+/,
+  )?.[0];
   if (!identifier) throw new Error('expected issue identifier in the URL');
 
   await page.getByRole('button', { name: 'Issue options' }).click();
@@ -41,7 +42,7 @@ test('archive and restore an issue', async ({ page, request }) => {
     expect.objectContaining({ identifier, archivedAt: expect.any(String) }),
   );
 
-  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await returnToIssues(page);
   await expandMoreNavigation(page);
   await page
     .getByRole('navigation', { name: 'More' })
@@ -403,7 +404,7 @@ test('sub-issue and saved view', async ({ page, request }) => {
     .toBe(true);
   await expect(page.getByRole('button', { name: new RegExp(childTitle) })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await returnToIssues(page);
   const issueList = page.getByRole('listbox', { name: 'Issues' });
   await fillIssueSearch(page, parentTitle);
   await expect(issueList.getByRole('option', { name: new RegExp(parentTitle) })).toBeVisible();

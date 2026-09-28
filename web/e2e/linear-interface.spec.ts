@@ -659,10 +659,14 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await title.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
   await expect(page.locator('input[aria-label="Issue title"]')).toHaveValue(createdIssueTitle);
-  await expect(page.getByRole('main').getByRole('link', { name: 'Back to issues' })).toBeVisible();
+  const issueOptions = page.getByRole('button', { name: 'Issue options', exact: true });
+  await expect(issueOptions).toBeVisible();
   await expect(page.getByRole('listbox', { name: 'Issues' })).toHaveCount(0);
 
-  await page.getByRole('main').getByRole('link', { name: 'Back to issues' }).click();
+  await issueOptions.click();
+  const backToIssues = page.getByRole('menuitem', { name: 'Back to issues', exact: true });
+  await expect(backToIssues).toBeVisible();
+  await backToIssues.click();
   await expect(page.getByRole('tab', { name: 'All issues' })).toHaveAttribute(
     'aria-selected',
     'true',

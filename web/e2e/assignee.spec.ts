@@ -11,9 +11,9 @@ test('creates a personally assigned issue from the issue composer', async ({ pag
   await dialog.getByRole('button', { name: 'Create', exact: true }).click();
 
   await expect(page.getByLabel('Issue title')).toHaveValue(title);
-  const identifier = (
-    await page.getByRole('button', { name: 'Copy identifier' }).textContent()
-  )?.trim();
+  const identifier = (await page.getByTestId('issue-header-title').textContent())?.match(
+    /[A-Z]+-\d+/,
+  )?.[0];
   if (!identifier) throw new Error('expected the created issue identifier in the URL');
   const response = await request.get(`/api/issues/${identifier}`);
   await expect(response).toBeOK();

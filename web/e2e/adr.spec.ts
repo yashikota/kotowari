@@ -1,5 +1,5 @@
 import { expect, test, type APIResponse } from '@playwright/test';
-import { expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
+import { expandMoreNavigation, fillIssueSearch, returnToIssues } from './issue-list-controls.ts';
 
 async function json<T>(res: APIResponse): Promise<T> {
   if (!res.ok()) {
@@ -87,7 +87,7 @@ test('returning to a cached list reflects an ADR unlink immediately', async ({ p
   await row.click();
   await page.getByRole('button', { name: `Unlink ${adr.identifier}`, exact: true }).click();
   await expect(page.getByText('No linked decisions.', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await returnToIssues(page);
   await fillIssueSearch(page, issue.identifier);
   await expect(row).toBeVisible();
   await expect(row.getByText('1 ADR', { exact: true })).toHaveCount(0);

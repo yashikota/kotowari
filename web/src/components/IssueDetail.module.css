@@ -10,6 +10,35 @@
   align-items: start;
 }
 
+.issueHeaderPrimary {
+  height: 52px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.issueHeaderTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--mantine-color-text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.issueHeaderToolbar {
+  height: 42px;
+}
+
+.issueHeaderActions {
+  flex-shrink: 0;
+}
+
+.issueHeaderNavigation {
+  padding-right: 8px;
+  border-right: 1px solid var(--mantine-color-default-border);
+}
+
 .title {
   grid-area: title;
   min-width: 0;

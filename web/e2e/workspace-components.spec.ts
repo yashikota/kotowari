@@ -6,6 +6,7 @@ import {
   expandMoreNavigation,
   fillIssueSearch,
   openIssueFilterCategory,
+  returnToIssues,
 } from './issue-list-controls.ts';
 
 test('issue detail keeps Linear-style properties in a right rail with editable fields', async ({
@@ -87,6 +88,27 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   await expect(page.getByLabel('1 / 1')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Navigate to previous issue' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Navigate to next issue' })).toBeDisabled();
+  const issueHeaderTitle = page.getByTestId('issue-header-title');
+  await expect(issueHeaderTitle).toHaveText(`${issue.identifier} ${title}`);
+  const favoriteButton = page.getByRole('button', { name: 'Add to favorites', exact: true });
+  const issueOptionsButton = page.getByRole('button', { name: 'Issue options', exact: true });
+  const copyUrlButton = page.getByRole('button', { name: 'Copy URL', exact: true });
+  const [headerTitleBounds, favoriteBounds, optionsBounds, copyUrlBounds] = await Promise.all([
+    issueHeaderTitle.boundingBox(),
+    favoriteButton.boundingBox(),
+    issueOptionsButton.boundingBox(),
+    copyUrlButton.boundingBox(),
+  ]);
+  expect(headerTitleBounds).not.toBeNull();
+  expect(favoriteBounds).not.toBeNull();
+  expect(optionsBounds).not.toBeNull();
+  expect(copyUrlBounds).not.toBeNull();
+  expect(headerTitleBounds!.y).toBeLessThan(60);
+  expect(Math.abs(favoriteBounds!.y - optionsBounds!.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(copyUrlBounds!.height - 28)).toBeLessThanOrEqual(2);
+  expect(copyUrlBounds!.y).toBeGreaterThan(favoriteBounds!.y);
+  await expect(page.getByRole('button', { name: 'Copy as prompt', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Choose coding tool', exact: true })).toBeVisible();
 
   await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeHidden();
   const properties = page.getByRole('region', { name: 'Issue properties' });
@@ -341,7 +363,7 @@ test('issue detail navigates through the originating list order', async ({ page,
   await rows.nth(1).click();
   await expect(page).toHaveURL(new RegExp(`/issues/${orderedIds[1]}$`));
 
-  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await returnToIssues(page);
   await expect(page).toHaveURL(/\/issues$/);
   const findInput = page.getByRole('textbox', { name: 'Find issues', exact: true });
   if ((await findInput.count()) === 0) {
@@ -2723,7 +2745,7 @@ test('board columns group cards by status and reflect a detail edit', async ({ p
   await card.click();
 
   await chooseIssueProperty(page, 'Status', 'Done');
-  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await returnToIssues(page);
   await expect(page).toHaveURL(/\/board$/);
 
   const doneColumn = page.getByRole('region', { name: 'done issues' });
@@ -2752,7 +2774,7 @@ test('issue detail returns to the filtered issues board layout', async ({ page, 
   await card.click();
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}$`));
 
-  await page.getByRole('link', { name: 'Back to issues' }).click();
+  await returnToIssues(page);
   await expect(page).toHaveURL(/\/issues\?layout=board$/);
   await expect(page.getByRole('textbox', { name: 'Find issues', exact: true })).toHaveValue(
     String(stamp),

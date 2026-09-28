@@ -1,5 +1,10 @@
 import type { Page } from '@playwright/test';
 
+export async function returnToIssues(page: Page) {
+  await page.getByRole('button', { name: 'Issue options', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Back to issues', exact: true }).click();
+}
+
 export async function fillIssueSearch(page: Page, query: string) {
   const input = page.getByRole('textbox', { name: 'Find issues', exact: true });
   if (!(await input.isVisible())) {
