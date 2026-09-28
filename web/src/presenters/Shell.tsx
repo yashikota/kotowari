@@ -2,11 +2,11 @@ import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { api, parseIssueSearch } from '../api.ts';
 import { queryCache } from '../application/cache.ts';
 import { resetIssueProjection } from '../application/issues.ts';
-import { signals } from '../application/mediator.ts';
+import { mediator, signals } from '../application/mediator.ts';
 import {
   useIntent,
   useIntentHandler,
@@ -15,6 +15,7 @@ import {
   useOverlay,
 } from '../application/Root.tsx';
 import { cycleCommands, filterCommands, projectCommands, staticCommands } from '../commands.ts';
+import type { Command } from '../commands.ts';
 import { Palette } from '../components/Palette.tsx';
 import { actionFromKeyboard } from '../keymap.ts';
 import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
@@ -140,6 +141,7 @@ export function useShellPresenter() {
   const [sidebarCustomizationOpen, setSidebarCustomizationOpen] =
     useMachineFlag('sidebar-customization');
   const { overlay, set: setOverlay } = useOverlay();
+  const quickOpenTarget = useSyncExternalStore(mediator.subscribe, mediator.getQuickOpenTarget);
   const paletteOpen = overlay === 'palette';
   const setPaletteOpen = setOverlay('palette');
   const [query, setQuery] = useState('');
@@ -348,7 +350,6 @@ export function useShellPresenter() {
     setAdrLinkIssue(detail.issueNumber);
     setCreateADR(true);
   });
-
   useEffect(() => {
     if (!paletteOpen || !query.trim()) {
       setHits([]);
@@ -463,6 +464,7 @@ export function useShellPresenter() {
   const runCommand = useCallback(
     async (id: string) => {
       setPaletteOpen(false);
+      mediator.setQuickOpenTarget(null);
       setQuery('');
       switch (id) {
         case 'new-issue':
@@ -598,6 +600,18 @@ export function useShellPresenter() {
           params: { slug: id.slice('open-view:'.length) },
         });
       }
+      if (id.startsWith('open-cycle:')) {
+        await navigate({
+          to: '/cycles/$number',
+          params: { number: id.slice('open-cycle:'.length) },
+        });
+      }
+      if (id.startsWith('open-initiative:')) {
+        await navigate({
+          to: '/initiatives/$slug',
+          params: { slug: id.slice('open-initiative:'.length) },
+        });
+      }
     },
     [currentIdentifier, cycles, navigate, router, pathname, defaultIssueAssignee],
   );
@@ -609,11 +623,14 @@ export function useShellPresenter() {
     }
     if (action === 'palette') {
       e.preventDefault();
+      setQuery('');
+      mediator.setQuickOpenTarget(null);
       setPaletteOpen((v) => !v);
       return true;
     }
     if (action === 'escape') {
       setPaletteOpen(false);
+      mediator.setQuickOpenTarget(null);
       setCreateIssue(false);
       setCreateADR(false);
       setCreatePage(false);
@@ -658,6 +675,7 @@ export function useShellPresenter() {
     }
     if (action === 'status' && currentIdentifier) {
       e.preventDefault();
+      mediator.setQuickOpenTarget(null);
       setPaletteOpen(true);
       setQuery('status');
     }
@@ -672,30 +690,125 @@ export function useShellPresenter() {
     return e.defaultPrevented;
   });
 
-  const commands = [
-    ...hits.map((h) => ({
-      id: `open-${h.kind}:${h.id}`,
-      title: `${h.kind} ${h.id}  ${h.title}${h.snippet ? ` — ${h.snippet}` : ''}`,
+  const quickOpenSearchCommands = hits
+    .filter((hit) =>
+      quickOpenTarget === 'issue'
+        ? hit.kind === 'issue'
+        : quickOpenTarget === 'document'
+          ? hit.kind === 'page'
+          : false,
+    )
+    .map((hit) => ({
+      id: `open-${hit.kind}:${hit.id}`,
+      title: `${hit.id} — ${hit.title}${hit.snippet ? ` — ${hit.snippet}` : ''}`,
+    }));
+  const quickOpenFavorites = [
+    ...favoriteIssues.map((issue) => ({
+      id: `open-issue:${issue.identifier}`,
+      title: t('quickOpen.item', {
+        type: t('quickOpen.kind.issue'),
+        title: `${issue.identifier} — ${issue.title}`,
+      }),
     })),
-    ...filterCommands(
-      staticCommands((key, values) => t(key, values as Record<string, string | number>)),
-      query,
-    ),
-    ...(currentIdentifier
-      ? filterCommands(
-          cycleCommands(cycles, (key, values) => t(key, values as Record<string, string | number>)),
-          query,
-        )
-      : []),
-    ...(currentIdentifier
-      ? filterCommands(
-          projectCommands(projects, (key, values) =>
-            t(key, values as Record<string, string | number>),
-          ),
-          query,
-        )
-      : []),
+    ...projects
+      .filter((project) => project.isFavorite)
+      .map((project) => ({
+        id: `open-project:${project.slug}`,
+        title: t('quickOpen.item', {
+          type: t('quickOpen.kind.project'),
+          title: project.name,
+        }),
+      })),
+    ...cycles
+      .filter((cycle) => cycle.isFavorite)
+      .map((cycle) => ({
+        id: `open-cycle:${cycle.number}`,
+        title: t('quickOpen.item', {
+          type: t('quickOpen.kind.cycle'),
+          title: cycle.name || t('field.cycleN', { number: cycle.number }),
+        }),
+      })),
+    ...views
+      .filter((view) => view.isFavorite)
+      .map((view) => ({
+        id: `open-view:${view.slug}`,
+        title: t('quickOpen.item', {
+          type: t('quickOpen.kind.view'),
+          title: view.name,
+        }),
+      })),
   ];
+  const quickOpenCollections: Command[] = (() => {
+    switch (quickOpenTarget) {
+      case 'favorite':
+        return quickOpenFavorites;
+      case 'project':
+        return projects.map((project) => ({
+          id: `open-project:${project.slug}`,
+          title: t('quickOpen.item', {
+            type: t('quickOpen.kind.project'),
+            title: project.name,
+          }),
+        }));
+      case 'cycle':
+        return cycles.map((cycle) => ({
+          id: `open-cycle:${cycle.number}`,
+          title: t('quickOpen.item', {
+            type: t('quickOpen.kind.cycle'),
+            title: cycle.name || t('field.cycleN', { number: cycle.number }),
+          }),
+        }));
+      case 'view':
+        return views.map((view) => ({
+          id: `open-view:${view.slug}`,
+          title: t('quickOpen.item', {
+            type: t('quickOpen.kind.view'),
+            title: view.name,
+          }),
+        }));
+      case 'initiative':
+        return initiatives.map((initiative) => ({
+          id: `open-initiative:${initiative.slug}`,
+          title: t('quickOpen.item', {
+            type: t('quickOpen.kind.initiative'),
+            title: initiative.name,
+          }),
+        }));
+      case 'issue':
+      case 'document':
+      case null:
+        return [];
+    }
+  })();
+  const quickOpenTargetKind = quickOpenTarget ?? 'issue';
+  const commands = quickOpenTarget
+    ? [...filterCommands(quickOpenCollections, query), ...quickOpenSearchCommands]
+    : [
+        ...hits.map((h) => ({
+          id: `open-${h.kind}:${h.id}`,
+          title: `${h.kind} ${h.id}  ${h.title}${h.snippet ? ` — ${h.snippet}` : ''}`,
+        })),
+        ...filterCommands(
+          staticCommands((key, values) => t(key, values as Record<string, string | number>)),
+          query,
+        ),
+        ...(currentIdentifier
+          ? filterCommands(
+              cycleCommands(cycles, (key, values) =>
+                t(key, values as Record<string, string | number>),
+              ),
+              query,
+            )
+          : []),
+        ...(currentIdentifier
+          ? filterCommands(
+              projectCommands(projects, (key, values) =>
+                t(key, values as Record<string, string | number>),
+              ),
+              query,
+            )
+          : []),
+      ];
 
   useIntentHandler('submit:Issue', submitIssue);
   useIntentHandler('submit:ADR', submitADR);
@@ -866,6 +979,24 @@ export function useShellPresenter() {
     favoriteIssueViews: preferences.favoriteIssueViews,
     overlay,
     paletteOpen,
+    quickOpenTarget,
+    quickOpenTitle: quickOpenTarget
+      ? t('quickOpen.title', { type: t(`quickOpen.kind.${quickOpenTargetKind}`) })
+      : undefined,
+    quickOpenPlaceholder: quickOpenTarget
+      ? t('quickOpen.search', { type: t(`quickOpen.kind.${quickOpenTargetKind}`) })
+      : undefined,
+    quickOpenEmptyMessage: quickOpenTarget
+      ? quickOpenTarget === 'favorite' && !query.trim() && quickOpenFavorites.length === 0
+        ? t('quickOpen.noFavorites')
+        : query.trim()
+          ? t('quickOpen.noResults', { type: t(`quickOpen.kind.${quickOpenTargetKind}`) })
+          : quickOpenTarget === 'issue' || quickOpenTarget === 'document'
+            ? t('quickOpen.typeToSearch', {
+                type: t(`quickOpen.kind.${quickOpenTargetKind}`),
+              })
+            : undefined
+      : undefined,
     query,
     createIssue,
     createADR,
@@ -943,6 +1074,7 @@ export function useShellPresenter() {
         }),
       onOpenPalette: () => {
         setQuery('');
+        mediator.setQuickOpenTarget(null);
         setPaletteOpen(true);
       },
       onOpenSearch: () => navigate({ to: '/search', search: {} }),
@@ -990,7 +1122,10 @@ export function useShellPresenter() {
       },
       onPick7: (id: Parameters<NonNullable<React.ComponentProps<typeof Palette>['onPick']>>[0]) =>
         runCommand(id),
-      onClose8: () => setPaletteOpen(false),
+      onClose8: () => {
+        setPaletteOpen(false);
+        mediator.setQuickOpenTarget(null);
+      },
       onClose9: () => setHelpOpen(false),
       onClick10: () => setCreateIssue(false),
       Create_issue_onClick11: (

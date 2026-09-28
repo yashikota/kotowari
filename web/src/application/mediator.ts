@@ -1,9 +1,12 @@
+import type { QuickOpenTarget } from '../keymap.ts';
+
 export type Overlay = 'none' | 'palette' | 'help' | 'issue' | 'adr' | 'page';
 export type Operation = 'idle' | 'running' | 'failed';
 export type Intent = { type: string; payload: unknown; source: EventScope };
 export type Handler = (payload: unknown) => unknown;
 type MachineEvent =
   | { type: 'overlay.open'; overlay: Overlay }
+  | { type: 'quick-open.set'; target: QuickOpenTarget | null }
   | { type: 'error.report'; error: unknown }
   | { type: 'error.clear' }
   | { type: 'operation.start' | 'operation.finish' | 'operation.fail'; key: string }
@@ -35,6 +38,7 @@ export class Mediator {
   readonly operations = new Map<string, Operation>();
   readonly signals = new EventTarget();
   private overlay: Overlay = 'none';
+  private quickOpenTarget: QuickOpenTarget | null = null;
   private flags = new Map<string, boolean>();
   private listeners = new Set<() => void>();
   private error = '';
@@ -44,6 +48,7 @@ export class Mediator {
     return () => this.listeners.delete(listener);
   };
   getOverlay = () => this.overlay;
+  getQuickOpenTarget = () => this.quickOpenTarget;
   getError = () => this.error;
   getFlag = (key: string, defaultValue = false) => this.flags.get(key) ?? defaultValue;
   private notify() {
@@ -54,8 +59,15 @@ export class Mediator {
   transition(event: MachineEvent) {
     switch (event.type) {
       case 'overlay.open':
-        if (this.overlay === event.overlay) return;
+        if (this.overlay === event.overlay && this.quickOpenTarget === null) return;
         this.overlay = event.overlay;
+        this.quickOpenTarget = null;
+        break;
+      case 'quick-open.set':
+        if (this.quickOpenTarget === event.target && (!event.target || this.overlay === 'palette'))
+          return;
+        this.quickOpenTarget = event.target;
+        if (event.target) this.overlay = 'palette';
         break;
       case 'error.report':
         this.error = event.error instanceof Error ? event.error.message : String(event.error);
@@ -87,6 +99,9 @@ export class Mediator {
 
   open(overlay: Overlay) {
     this.transition({ type: 'overlay.open', overlay });
+  }
+  setQuickOpenTarget(target: QuickOpenTarget | null) {
+    this.transition({ type: 'quick-open.set', target });
   }
   report(error: unknown) {
     this.transition({ type: 'error.report', error });

@@ -16,13 +16,13 @@ export function PaletteView({
   const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { query, commands, active, handlers } = model;
+      const { query, commands, active, handlers, title, placeholder, emptyMessage } = model;
       return (
         <Modal
           opened
           onClose={handlers.onClick0}
-          title={t('ui.commandPalette')}
-          aria-label={t('ui.commandPalette')}
+          title={title ?? t('ui.commandPalette')}
+          aria-label={title ?? t('ui.commandPalette')}
           centered
           size="lg"
           withCloseButton={false}
@@ -32,7 +32,7 @@ export function PaletteView({
             <TextInput
               ref={searchRef}
               aria-label={t('ui.commandSearch')}
-              placeholder={t('ui.typeCommandOrSearch')}
+              placeholder={placeholder ?? t('ui.typeCommandOrSearch')}
               value={query}
               onChange={handlers.Command_search_onChange2}
               onKeyDown={handlers.Command_search_onKeyDown3}
@@ -59,6 +59,11 @@ export function PaletteView({
                   </UnstyledButton>
                 ))}
               </Box>
+              {commands.length === 0 && emptyMessage ? (
+                <Text size="sm" c="dimmed" px="sm" py="md" ta="center">
+                  {emptyMessage}
+                </Text>
+              ) : null}
             </ScrollArea>
           </Box>
         </Modal>

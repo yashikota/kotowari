@@ -19,8 +19,9 @@ import {
   initiativeCreateSequenceFromKeyboard,
   isSubmitShortcut,
   projectCreateSequenceFromKeyboard,
+  quickOpenSequenceFromKeyboard,
 } from '../keymap.ts';
-import type { GlobalNavigationAction } from '../keymap.ts';
+import type { GlobalNavigationAction, QuickOpenTarget } from '../keymap.ts';
 
 const ScopeContext = createContext(mediator.root);
 const GLOBAL_NAVIGATION_HREF: Record<GlobalNavigationAction, string> = {
@@ -208,6 +209,7 @@ export function Root({
   navigate: (href: string) => Promise<void>;
 }) {
   useLocaleSync();
+  useIntentHandler('quick-open', (value) => mediator.setQuickOpenTarget(value as QuickOpenTarget));
   useIntentHandler('issues.find.open', () => mediator.setFlag('Root:issues.find', true));
   useIntentHandler('project.create.open', () => {
     mediator.setFlag('Root:project.create', true);
@@ -238,6 +240,7 @@ export function Root({
     let projectCreatePendingSince: number | null = null;
     let initiativeCreatePendingSince: number | null = null;
     let globalNavigationPendingSince: number | null = null;
+    let quickOpenPendingSince: number | null = null;
     const focus = (event: FocusEvent) => {
       if (event.target instanceof HTMLElement && !event.target.closest('[role="dialog"]'))
         previousFocus = event.target;
@@ -247,6 +250,7 @@ export function Root({
         projectCreatePendingSince = null;
         initiativeCreatePendingSince = null;
         globalNavigationPendingSince = null;
+        quickOpenPendingSince = null;
         return;
       }
       if (isSubmitShortcut(event) && event.target instanceof HTMLElement) {
@@ -287,6 +291,7 @@ export function Root({
         projectCreatePendingSince = null;
         initiativeCreatePendingSince = null;
         globalNavigationPendingSince = null;
+        quickOpenPendingSince = null;
         event.preventDefault();
         mediator.open('none');
         return;
@@ -295,6 +300,7 @@ export function Root({
         projectCreatePendingSince = null;
         initiativeCreatePendingSince = null;
         globalNavigationPendingSince = null;
+        quickOpenPendingSince = null;
       }
       const projectCreate = projectCreateSequenceFromKeyboard(
         event,
@@ -332,6 +338,24 @@ export function Root({
           'navigate',
           GLOBAL_NAVIGATION_HREF[globalNavigation.action],
         );
+        return;
+      }
+      const quickOpen = quickOpenSequenceFromKeyboard(event, quickOpenPendingSince, Date.now());
+      quickOpenPendingSince = quickOpen.pendingSince;
+      if (quickOpen.action) {
+        event.preventDefault();
+        let source =
+          event.target instanceof Element
+            ? mediator.scopes.get(
+                event.target.closest('[data-presenter]')?.getAttribute('data-presenter') ?? '',
+              )
+            : undefined;
+        source ??= mediator.root;
+        if (source) {
+          // Clear a child presenter's incomplete O,G sequence before the Root transition.
+          mediator.dispatch(source, 'keyboard.sequence.cancel', undefined);
+        }
+        mediator.dispatch(mediator.root, 'quick-open', quickOpen.action);
         return;
       }
       let scope =

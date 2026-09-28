@@ -10,6 +10,7 @@ import {
   isTypingTarget,
   issueCopyShortcutFromKeyboard,
   projectCreateSequenceFromKeyboard,
+  quickOpenSequenceFromKeyboard,
 } from './keymap.ts';
 
 function el(tagName: string): EventTarget {
@@ -501,6 +502,54 @@ describe('global navigation keyboard sequence', () => {
       pendingSince: null,
     });
     expect(key('i', 100, 200, { shiftKey: true })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+  });
+});
+
+describe('Linear-style quick open keyboard sequence', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    pendingSince: number | null = null,
+    now = 100,
+    overrides: Partial<Parameters<typeof quickOpenSequenceFromKeyboard>[0]> = {},
+  ) =>
+    quickOpenSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      pendingSince,
+      now,
+    );
+
+  it.each([
+    ['i', 'issue'],
+    ['f', 'favorite'],
+    ['p', 'project'],
+    ['c', 'cycle'],
+    ['v', 'view'],
+    ['d', 'document'],
+    ['n', 'initiative'],
+  ])('maps O, then %s to %s', (secondKey, action) => {
+    const started = key('o');
+    expect(started).toEqual({ action: null, pendingSince: 100 });
+    expect(key(secondKey, started.pendingSince, 250)).toEqual({ action, pendingSince: null });
+  });
+
+  it('leaves O,G for the issue linked-code handler and expires safely', () => {
+    expect(key('g', 100, 250)).toEqual({ action: null, pendingSince: null });
+    expect(key('i', 100, 1101)).toEqual({ action: null, pendingSince: null });
+    expect(key('o', null, 100, { target: el('INPUT') })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+    expect(key('o', null, 100, { isComposing: true })).toEqual({
       action: null,
       pendingSince: null,
     });

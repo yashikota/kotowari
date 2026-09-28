@@ -47,6 +47,13 @@ test('O then G opens the linked pull request and GitHub issues, but never while 
   await note.fill('');
   await page.getByRole('button', { name: 'Issue options' }).focus();
   await page.keyboard.press('o');
+  await page.keyboard.press('i');
+  await expect(page.getByRole('dialog', { name: 'Open issue' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Open issue' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Issue options' }).focus();
+  await page.keyboard.press('o');
   await page.keyboard.press('g');
   await expect.poll(() => page.evaluate(() => window.__openedIssueLinks)).toEqual([pullRequestURL]);
 

@@ -41,6 +41,23 @@
     "favorites": "Favorites",
     "favoriteHint": "Star an issue or cycle to keep it here"
   },
+  "quickOpen": {
+    "title": "Open {{type}}",
+    "search": "Search {{type}} by name or identifier…",
+    "noResults": "No matching {{type}}",
+    "typeToSearch": "Type to search {{type}}",
+    "noFavorites": "No favorites yet",
+    "item": "{{type}} · {{title}}",
+    "kind": {
+      "issue": "issue",
+      "favorite": "favorite",
+      "project": "project",
+      "cycle": "cycle",
+      "view": "view",
+      "document": "document",
+      "initiative": "initiative"
+    }
+  },
   "workspace": {
     "defaultName": "workspace"
   },
@@ -1976,6 +1993,20 @@
     "shortcutGoProjectsKeys": "G, then P",
     "shortcutGoInitiativesKeys": "G, then N",
     "shortcutGoSettingsKeys": "G, then S",
+    "shortcutQuickOpenIssueKeys": "O, then I",
+    "shortcutQuickOpenIssue": "Open an issue",
+    "shortcutQuickOpenFavoriteKeys": "O, then F",
+    "shortcutQuickOpenFavorite": "Open a favorite",
+    "shortcutQuickOpenProjectKeys": "O, then P",
+    "shortcutQuickOpenProject": "Open a project",
+    "shortcutQuickOpenCycleKeys": "O, then C",
+    "shortcutQuickOpenCycle": "Open a cycle",
+    "shortcutQuickOpenViewKeys": "O, then V",
+    "shortcutQuickOpenView": "Open a view",
+    "shortcutQuickOpenDocumentKeys": "O, then D",
+    "shortcutQuickOpenDocument": "Open a document",
+    "shortcutQuickOpenInitiativeKeys": "O, then N",
+    "shortcutQuickOpenInitiative": "Open an initiative",
     "shortcutOpenLinkedCodeKeys": "O, then G",
     "shortcutOpenLinkedCode": "Open a linked GitHub issue or pull request",
     "shortcutMoveSelection": "Move selection",

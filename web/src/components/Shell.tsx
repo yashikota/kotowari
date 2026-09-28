@@ -203,6 +203,9 @@ export function ShellView({
         favoriteIssues,
         favoriteIssueViews,
         paletteOpen,
+        quickOpenTitle,
+        quickOpenPlaceholder,
+        quickOpenEmptyMessage,
         query,
         createIssue,
         createADR,
@@ -719,6 +722,9 @@ export function ShellView({
               commands={commands}
               onPick={handlers.onPick7}
               onClose={handlers.onClose8}
+              title={quickOpenTitle}
+              placeholder={quickOpenPlaceholder}
+              emptyMessage={quickOpenEmptyMessage}
             />
           ) : null}
           {helpOpen ? <ShortcutHelp onClose={handlers.onClose9} /> : null}

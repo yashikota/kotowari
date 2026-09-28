@@ -53,7 +53,13 @@ import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
 import { formatAttachmentSize, IssueAttachmentList } from './IssueAttachmentList.tsx';
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
 
-import { PresenterScope, useActions, useIntent, useKeyboard } from '../application/Root.tsx';
+import {
+  PresenterScope,
+  useActions,
+  useIntent,
+  useIntentHandler,
+  useKeyboard,
+} from '../application/Root.tsx';
 import {
   issueCopyShortcutFromKeyboard,
   issueDetailShortcutFromKeyboard,
@@ -1657,6 +1663,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
   const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);
   const noteRef = useFocusWhen<HTMLTextAreaElement>(focusNote > 0, [focusNote]);
   const linkedCodeSequenceSince = useRef<number | null>(null);
+  useIntentHandler('keyboard.sequence.cancel', () => {
+    linkedCodeSequenceSince.current = null;
+  });
   useKeyboard((event) => {
     if (model._view !== 2) {
       linkedCodeSequenceSince.current = null;

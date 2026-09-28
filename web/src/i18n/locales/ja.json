@@ -41,6 +41,23 @@
     "favorites": "お気に入り",
     "favoriteHint": "星を付けたイシューやサイクルがここに表示されます"
   },
+  "quickOpen": {
+    "title": "{{type}}を開く",
+    "search": "{{type}}を名前または識別子で検索…",
+    "noResults": "一致する{{type}}はありません",
+    "typeToSearch": "{{type}}を検索するには入力してください",
+    "noFavorites": "お気に入りはまだありません",
+    "item": "{{type}} · {{title}}",
+    "kind": {
+      "issue": "イシュー",
+      "favorite": "お気に入り",
+      "project": "プロジェクト",
+      "cycle": "サイクル",
+      "view": "ビュー",
+      "document": "ドキュメント",
+      "initiative": "イニシアチブ"
+    }
+  },
   "workspace": {
     "defaultName": "ワークスペース"
   },
@@ -1967,6 +1984,20 @@
     "shortcutGoProjectsKeys": "G、続けてP",
     "shortcutGoInitiativesKeys": "G、続けてN",
     "shortcutGoSettingsKeys": "G、続けてS",
+    "shortcutQuickOpenIssueKeys": "O、続けてI",
+    "shortcutQuickOpenIssue": "イシューを開く",
+    "shortcutQuickOpenFavoriteKeys": "O、続けてF",
+    "shortcutQuickOpenFavorite": "お気に入りを開く",
+    "shortcutQuickOpenProjectKeys": "O、続けてP",
+    "shortcutQuickOpenProject": "プロジェクトを開く",
+    "shortcutQuickOpenCycleKeys": "O、続けてC",
+    "shortcutQuickOpenCycle": "サイクルを開く",
+    "shortcutQuickOpenViewKeys": "O、続けてV",
+    "shortcutQuickOpenView": "ビューを開く",
+    "shortcutQuickOpenDocumentKeys": "O、続けてD",
+    "shortcutQuickOpenDocument": "ドキュメントを開く",
+    "shortcutQuickOpenInitiativeKeys": "O、続けてN",
+    "shortcutQuickOpenInitiative": "イニシアチブを開く",
     "shortcutOpenLinkedCodeKeys": "O、続けてG",
     "shortcutOpenLinkedCode": "リンクされた GitHub の課題またはプルリクエストを開く",
     "shortcutMoveSelection": "選択項目を移動",

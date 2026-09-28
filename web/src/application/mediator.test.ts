@@ -30,6 +30,18 @@ describe('Root mediator', () => {
     mediator.open('none');
     expect(mediator.getOverlay()).toBe('none');
   });
+  it('opens the quick-open picker through the overlay state machine and clears its scope', () => {
+    const mediator = new Mediator();
+    const changed = vi.fn();
+    mediator.subscribe(changed);
+    mediator.setQuickOpenTarget('issue');
+    expect(mediator.getOverlay()).toBe('palette');
+    expect(mediator.getQuickOpenTarget()).toBe('issue');
+    mediator.open('palette');
+    expect(mediator.getOverlay()).toBe('palette');
+    expect(mediator.getQuickOpenTarget()).toBeNull();
+    expect(changed).toHaveBeenCalledTimes(2);
+  });
   it('arbitrates local view flags by scope and clears them on teardown', () => {
     const mediator = new Mediator();
     const first = new EventScope('first', mediator.root);

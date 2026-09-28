@@ -8,9 +8,21 @@ type Props = {
   commands: Command[];
   onPick: (id: string) => void;
   onClose: () => void;
+  title?: string;
+  placeholder?: string;
+  emptyMessage?: string;
 };
 
-export function usePalettePresenter({ query, onQuery, commands, onPick, onClose }: Props) {
+export function usePalettePresenter({
+  query,
+  onQuery,
+  commands,
+  onPick,
+  onClose,
+  title,
+  placeholder,
+  emptyMessage,
+}: Props) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -20,6 +32,9 @@ export function usePalettePresenter({ query, onQuery, commands, onPick, onClose 
   return {
     _view: 0 as const,
     query,
+    title,
+    placeholder,
+    emptyMessage,
     commands,
     active,
     handlers: {

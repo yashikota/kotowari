@@ -83,6 +83,7 @@ const PROJECT_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
 const INITIATIVE_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
 const ISSUE_LINK_SEQUENCE_TIMEOUT_MS = 1000;
 const GLOBAL_NAVIGATION_SEQUENCE_TIMEOUT_MS = 1000;
+const QUICK_OPEN_SEQUENCE_TIMEOUT_MS = 1000;
 
 export function projectCreateSequenceFromKeyboard(
   event: {
@@ -214,6 +215,63 @@ export type GlobalNavigationAction =
   | 'projects'
   | 'initiatives'
   | 'settings';
+
+export type QuickOpenTarget =
+  | 'issue'
+  | 'favorite'
+  | 'project'
+  | 'cycle'
+  | 'view'
+  | 'document'
+  | 'initiative';
+
+const QUICK_OPEN_KEYS: Record<string, QuickOpenTarget> = {
+  i: 'issue',
+  f: 'favorite',
+  p: 'project',
+  c: 'cycle',
+  v: 'view',
+  d: 'document',
+  n: 'initiative',
+};
+
+export function quickOpenSequenceFromKeyboard(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    defaultPrevented?: boolean;
+    target: EventTarget | null;
+  },
+  pendingSince: number | null,
+  now: number,
+): { action: QuickOpenTarget | null; pendingSince: number | null } {
+  const eligible =
+    !event.defaultPrevented &&
+    !event.isComposing &&
+    !event.repeat &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !isTypingTarget(event.target);
+  if (!eligible) return { action: null, pendingSince: null };
+
+  const key = event.key.toLowerCase();
+  if (key === 'o') return { action: null, pendingSince: now };
+  if (
+    pendingSince !== null &&
+    now >= pendingSince &&
+    now - pendingSince <= QUICK_OPEN_SEQUENCE_TIMEOUT_MS
+  ) {
+    return { action: QUICK_OPEN_KEYS[key] ?? null, pendingSince: null };
+  }
+  return { action: null, pendingSince: null };
+}
 
 const GLOBAL_NAVIGATION_KEYS: Record<string, GlobalNavigationAction> = {
   i: 'inbox',
