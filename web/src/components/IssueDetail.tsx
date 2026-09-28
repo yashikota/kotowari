@@ -1719,6 +1719,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'open-sub-issue':
           void sendIntent('onOpenSubIssueEditor', []);
           break;
+        case 'open-parent':
+          if (model.issue.parentIdentifier) void sendIntent('onClick1', []);
+          break;
         case 'toggle-resources':
           void sendIntent('onToggleResources', []);
           break;

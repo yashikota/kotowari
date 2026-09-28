@@ -618,6 +618,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['H', { shiftKey: true }, 'open-reminder'],
     ['R', { shiftKey: true }, 'rename'],
     ['O', { ctrlKey: true, shiftKey: true }, 'open-sub-issue'],
+    ['ArrowUp', { ctrlKey: true, shiftKey: true }, 'open-parent'],
     ['L', { metaKey: true, shiftKey: true }, 'toggle-resources'],
     ['l', { ctrlKey: true, altKey: true }, 'add-link'],
   ])('maps %s with its modifiers', (key, modifiers, action) => {

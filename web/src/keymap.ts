@@ -365,6 +365,7 @@ export type IssueDetailShortcut =
   | 'open-due-date'
   | 'open-reminder'
   | 'open-sub-issue'
+  | 'open-parent'
   | 'toggle-resources'
   | 'add-link';
 
@@ -386,6 +387,7 @@ export function issueDetailShortcutFromKeyboard(event: {
   const modifier = event.metaKey || event.ctrlKey;
   if (event.altKey && !event.shiftKey && !modifier && key === 'f') return 'toggle-favorite';
   if (modifier && event.shiftKey) {
+    if (key === 'arrowup') return 'open-parent';
     if (key === 'o') return 'open-sub-issue';
     if (key === 'l') return 'toggle-resources';
     if (key === 'i') return 'focus-description';
