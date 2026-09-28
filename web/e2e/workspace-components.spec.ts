@@ -8,7 +8,7 @@ import {
   openIssueFilterCategory,
 } from './issue-list-controls.ts';
 
-test('issue detail keeps Linear-style properties inline under the title with editable fields', async ({
+test('issue detail keeps Linear-style properties in a right rail with editable fields', async ({
   page,
   request,
 }) => {
@@ -83,7 +83,7 @@ test('issue detail keeps Linear-style properties inline under the title with edi
   const properties = page.getByRole('region', { name: 'Issue properties' });
   const activity = page.getByRole('region', { name: 'Activity' });
   await expect(properties).toBeVisible();
-  await expect(properties.getByText('Properties', { exact: true })).toBeHidden();
+  await expect(properties.getByRole('heading', { name: 'Properties', level: 3 })).toBeVisible();
   await expect(properties.getByRole('group', { name: 'Project' })).toBeVisible();
   await expect(activity.getByText(commentBody, { exact: true })).toBeVisible();
   await expect(activity.getByText(/Added a note/)).toHaveCount(0);
@@ -113,18 +113,19 @@ test('issue detail keeps Linear-style properties inline under the title with edi
   expect(editorBounds).not.toBeNull();
   expect(propertiesBounds!.width).toBeGreaterThan(200);
   expect(propertiesBounds!.width).toBeLessThan(1280);
-  expect(titleBounds!.y).toBeLessThan(propertiesBounds!.y);
+  expect(Math.abs(titleBounds!.y - propertiesBounds!.y)).toBeLessThanOrEqual(2);
   expect(propertiesBounds!.y).toBeLessThan(editorBounds!.y);
-  expect(Math.abs(propertiesBounds!.x - editorBounds!.x)).toBeLessThanOrEqual(1);
+  expect(propertiesBounds!.x).toBeGreaterThan(editorBounds!.x + editorBounds!.width);
+  expect(Math.abs(titleBounds!.x - editorBounds!.x)).toBeLessThanOrEqual(1);
   expect(labelsBounds).not.toBeNull();
   const orderedProperties = [
     properties.getByRole('combobox', { name: 'Status' }),
     properties.getByRole('combobox', { name: 'Priority' }),
     properties.getByRole('combobox', { name: 'Assignee' }),
-    projectPicker,
     properties.getByRole('combobox', { name: 'Estimate' }),
-    properties.getByRole('button', { name: 'Change labels' }),
     properties.getByRole('combobox', { name: 'Cycle' }),
+    properties.getByRole('button', { name: 'Change labels' }),
+    projectPicker,
   ];
   const orderedRowBounds = await Promise.all(
     orderedProperties.map((property) =>
@@ -139,11 +140,7 @@ test('issue detail keeps Linear-style properties inline under the title with edi
   for (let index = 1; index < orderedRowBounds.length; index += 1) {
     const previous = orderedRowBounds[index - 1]!;
     const current = orderedRowBounds[index]!;
-    if (Math.abs(current.y - previous.y) < 1) {
-      expect(current.x).toBeGreaterThanOrEqual(previous.x + previous.width - 1);
-    } else {
-      expect(current.y).toBeGreaterThanOrEqual(previous.y + previous.height - 1);
-    }
+    expect(current.y).toBeGreaterThanOrEqual(previous.y + previous.height - 1);
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -158,18 +155,16 @@ test('issue detail keeps Linear-style properties inline under the title with edi
   expect(narrowPanel.scrollWidth).toBeLessThanOrEqual(narrowPanel.clientWidth);
   await page.setViewportSize({ width: 1280, height: 720 });
 
-  const [subIssuesBounds, resourcesBounds, activityBounds, composerBounds] = await Promise.all([
+  const [subIssuesBounds, activityBounds, composerBounds] = await Promise.all([
     page.getByRole('region', { name: 'Sub-issues' }).boundingBox(),
-    page.getByRole('region', { name: 'Resources' }).boundingBox(),
     page.getByRole('region', { name: 'Activity' }).boundingBox(),
     page.getByRole('textbox', { name: 'New note' }).boundingBox(),
   ]);
   expect(subIssuesBounds).not.toBeNull();
-  expect(resourcesBounds).not.toBeNull();
   expect(activityBounds).not.toBeNull();
   expect(composerBounds).not.toBeNull();
-  expect(subIssuesBounds!.y).toBeLessThan(resourcesBounds!.y);
-  expect(resourcesBounds!.y).toBeLessThan(activityBounds!.y);
+  await expect(page.getByRole('region', { name: 'Resources' })).toHaveCount(0);
+  expect(subIssuesBounds!.y).toBeLessThan(activityBounds!.y);
   expect(activityBounds!.y).toBeLessThan(composerBounds!.y);
   await expect(page.getByText('Comments', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'New note' })).toHaveAttribute(
@@ -1393,21 +1388,22 @@ test('issue links can be added, displayed, sorted as real links, and removed', a
   await page.goto(`/issues/${issue.identifier}`);
   const url = 'https://github.com/example/repo/pull/42';
   await expect(page.getByRole('textbox', { name: 'URL', exact: true })).toHaveCount(0);
-  const resources = page.getByRole('region', { name: 'Resources' });
-  await expect(resources.getByText('No external links yet.')).toBeVisible();
-  await resources.getByRole('button', { name: 'Collapse resources section' }).click();
-  await expect(resources.getByText('No external links yet.')).toHaveCount(0);
-  await resources.getByRole('button', { name: 'Expand resources section' }).click();
-  await expect(resources.getByText('No external links yet.')).toBeVisible();
-  await page.getByRole('button', { name: 'Add resource to issue' }).click();
+  await expect(page.getByRole('region', { name: 'Resources' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Issue options' }).click();
   await page.getByRole('menuitem', { name: 'Add pull request…' }).click();
   const addResourceDialog = page.getByRole('dialog', { name: 'Add Pull request' });
   await addResourceDialog.getByRole('textbox', { name: 'URL', exact: true }).fill(url);
   await addResourceDialog.getByRole('textbox', { name: 'Title (optional)' }).fill('Review build');
   await addResourceDialog.getByRole('button', { name: 'Add Pull request' }).click();
 
+  const resources = page.getByRole('region', { name: 'Resources' });
+  await expect(resources).toBeVisible();
   const externalLink = page.getByRole('link', { name: 'Review build' });
   await expect(externalLink).toHaveAttribute('href', url);
+  await resources.getByRole('button', { name: 'Collapse resources section' }).click();
+  await expect(externalLink).toBeHidden();
+  await resources.getByRole('button', { name: 'Expand resources section' }).click();
+  await expect(externalLink).toBeVisible();
   await expect(page.getByRole('list', { name: 'Links' }).getByText('Pull request')).toBeVisible();
   const persisted = await request.get(`/api/issues/${issue.identifier}`);
   expect(await persisted.json()).toMatchObject({
@@ -1428,7 +1424,7 @@ test('issue links can be added, displayed, sorted as real links, and removed', a
 
   await page.goto(`/issues/${issue.identifier}`);
   await page.getByRole('button', { name: 'Remove link Review build' }).click();
-  await expect(page.getByText('No external links yet.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Resources' })).toHaveCount(0);
   await expect
     .poll(async () => {
       const response = await request.get(`/api/issues/${issue.identifier}`);

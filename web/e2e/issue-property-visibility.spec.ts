@@ -19,8 +19,9 @@ test('issue details keep optional properties out of the way until added', async 
   expect(created.ok()).toBeTruthy();
   const issue = (await created.json()) as { identifier: string };
 
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/issues/${issue.identifier}`);
-  await page.setViewportSize({ width: 930, height: 900 });
+  const titleInput = page.getByRole('textbox', { name: 'Issue title' });
   const properties = page.getByRole('region', { name: 'Issue properties' });
   const coreProperties = properties.getByRole('group', { name: 'Core properties' });
   const labelProperties = properties.getByRole('group', { name: 'Labels' });
@@ -33,7 +34,12 @@ test('issue details keep optional properties out of the way until added', async 
   await expect(coreProperties.getByRole('combobox', { name: 'Priority' })).toHaveValue(
     'No priority',
   );
-  await expect(projectProperties.getByRole('combobox', { name: 'Project' })).toHaveValue('Project');
+  await expect(projectProperties.getByRole('combobox', { name: 'Project' })).toHaveValue(
+    'Add to project',
+  );
+  await expect(labelProperties.getByRole('button', { name: 'Change labels' })).toContainText(
+    'Add label',
+  );
   await expect(coreProperties.getByRole('combobox', { name: 'Estimate' })).toHaveValue(
     'No estimate',
   );
@@ -41,14 +47,17 @@ test('issue details keep optional properties out of the way until added', async 
   await expect(coreProperties.getByRole('combobox', { name: 'Estimate' })).toBeVisible();
   await expect(labelProperties).toBeVisible();
   await expect(coreProperties.getByRole('combobox', { name: 'Cycle' })).toBeVisible();
+  await expect(coreProperties.getByRole('heading', { name: 'Properties', level: 3 })).toBeVisible();
+  await expect(labelProperties.getByRole('heading', { name: 'Labels', level: 3 })).toBeVisible();
+  await expect(projectProperties.getByRole('heading', { name: 'Project', level: 3 })).toBeVisible();
   const orderedProperties = [
     coreProperties.getByRole('combobox', { name: 'Status' }),
     coreProperties.getByRole('combobox', { name: 'Priority' }),
     coreProperties.getByRole('combobox', { name: 'Assignee' }),
-    projectProperties.getByRole('combobox', { name: 'Project' }),
     coreProperties.getByRole('combobox', { name: 'Estimate' }),
-    labelProperties.getByRole('button', { name: 'Change labels' }),
     coreProperties.getByRole('combobox', { name: 'Cycle' }),
+    labelProperties.getByRole('button', { name: 'Change labels' }),
+    projectProperties.getByRole('combobox', { name: 'Project' }),
   ];
   const propertyRowBounds = await Promise.all(
     orderedProperties.map((property) =>
@@ -61,30 +70,35 @@ test('issue details keep optional properties out of the way until added', async 
     ),
   );
   expect(propertyRowBounds.length).toBeGreaterThan(0);
+  const titleBounds = await titleInput.boundingBox();
+  const propertiesBounds = await properties.boundingBox();
+  expect(titleBounds).not.toBeNull();
+  expect(propertiesBounds).not.toBeNull();
+  expect(propertiesBounds!.x).toBeGreaterThan(titleBounds!.x + titleBounds!.width);
+  expect(propertiesBounds!.y).toBeLessThanOrEqual(titleBounds!.y + 2);
+  expect(propertiesBounds!.width).toBeLessThan(titleBounds!.width);
   for (let index = 1; index < propertyRowBounds.length; index += 1) {
     const previous = propertyRowBounds[index - 1]!;
     const current = propertyRowBounds[index]!;
-    if (Math.abs(current.y - previous.y) < 1) {
-      expect(current.x).toBeGreaterThanOrEqual(previous.x + previous.width - 1);
-    } else {
-      expect(current.y).toBeGreaterThanOrEqual(previous.y + previous.height - 1);
-    }
+    expect(current.y).toBeGreaterThanOrEqual(previous.y + previous.height - 1);
   }
   expect(await optionalProperties.getByRole('combobox', { name: 'Cycle' }).count()).toBe(0);
   const cycleRowY = propertyRowBounds.at(-1)?.y ?? null;
   expect(cycleRowY).not.toBeNull();
-  expect(cycleRowY).toBeGreaterThanOrEqual(propertyRowBounds[0]!.y);
   const statusRadius = await properties
     .locator('div[class*="row"]')
     .first()
     .evaluate((row) => Number.parseFloat(getComputedStyle(row).borderTopLeftRadius));
-  expect(statusRadius).toBeGreaterThan(12);
+  expect(statusRadius).toBeLessThanOrEqual(8);
   const addPropertyBounds = await optionalProperties
     .getByRole('button', { name: 'Add property' })
     .boundingBox();
   expect(addPropertyBounds).not.toBeNull();
-  expect(addPropertyBounds!.y).toBeGreaterThanOrEqual(cycleRowY!);
-  expect(addPropertyBounds!.y - cycleRowY!).toBeLessThan(48);
+  expect(addPropertyBounds!.y).toBeGreaterThan(cycleRowY!);
+  expect(addPropertyBounds!.x).toBeGreaterThanOrEqual(propertiesBounds!.x);
+  expect(addPropertyBounds!.x + addPropertyBounds!.width).toBeLessThanOrEqual(
+    propertiesBounds!.x + propertiesBounds!.width + 1,
+  );
 
   const cyclePicker = coreProperties.getByRole('combobox', { name: 'Cycle' });
   await cyclePicker.click();
@@ -130,4 +144,13 @@ test('issue details keep optional properties out of the way until added', async 
   expect(await unchanged.json()).toMatchObject({ dueDate: '2030-02-03' });
   await page.reload();
   await expect(properties.getByLabel('Due date')).toHaveCount(0);
+
+  await page.setViewportSize({ width: 930, height: 900 });
+  const stackedTitleBounds = await titleInput.boundingBox();
+  const stackedPropertiesBounds = await properties.boundingBox();
+  expect(stackedTitleBounds).not.toBeNull();
+  expect(stackedPropertiesBounds).not.toBeNull();
+  expect(Math.abs(stackedPropertiesBounds!.x - stackedTitleBounds!.x)).toBeLessThanOrEqual(1);
+  expect(stackedPropertiesBounds!.width).toBeGreaterThanOrEqual(stackedTitleBounds!.width - 1);
+  expect(stackedPropertiesBounds!.y).toBeGreaterThan(stackedTitleBounds!.y);
 });

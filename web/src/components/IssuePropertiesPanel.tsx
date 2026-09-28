@@ -125,7 +125,9 @@ export function IssuePropertiesPanel({
           aria-label={t('issueProperties.coreProperties')}
           className={styles.coreProperties}
         >
-          <Text className={styles.heading}>{t('issueProperties.heading')}</Text>
+          <Text component="h3" className={styles.heading}>
+            {t('issueProperties.heading')}
+          </Text>
 
           <PropertyRow
             label={t('field.status')}
@@ -191,7 +193,7 @@ export function IssuePropertiesPanel({
 
           <PropertyRow label={t('field.assignee')} icon={<IconUser size={14} stroke={1.7} />}>
             <PropertySelect
-              compactChars={10}
+              compactChars={14}
               compactLabel={assigneeValueLabel}
               aria-label={t('field.assignee')}
               value={issue.assignee ?? 'none'}
@@ -256,7 +258,9 @@ export function IssuePropertiesPanel({
           aria-label={t('issueProperties.labels')}
           className={`${styles.section} ${styles.labelsSection}`}
         >
-          <Text className={styles.heading}>{t('issueProperties.labels')}</Text>
+          <Text component="h3" className={styles.heading}>
+            {t('issueProperties.labels')}
+          </Text>
           <PropertyRow
             label={t('issueProperties.labels')}
             icon={<IconTag size={14} stroke={1.7} />}
@@ -293,11 +297,13 @@ export function IssuePropertiesPanel({
                       ))
                     ) : (
                       <Text size="xs" c="dimmed" truncate>
-                        {t('issueProperties.noLabels')}
+                        {t('issueProperties.addLabel')}
                       </Text>
                     )}
                   </Group>
-                  <IconChevronDown size={13} stroke={1.8} aria-hidden="true" />
+                  {selectedLabels.length > 0 ? (
+                    <IconChevronDown size={13} stroke={1.8} aria-hidden="true" />
+                  ) : null}
                 </UnstyledButton>
               </Popover.Target>
               <Popover.Dropdown
@@ -376,7 +382,9 @@ export function IssuePropertiesPanel({
           aria-label={t('field.project')}
           className={`${styles.section} ${styles.projectSection}`}
         >
-          <Text className={styles.heading}>{t('field.project')}</Text>
+          <Text component="h3" className={styles.heading}>
+            {t('field.project')}
+          </Text>
           <PropertyRow
             label={t('field.project')}
             icon={<IconFolder size={14} stroke={1.7} />}
@@ -389,7 +397,7 @@ export function IssuePropertiesPanel({
               value={issue.projectId != null ? String(issue.projectId) : 'none'}
               onChange={handlers.Project_onChange7}
               data={[
-                { value: 'none', label: t('field.project') },
+                { value: 'none', label: t('issueProperties.addToProject') },
                 ...projects.map((project) => ({ value: String(project.id), label: project.name })),
               ]}
               renderOption={({ option }) => (
@@ -577,7 +585,7 @@ function PropertySelect({
     (width, character) => width + ((character.codePointAt(0) ?? 0) <= 0xff ? 1 : 2),
     0,
   );
-  const inputWidth = Math.max(4, Math.min(compactChars, labelWidth + 1));
+  const inputWidth = Math.max(4, Math.min(compactChars, labelWidth + 2));
   return (
     <Select
       {...props}

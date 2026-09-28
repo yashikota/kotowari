@@ -2,43 +2,56 @@
   width: 100%;
   min-width: 0;
   padding: 0;
+  padding-top: 13px;
 }
 
 .properties {
   display: flex;
-  flex-flow: row wrap;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 32px;
   min-width: 0;
 }
 
 .coreProperties,
-.optionalProperties,
 .section {
-  display: contents;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .optionalProperties {
-  padding: 0;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.coreProperties {
+  padding-bottom: 0;
 }
 
 .heading {
-  display: none;
+  margin: 0 0 5px;
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .row {
   display: flex;
-  flex: 0 0 auto;
   align-items: center;
-  justify-content: flex-start;
   gap: 6px;
-  width: fit-content;
-  min-height: 34px;
+  width: 100%;
+  min-height: 30px;
   min-width: 0;
   max-width: 100%;
-  padding: 2px 8px;
-  border: 1px solid var(--mantine-color-default-border);
-  border-radius: 999px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
   background: transparent;
   transition:
     background-color 100ms ease,
@@ -48,7 +61,7 @@
 .row:hover,
 .row:focus-within {
   background-color: var(--mantine-color-default-hover);
-  border-color: color-mix(in srgb, var(--mantine-color-dimmed) 32%, transparent);
+  border-color: var(--mantine-color-default-border);
 }
 
 .label {
@@ -75,11 +88,11 @@
   display: flex;
   flex: 0 1 auto;
   align-items: center;
-  gap: 5px;
+  justify-content: flex-start;
+  gap: 6px;
   min-width: 0;
   width: fit-content;
   max-width: 100%;
-  justify-content: flex-end;
 }
 
 .select {
@@ -99,17 +112,18 @@
   max-width: 100%;
   min-height: 28px;
   height: 28px;
-  padding: 0 2px;
+  padding: 0 6px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 4px;
   background: transparent;
   color: var(--mantine-color-text);
   font-size: var(--mantine-font-size-xs);
-  line-height: 24px;
+  line-height: 26px;
 }
 
 .input:hover {
-  background: var(--mantine-color-default-hover);
+  border-color: var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
 }
 
 .input:focus,
@@ -130,21 +144,30 @@
 }
 
 .addPropertyButton {
-  flex: 0 0 24px;
+  flex: 0 0 28px;
   width: 24px;
   height: 24px;
-  margin-top: 4px;
-  border-radius: 50%;
+  margin: 2px 0 0 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.aside:hover .addPropertyButton,
+.aside:focus-within .addPropertyButton {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .dateInput {
   width: fit-content;
-  max-width: 136px;
+  max-width: 100%;
   min-width: 0;
 }
 
 .dateInput input {
-  width: 118px;
+  width: 118px !important;
+  min-width: 0;
   max-width: 100%;
   color-scheme: light dark;
 }
@@ -160,29 +183,8 @@
 
 .labelsRow .value,
 .projectRow .value {
-  flex: 0 1 auto;
   width: fit-content;
-  max-width: none;
-}
-
-.projectSection > .projectRow {
-  order: 4;
-}
-
-.coreProperties > .row:nth-of-type(4) {
-  order: 5;
-}
-
-.labelsSection > .labelsRow {
-  order: 6;
-}
-
-.coreProperties > .row:nth-of-type(5) {
-  order: 7;
-}
-
-.optionalProperties > * {
-  order: 8;
+  max-width: 100%;
 }
 
 .labelPill {
@@ -203,13 +205,13 @@
   display: flex;
   width: fit-content;
   min-width: 0;
-  max-width: 24ch;
+  max-width: 100%;
   min-height: 28px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 6px;
   padding: 0 2px;
-  border-radius: 999px;
+  border-radius: 4px;
   color: var(--mantine-color-text);
   font-size: var(--mantine-font-size-sm);
   text-align: left;
@@ -252,20 +254,18 @@
   color: var(--mantine-primary-color-6);
 }
 
-@media (max-width: 26em) {
-  .dueDateRow .value {
-    flex: 0 1 auto;
-    width: auto;
-    max-width: 66%;
+@media (max-width: 76em) {
+  .aside {
+    padding-top: 0;
   }
+}
 
-  .dueDateRow .dateInput,
-  .dueDateRow .dateInput :global(.mantine-Input-wrapper) {
-    width: 100%;
-    max-width: none;
+@media (hover: none) {
+  .addPropertyButton {
+    opacity: 1;
   }
+}
 
-  .dueDateRow .dateInput input {
-    width: 100%;
-  }
+.coreProperties > .heading {
+  margin-bottom: 8px;
 }

@@ -582,6 +582,7 @@
     "dueDate": "期限",
     "labels": "ラベル",
     "noLabels": "ラベルなし",
+    "addLabel": "ラベルを追加",
     "changeLabels": "ラベルを変更",
     "noLabelsFound": "一致するラベルがありません",
     "newLabel": "新しいラベル",

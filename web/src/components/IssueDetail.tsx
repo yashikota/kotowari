@@ -6,7 +6,6 @@ import {
   Avatar,
   Box,
   Button,
-  Grid,
   Group,
   Menu,
   Modal,
@@ -50,6 +49,7 @@ import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
 import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
+import layoutStyles from './IssueDetail.module.css';
 import { formatAttachmentSize, IssueAttachmentList } from './IssueAttachmentList.tsx';
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
 
@@ -198,7 +198,7 @@ export function IssueDetailView({
         handlers,
       } = model;
       return (
-        <Box maw={1120} mx="auto" px={{ base: 'sm', md: 'xl' }} pb="xl">
+        <Box maw={1180} mx="auto" px={{ base: 'sm', md: 'xs' }} pb="xl">
           <Group
             justify="space-between"
             wrap="wrap"
@@ -675,14 +675,14 @@ export function IssueDetailView({
             </Menu>
           </Group>
 
-          <Grid
-            gap="xl"
+          <Box
+            className={layoutStyles.issueLayout}
             mt="md"
             inert={issue.archivedAt ? true : undefined}
             aria-disabled={issue.archivedAt ? true : undefined}
             style={issue.archivedAt ? { opacity: 0.72 } : undefined}
           >
-            <Grid.Col span={12}>
+            <Box className={layoutStyles.title}>
               <TextInput
                 ref={titleRef}
                 aria-label={t('ui.issueTitle')}
@@ -702,224 +702,224 @@ export function IssueDetailView({
                   },
                 }}
               />
-            </Grid.Col>
+            </Box>
 
-            <Grid.Col span={12} order={{ base: 2, md: 2 }}>
-              <Stack gap="lg">
-                <DocumentEditor
-                  documentKey={`issues/${identifier}/body`}
-                  inline
-                  historyRequest={historyRequest}
-                  focusRequest={model.descriptionFocusRequest}
-                  showHistoryButton={false}
+            <Stack className={layoutStyles.content} gap="lg">
+              <DocumentEditor
+                documentKey={`issues/${identifier}/body`}
+                inline
+                historyRequest={historyRequest}
+                focusRequest={model.descriptionFocusRequest}
+                showHistoryButton={false}
+              />
+              <input
+                ref={issueFilesInputRef}
+                type="file"
+                multiple
+                aria-label={t('issueAttachments.chooseIssueFiles')}
+                onChange={handlers.onIssueFilesChange}
+                style={{ display: 'none' }}
+              />
+              <Group gap="xs">
+                <ReactionPicker
+                  target="issue"
+                  openedTarget={reactionPickerTarget}
+                  onOpenChange={handlers.onReactionPickerChange}
+                  onSelect={handlers.onSelectReaction}
                 />
-                <input
-                  ref={issueFilesInputRef}
-                  type="file"
-                  multiple
-                  aria-label={t('issueAttachments.chooseIssueFiles')}
-                  onChange={handlers.onIssueFilesChange}
-                  style={{ display: 'none' }}
+                <ReactionSummary
+                  reactions={issue.reactions ?? []}
+                  onToggle={(emoji) => handlers.onToggleReaction('issue', emoji)}
                 />
-                <Group gap="xs">
-                  <ReactionPicker
-                    target="issue"
-                    openedTarget={reactionPickerTarget}
-                    onOpenChange={handlers.onReactionPickerChange}
-                    onSelect={handlers.onSelectReaction}
+                <ActionIcon
+                  type="button"
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  aria-label={t(
+                    issueAttachmentBusy
+                      ? 'issueAttachments.uploading'
+                      : 'issueAttachments.addToIssue',
+                  )}
+                  disabled={issueAttachmentBusy}
+                  onClick={handlers.onChooseIssueFiles}
+                >
+                  <IconPaperclip size={15} aria-hidden="true" />
+                </ActionIcon>
+              </Group>
+              {issueAttachmentError ? (
+                <Alert color="red" role="alert">
+                  {issueAttachmentError}
+                </Alert>
+              ) : null}
+              {reactionError ? (
+                <Alert color="red" role="alert">
+                  {reactionError}
+                </Alert>
+              ) : null}
+              {issue.attachments?.length ? (
+                <Section title={t('issueAttachments.issueHeading')}>
+                  <IssueAttachmentList
+                    identifier={identifier}
+                    attachments={issue.attachments}
+                    onRemove={handlers.onRemoveIssueAttachment}
                   />
-                  <ReactionSummary
-                    reactions={issue.reactions ?? []}
-                    onToggle={(emoji) => handlers.onToggleReaction('issue', emoji)}
-                  />
-                  <ActionIcon
+                </Section>
+              ) : null}
+
+              <Box component="section" aria-label={t('ui.subIssues')} py="xs">
+                {children.length > 0 ? (
+                  <Stack gap="xs">
+                    {children.map((c) => (
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        key={c.identifier}
+                        onClick={() => handlers.onClick18(c)}
+                        fullWidth
+                        styles={{ inner: { justifyContent: 'flex-start' } }}
+                      >
+                        <Group justify="space-between" wrap="nowrap" w="100%">
+                          <Group gap="sm" wrap="nowrap">
+                            <Text fw={500}>{c.identifier}</Text>
+                            <Text>{c.title}</Text>
+                          </Group>
+                          <MetaBadge>
+                            {workflowStatusLabel(c.workflowStatus ?? c.status, workflowStatuses)}
+                          </MetaBadge>
+                        </Group>
+                      </Button>
+                    ))}
+                  </Stack>
+                ) : null}
+                {subIssueEditorOpen ? (
+                  <Stack gap="xs" mt={children.length > 0 ? 'xs' : 0}>
+                    <Textarea
+                      ref={subRef}
+                      rows={2}
+                      aria-label={t('ui.newSubIssue')}
+                      placeholder={t('ui.addSubIssue')}
+                      value={subTitle}
+                      onChange={handlers.New_sub_issue_onChange19}
+                      onKeyDown={handlers.New_sub_issue_onKeyDown20}
+                    />
+                    <Group justify="flex-end" gap="xs">
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="xs"
+                        onClick={handlers.onCloseSubIssueEditor}
+                      >
+                        {t('issueSubIssues.cancel')}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="xs"
+                        disabled={!subTitle.trim()}
+                        onClick={handlers.onCreateSubIssue}
+                      >
+                        {t('issueSubIssues.create')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                ) : (
+                  <Button
                     type="button"
                     variant="subtle"
-                    color="gray"
                     size="sm"
-                    aria-label={t(
-                      issueAttachmentBusy
-                        ? 'issueAttachments.uploading'
-                        : 'issueAttachments.addToIssue',
-                    )}
-                    disabled={issueAttachmentBusy}
-                    onClick={handlers.onChooseIssueFiles}
+                    leftSection={<IconPlus size={14} stroke={1.8} aria-hidden="true" />}
+                    onClick={handlers.onOpenSubIssueEditor}
                   >
-                    <IconPaperclip size={15} aria-hidden="true" />
-                  </ActionIcon>
-                </Group>
-                {issueAttachmentError ? (
-                  <Alert color="red" role="alert">
-                    {issueAttachmentError}
-                  </Alert>
-                ) : null}
-                {reactionError ? (
-                  <Alert color="red" role="alert">
-                    {reactionError}
-                  </Alert>
-                ) : null}
-                {issue.attachments?.length ? (
-                  <Section title={t('issueAttachments.issueHeading')}>
-                    <IssueAttachmentList
-                      identifier={identifier}
-                      attachments={issue.attachments}
-                      onRemove={handlers.onRemoveIssueAttachment}
-                    />
-                  </Section>
-                ) : null}
+                    {t('issueSubIssues.add')}
+                  </Button>
+                )}
+              </Box>
 
-                <Box component="section" aria-label={t('ui.subIssues')} py="xs">
-                  {children.length > 0 ? (
-                    <Stack gap="xs">
-                      {children.map((c) => (
-                        <Button
-                          type="button"
-                          variant="subtle"
-                          key={c.identifier}
-                          onClick={() => handlers.onClick18(c)}
-                          fullWidth
-                          styles={{ inner: { justifyContent: 'flex-start' } }}
+              {relationIssues.length > 0 || relationsEditorOpen ? (
+                <Box component="section" aria-label={t('issueRelations.heading')} py="xs">
+                  {relationIssues.length > 0 ? (
+                    <Stack gap="xs" role="list" aria-label={t('issueRelations.heading')}>
+                      {relationIssues.map(({ relation, target }) => (
+                        <Group
+                          key={relation.id}
+                          justify="space-between"
+                          wrap="nowrap"
+                          role="listitem"
                         >
-                          <Group justify="space-between" wrap="nowrap" w="100%">
-                            <Group gap="sm" wrap="nowrap">
-                              <Text fw={500}>{c.identifier}</Text>
-                              <Text>{c.title}</Text>
-                            </Group>
-                            <MetaBadge>
-                              {workflowStatusLabel(c.workflowStatus ?? c.status, workflowStatuses)}
-                            </MetaBadge>
+                          <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                            <MetaBadge>{t(`issueRelations.${relation.kind}`)}</MetaBadge>
+                            <Link
+                              to="/issues/$identifier"
+                              params={{ identifier: target.identifier }}
+                            >
+                              {target.identifier} {target.title}
+                            </Link>
                           </Group>
-                        </Button>
+                          <Button
+                            type="button"
+                            variant="subtle"
+                            color="gray"
+                            size="compact-sm"
+                            aria-label={t('issueRelations.remove', {
+                              identifier: target.identifier,
+                            })}
+                            onClick={() => handlers.onRemoveRelation33(relation)}
+                          >
+                            <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                          </Button>
+                        </Group>
                       ))}
                     </Stack>
                   ) : null}
-                  {subIssueEditorOpen ? (
-                    <Stack gap="xs" mt={children.length > 0 ? 'xs' : 0}>
-                      <Textarea
-                        ref={subRef}
-                        rows={2}
-                        aria-label={t('ui.newSubIssue')}
-                        placeholder={t('ui.addSubIssue')}
-                        value={subTitle}
-                        onChange={handlers.New_sub_issue_onChange19}
-                        onKeyDown={handlers.New_sub_issue_onKeyDown20}
-                      />
-                      <Group justify="flex-end" gap="xs">
-                        <Button
-                          type="button"
-                          variant="default"
-                          size="xs"
-                          onClick={handlers.onCloseSubIssueEditor}
-                        >
-                          {t('issueSubIssues.cancel')}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="xs"
-                          disabled={!subTitle.trim()}
-                          onClick={handlers.onCreateSubIssue}
-                        >
-                          {t('issueSubIssues.create')}
-                        </Button>
-                      </Group>
-                    </Stack>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="subtle"
-                      size="sm"
-                      leftSection={<IconPlus size={14} stroke={1.8} aria-hidden="true" />}
-                      onClick={handlers.onOpenSubIssueEditor}
-                    >
-                      {t('issueSubIssues.add')}
-                    </Button>
-                  )}
-                </Box>
-
-                {relationIssues.length > 0 || relationsEditorOpen ? (
-                  <Box component="section" aria-label={t('issueRelations.heading')} py="xs">
-                    {relationIssues.length > 0 ? (
-                      <Stack gap="xs" role="list" aria-label={t('issueRelations.heading')}>
-                        {relationIssues.map(({ relation, target }) => (
-                          <Group
-                            key={relation.id}
-                            justify="space-between"
-                            wrap="nowrap"
-                            role="listitem"
-                          >
-                            <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-                              <MetaBadge>{t(`issueRelations.${relation.kind}`)}</MetaBadge>
-                              <Link
-                                to="/issues/$identifier"
-                                params={{ identifier: target.identifier }}
-                              >
-                                {target.identifier} {target.title}
-                              </Link>
-                            </Group>
-                            <Button
-                              type="button"
-                              variant="subtle"
-                              color="gray"
-                              size="compact-sm"
-                              aria-label={t('issueRelations.remove', {
-                                identifier: target.identifier,
-                              })}
-                              onClick={() => handlers.onRemoveRelation33(relation)}
-                            >
-                              <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                            </Button>
-                          </Group>
-                        ))}
-                      </Stack>
-                    ) : null}
-                    {relationsEditorOpen ? (
-                      <form onSubmit={handlers.Relation_onSubmit32}>
-                        <Stack gap="xs">
-                          <Group align="flex-end" wrap="wrap">
-                            <NativeSelect
-                              aria-label={t('issueRelations.kindLabel')}
-                              value={relationKind}
-                              onChange={handlers.Relation_kind_onChange31}
-                              data={(
-                                ['related', 'blocks', 'blockedBy', 'duplicateOf'] as const
-                              ).map((kind) => ({
+                  {relationsEditorOpen ? (
+                    <form onSubmit={handlers.Relation_onSubmit32}>
+                      <Stack gap="xs">
+                        <Group align="flex-end" wrap="wrap">
+                          <NativeSelect
+                            aria-label={t('issueRelations.kindLabel')}
+                            value={relationKind}
+                            onChange={handlers.Relation_kind_onChange31}
+                            data={(['related', 'blocks', 'blockedBy', 'duplicateOf'] as const).map(
+                              (kind) => ({
                                 value: kind,
                                 label: t(`issueRelations.${kind}`),
-                              }))}
-                            />
-                            <NativeSelect
-                              aria-label={t('issueRelations.issueLabel')}
-                              value={relationTarget}
-                              onChange={handlers.Relation_target_onChange30}
-                              data={[
-                                { value: '', label: t('issueRelations.chooseIssue') },
-                                ...relationTargetOptions.map((candidate) => ({
-                                  value: candidate.identifier,
-                                  label: `${candidate.identifier} ${candidate.title}`,
-                                })),
-                              ]}
-                              style={{ flex: '1 1 240px' }}
-                            />
-                          </Group>
-                          <Group justify="flex-end" gap="xs">
-                            <Button
-                              type="button"
-                              variant="default"
-                              size="xs"
-                              onClick={handlers.onCloseRelationsEditor}
-                            >
-                              {t('issueSubIssues.cancel')}
-                            </Button>
-                            <Button type="submit" size="xs" disabled={!relationTarget}>
-                              {t('issueRelations.add')}
-                            </Button>
-                          </Group>
-                        </Stack>
-                      </form>
-                    ) : null}
-                  </Box>
-                ) : null}
+                              }),
+                            )}
+                          />
+                          <NativeSelect
+                            aria-label={t('issueRelations.issueLabel')}
+                            value={relationTarget}
+                            onChange={handlers.Relation_target_onChange30}
+                            data={[
+                              { value: '', label: t('issueRelations.chooseIssue') },
+                              ...relationTargetOptions.map((candidate) => ({
+                                value: candidate.identifier,
+                                label: `${candidate.identifier} ${candidate.title}`,
+                              })),
+                            ]}
+                            style={{ flex: '1 1 240px' }}
+                          />
+                        </Group>
+                        <Group justify="flex-end" gap="xs">
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="xs"
+                            onClick={handlers.onCloseRelationsEditor}
+                          >
+                            {t('issueSubIssues.cancel')}
+                          </Button>
+                          <Button type="submit" size="xs" disabled={!relationTarget}>
+                            {t('issueRelations.add')}
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </form>
+                  ) : null}
+                </Box>
+              ) : null}
 
+              {issue.externalLinks.length > 0 ? (
                 <Section
                   title={t('issueLinks.resourcesHeading')}
                   ariaLabel={t('issueLinks.resourcesHeading')}
@@ -973,406 +973,396 @@ export function IssueDetailView({
                 >
                   {resourcesCollapsed ? null : (
                     <Box id="issue-resources-content">
-                      {issue.externalLinks.length === 0 ? (
-                        <Text c="dimmed" size="sm">
-                          {t('issueLinks.empty')}
-                        </Text>
-                      ) : (
-                        <Stack gap="xs" role="list" aria-label={t('issueLinks.heading')}>
-                          {issue.externalLinks.map((link) => {
-                            let pageSlug: string | null = null;
-                            try {
-                              const url = new URL(link.url);
-                              const pageMarker = '/pages/';
-                              const markerIndex = url.pathname.lastIndexOf(pageMarker);
-                              if (url.origin === window.location.origin && markerIndex >= 0) {
-                                const candidate = url.pathname.slice(
-                                  markerIndex + pageMarker.length,
-                                );
-                                if (candidate && !candidate.includes('/')) {
-                                  pageSlug = decodeURIComponent(candidate);
-                                }
+                      <Stack gap="xs" role="list" aria-label={t('issueLinks.heading')}>
+                        {issue.externalLinks.map((link) => {
+                          let pageSlug: string | null = null;
+                          try {
+                            const url = new URL(link.url);
+                            const pageMarker = '/pages/';
+                            const markerIndex = url.pathname.lastIndexOf(pageMarker);
+                            if (url.origin === window.location.origin && markerIndex >= 0) {
+                              const candidate = url.pathname.slice(markerIndex + pageMarker.length);
+                              if (candidate && !candidate.includes('/')) {
+                                pageSlug = decodeURIComponent(candidate);
                               }
-                            } catch {
-                              pageSlug = null;
                             }
-                            const page = pageSlug
-                              ? pages.find((item) => item.slug === pageSlug)
-                              : null;
-                            const title = page?.title || link.title || link.url;
-                            return (
-                              <Group
-                                key={link.id}
-                                justify="space-between"
-                                wrap="nowrap"
-                                role="listitem"
-                              >
-                                <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-                                  {pageSlug ? (
-                                    <IconFileText size={15} stroke={1.7} aria-hidden="true" />
-                                  ) : (
-                                    <IconExternalLink size={15} stroke={1.7} aria-hidden="true" />
-                                  )}
-                                  {pageSlug ? (
-                                    <Link to="/pages/$slug" params={{ slug: pageSlug }}>
-                                      {title}
-                                    </Link>
-                                  ) : (
-                                    <a href={link.url} target="_blank" rel="noreferrer">
-                                      {title}
-                                    </a>
-                                  )}
-                                  <MetaBadge>{t(`issueLinks.${link.kind}`)}</MetaBadge>
-                                </Group>
-                                <Button
-                                  type="button"
-                                  variant="subtle"
-                                  color="gray"
-                                  size="compact-sm"
-                                  aria-label={t('issueLinks.remove', { title })}
-                                  onClick={() => handlers.onRemoveExternalLink28(link)}
-                                >
-                                  <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                                </Button>
+                          } catch {
+                            pageSlug = null;
+                          }
+                          const page = pageSlug
+                            ? pages.find((item) => item.slug === pageSlug)
+                            : null;
+                          const title = page?.title || link.title || link.url;
+                          return (
+                            <Group
+                              key={link.id}
+                              justify="space-between"
+                              wrap="nowrap"
+                              role="listitem"
+                            >
+                              <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                                {pageSlug ? (
+                                  <IconFileText size={15} stroke={1.7} aria-hidden="true" />
+                                ) : (
+                                  <IconExternalLink size={15} stroke={1.7} aria-hidden="true" />
+                                )}
+                                {pageSlug ? (
+                                  <Link to="/pages/$slug" params={{ slug: pageSlug }}>
+                                    {title}
+                                  </Link>
+                                ) : (
+                                  <a href={link.url} target="_blank" rel="noreferrer">
+                                    {title}
+                                  </a>
+                                )}
+                                <MetaBadge>{t(`issueLinks.${link.kind}`)}</MetaBadge>
                               </Group>
-                            );
-                          })}
-                        </Stack>
-                      )}
+                              <Button
+                                type="button"
+                                variant="subtle"
+                                color="gray"
+                                size="compact-sm"
+                                aria-label={t('issueLinks.remove', { title })}
+                                onClick={() => handlers.onRemoveExternalLink28(link)}
+                              >
+                                <IconTrash size={14} stroke={1.7} aria-hidden="true" />
+                              </Button>
+                            </Group>
+                          );
+                        })}
+                      </Stack>
                     </Box>
                   )}
                 </Section>
+              ) : null}
 
-                <Section
-                  title={t('ui.activity')}
-                  ariaLabel={t('ui.activity')}
-                  action={
-                    <ActionIcon
-                      type="button"
-                      variant="subtle"
-                      color={isSubscribed ? 'blue' : 'gray'}
-                      aria-label={t(
-                        isSubscribed
-                          ? 'issueSubscription.unsubscribe'
-                          : 'issueSubscription.subscribe',
-                      )}
-                      aria-pressed={isSubscribed}
-                      title={t(
-                        isSubscribed
-                          ? 'issueSubscription.unsubscribe'
-                          : 'issueSubscription.subscribe',
-                      )}
-                      onClick={handlers.Subscription_onClick}
-                    >
-                      <IconBell
-                        size={15}
-                        stroke={1.7}
-                        fill={isSubscribed ? 'currentColor' : 'none'}
-                        aria-hidden="true"
-                      />
-                    </ActionIcon>
-                  }
-                >
-                  <Stack gap="sm">
-                    {timeline.map((entry) => {
-                      if (entry.kind === 'activity') {
-                        const { activity } = entry;
-                        return (
-                          <Group
-                            key={`activity-${entry.id}`}
-                            gap="xs"
-                            wrap="nowrap"
-                            align="flex-start"
-                            data-testid="issue-activity-entry"
-                          >
-                            <ActivityAvatar />
-                            <Text size="sm" style={{ flex: 1, minWidth: 0 }}>
-                              <Text span fw={550}>
-                                {t('issueComments.you')}
-                              </Text>{' '}
-                              {formatActivity(activity.action, activity.payload, workflowStatuses)}{' '}
-                              <Text span c="dimmed" size="sm">
-                                {formatStamp(activity.createdAt, timeZone)}
-                              </Text>
-                            </Text>
-                          </Group>
-                        );
-                      }
-
-                      const c = entry.comment;
+              <Section
+                title={t('ui.activity')}
+                ariaLabel={t('ui.activity')}
+                action={
+                  <ActionIcon
+                    type="button"
+                    variant="subtle"
+                    color={isSubscribed ? 'blue' : 'gray'}
+                    aria-label={t(
+                      isSubscribed
+                        ? 'issueSubscription.unsubscribe'
+                        : 'issueSubscription.subscribe',
+                    )}
+                    aria-pressed={isSubscribed}
+                    title={t(
+                      isSubscribed
+                        ? 'issueSubscription.unsubscribe'
+                        : 'issueSubscription.subscribe',
+                    )}
+                    onClick={handlers.Subscription_onClick}
+                  >
+                    <IconBell
+                      size={15}
+                      stroke={1.7}
+                      fill={isSubscribed ? 'currentColor' : 'none'}
+                      aria-hidden="true"
+                    />
+                  </ActionIcon>
+                }
+              >
+                <Stack gap="sm">
+                  {timeline.map((entry) => {
+                    if (entry.kind === 'activity') {
+                      const { activity } = entry;
                       return (
                         <Group
-                          key={`comment-${entry.id}`}
+                          key={`activity-${entry.id}`}
                           gap="xs"
                           wrap="nowrap"
                           align="flex-start"
                           data-testid="issue-activity-entry"
                         >
                           <ActivityAvatar />
-                          <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-                            <Group justify="space-between" wrap="nowrap" align="flex-start">
-                              <Text c="dimmed" size="sm">
-                                <Text span fw={550} c="var(--mantine-color-text)">
-                                  {t('issueComments.you')}
-                                </Text>
-                                {' · '}
-                                {formatStamp(c.createdAt, timeZone)}
-                                {c.updatedAt ? (
-                                  <Text span ml={6}>
-                                    · {t('issueComments.edited')}
-                                  </Text>
-                                ) : null}
-                              </Text>
-                              <Menu withinPortal position="bottom-end">
-                                <Menu.Target>
-                                  <ActionIcon
-                                    type="button"
-                                    variant="subtle"
-                                    color="gray"
-                                    size="sm"
-                                    aria-label={t('issueComments.moreOptions')}
-                                  >
-                                    <IconDotsVertical size={15} aria-hidden="true" />
-                                  </ActionIcon>
-                                </Menu.Target>
-                                <Menu.Dropdown>
-                                  <Menu.Item onClick={() => handlers.onEditComment(c.id, c.body)}>
-                                    {t('issueComments.edit')}
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    color="red"
-                                    leftSection={<IconTrash size={14} aria-hidden="true" />}
-                                    onClick={() => handlers.onDeleteComment(c.id)}
-                                  >
-                                    {t('issueComments.delete')}
-                                  </Menu.Item>
-                                </Menu.Dropdown>
-                              </Menu>
-                            </Group>
-                            {editingCommentId === c.id ? (
-                              <Stack gap="xs">
-                                <Textarea
-                                  aria-label={t('issueComments.edit')}
-                                  value={editingCommentDraft}
-                                  onChange={handlers.onChangeCommentEdit}
-                                  autosize
-                                  minRows={2}
-                                  maxRows={12}
-                                />
-                                <Group justify="flex-end" gap="xs">
-                                  <Button
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={handlers.onCancelCommentEdit}
-                                  >
-                                    {t('issueComments.cancel')}
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="xs"
-                                    disabled={!editingCommentDraft.trim() && !c.attachments?.length}
-                                    onClick={() => handlers.onSaveCommentEdit(c.id)}
-                                  >
-                                    {t('issueComments.save')}
-                                  </Button>
-                                </Group>
-                              </Stack>
-                            ) : c.body ? (
-                              <MarkdownContent
-                                html={renderMarkdown(c.body, '', `comment-${c.id}-`)}
-                              />
-                            ) : null}
-                            <IssueAttachmentList
-                              identifier={identifier}
-                              attachments={c.attachments ?? []}
-                            />
-                            <Group gap="xs">
-                              <ReactionPicker
-                                target={`comment:${c.id}`}
-                                openedTarget={reactionPickerTarget}
-                                onOpenChange={handlers.onReactionPickerChange}
-                                onSelect={handlers.onSelectReaction}
-                              />
-                              <ReactionSummary
-                                reactions={c.reactions ?? []}
-                                onToggle={(emoji) =>
-                                  handlers.onToggleReaction(`comment:${c.id}`, emoji)
-                                }
-                              />
-                            </Group>
-                          </Stack>
+                          <Text size="sm" style={{ flex: 1, minWidth: 0 }}>
+                            <Text span fw={550}>
+                              {t('issueComments.you')}
+                            </Text>{' '}
+                            {formatActivity(activity.action, activity.payload, workflowStatuses)}{' '}
+                            <Text span c="dimmed" size="sm">
+                              {formatStamp(activity.createdAt, timeZone)}
+                            </Text>
+                          </Text>
                         </Group>
                       );
-                    })}
-                    <input
-                      ref={commentFilesInputRef}
-                      type="file"
-                      multiple
-                      aria-label={t('issueAttachments.chooseFiles')}
-                      onChange={handlers.onCommentFilesChange}
-                      style={{ display: 'none' }}
-                    />
-                    <Paper withBorder p="xs" radius="md">
-                      {commentFiles.length ? (
-                        <Stack gap={4} aria-label={t('issueAttachments.pending')} mb="xs">
-                          {commentFiles.map((file, index) => (
-                            <Group key={`${file.name}-${file.lastModified}-${index}`} gap="xs">
-                              <IconPaperclip size={15} aria-hidden="true" />
-                              <Text size="sm" truncate>
-                                {file.name}
+                    }
+
+                    const c = entry.comment;
+                    return (
+                      <Group
+                        key={`comment-${entry.id}`}
+                        gap="xs"
+                        wrap="nowrap"
+                        align="flex-start"
+                        data-testid="issue-activity-entry"
+                      >
+                        <ActivityAvatar />
+                        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                          <Group justify="space-between" wrap="nowrap" align="flex-start">
+                            <Text c="dimmed" size="sm">
+                              <Text span fw={550} c="var(--mantine-color-text)">
+                                {t('issueComments.you')}
                               </Text>
-                              <Text size="xs" c="dimmed">
-                                {t('issueAttachments.fileSize', {
-                                  size: formatAttachmentSize(file.size),
-                                })}
-                              </Text>
-                              <ActionIcon
-                                type="button"
-                                variant="subtle"
-                                color="gray"
-                                size="sm"
-                                aria-label={t('issueAttachments.removeFile', { name: file.name })}
-                                onClick={() => handlers.onRemoveCommentFile(index)}
-                              >
-                                <IconTrash size={14} aria-hidden="true" />
-                              </ActionIcon>
-                            </Group>
-                          ))}
+                              {' · '}
+                              {formatStamp(c.createdAt, timeZone)}
+                              {c.updatedAt ? (
+                                <Text span ml={6}>
+                                  · {t('issueComments.edited')}
+                                </Text>
+                              ) : null}
+                            </Text>
+                            <Menu withinPortal position="bottom-end">
+                              <Menu.Target>
+                                <ActionIcon
+                                  type="button"
+                                  variant="subtle"
+                                  color="gray"
+                                  size="sm"
+                                  aria-label={t('issueComments.moreOptions')}
+                                >
+                                  <IconDotsVertical size={15} aria-hidden="true" />
+                                </ActionIcon>
+                              </Menu.Target>
+                              <Menu.Dropdown>
+                                <Menu.Item onClick={() => handlers.onEditComment(c.id, c.body)}>
+                                  {t('issueComments.edit')}
+                                </Menu.Item>
+                                <Menu.Item
+                                  color="red"
+                                  leftSection={<IconTrash size={14} aria-hidden="true" />}
+                                  onClick={() => handlers.onDeleteComment(c.id)}
+                                >
+                                  {t('issueComments.delete')}
+                                </Menu.Item>
+                              </Menu.Dropdown>
+                            </Menu>
+                          </Group>
+                          {editingCommentId === c.id ? (
+                            <Stack gap="xs">
+                              <Textarea
+                                aria-label={t('issueComments.edit')}
+                                value={editingCommentDraft}
+                                onChange={handlers.onChangeCommentEdit}
+                                autosize
+                                minRows={2}
+                                maxRows={12}
+                              />
+                              <Group justify="flex-end" gap="xs">
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="xs"
+                                  onClick={handlers.onCancelCommentEdit}
+                                >
+                                  {t('issueComments.cancel')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="xs"
+                                  disabled={!editingCommentDraft.trim() && !c.attachments?.length}
+                                  onClick={() => handlers.onSaveCommentEdit(c.id)}
+                                >
+                                  {t('issueComments.save')}
+                                </Button>
+                              </Group>
+                            </Stack>
+                          ) : c.body ? (
+                            <MarkdownContent
+                              html={renderMarkdown(c.body, '', `comment-${c.id}-`)}
+                            />
+                          ) : null}
+                          <IssueAttachmentList
+                            identifier={identifier}
+                            attachments={c.attachments ?? []}
+                          />
+                          <Group gap="xs">
+                            <ReactionPicker
+                              target={`comment:${c.id}`}
+                              openedTarget={reactionPickerTarget}
+                              onOpenChange={handlers.onReactionPickerChange}
+                              onSelect={handlers.onSelectReaction}
+                            />
+                            <ReactionSummary
+                              reactions={c.reactions ?? []}
+                              onToggle={(emoji) =>
+                                handlers.onToggleReaction(`comment:${c.id}`, emoji)
+                              }
+                            />
+                          </Group>
                         </Stack>
-                      ) : null}
-                      <Textarea
-                        ref={noteRef}
-                        minRows={1}
-                        maxRows={8}
-                        autosize
-                        variant="unstyled"
-                        aria-label={t('ui.newNote')}
-                        aria-describedby="issue-comment-instructions"
-                        placeholder={t('issueComments.composerPlaceholder')}
-                        value={draft}
-                        onChange={handlers.New_note_onChange21}
-                        onKeyDown={handlers.New_note_onKeyDown22}
-                      />
-                      <Group justify="space-between" mt="xs">
-                        <ActionIcon
+                      </Group>
+                    );
+                  })}
+                  <input
+                    ref={commentFilesInputRef}
+                    type="file"
+                    multiple
+                    aria-label={t('issueAttachments.chooseFiles')}
+                    onChange={handlers.onCommentFilesChange}
+                    style={{ display: 'none' }}
+                  />
+                  <Paper withBorder p="xs" radius="md">
+                    {commentFiles.length ? (
+                      <Stack gap={4} aria-label={t('issueAttachments.pending')} mb="xs">
+                        {commentFiles.map((file, index) => (
+                          <Group key={`${file.name}-${file.lastModified}-${index}`} gap="xs">
+                            <IconPaperclip size={15} aria-hidden="true" />
+                            <Text size="sm" truncate>
+                              {file.name}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {t('issueAttachments.fileSize', {
+                                size: formatAttachmentSize(file.size),
+                              })}
+                            </Text>
+                            <ActionIcon
+                              type="button"
+                              variant="subtle"
+                              color="gray"
+                              size="sm"
+                              aria-label={t('issueAttachments.removeFile', { name: file.name })}
+                              onClick={() => handlers.onRemoveCommentFile(index)}
+                            >
+                              <IconTrash size={14} aria-hidden="true" />
+                            </ActionIcon>
+                          </Group>
+                        ))}
+                      </Stack>
+                    ) : null}
+                    <Textarea
+                      ref={noteRef}
+                      minRows={1}
+                      maxRows={8}
+                      autosize
+                      variant="unstyled"
+                      aria-label={t('ui.newNote')}
+                      aria-describedby="issue-comment-instructions"
+                      placeholder={t('issueComments.composerPlaceholder')}
+                      value={draft}
+                      onChange={handlers.New_note_onChange21}
+                      onKeyDown={handlers.New_note_onKeyDown22}
+                    />
+                    <Group justify="space-between" mt="xs">
+                      <ActionIcon
+                        type="button"
+                        variant="subtle"
+                        color="gray"
+                        aria-label={t('issueAttachments.add')}
+                        onClick={handlers.onChooseCommentFiles}
+                      >
+                        <IconPaperclip size={16} aria-hidden="true" />
+                      </ActionIcon>
+                      <ActionIcon
+                        type="button"
+                        variant="filled"
+                        aria-label={t('issueAttachments.submit')}
+                        onClick={handlers.onSubmitComment}
+                        disabled={!draft.trim() && commentFiles.length === 0}
+                      >
+                        <IconArrowUp size={16} aria-hidden="true" />
+                      </ActionIcon>
+                    </Group>
+                  </Paper>
+                  <VisuallyHidden id="issue-comment-instructions">
+                    {t('issueAttachments.limits')}{' '}
+                    {t(commentSubmitShortcut === 'enter' ? 'ui.enterToSave' : 'ui.modEnterToSave')}
+                  </VisuallyHidden>
+                  {commentError ? (
+                    <Alert color="red" role="alert">
+                      {commentError}
+                    </Alert>
+                  ) : null}
+                </Stack>
+              </Section>
+              <Section title={t('nav.adrs')}>
+                {linkedAdrs.length === 0 ? (
+                  <Text c="dimmed" size="sm">
+                    {t('ui.noLinkedDecisions')}
+                  </Text>
+                ) : (
+                  <Stack gap="xs" role="list">
+                    {linkedAdrs.map((a) => (
+                      <Group key={a.identifier} justify="space-between" wrap="nowrap">
+                        <Group gap="sm" wrap="nowrap">
+                          <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
+                            {a.identifier}
+                          </Link>
+                          <Text>{a.title}</Text>
+                          <MetaBadge>{a.status}</MetaBadge>
+                        </Group>
+                        <Button
                           type="button"
                           variant="subtle"
-                          color="gray"
-                          aria-label={t('issueAttachments.add')}
-                          onClick={handlers.onChooseCommentFiles}
+                          aria-label={t('issueADRs.unlink', { identifier: a.identifier })}
+                          onClick={() => handlers.onClick14(a)}
                         >
-                          <IconPaperclip size={16} aria-hidden="true" />
-                        </ActionIcon>
-                        <ActionIcon
-                          type="button"
-                          variant="filled"
-                          aria-label={t('issueAttachments.submit')}
-                          onClick={handlers.onSubmitComment}
-                          disabled={!draft.trim() && commentFiles.length === 0}
-                        >
-                          <IconArrowUp size={16} aria-hidden="true" />
-                        </ActionIcon>
+                          {t('ui.unlink')}
+                        </Button>
                       </Group>
-                    </Paper>
-                    <VisuallyHidden id="issue-comment-instructions">
-                      {t('issueAttachments.limits')}{' '}
-                      {t(
-                        commentSubmitShortcut === 'enter' ? 'ui.enterToSave' : 'ui.modEnterToSave',
-                      )}
-                    </VisuallyHidden>
-                    {commentError ? (
-                      <Alert color="red" role="alert">
-                        {commentError}
-                      </Alert>
-                    ) : null}
+                    ))}
                   </Stack>
-                </Section>
-                <Section title={t('nav.adrs')}>
-                  {linkedAdrs.length === 0 ? (
-                    <Text c="dimmed" size="sm">
-                      {t('ui.noLinkedDecisions')}
-                    </Text>
-                  ) : (
-                    <Stack gap="xs" role="list">
-                      {linkedAdrs.map((a) => (
-                        <Group key={a.identifier} justify="space-between" wrap="nowrap">
-                          <Group gap="sm" wrap="nowrap">
-                            <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
-                              {a.identifier}
-                            </Link>
-                            <Text>{a.title}</Text>
-                            <MetaBadge>{a.status}</MetaBadge>
-                          </Group>
-                          <Button
-                            type="button"
-                            variant="subtle"
-                            aria-label={t('issueADRs.unlink', { identifier: a.identifier })}
-                            onClick={() => handlers.onClick14(a)}
-                          >
-                            {t('ui.unlink')}
-                          </Button>
-                        </Group>
-                      ))}
-                    </Stack>
-                  )}
-                  <Group align="flex-end" wrap="wrap">
-                    <NativeSelect
-                      aria-label={t('ui.linkAdr')}
-                      value={adrPick}
-                      onChange={handlers.Link_ADR_onChange15}
-                      data={[
-                        { value: '', label: t('issueADRs.choose') },
-                        ...unlinkedAdrs.map((a) => ({
-                          value: String(a.number),
-                          label: `${a.identifier} ${a.title}`,
-                        })),
-                      ]}
-                      style={{ flex: 1, minWidth: 200 }}
-                    />
-                    <Button
-                      type="button"
-                      variant="subtle"
-                      disabled={!adrPick}
-                      onClick={handlers.onClick16}
-                    >
-                      {t('ui.link')}
-                    </Button>
-                    <Button type="button" variant="subtle" onClick={handlers.onClick17}>
-                      {t('ui.newAdr')}
-                    </Button>
-                  </Group>
-                </Section>
-                <Box pt="sm" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-                  <AIPanel
-                    kind="issues"
-                    id={identifier}
-                    floating
-                    contextLabel={issue.title}
-                    promptPlaceholder={t('issueAssistant.placeholder')}
-                    starterPrompts={[
-                      {
-                        label: t('issueAssistant.prompts.summary'),
-                        prompt: t('issueAssistant.prompts.summaryPrompt'),
-                      },
-                      {
-                        label: t('issueAssistant.prompts.plan'),
-                        prompt: t('issueAssistant.prompts.planPrompt'),
-                      },
-                      {
-                        label: t('issueAssistant.prompts.risks'),
-                        prompt: t('issueAssistant.prompts.risksPrompt'),
-                      },
+                )}
+                <Group align="flex-end" wrap="wrap">
+                  <NativeSelect
+                    aria-label={t('ui.linkAdr')}
+                    value={adrPick}
+                    onChange={handlers.Link_ADR_onChange15}
+                    data={[
+                      { value: '', label: t('issueADRs.choose') },
+                      ...unlinkedAdrs.map((a) => ({
+                        value: String(a.number),
+                        label: `${a.identifier} ${a.title}`,
+                      })),
                     ]}
-                    onOpenFullPage={handlers.onOpenIssueAgentPage}
+                    style={{ flex: 1, minWidth: 200 }}
                   />
-                </Box>
-              </Stack>
-            </Grid.Col>
-            <Grid.Col span={12} order={{ base: 1, md: 1 }}>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    disabled={!adrPick}
+                    onClick={handlers.onClick16}
+                  >
+                    {t('ui.link')}
+                  </Button>
+                  <Button type="button" variant="subtle" onClick={handlers.onClick17}>
+                    {t('ui.newAdr')}
+                  </Button>
+                </Group>
+              </Section>
+              <Box pt="sm" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+                <AIPanel
+                  kind="issues"
+                  id={identifier}
+                  floating
+                  contextLabel={issue.title}
+                  promptPlaceholder={t('issueAssistant.placeholder')}
+                  starterPrompts={[
+                    {
+                      label: t('issueAssistant.prompts.summary'),
+                      prompt: t('issueAssistant.prompts.summaryPrompt'),
+                    },
+                    {
+                      label: t('issueAssistant.prompts.plan'),
+                      prompt: t('issueAssistant.prompts.planPrompt'),
+                    },
+                    {
+                      label: t('issueAssistant.prompts.risks'),
+                      prompt: t('issueAssistant.prompts.risksPrompt'),
+                    },
+                  ]}
+                  onOpenFullPage={handlers.onOpenIssueAgentPage}
+                />
+              </Box>
+            </Stack>
+            <Box component="aside" className={layoutStyles.properties}>
               <IssuePropertiesPanel model={model} />
-            </Grid.Col>
-          </Grid>
+            </Box>
+          </Box>
           <Modal
             opened={customReminderOpen}
             onClose={handlers.onCloseCustomReminder}

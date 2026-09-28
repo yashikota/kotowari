@@ -588,6 +588,7 @@
     "dueDate": "Due date",
     "labels": "Labels",
     "noLabels": "No labels",
+    "addLabel": "Add label",
     "changeLabels": "Change labels",
     "noLabelsFound": "No matching labels",
     "newLabel": "New label",
