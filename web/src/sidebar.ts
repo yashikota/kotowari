@@ -58,6 +58,20 @@ export function sidebarNavigation(preferences: PersonalPreferences) {
   };
 }
 
+export function visibleSidebarNavigation(
+  preferences: PersonalPreferences,
+  badgeCounts: Partial<Record<SidebarItemId, number>>,
+) {
+  const navigation = sidebarNavigation(preferences);
+  const onlyVisible = <T extends SidebarEntry>(entries: T[]) =>
+    entries.filter((entry) => entry.location !== 'badged' || (badgeCounts[entry.id] ?? 0) > 0);
+  return {
+    personal: onlyVisible(navigation.personal),
+    workspace: onlyVisible(navigation.workspace),
+    more: onlyVisible(navigation.more),
+  };
+}
+
 export function sidebarSettingsGroups(preferences: PersonalPreferences) {
   const entries = sidebarEntries(preferences);
   return (['personal', 'workspace', 'more', 'hidden'] as const).map((group) => ({

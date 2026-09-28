@@ -5,6 +5,7 @@ import {
   INBOX_PRIORITY_TYPES,
   INBOX_STATE_KEY,
   parseInboxState,
+  INBOX_STATE_EVENT,
   serializeInboxState,
   type InboxPriorityType,
   type InboxState,
@@ -22,6 +23,7 @@ export function useInboxSettingsPresenter() {
     setInboxState((current) => {
       const next = update(current);
       window.localStorage.setItem(INBOX_STATE_KEY, serializeInboxState(next));
+      window.dispatchEvent(new Event(INBOX_STATE_EVENT));
       return next;
     });
   }

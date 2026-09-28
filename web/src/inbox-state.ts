@@ -31,6 +31,7 @@ export const INBOX_PRIORITY_TYPES = [
 export type InboxPriorityType = (typeof INBOX_PRIORITY_TYPES)[number];
 
 export const INBOX_STATE_KEY = 'kotowari.inbox.v1';
+export const INBOX_STATE_EVENT = 'kotowari:inbox-state-changed';
 
 export const DEFAULT_INBOX_STATE: InboxState = {
   readIds: [],
@@ -81,6 +82,25 @@ export function splitPriorityInboxActivities<T extends InboxPriorityActivity>(
     (included.has(inboxPriorityType(activity)) ? priority : other).push(activity);
   }
   return { priority, other };
+}
+
+export function unreadInboxBadgeCount<T extends InboxPriorityActivity & { id: number }>(
+  activities: T[],
+  state: InboxState,
+  now = Date.now(),
+): number {
+  if (state.badgeCount === 'none') return 0;
+  const unread = activities.filter(
+    (activity) =>
+      !state.readIds.includes(activity.id) &&
+      !state.archivedIds.includes(activity.id) &&
+      !state.deletedIds.includes(activity.id) &&
+      !(state.snoozedUntil[activity.id] > now),
+  );
+  if (state.badgeCount === 'priority') {
+    return splitPriorityInboxActivities(unread, state.priorityTypes).priority.length;
+  }
+  return unread.length;
 }
 
 function validPriorityTypes(value: unknown): InboxPriorityType[] {

@@ -6,6 +6,7 @@ import {
   inboxSnoozeUntil,
   parseInboxState,
   sortInboxActivities,
+  unreadInboxBadgeCount,
   serializeInboxState,
 } from './inbox-state.ts';
 
@@ -125,5 +126,43 @@ describe('personal inbox state', () => {
         ordering: 'newest',
       }).map((item) => item.id),
     ).toEqual([2, 1, 3]);
+  });
+
+  it('counts only unread, visible inbox notifications according to badge preference', () => {
+    const activities = [
+      { id: 1, createdAt: '2026-01-01', entityType: 'issue', action: 'commented', payload: {} },
+      {
+        id: 2,
+        createdAt: '2026-01-02',
+        entityType: 'issue',
+        action: 'status_changed',
+        payload: {},
+      },
+      {
+        id: 3,
+        createdAt: '2026-01-03',
+        entityType: 'project',
+        action: 'status_update_posted',
+        payload: {},
+      },
+    ];
+    const state = {
+      ...DEFAULT_INBOX_STATE,
+      readIds: [1],
+      archivedIds: [2],
+      snoozedUntil: { 3: 20_000 },
+    };
+    expect(unreadInboxBadgeCount(activities, state, 10_000)).toBe(0);
+    expect(unreadInboxBadgeCount(activities, { ...state, snoozedUntil: {} }, 10_000)).toBe(1);
+    expect(
+      unreadInboxBadgeCount(
+        activities,
+        { ...state, badgeCount: 'priority', snoozedUntil: {} },
+        10_000,
+      ),
+    ).toBe(1);
+    expect(
+      unreadInboxBadgeCount(activities, { ...state, badgeCount: 'none', snoozedUntil: {} }, 10_000),
+    ).toBe(0);
   });
 });

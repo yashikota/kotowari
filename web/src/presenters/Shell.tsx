@@ -7,13 +7,31 @@ import { api, parseIssueSearch } from '../api.ts';
 import { queryCache } from '../application/cache.ts';
 import { resetIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
-import { useIntent, useIntentHandler, useKeyboard, useOverlay } from '../application/Root.tsx';
+import {
+  useIntent,
+  useIntentHandler,
+  useKeyboard,
+  useMachineFlag,
+  useOverlay,
+} from '../application/Root.tsx';
 import { cycleCommands, filterCommands, projectCommands, staticCommands } from '../commands.ts';
 import { Palette } from '../components/Palette.tsx';
 import { actionFromKeyboard } from '../keymap.ts';
 import { navTargetForAction, type NavShortcutAction } from '../nav.ts';
-import { sidebarNavigation } from '../sidebar.ts';
-import { usePersonalPreferences } from '../preferences.ts';
+import { sidebarSettingsGroups, visibleSidebarNavigation } from '../sidebar.ts';
+import {
+  usePersonalPreferences,
+  type SidebarBadgeStyle,
+  type SidebarItemId,
+  type SidebarLocation,
+} from '../preferences.ts';
+import {
+  INBOX_STATE_EVENT,
+  INBOX_STATE_KEY,
+  parseInboxState,
+  unreadInboxBadgeCount,
+} from '../inbox-state.ts';
+import { listLinkedPullRequests } from '../reviews.ts';
 import type {
   Cycle,
   Issue,
@@ -59,7 +77,7 @@ export function useShellPresenter() {
   const send = useIntent();
   const navigate = useNavigate();
   const router = useRouter();
-  const { preferences } = usePersonalPreferences();
+  const { preferences, update: updatePreferences } = usePersonalPreferences();
   const defaultIssueAssignee: '' | 'self' = preferences.autoAssignToSelf ? 'self' : '';
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   useEffect(() => {
@@ -116,6 +134,11 @@ export function useShellPresenter() {
   const [views, setViews] = useState<View[]>([]);
   const [favoriteIssues, setFavoriteIssues] = useState<Issue[]>([]);
   const [workspaceName, setWorkspaceName] = useState('');
+  const [sidebarBadgeCounts, setSidebarBadgeCounts] = useState<
+    Partial<Record<SidebarItemId, number>>
+  >({});
+  const [sidebarCustomizationOpen, setSidebarCustomizationOpen] =
+    useMachineFlag('sidebar-customization');
   const { overlay, set: setOverlay } = useOverlay();
   const paletteOpen = overlay === 'palette';
   const setPaletteOpen = setOverlay('palette');
@@ -205,6 +228,34 @@ export function useShellPresenter() {
     signals.addEventListener('kotowari:refresh', loadWorkspace);
     return () => signals.removeEventListener('kotowari:refresh', loadWorkspace);
   }, [loadWorkspace]);
+
+  useEffect(() => {
+    let active = true;
+    const refreshBadges = async () => {
+      try {
+        const [activities, issues] = await Promise.all([api.inboxActivities(), api.issues()]);
+        if (!active) return;
+        const inboxState = parseInboxState(window.localStorage.getItem(INBOX_STATE_KEY));
+        setSidebarBadgeCounts({
+          '/inbox': unreadInboxBadgeCount(activities, inboxState),
+          '/reviews': listLinkedPullRequests(issues).length,
+        });
+      } catch {
+        if (active) setSidebarBadgeCounts({});
+      }
+    };
+    const onInboxStateChange = () => void refreshBadges();
+    void refreshBadges();
+    window.addEventListener(INBOX_STATE_EVENT, onInboxStateChange);
+    window.addEventListener('storage', onInboxStateChange);
+    signals.addEventListener('kotowari:refresh', onInboxStateChange);
+    return () => {
+      active = false;
+      window.removeEventListener(INBOX_STATE_EVENT, onInboxStateChange);
+      window.removeEventListener('storage', onInboxStateChange);
+      signals.removeEventListener('kotowari:refresh', onInboxStateChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!createIssue) {
@@ -800,7 +851,15 @@ export function useShellPresenter() {
     favoritesOpen,
     teamsOpen,
     teamNavigationOpen,
-    sidebarNavigation: sidebarNavigation(preferences),
+    sidebarNavigation: visibleSidebarNavigation(preferences, sidebarBadgeCounts),
+    sidebarBadgeCounts,
+    sidebarBadgeStyle: preferences.sidebarBadgeStyle,
+    sidebarGroups: sidebarSettingsGroups(preferences).map(({ group, items }) => ({
+      group,
+      label: t(`config.sidebarGroup.${group}`),
+      items: items.map((item) => ({ ...item, label: t(item.labelKey) })),
+    })),
+    sidebarCustomizationOpen,
     cycles,
     views,
     favoriteIssues,
@@ -892,6 +951,29 @@ export function useShellPresenter() {
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onToggleWorkspaceNavigation: () => setWorkspaceNavigationOpen((open) => !open),
       onToggleMoreLinks: () => setMoreLinksOpen((open) => !open),
+      onOpenSidebarCustomization: () => setSidebarCustomizationOpen(true),
+      onCloseSidebarCustomization: () => setSidebarCustomizationOpen(false),
+      onSidebarLocationChange: (id: SidebarItemId, location: SidebarLocation) =>
+        updatePreferences({
+          sidebarLocations: { ...preferences.sidebarLocations, [id]: location },
+        }),
+      onSidebarBadgeStyleChange: (style: SidebarBadgeStyle) =>
+        updatePreferences({ sidebarBadgeStyle: style }),
+      onMoveSidebarItem: (id: SidebarItemId, direction: number) => {
+        const group = sidebarSettingsGroups(preferences).find((candidate) =>
+          candidate.items.some((item) => item.id === id),
+        );
+        if (!group) return;
+        const index = group.items.findIndex((item) => item.id === id);
+        const neighbor = group.items[index + direction];
+        if (!neighbor) return;
+        const sidebarOrder = [...preferences.sidebarOrder];
+        const from = sidebarOrder.indexOf(id);
+        const to = sidebarOrder.indexOf(neighbor.id);
+        if (from < 0 || to < 0) return;
+        [sidebarOrder[from], sidebarOrder[to]] = [sidebarOrder[to]!, sidebarOrder[from]!];
+        updatePreferences({ sidebarOrder });
+      },
       onToggleFavorites: () => setFavoritesOpen((open) => !open),
       onToggleTeams: () => setTeamsOpen((open) => !open),
       onToggleTeamNavigation: () => setTeamNavigationOpen((open) => !open),

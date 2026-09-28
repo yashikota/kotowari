@@ -2,6 +2,9 @@
   "nav": {
     "home": "Home",
     "inbox": "Inbox",
+    "unreadCount": "{{count}} unread",
+    "reviewCount": "{{count}} reviews",
+    "workspaceMenu": "Open {{workspace}} menu",
     "reviews": "Reviews",
     "reminders": "Reminders",
     "myIssues": "My issues",
@@ -394,7 +397,7 @@
       "enter": "Enter"
     },
     "customizeSidebar": "Customize sidebar",
-    "sidebarDescription": "Choose which single-user sections stay in the sidebar, move other sections into More, or hide them. Use the arrows to reorder items.",
+    "sidebarDescription": "Choose which single-user sections stay visible, appear when badged, live in More, or stay hidden. Use the arrows to reorder items.",
     "sidebarEmpty": "No items",
     "sidebarGroup": {
       "personal": "Personal",
@@ -404,9 +407,15 @@
     },
     "sidebarLocationFor": "Where to show {{item}}",
     "sidebarLocation": {
-      "primary": "Sidebar",
-      "more": "More",
+      "primary": "Always show",
+      "badged": "Show when badged",
+      "more": "Show in More",
       "hidden": "Don't show"
+    },
+    "sidebarBadgeStyle": "Default badge style",
+    "sidebarBadgeStyles": {
+      "count": "Count",
+      "dot": "Dot"
     },
     "moveSidebarUp": "Move {{item}} up",
     "moveSidebarDown": "Move {{item}} down",

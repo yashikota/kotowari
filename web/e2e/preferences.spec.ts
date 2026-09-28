@@ -70,7 +70,7 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
 }) => {
   await page.goto('/config');
   await page.getByRole('button', { name: 'Customize sidebar' }).click();
-  await choose(page, 'Where to show Issues', 'More');
+  await choose(page, 'Where to show Issues', 'Show in More');
   await page.getByRole('button', { name: 'Move Issues down' }).click();
   await page.getByRole('dialog').getByRole('button').first().click();
 
@@ -117,7 +117,7 @@ test('sidebar sections can be moved, reordered, hidden, and restored after reloa
   ).not.toBeVisible();
 
   await page.getByRole('button', { name: 'Customize sidebar' }).click();
-  await choose(page, 'Where to show Issues', 'Sidebar');
+  await choose(page, 'Where to show Issues', 'Always show');
   await page.getByRole('dialog').getByRole('button').first().click();
   await expect(
     page

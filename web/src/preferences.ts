@@ -60,7 +60,8 @@ export const SIDEBAR_ITEM_IDS = [
   '/recurring',
 ] as const satisfies readonly SidebarItem[];
 export type SidebarItemId = (typeof SIDEBAR_ITEM_IDS)[number];
-export type SidebarLocation = 'primary' | 'more' | 'hidden';
+export type SidebarLocation = 'primary' | 'badged' | 'more' | 'hidden';
+export type SidebarBadgeStyle = 'count' | 'dot';
 
 export type PersonalPreferences = {
   defaultHome: DefaultHome;
@@ -71,6 +72,7 @@ export type PersonalPreferences = {
   commentSubmitShortcut: CommentSubmitShortcut;
   sidebarLocations: Record<SidebarItemId, SidebarLocation>;
   sidebarOrder: SidebarItemId[];
+  sidebarBadgeStyle: SidebarBadgeStyle;
   convertEmoticons: boolean;
   underlineLinks: boolean;
   pointerCursors: boolean;
@@ -103,6 +105,7 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
     '/recurring': 'more',
   },
   sidebarOrder: [...SIDEBAR_ITEM_IDS],
+  sidebarBadgeStyle: 'count',
   convertEmoticons: true,
   underlineLinks: false,
   pointerCursors: false,
@@ -126,7 +129,8 @@ const DEFAULT_HOMES: DefaultHome[] = [
 ];
 const FONT_SIZES: FontSize[] = ['small', 'default', 'large'];
 const COMMENT_SHORTCUTS: CommentSubmitShortcut[] = ['modEnter', 'enter'];
-const SIDEBAR_LOCATIONS: SidebarLocation[] = ['primary', 'more', 'hidden'];
+const SIDEBAR_LOCATIONS: SidebarLocation[] = ['primary', 'badged', 'more', 'hidden'];
+const SIDEBAR_BADGE_STYLES: SidebarBadgeStyle[] = ['count', 'dot'];
 const FAVORITE_ISSUE_VIEWS: FavoriteIssueView[] = ['active', 'backlog', 'all', 'archived'];
 
 function isSidebarItemId(value: unknown): value is SidebarItemId {
@@ -175,6 +179,11 @@ export function parsePersonalPreferences(value: string | null): PersonalPreferen
         ...new Set((parsed.sidebarOrder ?? []).filter(isSidebarItemId)),
         ...SIDEBAR_ITEM_IDS.filter((id) => !(parsed.sidebarOrder ?? []).includes(id)),
       ],
+      sidebarBadgeStyle: SIDEBAR_BADGE_STYLES.includes(
+        parsed.sidebarBadgeStyle as SidebarBadgeStyle,
+      )
+        ? (parsed.sidebarBadgeStyle as SidebarBadgeStyle)
+        : DEFAULT_PERSONAL_PREFERENCES.sidebarBadgeStyle,
       convertEmoticons:
         typeof parsed.convertEmoticons === 'boolean'
           ? parsed.convertEmoticons

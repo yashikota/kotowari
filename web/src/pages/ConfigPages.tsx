@@ -6,7 +6,6 @@ import {
   Checkbox,
   Group,
   Kbd,
-  Modal,
   Select,
   Stack,
   Text,
@@ -14,12 +13,13 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { IconChevronDown, IconChevronUp, IconTrash } from '@tabler/icons-react';
+import { IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { IssueStatus, ProjectStatus } from '../types.ts';
 import { FIRST_DAYS_OF_WEEK } from '../preferences.ts';
 import { IssueStatusIcon } from '../components/issue-ui.tsx';
 import { InboxNotificationSettings } from '../components/InboxNotificationSettings.tsx';
+import { SidebarCustomizationModal } from '../components/SidebarCustomizationModal.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
@@ -545,74 +545,15 @@ export function ConfigPageView({
                 )}
               </Stack>
             </Stack>
-            <Modal
+            <SidebarCustomizationModal
               opened={sidebarCustomizationOpen}
               onClose={handlers.onCloseSidebarCustomization}
-              title={t('config.customizeSidebar')}
-              centered
-              size="lg"
-            >
-              <Stack gap="lg">
-                <Text size="sm" c="dimmed">
-                  {t('config.sidebarDescription')}
-                </Text>
-                {sidebarGroups.map((section) => (
-                  <Stack
-                    key={section.group}
-                    component="section"
-                    aria-label={section.label}
-                    gap="xs"
-                  >
-                    <Text size="sm" fw={600}>
-                      {section.label}
-                    </Text>
-                    {section.items.length === 0 ? (
-                      <Text size="sm" c="dimmed">
-                        {t('config.sidebarEmpty')}
-                      </Text>
-                    ) : (
-                      section.items.map((item, index) => (
-                        <Group key={item.id} gap="xs" wrap="nowrap">
-                          <Text size="sm" style={{ flex: 1 }} truncate>
-                            {item.label}
-                          </Text>
-                          <ActionIcon
-                            type="button"
-                            variant="subtle"
-                            aria-label={t('config.moveSidebarUp', { item: item.label })}
-                            disabled={index === 0}
-                            onClick={() => handlers.onMoveSidebarItem(item.id, -1)}
-                          >
-                            <IconChevronUp size={16} aria-hidden />
-                          </ActionIcon>
-                          <ActionIcon
-                            type="button"
-                            variant="subtle"
-                            aria-label={t('config.moveSidebarDown', { item: item.label })}
-                            disabled={index === section.items.length - 1}
-                            onClick={() => handlers.onMoveSidebarItem(item.id, 1)}
-                          >
-                            <IconChevronDown size={16} aria-hidden />
-                          </ActionIcon>
-                          <Select
-                            aria-label={t('config.sidebarLocationFor', { item: item.label })}
-                            value={item.location}
-                            onChange={(value) => handlers.onSidebarLocationChange(item.id, value)}
-                            data={[
-                              { value: 'primary', label: t('config.sidebarLocation.primary') },
-                              { value: 'more', label: t('config.sidebarLocation.more') },
-                              { value: 'hidden', label: t('config.sidebarLocation.hidden') },
-                            ]}
-                            w={160}
-                            allowDeselect={false}
-                          />
-                        </Group>
-                      ))
-                    )}
-                  </Stack>
-                ))}
-              </Stack>
-            </Modal>
+              groups={sidebarGroups}
+              badgeStyle={preferences.sidebarBadgeStyle}
+              onBadgeStyleChange={handlers.onSidebarBadgeStyleChange}
+              onLocationChange={handlers.onSidebarLocationChange}
+              onMove={handlers.onMoveSidebarItem}
+            />
           </Pane>
         </SplitLayout>
       );

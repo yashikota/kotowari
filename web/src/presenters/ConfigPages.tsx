@@ -26,7 +26,6 @@ import {
   type DefaultHome,
   type FontSize,
   type SidebarItemId,
-  type SidebarLocation,
   SIDEBAR_ITEM_IDS,
 } from '../preferences.ts';
 import { sidebarSettingsGroups } from '../sidebar.ts';
@@ -435,13 +434,17 @@ export function useConfigPagePresenter() {
       onCloseSidebarCustomization: () => setSidebarCustomizationOpen(false),
       onSidebarLocationChange: (id: string, value: string | null) => {
         if (!SIDEBAR_ITEM_IDS.includes(id as SidebarItemId)) return;
-        if (value !== 'primary' && value !== 'more' && value !== 'hidden') return;
+        if (value !== 'primary' && value !== 'badged' && value !== 'more' && value !== 'hidden')
+          return;
         updatePreferences({
           sidebarLocations: {
             ...preferences.sidebarLocations,
-            [id]: value as SidebarLocation,
+            [id]: value,
           },
         });
+      },
+      onSidebarBadgeStyleChange: (value: string | null) => {
+        if (value === 'count' || value === 'dot') updatePreferences({ sidebarBadgeStyle: value });
       },
       onMoveSidebarItem: (id: string, direction: number) => {
         const group = sidebarSettingsGroups(preferences).find((candidate) =>

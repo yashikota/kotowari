@@ -58,10 +58,49 @@ import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
 import { IssueCreateProperties } from './IssueCreateProperties.tsx';
 import { ViewIcon } from './ViewIcon.tsx';
+import { SidebarCustomizationModal } from './SidebarCustomizationModal.tsx';
 import styles from './Shell.module.css';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useShellPresenter } from '../presenters/Shell.tsx';
+import type { SidebarItemId, SidebarBadgeStyle } from '../preferences.ts';
+
+function SidebarBadge({
+  count,
+  style,
+  label,
+}: {
+  count: number;
+  style: SidebarBadgeStyle;
+  label: string;
+}) {
+  if (count < 1) return undefined;
+  if (style === 'dot')
+    return (
+      <Box
+        component="span"
+        role="img"
+        aria-label={label}
+        title={label}
+        w={7}
+        h={7}
+        style={{ borderRadius: '50%', background: 'var(--mantine-color-blue-5)' }}
+      />
+    );
+  return (
+    <Text
+      component="span"
+      role="img"
+      aria-label={label}
+      title={label}
+      size="xs"
+      fw={600}
+      c="dimmed"
+    >
+      {count > 99 ? '99+' : count}
+    </Text>
+  );
+}
 
 const NAV_ICONS: Record<string, ReactNode> = {
   '/': <IconHome size={14} aria-hidden />,
@@ -155,6 +194,10 @@ export function ShellView({
         mobileNavigationOpen,
         moreLinksOpen,
         sidebarNavigation,
+        sidebarBadgeCounts,
+        sidebarBadgeStyle,
+        sidebarGroups,
+        sidebarCustomizationOpen,
         cycles,
         views,
         favoriteIssues,
@@ -182,6 +225,13 @@ export function ShellView({
       const favoriteCycles = cycles.filter((cycle) => cycle.isFavorite);
       const favoriteProjects = projects.filter((project) => project.isFavorite);
       const favoriteViews = views.filter((view) => view.isFavorite);
+      const sidebarBadge = (id: SidebarItemId) => {
+        const count = sidebarBadgeCounts[id] ?? 0;
+        if (!count) return undefined;
+        const label =
+          id === '/inbox' ? t('nav.unreadCount', { count }) : t('nav.reviewCount', { count });
+        return <SidebarBadge count={count} style={sidebarBadgeStyle} label={label} />;
+      };
       return (
         <>
           <AppShell
@@ -210,19 +260,50 @@ export function ShellView({
                 wrap="nowrap"
                 style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
               >
-                <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-                  <ThemeIcon size={20} radius="sm" color="indigo" aria-hidden>
-                    {(workspaceName || 'K').slice(0, 1).toUpperCase()}
-                  </ThemeIcon>
-                  <Text
-                    size="sm"
-                    fw={600}
-                    truncate
-                    title={workspaceName || t('workspace.defaultName')}
-                  >
-                    {workspaceName || t('workspace.defaultName')}
-                  </Text>
-                </Group>
+                <Menu position="bottom-start" withinPortal>
+                  <Menu.Target>
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      color="gray"
+                      size="compact-sm"
+                      px={6}
+                      aria-label={t('nav.workspaceMenu', {
+                        workspace: workspaceName || t('workspace.defaultName'),
+                      })}
+                    >
+                      <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
+                        <ThemeIcon size={20} radius="sm" color="indigo" aria-hidden>
+                          {(workspaceName || 'K').slice(0, 1).toUpperCase()}
+                        </ThemeIcon>
+                        <Text
+                          size="sm"
+                          fw={600}
+                          truncate
+                          title={workspaceName || t('workspace.defaultName')}
+                        >
+                          {workspaceName || t('workspace.defaultName')}
+                        </Text>
+                      </Group>
+                    </Button>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Label>{workspaceName || t('workspace.defaultName')}</Menu.Label>
+                    <Menu.Item
+                      leftSection={<IconSettings size={14} aria-hidden />}
+                      onClick={handlers.onOpenSidebarCustomization}
+                    >
+                      {t('config.customizeSidebar')}
+                    </Menu.Item>
+                    <Menu.Item
+                      component={Link}
+                      to="/config"
+                      leftSection={<IconSettings size={14} aria-hidden />}
+                    >
+                      {t('nav.config')}
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
                 <Group gap={2} wrap="nowrap">
                   <ActionIcon
                     type="button"
@@ -262,6 +343,7 @@ export function ShellView({
                       fuzzy={item.fuzzy}
                       label={t(item.labelKey)}
                       leftSection={NAV_ICONS[item.to as string]}
+                      rightSection={sidebarBadge(item.id)}
                     />
                   ))}
                 </Stack>
@@ -304,6 +386,7 @@ export function ShellView({
                               fuzzy={item.fuzzy}
                               label={t(item.labelKey)}
                               leftSection={NAV_ICONS[item.to as string]}
+                              rightSection={sidebarBadge(item.id)}
                             />
                           ))}
                           <RouterNavLink
@@ -404,6 +487,7 @@ export function ShellView({
                                   fuzzy={item.fuzzy}
                                   label={t(item.labelKey)}
                                   leftSection={NAV_ICONS[item.to as string]}
+                                  rightSection={sidebarBadge(item.id)}
                                 />
                                 <Stack
                                   component="div"
@@ -433,6 +517,7 @@ export function ShellView({
                                 fuzzy={item.fuzzy}
                                 label={t(item.labelKey)}
                                 leftSection={NAV_ICONS[item.to as string]}
+                                rightSection={sidebarBadge(item.id)}
                               />
                             ),
                           )}
@@ -616,6 +701,16 @@ export function ShellView({
               </Box>
             </AppShell.Main>
           </AppShell>
+
+          <SidebarCustomizationModal
+            opened={sidebarCustomizationOpen}
+            onClose={handlers.onCloseSidebarCustomization}
+            groups={sidebarGroups}
+            badgeStyle={sidebarBadgeStyle}
+            onBadgeStyleChange={handlers.onSidebarBadgeStyleChange}
+            onLocationChange={handlers.onSidebarLocationChange}
+            onMove={handlers.onMoveSidebarItem}
+          />
 
           {paletteOpen ? (
             <Palette

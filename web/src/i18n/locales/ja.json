@@ -2,6 +2,9 @@
   "nav": {
     "home": "ホーム",
     "inbox": "受信トレイ",
+    "unreadCount": "未読 {{count}} 件",
+    "reviewCount": "レビュー {{count}} 件",
+    "workspaceMenu": "{{workspace}}メニューを開く",
     "reviews": "レビュー",
     "reminders": "リマインダー",
     "myIssues": "自分のイシュー",
@@ -389,7 +392,7 @@
       "enter": "Enter"
     },
     "customizeSidebar": "サイドバーをカスタマイズ",
-    "sidebarDescription": "サイドバーに表示する個人向けの項目を選び、Moreへ移動したり非表示にできます。矢印で順序を変更できます。",
+    "sidebarDescription": "個人向け項目を常に表示するか、バッジがあるときだけ表示するか、Moreへ移動するかを選べます。矢印で順序を変更できます。",
     "sidebarEmpty": "項目はありません",
     "sidebarGroup": {
       "personal": "個人",
@@ -399,9 +402,15 @@
     },
     "sidebarLocationFor": "{{item}}の表示先",
     "sidebarLocation": {
-      "primary": "サイドバー",
-      "more": "More",
+      "primary": "常に表示",
+      "badged": "バッジ時のみ表示",
+      "more": "Moreに表示",
       "hidden": "表示しない"
+    },
+    "sidebarBadgeStyle": "既定のバッジ形式",
+    "sidebarBadgeStyles": {
+      "count": "件数",
+      "dot": "ドット"
     },
     "moveSidebarUp": "{{item}}を上へ移動",
     "moveSidebarDown": "{{item}}を下へ移動",

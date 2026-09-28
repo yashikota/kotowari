@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { convertTextEmoticons, defaultHomeHref, parsePersonalPreferences } from './preferences.ts';
-import { sidebarNavigation } from './sidebar.ts';
+import { sidebarNavigation, visibleSidebarNavigation } from './sidebar.ts';
 
 describe('personal preferences', () => {
   it('falls back safely when stored settings are missing, malformed, or outdated', () => {
@@ -47,6 +47,7 @@ describe('personal preferences', () => {
         '/templates',
         '/recurring',
       ],
+      sidebarBadgeStyle: 'count',
       convertEmoticons: true,
       underlineLinks: false,
       pointerCursors: false,
@@ -120,6 +121,28 @@ describe('personal preferences', () => {
     expect(navigation.workspace.map((item) => item.to)).not.toContain('/projects');
     expect(navigation.more.map((item) => item.to)).toContain('/projects');
     expect(navigation.workspace[0]?.to).toBe('/adrs');
+  });
+
+  it('shows badge-dependent entries only while their personal badge is present', () => {
+    const preferences = parsePersonalPreferences(
+      JSON.stringify({ sidebarLocations: { '/inbox': 'badged', '/reviews': 'badged' } }),
+    );
+    const empty = visibleSidebarNavigation(preferences, {});
+    expect(empty.personal.map((item) => item.to)).not.toContain('/inbox');
+    expect(empty.personal.map((item) => item.to)).not.toContain('/reviews');
+
+    const unread = visibleSidebarNavigation(preferences, { '/inbox': 3 });
+    expect(unread.personal.map((item) => item.to)).toContain('/inbox');
+    expect(unread.personal.map((item) => item.to)).not.toContain('/reviews');
+  });
+
+  it('normalizes invalid sidebar badge styles and accepts dot badges', () => {
+    expect(
+      parsePersonalPreferences(JSON.stringify({ sidebarBadgeStyle: 'large' })).sidebarBadgeStyle,
+    ).toBe('count');
+    expect(
+      parsePersonalPreferences(JSON.stringify({ sidebarBadgeStyle: 'dot' })).sidebarBadgeStyle,
+    ).toBe('dot');
   });
 
   it('converts text emoticons without changing ordinary URL punctuation', () => {

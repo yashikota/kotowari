@@ -5,6 +5,7 @@ import { api } from '../api.ts';
 import { useActions, useKeyboard } from '../application/Root.tsx';
 import {
   DEFAULT_INBOX_STATE,
+  INBOX_STATE_EVENT,
   inboxSnoozeUntil,
   INBOX_STATE_KEY,
   parseInboxState,
@@ -55,6 +56,7 @@ export function useInboxPresenter() {
     setInboxState((current) => {
       const next = update(current);
       window.localStorage.setItem(INBOX_STATE_KEY, serializeInboxState(next));
+      window.dispatchEvent(new Event(INBOX_STATE_EVENT));
       return next;
     });
   }
