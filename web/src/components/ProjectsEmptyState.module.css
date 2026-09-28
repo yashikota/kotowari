@@ -1,0 +1,85 @@
+.root {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 320px;
+  width: min(372px, 100%);
+  margin-inline: auto;
+  padding: 32px 16px;
+}
+
+.illustration {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0 0 24px;
+}
+
+.heading {
+  width: 100%;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 23px;
+}
+
+.description {
+  max-width: 340px;
+  margin: 0 0 24px;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 18.2px;
+}
+
+.actions {
+  min-height: 28px;
+}
+
+.createButton {
+  min-height: 28px;
+  height: 28px;
+  padding-inline: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.buttonLabel {
+  font-size: 12px;
+  line-height: normal;
+}
+
+.shortcut {
+  font-size: 10px;
+  line-height: 23px;
+}
+
+.shortcutThen {
+  font-size: 10px;
+  font-weight: 450;
+  line-height: 23px;
+}
+
+.shortcutKey {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: 18px;
+  height: 19px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 13px;
+}
+
+@media (max-width: 680px) {
+  .root {
+    width: min(372px, 100%);
+    padding-inline: 16px;
+  }
+}

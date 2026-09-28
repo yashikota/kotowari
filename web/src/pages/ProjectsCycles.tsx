@@ -100,8 +100,10 @@ export function ProjectsPageView({
           <Pane single flush style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <PageHeader
               title={t('nav.projects')}
-              minHeight={62}
+              minHeight={44}
               titleSize="md"
+              titleWeight={500}
+              titleLineHeight="normal"
               paddingX={19}
               actions={
                 <ActionIcon
@@ -194,7 +196,7 @@ function ProjectViewsBar({
 }) {
   const { t } = useTranslation();
   return (
-    <Group justify="space-between" align="center" gap="sm" wrap="wrap" mb="sm" pl={9} pr={8}>
+    <Group justify="space-between" align="center" gap="sm" wrap="wrap" mt={8} mb={8} pl={9} pr={8}>
       <Group gap={4} wrap="wrap" role="tablist" aria-label={t('projectViews.views')}>
         <Button
           type="button"

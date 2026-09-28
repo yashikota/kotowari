@@ -83,12 +83,16 @@ export function PageHeader({
   actions,
   minHeight = 42,
   titleSize = 'sm',
+  titleWeight = 550,
+  titleLineHeight,
   paddingX = 16,
 }: {
   title: ReactNode;
   actions?: ReactNode;
   minHeight?: number;
   titleSize?: string;
+  titleWeight?: number;
+  titleLineHeight?: string;
   paddingX?: number;
 }) {
   return (
@@ -101,7 +105,13 @@ export function PageHeader({
       px={paddingX}
       style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
     >
-      <Title order={2} size={titleSize} fw={550} c="var(--mantine-color-text)">
+      <Title
+        order={2}
+        size={titleSize}
+        fw={titleWeight}
+        lh={titleLineHeight}
+        c="var(--mantine-color-text)"
+      >
         {title}
       </Title>
       {actions ? (

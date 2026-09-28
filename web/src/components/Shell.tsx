@@ -265,7 +265,7 @@ export function ShellView({
               className={styles.sidebar}
               styles={{
                 navbar: {
-                  backgroundColor: 'var(--mantine-color-gray-0)',
+                  backgroundColor: 'var(--mantine-color-gray-1)',
                   borderColor: 'var(--mantine-color-default-border)',
                 },
               }}
@@ -620,167 +620,169 @@ export function ShellView({
             ) : null}
 
             <AppShell.Main className={styles.main}>
-              <Group
-                component="header"
-                justify="space-between"
-                gap="md"
-                h={52}
-                px="md"
-                wrap="nowrap"
-                className={
-                  isIssueDetail
-                    ? styles.issueDetailHeader
-                    : isPageOwnedHeader
-                      ? styles.pageOwnedHeader
-                      : undefined
-                }
-                style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-              >
-                <ActionIcon
-                  type="button"
-                  variant="subtle"
-                  color="gray"
-                  className={styles.collapsedSidebarToggle}
-                  aria-label={t('nav.expandNavigation')}
-                  title={t('nav.expandNavigation')}
-                  onClick={handlers.onToggleSidebar}
-                >
-                  <IconMenu2 size={16} stroke={1.7} aria-hidden />
-                </ActionIcon>
+              <Box className={styles.workspacePanel} data-testid="workspace-panel">
                 <Group
-                  component={isMyIssues ? 'div' : 'nav'}
-                  aria-label={isMyIssues ? undefined : t('nav.breadcrumb')}
-                  gap="sm"
+                  component="header"
+                  justify="space-between"
+                  gap="md"
+                  h={44}
+                  px="md"
                   wrap="nowrap"
                   className={
                     isIssueDetail
-                      ? styles.issueDetailBreadcrumb
+                      ? styles.issueDetailHeader
                       : isPageOwnedHeader
-                        ? styles.pageOwnedBreadcrumb
+                        ? styles.pageOwnedHeader
                         : undefined
                   }
-                  style={{ minWidth: 0 }}
+                  style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
                 >
-                  {isMyIssues ? null : (
-                    <>
-                      <Text size="sm" c="dimmed" truncate maw={180}>
-                        {workspaceName || t('workspace.defaultName')}
-                      </Text>
-                      <IconChevronRight
-                        size={14}
-                        stroke={1.6}
-                        aria-hidden
-                        color="var(--mantine-color-dimmed)"
-                      />
-                    </>
-                  )}
-                  {isCycleDetail ? (
-                    <>
-                      <Link
-                        to="/cycles"
-                        search={{ scope: 'all' }}
-                        style={{
-                          color: 'var(--mantine-color-dimmed)',
-                          fontSize: 'var(--mantine-font-size-sm)',
-                          textDecoration: 'none',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {t('nav.cycles')}
-                      </Link>
-                      <IconChevronRight
-                        size={14}
-                        stroke={1.6}
-                        aria-hidden
-                        color="var(--mantine-color-dimmed)"
-                      />
-                      <CycleNavigationMenu
-                        currentCycleName={currentCycleName}
-                        opened={cycleNavigationOpen}
-                        nextCycles={nextCycles}
-                        previousCycles={previousCycles}
-                        searchQuery={cycleNavigationQuery}
-                        onOpenChange={handlers.onCycleNavigationOpenChange}
-                        onSearchChange={handlers.onCycleNavigationQueryChange}
-                        onNavigate={handlers.onNavigateCycle}
-                      />
-                    </>
-                  ) : (
-                    <Text
-                      component={isMyIssues || showIssueViewFavorite ? 'h2' : 'span'}
-                      size="sm"
-                      fw={isMyIssues || showIssueViewFavorite ? 550 : 500}
-                      truncate
-                    >
-                      {routeTitle}
-                    </Text>
-                  )}
-                  {showIssueViewFavorite ? (
-                    <ActionIcon
-                      type="button"
-                      variant="subtle"
-                      color={issueViewFavorite ? 'yellow' : 'gray'}
-                      role="switch"
-                      aria-label={t(
-                        issueViewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
-                      )}
-                      aria-checked={issueViewFavorite}
-                      title={t(
-                        issueViewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
-                      )}
-                      onClick={handlers.onToggleIssueViewFavorite}
-                    >
-                      <IconStar
-                        size={15}
-                        stroke={1.7}
-                        fill={issueViewFavorite ? 'currentColor' : 'none'}
-                        aria-hidden="true"
-                      />
-                    </ActionIcon>
-                  ) : null}
-                </Group>
-                <Group gap={4} wrap="nowrap">
                   <ActionIcon
                     type="button"
                     variant="subtle"
                     color="gray"
-                    w={28}
-                    h={28}
-                    className={styles.mobileMenuButton}
-                    aria-label={
-                      mobileNavigationOpen ? t('nav.closeNavigation') : t('nav.openNavigation')
-                    }
-                    onClick={handlers.onToggleMobileNavigation}
+                    className={styles.collapsedSidebarToggle}
+                    aria-label={t('nav.expandNavigation')}
+                    title={t('nav.expandNavigation')}
+                    onClick={handlers.onToggleSidebar}
                   >
                     <IconMenu2 size={16} stroke={1.7} aria-hidden />
                   </ActionIcon>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    w={28}
-                    h={28}
-                    aria-label={t('nav.search')}
-                    title={t('ui.searchShortcut')}
-                    onClick={handlers.onOpenSearch}
+                  <Group
+                    component={isMyIssues ? 'div' : 'nav'}
+                    aria-label={isMyIssues ? undefined : t('nav.breadcrumb')}
+                    gap="sm"
+                    wrap="nowrap"
+                    className={
+                      isIssueDetail
+                        ? styles.issueDetailBreadcrumb
+                        : isPageOwnedHeader
+                          ? styles.pageOwnedBreadcrumb
+                          : undefined
+                    }
+                    style={{ minWidth: 0 }}
                   >
-                    <IconSearch size={15} stroke={1.7} aria-hidden />
-                  </ActionIcon>
+                    {isMyIssues ? null : (
+                      <>
+                        <Text size="sm" c="dimmed" truncate maw={180}>
+                          {workspaceName || t('workspace.defaultName')}
+                        </Text>
+                        <IconChevronRight
+                          size={14}
+                          stroke={1.6}
+                          aria-hidden
+                          color="var(--mantine-color-dimmed)"
+                        />
+                      </>
+                    )}
+                    {isCycleDetail ? (
+                      <>
+                        <Link
+                          to="/cycles"
+                          search={{ scope: 'all' }}
+                          style={{
+                            color: 'var(--mantine-color-dimmed)',
+                            fontSize: 'var(--mantine-font-size-sm)',
+                            textDecoration: 'none',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {t('nav.cycles')}
+                        </Link>
+                        <IconChevronRight
+                          size={14}
+                          stroke={1.6}
+                          aria-hidden
+                          color="var(--mantine-color-dimmed)"
+                        />
+                        <CycleNavigationMenu
+                          currentCycleName={currentCycleName}
+                          opened={cycleNavigationOpen}
+                          nextCycles={nextCycles}
+                          previousCycles={previousCycles}
+                          searchQuery={cycleNavigationQuery}
+                          onOpenChange={handlers.onCycleNavigationOpenChange}
+                          onSearchChange={handlers.onCycleNavigationQueryChange}
+                          onNavigate={handlers.onNavigateCycle}
+                        />
+                      </>
+                    ) : (
+                      <Text
+                        component={isMyIssues || showIssueViewFavorite ? 'h2' : 'span'}
+                        size="sm"
+                        fw={isMyIssues || showIssueViewFavorite ? 550 : 500}
+                        truncate
+                      >
+                        {routeTitle}
+                      </Text>
+                    )}
+                    {showIssueViewFavorite ? (
+                      <ActionIcon
+                        type="button"
+                        variant="subtle"
+                        color={issueViewFavorite ? 'yellow' : 'gray'}
+                        role="switch"
+                        aria-label={t(
+                          issueViewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
+                        )}
+                        aria-checked={issueViewFavorite}
+                        title={t(
+                          issueViewFavorite ? 'issueViewFavorite.remove' : 'issueViewFavorite.add',
+                        )}
+                        onClick={handlers.onToggleIssueViewFavorite}
+                      >
+                        <IconStar
+                          size={15}
+                          stroke={1.7}
+                          fill={issueViewFavorite ? 'currentColor' : 'none'}
+                          aria-hidden="true"
+                        />
+                      </ActionIcon>
+                    ) : null}
+                  </Group>
+                  <Group gap={4} wrap="nowrap">
+                    <ActionIcon
+                      type="button"
+                      variant="subtle"
+                      color="gray"
+                      w={28}
+                      h={28}
+                      className={styles.mobileMenuButton}
+                      aria-label={
+                        mobileNavigationOpen ? t('nav.closeNavigation') : t('nav.openNavigation')
+                      }
+                      onClick={handlers.onToggleMobileNavigation}
+                    >
+                      <IconMenu2 size={16} stroke={1.7} aria-hidden />
+                    </ActionIcon>
+                    <ActionIcon
+                      type="button"
+                      variant="subtle"
+                      color="gray"
+                      w={28}
+                      h={28}
+                      aria-label={t('nav.search')}
+                      title={t('ui.searchShortcut')}
+                      onClick={handlers.onOpenSearch}
+                    >
+                      <IconSearch size={15} stroke={1.7} aria-hidden />
+                    </ActionIcon>
+                  </Group>
                 </Group>
-              </Group>
-              <Box style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0, overflow: 'auto' }}>
-                {error ? (
-                  <Alert
-                    color="red"
-                    variant="light"
-                    m="sm"
-                    withCloseButton
-                    onClose={handlers.onDismissError}
-                  >
-                    {error}
-                  </Alert>
-                ) : null}
-                <Outlet />
+                <Box style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0, overflow: 'auto' }}>
+                  {error ? (
+                    <Alert
+                      color="red"
+                      variant="light"
+                      m="sm"
+                      withCloseButton
+                      onClose={handlers.onDismissError}
+                    >
+                      {error}
+                    </Alert>
+                  ) : null}
+                  <Outlet />
+                </Box>
               </Box>
             </AppShell.Main>
           </AppShell>

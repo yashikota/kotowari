@@ -1,14 +1,27 @@
-import { Link } from '@tanstack/react-router';
 import { Button, Group, Kbd, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
+import styles from './ProjectsEmptyState.module.css';
 
-const shortcutKeyStyle = {
-  background: 'rgba(255, 255, 255, 0.22)',
-  color: 'inherit',
-  fontSize: 10,
-  lineHeight: 1,
-  padding: '2px 3px',
-};
+const cubePositions = [
+  [17, 0],
+  [0, 8],
+  [14, 17],
+  [34, 8],
+  [0, 26],
+  [34, 26],
+  [17, 36],
+] as const;
+
+function ProjectCube({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <path d="m11 0 11 6-11 6L0 6 11 0Z" fill="currentColor" fillOpacity={0.05} />
+      <path d="M0 6v12l11 6V12L0 6Z" fill="currentColor" fillOpacity={0.1} />
+      <path d="M22 6v12l-11 6V12l11-6Z" fill="currentColor" fillOpacity={0.07} />
+      <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
+    </g>
+  );
+}
 
 export function ProjectsEmptyState({ onCreateProject }: { onCreateProject: () => void }) {
   const { t } = useTranslation();
@@ -17,68 +30,56 @@ export function ProjectsEmptyState({ onCreateProject }: { onCreateProject: () =>
     <Stack
       component="section"
       aria-label={t('nav.projects')}
+      className={styles.root}
       align="flex-start"
       justify="center"
-      gap="sm"
-      px="md"
-      py="xl"
-      style={{ flex: 1, minHeight: 320, width: 'min(380px, 100%)', marginInline: 'auto' }}
+      gap={0}
     >
       <svg
         aria-hidden="true"
-        width="72"
-        height="60"
-        viewBox="0 0 72 60"
+        className={styles.illustration}
+        width="77"
+        height="80"
+        viewBox="0 0 72 80"
         fill="none"
-        stroke="var(--mantine-color-dimmed)"
+        stroke="color-mix(in srgb, var(--mantine-color-text) 30%, var(--mantine-color-dimmed))"
         strokeWidth="1.2"
+        strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <g transform="translate(24 0)">
-          <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
-        </g>
-        <g transform="translate(12 14)">
-          <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
-        </g>
-        <g transform="translate(36 14)">
-          <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
-        </g>
-        <g transform="translate(0 28)">
-          <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
-        </g>
-        <g transform="translate(24 28)">
-          <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
-        </g>
-        <g transform="translate(48 28)">
-          <path d="m11 0 11 6-11 6L0 6 11 0Z M0 6v12l11 6V12 M22 6v12l-11 6V12" />
+        <g transform="translate(0 8) scale(1.15)">
+          {cubePositions.map(([x, y]) => (
+            <ProjectCube key={`${x}-${y}`} x={x} y={y} />
+          ))}
         </g>
       </svg>
-      <Text component="h2" fw={600} size="md">
+      <Text component="h2" className={styles.heading}>
         {t('nav.projects')}
       </Text>
-      <Text c="dimmed" size="sm" maw={320}>
+      <Text c="dimmed" className={styles.description}>
         {t('projectList.empty')}
       </Text>
-      <Group gap={8} mt="xs" justify="flex-start" wrap="wrap">
+      <Group className={styles.actions} gap={8} justify="flex-start" wrap="wrap">
         <Button
           type="button"
           variant="filled"
           size="xs"
-          style={{ paddingInline: 8 }}
+          className={styles.createButton}
           aria-label={t('projectList.emptyCreate')}
           onClick={onCreateProject}
         >
-          <Group component="span" gap={6} wrap="nowrap">
-            <Text component="span">{t('projectList.emptyCreate')}</Text>
-            <Kbd style={shortcutKeyStyle}>N</Kbd>
-            <Text component="span" size="xs">
-              {t('ui.shortcutThen')}
+          <Group component="span" gap={8} wrap="nowrap">
+            <Text component="span" className={styles.buttonLabel}>
+              {t('projectList.emptyCreate')}
             </Text>
-            <Kbd style={shortcutKeyStyle}>P</Kbd>
+            <Group component="span" className={styles.shortcut} gap={3} wrap="nowrap">
+              <Kbd className={styles.shortcutKey}>N</Kbd>
+              <Text component="span" className={styles.shortcutThen}>
+                {t('ui.shortcutThen')}
+              </Text>
+              <Kbd className={styles.shortcutKey}>P</Kbd>
+            </Group>
           </Group>
-        </Button>
-        <Button component={Link} to="/pages" variant="default" size="xs">
-          {t('projectList.emptyDocumentation')}
         </Button>
       </Group>
     </Stack>
