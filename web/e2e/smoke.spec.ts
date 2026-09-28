@@ -226,7 +226,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await page.getByLabel('Edit comment').fill('updated **note**');
   await page.getByRole('button', { name: 'Save', exact: true }).last().click();
   await expect(page.locator('strong', { hasText: 'note' })).toBeVisible();
-  await expect(page.getByText(/edited/)).toBeVisible();
+  await expect(page.getByText('· edited', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Comment options' }).nth(1).click();
   await page.once('dialog', (dialog) => dialog.accept());
