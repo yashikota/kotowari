@@ -105,14 +105,14 @@ export function IssueGroupRow({
           </Text>
         </Group>
       </Button>
-      {row.groupBy === 'priority' && onCreate ? (
+      {row.groupBy !== 'parent' && onCreate ? (
         <ActionIcon
           type="button"
           variant="subtle"
           color="gray"
           size="sm"
-          aria-label={i18n.t('ui.createIssueInPriorityGroup', { label })}
-          title={i18n.t('ui.createIssueInPriorityGroup', { label })}
+          aria-label={i18n.t('ui.createIssueInGroup', { label })}
+          title={i18n.t('ui.createIssueInGroup', { label })}
           onClick={() => onCreate(row)}
         >
           <IconPlus size={14} stroke={1.8} aria-hidden />

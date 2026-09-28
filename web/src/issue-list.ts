@@ -68,6 +68,17 @@ export type IssueGroupOption = {
   priority: number | null;
   status: string | null;
 };
+
+export type IssueCreateContext = {
+  status?: string;
+  priority?: number;
+  assignee?: Issue['assignee'] | '';
+  projectId?: number;
+  cycleId?: number;
+  estimate?: number | null;
+  type?: Issue['type'] | '';
+  labelNames?: string[];
+};
 export const COMPLETED_ISSUES_FILTERS = [
   'all',
   'pastDay',

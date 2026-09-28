@@ -34,6 +34,7 @@ import {
   unreadInboxBadgeCount,
 } from '../inbox-state.ts';
 import { listLinkedPullRequests } from '../reviews.ts';
+import type { IssueCreateContext } from '../issue-list.ts';
 import type {
   Cycle,
   Issue,
@@ -447,7 +448,7 @@ export function useShellPresenter() {
 
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
   useIntentHandler('issue.create', (value) => {
-    const detail = (value ?? {}) as { projectId?: number; cycleId?: number; priority?: number };
+    const detail = (value ?? {}) as IssueCreateContext;
     openCreateIssue(detail);
   });
   useIntentHandler('issue.openDraft', (value) => {
@@ -647,19 +648,17 @@ export function useShellPresenter() {
     void navigate({ to: '/cycles/$number', params: { number: String(number) } });
   }
 
-  function openCreateIssue(
-    prefill: { projectId?: number; cycleId?: number; priority?: number } = {},
-  ) {
+  function openCreateIssue(prefill: IssueCreateContext = {}) {
     issueDraftIdRef.current = '';
     setIssueDraftId('');
     setIssueDraftSaved(false);
     setIssueCreateMore(false);
     setIssueTitle('');
     setIssueBody('');
-    setIssueStatus('todo');
+    setIssueStatus(prefill.status ?? 'todo');
     setIssuePriority(prefill.priority ?? 0);
-    setIssueType('');
-    setIssueEstimate('');
+    setIssueType(prefill.type ?? '');
+    setIssueEstimate(prefill.estimate == null ? '' : String(prefill.estimate));
     setIssueAttachments([]);
     setIssueAttachmentError('');
     setIssueDueDate('');
@@ -672,7 +671,7 @@ export function useShellPresenter() {
     setIssueLinkOpen(false);
     setIssueLinkURL('');
     setIssueLinkTitle('');
-    setIssueLabelNames([]);
+    setIssueLabelNames(prefill.labelNames ?? []);
     setIssueParentId(undefined);
     setIssueParentOpen(false);
     setIssueParentIdentifier('');
@@ -684,7 +683,7 @@ export function useShellPresenter() {
     setIssueTemplateSlug('');
     setIssueProjectId(prefill.projectId ? String(prefill.projectId) : '');
     setIssueCycleId(prefill.cycleId ? String(prefill.cycleId) : '');
-    setIssueAssignee(defaultIssueAssignee);
+    setIssueAssignee(prefill.assignee ?? defaultIssueAssignee);
     setCreateIssue(true);
   }
 

@@ -2083,7 +2083,7 @@
     "issueCards": "{{status}} issue cards",
     "issueGroupCount_one": "{{label}} · {{count}} issue",
     "issueGroupCount_other": "{{label}} · {{count}} issues",
-    "createIssueInPriorityGroup": "Create new issue in {{label}} priority group",
+    "createIssueInGroup": "Create new issue in {{label}} group",
     "projectProgress": "Project progress {{progress}}%",
     "searchShortcut": "Search · Ctrl K",
     "startNewConversationConfirmation": "Start a new conversation for this document?",

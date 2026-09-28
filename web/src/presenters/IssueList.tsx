@@ -19,6 +19,7 @@ import {
   buildIssueListRows,
   DEFAULT_DISPLAY_PROPERTIES,
   sortIssues,
+  type IssueCreateContext,
   type IssueDisplayProperty,
   type IssueGroupBy,
   type IssueOrderBy,
@@ -371,7 +372,51 @@ export function useIssueListPresenter({
         );
       },
       onCreateInGroup2: (row: Extract<IssueListRow, { kind: 'group' }>) => {
-        if (row.groupBy === 'priority') sendIntent('issue.create', { priority: row.priority ?? 0 });
+        const context: IssueCreateContext = {};
+        switch (row.groupBy) {
+          case 'status':
+            if (row.status) context.status = row.status;
+            break;
+          case 'priority':
+            context.priority = row.priority ?? 0;
+            break;
+          case 'assignee':
+            context.assignee =
+              row.key === 'assignee:self' ? 'self' : row.key === 'assignee:agent' ? 'agent' : '';
+            break;
+          case 'agent':
+            context.assignee = row.key === 'agent:agent' ? 'agent' : '';
+            break;
+          case 'project': {
+            const slug = row.key.slice('project:'.length);
+            const project = projects.find((candidate) => candidate.slug === slug);
+            const issue = issues.find((candidate) => candidate.projectSlug === slug);
+            if (slug !== 'none') context.projectId = project?.id ?? issue?.projectId ?? undefined;
+            break;
+          }
+          case 'cycle': {
+            const number = Number(row.key.slice('cycle:'.length));
+            if (Number.isFinite(number) && number > 0)
+              context.cycleId =
+                cycles.find((candidate) => candidate.number === number)?.id ??
+                issues.find((issue) => issue.cycleNumber === number)?.cycleId ??
+                undefined;
+            break;
+          }
+          case 'label':
+            context.labelNames = row.key === 'label:none' ? [] : [row.label];
+            break;
+          case 'type':
+            context.type = row.key === 'type:none' ? '' : (row.label as Issue['type']);
+            break;
+          case 'estimate':
+            context.estimate = row.key === 'estimate:none' ? null : Number(row.label);
+            break;
+          case 'parent':
+          case 'none':
+            return;
+        }
+        sendIntent('issue.create', context);
       },
     },
   };

@@ -734,7 +734,7 @@ test('priority group quick-create inherits the group priority', async ({ page, r
 
   await page.goto('/issues');
   await fillIssueSearch(page, stamp.toString());
-  await page.getByRole('button', { name: 'Create new issue in High priority group' }).click();
+  await page.getByRole('button', { name: 'Create new issue in High group' }).click();
 
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   const title = dialog.getByPlaceholder('Issue title');
@@ -750,5 +750,82 @@ test('priority group quick-create inherits the group priority', async ({ page, r
   expect(await created.json()).toMatchObject({
     title: `Created from high group ${stamp}`,
     priority: 2,
+  });
+});
+
+test('status group quick-create inherits the group status', async ({ page, request }) => {
+  const stamp = Date.now();
+  const seed = await request.post('/api/issues', {
+    data: { title: `Todo group seed ${stamp}`, status: 'todo', priority: 2 },
+  });
+  expect(seed.ok()).toBeTruthy();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, stamp.toString());
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Grouping', { exact: true }).selectOption('status');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Create new issue in Todo group' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(dialog.getByRole('combobox', { name: 'Status' })).toHaveValue('Todo');
+  const title = dialog.getByPlaceholder('Issue title');
+  await title.fill(`Created from todo group ${stamp}`);
+  await title.press('ControlOrMeta+Enter');
+  await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
+
+  const identifier = new URL(page.url()).pathname.match(/\/issues\/([^/]+)/)?.[1];
+  expect(identifier).toBeTruthy();
+  const created = await request.get(`/api/issues/${identifier}`);
+  expect(created.ok()).toBeTruthy();
+  expect(await created.json()).toMatchObject({
+    title: `Created from todo group ${stamp}`,
+    status: 'todo',
+    workflowStatus: 'todo',
+  });
+});
+
+test('cycle group quick-create inherits the group cycle', async ({ page, request }) => {
+  const now = Date.now();
+  const cycleResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: new Date(now + 7 * 86_400_000).toISOString(),
+      endsAt: new Date(now + 14 * 86_400_000).toISOString(),
+      status: 'upcoming',
+    },
+  });
+  expect(cycleResponse.ok()).toBeTruthy();
+  const cycle = (await cycleResponse.json()) as { id: number; number: number };
+  const stamp = Date.now();
+  const seed = await request.post('/api/issues', {
+    data: { title: `Cycle group seed ${stamp}`, status: 'todo', cycleId: cycle.id },
+  });
+  expect(seed.ok()).toBeTruthy();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, stamp.toString());
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Grouping', { exact: true }).selectOption('cycle');
+  await page.keyboard.press('Escape');
+  await page
+    .getByRole('button', { name: `Create new issue in Cycle ${cycle.number} group` })
+    .click();
+
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(dialog.getByRole('combobox', { name: 'Add to cycle' })).toHaveValue(
+    `Cycle ${cycle.number}`,
+  );
+  const title = dialog.getByPlaceholder('Issue title');
+  await title.fill(`Created from cycle group ${stamp}`);
+  await title.press('ControlOrMeta+Enter');
+  await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
+
+  const identifier = new URL(page.url()).pathname.match(/\/issues\/([^/]+)/)?.[1];
+  expect(identifier).toBeTruthy();
+  const created = await request.get(`/api/issues/${identifier}`);
+  expect(created.ok()).toBeTruthy();
+  expect(await created.json()).toMatchObject({
+    title: `Created from cycle group ${stamp}`,
+    cycleId: cycle.id,
   });
 });
