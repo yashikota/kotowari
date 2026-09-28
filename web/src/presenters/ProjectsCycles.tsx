@@ -12,6 +12,7 @@ import { api, type IssueSearch } from '../api.ts';
 import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
+import { nextCycleRange } from '../cycle-schedule.ts';
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
 import {
   cycleProgressBreakdown,
@@ -1763,19 +1764,13 @@ export function useCyclesPagePresenter() {
       onEndDateChange: (e: React.ChangeEvent<HTMLInputElement>) => setEndDateDraft(e.target.value),
       onSaveDates: saveCycleDates,
       onClick0: () => {
-        const start = new Date();
-        const end = new Date(start.getTime() + 14 * 86400000);
-        return api
-          .createCycle({
-            startsAt: start.toISOString(),
-            endsAt: end.toISOString(),
-          })
-          .then((c) =>
-            navigate({
-              to: '/cycles/$number',
-              params: { number: String(c.number) },
-            }),
-          );
+        const range = nextCycleRange(data.cycles);
+        return api.createCycle(range).then((c) =>
+          navigate({
+            to: '/cycles/$number',
+            params: { number: String(c.number) },
+          }),
+        );
       },
     },
   };

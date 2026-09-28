@@ -838,6 +838,29 @@ test('cycle group quick-create inherits the group cycle', async ({ page, request
   });
 });
 
+test('new cycle continues the latest cycle schedule', async ({ page, request }) => {
+  const cycleResponse = await request.post('/api/cycles', {
+    data: {
+      startsAt: '2090-09-02T00:00:00.000Z',
+      endsAt: '2090-09-09T00:00:00.000Z',
+      status: 'upcoming',
+    },
+  });
+  expect(cycleResponse.ok()).toBeTruthy();
+  const cycle = (await cycleResponse.json()) as { number: number };
+
+  await page.goto('/cycles?scope=all');
+  await page.getByRole('button', { name: 'New cycle' }).click();
+  await expect(page).toHaveURL(new RegExp(`/cycles/${cycle.number + 1}$`));
+
+  const nextCycleResponse = await request.get(`/api/cycles/${cycle.number + 1}`);
+  expect(nextCycleResponse.ok()).toBeTruthy();
+  expect(await nextCycleResponse.json()).toMatchObject({
+    startsAt: '2090-09-09T00:00:00.000Z',
+    endsAt: '2090-09-16T00:00:00.000Z',
+  });
+});
+
 test('parent group quick-create creates a sub-issue under that parent', async ({
   page,
   request,
