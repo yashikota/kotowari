@@ -105,7 +105,7 @@ export function IssueGroupRow({
           </Text>
         </Group>
       </Button>
-      {row.groupBy !== 'parent' && onCreate ? (
+      {onCreate ? (
         <ActionIcon
           type="button"
           variant="subtle"

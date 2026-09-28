@@ -412,7 +412,14 @@ export function useIssueListPresenter({
           case 'estimate':
             context.estimate = row.key === 'estimate:none' ? null : Number(row.label);
             break;
-          case 'parent':
+          case 'parent': {
+            if (row.key === 'parent:none') break;
+            const child = issues.find((issue) => issue.parentIdentifier === row.label);
+            if (child?.parentId != null)
+              context.parent = { id: child.parentId, identifier: row.label };
+            else return;
+            break;
+          }
           case 'none':
             return;
         }

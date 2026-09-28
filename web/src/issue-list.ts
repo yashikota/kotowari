@@ -78,6 +78,7 @@ export type IssueCreateContext = {
   estimate?: number | null;
   type?: Issue['type'] | '';
   labelNames?: string[];
+  parent?: { id: number; identifier: string };
 };
 export const COMPLETED_ISSUES_FILTERS = [
   'all',

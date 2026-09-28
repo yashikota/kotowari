@@ -829,3 +829,47 @@ test('cycle group quick-create inherits the group cycle', async ({ page, request
     cycleId: cycle.id,
   });
 });
+
+test('parent group quick-create creates a sub-issue under that parent', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const parentResponse = await request.post('/api/issues', {
+    data: { title: `Parent group ${stamp}`, status: 'todo' },
+  });
+  expect(parentResponse.ok()).toBeTruthy();
+  const parent = (await parentResponse.json()) as { id: number; identifier: string };
+  const childResponse = await request.post('/api/issues', {
+    data: { title: `Child seed ${stamp}`, status: 'todo', parentId: parent.id },
+  });
+  expect(childResponse.ok()).toBeTruthy();
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, stamp.toString());
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByLabel('Grouping', { exact: true }).selectOption('parent');
+  await page.keyboard.press('Escape');
+  await page
+    .getByRole('button', { name: `Create new issue in ${parent.identifier} group` })
+    .click();
+
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(dialog.getByRole('combobox', { name: 'Parent', exact: true })).toHaveValue(
+    parent.identifier,
+  );
+  const title = dialog.getByPlaceholder('Issue title');
+  await title.fill(`Created from parent group ${stamp}`);
+  await title.press('ControlOrMeta+Enter');
+  await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
+
+  const identifier = new URL(page.url()).pathname.match(/\/issues\/([^/]+)/)?.[1];
+  expect(identifier).toBeTruthy();
+  const created = await request.get(`/api/issues/${identifier}`);
+  expect(created.ok()).toBeTruthy();
+  expect(await created.json()).toMatchObject({
+    title: `Created from parent group ${stamp}`,
+    parentId: parent.id,
+    parentIdentifier: parent.identifier,
+  });
+});

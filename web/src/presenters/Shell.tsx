@@ -672,14 +672,16 @@ export function useShellPresenter() {
     setIssueLinkURL('');
     setIssueLinkTitle('');
     setIssueLabelNames(prefill.labelNames ?? []);
-    setIssueParentId(undefined);
-    setIssueParentOpen(false);
-    setIssueParentIdentifier('');
+    setIssueParentId(prefill.parent?.id);
+    setIssueParentOpen(Boolean(prefill.parent));
+    setIssueParentIdentifier(prefill.parent?.identifier ?? '');
     setIssueParentQuery('');
     setIssueParentResults([]);
     setIssueParentLoading(false);
     parentLookupVersion.current += 1;
-    setSelectedParentIssue(null);
+    setSelectedParentIssue(
+      prefill.parent ? { kind: 'issue', id: prefill.parent.identifier, title: '' } : null,
+    );
     setIssueTemplateSlug('');
     setIssueProjectId(prefill.projectId ? String(prefill.projectId) : '');
     setIssueCycleId(prefill.cycleId ? String(prefill.cycleId) : '');
@@ -1290,7 +1292,7 @@ export function useShellPresenter() {
     issueParentOptions: [
       ...(selectedParentIssue ? [selectedParentIssue] : []),
       ...issueParentResults.filter((hit) => hit.id !== selectedParentIssue?.id),
-    ].map((hit) => ({ value: hit.id, label: `${hit.id} ${hit.title}` })),
+    ].map((hit) => ({ value: hit.id, label: hit.title ? `${hit.id} ${hit.title}` : hit.id })),
     issueLabelNames,
     issueTemplates,
     issueTemplateSlug,
