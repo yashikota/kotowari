@@ -69,6 +69,13 @@
     "pullRequestCount": "{{count}} pull requests"
   },
   "issueFilters": {
+    "aiFilter": "AI filter",
+    "aiInput": "AI filter",
+    "aiSuggestions": "Suggested filters",
+    "aiUnsupported": "I couldn’t match that. Try a suggestion or describe an assignee, due date, completion date, or priority.",
+    "aiSuggestionAssignedToMe": "assigned to me",
+    "aiSuggestionCompletedLastMonth": "completed in the last month",
+    "aiSuggestionDueInTwoWeeks": "due in the next 2 weeks",
     "advancedFilter": "Advanced filter",
     "toggleAdvancedFilter": "Toggle advanced filter",
     "chooseField": "Choose field",

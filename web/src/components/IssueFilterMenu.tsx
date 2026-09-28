@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ChangeEvent, KeyboardEvent, ReactNode } from 'react';
 import {
   ActionIcon,
   Button,
@@ -31,6 +31,7 @@ import {
   IconListCheck,
   IconRepeat,
   IconSearch,
+  IconSparkles,
   IconTag,
   IconUser,
 } from '@tabler/icons-react';
@@ -287,6 +288,10 @@ export function IssueFilterMenu({
   selectedTemplateSlugs,
   selectedProjectLabels,
   selectedAddedToCycle,
+  aiFilterOpen,
+  aiFilterQuery,
+  aiFilterError,
+  aiFilterSuggestions,
   opened,
   chips,
   onOpenChange,
@@ -312,6 +317,10 @@ export function IssueFilterMenu({
   onLabelOperatorChange,
   onToggleProjectLabel,
   onToggleAddedToCycle,
+  onAIFilterOpen,
+  onAIFilterQueryChange,
+  onAIFilterKeyDown,
+  onAIFilterApply,
   onToggleAdvancedFilter,
   onRemoveFilter,
   onClear,
@@ -327,6 +336,10 @@ export function IssueFilterMenu({
   selectedTemplateSlugs: string[];
   selectedProjectLabels: string[];
   selectedAddedToCycle: string[];
+  aiFilterOpen: boolean;
+  aiFilterQuery: string;
+  aiFilterError: boolean;
+  aiFilterSuggestions: { query: string }[];
   opened: boolean;
   chips: FilterChip[];
   onOpenChange: (next: boolean) => void;
@@ -352,6 +365,10 @@ export function IssueFilterMenu({
   onLabelOperatorChange: (value: string) => void;
   onToggleProjectLabel: (name: string) => void;
   onToggleAddedToCycle: (phase: 'planned' | 'during' | 'after') => void;
+  onAIFilterOpen: () => void;
+  onAIFilterQueryChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onAIFilterKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  onAIFilterApply: (query?: string) => void;
   onToggleAdvancedFilter?: () => void;
   onRemoveFilter: (key: string) => void;
   onClear: () => void;
@@ -817,142 +834,196 @@ export function IssueFilterMenu({
           style={{ width: 240, maxWidth: 'calc(100vw - 16px)', overflow: 'visible' }}
         >
           <Stack w="100%" gap={0}>
-            <TextInput
-              aria-label={t('filters.searchFilters')}
-              placeholder={t('filters.searchPlaceholder')}
-              leftSection={<IconSearch size={15} aria-hidden="true" />}
-              value={filterQuery}
-              autoFocus
-              onFocus={() => setOpenCategory(null)}
-              onChange={(event) => setFilterQuery(event.currentTarget.value)}
-              styles={{ input: { border: 0, borderRadius: 0 } }}
-            />
+            {aiFilterOpen ? (
+              <TextInput
+                aria-label={t('issueFilters.aiInput')}
+                placeholder={t('issueFilters.aiInput')}
+                leftSection={<IconSparkles size={15} aria-hidden="true" />}
+                value={aiFilterQuery}
+                autoFocus
+                onChange={onAIFilterQueryChange}
+                onKeyDown={onAIFilterKeyDown}
+                styles={{ input: { border: 0, borderRadius: 0 } }}
+              />
+            ) : (
+              <TextInput
+                aria-label={t('filters.searchFilters')}
+                placeholder={t('filters.searchPlaceholder')}
+                leftSection={<IconSearch size={15} aria-hidden="true" />}
+                value={filterQuery}
+                autoFocus
+                onFocus={() => setOpenCategory(null)}
+                onChange={(event) => setFilterQuery(event.currentTarget.value)}
+                styles={{ input: { border: 0, borderRadius: 0 } }}
+              />
+            )}
             <Divider />
-            <Stack gap="xs" p="xs" mah="calc(80vh - 42px)" style={{ overflowY: 'auto' }}>
-              {onToggleAdvancedFilter ? (
-                <>
-                  <Menu.Item
-                    leftSection={<IconFilter size={15} stroke={1.7} aria-hidden="true" />}
-                    aria-pressed={Boolean(search.advancedFilter)}
-                    onClick={() => {
-                      onToggleAdvancedFilter();
-                      onOpenChange(false);
-                    }}
-                  >
-                    {t('issueFilters.advancedFilter')}
-                  </Menu.Item>
-                  <Divider my={4} />
-                </>
-              ) : null}
-              {visibleGroups.map(({ categories: groupCategories, group }, groupIndex) => (
-                <Stack key={group} gap={2}>
-                  {groupIndex > 0 ? <Divider my={4} /> : null}
-                  {groupCategories.map(({ id }) => {
-                    const CategoryIcon = FILTER_CATEGORY_ICONS[id];
-                    return (
-                      <Popover
-                        key={id}
-                        opened={openCategory === id}
-                        onChange={(next) => {
-                          if (!next) setOpenCategory(null);
-                        }}
-                        position={compact ? 'bottom-start' : 'right-start'}
-                        offset={4}
-                        withinPortal={false}
-                        closeOnClickOutside={false}
-                        shadow="md"
-                      >
-                        <Popover.Target popupType="menu">
-                          <Menu.Item
-                            leftSection={<CategoryIcon size={15} stroke={1.7} aria-hidden="true" />}
-                            rightSection={<IconChevronRight size={14} aria-hidden="true" />}
-                            aria-pressed={isCategoryActive(id)}
-                            aria-expanded={openCategory === id}
-                            aria-haspopup="menu"
-                            closeMenuOnClick={false}
-                            onMouseEnter={() => setOpenCategory(id)}
-                            onClick={() => setOpenCategory(id)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'ArrowRight') {
-                                event.preventDefault();
-                                setOpenCategory(id);
+            {aiFilterOpen ? (
+              <Stack gap="xs" p="xs" mah="calc(80vh - 42px)" style={{ overflowY: 'auto' }}>
+                <Stack gap={2} role="listbox" aria-label={t('issueFilters.aiSuggestions')}>
+                  {aiFilterSuggestions.map(({ query }) => (
+                    <Button
+                      key={query}
+                      type="button"
+                      size="compact-sm"
+                      variant="subtle"
+                      color="gray"
+                      role="option"
+                      fullWidth
+                      justify="flex-start"
+                      leftSection={<IconSparkles size={14} stroke={1.7} aria-hidden="true" />}
+                      onClick={() => onAIFilterApply(query)}
+                    >
+                      {query}
+                    </Button>
+                  ))}
+                </Stack>
+                {aiFilterError ? (
+                  <Text size="xs" c="dimmed" px="xs" role="alert">
+                    {t('issueFilters.aiUnsupported')}
+                  </Text>
+                ) : null}
+              </Stack>
+            ) : (
+              <Stack gap="xs" p="xs" mah="calc(80vh - 42px)" style={{ overflowY: 'auto' }}>
+                <Menu.Item
+                  leftSection={<IconSparkles size={15} stroke={1.7} aria-hidden="true" />}
+                  closeMenuOnClick={false}
+                  onClick={() => {
+                    setOpenCategory(null);
+                    onAIFilterOpen();
+                  }}
+                >
+                  {t('issueFilters.aiFilter')}
+                </Menu.Item>
+                <Divider my={4} />
+                {onToggleAdvancedFilter ? (
+                  <>
+                    <Menu.Item
+                      leftSection={<IconFilter size={15} stroke={1.7} aria-hidden="true" />}
+                      aria-pressed={Boolean(search.advancedFilter)}
+                      onClick={() => {
+                        onToggleAdvancedFilter();
+                        onOpenChange(false);
+                      }}
+                    >
+                      {t('issueFilters.advancedFilter')}
+                    </Menu.Item>
+                    <Divider my={4} />
+                  </>
+                ) : null}
+                {visibleGroups.map(({ categories: groupCategories, group }, groupIndex) => (
+                  <Stack key={group} gap={2}>
+                    {groupIndex > 0 ? <Divider my={4} /> : null}
+                    {groupCategories.map(({ id }) => {
+                      const CategoryIcon = FILTER_CATEGORY_ICONS[id];
+                      return (
+                        <Popover
+                          key={id}
+                          opened={openCategory === id}
+                          onChange={(next) => {
+                            if (!next) setOpenCategory(null);
+                          }}
+                          position={compact ? 'bottom-start' : 'right-start'}
+                          offset={4}
+                          withinPortal={false}
+                          closeOnClickOutside={false}
+                          shadow="md"
+                        >
+                          <Popover.Target popupType="menu">
+                            <Menu.Item
+                              leftSection={
+                                <CategoryIcon size={15} stroke={1.7} aria-hidden="true" />
                               }
+                              rightSection={<IconChevronRight size={14} aria-hidden="true" />}
+                              aria-pressed={isCategoryActive(id)}
+                              aria-expanded={openCategory === id}
+                              aria-haspopup="menu"
+                              closeMenuOnClick={false}
+                              onMouseEnter={() => setOpenCategory(id)}
+                              onClick={() => setOpenCategory(id)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'ArrowRight') {
+                                  event.preventDefault();
+                                  setOpenCategory(id);
+                                }
+                              }}
+                            >
+                              {categoryLabels[id]}
+                            </Menu.Item>
+                          </Popover.Target>
+                          <Popover.Dropdown
+                            role="menu"
+                            aria-label={categoryLabels[id]}
+                            p={0}
+                            style={{
+                              width: compact ? 320 : 220,
+                              maxWidth: 'calc(100vw - 16px)',
+                              overflow: 'hidden',
                             }}
                           >
-                            {categoryLabels[id]}
-                          </Menu.Item>
-                        </Popover.Target>
-                        <Popover.Dropdown
-                          role="menu"
-                          aria-label={categoryLabels[id]}
-                          p={0}
-                          style={{
-                            width: compact ? 320 : 220,
-                            maxWidth: 'calc(100vw - 16px)',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <Stack
-                            gap="sm"
-                            p="sm"
-                            mah="min(80vh, 440px)"
-                            style={{ overflowY: 'auto' }}
-                          >
-                            {isCategoryActive(id) ? (
-                              <Button
-                                type="button"
-                                size="compact-xs"
-                                variant="subtle"
-                                onClick={() => {
-                                  const definition = FILTER_CATEGORIES.find(
-                                    (filter) => filter.id === id,
-                                  );
-                                  if (!definition) return;
-                                  for (const chip of chips) {
-                                    if (
-                                      definition.chips.some((key) =>
-                                        key.endsWith(':')
-                                          ? chip.key.startsWith(key)
-                                          : chip.key === key,
-                                      )
-                                    ) {
-                                      onRemoveFilter(chip.key);
+                            <Stack
+                              gap="sm"
+                              p="sm"
+                              mah="min(80vh, 440px)"
+                              style={{ overflowY: 'auto' }}
+                            >
+                              {isCategoryActive(id) ? (
+                                <Button
+                                  type="button"
+                                  size="compact-xs"
+                                  variant="subtle"
+                                  onClick={() => {
+                                    const definition = FILTER_CATEGORIES.find(
+                                      (filter) => filter.id === id,
+                                    );
+                                    if (!definition) return;
+                                    for (const chip of chips) {
+                                      if (
+                                        definition.chips.some((key) =>
+                                          key.endsWith(':')
+                                            ? chip.key.startsWith(key)
+                                            : chip.key === key,
+                                        )
+                                      ) {
+                                        onRemoveFilter(chip.key);
+                                      }
                                     }
-                                  }
-                                  setOpenCategory(null);
-                                }}
-                              >
-                                {t('filters.clearFilter')}
-                              </Button>
-                            ) : null}
-                            {renderCategoryEditor(id)}
-                          </Stack>
-                        </Popover.Dropdown>
-                      </Popover>
-                    );
-                  })}
-                </Stack>
-              ))}
-              {filteredCategories.length === 0 ? (
-                <Text size="sm" c="dimmed" px="xs" py="sm">
-                  {t('filters.noMatchingFilters')}
-                </Text>
-              ) : null}
-              {chips.length > 0 ? (
-                <>
-                  <Divider my={4} />
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    size="compact-sm"
-                    onClick={onClear}
-                  >
-                    {t('filters.clear')}
-                  </Button>
-                </>
-              ) : null}
-            </Stack>
+                                    setOpenCategory(null);
+                                  }}
+                                >
+                                  {t('filters.clearFilter')}
+                                </Button>
+                              ) : null}
+                              {renderCategoryEditor(id)}
+                            </Stack>
+                          </Popover.Dropdown>
+                        </Popover>
+                      );
+                    })}
+                  </Stack>
+                ))}
+                {filteredCategories.length === 0 ? (
+                  <Text size="sm" c="dimmed" px="xs" py="sm">
+                    {t('filters.noMatchingFilters')}
+                  </Text>
+                ) : null}
+                {chips.length > 0 ? (
+                  <>
+                    <Divider my={4} />
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      color="gray"
+                      size="compact-sm"
+                      onClick={onClear}
+                    >
+                      {t('filters.clear')}
+                    </Button>
+                  </>
+                ) : null}
+              </Stack>
+            )}
           </Stack>
         </Menu.Dropdown>
       </Menu>

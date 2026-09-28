@@ -34,6 +34,10 @@ export function IssueFiltersView({
         selectedLabels,
         selectedProjectLabels,
         selectedAddedToCycle,
+        aiFilterOpen,
+        aiFilterQuery,
+        aiFilterError,
+        aiFilterSuggestions,
         filterOpened,
         displayOpened,
         chips,
@@ -95,6 +99,10 @@ export function IssueFiltersView({
                 selectedTemplateSlugs={model.selectedTemplateSlugs}
                 selectedProjectLabels={selectedProjectLabels}
                 selectedAddedToCycle={selectedAddedToCycle}
+                aiFilterOpen={aiFilterOpen}
+                aiFilterQuery={aiFilterQuery}
+                aiFilterError={aiFilterError}
+                aiFilterSuggestions={aiFilterSuggestions}
                 opened={filterOpened}
                 chips={chips}
                 onOpenChange={handlers.onFilterOpenChange}
@@ -120,6 +128,10 @@ export function IssueFiltersView({
                 onLabelOperatorChange={handlers.onLabelOperatorChange}
                 onToggleProjectLabel={handlers.onToggleProjectLabel}
                 onToggleAddedToCycle={handlers.onToggleAddedToCycle}
+                onAIFilterOpen={handlers.onAIFilterOpen}
+                onAIFilterQueryChange={handlers.onAIFilterQueryChange}
+                onAIFilterKeyDown={handlers.onAIFilterKeyDown}
+                onAIFilterApply={handlers.onAIFilterApply}
                 onToggleAdvancedFilter={
                   onAdvancedFilterToggle ? handlers.onAdvancedFilterToggle : undefined
                 }

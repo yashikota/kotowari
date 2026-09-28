@@ -69,6 +69,13 @@
     "pullRequestCount": "{{count}} 件のプルリクエスト"
   },
   "issueFilters": {
+    "aiFilter": "AIフィルター",
+    "aiInput": "AIフィルター",
+    "aiSuggestions": "おすすめのフィルター",
+    "aiUnsupported": "条件を読み取れません。候補を選ぶか、担当者・期限・完了時期・優先度を含めて入力してください。",
+    "aiSuggestionAssignedToMe": "自分に割り当て済み",
+    "aiSuggestionCompletedLastMonth": "過去1か月に完了",
+    "aiSuggestionDueInTwoWeeks": "今後2週間以内に期限",
     "advancedFilter": "詳細フィルター",
     "toggleAdvancedFilter": "詳細フィルターを切り替え",
     "chooseField": "項目を選択",

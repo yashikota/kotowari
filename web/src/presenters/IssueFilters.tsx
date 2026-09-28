@@ -1,9 +1,10 @@
 import type * as React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMachineFlag, useRootMachineFlag } from '../application/Root.tsx';
 import type { IssueSearch } from '../api.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
+import { interpretIssueFilterQuery } from '../issue-filter-query.ts';
 import type {
   CompletedIssuesFilter,
   IssueDisplayProperty,
@@ -174,7 +175,15 @@ export function useIssueFiltersPresenter({
     }
   }
   const [filterOpened, setFilterOpened] = useMachineFlag('filter');
+  const [aiFilterOpen, setAIFilterOpen] = useMachineFlag('ai-filter');
   const [displayOpened, setDisplayOpened] = useMachineFlag('display');
+  const [aiFilterQuery, setAIFilterQuery] = useState('');
+  const [aiFilterError, setAIFilterError] = useState(false);
+  const aiFilterSuggestions = [
+    t('issueFilters.aiSuggestionAssignedToMe'),
+    t('issueFilters.aiSuggestionCompletedLastMonth'),
+    t('issueFilters.aiSuggestionDueInTwoWeeks'),
+  ].map((query) => ({ query }));
 
   useEffect(() => {
     if (findOpen) findRef.current?.focus();
@@ -263,6 +272,32 @@ export function useIssueFiltersPresenter({
     searchRef.current = next;
     pendingSearchRef.current = next;
     onChange(next);
+  }
+
+  function applyAIFilter(query = aiFilterQuery) {
+    const interpreted = interpretIssueFilterQuery(query);
+    if (!interpreted) {
+      setAIFilterError(true);
+      return;
+    }
+    const generatedGroup = interpreted.advancedFilterGroup;
+    if (generatedGroup) {
+      const currentGroup = searchRef.current.advancedFilterGroup;
+      const combinedGroup = currentGroup?.children.length
+        ? {
+            kind: 'group' as const,
+            operator: 'and' as const,
+            children: [currentGroup, generatedGroup],
+          }
+        : generatedGroup;
+      set({ ...interpreted, advancedFilter: true, advancedFilterGroup: combinedGroup });
+    } else {
+      set(interpreted);
+    }
+    setFilterOpened(false);
+    setAIFilterOpen(false);
+    setAIFilterQuery('');
+    setAIFilterError(false);
   }
 
   const chips: FilterChip[] = [
@@ -455,10 +490,36 @@ export function useIssueFiltersPresenter({
     selectedProjectLabels,
     selectedAddedToCycle,
     filterOpened,
+    aiFilterOpen,
+    aiFilterQuery,
+    aiFilterError,
+    aiFilterSuggestions,
     displayOpened,
     chips,
     handlers: {
-      onFilterOpenChange: (next: boolean) => setFilterOpened(next),
+      onFilterOpenChange: (next: boolean) => {
+        setFilterOpened(next);
+        if (!next) {
+          setAIFilterOpen(false);
+          setAIFilterQuery('');
+          setAIFilterError(false);
+        }
+      },
+      onAIFilterOpen: () => {
+        setAIFilterOpen(true);
+        setAIFilterQuery('');
+        setAIFilterError(false);
+      },
+      onAIFilterQueryChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAIFilterQuery(event.currentTarget.value);
+        setAIFilterError(false);
+      },
+      onAIFilterKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        applyAIFilter();
+      },
+      onAIFilterApply: (query?: string) => applyAIFilter(query),
       onAdvancedFilterToggle: () =>
         onAdvancedFilterToggle?.(!(advancedFilter ?? search.advancedFilter ?? false)),
       onAdvancedFilterChange: (group: IssueFilterGroup) => onAdvancedFilterChange?.(group),

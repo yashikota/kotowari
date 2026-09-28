@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { createIssueView, expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
+function localDateOffset(days: number): string {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 test('issue views and controls share a toolbar that wraps on narrow screens', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/issues');
@@ -30,6 +37,70 @@ test('issue views and controls share a toolbar that wraps on narrow screens', as
   expect(mobileFilterBounds).not.toBeNull();
   expect(mobileFilterBounds!.y).toBeGreaterThan(mobileTabBounds!.y);
   expect(documentWidth).toBeLessThanOrEqual(390);
+});
+
+test('AI filter suggestions apply real local issue filters and explain unsupported prompts', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const assignedTitle = `AI filter assigned ${stamp}`;
+  const unassignedTitle = `AI filter unassigned ${stamp}`;
+  for (const data of [{ title: assignedTitle, assignee: 'self' }, { title: unassignedTitle }]) {
+    const response = await request.post('/api/issues', { data });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  const filterMenu = page.getByRole('menu', { name: 'Add filter' });
+  await filterMenu.getByRole('menuitem', { name: 'AI filter', exact: true }).click();
+
+  const input = page.getByRole('textbox', { name: 'AI filter' });
+  await expect(input).toBeFocused();
+  await input.fill('show me mysterious work');
+  await input.press('Enter');
+  await expect(page.getByRole('alert')).toContainText('couldn’t match');
+  await page.getByRole('option', { name: 'assigned to me', exact: true }).click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get('assignee')).toBe('self');
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(assignedTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(unassignedTitle) })).toHaveCount(0);
+  await expect(page.getByRole('menu', { name: 'Add filter' })).toBeHidden();
+});
+
+test('AI filter date prompt includes due dates only inside its requested window', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const todayTitle = `AI due today ${stamp}`;
+  const boundaryTitle = `AI due boundary ${stamp}`;
+  const outsideTitle = `AI due outside ${stamp}`;
+  for (const data of [
+    { title: todayTitle, dueDate: localDateOffset(0) },
+    { title: boundaryTitle, dueDate: localDateOffset(14) },
+    { title: outsideTitle, dueDate: localDateOffset(15) },
+  ]) {
+    const response = await request.post('/api/issues', { data });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'AI filter', exact: true }).click();
+  const input = page.getByRole('textbox', { name: 'AI filter' });
+  await input.fill('due in the next 2 weeks');
+  await input.press('Enter');
+
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('advancedFilterGroup'))
+    .not.toBeNull();
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(todayTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(boundaryTitle) })).toBeVisible();
+  await expect(issueList.getByRole('option', { name: new RegExp(outsideTitle) })).toHaveCount(0);
 });
 
 test('issue display property chips persist as personal view state', async ({ page }) => {
