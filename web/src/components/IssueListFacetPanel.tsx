@@ -1,10 +1,11 @@
-import { Box, Button, Group, Paper, Select, Stack, Text } from '@mantine/core';
+import { Box, Button, Group, Paper, Stack, Tabs, Text } from '@mantine/core';
 import { IconCircleDashed, IconFolder, IconUser } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { priorityLabel } from '../i18n/labels.ts';
 import type { IssueFacetOption, IssueFacetType } from '../issue-list.ts';
 import { IssuePriorityIcon } from './issue-ui.tsx';
+import styles from './IssueListFacetPanel.module.css';
 
 const FACET_TYPES: IssueFacetType[] = ['assignees', 'labels', 'priority', 'projects'];
 
@@ -49,7 +50,8 @@ export function IssueListFacetPanel({
       radius="sm"
       p="xs"
       style={{
-        width: 336,
+        width: 424,
+        maxWidth: '40vw',
         height: '100%',
         flexShrink: 0,
         overflowY: 'auto',
@@ -57,102 +59,109 @@ export function IssueListFacetPanel({
       }}
     >
       <Stack gap="xs">
-        <Select
-          aria-label={t('ui.detailBy')}
-          data={FACET_TYPES.map((value) => ({ value, label: facetLabels[value] }))}
+        <Tabs
           value={facet}
           onChange={(value) => {
             if (value && FACET_TYPES.includes(value as IssueFacetType))
               onFacetChange(value as IssueFacetType);
           }}
-          allowDeselect={false}
-          size="sm"
-          comboboxProps={{ withinPortal: false }}
-          styles={{ input: { height: 32, minHeight: 32 } }}
-        />
-        {options.length === 0 ? (
-          <Text size="sm" c="dimmed" px="xs" py="sm">
-            {t('ui.noFacetValues')}
-          </Text>
-        ) : (
-          options.map((option) => {
-            const label = labelFor(option);
-            const pressed = selectedValues.includes(option.value);
-            return (
-              <Button
-                key={option.value}
-                type="button"
-                variant={pressed ? 'light' : 'subtle'}
-                color="gray"
-                fullWidth
-                aria-pressed={pressed}
-                aria-label={t('ui.facetOptionCount', {
-                  label,
-                  countLabel: t('ui.facetCount', { count: option.count }),
-                })}
-                onClick={() => onToggle(option.value)}
-                styles={{ root: { height: 36, paddingInline: 8 }, inner: { width: '100%' } }}
-              >
-                <Group justify="space-between" wrap="nowrap" w="100%" gap="xs">
-                  <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                    {facet === 'assignees' ? (
-                      option.value === 'none' ? (
-                        <IconCircleDashed
-                          size={14}
-                          stroke={1.7}
-                          color="var(--mantine-color-gray-6)"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <IconUser
-                          size={14}
-                          stroke={1.7}
-                          color="var(--mantine-color-dimmed)"
-                          aria-hidden="true"
-                        />
-                      )
-                    ) : facet === 'priority' ? (
-                      Number(option.value) === 0 ? (
-                        <IconCircleDashed
-                          size={14}
-                          stroke={1.7}
-                          color="var(--mantine-color-gray-6)"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <IssuePriorityIcon priority={Number(option.value)} />
-                      )
-                    ) : facet === 'projects' ? (
-                      <IconFolder
-                        size={14}
-                        stroke={1.7}
-                        color="var(--mantine-color-dimmed)"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <Box
-                        aria-hidden="true"
-                        w={9}
-                        h={9}
-                        style={{
-                          flexShrink: 0,
-                          borderRadius: 3,
-                          backgroundColor: option.color || 'var(--mantine-color-gray-5)',
-                        }}
-                      />
-                    )}
-                    <Text size="sm" truncate>
-                      {label}
-                    </Text>
-                  </Group>
-                  <Text size="xs" c="dimmed" ff="var(--mantine-font-family-monospace)">
-                    {option.count}
-                  </Text>
-                </Group>
-              </Button>
-            );
-          })
-        )}
+          variant="pills"
+          radius="xl"
+          color="gray"
+        >
+          <Tabs.List grow aria-label={t('ui.issueDetails')} className={styles.facetTabs}>
+            {FACET_TYPES.map((value) => (
+              <Tabs.Tab key={value} value={value} className={styles.tab}>
+                {facetLabels[value]}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+          <Tabs.Panel value={facet} pt="xs">
+            {options.length === 0 ? (
+              <Text size="sm" c="dimmed" px="xs" py="sm">
+                {t('ui.noFacetValues')}
+              </Text>
+            ) : (
+              options.map((option) => {
+                const label = labelFor(option);
+                const pressed = selectedValues.includes(option.value);
+                return (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant={pressed ? 'light' : 'subtle'}
+                    color="gray"
+                    fullWidth
+                    aria-pressed={pressed}
+                    aria-label={t('ui.facetOptionCount', {
+                      label,
+                      countLabel: t('ui.facetCount', { count: option.count }),
+                    })}
+                    onClick={() => onToggle(option.value)}
+                    styles={{ root: { height: 36, paddingInline: 8 }, inner: { width: '100%' } }}
+                  >
+                    <Group justify="space-between" wrap="nowrap" w="100%" gap="xs">
+                      <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                        {facet === 'assignees' ? (
+                          option.value === 'none' ? (
+                            <IconCircleDashed
+                              size={14}
+                              stroke={1.7}
+                              color="var(--mantine-color-gray-6)"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <IconUser
+                              size={14}
+                              stroke={1.7}
+                              color="var(--mantine-color-dimmed)"
+                              aria-hidden="true"
+                            />
+                          )
+                        ) : facet === 'priority' ? (
+                          Number(option.value) === 0 ? (
+                            <IconCircleDashed
+                              size={14}
+                              stroke={1.7}
+                              color="var(--mantine-color-gray-6)"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <IssuePriorityIcon priority={Number(option.value)} />
+                          )
+                        ) : facet === 'projects' ? (
+                          <IconFolder
+                            size={14}
+                            stroke={1.7}
+                            color="var(--mantine-color-dimmed)"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <Box
+                            aria-hidden="true"
+                            w={9}
+                            h={9}
+                            style={{
+                              flexShrink: 0,
+                              borderRadius: 3,
+                              backgroundColor: option.color || 'var(--mantine-color-gray-5)',
+                            }}
+                          />
+                        )}
+                        <Text size="sm" truncate>
+                          {label}
+                        </Text>
+                      </Group>
+                      <Text size="xs" c="dimmed" ff="var(--mantine-font-family-monospace)">
+                        {option.count}
+                      </Text>
+                    </Group>
+                  </Button>
+                );
+              })
+            )}
+          </Tabs.Panel>
+        </Tabs>
       </Stack>
     </Paper>
   );

@@ -34,7 +34,10 @@ test('the issue-list sidebar shows and filters single-user assignees', async ({
   await page.getByRole('button', { name: 'Open details' }).click();
 
   const sidebar = page.getByRole('complementary', { name: 'Issue details' });
-  await expect(sidebar.getByRole('combobox', { name: 'Details by' })).toHaveValue('Assignees');
+  await expect(sidebar.getByRole('tab', { name: 'Assignees', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
   await expect(sidebar.getByRole('button', { name: /^You,/ })).toBeVisible();
   await expect(sidebar.getByRole('button', { name: /^Agent,/ })).toBeVisible();
   await expect(sidebar.getByRole('button', { name: /^Unassigned,/ })).toBeVisible();

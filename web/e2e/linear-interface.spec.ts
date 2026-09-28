@@ -548,11 +548,10 @@ test('issue details facets show counts and filter the visible issue list', async
   await expect(details).toBeVisible();
   const panelBounds = await details.boundingBox();
   expect(panelBounds).not.toBeNull();
-  expect(panelBounds!.width).toBeGreaterThanOrEqual(300);
-  expect(panelBounds!.width).toBeLessThanOrEqual(340);
-  const detailBy = details.getByRole('combobox', { name: 'Details by' });
-  await detailBy.click();
-  await page.getByRole('option', { name: 'Priority' }).click();
+  expect(panelBounds!.width).toBeGreaterThanOrEqual(400);
+  expect(panelBounds!.width).toBeLessThanOrEqual(430);
+  const facetTab = (name: string) => details.getByRole('tab', { name, exact: true });
+  await facetTab('Priority').click();
   const high = details.getByRole('button', { name: 'High, 1 issue' });
   await expect(high).toBeVisible();
   await expect(details.getByRole('button', { name: 'Low, 1 issue' })).toBeVisible();
@@ -567,16 +566,14 @@ test('issue details facets show counts and filter the visible issue list', async
     'true',
   );
 
-  await detailBy.click();
-  await page.getByRole('option', { name: 'Labels' }).click();
+  await facetTab('Labels').click();
   const labelFacet = details.getByRole('button', { name: `${labelName}, 1 issue` });
   await expect(labelFacet).toBeVisible();
   await labelFacet.click();
   await expect.poll(() => new URL(page.url()).searchParams.get('labels')).toBe(labelName);
   await expect(issues.getByRole('option', { name: new RegExp(highTitle) })).toBeVisible();
 
-  await detailBy.click();
-  await page.getByRole('option', { name: 'Projects' }).click();
+  await facetTab('Projects').click();
   const projectFacet = details.getByRole('button', { name: `${projectName}, 1 issue` });
   await expect(projectFacet).toBeVisible();
   await projectFacet.click();
