@@ -15,6 +15,7 @@ import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import i18n from '../i18n/index.ts';
 import type { IssueListRow as IssueListRowModel } from '../issue-list.ts';
 import { formatIssueCreatedDate, type IssueDisplayProperty } from '../issue-list.ts';
+import { formatCalendarDate } from '../time.ts';
 import type { Cycle, Issue, IssueType, Project } from '../types.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssueLabelPill, IssueMetaText, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
@@ -35,7 +36,11 @@ export function IssueGroupRow({
 }) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const cycleNumber = row.groupBy === 'cycle' ? Number(row.key.slice('cycle:'.length)) : 0;
-  const cycleName = cycles.find((cycle) => cycle.number === cycleNumber)?.name?.trim();
+  const cycle = cycles.find((candidate) => candidate.number === cycleNumber);
+  const cycleName = cycle?.name?.trim();
+  const cycleDateRange = cycle
+    ? `${formatCalendarDate(cycle.startsAt, i18n.language)} → ${formatCalendarDate(cycle.endsAt, i18n.language)}`
+    : undefined;
   const label =
     row.groupBy === 'type'
       ? row.label
@@ -95,6 +100,7 @@ export function IssueGroupRow({
         variant="subtle"
         color="gray"
         aria-label={i18n.t('ui.issueGroupCount', { label, count: row.count })}
+        aria-description={cycleDateRange}
         aria-expanded={!row.collapsed}
         onClick={() => onToggle(row.key)}
         classNames={{ root: styles.groupButton, inner: styles.groupButtonInner }}
@@ -112,6 +118,11 @@ export function IssueGroupRow({
           <Text size="xs" c="dimmed">
             {row.count}
           </Text>
+          {cycleDateRange ? (
+            <Text size="xs" c="dimmed">
+              {cycleDateRange}
+            </Text>
+          ) : null}
         </Group>
       </Button>
       {onCreate ? (

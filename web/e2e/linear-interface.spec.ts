@@ -812,7 +812,14 @@ test('cycle group quick-create inherits the group cycle', async ({ page, request
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByLabel('Grouping', { exact: true }).selectOption('cycle');
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: `Create new issue in ${cycleName} group` }).click();
+  const createInCycle = page.getByRole('button', {
+    name: `Create new issue in ${cycleName} group`,
+  });
+  await expect(createInCycle.locator('..').locator('button').first()).toHaveAttribute(
+    'aria-description',
+    /→/,
+  );
+  await createInCycle.click();
 
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await expect(dialog.getByRole('combobox', { name: 'Add to cycle' })).toHaveValue(cycleName);
