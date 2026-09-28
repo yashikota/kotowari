@@ -4,11 +4,13 @@
     "inbox": "受信トレイ",
     "unreadCount": "未読 {{count}} 件",
     "reviewCount": "レビュー {{count}} 件",
+    "draftCount": "下書き {{count}} 件",
     "workspaceMenu": "{{workspace}}メニューを開く",
     "reviews": "レビュー",
     "reminders": "リマインダー",
     "myIssues": "自分のイシュー",
     "agent": "AI エージェント",
+    "drafts": "下書き",
     "issues": "イシュー",
     "archivedIssues": "アーカイブ済みイシュー",
     "board": "ボード",
@@ -484,6 +486,7 @@
   },
   "modal": {
     "createIssue": "イシューを作成",
+    "saveDraft": "下書きを保存",
     "issueProperties": "イシューのプロパティ",
     "createAdr": "ADR を作成",
     "createPage": "ページを作成",
@@ -513,6 +516,20 @@
     "month": "か月ごと",
     "year": "年ごと",
     "willLinkIssue": "イシュー {{issue}} にリンクします"
+  },
+  "drafts": {
+    "empty": "有効な下書きはありません",
+    "issues": "イシュー",
+    "addDescription": "説明を追加…",
+    "discardDraft": "下書きを破棄",
+    "discardAll": "すべて破棄",
+    "discardTitle": "この下書きを破棄しますか？",
+    "discardDescription": "下書きは削除されます。",
+    "discardAllTitle": "すべての下書きを破棄しますか？",
+    "discardAllDescription": "すべての下書きが削除されます。",
+    "discard": "破棄",
+    "saved": "イシューの下書きを保存しました",
+    "open": "下書きを開く"
   },
   "field": {
     "status": "ステータス",

@@ -208,6 +208,7 @@ export type GlobalNavigationAction =
   | 'inbox'
   | 'reviews'
   | 'agent'
+  | 'drafts'
   | 'my-issues'
   | 'backlog'
   | 'all-issues'
@@ -279,6 +280,7 @@ const GLOBAL_NAVIGATION_KEYS: Record<string, GlobalNavigationAction> = {
   i: 'inbox',
   r: 'reviews',
   j: 'agent',
+  d: 'drafts',
   m: 'my-issues',
   b: 'backlog',
   e: 'all-issues',

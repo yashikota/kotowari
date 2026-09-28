@@ -14,6 +14,7 @@ type NavKey =
   | 'a'
   | 'b'
   | 'c'
+  | 'd'
   | 'i'
   | 'm'
   | 'r'
@@ -42,6 +43,7 @@ export const HOME_NAV: NavTarget[] = [
     fuzzy: false,
   },
   { key: 'a', labelKey: 'nav.agent', to: '/agent', fuzzy: false },
+  { key: 'd', labelKey: 'nav.drafts', to: '/drafts', fuzzy: false },
 ];
 
 export const TEAM_NAV: NavTarget[] = [

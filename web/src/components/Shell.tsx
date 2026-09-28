@@ -27,6 +27,7 @@ import {
   IconChevronRight,
   IconCircleDot,
   IconDots,
+  IconFileText,
   IconFilter,
   IconGitPullRequest,
   IconHome,
@@ -59,6 +60,7 @@ import { ShortcutHelp } from './ShortcutHelp.tsx';
 import { IssueCreateProperties } from './IssueCreateProperties.tsx';
 import { ViewIcon } from './ViewIcon.tsx';
 import { SidebarCustomizationModal } from './SidebarCustomizationModal.tsx';
+import { DraftDiscardDialog } from './DraftDiscardDialog.tsx';
 import styles from './Shell.module.css';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -108,6 +110,7 @@ const NAV_ICONS: Record<string, ReactNode> = {
   '/reviews': <IconGitPullRequest size={14} aria-hidden />,
   '/reminders': <IconBell size={14} aria-hidden />,
   '/agent': <IconSparkles size={14} aria-hidden />,
+  '/drafts': <IconFileText size={14} aria-hidden />,
   '/issues': <IconListCheck size={14} aria-hidden />,
   '/my-issues': <IconListCheck size={14} aria-hidden />,
   '/board': <IconLayoutKanban size={14} aria-hidden />,
@@ -215,6 +218,9 @@ export function ShellView({
         createADR,
         createPage,
         issueTitle,
+        issueDraftSaved,
+        savedIssueDraft,
+        issueDraftDiscardRequest,
         issueStatus,
         issuePriority,
         issueAssignee,
@@ -236,7 +242,11 @@ export function ShellView({
         const count = sidebarBadgeCounts[id] ?? 0;
         if (!count) return undefined;
         const label =
-          id === '/inbox' ? t('nav.unreadCount', { count }) : t('nav.reviewCount', { count });
+          id === '/inbox'
+            ? t('nav.unreadCount', { count })
+            : id === '/drafts'
+              ? t('nav.draftCount', { count })
+              : t('nav.reviewCount', { count });
         return <SidebarBadge count={count} style={sidebarBadgeStyle} label={label} />;
       };
       return (
@@ -796,6 +806,30 @@ export function ShellView({
             autoFocus={false}
           >
             <Stack gap="sm">
+              {(issueDraftSaved || issueTitle.trim()) && (
+                <Group justify="flex-end">
+                  {issueDraftSaved ? (
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      color="red"
+                      size="compact-sm"
+                      onClick={handlers.onRequestDiscardCurrentDraft}
+                    >
+                      {t('drafts.discardDraft')}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      size="compact-sm"
+                      onClick={handlers.onSaveIssueDraft}
+                    >
+                      {t('modal.saveDraft')}
+                    </Button>
+                  )}
+                </Group>
+              )}
               <Textarea
                 ref={issueTitleRef}
                 data-autofocus
@@ -1002,6 +1036,67 @@ export function ShellView({
               ) : null}
             </Stack>
           </Modal>
+
+          {savedIssueDraft ? (
+            <Alert
+              color="teal"
+              variant="light"
+              role="status"
+              styles={{
+                root: {
+                  position: 'fixed',
+                  bottom: 16,
+                  left: 260,
+                  zIndex: 1000,
+                  maxWidth: 460,
+                },
+              }}
+            >
+              <Group justify="space-between" wrap="nowrap">
+                <Text size="sm">{t('drafts.saved')}</Text>
+                <Group gap="xs" wrap="nowrap">
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    size="compact-xs"
+                    onClick={handlers.onOpenSavedIssueDraft}
+                  >
+                    {t('drafts.open')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    size="compact-xs"
+                    onClick={handlers.onDismissSavedIssueDraft}
+                  >
+                    {t('common.dismiss')}
+                  </Button>
+                </Group>
+              </Group>
+            </Alert>
+          ) : null}
+
+          <DraftDiscardDialog
+            opened={issueDraftDiscardRequest !== null}
+            title={
+              issueDraftDiscardRequest?.kind === 'all'
+                ? t('drafts.discardAllTitle')
+                : t('drafts.discardTitle')
+            }
+            description={
+              issueDraftDiscardRequest?.kind === 'all'
+                ? t('drafts.discardAllDescription')
+                : t('drafts.discardDescription')
+            }
+            discardLabel={
+              issueDraftDiscardRequest?.kind === 'all'
+                ? t('drafts.discardAll')
+                : t('drafts.discard')
+            }
+            cancelLabel={t('common.cancel')}
+            onCancel={handlers.onCancelIssueDraftDiscard}
+            onConfirm={handlers.onConfirmIssueDraftDiscard}
+          />
 
           <Modal
             opened={createIssue && model.issueLinkOpen}

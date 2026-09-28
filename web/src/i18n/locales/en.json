@@ -4,11 +4,14 @@
     "inbox": "Inbox",
     "unreadCount": "{{count}} unread",
     "reviewCount": "{{count}} reviews",
+    "draftCount_one": "{{count}} draft",
+    "draftCount_other": "{{count}} drafts",
     "workspaceMenu": "Open {{workspace}} menu",
     "reviews": "Reviews",
     "reminders": "Reminders",
     "myIssues": "My issues",
     "agent": "Agent",
+    "drafts": "Drafts",
     "issues": "Issues",
     "archivedIssues": "Archived issues",
     "board": "Board",
@@ -489,6 +492,7 @@
   },
   "modal": {
     "createIssue": "Create issue",
+    "saveDraft": "Save draft",
     "issueProperties": "Issue properties",
     "createAdr": "Create ADR",
     "createPage": "Create page",
@@ -518,6 +522,20 @@
     "month": "month(s)",
     "year": "year(s)",
     "willLinkIssue": "Will link issue {{issue}}"
+  },
+  "drafts": {
+    "empty": "No active drafts",
+    "issues": "Issues",
+    "addDescription": "Add description…",
+    "discardDraft": "Discard draft",
+    "discardAll": "Discard all",
+    "discardTitle": "Discard this draft?",
+    "discardDescription": "Your draft will be deleted.",
+    "discardAllTitle": "Discard all drafts?",
+    "discardAllDescription": "All your drafts will be deleted.",
+    "discard": "Discard",
+    "saved": "Issue draft saved",
+    "open": "Open draft"
   },
   "field": {
     "status": "Status",

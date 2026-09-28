@@ -30,6 +30,7 @@ export type SidebarItem =
   | '/reviews'
   | '/reminders'
   | '/agent'
+  | '/drafts'
   | '/my-issues'
   | '/issues'
   | '/board'
@@ -48,6 +49,7 @@ export const SIDEBAR_ITEM_IDS = [
   '/reminders',
   '/my-issues',
   '/agent',
+  '/drafts',
   '/issues',
   '/board',
   '/cycles',
@@ -94,6 +96,7 @@ export const DEFAULT_PERSONAL_PREFERENCES: PersonalPreferences = {
     '/reminders': 'more',
     '/my-issues': 'primary',
     '/agent': 'primary',
+    '/drafts': 'primary',
     '/issues': 'primary',
     '/board': 'more',
     '/cycles': 'primary',

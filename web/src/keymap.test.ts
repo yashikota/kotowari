@@ -497,6 +497,7 @@ describe('global navigation keyboard sequence', () => {
   it.each([
     ['i', 'inbox'],
     ['j', 'agent'],
+    ['d', 'drafts'],
     ['m', 'my-issues'],
     ['b', 'backlog'],
     ['e', 'all-issues'],

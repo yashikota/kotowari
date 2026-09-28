@@ -49,6 +49,16 @@ import type {
 } from '../types.ts';
 import { useIssueWorkflow, workflowStatusCategory } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import {
+  deleteAllIssueDrafts,
+  deleteIssueDraft,
+  ISSUE_DRAFTS_EVENT,
+  listIssueDrafts,
+  saveIssueDraft,
+  type IssueDraft,
+} from '../issue-drafts.ts';
+
+type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
 
 function slugify(s: string): string {
   return s
@@ -137,6 +147,7 @@ export function useShellPresenter() {
   const isCycleDetail = pathname.startsWith('/cycles/');
   const isPageOwnedHeader =
     pathname === '/inbox' ||
+    pathname === '/drafts' ||
     pathname === '/projects' ||
     pathname === '/cycles' ||
     pathname === '/initiatives' ||
@@ -166,6 +177,9 @@ export function useShellPresenter() {
   const createPage = overlay === 'page';
   const setCreatePage = setOverlay('page');
   const [issueTitle, setIssueTitle] = useState('');
+  const [issueDraftId, setIssueDraftId] = useState('');
+  const issueDraftIdRef = useRef('');
+  const [issueDraftSaved, setIssueDraftSaved] = useState(false);
   const [issueCreateMore, setIssueCreateMore] = useState(false);
   const [issueCreateMoreFocusRequest, setIssueCreateMoreFocusRequest] = useState(0);
   const [issueStatus, setIssueStatus] = useState('todo');
@@ -216,6 +230,110 @@ export function useShellPresenter() {
   const [favoritesOpen, setFavoritesOpen] = useState(true);
   const [teamsOpen, setTeamsOpen] = useState(true);
   const [teamNavigationOpen, setTeamNavigationOpen] = useState(true);
+  const [issueDraftDiscardRequest, setIssueDraftDiscardRequest] =
+    useState<IssueDraftDiscardRequest | null>(null);
+  const [savedIssueDraft, setSavedIssueDraft] = useState<IssueDraft | null>(null);
+
+  const saveCurrentIssueDraft = useCallback(() => {
+    const title = issueTitle.trim();
+    if (!title) return null;
+    const now = new Date().toISOString();
+    const currentDraftId = issueDraftIdRef.current || issueDraftId;
+    const draft: IssueDraft = {
+      id: currentDraftId || crypto.randomUUID(),
+      title,
+      body: issueBody,
+      status: issueStatus,
+      priority: issuePriority,
+      assignee: issueAssignee,
+      type: issueType ?? '',
+      estimate: issueEstimate,
+      projectId: issueProjectId,
+      cycleId: issueCycleId,
+      dueDate: issueDueDate,
+      labelNames: [...issueLabelNames],
+      templateSlug: issueTemplateSlug,
+      parentId: issueParentId,
+      parentIdentifier: issueParentIdentifier,
+      externalLinks: issueExternalLinks.map((link) => ({ ...link })),
+      recurringOpen: issueRecurringOpen,
+      recurringFirstDueDate: issueRecurringFirstDueDate,
+      recurringInterval: issueRecurringInterval,
+      recurringUnit: issueRecurringUnit,
+      createdAt: now,
+      updatedAt: now,
+    };
+    saveIssueDraft(draft);
+    if (!currentDraftId) {
+      issueDraftIdRef.current = draft.id;
+      setIssueDraftId(draft.id);
+    }
+    return draft;
+  }, [
+    issueAssignee,
+    issueBody,
+    issueCycleId,
+    issueDraftId,
+    issueDueDate,
+    issueEstimate,
+    issueExternalLinks,
+    issueLabelNames,
+    issueParentId,
+    issueParentIdentifier,
+    issuePriority,
+    issueProjectId,
+    issueRecurringFirstDueDate,
+    issueRecurringInterval,
+    issueRecurringOpen,
+    issueRecurringUnit,
+    issueStatus,
+    issueTemplateSlug,
+    issueTitle,
+    issueType,
+  ]);
+
+  function closeCreateIssue() {
+    saveCurrentIssueDraft();
+    setCreateIssue(false);
+  }
+
+  function saveIssueDraftAndClose() {
+    const draft = saveCurrentIssueDraft();
+    if (!draft) return;
+    setIssueDraftSaved(true);
+    setCreateIssue(false);
+    setSavedIssueDraft(draft);
+  }
+
+  function confirmIssueDraftDiscard() {
+    const request = issueDraftDiscardRequest;
+    if (!request) return;
+
+    const discardedCurrentDraft = request.kind === 'all' || request.id === issueDraftIdRef.current;
+    if (request.kind === 'all') deleteAllIssueDrafts();
+    else deleteIssueDraft(request.id);
+
+    if (discardedCurrentDraft && createIssue) {
+      issueDraftIdRef.current = '';
+      setIssueDraftId('');
+      setIssueDraftSaved(false);
+      setIssueTitle('');
+      setIssueBody('');
+      setCreateIssue(false);
+    }
+    setSavedIssueDraft(null);
+    setIssueDraftDiscardRequest(null);
+  }
+
+  useEffect(() => {
+    if (!savedIssueDraft) return;
+    const timeout = window.setTimeout(() => setSavedIssueDraft(null), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [savedIssueDraft]);
+
+  useEffect(() => {
+    if (createIssue && issueTitle.trim()) saveCurrentIssueDraft();
+  }, [createIssue, issueTitle, saveCurrentIssueDraft]);
 
   const loadWorkspace = useCallback(async () => {
     try {
@@ -254,9 +372,10 @@ export function useShellPresenter() {
         setSidebarBadgeCounts({
           '/inbox': unreadInboxBadgeCount(activities, inboxState),
           '/reviews': listLinkedPullRequests(issues).length,
+          '/drafts': listIssueDrafts().length,
         });
       } catch {
-        if (active) setSidebarBadgeCounts({});
+        if (active) setSidebarBadgeCounts({ '/drafts': listIssueDrafts().length });
       }
     };
     const onInboxStateChange = () => void refreshBadges();
@@ -269,6 +388,19 @@ export function useShellPresenter() {
       window.removeEventListener(INBOX_STATE_EVENT, onInboxStateChange);
       window.removeEventListener('storage', onInboxStateChange);
       signals.removeEventListener('kotowari:refresh', onInboxStateChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const refreshDraftBadge = () => {
+      setSidebarBadgeCounts((current) => ({ ...current, '/drafts': listIssueDrafts().length }));
+    };
+    refreshDraftBadge();
+    window.addEventListener(ISSUE_DRAFTS_EVENT, refreshDraftBadge);
+    window.addEventListener('storage', refreshDraftBadge);
+    return () => {
+      window.removeEventListener(ISSUE_DRAFTS_EVENT, refreshDraftBadge);
+      window.removeEventListener('storage', refreshDraftBadge);
     };
   }, []);
 
@@ -316,14 +448,56 @@ export function useShellPresenter() {
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
   useIntentHandler('issue.create', (value) => {
     const detail = (value ?? {}) as { projectId?: number; cycleId?: number; priority?: number };
-    setIssueProjectId(detail.projectId ? String(detail.projectId) : '');
-    setIssueCycleId(detail.cycleId ? String(detail.cycleId) : '');
-    setIssuePriority(detail.priority ?? 0);
-    openCreateIssue();
+    openCreateIssue(detail);
+  });
+  useIntentHandler('issue.openDraft', (value) => {
+    const draft = value as IssueDraft;
+    issueDraftIdRef.current = draft.id;
+    setIssueDraftId(draft.id);
+    setIssueDraftSaved(true);
+    setIssueTitle(draft.title);
+    setIssueBody(draft.body);
+    setIssueStatus(draft.status);
+    setIssuePriority(draft.priority);
+    setIssueAssignee(draft.assignee);
+    setIssueType(draft.type);
+    setIssueEstimate(draft.estimate);
+    setIssueProjectId(draft.projectId);
+    setIssueCycleId(draft.cycleId);
+    setIssueDueDate(draft.dueDate);
+    setIssueDueDateOpen(Boolean(draft.dueDate));
+    setIssueLabelNames([...draft.labelNames]);
+    setIssueTemplateSlug(draft.templateSlug);
+    setIssueParentId(draft.parentId);
+    setIssueParentIdentifier(draft.parentIdentifier);
+    setIssueParentQuery('');
+    setIssueParentResults([]);
+    setIssueParentOpen(Boolean(draft.parentId));
+    setIssueParentLoading(false);
+    parentLookupVersion.current += 1;
+    setSelectedParentIssue(null);
+    setIssueExternalLinks(draft.externalLinks.map((link) => ({ ...link })));
+    setIssueRecurringOpen(draft.recurringOpen);
+    setIssueRecurringFirstDueDate(draft.recurringFirstDueDate);
+    setIssueRecurringInterval(draft.recurringInterval);
+    setIssueRecurringUnit(draft.recurringUnit);
+    setIssueAttachments([]);
+    setIssueAttachmentError('');
+    setIssueCreateMore(false);
+    setCreateIssue(true);
+  });
+  useIntentHandler('issue.requestDiscardDraft', (value) => {
+    const request = value as IssueDraftDiscardRequest;
+    if (request.kind === 'all' || request.kind === 'draft') {
+      setIssueDraftDiscardRequest(request);
+    }
   });
   useIntentHandler('issue.createRecurring', (value) => {
     const draft = value as RecurringIssueDraft;
     const firstDueDate = localDateValue(new Date());
+    issueDraftIdRef.current = '';
+    setIssueDraftId('');
+    setIssueDraftSaved(false);
     setIssueCreateMore(false);
     setIssueTitle(draft.title);
     setIssueBody(draft.body);
@@ -392,6 +566,7 @@ export function useShellPresenter() {
   const routeTitle = (() => {
     if (pathname === '/') return 'Home';
     if (pathname === '/inbox') return t('nav.inbox');
+    if (pathname === '/drafts') return t('nav.drafts');
     if (pathname === '/reviews') return t('nav.reviews');
     if (pathname === '/search') return t('nav.search');
     if (pathname === '/reminders') return 'Reminders';
@@ -468,8 +643,43 @@ export function useShellPresenter() {
     void navigate({ to: '/cycles/$number', params: { number: String(number) } });
   }
 
-  function openCreateIssue() {
+  function openCreateIssue(
+    prefill: { projectId?: number; cycleId?: number; priority?: number } = {},
+  ) {
+    issueDraftIdRef.current = '';
+    setIssueDraftId('');
+    setIssueDraftSaved(false);
     setIssueCreateMore(false);
+    setIssueTitle('');
+    setIssueBody('');
+    setIssueStatus('todo');
+    setIssuePriority(prefill.priority ?? 0);
+    setIssueType('');
+    setIssueEstimate('');
+    setIssueAttachments([]);
+    setIssueAttachmentError('');
+    setIssueDueDate('');
+    setIssueDueDateOpen(false);
+    setIssueRecurringOpen(false);
+    setIssueRecurringFirstDueDate('');
+    setIssueRecurringInterval('1');
+    setIssueRecurringUnit('week');
+    setIssueExternalLinks([]);
+    setIssueLinkOpen(false);
+    setIssueLinkURL('');
+    setIssueLinkTitle('');
+    setIssueLabelNames([]);
+    setIssueParentId(undefined);
+    setIssueParentOpen(false);
+    setIssueParentIdentifier('');
+    setIssueParentQuery('');
+    setIssueParentResults([]);
+    setIssueParentLoading(false);
+    parentLookupVersion.current += 1;
+    setSelectedParentIssue(null);
+    setIssueTemplateSlug('');
+    setIssueProjectId(prefill.projectId ? String(prefill.projectId) : '');
+    setIssueCycleId(prefill.cycleId ? String(prefill.cycleId) : '');
     setIssueAssignee(defaultIssueAssignee);
     setCreateIssue(true);
   }
@@ -648,7 +858,7 @@ export function useShellPresenter() {
     if (action === 'escape') {
       setPaletteOpen(false);
       mediator.setQuickOpenTarget(null);
-      setCreateIssue(false);
+      closeCreateIssue();
       setCreateADR(false);
       setCreatePage(false);
       setHelpOpen(false);
@@ -878,6 +1088,11 @@ export function useShellPresenter() {
           }
         : undefined,
     });
+    const submittedDraftId = issueDraftIdRef.current || issueDraftId;
+    if (submittedDraftId) deleteIssueDraft(submittedDraftId);
+    issueDraftIdRef.current = '';
+    setIssueDraftId('');
+    setIssueDraftSaved(false);
     let attachmentUploadFailed = false;
     if (issueAttachments.length > 0) {
       try {
@@ -1028,6 +1243,10 @@ export function useShellPresenter() {
     createADR,
     createPage,
     issueTitle,
+    issueDraftId,
+    issueDraftSaved,
+    savedIssueDraft,
+    issueDraftDiscardRequest,
     issueCreateMore,
     issueCreateMoreFocusRequest,
     issueStatus,
@@ -1113,7 +1332,21 @@ export function useShellPresenter() {
         setPaletteOpen(true);
       },
       onOpenSearch: () => navigate({ to: '/search', search: {} }),
-      onCreateIssue: openCreateIssue,
+      onCreateIssue: () => openCreateIssue(),
+      onSaveIssueDraft: saveIssueDraftAndClose,
+      onRequestDiscardCurrentDraft: () => {
+        const id = issueDraftIdRef.current || issueDraftId;
+        if (id) send('issue.requestDiscardDraft', { kind: 'draft', id });
+      },
+      onOpenSavedIssueDraft: () => {
+        if (!savedIssueDraft) return;
+        const draft = listIssueDrafts().find((candidate) => candidate.id === savedIssueDraft.id);
+        setSavedIssueDraft(null);
+        if (draft) send('issue.openDraft', draft);
+      },
+      onDismissSavedIssueDraft: () => setSavedIssueDraft(null),
+      onCancelIssueDraftDiscard: () => setIssueDraftDiscardRequest(null),
+      onConfirmIssueDraftDiscard: confirmIssueDraftDiscard,
       onDismissError: () => setError(''),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onToggleSidebar: () => send('navigation.sidebar.toggle'),
@@ -1163,7 +1396,7 @@ export function useShellPresenter() {
         mediator.setQuickOpenTarget(null);
       },
       onClose9: () => setHelpOpen(false),
-      onClick10: () => setCreateIssue(false),
+      onClick10: closeCreateIssue,
       Create_issue_onClick11: (
         e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
       ) => e.stopPropagation(),

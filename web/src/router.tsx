@@ -174,6 +174,12 @@ const agentRoute = createRoute({
   component: lazyRouteComponent(() => import('./pages/AgentPages.tsx'), 'AgentPage'),
 });
 
+const draftsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/drafts',
+  component: lazyRouteComponent(() => import('./pages/DraftsPages.tsx'), 'DraftsPage'),
+});
+
 const templatesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/templates',
@@ -643,6 +649,7 @@ const routeTree = rootRoute.addChildren([
   inboxRoute,
   reviewsRoute,
   agentRoute,
+  draftsRoute,
   templatesRoute,
   recurringIssuesRoute,
   issueRoute,
