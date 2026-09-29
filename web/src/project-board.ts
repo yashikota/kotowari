@@ -1,7 +1,11 @@
 import { compareProjectGroupValues, projectGroupValues } from './project-grouping.ts';
 import type { ProjectGroupValue } from './project-grouping.ts';
 import type { Project } from './types.ts';
-import type { ProjectBoardGrouping, ProjectGroupBy, ProjectViewSearch } from './project-views.ts';
+import type {
+  ProjectBoardGrouping,
+  ProjectGroupBy,
+  ProjectViewSearch,
+} from './project-view-search.ts';
 
 export type ProjectBoardGroup = {
   key: string;

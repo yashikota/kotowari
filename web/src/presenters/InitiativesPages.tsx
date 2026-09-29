@@ -16,7 +16,7 @@ import type {
   InitiativeDisplayProperty,
   InitiativeListSearch,
 } from '../initiative-list.ts';
-import type { ProjectFilterGroup } from '../project-views.ts';
+import type { ProjectFilterGroup } from '../project-view-search.ts';
 import {
   parseSearchDateFilter,
   serializeSearchDateFilter,

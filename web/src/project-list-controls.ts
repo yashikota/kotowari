@@ -6,7 +6,7 @@ import type {
   ProjectFilterGroup,
   ProjectGroupBy,
   ProjectViewSearch,
-} from './project-views.ts';
+} from './project-view-search.ts';
 
 export type ProjectListControlsModel = {
   search: string;

@@ -13,11 +13,8 @@ import {
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectViews } from '../project-views.ts';
-import type {
-  ProjectBoardGrouping,
-  ProjectSavedView,
-  ProjectViewSearch,
-} from '../project-views.ts';
+import type { ProjectBoardGrouping, ProjectViewSearch } from '../project-view-search.ts';
+import type { ProjectSavedView } from '../project-views.ts';
 import { matchesProjectViewSearch } from '../project-view-filtering.ts';
 import { groupProjects } from '../project-grouping.ts';
 import {

@@ -11,9 +11,12 @@ import {
   serializeSearchDateFilter,
   type SearchDateFilter,
 } from './search.ts';
-import { parseProjectFilterGroup } from './project-views.ts';
-import type { ProjectFilterCondition, ProjectFilterGroup } from './project-views.ts';
-import type { ProjectFilterField } from './project-views.ts';
+import { parseProjectFilterGroup } from './project-view-search.ts';
+import type {
+  ProjectFilterCondition,
+  ProjectFilterField,
+  ProjectFilterGroup,
+} from './project-view-search.ts';
 
 export type InitiativeScope = 'active' | 'planned' | 'all';
 export type InitiativeGrouping = 'none' | 'status';

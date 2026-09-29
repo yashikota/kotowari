@@ -14,7 +14,7 @@ import type {
   ProjectFilterField,
   ProjectFilterGroup,
   ProjectFilterNode,
-} from '../project-views.ts';
+} from '../project-view-search.ts';
 
 type FilterChoice = { value: string; label: string };
 type FilterChoices = Partial<Record<ProjectFilterField, FilterChoice[]>>;

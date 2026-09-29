@@ -2,7 +2,7 @@ import { IconChevronDown, IconChevronUp, IconSelector } from '@tabler/icons-reac
 import { useTranslation } from 'react-i18next';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import type { ProjectGroup } from '../project-grouping.ts';
-import type { ProjectViewSearch } from '../project-views.ts';
+import type { ProjectViewSearch } from '../project-view-search.ts';
 import type { Project } from '../types.ts';
 import { ProjectListItem } from './ProjectListItem.tsx';
 import styles from './ProjectListView.module.css';

@@ -1,4 +1,4 @@
-import type { ProjectGroupBy } from './project-views.ts';
+import type { ProjectGroupBy } from './project-view-search.ts';
 import type { Project } from './types.ts';
 
 export type ProjectGroup = {

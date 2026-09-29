@@ -1,5 +1,5 @@
-import { parseProjectFilterGroup } from './project-views.ts';
-import type { ProjectViewSearch } from './project-views.ts';
+import { parseProjectFilterGroup } from './project-view-search.ts';
+import type { ProjectViewSearch } from './project-view-search.ts';
 type ProjectListSearch = ProjectViewSearch & { projectView?: string; archived?: boolean };
 
 function searchStringList(value: unknown): string[] {

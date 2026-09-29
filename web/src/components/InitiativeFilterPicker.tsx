@@ -33,7 +33,7 @@ import type {
   InitiativeDateFilters,
   InitiativeProjectFilter,
 } from '../initiative-list.ts';
-import type { ProjectFilterField, ProjectFilterGroup } from '../project-views.ts';
+import type { ProjectFilterField, ProjectFilterGroup } from '../project-view-search.ts';
 import { SEARCH_DATE_WINDOWS, type SearchDateFilter } from '../search.ts';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
 import {

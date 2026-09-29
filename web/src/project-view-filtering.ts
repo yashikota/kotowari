@@ -1,7 +1,6 @@
 import type { Project } from './types.ts';
-import { matchesProjectTitleSummary } from './project-views.ts';
-import type { ProjectFilterCondition } from './project-views.ts';
-import type { ProjectViewSearch } from './project-views.ts';
+import { matchesProjectTitleSummary } from './project-view-search.ts';
+import type { ProjectFilterCondition, ProjectViewSearch } from './project-view-search.ts';
 
 function localDateString(date: Date): string {
   const year = date.getFullYear();

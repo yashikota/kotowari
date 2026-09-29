@@ -29,7 +29,7 @@ import { ProjectDisplayPropertyOptions } from './ProjectDisplayPropertyOptions.t
 import { TIMELINE_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectBoardGroup } from '../project-board.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
-import type { ProjectGroupBy } from '../project-views.ts';
+import type { ProjectGroupBy } from '../project-view-search.ts';
 import { PROJECT_BOARD_GROUPINGS } from '../project-board.ts';
 import styles from './ProjectListControls.module.css';
 

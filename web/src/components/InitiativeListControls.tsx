@@ -11,7 +11,7 @@ import type {
 import type { InitiativeFilterHandlers } from './InitiativeFilterPicker.tsx';
 import { InitiativeFilterPicker } from './InitiativeFilterPicker.tsx';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
-import type { ProjectFilterGroup } from '../project-views.ts';
+import type { ProjectFilterGroup } from '../project-view-search.ts';
 
 const DISPLAY_PROPERTIES: InitiativeDisplayProperty[] = [
   'id',
