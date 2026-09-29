@@ -73,8 +73,9 @@ export function useIssueDetailProperties({ identifier, issue, setIssue, patch }:
         patch({ cycleId: value && value !== 'none' ? Number(value) : null }),
       onParentChange: (value: string | null) =>
         patch({ parentId: value && value !== 'none' ? Number(value) : null }),
-      onDueDateChange: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) =>
-        patch({ dueDate: e.target.value ? e.target.value : null }),
+      onPropertyDueDateChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => patch({ dueDate: e.target.value ? e.target.value : null }),
       onToggleIssueOptionalProperty: (property: IssueOptionalProperty) => {
         const nextOverrides = {
           ...optionalPropertyOverrides,

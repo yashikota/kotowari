@@ -84,7 +84,7 @@ export function IssuePropertiesPanel({
           parentOptions={parentOptions}
           onTypeChange={handlers.onTypeChange}
           onParentChange={handlers.onParentChange}
-          onDueDateChange={handlers.onDueDateChange}
+          onDueDateChange={handlers.onPropertyDueDateChange}
           onMilestoneChange={handlers.onMilestoneChange}
           onToggleProperty={handlers.onToggleIssueOptionalProperty}
         />

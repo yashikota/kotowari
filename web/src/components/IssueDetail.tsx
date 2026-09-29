@@ -261,7 +261,7 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
       event.preventDefault();
       switch (issueShortcut) {
         case 'assign-self':
-          void sendIntent('Assignee_onChange', ['self']);
+          void sendIntent('onAssigneeChange', ['self']);
           break;
         case 'open-status':
           void sendIntent('onOpenIssuePropertyMenu', ['status']);
