@@ -162,3 +162,8 @@ type ProjectDependency struct {
 	ProjectSlug string `json:"projectSlug" toml:"project_slug"`
 	Kind        string `json:"kind" toml:"kind"`
 }
+
+type CreateProjectDependencyInput struct {
+	ProjectSlug string `json:"projectSlug"`
+	Kind        string `json:"kind"`
+}

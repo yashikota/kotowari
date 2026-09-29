@@ -1508,19 +1508,19 @@ func TestProjectDependenciesAreReciprocalPersistedAndAcyclic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AddProjectDependency(first.Slug, second.Slug, "blocks"); err != nil {
+	if _, err := s.AddProjectDependency(first.Slug, CreateProjectDependencyInput{ProjectSlug: second.Slug, Kind: "blocks"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AddProjectDependency(second.Slug, third.Slug, "blocks"); err != nil {
+	if _, err := s.AddProjectDependency(second.Slug, CreateProjectDependencyInput{ProjectSlug: third.Slug, Kind: "blocks"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AddProjectDependency(third.Slug, first.Slug, "blocks"); !errors.Is(err, ErrValidation) {
+	if _, err := s.AddProjectDependency(third.Slug, CreateProjectDependencyInput{ProjectSlug: first.Slug, Kind: "blocks"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("blocking cycle: %v", err)
 	}
-	if _, err := s.AddProjectDependency(first.Slug, second.Slug, "related"); !errors.Is(err, ErrConflict) {
+	if _, err := s.AddProjectDependency(first.Slug, CreateProjectDependencyInput{ProjectSlug: second.Slug, Kind: "related"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate dependency: %v", err)
 	}
-	if _, err := s.AddProjectDependency(first.Slug, first.Slug, "related"); !errors.Is(err, ErrValidation) {
+	if _, err := s.AddProjectDependency(first.Slug, CreateProjectDependencyInput{ProjectSlug: first.Slug, Kind: "related"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("self dependency: %v", err)
 	}
 

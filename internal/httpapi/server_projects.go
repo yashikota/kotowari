@@ -127,15 +127,12 @@ func (s *Server) deleteProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) createProjectDependency(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		ProjectSlug string `json:"projectSlug"`
-		Kind        string `json:"kind"`
-	}
+	var in model.CreateProjectDependencyInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.AddProjectDependency(r.PathValue("slug"), in.ProjectSlug, in.Kind)
+	out, err := s.store.AddProjectDependency(r.PathValue("slug"), in)
 	if err != nil {
 		writeError(w, err)
 		return

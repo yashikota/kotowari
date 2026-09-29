@@ -16,3 +16,4 @@ type ProjectCreationOptions = model.ProjectCreationOptions
 type ProjectCreateInput = model.ProjectCreateInput
 type ProjectUpdateInput = model.ProjectUpdateInput
 type ProjectDependency = model.ProjectDependency
+type CreateProjectDependencyInput = model.CreateProjectDependencyInput

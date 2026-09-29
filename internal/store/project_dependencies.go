@@ -6,9 +6,10 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-func (s *Store) AddProjectDependency(projectSlug, dependencySlug, kind string) (Project, error) {
+func (s *Store) AddProjectDependency(projectSlug string, in CreateProjectDependencyInput) (Project, error) {
 	projectSlug = strings.TrimSpace(projectSlug)
-	dependencySlug = strings.TrimSpace(dependencySlug)
+	dependencySlug := strings.TrimSpace(in.ProjectSlug)
+	kind := in.Kind
 	if kind != "blocks" && kind != "blocked_by" && kind != "related" {
 		return Project{}, validationf("invalid project dependency kind")
 	}
