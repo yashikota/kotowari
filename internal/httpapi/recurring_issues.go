@@ -20,19 +20,12 @@ func (s *Server) listRecurringIssues(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) createRecurringIssue(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Name         string `json:"name"`
-		FirstDueDate string `json:"firstDueDate"`
-		Interval     int    `json:"interval"`
-		Unit         string `json:"unit"`
-	}
+	var in model.CreateRecurringIssueInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	item, err := s.store.CreateRecurringIssue(r.PathValue("id"), model.CreateRecurringIssueInput{
-		Name: in.Name, FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,
-	})
+	item, err := s.store.CreateRecurringIssue(r.PathValue("id"), in)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -41,14 +34,12 @@ func (s *Server) createRecurringIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) patchRecurringIssue(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Enabled *bool `json:"enabled"`
-	}
-	if err := decodeJSON(r, &in); err != nil || in.Enabled == nil {
+	var in model.SetRecurringIssueEnabledInput
+	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "enabled is required"})
 		return
 	}
-	item, err := s.store.SetRecurringIssueEnabled(r.PathValue("slug"), *in.Enabled)
+	item, err := s.store.SetRecurringIssueEnabled(r.PathValue("slug"), in)
 	if err != nil {
 		writeError(w, err)
 		return

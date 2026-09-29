@@ -27,3 +27,7 @@ type CreateRecurringIssueInput struct {
 	Interval     int    `json:"interval"`
 	Unit         string `json:"unit"`
 }
+
+type SetRecurringIssueEnabledInput struct {
+	Enabled *bool `json:"enabled"`
+}

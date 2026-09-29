@@ -271,7 +271,8 @@ func TestRecurringIssueCreatesAndRecoversScheduledInstances(t *testing.T) {
 		t.Fatalf("reprocessing duplicated instances: %d", count)
 	}
 
-	paused, err := s.SetRecurringIssueEnabled(schedule.Slug, false)
+	disabled := false
+	paused, err := s.SetRecurringIssueEnabled(schedule.Slug, SetRecurringIssueEnabledInput{Enabled: &disabled})
 	if err != nil || paused.Enabled {
 		t.Fatalf("pause recurring issue %#v, %v", paused, err)
 	}

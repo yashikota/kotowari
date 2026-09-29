@@ -116,9 +116,12 @@ func (s *Store) createUniqueRecurringIssueFile(in CreateRecurringIssueInput, rec
 	return in, slug, nil
 }
 
-func (s *Store) SetRecurringIssueEnabled(slug string, enabled bool) (RecurringIssue, error) {
+func (s *Store) SetRecurringIssueEnabled(slug string, in SetRecurringIssueEnabledInput) (RecurringIssue, error) {
 	if issueTemplateSlug(slug) != slug || slug == "" {
 		return RecurringIssue{}, validationf("invalid recurring issue identifier")
+	}
+	if in.Enabled == nil {
+		return RecurringIssue{}, validationf("enabled is required")
 	}
 	s.recurringMu.Lock()
 	defer s.recurringMu.Unlock()
@@ -133,7 +136,7 @@ func (s *Store) SetRecurringIssueEnabled(slug string, enabled bool) (RecurringIs
 		return RecurringIssue{}, err
 	}
 	recurring.Slug = slug
-	recurring.Enabled = enabled
+	recurring.Enabled = *in.Enabled
 	if err := writeRecurringIssue(path, recurring); err != nil {
 		return RecurringIssue{}, err
 	}
