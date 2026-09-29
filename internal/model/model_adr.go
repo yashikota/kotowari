@@ -19,15 +19,15 @@ type ADR struct {
 }
 
 type CreateADRInput struct {
-	ProjectSlug  *string
-	Title        string
-	Body         string
-	Status       string
-	Evaluation   string
-	Replay       string
-	Workload     string
-	IssueNumbers []int
-	Supersedes   *int
+	ProjectSlug  *string `json:"projectSlug"`
+	Title        string  `json:"title"`
+	Body         string  `json:"body"`
+	Status       string  `json:"status"`
+	Evaluation   string  `json:"evaluation"`
+	Replay       string  `json:"replay"`
+	Workload     string  `json:"workload"`
+	IssueNumbers []int   `json:"issueNumbers"`
+	Supersedes   *int    `json:"supersedes"`
 }
 
 type PatchADRInput struct {

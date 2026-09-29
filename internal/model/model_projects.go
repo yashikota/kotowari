@@ -66,17 +66,17 @@ type Initiative struct {
 }
 
 type CreateInitiativeInput struct {
-	Name         string
-	Slug         string
-	Description  string
-	Status       string
-	Color        string
-	StartDate    *string
-	TargetDate   *string
-	ProjectSlugs []string
-	Health       string
-	Priority     int
-	Labels       []string
+	Name         string   `json:"name"`
+	Slug         string   `json:"slug"`
+	Description  string   `json:"description"`
+	Status       string   `json:"status"`
+	Color        string   `json:"color"`
+	StartDate    *string  `json:"startDate"`
+	TargetDate   *string  `json:"targetDate"`
+	ProjectSlugs []string `json:"projectSlugs"`
+	Health       string   `json:"health"`
+	Priority     int      `json:"priority"`
+	Labels       []string `json:"labels"`
 }
 
 type UpdateInitiativeInput struct {

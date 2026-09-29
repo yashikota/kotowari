@@ -104,49 +104,49 @@ func (v View) Filter() IssueFilter {
 }
 
 type CreateViewInput struct {
-	Name                string
-	Slug                string
-	IsFavorite          *bool
-	Description         *string
-	Icon                *string
-	Display             string
-	GroupBy             string
-	OrderBy             string
-	SubGroupBy          string
-	Direction           string
-	CompletedIssues     string
-	ShowSubIssues       *bool
-	NestedSubIssues     string
-	ShowEmptyGroups     *bool
-	DisplayProperties   []string
-	Status              *string
-	Statuses            []string
-	Assignee            *string
-	Subscriber          *string
-	Project             *string
-	Cycle               *int
-	Labels              []string
-	LabelOperator       string
-	Priority            *int
-	Priorities          []int
-	Type                *string
-	Estimate            *int
-	Estimates           []int
-	NoEstimate          *bool
-	DueDate             *string
-	Relation            *string
-	LinkSources         []string
-	TemplateSlugs       []string
-	Content             *string
-	MilestoneName       *string
-	DateField           *string
-	DateRange           *string
-	ProjectStatus       *string
-	ProjectPriority     *int
-	ProjectLabels       []string
-	AddedToCycle        []string
-	AdvancedFilter      *bool
-	AdvancedFilterGroup *IssueFilterNode
+	Name                string           `json:"name"`
+	Slug                string           `json:"slug"`
+	IsFavorite          *bool            `json:"isFavorite"`
+	Description         *string          `json:"description"`
+	Icon                *string          `json:"icon"`
+	Display             string           `json:"display"`
+	GroupBy             string           `json:"groupBy"`
+	OrderBy             string           `json:"orderBy"`
+	SubGroupBy          string           `json:"subGroupBy"`
+	Direction           string           `json:"direction"`
+	CompletedIssues     string           `json:"completedIssues"`
+	ShowSubIssues       *bool            `json:"showSubIssues"`
+	NestedSubIssues     string           `json:"nestedSubIssues"`
+	ShowEmptyGroups     *bool            `json:"showEmptyGroups"`
+	DisplayProperties   []string         `json:"displayProperties"`
+	Status              *string          `json:"status"`
+	Statuses            []string         `json:"statuses"`
+	Assignee            *string          `json:"assignee"`
+	Subscriber          *string          `json:"subscriber"`
+	Project             *string          `json:"project"`
+	Cycle               *int             `json:"cycle"`
+	Labels              []string         `json:"labels"`
+	LabelOperator       string           `json:"labelOperator"`
+	Priority            *int             `json:"priority"`
+	Priorities          []int            `json:"priorities"`
+	Type                *string          `json:"type"`
+	Estimate            *int             `json:"estimate"`
+	Estimates           []int            `json:"estimates"`
+	NoEstimate          *bool            `json:"noEstimate"`
+	DueDate             *string          `json:"dueDate"`
+	Relation            *string          `json:"relation"`
+	LinkSources         []string         `json:"linkSources"`
+	TemplateSlugs       []string         `json:"templateSlugs"`
+	Content             *string          `json:"content"`
+	MilestoneName       *string          `json:"milestoneName"`
+	DateField           *string          `json:"dateField"`
+	DateRange           *string          `json:"dateRange"`
+	ProjectStatus       *string          `json:"projectStatus"`
+	ProjectPriority     *int             `json:"projectPriority"`
+	ProjectLabels       []string         `json:"projectLabels"`
+	AddedToCycle        []string         `json:"addedToCycle"`
+	AdvancedFilter      *bool            `json:"advancedFilter"`
+	AdvancedFilterGroup *IssueFilterNode `json:"advancedFilterGroup"`
 }
 
 type UpdateViewInput CreateViewInput

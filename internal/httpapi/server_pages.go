@@ -16,24 +16,12 @@ func (s *Server) listPages(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) createPage(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Title     string   `json:"title"`
-		Slug      string   `json:"slug"`
-		Body      string   `json:"body"`
-		Status    string   `json:"status"`
-		ParentID  *int64   `json:"parentId"`
-		ProjectID *int64   `json:"projectId"`
-		Date      *string  `json:"date"`
-		Tags      []string `json:"tags"`
-	}
+	var in model.CreatePageInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreatePage(model.CreatePageInput{
-		Title: in.Title, Slug: in.Slug, Body: in.Body, Status: in.Status,
-		ParentID: in.ParentID, ProjectID: in.ProjectID, Date: in.Date, Tags: in.Tags,
-	})
+	out, err := s.store.CreatePage(in)
 	if err != nil {
 		writeError(w, err)
 		return

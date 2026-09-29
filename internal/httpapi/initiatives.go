@@ -48,28 +48,12 @@ func (s *Server) postInitiativeUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) createInitiative(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Name         string   `json:"name"`
-		Slug         string   `json:"slug"`
-		Description  string   `json:"description"`
-		Status       string   `json:"status"`
-		Color        string   `json:"color"`
-		Health       string   `json:"health"`
-		Priority     int      `json:"priority"`
-		Labels       []string `json:"labels"`
-		StartDate    *string  `json:"startDate"`
-		TargetDate   *string  `json:"targetDate"`
-		ProjectSlugs []string `json:"projectSlugs"`
-	}
+	var in model.CreateInitiativeInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateInitiative(model.CreateInitiativeInput{
-		Name: in.Name, Slug: in.Slug, Description: in.Description, Status: in.Status, Color: in.Color,
-		StartDate: in.StartDate, TargetDate: in.TargetDate, ProjectSlugs: in.ProjectSlugs,
-		Health: in.Health, Priority: in.Priority, Labels: in.Labels,
-	})
+	out, err := s.store.CreateInitiative(in)
 	if err != nil {
 		writeError(w, err)
 		return

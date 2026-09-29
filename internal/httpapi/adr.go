@@ -16,25 +16,12 @@ func (s *Server) listADRs(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) createADR(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		ProjectSlug  *string `json:"projectSlug"`
-		Title        string  `json:"title"`
-		Body         string  `json:"body"`
-		Status       string  `json:"status"`
-		Evaluation   string  `json:"evaluation"`
-		Replay       string  `json:"replay"`
-		Workload     string  `json:"workload"`
-		IssueNumbers []int   `json:"issueNumbers"`
-		Supersedes   *int    `json:"supersedes"`
-	}
+	var in model.CreateADRInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateADR(model.CreateADRInput{
-		ProjectSlug: in.ProjectSlug, Title: in.Title, Body: in.Body, Status: in.Status, Evaluation: in.Evaluation,
-		Replay: in.Replay, Workload: in.Workload, IssueNumbers: in.IssueNumbers, Supersedes: in.Supersedes,
-	})
+	out, err := s.store.CreateADR(in)
 	if err != nil {
 		writeError(w, err)
 		return

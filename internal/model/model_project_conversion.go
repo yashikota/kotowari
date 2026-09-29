@@ -1,11 +1,11 @@
 package model
 
 type CreateProjectFromIssueInput struct {
-	Name           string
-	Description    string
-	Status         string
-	WorkflowStatus string
-	Priority       int
-	StartDate      *string
-	TargetDate     *string
+	Name           string  `json:"name"`
+	Description    string  `json:"description"`
+	Status         string  `json:"status"`
+	WorkflowStatus string  `json:"workflowStatus"`
+	Priority       int     `json:"priority"`
+	StartDate      *string `json:"startDate"`
+	TargetDate     *string `json:"targetDate"`
 }

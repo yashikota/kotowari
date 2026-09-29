@@ -17,14 +17,14 @@ type Page struct {
 }
 
 type CreatePageInput struct {
-	Title     string
-	Slug      string
-	Body      string
-	Status    string
-	ParentID  *int64
-	ProjectID *int64
-	Date      *string
-	Tags      []string
+	Title     string   `json:"title"`
+	Slug      string   `json:"slug"`
+	Body      string   `json:"body"`
+	Status    string   `json:"status"`
+	ParentID  *int64   `json:"parentId"`
+	ProjectID *int64   `json:"projectId"`
+	Date      *string  `json:"date"`
+	Tags      []string `json:"tags"`
 }
 
 type UpdatePageInput struct {

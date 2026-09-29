@@ -7,62 +7,11 @@ import (
 )
 
 func viewInput(r *http.Request) (model.CreateViewInput, error) {
-	var in struct {
-		Name                string                 `json:"name"`
-		Slug                string                 `json:"slug"`
-		IsFavorite          *bool                  `json:"isFavorite"`
-		Description         *string                `json:"description"`
-		Icon                *string                `json:"icon"`
-		Display             string                 `json:"display"`
-		GroupBy             string                 `json:"groupBy"`
-		SubGroupBy          string                 `json:"subGroupBy"`
-		OrderBy             string                 `json:"orderBy"`
-		Direction           string                 `json:"direction"`
-		CompletedIssues     string                 `json:"completedIssues"`
-		ShowSubIssues       *bool                  `json:"showSubIssues"`
-		NestedSubIssues     string                 `json:"nestedSubIssues"`
-		ShowEmptyGroups     *bool                  `json:"showEmptyGroups"`
-		DisplayProperties   []string               `json:"displayProperties"`
-		Status              *string                `json:"status"`
-		Statuses            []string               `json:"statuses"`
-		Assignee            *string                `json:"assignee"`
-		Subscriber          *string                `json:"subscriber"`
-		Project             *string                `json:"project"`
-		Cycle               *int                   `json:"cycle"`
-		Labels              []string               `json:"labels"`
-		LabelOperator       string                 `json:"labelOperator"`
-		Priority            *int                   `json:"priority"`
-		Priorities          []int                  `json:"priorities"`
-		Type                *string                `json:"type"`
-		Estimate            *int                   `json:"estimate"`
-		Estimates           []int                  `json:"estimates"`
-		NoEstimate          *bool                  `json:"noEstimate"`
-		DueDate             *string                `json:"dueDate"`
-		Relation            *string                `json:"relation"`
-		LinkSources         []string               `json:"linkSources"`
-		TemplateSlugs       []string               `json:"templateSlugs"`
-		Content             *string                `json:"content"`
-		MilestoneName       *string                `json:"milestoneName"`
-		ProjectLabels       []string               `json:"projectLabels"`
-		DateField           *string                `json:"dateField"`
-		DateRange           *string                `json:"dateRange"`
-		ProjectStatus       *string                `json:"projectStatus"`
-		ProjectPriority     *int                   `json:"projectPriority"`
-		AddedToCycle        []string               `json:"addedToCycle"`
-		AdvancedFilter      *bool                  `json:"advancedFilter"`
-		AdvancedFilterGroup *model.IssueFilterNode `json:"advancedFilterGroup"`
-	}
+	var in model.CreateViewInput
 	if err := decodeJSON(r, &in); err != nil {
 		return model.CreateViewInput{}, err
 	}
-	return model.CreateViewInput{
-		Name: in.Name, Slug: in.Slug, IsFavorite: in.IsFavorite, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
-		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
-		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
-		Status: in.Status, Statuses: in.Statuses, Assignee: in.Assignee, Subscriber: in.Subscriber,
-		Project: in.Project, Cycle: in.Cycle, Labels: in.Labels, LabelOperator: in.LabelOperator, Priority: in.Priority, Priorities: in.Priorities, Type: in.Type, Estimate: in.Estimate, Estimates: in.Estimates, NoEstimate: in.NoEstimate, DueDate: in.DueDate, Relation: in.Relation, LinkSources: in.LinkSources, TemplateSlugs: in.TemplateSlugs, Content: in.Content, MilestoneName: in.MilestoneName, DateField: in.DateField, DateRange: in.DateRange, ProjectStatus: in.ProjectStatus, ProjectPriority: in.ProjectPriority, ProjectLabels: in.ProjectLabels, AddedToCycle: in.AddedToCycle,
-		AdvancedFilter: in.AdvancedFilter, AdvancedFilterGroup: in.AdvancedFilterGroup,
-	}, nil
+	return in, nil
 }
 
 func (s *Server) listViews(w http.ResponseWriter, _ *http.Request) {
