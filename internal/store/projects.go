@@ -18,7 +18,7 @@ func (s *Store) ListProjectsByArchived(archived bool) ([]Project, error) {
 }
 
 func (s *Store) listProjects(archived *bool) ([]Project, error) {
-	var out []Project
+	out := []Project{}
 	err := s.snapshot(func(m *mem) error {
 		for _, project := range m.Projects {
 			if archived != nil && (*archived != (project.ArchivedAt != nil)) {

@@ -18,7 +18,7 @@ func (s *Store) ListCyclesByArchived(archived bool) ([]Cycle, error) {
 }
 
 func (s *Store) listCycles(archived *bool) ([]Cycle, error) {
-	var out []Cycle
+	out := []Cycle{}
 	err := s.snapshot(func(m *mem) error {
 		for _, cycle := range m.Cycles {
 			if archived != nil && (*archived != (cycle.ArchivedAt != nil)) {
