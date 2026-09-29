@@ -17,6 +17,9 @@ import { FIRST_DAYS_OF_WEEK } from '../preferences.ts';
 import { InboxNotificationSettings } from '../components/InboxNotificationSettings.tsx';
 import { SidebarCustomizationModal } from '../components/SidebarCustomizationModal.tsx';
 import { ConfigWorkflowSettingsSection } from '../components/ConfigWorkflowSettingsSection.tsx';
+import { ConfigWorkspaceSettingsSection } from '../components/ConfigWorkspaceSettingsSection.tsx';
+import { ConfigCycleSettingsSection } from '../components/ConfigCycleSettingsSection.tsx';
+import { ConfigIssueAutomationSettingsSection } from '../components/ConfigIssueAutomationSettingsSection.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
@@ -32,15 +35,6 @@ export function ConfigPageView({
   switch (model._view) {
     case 0: {
       const {
-        workspace,
-        cycleSettings,
-        cycleSettingsError,
-        cycleSettingsSaved,
-        issueAutomationSettings,
-        issueAutomationSettingsError,
-        issueAutomationSettingsSaved,
-        timeZones,
-        languages,
         preferences,
         codingToolDraft,
         codingToolError,
@@ -70,195 +64,9 @@ export function ConfigPageView({
             ) : null}
 
             <Stack gap="xl">
-              <Stack gap="md" component="section" aria-label={t('config.workspace')}>
-                <Title order={4}>{t('config.workspace')}</Title>
-                <Box component="form" onSubmit={handlers.onSaveWorkspace}>
-                  <Stack gap="md" maw={480}>
-                    <TextInput
-                      id="config-ws-name"
-                      label={t('config.name')}
-                      value={workspace.name}
-                      onChange={handlers.onWorkspaceNameChange}
-                    />
-                    <Select
-                      id="config-ws-tz"
-                      label={t('config.timezone')}
-                      aria-label={t('config.timezone')}
-                      searchable
-                      nothingFoundMessage={t('config.noTimezone')}
-                      value={workspace.timezone}
-                      onChange={handlers.onWorkspaceTimezoneChange}
-                      data={timeZones}
-                    />
-                    <Select
-                      id="config-ws-locale"
-                      label={t('config.language')}
-                      aria-label={t('config.language')}
-                      value={workspace.locale}
-                      onChange={handlers.onWorkspaceLocaleChange}
-                      data={languages}
-                    />
-                    <Group>
-                      <Button type="submit">{t('config.saveWorkspace')}</Button>
-                    </Group>
-                  </Stack>
-                </Box>
-              </Stack>
-
-              <Stack gap="md" component="section" aria-label={t('config.cycleSettings')}>
-                <Title order={4}>{t('config.cycleSettings')}</Title>
-                <Text size="sm" c="dimmed">
-                  {t('config.cycleSettingsDescription')}
-                </Text>
-                {cycleSettingsError ? (
-                  <Alert color="red" variant="light">
-                    {cycleSettingsError}
-                  </Alert>
-                ) : null}
-                {cycleSettingsSaved ? (
-                  <Alert color="green" variant="light">
-                    {t('config.cycleSettingsSaved')}
-                  </Alert>
-                ) : null}
-                <Box component="form" onSubmit={handlers.onSaveCycleSettings}>
-                  <Stack gap="md" maw={480}>
-                    <Select
-                      label={t('config.cycleDuration')}
-                      aria-label={t('config.cycleDuration')}
-                      value={String(cycleSettings.durationDays)}
-                      onChange={handlers.onCycleDurationChange}
-                      data={[1, 2, 3, 4, 6, 8].map((weeks) => ({
-                        value: String(weeks * 7),
-                        label: t('config.cycleWeeks', { count: weeks }),
-                      }))}
-                    />
-                    <Select
-                      label={t('config.cycleCooldown')}
-                      aria-label={t('config.cycleCooldown')}
-                      value={String(cycleSettings.cooldownDays)}
-                      onChange={handlers.onCycleCooldownChange}
-                      data={[0, 7, 14].map((days) => ({
-                        value: String(days),
-                        label:
-                          days === 0
-                            ? t('config.noCooldown')
-                            : t('config.cycleWeeks', { count: days / 7 }),
-                      }))}
-                    />
-                    <Select
-                      label={t('config.cycleStartDay')}
-                      aria-label={t('config.cycleStartDay')}
-                      value={cycleSettings.startDay}
-                      onChange={handlers.onCycleStartDayChange}
-                      data={FIRST_DAYS_OF_WEEK.map((day) => ({
-                        value: day,
-                        label: t(`config.weekday.${day}`),
-                      }))}
-                    />
-                    <Select
-                      label={t('config.autoCreateCycles')}
-                      aria-label={t('config.autoCreateCycles')}
-                      value={String(cycleSettings.autoCreateAhead)}
-                      onChange={handlers.onCycleAutoCreateAheadChange}
-                      data={Array.from({ length: 7 }, (_, count) => ({
-                        value: String(count),
-                        label:
-                          count === 0
-                            ? t('config.noAutoCreate')
-                            : t('config.cyclesAhead', { count }),
-                      }))}
-                    />
-                    <Checkbox
-                      label={t('config.autoAddActiveIssues')}
-                      description={t('config.autoAddActiveIssuesDescription')}
-                      checked={cycleSettings.autoAddActiveIssues}
-                      onChange={handlers.onCycleAutoAddActiveIssuesChange}
-                    />
-                    <Checkbox
-                      label={t('config.autoAddCompletedIssues')}
-                      description={t('config.autoAddCompletedIssuesDescription')}
-                      checked={cycleSettings.autoAddCompletedIssues}
-                      onChange={handlers.onCycleAutoAddCompletedIssuesChange}
-                    />
-                    <Group>
-                      <Button type="submit">{t('config.saveCycleSettings')}</Button>
-                    </Group>
-                  </Stack>
-                </Box>
-              </Stack>
-
-              <Stack gap="md" component="section" aria-label={t('config.issueAutomationSettings')}>
-                <Title order={4}>{t('config.issueAutomationSettings')}</Title>
-                <Text size="sm" c="dimmed">
-                  {t('config.issueAutomationSettingsDescription')}
-                </Text>
-                {issueAutomationSettingsError ? (
-                  <Alert color="red" variant="light">
-                    {issueAutomationSettingsError}
-                  </Alert>
-                ) : null}
-                {issueAutomationSettingsSaved ? (
-                  <Alert color="green" variant="light">
-                    {t('config.issueAutomationSettingsSaved')}
-                  </Alert>
-                ) : null}
-                <Box component="form" onSubmit={handlers.onSaveIssueAutomationSettings}>
-                  <Stack gap="md" maw={480}>
-                    <Checkbox
-                      label={t('config.autoCloseParentIssues')}
-                      description={t('config.autoCloseParentIssuesDescription')}
-                      checked={issueAutomationSettings.autoCloseParentIssues}
-                      onChange={handlers.onAutoCloseParentIssuesChange}
-                    />
-                    <Checkbox
-                      label={t('config.autoCloseSubIssues')}
-                      description={t('config.autoCloseSubIssuesDescription')}
-                      checked={issueAutomationSettings.autoCloseSubIssues}
-                      onChange={handlers.onAutoCloseSubIssuesChange}
-                    />
-                    <Select
-                      label={t('config.statusProgressionOrder')}
-                      description={t('config.statusProgressionOrderDescription')}
-                      value={issueAutomationSettings.statusProgressionOrder}
-                      onChange={handlers.onStatusProgressionOrderChange}
-                      data={[
-                        { value: 'first', label: t('config.statusProgressionFirst') },
-                        { value: 'last', label: t('config.statusProgressionLast') },
-                        { value: 'no_action', label: t('config.statusProgressionNoAction') },
-                      ]}
-                    />
-                    <Select
-                      label={t('config.autoCloseStaleIssues')}
-                      description={t('config.autoCloseStaleIssuesDescription')}
-                      value={String(issueAutomationSettings.autoCloseStaleIssuesAfterMonths)}
-                      onChange={handlers.onAutoCloseStaleIssuesAfterMonthsChange}
-                      data={[0, 1, 3, 6, 12].map((months) => ({
-                        value: String(months),
-                        label:
-                          months === 0
-                            ? t('config.automationOff')
-                            : t('config.automationMonths', { count: months }),
-                      }))}
-                    />
-                    <Select
-                      label={t('config.autoArchiveCompletedItems')}
-                      description={t('config.autoArchiveCompletedItemsDescription')}
-                      value={String(issueAutomationSettings.autoArchiveClosedIssuesAfterMonths)}
-                      onChange={handlers.onAutoArchiveClosedIssuesAfterMonthsChange}
-                      data={[0, 1, 3, 6, 12].map((months) => ({
-                        value: String(months),
-                        label:
-                          months === 0
-                            ? t('config.automationOff')
-                            : t('config.automationMonths', { count: months }),
-                      }))}
-                    />
-                    <Group>
-                      <Button type="submit">{t('config.saveIssueAutomationSettings')}</Button>
-                    </Group>
-                  </Stack>
-                </Box>
-              </Stack>
+              <ConfigWorkspaceSettingsSection model={model} handlers={handlers} t={t} />
+              <ConfigCycleSettingsSection model={model} handlers={handlers} t={t} />
+              <ConfigIssueAutomationSettingsSection model={model} handlers={handlers} t={t} />
 
               <Stack gap="md" component="section" aria-label={t('config.personalPreferences')}>
                 <Title order={4}>{t('config.personalPreferences')}</Title>
