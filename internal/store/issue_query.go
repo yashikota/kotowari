@@ -108,64 +108,8 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 			if f.Status != "" && iss.Status != f.Status && iss.WorkflowStatus != f.Status {
 				continue
 			}
-			if f.ProjectSlug != "" && (iss.ProjectSlug == nil || *iss.ProjectSlug != f.ProjectSlug) {
-				if iss.ProjectID != nil {
-					if p, ok := projectByID(m, *iss.ProjectID); !ok || p.Slug != f.ProjectSlug {
-						continue
-					}
-				} else {
-					continue
-				}
-			}
-			if f.ProjectStatus != "" || f.ProjectPriority != nil {
-				project, found := Project{}, false
-				if iss.ProjectID != nil {
-					project, found = projectByID(m, *iss.ProjectID)
-				}
-				if !found && iss.ProjectSlug != nil {
-					for _, candidate := range m.Projects {
-						if candidate.Slug == *iss.ProjectSlug {
-							project, found = candidate, true
-							break
-						}
-					}
-				}
-				if !found || (f.ProjectStatus != "" && normalizeProjectWorkflowStatus(project, m.Workspace).WorkflowStatus != f.ProjectStatus && project.Status != f.ProjectStatus) ||
-					(f.ProjectPriority != nil && project.Priority != *f.ProjectPriority) {
-					continue
-				}
-			}
-			if len(f.ProjectLabels) > 0 {
-				project, found := Project{}, false
-				if iss.ProjectID != nil {
-					project, found = projectByID(m, *iss.ProjectID)
-				}
-				if !found && iss.ProjectSlug != nil {
-					project, found = projectBySlug(m, *iss.ProjectSlug)
-				}
-				if !found {
-					continue
-				}
-				have := make(map[string]struct{}, len(project.Labels))
-				for _, name := range project.Labels {
-					have[strings.ToLower(name)] = struct{}{}
-				}
-				matches := true
-				for _, name := range f.ProjectLabels {
-					if name == "__none__" {
-						if len(have) != 0 {
-							matches = false
-						}
-						continue
-					}
-					if _, ok := have[strings.ToLower(name)]; !ok {
-						matches = false
-						break
-					}
-				}
-				if !matches {
-					continue
-				}
+			if !matchesIssueProjectFilters(m, iss, f) {
+				continue
 			}
 			if f.CycleNumber != 0 {
 				ok := iss.CycleNumber != nil && *iss.CycleNumber == f.CycleNumber
