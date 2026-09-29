@@ -217,10 +217,9 @@ export function useProjectDetailPagePresenter() {
     milestoneDescription,
     milestoneTargetDate,
     handlers: {
-      Project_status_onChange0: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ workflowStatus: e.target.value }),
-      Project_priority_onChange1: (
+      onStatusChange: (e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0]) =>
+        save({ workflowStatus: e.target.value }),
+      onPriorityChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ priority: Number(e.target.value) }),
       onToggleFavorite: async () => {
@@ -304,14 +303,14 @@ export function useProjectDetailPagePresenter() {
         await api.deleteProjectDependency(slug, dependencySlug);
         await refreshProject();
       },
-      onClick1: () => sendIntent('issue.create', { projectId: project.id }),
+      onCreateIssue: () => sendIntent('issue.create', { projectId: project.id }),
       onToggleProjectArchived: async () => {
         const archived = !project.archivedAt;
         await api.patchProject(slug, { archived });
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await navigate({ to: '/projects', search: { archived } });
       },
-      onClick2: () => {
+      onDeleteProject: () => {
         if (!window.confirm(i18n.t('ui.deleteProjectConfirmation', { name: project.name }))) {
           return;
         }
@@ -320,27 +319,27 @@ export function useProjectDetailPagePresenter() {
           await navigate({ to: '/projects' });
         });
       },
-      Project_description_onChange3: (
+      onDescriptionChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setProject({ ...project, description: e.target.value }),
-      Project_description_onBlur4: () => save({ description: project.description }),
-      Project_summary_onChange: (
+      onDescriptionBlur: () => save({ description: project.description }),
+      onSummaryChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
         const summaryDraft = e.currentTarget.value;
         setProject((current) => ({ ...current, summary: summaryDraft }));
       },
-      Project_summary_onBlur: (e: React.FocusEvent<HTMLInputElement>) =>
+      onSummaryBlur: (e: React.FocusEvent<HTMLInputElement>) =>
         save({ summary: e.currentTarget.value }),
       onProjectIconChange: (value: string) => save({ icon: value }),
       onProjectIconColorChange: (value: string) => save({ iconColor: value }),
-      Start_date_onChange5: (
+      onStartDateChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => save(e.target.value ? { startDate: e.target.value } : { clearStartDate: true }),
-      Target_date_onChange6: (
+      onTargetDateChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => save(e.target.value ? { targetDate: e.target.value } : { clearTargetDate: true }),
-      onClick7: () => {
+      onCreateADR: () => {
         const title = window.prompt(i18n.t('modal.adrTitle'));
         if (title?.trim())
           return api
@@ -349,7 +348,7 @@ export function useProjectDetailPagePresenter() {
               navigate({ to: '/adrs/$identifier', params: { identifier: a.identifier } }),
             );
       },
-      Milestone_name_onChange42: (
+      onMilestoneNameChange: (
         id: number,
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) =>
@@ -359,13 +358,13 @@ export function useProjectDetailPagePresenter() {
             item.id === id ? { ...item, name: e.target.value } : item,
           ),
         }),
-      Milestone_name_onBlur43: async (id: number) => {
+      onMilestoneNameBlur: async (id: number) => {
         const milestone = project.milestones.find((item) => item.id === id);
         if (!milestone) return;
         await api.patchMilestone(slug, id, { name: milestone.name });
         await refreshProject();
       },
-      Milestone_target_onChange44: (
+      onMilestoneTargetDateChange: (
         id: number,
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) =>
@@ -375,32 +374,32 @@ export function useProjectDetailPagePresenter() {
             item.id === id ? { ...item, targetDate: e.target.value || null } : item,
           ),
         }),
-      Milestone_target_onBlur45: async (id: number) => {
+      onMilestoneTargetDateBlur: async (id: number) => {
         const milestone = project.milestones.find((item) => item.id === id);
         if (!milestone) return;
         await api.patchMilestone(slug, id, { targetDate: milestone.targetDate });
         await refreshProject();
       },
-      Milestone_description_onBlur: async (id: number, description: string) => {
+      onMilestoneDescriptionBlur: async (id: number, description: string) => {
         await api.patchMilestone(slug, id, { description });
         await refreshProject();
       },
-      Milestone_remove_onClick46: async (id: number, name: string) => {
+      onRemoveMilestone: async (id: number, name: string) => {
         if (!window.confirm(i18n.t('projectMilestones.removeConfirmation', { name }))) return;
         await api.deleteMilestone(slug, id);
         await refreshProject();
       },
-      New_milestone_name_onChange47: (
+      onMilestoneNameDraftChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setMilestoneName(e.target.value),
-      New_milestone_target_onChange48: (
+      onMilestoneTargetDateDraftChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setMilestoneTargetDate(e.target.value),
-      New_milestone_description_onChange: (
+      onMilestoneDescriptionDraftChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setMilestoneDescription(e.target.value),
-      New_milestone_onSubmit49: (e: React.FormEvent<HTMLFormElement>) => createMilestone(e),
-      onSelect8: (
+      onCreateMilestone: (e: React.FormEvent<HTMLFormElement>) => createMilestone(e),
+      onIssueSelect: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {
         const handle: NonNullable<React.ComponentProps<typeof IssueList>['onSelect']> = setSelected;

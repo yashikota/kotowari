@@ -106,7 +106,7 @@ export function ProjectDetailPageView({
                     <NativeSelect
                       aria-label={t('ui.projectStatus')}
                       value={project.workflowStatus ?? project.status}
-                      onChange={handlers.Project_status_onChange0}
+                      onChange={handlers.onStatusChange}
                       data={model.projectWorkflowStatuses.map((status) => ({
                         value: status.id,
                         label: projectWorkflowStatusLabel(
@@ -119,7 +119,7 @@ export function ProjectDetailPageView({
                     <NativeSelect
                       aria-label={t('field.priority')}
                       value={String(project.priority)}
-                      onChange={handlers.Project_priority_onChange1}
+                      onChange={handlers.onPriorityChange}
                       data={[0, 1, 2, 3, 4].map((priority) => ({
                         value: String(priority),
                         label: priorityLabel(priority),
@@ -134,7 +134,7 @@ export function ProjectDetailPageView({
                         label: t(`projectHealth.status.${health}`),
                       }))}
                     />
-                    <Button type="button" variant="subtle" onClick={handlers.onClick1}>
+                    <Button type="button" variant="subtle" onClick={handlers.onCreateIssue}>
                       {t('ui.newIssue')}
                     </Button>
                     <Button type="button" variant="default" onClick={handlers.onOpenProjectUpdate}>
@@ -150,7 +150,12 @@ export function ProjectDetailPageView({
                     >
                       {t(project.archivedAt ? 'projectList.restore' : 'projectList.archive')}
                     </Button>
-                    <Button type="button" variant="subtle" color="red" onClick={handlers.onClick2}>
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      color="red"
+                      onClick={handlers.onDeleteProject}
+                    >
                       {t('ui.delete')}
                     </Button>
                   </Group>
@@ -161,16 +166,16 @@ export function ProjectDetailPageView({
                   aria-label={t('ui.projectSummary')}
                   label={t('ui.projectSummary')}
                   value={project.summary ?? ''}
-                  onChange={handlers.Project_summary_onChange}
-                  onBlur={handlers.Project_summary_onBlur}
+                  onChange={handlers.onSummaryChange}
+                  onBlur={handlers.onSummaryBlur}
                 />
                 <Textarea
                   ref={descriptionRef}
                   aria-label={t('ui.projectDescription')}
                   placeholder={t('ui.description')}
                   value={project.description}
-                  onChange={handlers.Project_description_onChange3}
-                  onBlur={handlers.Project_description_onBlur4}
+                  onChange={handlers.onDescriptionChange}
+                  onBlur={handlers.onDescriptionBlur}
                   styles={{
                     input: {
                       minHeight: 42,
@@ -204,14 +209,14 @@ export function ProjectDetailPageView({
                     aria-label={t('ui.startDate')}
                     label={t('ui.start')}
                     value={project.startDate?.slice(0, 10) ?? ''}
-                    onChange={handlers.Start_date_onChange5}
+                    onChange={handlers.onStartDateChange}
                   />
                   <TextInput
                     type="date"
                     aria-label={t('ui.targetDate')}
                     label={t('ui.target')}
                     value={project.targetDate?.slice(0, 10) ?? ''}
-                    onChange={handlers.Target_date_onChange6}
+                    onChange={handlers.onTargetDateChange}
                   />
                 </Group>
                 <Section title={t('initiatives.projectProperty')}>
@@ -350,14 +355,14 @@ export function ProjectDetailPageView({
                   <Box
                     component="form"
                     aria-label={t('projectMilestones.heading')}
-                    onSubmit={handlers.New_milestone_onSubmit49}
+                    onSubmit={handlers.onCreateMilestone}
                   >
                     <Group gap="xs" align="flex-end" wrap="wrap">
                       <TextInput
                         aria-label={t('projectMilestones.name')}
                         placeholder={t('projectMilestones.namePlaceholder')}
                         value={milestoneName}
-                        onChange={handlers.New_milestone_name_onChange47}
+                        onChange={handlers.onMilestoneNameDraftChange}
                         size="sm"
                         style={{ flex: '1 1 220px' }}
                       />
@@ -365,7 +370,7 @@ export function ProjectDetailPageView({
                         aria-label={t('projectMilestones.description')}
                         placeholder={t('projectMilestones.descriptionPlaceholder')}
                         value={milestoneDescription}
-                        onChange={handlers.New_milestone_description_onChange}
+                        onChange={handlers.onMilestoneDescriptionDraftChange}
                         minRows={1}
                         autosize
                         size="sm"
@@ -375,7 +380,7 @@ export function ProjectDetailPageView({
                         type="date"
                         aria-label={t('projectMilestones.targetDate')}
                         value={milestoneTargetDate}
-                        onChange={handlers.New_milestone_target_onChange48}
+                        onChange={handlers.onMilestoneTargetDateDraftChange}
                         size="sm"
                       />
                       <Button type="submit" variant="default" size="sm">
@@ -405,9 +410,9 @@ export function ProjectDetailPageView({
                               aria-label={`${t('projectMilestones.name')}: ${milestone.name}`}
                               value={milestone.name}
                               onChange={(event) =>
-                                handlers.Milestone_name_onChange42(milestone.id, event)
+                                handlers.onMilestoneNameChange(milestone.id, event)
                               }
-                              onBlur={() => handlers.Milestone_name_onBlur43(milestone.id)}
+                              onBlur={() => handlers.onMilestoneNameBlur(milestone.id)}
                               size="sm"
                               style={{ flex: '1 1 220px' }}
                             />
@@ -416,9 +421,9 @@ export function ProjectDetailPageView({
                               aria-label={`${t('projectMilestones.targetDate')}: ${milestone.name}`}
                               value={milestone.targetDate?.slice(0, 10) ?? ''}
                               onChange={(event) =>
-                                handlers.Milestone_target_onChange44(milestone.id, event)
+                                handlers.onMilestoneTargetDateChange(milestone.id, event)
                               }
-                              onBlur={() => handlers.Milestone_target_onBlur45(milestone.id)}
+                              onBlur={() => handlers.onMilestoneTargetDateBlur(milestone.id)}
                               size="sm"
                             />
                             <ActionIcon
@@ -427,7 +432,7 @@ export function ProjectDetailPageView({
                               color="red"
                               aria-label={t('projectMilestones.remove', { name: milestone.name })}
                               onClick={() =>
-                                handlers.Milestone_remove_onClick46(milestone.id, milestone.name)
+                                handlers.onRemoveMilestone(milestone.id, milestone.name)
                               }
                             >
                               <IconTrash size={14} stroke={1.7} aria-hidden="true" />
@@ -438,7 +443,7 @@ export function ProjectDetailPageView({
                             placeholder={t('projectMilestones.descriptionPlaceholder')}
                             defaultValue={milestone.description ?? ''}
                             onBlur={(event) =>
-                              handlers.Milestone_description_onBlur(
+                              handlers.onMilestoneDescriptionBlur(
                                 milestone.id,
                                 event.currentTarget.value,
                               )
@@ -456,7 +461,12 @@ export function ProjectDetailPageView({
                   <Section
                     title={t('nav.adrs')}
                     action={
-                      <Button type="button" variant="subtle" size="xs" onClick={handlers.onClick7}>
+                      <Button
+                        type="button"
+                        variant="subtle"
+                        size="xs"
+                        onClick={handlers.onCreateADR}
+                      >
                         {t('ui.newAdr')}
                       </Button>
                     }
@@ -503,7 +513,7 @@ export function ProjectDetailPageView({
                 <IssueList
                   issues={data.issues}
                   selectedId={selected}
-                  onSelect={handlers.onSelect8}
+                  onSelect={handlers.onIssueSelect}
                   groupBy="status"
                   hideProjectSlug
                   projects={data.projects}
