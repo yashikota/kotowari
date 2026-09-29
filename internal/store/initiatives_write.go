@@ -8,9 +8,9 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-func (s *Store) PostInitiativeUpdate(slug, health, body string) (Activity, error) {
-	health = strings.TrimSpace(health)
-	body = strings.TrimSpace(body)
+func (s *Store) PostInitiativeUpdate(slug string, in PostHealthUpdateInput) (Activity, error) {
+	health := strings.TrimSpace(in.Health)
+	body := strings.TrimSpace(in.Body)
 	if !domain.ValidProjectHealth(health) || health == "" {
 		return Activity{}, validationf("invalid initiative health")
 	}

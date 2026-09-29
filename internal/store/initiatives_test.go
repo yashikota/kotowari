@@ -160,11 +160,11 @@ func TestInitiativeUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, err := s.PostInitiativeUpdate(initiative.Slug, "on_track", "The launch is on schedule.")
+	first, err := s.PostInitiativeUpdate(initiative.Slug, PostHealthUpdateInput{Health: "on_track", Body: "The launch is on schedule."})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.PostInitiativeUpdate(initiative.Slug, "at_risk", "The integration needs attention.")
+	second, err := s.PostInitiativeUpdate(initiative.Slug, PostHealthUpdateInput{Health: "at_risk", Body: "The integration needs attention."})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,13 +179,13 @@ func TestInitiativeUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	if err != nil || updated.Health != "at_risk" || updated.HealthUpdatedAt == nil || *updated.HealthUpdatedAt == "" {
 		t.Fatalf("latest initiative health %#v (%v)", updated, err)
 	}
-	if _, err := s.PostInitiativeUpdate(initiative.Slug, "unknown", "Bad health"); !errors.Is(err, ErrValidation) {
+	if _, err := s.PostInitiativeUpdate(initiative.Slug, PostHealthUpdateInput{Health: "unknown", Body: "Bad health"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid health error %v", err)
 	}
-	if _, err := s.PostInitiativeUpdate(initiative.Slug, "on_track", "  "); !errors.Is(err, ErrValidation) {
+	if _, err := s.PostInitiativeUpdate(initiative.Slug, PostHealthUpdateInput{Health: "on_track", Body: "  "}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty body error %v", err)
 	}
-	if _, err := s.PostInitiativeUpdate("missing", "on_track", "Update"); !errors.Is(err, ErrNotFound) {
+	if _, err := s.PostInitiativeUpdate("missing", PostHealthUpdateInput{Health: "on_track", Body: "Update"}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing initiative error %v", err)
 	}
 	reopened, err := Open(s.root)

@@ -34,15 +34,12 @@ func (s *Server) listInitiativeActivities(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) postInitiativeUpdate(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Health string `json:"health"`
-		Body   string `json:"body"`
-	}
+	var in model.PostHealthUpdateInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.PostInitiativeUpdate(r.PathValue("slug"), in.Health, in.Body)
+	out, err := s.store.PostInitiativeUpdate(r.PathValue("slug"), in)
 	if err != nil {
 		writeError(w, err)
 		return

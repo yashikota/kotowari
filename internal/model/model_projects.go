@@ -35,6 +35,11 @@ type Project struct {
 	UpdatedAt       string              `json:"updatedAt" toml:"updatedAt"`
 }
 
+type PostHealthUpdateInput struct {
+	Health string `json:"health"`
+	Body   string `json:"body"`
+}
+
 // Initiative groups projects around a single strategic outcome.
 type Initiative struct {
 	ID              int64    `json:"id" toml:"id"`

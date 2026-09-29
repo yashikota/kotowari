@@ -1411,7 +1411,7 @@ func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.PostProjectUpdate(project.Slug, "at_risk", "Mitigation is underway."); err != nil {
+	if _, err := s.PostProjectUpdate(project.Slug, PostHealthUpdateInput{Health: "at_risk", Body: "Mitigation is underway."}); err != nil {
 		t.Fatal(err)
 	}
 	updated, err := s.GetProject(project.Slug)
@@ -1440,13 +1440,13 @@ func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	if payload.Health != "at_risk" || payload.Body != "Mitigation is underway." {
 		t.Fatalf("project update payload = %#v", payload)
 	}
-	if _, err := s.PostProjectUpdate(project.Slug, "unknown", "invalid health"); !errors.Is(err, ErrValidation) {
+	if _, err := s.PostProjectUpdate(project.Slug, PostHealthUpdateInput{Health: "unknown", Body: "invalid health"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid health error = %v", err)
 	}
-	if _, err := s.PostProjectUpdate(project.Slug, "on_track", "  "); !errors.Is(err, ErrValidation) {
+	if _, err := s.PostProjectUpdate(project.Slug, PostHealthUpdateInput{Health: "on_track", Body: "  "}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty body error = %v", err)
 	}
-	if _, err := s.PostProjectUpdate("missing", "on_track", "Update"); !errors.Is(err, ErrNotFound) {
+	if _, err := s.PostProjectUpdate("missing", PostHealthUpdateInput{Health: "on_track", Body: "Update"}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing project error = %v", err)
 	}
 

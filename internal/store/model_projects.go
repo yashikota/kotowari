@@ -4,6 +4,7 @@ import "github.com/yashikota/kotowari/internal/model"
 
 type Label = model.Label
 type Project = model.Project
+type PostHealthUpdateInput = model.PostHealthUpdateInput
 type Initiative = model.Initiative
 type CreateInitiativeInput = model.CreateInitiativeInput
 type UpdateInitiativeInput = model.UpdateInitiativeInput

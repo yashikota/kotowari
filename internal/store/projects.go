@@ -110,9 +110,9 @@ func (s *Store) UpdateProjectFavorite(slug string, favorite bool) (Project, erro
 	return out, err
 }
 
-func (s *Store) PostProjectUpdate(slug, health, body string) (Activity, error) {
-	health = strings.TrimSpace(health)
-	body = strings.TrimSpace(body)
+func (s *Store) PostProjectUpdate(slug string, in PostHealthUpdateInput) (Activity, error) {
+	health := strings.TrimSpace(in.Health)
+	body := strings.TrimSpace(in.Body)
 	if !domain.ValidProjectHealth(health) {
 		return Activity{}, validationf("invalid project health")
 	}
