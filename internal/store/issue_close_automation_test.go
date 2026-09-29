@@ -5,7 +5,7 @@ import "testing"
 func TestIssueAutomationClosesParentWhenLastSubIssueCloses(t *testing.T) {
 	s := openTest(t)
 	settings := IssueAutomationSettings{AutoCloseParentIssues: true}
-	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, nil, &settings); err != nil {
+	if _, err := s.UpdateWorkspace(UpdateWorkspaceInput{IssueAutomationSettings: &settings}); err != nil {
 		t.Fatal(err)
 	}
 	grandparent, err := s.CreateIssue(CreateIssueInput{Title: "grandparent"})
@@ -66,7 +66,7 @@ func TestIssueAutomationClosesParentWhenLastSubIssueCloses(t *testing.T) {
 func TestIssueAutomationClosesOpenSubIssuesWithTheirParent(t *testing.T) {
 	s := openTest(t)
 	settings := IssueAutomationSettings{AutoCloseSubIssues: true}
-	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, nil, &settings); err != nil {
+	if _, err := s.UpdateWorkspace(UpdateWorkspaceInput{IssueAutomationSettings: &settings}); err != nil {
 		t.Fatal(err)
 	}
 	parent, err := s.CreateIssue(CreateIssueInput{Title: "parent"})
@@ -136,7 +136,7 @@ func TestIssueAutomationSettingsPersist(t *testing.T) {
 		AutoCloseSubIssues:     true,
 		StatusProgressionOrder: "first",
 	}
-	if _, err := s.UpdateWorkspace(nil, nil, nil, nil, nil, nil, nil, &want); err != nil {
+	if _, err := s.UpdateWorkspace(UpdateWorkspaceInput{IssueAutomationSettings: &want}); err != nil {
 		t.Fatal(err)
 	}
 	reopened, err := Open(s.root)

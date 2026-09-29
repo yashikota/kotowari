@@ -14,6 +14,17 @@ type Workspace struct {
 	UpdatedAt               string                  `json:"updatedAt"`
 }
 
+type UpdateWorkspaceInput struct {
+	Name                    *string                  `json:"name"`
+	Timezone                *string                  `json:"timezone"`
+	Locale                  *string                  `json:"locale"`
+	URL                     *string                  `json:"url"`
+	Description             *string                  `json:"description"`
+	GitHubURL               *string                  `json:"githubUrl"`
+	CycleSettings           *CycleSettings           `json:"cycleSettings"`
+	IssueAutomationSettings *IssueAutomationSettings `json:"issueAutomationSettings"`
+}
+
 type CycleSettings struct {
 	DurationDays           int    `json:"durationDays" toml:"durationDays"`
 	CooldownDays           int    `json:"cooldownDays" toml:"cooldownDays"`

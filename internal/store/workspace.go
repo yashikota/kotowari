@@ -45,22 +45,18 @@ func validLocale(locale string) bool {
 	}
 }
 
-func (s *Store) UpdateWorkspace(
-	name, timezone, locale, url, description, githubURL *string,
-	cycleSettings *CycleSettings,
-	issueAutomationSettings *IssueAutomationSettings,
-) (Workspace, error) {
+func (s *Store) UpdateWorkspace(in UpdateWorkspaceInput) (Workspace, error) {
 	var ws Workspace
 	err := s.mutate(func(m *mem) error {
-		if cycleSettings != nil {
-			if !validCycleSettings(*cycleSettings) {
+		if in.CycleSettings != nil {
+			if !validCycleSettings(*in.CycleSettings) {
 				return validationf("invalid cycle settings")
 			}
-			settings := *cycleSettings
+			settings := *in.CycleSettings
 			m.Workspace.CycleSettings = &settings
 		}
-		if issueAutomationSettings != nil {
-			settings := normalizedIssueAutomationSettings(issueAutomationSettings)
+		if in.IssueAutomationSettings != nil {
+			settings := normalizedIssueAutomationSettings(in.IssueAutomationSettings)
 			if !validStatusProgressionOrder(settings.StatusProgressionOrder) ||
 				settings.AutoCloseStaleIssuesAfterMonths < 0 || settings.AutoCloseStaleIssuesAfterMonths > 60 ||
 				settings.AutoArchiveClosedIssuesAfterMonths < 0 || settings.AutoArchiveClosedIssuesAfterMonths > 60 ||
@@ -70,20 +66,20 @@ func (s *Store) UpdateWorkspace(
 			}
 			m.Workspace.IssueAutomationSettings = &settings
 		}
-		if name != nil {
-			if strings.TrimSpace(*name) == "" {
+		if in.Name != nil {
+			if strings.TrimSpace(*in.Name) == "" {
 				return validationf("name required")
 			}
-			m.Workspace.Name = strings.TrimSpace(*name)
+			m.Workspace.Name = strings.TrimSpace(*in.Name)
 		}
-		if timezone != nil {
-			if strings.TrimSpace(*timezone) == "" {
+		if in.Timezone != nil {
+			if strings.TrimSpace(*in.Timezone) == "" {
 				return validationf("timezone required")
 			}
-			m.Workspace.Timezone = strings.TrimSpace(*timezone)
+			m.Workspace.Timezone = strings.TrimSpace(*in.Timezone)
 		}
-		if locale != nil {
-			next := strings.TrimSpace(*locale)
+		if in.Locale != nil {
+			next := strings.TrimSpace(*in.Locale)
 			if next == "" {
 				return validationf("locale required")
 			}
@@ -92,20 +88,20 @@ func (s *Store) UpdateWorkspace(
 			}
 			m.Workspace.Locale = next
 		}
-		if url != nil {
-			m.Workspace.URL = strings.TrimSpace(*url)
+		if in.URL != nil {
+			m.Workspace.URL = strings.TrimSpace(*in.URL)
 		}
-		if description != nil {
-			m.Workspace.Description = *description
+		if in.Description != nil {
+			m.Workspace.Description = *in.Description
 		}
-		if githubURL != nil {
-			m.Workspace.GitHubURL = strings.TrimSpace(*githubURL)
+		if in.GitHubURL != nil {
+			m.Workspace.GitHubURL = strings.TrimSpace(*in.GitHubURL)
 		}
 		m.bump(domain.Now())
 		ws = workspaceFrom(m)
 		return nil
 	})
-	if err == nil && issueAutomationSettings != nil {
+	if err == nil && in.IssueAutomationSettings != nil {
 		s.issueAutomationMu.Lock()
 		s.lastIssueAutomation = time.Time{}
 		s.issueAutomationMu.Unlock()
