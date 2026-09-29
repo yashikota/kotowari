@@ -9,14 +9,7 @@ import { useMachineFlag, useOverlay } from '../application/Root.tsx';
 import { applyLocale } from '../i18n/index.ts';
 import { languageOptions, normalizeWorkspace, resolveLocale } from '../i18n/locale.ts';
 import { timeZoneOptions, systemTimeZone } from '../time.ts';
-import type {
-  Diagnostic,
-  IssueStatus,
-  IssueWorkflowStatus,
-  ProjectStatus,
-  ProjectWorkflowStatus,
-  Workspace,
-} from '../types.ts';
+import type { Diagnostic, Workspace } from '../types.ts';
 import { isWebCodingToolURLTemplate, useCodingToolPreferences } from '../coding-tools.ts';
 import type { CodingToolPreferences } from '../coding-tools.ts';
 import {
@@ -29,8 +22,7 @@ import {
   SIDEBAR_ITEM_IDS,
 } from '../preferences.ts';
 import { sidebarSettingsGroups } from '../sidebar.ts';
-import { useIssueWorkflow } from '../workflow.tsx';
-import { useProjectWorkflow } from '../project-workflow.tsx';
+import { useConfigWorkflowSettings } from './useConfigWorkflowSettings.ts';
 
 type ConfigData = {
   workspace: Workspace;
@@ -41,6 +33,8 @@ export function useConfigPagePresenter() {
   const data = useLoaderData({ from: '/config' }) as ConfigData;
   const { t } = useTranslation();
   const router = useRouter();
+  const workflowSettings = useConfigWorkflowSettings();
+  const { data: workflowSettingsData, handlers: workflowSettingsHandlers } = workflowSettings;
   const { set: setOverlay } = useOverlay();
   const [sidebarCustomizationOpen, setSidebarCustomizationOpen] =
     useMachineFlag('sidebar-customization');
@@ -58,26 +52,9 @@ export function useConfigPagePresenter() {
   const { preferences, update: updatePreferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences, update: updateCodingToolPreferences } =
     useCodingToolPreferences();
-  const { statuses: issueWorkflowStatuses, updateStatuses: saveIssueWorkflowStatuses } =
-    useIssueWorkflow();
-  const { statuses: projectWorkflowStatuses, updateStatuses: saveProjectWorkflowStatuses } =
-    useProjectWorkflow();
   const [codingToolDraft, setCodingToolDraft] = useState(codingToolPreferences);
   const [codingToolError, setCodingToolError] = useState('');
   const [codingToolSaved, setCodingToolSaved] = useState(false);
-  const [workflowDraft, setWorkflowDraft] = useState(issueWorkflowStatuses);
-  const [workflowName, setWorkflowName] = useState('');
-  const [workflowDescription, setWorkflowDescription] = useState('');
-  const [workflowCategory, setWorkflowCategory] = useState<IssueStatus>('in_progress');
-  const [workflowError, setWorkflowError] = useState('');
-  const [workflowSaved, setWorkflowSaved] = useState(false);
-  const [projectWorkflowDraft, setProjectWorkflowDraft] = useState(projectWorkflowStatuses);
-  const [projectWorkflowName, setProjectWorkflowName] = useState('');
-  const [projectWorkflowDescription, setProjectWorkflowDescription] = useState('');
-  const [projectWorkflowCategory, setProjectWorkflowCategory] = useState<ProjectStatus>('started');
-  const [projectWorkflowFormOpen, setProjectWorkflowFormOpen] = useState(false);
-  const [projectWorkflowError, setProjectWorkflowError] = useState('');
-  const [projectWorkflowSaved, setProjectWorkflowSaved] = useState(false);
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -91,14 +68,6 @@ export function useConfigPagePresenter() {
   useEffect(() => {
     setCodingToolDraft(codingToolPreferences);
   }, [codingToolPreferences]);
-
-  useEffect(() => {
-    setWorkflowDraft(issueWorkflowStatuses);
-  }, [issueWorkflowStatuses]);
-
-  useEffect(() => {
-    setProjectWorkflowDraft(projectWorkflowStatuses);
-  }, [projectWorkflowStatuses]);
 
   const timeZones = useMemo(() => timeZoneOptions(workspace.timezone), [workspace.timezone]);
   const languages = useMemo(
@@ -121,22 +90,7 @@ export function useConfigPagePresenter() {
     codingToolDraft,
     codingToolError,
     codingToolSaved,
-    issueWorkflowStatuses: workflowDraft,
-    workflowError,
-    workflowSaved,
-    workflowDirty: JSON.stringify(workflowDraft) !== JSON.stringify(issueWorkflowStatuses),
-    workflowName,
-    workflowDescription,
-    workflowCategory,
-    projectWorkflowStatuses: projectWorkflowDraft,
-    projectWorkflowName,
-    projectWorkflowDescription,
-    projectWorkflowCategory,
-    projectWorkflowFormOpen,
-    projectWorkflowError,
-    projectWorkflowSaved,
-    projectWorkflowDirty:
-      JSON.stringify(projectWorkflowDraft) !== JSON.stringify(projectWorkflowStatuses),
+    ...workflowSettingsData,
     sidebarGroups: sidebarSettingsGroups(preferences).map(({ group, items }) => ({
       group,
       label: t(`config.sidebarGroup.${group}`),
@@ -412,183 +366,7 @@ export function useConfigPagePresenter() {
         updateCodingToolPreferences(next);
         setCodingToolSaved(true);
       },
-      onWorkflowStatusNameChange: (id: string, name: string) => {
-        setWorkflowSaved(false);
-        setWorkflowDraft((current) =>
-          current.map((status) => (status.id === id ? { ...status, name } : status)),
-        );
-      },
-      onWorkflowStatusDescriptionChange: (id: string, description: string) => {
-        setWorkflowSaved(false);
-        setWorkflowDraft((current) =>
-          current.map((status) => (status.id === id ? { ...status, description } : status)),
-        );
-      },
-      onWorkflowNameChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setWorkflowName(e.target.value),
-      onWorkflowDescriptionChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setWorkflowDescription(e.target.value),
-      onWorkflowCategoryChange: (value: string | null) => {
-        if (
-          value === 'backlog' ||
-          value === 'todo' ||
-          value === 'in_progress' ||
-          value === 'done' ||
-          value === 'canceled'
-        )
-          setWorkflowCategory(value);
-      },
-      onSaveWorkflow: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setWorkflowError('');
-        setWorkflowSaved(false);
-        void saveIssueWorkflowStatuses(workflowDraft)
-          .then(() => setWorkflowSaved(true))
-          .catch((err: unknown) =>
-            setWorkflowError(err instanceof Error ? err.message : t('config.workflowSaveFailed')),
-          );
-      },
-      onAddWorkflowStatus: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const name = workflowName.trim();
-        if (!name) {
-          setWorkflowError(t('config.workflowNameRequired'));
-          return;
-        }
-        const base = name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '')
-          .slice(0, 48);
-        const idBase = base || `custom-status-${Date.now().toString(36)}`;
-        const used = new Set(workflowDraft.map((status) => status.id));
-        let id = idBase;
-        for (let suffix = 2; used.has(id); suffix++) id = `${idBase.slice(0, 43)}-${suffix}`;
-        const status: IssueWorkflowStatus = {
-          id,
-          name,
-          category: workflowCategory,
-          ...(workflowDescription.trim() ? { description: workflowDescription.trim() } : {}),
-        };
-        const next = [...workflowDraft, status];
-        setWorkflowError('');
-        setWorkflowSaved(false);
-        void saveIssueWorkflowStatuses(next)
-          .then(() => {
-            setWorkflowDraft(next);
-            setWorkflowName('');
-            setWorkflowDescription('');
-            setWorkflowSaved(true);
-          })
-          .catch((err: unknown) =>
-            setWorkflowError(err instanceof Error ? err.message : t('config.workflowSaveFailed')),
-          );
-      },
-      onDeleteWorkflowStatus: (id: string) => {
-        const next = workflowDraft.filter((status) => status.id !== id);
-        setWorkflowError('');
-        setWorkflowSaved(false);
-        void saveIssueWorkflowStatuses(next)
-          .then(() => {
-            setWorkflowDraft(next);
-            setWorkflowSaved(true);
-          })
-          .catch((err: unknown) =>
-            setWorkflowError(err instanceof Error ? err.message : t('config.workflowSaveFailed')),
-          );
-      },
-      onProjectWorkflowStatusNameChange: (id: string, name: string) => {
-        setProjectWorkflowSaved(false);
-        setProjectWorkflowDraft((current) =>
-          current.map((status) => (status.id === id ? { ...status, name } : status)),
-        );
-      },
-      onProjectWorkflowStatusDescriptionChange: (id: string, description: string) => {
-        setProjectWorkflowSaved(false);
-        setProjectWorkflowDraft((current) =>
-          current.map((status) => (status.id === id ? { ...status, description } : status)),
-        );
-      },
-      onProjectWorkflowNameChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setProjectWorkflowName(e.target.value),
-      onProjectWorkflowDescriptionChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setProjectWorkflowDescription(e.target.value),
-      onOpenProjectWorkflowStatus: (category: ProjectStatus) => {
-        setProjectWorkflowCategory(category);
-        setProjectWorkflowName('');
-        setProjectWorkflowDescription('');
-        setProjectWorkflowError('');
-        setProjectWorkflowFormOpen(true);
-      },
-      onCloseProjectWorkflowStatus: () => setProjectWorkflowFormOpen(false),
-      onAddProjectWorkflowStatus: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const name = projectWorkflowName.trim();
-        if (!name) {
-          setProjectWorkflowError(t('config.workflowNameRequired'));
-          return;
-        }
-        const base = name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '')
-          .slice(0, 48);
-        const idBase = base || `project-status-${Date.now().toString(36)}`;
-        const used = new Set(projectWorkflowDraft.map((status) => status.id));
-        let id = idBase;
-        for (let suffix = 2; used.has(id); suffix++) id = `${idBase.slice(0, 43)}-${suffix}`;
-        const status: ProjectWorkflowStatus = {
-          id,
-          name,
-          category: projectWorkflowCategory,
-          ...(projectWorkflowDescription.trim()
-            ? { description: projectWorkflowDescription.trim() }
-            : {}),
-        };
-        const next = [...projectWorkflowDraft, status];
-        setProjectWorkflowError('');
-        setProjectWorkflowSaved(false);
-        void saveProjectWorkflowStatuses(next)
-          .then(() => {
-            setProjectWorkflowDraft(next);
-            setProjectWorkflowName('');
-            setProjectWorkflowDescription('');
-            setProjectWorkflowFormOpen(false);
-            setProjectWorkflowSaved(true);
-          })
-          .catch((err: unknown) =>
-            setProjectWorkflowError(
-              err instanceof Error ? err.message : t('config.projectWorkflowSaveFailed'),
-            ),
-          );
-      },
-      onDeleteProjectWorkflowStatus: (id: string) => {
-        const next = projectWorkflowDraft.filter((status) => status.id !== id);
-        setProjectWorkflowError('');
-        setProjectWorkflowSaved(false);
-        void saveProjectWorkflowStatuses(next)
-          .then(() => {
-            setProjectWorkflowDraft(next);
-            setProjectWorkflowSaved(true);
-          })
-          .catch((err: unknown) =>
-            setProjectWorkflowError(
-              err instanceof Error ? err.message : t('config.projectWorkflowSaveFailed'),
-            ),
-          );
-      },
-      onSaveProjectWorkflow: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setProjectWorkflowError('');
-        setProjectWorkflowSaved(false);
-        void saveProjectWorkflowStatuses(projectWorkflowDraft)
-          .then(() => setProjectWorkflowSaved(true))
-          .catch((err: unknown) =>
-            setProjectWorkflowError(
-              err instanceof Error ? err.message : t('config.projectWorkflowSaveFailed'),
-            ),
-          );
-      },
+      ...workflowSettingsHandlers,
       onOpenSidebarCustomization: () => setSidebarCustomizationOpen(true),
       onCloseSidebarCustomization: () => setSidebarCustomizationOpen(false),
       onSidebarLocationChange: (id: string, value: string | null) => {
