@@ -1,7 +1,7 @@
 import { ActionIcon, Badge, Box, Button, Group, NativeSelect, Stack } from '@mantine/core';
 import { IconLink, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import type { useProjectsPagePresenter } from '../presenters/ProjectsCycles.tsx';
+import type { useProjectsPagePresenter } from '../presenters/Projects.tsx';
 
 type ProjectCreateDialogModel = ReturnType<typeof useProjectsPagePresenter>;
 type DependencyModel = Pick<

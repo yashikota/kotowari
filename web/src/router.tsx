@@ -243,7 +243,7 @@ const projectsRoute = createRoute({
     ]);
     return { projects, labels, issues: issues ?? [], projectTemplates, initiatives, workspace };
   },
-  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectsPage'),
+  component: lazyRouteComponent(() => import('./pages/Projects.tsx'), 'ProjectsPage'),
 });
 
 const initiativesRoute = createRoute({
@@ -490,7 +490,7 @@ const projectRoute = createRoute({
       ]);
     return { project, adrs, pages, issues, labels, projects, cycles, activities, initiatives };
   },
-  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'ProjectDetailPage'),
+  component: lazyRouteComponent(() => import('./pages/ProjectDetail.tsx'), 'ProjectDetailPage'),
 });
 
 const cyclesRoute = createRoute({
@@ -517,7 +517,7 @@ const cyclesRoute = createRoute({
     const activeCycleActivities = activeCycle ? await api.cycleActivities(activeCycle.number) : [];
     return { cycles, issues, activeCycleActivities, workspace };
   },
-  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CyclesPage'),
+  component: lazyRouteComponent(() => import('./pages/Cycles.tsx'), 'CyclesPage'),
 });
 
 const cycleRoute = createRoute({
@@ -591,7 +591,7 @@ const cycleRoute = createRoute({
       initiatives,
     };
   },
-  component: lazyRouteComponent(() => import('./pages/ProjectsCycles.tsx'), 'CycleDetailPage'),
+  component: lazyRouteComponent(() => import('./pages/CycleDetail.tsx'), 'CycleDetailPage'),
 });
 
 const viewRoute = createRoute({

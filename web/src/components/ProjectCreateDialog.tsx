@@ -33,7 +33,7 @@ import { projectWorkflowStatusCategory, projectWorkflowStatusLabel } from '../pr
 import { priorityLabel } from '../i18n/labels.ts';
 import { ProjectCreationAssistant } from './ProjectCreationAssistant.tsx';
 import { ProjectCreateMilestones } from './ProjectCreateMilestones.tsx';
-import type { useProjectsPagePresenter } from '../presenters/ProjectsCycles.tsx';
+import type { useProjectsPagePresenter } from '../presenters/Projects.tsx';
 import type { IssueStatus, ProjectStatus } from '../types.ts';
 
 type ProjectCreateDialogModel = ReturnType<typeof useProjectsPagePresenter>;

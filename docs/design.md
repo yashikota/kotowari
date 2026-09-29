@@ -294,6 +294,10 @@ Release 用 SPA は `web/e2e/copy-dist.mjs` で `internal/webembed/dist` にコ�
 `.keep` は空ディレクトリを Git に保持するための追跡ファイルなので、生成物の入れ替えでも内容を変えない。
 CI と Release は同じコピー手順の後に GoReleaser snapshot を実行し、配布対象のクロスビルドが成功してから Release workflow がタグを作る。
 
+## Web の実装境界
+
+Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。複数画面で共有するCycle URLや進捗表示の処理は `projectCycleHelpers.ts` に置く。
+
 ## 代替案
 
 Issue 番号と ADR 番号を同一にする案は採らない。
