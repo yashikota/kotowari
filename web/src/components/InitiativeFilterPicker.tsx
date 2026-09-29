@@ -36,28 +36,23 @@ import type {
 import type { ProjectFilterField, ProjectFilterGroup } from '../project-views.ts';
 import {
   SEARCH_DATE_WINDOWS,
-  type SearchDateFilter,
   type SearchDateGranularity,
   type SearchDateRange,
+  type SearchDateFilter,
 } from '../search.ts';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
 import { SearchDateTimeframeDialog } from './SearchDateTimeframeDialog.tsx';
+import {
+  buildInitiativeFilterChips,
+  INITIATIVE_DATE_FIELDS,
+  INITIATIVE_FILTERS,
+  type InitiativeFilterKey,
+} from '../initiative-filter-chips.ts';
 import { AdvancedProjectFilterBuilder } from './AdvancedProjectFilterBuilder.tsx';
 
 const STATUSES: InitiativeStatus[] = ['proposed', 'planned', 'active', 'completed', 'canceled'];
 const HEALTH_STATUSES: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
 const PRIORITIES = [0, 1, 2, 3, 4];
-const DATE_FIELDS: InitiativeDateField[] = ['created', 'updated', 'completed', 'latestUpdate'];
-const FILTERS = [
-  'status',
-  'priority',
-  'labels',
-  'health',
-  'dates',
-  'projects',
-  'advanced',
-] as const;
-
 function advancedDateWindow(
   value: (typeof SEARCH_DATE_WINDOWS)[number],
   operator: 'last' | 'within',
@@ -65,16 +60,7 @@ function advancedDateWindow(
   return `${operator}:${value.slice(1).toLocaleLowerCase()}`;
 }
 
-type FilterKey = (typeof FILTERS)[number];
-type ActiveFilterChip = {
-  filter: FilterKey;
-  key: string;
-  label: string;
-  value: string;
-  dateField: InitiativeDateField | null;
-};
-
-const FILTER_ICONS: Record<FilterKey, TablerIcon> = {
+const FILTER_ICONS: Record<InitiativeFilterKey, TablerIcon> = {
   status: IconCircleDot,
   priority: IconFlag,
   labels: IconTag,
@@ -125,7 +111,7 @@ export function InitiativeFilterPicker({
   handlers: InitiativeFilterHandlers;
 }) {
   const { t } = useTranslation();
-  const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
+  const [activeFilter, setActiveFilter] = useState<InitiativeFilterKey | null>(null);
   const [activeDateField, setActiveDateField] = useState<InitiativeDateField | null>(null);
   const [customDateField, setCustomDateField] = useState<InitiativeDateField | null>(null);
   const [customDateInput, setCustomDateInput] = useState('');
@@ -138,7 +124,7 @@ export function InitiativeFilterPicker({
     completed: t('initiativeList.dateField.completed'),
     latestUpdate: t('initiativeList.dateField.latestUpdate'),
   };
-  const filterLabels: Record<FilterKey, string> = {
+  const filterLabels: Record<InitiativeFilterKey, string> = {
     status: t('initiativeList.status'),
     priority: t('initiativeList.priority'),
     labels: t('initiativeList.labels'),
@@ -147,83 +133,21 @@ export function InitiativeFilterPicker({
     projects: t('initiativeList.projects'),
     advanced: t('initiativeList.advancedFilter'),
   };
-  const filterCounts: Record<FilterKey, number> = {
-    status: statusFilter.length,
-    priority: priorityFilter.length,
-    labels: labelFilter.length,
-    health: healthFilter.length,
-    dates: DATE_FIELDS.filter((field) => dateFilters[field]).length,
-    projects: Number(projectsFilter !== 'all'),
-    advanced: Number(advancedFilter),
-  };
-  const visibleFilters = FILTERS.filter((filter) =>
+  const { filterCounts, activeFilterChips } = buildInitiativeFilterChips({
+    statusFilter,
+    priorityFilter,
+    healthFilter,
+    labelFilter,
+    dateFilters,
+    projectsFilter,
+    advancedFilter,
+    filterLabels,
+    dateFieldLabels,
+    t,
+  });
+  const visibleFilters = INITIATIVE_FILTERS.filter((filter) =>
     filterLabels[filter].toLocaleLowerCase().includes(filterQuery.trim().toLocaleLowerCase()),
   );
-
-  function formatDateFilter(filter: SearchDateFilter) {
-    if (filter.value.kind === 'relative') {
-      return `${t('searchPage.filters.operators.after')} ${t(`searchPage.filters.dateWindows.${filter.value.window}`)}`;
-    }
-    return filter.value.start === filter.value.end
-      ? filter.value.start
-      : `${filter.value.start} – ${filter.value.end}`;
-  }
-
-  const activeFilterChips: ActiveFilterChip[] = [];
-  for (const filter of FILTERS) {
-    if (filter === 'dates') {
-      for (const field of DATE_FIELDS) {
-        const dateFilter = dateFilters[field];
-        if (dateFilter) {
-          activeFilterChips.push({
-            filter,
-            key: `${filter}-${field}`,
-            label: dateFieldLabels[field],
-            value: formatDateFilter(dateFilter),
-            dateField: field,
-          });
-        }
-      }
-      continue;
-    }
-    if (!filterCounts[filter]) continue;
-    let value: string;
-    switch (filter) {
-      case 'status':
-        value = statusFilter.map((status) => t(`initiatives.${status}`)).join(', ');
-        break;
-      case 'priority':
-        value = priorityFilter
-          .map((priority) => t(`initiativeList.priorityValue.${priority}`))
-          .join(', ');
-        break;
-      case 'labels':
-        value = labelFilter.join(', ');
-        break;
-      case 'health':
-        value = healthFilter.map((health) => t(`initiativeList.healthValue.${health}`)).join(', ');
-        break;
-      case 'projects':
-        value = t(
-          projectsFilter === 'withProjects'
-            ? 'initiativeList.withProjects'
-            : 'initiativeList.withoutProjects',
-        );
-        break;
-      case 'advanced':
-        value = '';
-        break;
-      default:
-        continue;
-    }
-    activeFilterChips.push({
-      filter,
-      key: filter,
-      label: filterLabels[filter],
-      value,
-      dateField: null,
-    });
-  }
 
   function closeFilterPicker() {
     handlers.onFilterOpenedChange(false);
@@ -236,7 +160,7 @@ export function InitiativeFilterPicker({
     handlers.onDateFilterChange(field, undefined);
   }
 
-  function clearFilter(filter: FilterKey) {
+  function clearFilter(filter: InitiativeFilterKey) {
     switch (filter) {
       case 'status':
         handlers.onStatusFilterChange([]);
@@ -251,7 +175,7 @@ export function InitiativeFilterPicker({
         handlers.onHealthFilterChange([]);
         break;
       case 'dates':
-        DATE_FIELDS.forEach(clearDateFilter);
+        INITIATIVE_DATE_FIELDS.forEach(clearDateFilter);
         break;
       case 'projects':
         handlers.onProjectsFilterChange('all');
@@ -551,7 +475,7 @@ export function InitiativeFilterPicker({
                   ) : null}
                   {activeFilter === 'dates' && !activeDateField ? (
                     <Stack gap={2}>
-                      {DATE_FIELDS.map((field) => (
+                      {INITIATIVE_DATE_FIELDS.map((field) => (
                         <Button
                           key={field}
                           type="button"
