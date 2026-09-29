@@ -17,7 +17,7 @@ func (s *Server) createMilestone(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateMilestoneFromInput(model.CreateMilestoneInput{
+	out, err := s.store.CreateMilestone(model.CreateMilestoneInput{
 		ProjectSlug: r.PathValue("slug"), Name: in.Name,
 		Description: in.Description, TargetDate: in.TargetDate,
 	})
@@ -44,7 +44,7 @@ func (s *Server) patchMilestone(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	out, err := s.store.UpdateMilestoneFromInput(model.UpdateMilestoneInput{
+	out, err := s.store.UpdateMilestone(model.UpdateMilestoneInput{
 		ProjectSlug: r.PathValue("slug"), ID: id,
 		Name: name, Description: description, TargetDate: targetDate,
 	})

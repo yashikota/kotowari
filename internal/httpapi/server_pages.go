@@ -30,7 +30,7 @@ func (s *Server) createPage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreatePageFromInput(model.CreatePageInput{
+	out, err := s.store.CreatePage(model.CreatePageInput{
 		Title: in.Title, Slug: in.Slug, Body: in.Body, Status: in.Status,
 		ParentID: in.ParentID, ProjectID: in.ProjectID, Date: in.Date, Tags: in.Tags,
 	})
@@ -61,7 +61,7 @@ func (s *Server) patchPage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	out, err := s.store.UpdatePageFromInput(model.UpdatePageInput{
+	out, err := s.store.UpdatePage(model.UpdatePageInput{
 		Slug: r.PathValue("slug"), Title: title, Body: body, Status: status,
 		ParentID: parentID, ProjectID: projectID, Date: date, Tags: tags,
 	})

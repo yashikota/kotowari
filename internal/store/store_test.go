@@ -48,11 +48,11 @@ func TestSingleActiveCycle(t *testing.T) {
 	s := openTest(t)
 	start := time.Now().UTC().Format(time.RFC3339)
 	end := time.Now().UTC().Add(7 * 24 * time.Hour).Format(time.RFC3339)
-	c1, err := s.CreateCycle(start, end, "active")
+	c1, err := s.CreateCycle(CreateCycleInput{StartsAt: start, EndsAt: end, Status: "active"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	c2, err := s.CreateCycle(start, end, "active")
+	c2, err := s.CreateCycle(CreateCycleInput{StartsAt: start, EndsAt: end, Status: "active"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,16 +91,16 @@ func TestCreateIssueValidation(t *testing.T) {
 
 func TestPageRejectsCycle(t *testing.T) {
 	s := openTest(t)
-	p, err := s.CreatePage("Root", "root", "", "proposed", nil, nil, nil, nil)
+	p, err := s.CreatePage(CreatePageInput{Title: "Root", Slug: "root", Status: "proposed"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	child, err := s.CreatePage("Child", "child", "", "proposed", &p.ID, nil, nil, nil)
+	child, err := s.CreatePage(CreatePageInput{Title: "Child", Slug: "child", Status: "proposed", ParentID: &p.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	parentID := &child.ID
-	_, err = s.UpdatePage("root", nil, nil, nil, &parentID, nil, nil, nil)
+	_, err = s.UpdatePage(UpdatePageInput{Slug: "root", ParentID: &parentID})
 	if !errors.Is(err, ErrValidation) {
 		t.Fatalf("want cycle validation, got %v", err)
 	}

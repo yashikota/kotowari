@@ -344,17 +344,19 @@ func TestRecurringIssueFromNewInputPreservesInitialRelations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Release", Slug: "release", Status: "started"})
+	project, err := s.CreateProject(ProjectCreateInput{Name: "Release", Slug: "release", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	milestone, err := s.CreateMilestone(project.Slug, "Beta", nil)
+	milestone, err := s.CreateMilestone(CreateMilestoneInput{ProjectSlug: project.Slug, Name: "Beta"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	start := time.Now().AddDate(0, 0, -1).UTC()
 	end := start.AddDate(0, 0, 7)
-	cycle, err := s.CreateCycle(start.Format(time.RFC3339), end.Format(time.RFC3339), "active")
+	cycle, err := s.CreateCycle(CreateCycleInput{
+		StartsAt: start.Format(time.RFC3339), EndsAt: end.Format(time.RFC3339), Status: "active",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

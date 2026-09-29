@@ -7,7 +7,7 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-func (s *Store) UpdateProjectFromInput(in ProjectUpdateInput) (Project, error) {
+func (s *Store) UpdateProject(in ProjectUpdateInput) (Project, error) {
 	slug, name, summary := in.Slug, in.Name, in.Summary
 	icon, iconColor, description := in.Icon, in.IconColor, in.Description
 	status, workflowStatus, health, lead := in.Status, in.WorkflowStatus, in.Health, in.Lead

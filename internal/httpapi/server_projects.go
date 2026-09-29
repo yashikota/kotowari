@@ -38,7 +38,7 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectFromInput(model.ProjectCreateInput{
+	out, err := s.store.CreateProject(model.ProjectCreateInput{
 		Name: in.Name, Slug: in.Slug, Summary: in.Summary, Icon: in.Icon,
 		IconColor: in.IconColor, Description: in.Description, Status: in.Status,
 		WorkflowStatus: in.WorkflowStatus, Priority: in.Priority,
@@ -91,7 +91,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, out)
 		return
 	}
-	out, err := s.store.UpdateProjectFromInput(in.updateInput(r.PathValue("slug")))
+	out, err := s.store.UpdateProject(in.updateInput(r.PathValue("slug")))
 	if err != nil {
 		writeError(w, err)
 		return

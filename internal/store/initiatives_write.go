@@ -40,23 +40,7 @@ func (s *Store) PostInitiativeUpdate(slug, health, body string) (Activity, error
 	return out, err
 }
 
-func (s *Store) CreateInitiative(name, slug, description, status, color string, start, target *string) (Initiative, error) {
-	return s.CreateInitiativeWithProjects(name, slug, description, status, color, start, target, nil)
-}
-
-func (s *Store) CreateInitiativeWithProjects(name, slug, description, status, color string, start, target *string, projectSlugs []string) (Initiative, error) {
-	return s.CreateInitiativeWithOptions(name, slug, description, status, color, start, target, projectSlugs, "", 0, nil)
-}
-
-func (s *Store) CreateInitiativeWithOptions(name, slug, description, status, color string, start, target *string, projectSlugs []string, health string, priority int, labels []string) (Initiative, error) {
-	return s.CreateInitiativeFromInput(CreateInitiativeInput{
-		Name: name, Slug: slug, Description: description, Status: status, Color: color,
-		StartDate: start, TargetDate: target, ProjectSlugs: projectSlugs,
-		Health: health, Priority: priority, Labels: labels,
-	})
-}
-
-func (s *Store) CreateInitiativeFromInput(in CreateInitiativeInput) (Initiative, error) {
+func (s *Store) CreateInitiative(in CreateInitiativeInput) (Initiative, error) {
 	var err error
 	in, err = normalizeInitiativeCreateInput(in)
 	if err != nil {

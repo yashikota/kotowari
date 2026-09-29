@@ -7,16 +7,19 @@ import (
 
 func TestInitiativeProjectsPersistAndAreUnlinkedOnDelete(t *testing.T) {
 	s := openTest(t)
-	first, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "First", Slug: "first", Status: "started"})
+	first, err := s.CreateProject(ProjectCreateInput{Name: "First", Slug: "first", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Second", Slug: "second", Status: "planned"})
+	second, err := s.CreateProject(ProjectCreateInput{Name: "Second", Slug: "second", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	start, target := "2026-09-01", "2026-12-31"
-	initiative, err := s.CreateInitiative("Platform launch", "platform-launch", "Ship the platform", "planned", "blue", &start, &target)
+	initiative, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Platform launch", Slug: "platform-launch", Description: "Ship the platform",
+		Status: "planned", Color: "blue", StartDate: &start, TargetDate: &target,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,10 +76,14 @@ func TestInitiativeProjectsPersistAndAreUnlinkedOnDelete(t *testing.T) {
 func TestCreateInitiativeRejectsInvalidDatesAndProjectLinks(t *testing.T) {
 	s := openTest(t)
 	start, target := "2026-12-31", "2026-09-01"
-	if _, err := s.CreateInitiative("Invalid dates", "invalid-dates", "", "planned", "", &start, &target); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Invalid dates", Slug: "invalid-dates", Status: "planned", StartDate: &start, TargetDate: &target,
+	}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("reversed initiative date range error %v", err)
 	}
-	if _, err := s.CreateInitiativeWithProjects("Missing project", "missing-project", "", "planned", "", nil, nil, []string{"missing"}); !errors.Is(err, ErrNotFound) {
+	if _, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Missing project", Slug: "missing-project", Status: "planned", ProjectSlugs: []string{"missing"},
+	}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing project error %v", err)
 	}
 	if _, err := s.GetInitiative("missing-project"); !errors.Is(err, ErrNotFound) {
@@ -86,7 +93,9 @@ func TestCreateInitiativeRejectsInvalidDatesAndProjectLinks(t *testing.T) {
 
 func TestProposedInitiativeStatusPersists(t *testing.T) {
 	s := openTest(t)
-	initiative, err := s.CreateInitiative("Proposed launch", "proposed-launch", "", "proposed", "blue", nil, nil)
+	initiative, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Proposed launch", Slug: "proposed-launch", Status: "proposed", Color: "blue",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,10 +116,10 @@ func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	initiative, err := s.CreateInitiativeWithOptions(
-		"Release quality", "release-quality", "", "active", "purple", nil, nil,
-		nil, "on_track", 2, []string{label.Name},
-	)
+	initiative, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Release quality", Slug: "release-quality", Status: "active", Color: "purple",
+		Health: "on_track", Priority: 2, Labels: []string{label.Name},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +154,9 @@ func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
 
 func TestInitiativeUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	s := openTest(t)
-	initiative, err := s.CreateInitiative("Platform", "platform", "", "active", "purple", nil, nil)
+	initiative, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Platform", Slug: "platform", Status: "active", Color: "purple",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,15 +201,17 @@ func TestInitiativeUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 
 func TestProjectInitiativePropertyUpdatesBothSides(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Roadmap", Slug: "roadmap", Status: "started"})
+	project, err := s.CreateProject(ProjectCreateInput{Name: "Roadmap", Slug: "roadmap", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	initiative, err := s.CreateInitiative("Platform", "platform", "", "planned", "purple", nil, nil)
+	initiative, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Platform", Slug: "platform", Status: "planned", Color: "purple",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	assigned, err := s.UpdateProjectFromInput(ProjectUpdateInput{
+	assigned, err := s.UpdateProject(ProjectUpdateInput{
 		Slug: project.Slug, InitiativeSlugs: &[]string{initiative.Slug},
 	})
 	if err != nil {
@@ -211,12 +224,12 @@ func TestProjectInitiativePropertyUpdatesBothSides(t *testing.T) {
 	if err != nil || len(initiative.ProjectSlugs) != 1 || initiative.ProjectSlugs[0] != project.Slug {
 		t.Fatalf("initiative projects %#v (%v)", initiative.ProjectSlugs, err)
 	}
-	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{
+	if _, err := s.UpdateProject(ProjectUpdateInput{
 		Slug: project.Slug, InitiativeSlugs: &[]string{"missing"},
 	}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing initiative assignment error %v", err)
 	}
-	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{
+	if _, err := s.UpdateProject(ProjectUpdateInput{
 		Slug: project.Slug, InitiativeSlugs: &[]string{},
 	}); err != nil {
 		t.Fatal(err)

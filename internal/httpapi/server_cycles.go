@@ -35,7 +35,7 @@ func (s *Server) createCycle(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateCycleFromInput(model.CreateCycleInput{
+	out, err := s.store.CreateCycle(model.CreateCycleInput{
 		StartsAt: in.StartsAt, EndsAt: in.EndsAt, Status: in.Status,
 	})
 	if err != nil {

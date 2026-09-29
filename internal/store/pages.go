@@ -31,14 +31,7 @@ func (s *Store) GetPage(slug string) (Page, error) {
 	return p, err
 }
 
-func (s *Store) CreatePage(title, slug, body, status string, parentID, projectID *int64, date *string, tags []string) (Page, error) {
-	return s.CreatePageFromInput(CreatePageInput{
-		Title: title, Slug: slug, Body: body, Status: status,
-		ParentID: parentID, ProjectID: projectID, Date: date, Tags: tags,
-	})
-}
-
-func (s *Store) CreatePageFromInput(in CreatePageInput) (Page, error) {
+func (s *Store) CreatePage(in CreatePageInput) (Page, error) {
 	title, slug, body, status := in.Title, in.Slug, in.Body, in.Status
 	parentID, projectID, date, tags := in.ParentID, in.ProjectID, in.Date, in.Tags
 	title = strings.TrimSpace(title)
@@ -91,14 +84,7 @@ func (s *Store) CreatePageFromInput(in CreatePageInput) (Page, error) {
 	return out, err
 }
 
-func (s *Store) UpdatePage(slug string, title, body, status *string, parentID, projectID **int64, date **string, tags *[]string) (Page, error) {
-	return s.UpdatePageFromInput(UpdatePageInput{
-		Slug: slug, Title: title, Body: body, Status: status,
-		ParentID: parentID, ProjectID: projectID, Date: date, Tags: tags,
-	})
-}
-
-func (s *Store) UpdatePageFromInput(in UpdatePageInput) (Page, error) {
+func (s *Store) UpdatePage(in UpdatePageInput) (Page, error) {
 	slug, title, body, status := in.Slug, in.Title, in.Body, in.Status
 	parentID, projectID, date, tags := in.ParentID, in.ProjectID, in.Date, in.Tags
 	var out Page

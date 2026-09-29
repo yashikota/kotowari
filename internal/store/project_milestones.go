@@ -15,17 +15,7 @@ func validMilestoneDate(value *string) bool {
 	return err == nil && parsed.Format("2006-01-02") == strings.TrimSpace(*value)
 }
 
-func (s *Store) CreateMilestone(projectSlug, name string, targetDate *string) (Milestone, error) {
-	return s.CreateMilestoneWithDescription(projectSlug, name, "", targetDate)
-}
-
-func (s *Store) CreateMilestoneWithDescription(projectSlug, name, description string, targetDate *string) (Milestone, error) {
-	return s.CreateMilestoneFromInput(CreateMilestoneInput{
-		ProjectSlug: projectSlug, Name: name, Description: description, TargetDate: targetDate,
-	})
-}
-
-func (s *Store) CreateMilestoneFromInput(in CreateMilestoneInput) (Milestone, error) {
+func (s *Store) CreateMilestone(in CreateMilestoneInput) (Milestone, error) {
 	projectSlug, name, description, targetDate := in.ProjectSlug, in.Name, in.Description, in.TargetDate
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -66,17 +56,7 @@ func (s *Store) CreateMilestoneFromInput(in CreateMilestoneInput) (Milestone, er
 	return out, err
 }
 
-func (s *Store) UpdateMilestone(projectSlug string, milestoneID int64, name *string, targetDate **string) (Milestone, error) {
-	return s.UpdateMilestoneDetails(projectSlug, milestoneID, name, nil, targetDate)
-}
-
-func (s *Store) UpdateMilestoneDetails(projectSlug string, milestoneID int64, name, description *string, targetDate **string) (Milestone, error) {
-	return s.UpdateMilestoneFromInput(UpdateMilestoneInput{
-		ProjectSlug: projectSlug, ID: milestoneID, Name: name, Description: description, TargetDate: targetDate,
-	})
-}
-
-func (s *Store) UpdateMilestoneFromInput(in UpdateMilestoneInput) (Milestone, error) {
+func (s *Store) UpdateMilestone(in UpdateMilestoneInput) (Milestone, error) {
 	projectSlug, milestoneID, name, description, targetDate := in.ProjectSlug, in.ID, in.Name, in.Description, in.TargetDate
 	if name != nil && strings.TrimSpace(*name) == "" {
 		return Milestone{}, validationf("milestone name required")

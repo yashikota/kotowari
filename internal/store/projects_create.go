@@ -6,7 +6,7 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-func (s *Store) CreateProjectFromInput(in ProjectCreateInput) (Project, error) {
+func (s *Store) CreateProject(in ProjectCreateInput) (Project, error) {
 	prepared, err := s.prepareProjectCreateInput(in)
 	if err != nil {
 		return Project{}, err

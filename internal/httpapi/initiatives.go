@@ -68,7 +68,7 @@ func (s *Server) createInitiative(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateInitiativeFromInput(model.CreateInitiativeInput{
+	out, err := s.store.CreateInitiative(model.CreateInitiativeInput{
 		Name: in.Name, Slug: in.Slug, Description: in.Description, Status: in.Status, Color: in.Color,
 		StartDate: in.StartDate, TargetDate: in.TargetDate, ProjectSlugs: in.ProjectSlugs,
 		Health: in.Health, Priority: in.Priority, Labels: in.Labels,

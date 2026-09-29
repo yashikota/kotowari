@@ -81,11 +81,19 @@ func TestIssueCycleAutomationOnCreateAndUpdate(t *testing.T) {
 	s := openTest(t)
 	now := time.Now().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	current, err := s.CreateCycle(today.AddDate(0, 0, -7).Format(time.RFC3339), today.AddDate(0, 0, 7).Format(time.RFC3339), "active")
+	current, err := s.CreateCycle(CreateCycleInput{
+		StartsAt: today.AddDate(0, 0, -7).Format(time.RFC3339),
+		EndsAt:   today.AddDate(0, 0, 7).Format(time.RFC3339),
+		Status:   "active",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	future, err := s.CreateCycle(today.AddDate(0, 0, 7).Format(time.RFC3339), today.AddDate(0, 0, 14).Format(time.RFC3339), "upcoming")
+	future, err := s.CreateCycle(CreateCycleInput{
+		StartsAt: today.AddDate(0, 0, 7).Format(time.RFC3339),
+		EndsAt:   today.AddDate(0, 0, 14).Format(time.RFC3339),
+		Status:   "upcoming",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

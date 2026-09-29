@@ -585,7 +585,9 @@ func TestIssueExternalLinksPersistAndValidate(t *testing.T) {
 
 func TestCycleResourcesPersistAndValidate(t *testing.T) {
 	s := openTest(t)
-	cycle, err := s.CreateCycle("2026-09-24T00:00:00Z", "2026-10-01T00:00:00Z", "upcoming")
+	cycle, err := s.CreateCycle(CreateCycleInput{
+		StartsAt: "2026-09-24T00:00:00Z", EndsAt: "2026-10-01T00:00:00Z", Status: "upcoming",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -966,11 +968,11 @@ func TestListIssuesByLinkSourceAndSaveFilter(t *testing.T) {
 
 func TestListIssuesByMilestoneNameAndSaveFilter(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Release", Slug: "release", Status: "started"})
+	project, err := s.CreateProject(ProjectCreateInput{Name: "Release", Slug: "release", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	milestone, err := s.CreateMilestone(project.Slug, "Beta rollout", nil)
+	milestone, err := s.CreateMilestone(CreateMilestoneInput{ProjectSlug: project.Slug, Name: "Beta rollout"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1015,16 +1017,16 @@ func TestProjectLabelsFilterLinkedIssuesAndPersistWithViews(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	withLabel, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Labeled", Slug: "labeled", Status: "started"})
+	withLabel, err := s.CreateProject(ProjectCreateInput{Name: "Labeled", Slug: "labeled", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	withoutLabel, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Unlabeled", Slug: "unlabeled", Status: "planned"})
+	withoutLabel, err := s.CreateProject(ProjectCreateInput{Name: "Unlabeled", Slug: "unlabeled", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	projectLabels := []string{label.Name}
-	withLabel, err = s.UpdateProjectFromInput(ProjectUpdateInput{Slug: withLabel.Slug, Labels: &projectLabels})
+	withLabel, err = s.UpdateProject(ProjectUpdateInput{Slug: withLabel.Slug, Labels: &projectLabels})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1134,13 +1136,13 @@ func TestListIssuesByDateFieldAndTimeframe(t *testing.T) {
 
 func TestListIssuesByLinkedProjectProperties(t *testing.T) {
 	s := openTest(t)
-	startedProject, err := s.CreateProjectFromInput(ProjectCreateInput{
+	startedProject, err := s.CreateProject(ProjectCreateInput{
 		Name: "Started", Slug: "started-project", Status: "started", Priority: 2,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	plannedProject, err := s.CreateProjectFromInput(ProjectCreateInput{
+	plannedProject, err := s.CreateProject(ProjectCreateInput{
 		Name: "Planned", Slug: "planned-project", Status: "planned", Priority: 1,
 	})
 	if err != nil {
@@ -1208,7 +1210,7 @@ func TestCycleActivitiesIncludeStatusHistoryForCurrentMembers(t *testing.T) {
 	s := openTest(t)
 	start := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
 	end := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
-	cycle, err := s.CreateCycle(start, end, "active")
+	cycle, err := s.CreateCycle(CreateCycleInput{StartsAt: start, EndsAt: end, Status: "active"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1260,7 +1262,7 @@ func TestCycleNotificationSubscriptionsDeliverIssueEventsToInbox(t *testing.T) {
 	s := openTest(t)
 	start := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
 	end := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
-	cycle, err := s.CreateCycle(start, end, "active")
+	cycle, err := s.CreateCycle(CreateCycleInput{StartsAt: start, EndsAt: end, Status: "active"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1350,20 +1352,20 @@ func TestCreateLabelValidation(t *testing.T) {
 
 func TestCreateProjectDefaultsAndConflict(t *testing.T) {
 	s := openTest(t)
-	p, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Harbor", Slug: "harbor"})
+	p, err := s.CreateProject(ProjectCreateInput{Name: "Harbor", Slug: "harbor"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if p.Status != "planned" {
 		t.Fatalf("default status %q", p.Status)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Again", Slug: "harbor", Status: "planned"}); !errors.Is(err, ErrConflict) {
+	if _, err := s.CreateProject(ProjectCreateInput{Name: "Again", Slug: "harbor", Status: "planned"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate slug: %v", err)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Bad", Slug: "Harbor"}); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateProject(ProjectCreateInput{Name: "Bad", Slug: "Harbor"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("uppercase slug: %v", err)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{Name: " ", Slug: "ok"}); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateProject(ProjectCreateInput{Name: " ", Slug: "ok"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty name: %v", err)
 	}
 	if _, err := s.GetProject("missing"); !errors.Is(err, ErrNotFound) {
@@ -1373,7 +1375,7 @@ func TestCreateProjectDefaultsAndConflict(t *testing.T) {
 
 func TestProjectFavoritePersistsWithoutChangingContentTimestamp(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Launch", Slug: "launch", Status: "planned"})
+	project, err := s.CreateProject(ProjectCreateInput{Name: "Launch", Slug: "launch", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1405,7 +1407,7 @@ func TestProjectFavoritePersistsWithoutChangingContentTimestamp(t *testing.T) {
 
 func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Launch", Slug: "launch", Status: "started"})
+	project, err := s.CreateProject(ProjectCreateInput{Name: "Launch", Slug: "launch", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1417,7 +1419,7 @@ func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 		t.Fatalf("updated project health = %#v, error %v", updated, err)
 	}
 	healthUpdatedAt := *updated.HealthUpdatedAt
-	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{Slug: project.Slug, Name: stringPtr("Renamed")}); err != nil {
+	if _, err := s.UpdateProject(ProjectUpdateInput{Slug: project.Slug, Name: stringPtr("Renamed")}); err != nil {
 		t.Fatal(err)
 	}
 	updated, err = s.GetProject(project.Slug)
@@ -1471,7 +1473,7 @@ func TestProjectStatusUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 
 func TestCreateProjectWithLabelsCanonicalizesAndValidatesLabels(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+	project, err := s.CreateProject(ProjectCreateInput{
 		Name: "Launch", Slug: "launch", Status: "planned", Labels: []string{" bug ", "BUG"},
 	})
 	if err != nil {
@@ -1485,7 +1487,7 @@ func TestCreateProjectWithLabelsCanonicalizesAndValidatesLabels(t *testing.T) {
 	} else if got, err := s.GetProject(project.Slug); err != nil || len(got.Labels) != 1 || got.Labels[0] != "Bug" {
 		t.Fatalf("persisted project labels %#v, err %v", got.Labels, err)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{
+	if _, err := s.CreateProject(ProjectCreateInput{
 		Name: "Unknown", Slug: "unknown", Status: "planned", Labels: []string{"not-a-label"},
 	}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("unknown label: %v", err)
@@ -1494,15 +1496,15 @@ func TestCreateProjectWithLabelsCanonicalizesAndValidatesLabels(t *testing.T) {
 
 func TestProjectDependenciesAreReciprocalPersistedAndAcyclic(t *testing.T) {
 	s := openTest(t)
-	first, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "First", Slug: "first", Status: "planned"})
+	first, err := s.CreateProject(ProjectCreateInput{Name: "First", Slug: "first", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Second", Slug: "second", Status: "planned"})
+	second, err := s.CreateProject(ProjectCreateInput{Name: "Second", Slug: "second", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	third, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Third", Slug: "third", Status: "planned"})
+	third, err := s.CreateProject(ProjectCreateInput{Name: "Third", Slug: "third", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1564,7 +1566,7 @@ func TestCreateProjectFromIssuePreservesAndAssociatesSourceIssue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Existing", Slug: "project-1", Status: "planned"}); err != nil {
+	if _, err := s.CreateProject(ProjectCreateInput{Name: "Existing", Slug: "project-1", Status: "planned"}); err != nil {
 		t.Fatal(err)
 	}
 	start := "2026-09-01"
@@ -1589,26 +1591,30 @@ func TestCreateProjectFromIssuePreservesAndAssociatesSourceIssue(t *testing.T) {
 
 func TestProjectMilestonesPersistAndStayBoundToTheirProject(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Release", Slug: "release", Status: "started"})
+	project, err := s.CreateProject(ProjectCreateInput{Name: "Release", Slug: "release", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	otherProject, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Other", Slug: "other", Status: "planned"})
+	otherProject, err := s.CreateProject(ProjectCreateInput{Name: "Other", Slug: "other", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	targetDate := "2026-11-15"
-	milestone, err := s.CreateMilestone(project.Slug, "Beta", &targetDate)
+	milestone, err := s.CreateMilestone(CreateMilestoneInput{
+		ProjectSlug: project.Slug, Name: "Beta", TargetDate: &targetDate,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if milestone.ID < 1 || milestone.TargetDate == nil || *milestone.TargetDate != targetDate {
 		t.Fatalf("milestone %#v", milestone)
 	}
-	if _, err := s.CreateMilestone(project.Slug, "beta", nil); !errors.Is(err, ErrConflict) {
+	if _, err := s.CreateMilestone(CreateMilestoneInput{ProjectSlug: project.Slug, Name: "beta"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("case-insensitive duplicate name: %v", err)
 	}
-	if _, err := s.CreateMilestone(project.Slug, "Bad date", stringPointer("2026-13-40")); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateMilestone(CreateMilestoneInput{
+		ProjectSlug: project.Slug, Name: "Bad date", TargetDate: stringPointer("2026-13-40"),
+	}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid target date: %v", err)
 	}
 
@@ -1631,7 +1637,9 @@ func TestProjectMilestonesPersistAndStayBoundToTheirProject(t *testing.T) {
 	}
 
 	newName := "Beta release"
-	milestone, err = s.UpdateMilestone(project.Slug, milestone.ID, &newName, nil)
+	milestone, err = s.UpdateMilestone(UpdateMilestoneInput{
+		ProjectSlug: project.Slug, ID: milestone.ID, Name: &newName,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1670,7 +1678,7 @@ func stringPointer(value string) *string { return &value }
 
 func TestProjectProgressCountsDoneAndCanceled(t *testing.T) {
 	s := openTest(t)
-	p, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Dock", Slug: "dock", Status: "started"})
+	p, err := s.CreateProject(ProjectCreateInput{Name: "Dock", Slug: "dock", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1994,7 +2002,7 @@ func TestListIssuesCycleFilter(t *testing.T) {
 	s := openTest(t)
 	start := time.Now().UTC().Format(time.RFC3339)
 	end := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
-	c, err := s.CreateCycle(start, end, "active")
+	c, err := s.CreateCycle(CreateCycleInput{StartsAt: start, EndsAt: end, Status: "active"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2018,11 +2026,11 @@ func TestListIssuesAddedToCyclePhaseFilterAndPersistence(t *testing.T) {
 	now := time.Now().UTC()
 	cycleFor := func(offsetStart, offsetEnd time.Duration, status string) Cycle {
 		t.Helper()
-		cycle, err := s.CreateCycle(
-			now.Add(offsetStart).Format(time.RFC3339),
-			now.Add(offsetEnd).Format(time.RFC3339),
-			status,
-		)
+		cycle, err := s.CreateCycle(CreateCycleInput{
+			StartsAt: now.Add(offsetStart).Format(time.RFC3339),
+			EndsAt:   now.Add(offsetEnd).Format(time.RFC3339),
+			Status:   status,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2081,21 +2089,23 @@ func TestFirstUpcomingCycleBecomesActive(t *testing.T) {
 	s := openTest(t)
 	start := time.Now().UTC().Format(time.RFC3339)
 	end := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
-	c, err := s.CreateCycle(start, end, "upcoming")
+	c, err := s.CreateCycle(CreateCycleInput{StartsAt: start, EndsAt: end, Status: "upcoming"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if c.Number != 1 || c.Status != "active" {
 		t.Fatalf("first cycle %#v", c)
 	}
-	if _, err := s.CreateCycle(start, end, "planned"); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateCycle(CreateCycleInput{StartsAt: start, EndsAt: end, Status: "planned"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid cycle status: %v", err)
 	}
 }
 
 func TestCycleMetadataAndFavoritePersist(t *testing.T) {
 	s := openTest(t)
-	cycle, err := s.CreateCycle("2026-09-21T00:00:00Z", "2026-09-28T00:00:00Z", "upcoming")
+	cycle, err := s.CreateCycle(CreateCycleInput{
+		StartsAt: "2026-09-21T00:00:00Z", EndsAt: "2026-09-28T00:00:00Z", Status: "upcoming",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2321,7 +2331,7 @@ func TestYAMLFrontmatterRejected(t *testing.T) {
 
 func TestDeleteProjectUnassignsIssues(t *testing.T) {
 	s := openTest(t)
-	p, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Dock", Slug: "dock"})
+	p, err := s.CreateProject(ProjectCreateInput{Name: "Dock", Slug: "dock"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2410,7 +2420,7 @@ func TestListPagesEmptySlice(t *testing.T) {
 
 func TestCreatePageDefaultsAndInvalidSlug(t *testing.T) {
 	s := openTest(t)
-	p, err := s.CreatePage("ADR", "adr-1", "", "", nil, nil, nil, nil)
+	p, err := s.CreatePage(CreatePageInput{Title: "ADR", Slug: "adr-1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2420,7 +2430,7 @@ func TestCreatePageDefaultsAndInvalidSlug(t *testing.T) {
 	if p.Tags == nil {
 		t.Fatal("tags should be empty slice")
 	}
-	if _, err := s.CreatePage("Bad", "ADR", "", "", nil, nil, nil, nil); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreatePage(CreatePageInput{Title: "Bad", Slug: "ADR"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid slug: %v", err)
 	}
 }

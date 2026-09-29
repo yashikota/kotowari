@@ -8,7 +8,7 @@ import (
 func TestCreateProjectWithMilestones(t *testing.T) {
 	s := openTest(t)
 	targetDate := "2026-12-01"
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+	project, err := s.CreateProject(ProjectCreateInput{
 		Name: "Release plan", Slug: "release-plan", Status: "planned",
 		Options: ProjectCreationOptions{Milestones: []MilestoneInput{
 			{Name: "Beta", Description: "Private preview", TargetDate: &targetDate},
@@ -26,7 +26,7 @@ func TestCreateProjectWithMilestones(t *testing.T) {
 		*project.Milestones[0].TargetDate != targetDate || project.Milestones[1].Name != "Launch" {
 		t.Fatalf("created milestone details %#v", project.Milestones)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{
+	if _, err := s.CreateProject(ProjectCreateInput{
 		Name: "Duplicate milestones", Slug: "duplicate-milestones", Status: "planned",
 		Options: ProjectCreationOptions{Milestones: []MilestoneInput{{Name: "Beta"}, {Name: " beta "}}},
 	}); !errors.Is(err, ErrConflict) {
@@ -39,16 +39,20 @@ func TestCreateProjectWithMilestones(t *testing.T) {
 
 func TestMilestoneDescriptionPersistsAndUpdates(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Roadmap", Slug: "roadmap", Status: "planned"})
+	project, err := s.CreateProject(ProjectCreateInput{Name: "Roadmap", Slug: "roadmap", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	milestone, err := s.CreateMilestoneWithDescription(project.Slug, "Preview", "Customer validation", nil)
+	milestone, err := s.CreateMilestone(CreateMilestoneInput{
+		ProjectSlug: project.Slug, Name: "Preview", Description: "Customer validation",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	description := "Feedback incorporated"
-	milestone, err = s.UpdateMilestoneDetails(project.Slug, milestone.ID, nil, &description, nil)
+	milestone, err = s.UpdateMilestone(UpdateMilestoneInput{
+		ProjectSlug: project.Slug, ID: milestone.ID, Description: &description,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

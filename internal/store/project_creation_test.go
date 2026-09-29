@@ -7,11 +7,11 @@ import (
 
 func TestCreateProjectWithDependenciesUpdatesBothProjectsAtomically(t *testing.T) {
 	s := openTest(t)
-	base, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Core platform", Slug: "core-platform", Status: "started"})
+	base, err := s.CreateProject(ProjectCreateInput{Name: "Core platform", Slug: "core-platform", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	created, err := s.CreateProjectFromInput(ProjectCreateInput{
+	created, err := s.CreateProject(ProjectCreateInput{
 		Name: "Release experience", Slug: "release-experience", Status: "planned",
 		Options: ProjectCreationOptions{Dependencies: []ProjectDependency{{ProjectSlug: base.Slug, Kind: "blocked_by"}}},
 	})
@@ -28,7 +28,7 @@ func TestCreateProjectWithDependenciesUpdatesBothProjectsAtomically(t *testing.T
 	if len(updatedBase.Dependencies) != 1 || updatedBase.Dependencies[0] != (ProjectDependency{ProjectSlug: created.Slug, Kind: "blocks"}) {
 		t.Fatalf("reciprocal dependencies %#v", updatedBase.Dependencies)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{
+	if _, err := s.CreateProject(ProjectCreateInput{
 		Name: "Broken plan", Slug: "broken-plan", Status: "planned",
 		Options: ProjectCreationOptions{Dependencies: []ProjectDependency{{ProjectSlug: "missing-project", Kind: "related"}}},
 	}); !errors.Is(err, ErrNotFound) {
@@ -41,7 +41,7 @@ func TestCreateProjectWithDependenciesUpdatesBothProjectsAtomically(t *testing.T
 
 func TestProjectLeadCanBeSetClearedAndValidated(t *testing.T) {
 	s := openTest(t)
-	created, err := s.CreateProjectFromInput(ProjectCreateInput{
+	created, err := s.CreateProject(ProjectCreateInput{
 		Name: "Lead project", Slug: "lead-project", Status: "planned",
 		Options: ProjectCreationOptions{Lead: "self"},
 	})
@@ -51,14 +51,14 @@ func TestProjectLeadCanBeSetClearedAndValidated(t *testing.T) {
 	if created.Lead != "self" {
 		t.Fatalf("created lead = %q, want self", created.Lead)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{
+	if _, err := s.CreateProject(ProjectCreateInput{
 		Name: "Invalid lead", Slug: "invalid-lead", Status: "planned",
 		Options: ProjectCreationOptions{Lead: "another-user"},
 	}); err == nil {
 		t.Fatal("expected unsupported multi-user lead to be rejected")
 	}
 	cleared := ""
-	updated, err := s.UpdateProjectFromInput(ProjectUpdateInput{Slug: created.Slug, Lead: &cleared})
+	updated, err := s.UpdateProject(ProjectUpdateInput{Slug: created.Slug, Lead: &cleared})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestProjectLeadCanBeSetClearedAndValidated(t *testing.T) {
 		t.Fatalf("updated lead = %q, want unassigned", updated.Lead)
 	}
 	invalid := "another-user"
-	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{Slug: created.Slug, Lead: &invalid}); err == nil {
+	if _, err := s.UpdateProject(ProjectUpdateInput{Slug: created.Slug, Lead: &invalid}); err == nil {
 		t.Fatal("expected unsupported multi-user lead update to be rejected")
 	}
 }

@@ -17,7 +17,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 	}
 	startDate := "2026-09-01"
 	targetDate := "2026-10-01"
-	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+	project, err := s.CreateProject(ProjectCreateInput{
 		Name: "Launch", Slug: "launch", Summary: "A short summary", Icon: "rocket", IconColor: "blue",
 		Description: "## Brief\nShip the new flow.", Status: "started", WorkflowStatus: "started", Priority: 2,
 		StartDate: &startDate, TargetDate: &targetDate, Labels: []string{label.Name},
@@ -41,7 +41,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 		template.Milestones[0] != (ProjectTemplateMilestone{Name: "Beta", Description: "Validate with users."}) {
 		t.Fatalf("created template %#v", template)
 	}
-	fromTemplate, err := s.CreateProjectFromInput(ProjectCreateInput{
+	fromTemplate, err := s.CreateProject(ProjectCreateInput{
 		Name: "Reused launch", Slug: "reused-launch", Summary: template.Summary,
 		Icon: template.Icon, IconColor: template.IconColor, Description: template.Description,
 		Status: template.Status, WorkflowStatus: template.WorkflowStatus, Priority: template.Priority,
@@ -54,7 +54,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 	if fromTemplate.TemplateSlug != template.Slug || fromTemplate.Lead != "self" {
 		t.Fatalf("created project template origin %q, want %q", fromTemplate.TemplateSlug, template.Slug)
 	}
-	if _, err := s.CreateProjectFromInput(ProjectCreateInput{
+	if _, err := s.CreateProject(ProjectCreateInput{
 		Name: "Invalid origin", Slug: "invalid-origin", Status: "planned", WorkflowStatus: "planned",
 		Options: ProjectCreationOptions{TemplateSlug: "../escape"},
 	}); !errors.Is(err, ErrValidation) {
