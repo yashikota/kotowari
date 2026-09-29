@@ -1,9 +1,7 @@
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
-import type * as React from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { api } from '../api.ts';
-import { useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
-import { signals } from '../application/mediator.ts';
+import { useKeyboard } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
 
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
@@ -28,26 +26,11 @@ import {
 } from '../project-board.ts';
 import { isTypingTarget } from '../keymap.ts';
 import { priorityLabel } from '../i18n/labels.ts';
-import type {
-  Issue,
-  Initiative,
-  Label,
-  Project,
-  ProjectDependency,
-  ProjectTemplate,
-  Workspace,
-} from '../types.ts';
-import {
-  useProjectWorkflow,
-  projectWorkflowStatusCategory,
-  projectWorkflowStatusLabel,
-} from '../project-workflow.tsx';
-
-import { LABEL_COLORS } from '../label-colors.ts';
+import type { Issue, Initiative, Label, Project, ProjectTemplate, Workspace } from '../types.ts';
+import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
+import { useProjectComposer } from './useProjectComposer.ts';
 
 const DAY_MS = 86_400_000;
-
-type ProjectMilestoneDraft = { name: string; description: string; targetDate: string };
 
 function monthKey(year: number, month: number) {
   const value = new Date(Date.UTC(year, month, 1));
@@ -81,43 +64,16 @@ export function useProjectsPagePresenter() {
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const search = useSearch({ from: '/projects' });
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [summary, setSummary] = useState('');
-  const [icon, setIcon] = useState('cube');
-  const [iconColor, setIconColor] = useState('blue');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('backlog');
-  const [lead, setLead] = useState<'' | 'self'>('');
-  const [priority, setPriority] = useState(0);
-  const [startDate, setStartDate] = useState('');
-  const [targetDate, setTargetDate] = useState('');
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  const [createdProjectLabels, setCreatedProjectLabels] = useState<Label[]>([]);
-  const [projectLabelQuery, setProjectLabelQuery] = useState('');
-  const [projectLabelCreatePending, setProjectLabelCreatePending] = useState(false);
-  const [projectLabelCreateError, setProjectLabelCreateError] = useState('');
-  const [selectedProjectTemplate, setSelectedProjectTemplate] = useState<string | null>(null);
-  const [initialMilestones, setInitialMilestones] = useState<ProjectMilestoneDraft[]>([]);
-  const [milestonesExpanded, setMilestonesExpanded] = useState(false);
-  const [milestoneDraftOpen, setMilestoneDraftOpen] = useState(false);
-  const [milestoneDraftName, setMilestoneDraftName] = useState('');
-  const [milestoneDraftDescription, setMilestoneDraftDescription] = useState('');
-  const [milestoneDraftTargetDate, setMilestoneDraftTargetDate] = useState('');
-  const [initialDependencies, setInitialDependencies] = useState<ProjectDependency[]>([]);
-  const [dependencyDraftOpen, setDependencyDraftOpen] = useState(false);
-  const [dependencyDraftProjectSlug, setDependencyDraftProjectSlug] = useState('');
-  const [dependencyDraftKind, setDependencyDraftKind] =
-    useState<ProjectDependency['kind']>('blocks');
-  const [createOpen, setCreateOpen] = useRootMachineFlag('project.create');
-  const [projectAssistantOpen, setProjectAssistantOpen] = useState(false);
-  const [projectAssistantId, setProjectAssistantId] = useState('');
+  const projectComposer = useProjectComposer({
+    projects,
+    labels: data.labels,
+    templates: data.projectTemplates,
+    workflowStatuses: projectWorkflowStatuses,
+  });
+  const { data: projectComposerData, handlers: projectComposerHandlers } = projectComposer;
+  const { availableLabels: availableProjectLabels } = projectComposerData;
   const projectViews = useProjectViews();
   const navigate = useNavigate({ from: '/projects' });
-  const availableProjectLabels = useMemo(() => {
-    const labelsById = new Map(data.labels.map((label) => [label.id, label]));
-    for (const label of createdProjectLabels) labelsById.set(label.id, label);
-    return [...labelsById.values()];
-  }, [createdProjectLabels, data.labels]);
 
   function updateProjectSearch(patch: Partial<typeof search>) {
     return navigate({
@@ -773,161 +729,6 @@ export function useProjectsPagePresenter() {
     },
   };
 
-  async function createProject(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const projectName = name.trim();
-    if (!projectName) return;
-    const base =
-      projectName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') || `project-${Date.now()}`;
-    let slug = base;
-    for (let suffix = 2; projects.some((project) => project.slug === slug); suffix++)
-      slug = `${base}-${suffix}`;
-    const project = await api.createProject({
-      name: projectName,
-      slug,
-      summary,
-      icon,
-      iconColor,
-      description,
-      status: projectWorkflowStatusCategory(status, projectWorkflowStatuses),
-      workflowStatus: status,
-      lead,
-      ...(selectedProjectTemplate ? { templateSlug: selectedProjectTemplate } : {}),
-      priority,
-      ...(startDate ? { startDate } : {}),
-      ...(targetDate ? { targetDate } : {}),
-      labels: selectedLabels,
-      dependencies: initialDependencies,
-      milestones: initialMilestones.map((milestone) => ({
-        name: milestone.name,
-        ...(milestone.description ? { description: milestone.description } : {}),
-        ...(milestone.targetDate ? { targetDate: milestone.targetDate } : {}),
-      })),
-    });
-    setCreateOpen(false);
-    await navigate({
-      to: '/projects/$slug',
-      params: { slug: project.slug },
-      state: { autofocus: 'description' },
-    });
-  }
-
-  async function createProjectLabel(value: string) {
-    const labelName = value.trim();
-    if (!labelName || projectLabelCreatePending) return;
-    const existingLabel = availableProjectLabels.find(
-      (label) => label.name.toLocaleLowerCase() === labelName.toLocaleLowerCase(),
-    );
-    if (existingLabel) {
-      setSelectedLabels((current) =>
-        current.includes(existingLabel.name) ? current : [...current, existingLabel.name],
-      );
-      setProjectLabelQuery('');
-      return;
-    }
-
-    setProjectLabelCreatePending(true);
-    setProjectLabelCreateError('');
-    try {
-      const created = await api.createLabel({
-        name: labelName,
-        color: LABEL_COLORS[availableProjectLabels.length % LABEL_COLORS.length] ?? '#c4a574',
-      });
-      setCreatedProjectLabels((current) => [...current, created]);
-      setSelectedLabels((current) =>
-        current.includes(created.name) ? current : [...current, created.name],
-      );
-      setProjectLabelQuery('');
-      signals.dispatchEvent(new Event('kotowari:refresh'));
-      await router.invalidate();
-    } catch {
-      setProjectLabelCreateError(i18n.t('projectLabelPicker.createFailed'));
-    } finally {
-      setProjectLabelCreatePending(false);
-    }
-  }
-
-  function applyProjectTemplate(slug: string | null) {
-    setSelectedProjectTemplate(slug);
-    const template = data.projectTemplates.find((candidate) => candidate.slug === slug);
-    if (!template) return;
-    setSummary(template.summary ?? '');
-    setIcon(template.icon ?? '');
-    setIconColor(template.iconColor ?? 'grey');
-    setDescription(template.description);
-    const templateStatus = template.workflowStatus ?? template.status;
-    setStatus(
-      projectWorkflowStatuses.some((workflowStatus) => workflowStatus.id === templateStatus)
-        ? templateStatus
-        : template.status,
-    );
-    setLead(template.lead ?? '');
-    setPriority(template.priority);
-    setSelectedLabels(
-      template.labels.filter((label) =>
-        availableProjectLabels.some((available) => available.name === label),
-      ),
-    );
-    setInitialMilestones(
-      template.milestones.map((milestone) => ({
-        name: milestone.name,
-        description: milestone.description ?? '',
-        targetDate: '',
-      })),
-    );
-    setMilestonesExpanded(template.milestones.length > 0);
-  }
-
-  async function deleteSelectedProjectTemplate() {
-    if (!selectedProjectTemplate) return;
-    const template = data.projectTemplates.find(
-      (candidate) => candidate.slug === selectedProjectTemplate,
-    );
-    if (
-      !template ||
-      !window.confirm(i18n.t('projectTemplates.deleteConfirmation', { name: template.name }))
-    )
-      return;
-    await api.deleteProjectTemplate(selectedProjectTemplate);
-    setSelectedProjectTemplate(null);
-    await router.invalidate();
-  }
-
-  function addInitialMilestone() {
-    const milestoneName = milestoneDraftName.trim();
-    if (!milestoneName) return;
-    setInitialMilestones((current) => [
-      ...current,
-      {
-        name: milestoneName,
-        description: milestoneDraftDescription.trim(),
-        targetDate: milestoneDraftTargetDate,
-      },
-    ]);
-    setMilestoneDraftOpen(false);
-    setMilestoneDraftName('');
-    setMilestoneDraftDescription('');
-    setMilestoneDraftTargetDate('');
-  }
-
-  function addInitialDependency() {
-    if (!dependencyDraftProjectSlug) return;
-    setInitialDependencies((current) => [
-      ...current,
-      { projectSlug: dependencyDraftProjectSlug, kind: dependencyDraftKind },
-    ]);
-    setDependencyDraftOpen(false);
-    setDependencyDraftProjectSlug('');
-  }
-
-  const availableDependencyProjects = projects.filter(
-    (candidate) =>
-      !initialDependencies.some((dependency) => dependency.projectSlug === candidate.slug),
-  );
-
   return {
     _view: 0 as const,
     archived: !!search.archived,
@@ -943,40 +744,10 @@ export function useProjectsPagePresenter() {
     isGrouped: groupBy !== 'none',
     hasActiveSearch: Boolean(search.q?.trim()) || filterCount > 0,
     controls,
-    availableLabels: availableProjectLabels,
     workspace: data.workspace,
     projectTemplates: data.projectTemplates,
-    selectedProjectTemplate,
+    ...projectComposerData,
     projectWorkflowStatuses,
-    name,
-    summary,
-    icon,
-    iconColor,
-    description,
-    status,
-    lead,
-    priority,
-    startDate,
-    targetDate,
-    selectedLabels,
-    projectLabelQuery,
-    projectLabelCreatePending,
-    projectLabelCreateError,
-    initialMilestones,
-    milestonesExpanded,
-    milestoneDraftOpen,
-    milestoneDraftName,
-    milestoneDraftDescription,
-    milestoneDraftTargetDate,
-    initialDependencies,
-    dependencyDraftOpen,
-    dependencyDraftProjectSlug,
-    dependencyDraftKind,
-    availableDependencyProjects,
-    projectNameBySlug: Object.fromEntries(projects.map((project) => [project.slug, project.name])),
-    createOpen,
-    projectAssistantOpen,
-    projectAssistantId,
     handlers: {
       onOpenCreateProjectView: () =>
         navigate({
@@ -999,104 +770,7 @@ export function useProjectsPagePresenter() {
       onTimelineToday: () => void updateProjectSearch({ timelineStart: undefined }),
       onReorderProject: reorderProject,
       onMoveProjectOnBoard: moveProjectOnBoard,
-      onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
-        return createProject(e);
-      },
-      onOpenCreateProject: () => {
-        setProjectAssistantOpen(false);
-        setProjectAssistantId(`project-draft-${crypto.randomUUID()}`);
-        setSelectedProjectTemplate(null);
-        setName('');
-        setSummary('');
-        setIcon('cube');
-        setIconColor('blue');
-        setDescription('');
-        setStatus('backlog');
-        setLead('');
-        setPriority(0);
-        setStartDate('');
-        setTargetDate('');
-        setSelectedLabels([]);
-        setProjectLabelQuery('');
-        setProjectLabelCreateError('');
-        setInitialMilestones([]);
-        setMilestonesExpanded(false);
-        setMilestoneDraftOpen(false);
-        setMilestoneDraftName('');
-        setMilestoneDraftDescription('');
-        setMilestoneDraftTargetDate('');
-        setInitialDependencies([]);
-        setDependencyDraftOpen(false);
-        setDependencyDraftProjectSlug('');
-        setDependencyDraftKind('blocks');
-        setCreateOpen(true);
-      },
-      onCloseCreateProject: () => setCreateOpen(false),
-      onToggleProjectAssistant: () => setProjectAssistantOpen((current) => !current),
-      onProjectTemplateChange: (value: string | null) => applyProjectTemplate(value),
-      onDeleteProjectTemplate: deleteSelectedProjectTemplate,
-      onToggleMilestones: () => setMilestonesExpanded((current) => !current),
-      onOpenMilestoneDraft: () => {
-        setMilestonesExpanded(true);
-        setMilestoneDraftOpen(true);
-      },
-      onCancelMilestoneDraft: () => {
-        setMilestoneDraftOpen(false);
-        setMilestoneDraftName('');
-        setMilestoneDraftDescription('');
-        setMilestoneDraftTargetDate('');
-      },
-      onMilestoneDraftNameChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setMilestoneDraftName(e.target.value),
-      onMilestoneDraftNameKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          addInitialMilestone();
-        }
-      },
-      onMilestoneDraftDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
-        setMilestoneDraftDescription(e.target.value),
-      onMilestoneDraftTargetDateChange: (value: string) => setMilestoneDraftTargetDate(value),
-      onAddInitialMilestone: addInitialMilestone,
-      onRemoveInitialMilestone: (index: number) =>
-        setInitialMilestones((current) => current.filter((_, itemIndex) => itemIndex !== index)),
-      onOpenDependencyDraft: () => setDependencyDraftOpen(true),
-      onCancelDependencyDraft: () => {
-        setDependencyDraftOpen(false);
-        setDependencyDraftProjectSlug('');
-      },
-      onDependencyDraftProjectChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
-        setDependencyDraftProjectSlug(e.target.value),
-      onDependencyDraftKindChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
-        setDependencyDraftKind(e.target.value as ProjectDependency['kind']),
-      onAddInitialDependency: addInitialDependency,
-      onRemoveInitialDependency: (projectSlug: string) =>
-        setInitialDependencies((current) =>
-          current.filter((dependency) => dependency.projectSlug !== projectSlug),
-        ),
-      New_project_name_onChange1: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setName(e.target.value),
-      New_project_summary_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setSummary(e.target.value),
-      onProjectIconChange: (value: string) => setIcon(value),
-      onProjectIconColorChange: (value: string) => setIconColor(value),
-      New_project_description_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setDescription(e.target.value),
-      New_project_status_onChange: (value: string | null) => value && setStatus(value),
-      New_project_priority_onChange: (value: string | null) =>
-        value !== null && setPriority(Number(value)),
-      New_project_lead_onChange: (value: string | null) => setLead(value === 'self' ? 'self' : ''),
-      onProjectStartDateChange: (value: string) => setStartDate(value),
-      onProjectTargetDateChange: (value: string) => setTargetDate(value),
-      New_project_labels_onChange: (value: string[]) => setSelectedLabels(value),
-      onProjectLabelsSearchChange: (value: string) => {
-        setProjectLabelQuery(value);
-        setProjectLabelCreateError('');
-      },
-      onCreateProjectLabel: createProjectLabel,
+      ...projectComposerHandlers,
     },
   };
 }
