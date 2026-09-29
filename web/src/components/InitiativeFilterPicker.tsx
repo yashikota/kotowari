@@ -34,14 +34,8 @@ import type {
   InitiativeProjectFilter,
 } from '../initiative-list.ts';
 import type { ProjectFilterField, ProjectFilterGroup } from '../project-views.ts';
-import {
-  SEARCH_DATE_WINDOWS,
-  type SearchDateGranularity,
-  type SearchDateRange,
-  type SearchDateFilter,
-} from '../search.ts';
+import { SEARCH_DATE_WINDOWS, type SearchDateFilter } from '../search.ts';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
-import { SearchDateTimeframeDialog } from './SearchDateTimeframeDialog.tsx';
 import {
   buildInitiativeFilterChips,
   INITIATIVE_DATE_FIELDS,
@@ -49,6 +43,7 @@ import {
   type InitiativeFilterKey,
 } from '../initiative-filter-chips.ts';
 import { AdvancedProjectFilterBuilder } from './AdvancedProjectFilterBuilder.tsx';
+import { InitiativeDateFilterEditor } from './InitiativeDateFilterEditor.tsx';
 
 const STATUSES: InitiativeStatus[] = ['proposed', 'planned', 'active', 'completed', 'canceled'];
 const HEALTH_STATUSES: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
@@ -113,10 +108,6 @@ export function InitiativeFilterPicker({
   const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<InitiativeFilterKey | null>(null);
   const [activeDateField, setActiveDateField] = useState<InitiativeDateField | null>(null);
-  const [customDateField, setCustomDateField] = useState<InitiativeDateField | null>(null);
-  const [customDateInput, setCustomDateInput] = useState('');
-  const [customDateGranularity, setCustomDateGranularity] =
-    useState<SearchDateGranularity>('quarter');
   const [filterQuery, setFilterQuery] = useState('');
   const dateFieldLabels: Record<InitiativeDateField, string> = {
     created: t('initiativeList.dateField.created'),
@@ -191,18 +182,6 @@ export function InitiativeFilterPicker({
   function applyFilterChange(update: () => void) {
     update();
     closeFilterPicker();
-  }
-
-  function applyCustomDate(range: SearchDateRange) {
-    if (!customDateField) return;
-    const field = customDateField;
-    setCustomDateField(null);
-    applyFilterChange(() =>
-      handlers.onDateFilterChange(field, {
-        operator: 'in',
-        value: { kind: 'range', ...range },
-      }),
-    );
   }
 
   return (
@@ -473,91 +452,16 @@ export function InitiativeFilterPicker({
                       }
                     />
                   ) : null}
-                  {activeFilter === 'dates' && !activeDateField ? (
-                    <Stack gap={2}>
-                      {INITIATIVE_DATE_FIELDS.map((field) => (
-                        <Button
-                          key={field}
-                          type="button"
-                          variant="subtle"
-                          color="gray"
-                          size="compact-sm"
-                          fullWidth
-                          justify="space-between"
-                          aria-pressed={Boolean(dateFilters[field])}
-                          onClick={() => setActiveDateField(field)}
-                          rightSection={
-                            <Group gap={6} wrap="nowrap">
-                              {dateFilters[field] ? (
-                                <Badge size="xs" variant="light">
-                                  1
-                                </Badge>
-                              ) : null}
-                              <IconChevronRight size={14} aria-hidden="true" />
-                            </Group>
-                          }
-                        >
-                          {dateFieldLabels[field]}
-                        </Button>
-                      ))}
-                    </Stack>
-                  ) : null}
-                  {activeFilter === 'dates' && activeDateField ? (
-                    <Stack gap={2}>
-                      <Button
-                        type="button"
-                        variant="subtle"
-                        color="gray"
-                        size="compact-sm"
-                        fullWidth
-                        justify="flex-start"
-                        onClick={() => applyFilterChange(() => clearDateFilter(activeDateField))}
-                      >
-                        {t('searchPage.filters.anyTime')}
-                      </Button>
-                      {SEARCH_DATE_WINDOWS.map((window) => (
-                        <Button
-                          key={window}
-                          type="button"
-                          variant="subtle"
-                          color="gray"
-                          size="compact-sm"
-                          fullWidth
-                          justify="flex-start"
-                          aria-pressed={
-                            dateFilters[activeDateField]?.value.kind === 'relative' &&
-                            dateFilters[activeDateField]?.value.window === window
-                          }
-                          onClick={() =>
-                            applyFilterChange(() =>
-                              handlers.onDateFilterChange(activeDateField, {
-                                operator: 'after',
-                                value: { kind: 'relative', window },
-                              }),
-                            )
-                          }
-                        >
-                          {t(`searchPage.filters.dateWindows.${window}`)}
-                        </Button>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="subtle"
-                        color="gray"
-                        size="compact-sm"
-                        fullWidth
-                        justify="space-between"
-                        rightSection={<IconChevronRight size={14} aria-hidden="true" />}
-                        onClick={() => {
-                          setCustomDateInput('');
-                          setCustomDateGranularity('quarter');
-                          setCustomDateField(activeDateField);
-                        }}
-                      >
-                        {t('searchPage.filters.customTimeframe')}
-                      </Button>
-                    </Stack>
-                  ) : null}
+                  <InitiativeDateFilterEditor
+                    open={activeFilter === 'dates'}
+                    activeDateField={activeDateField}
+                    dateFilters={dateFilters}
+                    dateFieldLabels={dateFieldLabels}
+                    onActiveDateFieldChange={setActiveDateField}
+                    onDateFilterChange={handlers.onDateFilterChange}
+                    applyFilterChange={applyFilterChange}
+                    clearDateFilter={clearDateFilter}
+                  />
                 </ScrollArea.Autosize>
               </Stack>
             ) : (
@@ -631,17 +535,6 @@ export function InitiativeFilterPicker({
           </Popover.Dropdown>
         </Popover>
       </Group>
-      <SearchDateTimeframeDialog
-        field={null}
-        opened={customDateField !== null}
-        title={customDateField ? dateFieldLabels[customDateField] : undefined}
-        value={customDateInput}
-        granularity={customDateGranularity}
-        onValueChange={setCustomDateInput}
-        onGranularityChange={setCustomDateGranularity}
-        onCancel={() => setCustomDateField(null)}
-        onApply={applyCustomDate}
-      />
       {activeFilterChips.length > 0 ? (
         <Group role="group" aria-label={t('initiativeList.activeFilters')} gap={4} wrap="wrap">
           {activeFilterChips.map(({ filter, key, label, value, dateField }) => (

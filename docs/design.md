@@ -310,7 +310,7 @@ Initiative一覧と詳細はroute単位で `InitiativesPages.tsx` と `Initiativ
 
 Inboxの選択中activity detail paneは `InboxActivityDetails.tsx`、actionからアイコンを選ぶ処理は `InboxActivityIcon.tsx`、priority inboxと表示設定の操作は `InboxDisplayOptionsMenu.tsx` に分ける。`InboxPages.tsx` はtoolbar、activity list、ページレイアウトを構成する。
 
-InitiativeFilterPickerで選択条件からfilter countとchip表示モデルを作る処理は `initiative-filter-chips.ts` に置き、入力UIとPopover状態から分離する。
+InitiativeFilterPickerで選択条件からfilter countとchip表示モデルを作る処理は `initiative-filter-chips.ts` に置き、入力UIとPopover状態から分離する。日付条件の選択・custom timeframe dialogは `InitiativeDateFilterEditor.tsx` にまとめる。
 
 ShellのWorkspace情報、Cycle/Project/View/Initiative一覧、favorite Issue一覧、sidebar badgeの同期は `useShellWorkspace.ts`、Paletteの検索とコマンド候補は `useShellPalette.ts`、Cycle切替とナビゲーション状態は `useShellCycleNavigation.ts`、Issue composerの入力・draft・submitは `useShellIssueComposer.ts` が担当する。Sidebarのナビゲーション表示は `ShellSidebar.tsx`、Issue作成、draft破棄、関連リンクのdialog表示は `IssueComposerOverlays.tsx` に分け、Shell presenter と `ShellView` は画面間で共有するオーバーレイとナビゲーションを構成する。
 
