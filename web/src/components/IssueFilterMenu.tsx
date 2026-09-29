@@ -46,7 +46,7 @@ import type {
   Project,
 } from '../types.ts';
 import { LabelChip } from '../mantine-ui.tsx';
-import type { FilterChip } from '../presenters/IssueFilters.tsx';
+import type { FilterChip } from '../issue-filter-chips.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
