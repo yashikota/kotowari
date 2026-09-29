@@ -1,20 +1,9 @@
-import {
-  ActionIcon,
-  Alert,
-  Box,
-  Button,
-  Group,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-} from '@mantine/core';
-import { IconPaperclip, IconPlus } from '@tabler/icons-react';
+import { ActionIcon, Alert, Box, Group, Stack, Text, TextInput } from '@mantine/core';
+import { IconPaperclip } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
-import { MetaBadge, Section } from '../mantine-ui.tsx';
-import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
+import { Section } from '../mantine-ui.tsx';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
 import { IssueDetailDialogs } from './IssueDetailDialogs.tsx';
@@ -24,6 +13,7 @@ import { IssueDetailHeader } from './IssueDetailHeader.tsx';
 import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
 import { IssueRelationsSection } from './IssueRelationsSection.tsx';
 import { IssueResourcesSection } from './IssueResourcesSection.tsx';
+import { IssueSubIssuesSection } from './IssueSubIssuesSection.tsx';
 import layoutStyles from './IssueDetail.module.css';
 import { IssueAttachmentList } from './IssueAttachmentList.tsx';
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
@@ -65,7 +55,6 @@ export function IssueDetailView({
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
-  const { statuses: workflowStatuses } = useIssueWorkflow();
   switch (model._view) {
     case 0: {
       const { error } = model;
@@ -87,10 +76,7 @@ export function IssueDetailView({
         issueAttachmentError,
         issueAttachmentBusy,
         issueFilesInputRef,
-        subTitle,
         historyRequest,
-        subIssueEditorOpen,
-        children,
         handlers,
       } = model;
       return (
@@ -190,76 +176,7 @@ export function IssueDetailView({
                   </Section>
                 ) : null}
 
-                <Box component="section" aria-label={t('ui.subIssues')} ml={-5} pt={0} pb={10}>
-                  {children.length > 0 ? (
-                    <Stack gap="xs">
-                      {children.map((c) => (
-                        <Button
-                          type="button"
-                          variant="subtle"
-                          key={c.identifier}
-                          onClick={() => handlers.onClick18(c)}
-                          fullWidth
-                          styles={{ inner: { justifyContent: 'flex-start' } }}
-                        >
-                          <Group justify="space-between" wrap="nowrap" w="100%">
-                            <Group gap="sm" wrap="nowrap">
-                              <Text fw={500}>{c.identifier}</Text>
-                              <Text>{c.title}</Text>
-                            </Group>
-                            <MetaBadge>
-                              {workflowStatusLabel(c.workflowStatus ?? c.status, workflowStatuses)}
-                            </MetaBadge>
-                          </Group>
-                        </Button>
-                      ))}
-                    </Stack>
-                  ) : null}
-                  {subIssueEditorOpen ? (
-                    <Stack gap="xs" mt={children.length > 0 ? 'xs' : 0}>
-                      <Textarea
-                        ref={subRef}
-                        rows={2}
-                        aria-label={t('ui.newSubIssue')}
-                        placeholder={t('ui.addSubIssue')}
-                        value={subTitle}
-                        onChange={handlers.New_sub_issue_onChange19}
-                        onKeyDown={handlers.New_sub_issue_onKeyDown20}
-                      />
-                      <Group justify="flex-end" gap="xs">
-                        <Button
-                          type="button"
-                          variant="default"
-                          size="xs"
-                          onClick={handlers.onCloseSubIssueEditor}
-                        >
-                          {t('issueSubIssues.cancel')}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="xs"
-                          disabled={!subTitle.trim()}
-                          onClick={handlers.onCreateSubIssue}
-                        >
-                          {t('issueSubIssues.create')}
-                        </Button>
-                      </Group>
-                    </Stack>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="subtle"
-                      size="compact-sm"
-                      h={24}
-                      pr={13}
-                      styles={{ section: { marginInlineEnd: 3 } }}
-                      leftSection={<IconPlus size={14} stroke={1.8} aria-hidden="true" />}
-                      onClick={handlers.onOpenSubIssueEditor}
-                    >
-                      {t('issueSubIssues.add')}
-                    </Button>
-                  )}
-                </Box>
+                <IssueSubIssuesSection model={model} subRef={subRef} />
               </Stack>
 
               <IssueRelationsSection model={model} />
