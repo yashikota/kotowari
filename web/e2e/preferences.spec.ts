@@ -321,7 +321,7 @@ test('cycle schedule settings persist in the workspace', async ({ page, request 
   await choose(page, 'Cycle start day', 'Tuesday');
   await choose(page, 'Automatically create upcoming cycles', 'Off');
   await page.getByLabel('Active issues & due date').check();
-  await page.getByLabel('Completed issues').check();
+  await page.getByRole('checkbox', { name: 'Completed issues', exact: true }).check();
   await page.getByRole('button', { name: 'Save cycle schedule' }).click();
   await expect(page.getByText('Cycle schedule saved')).toBeVisible();
 
@@ -356,11 +356,9 @@ test('issue automation settings persist in the workspace', async ({ page, reques
   await page.goto('/config');
   await page.getByLabel('Auto-close parent issues').check();
   await page.getByLabel('Auto-close sub-issues').check();
-  await page.getByLabel('When progressing status, place issues').selectOption('last');
-  await page.getByLabel('Auto-close stale issues after').selectOption('6');
-  await page
-    .getByLabel('Auto-archive completed issues, cycles, and projects after')
-    .selectOption('6');
+  await choose(page, 'When progressing status, place issues', 'Last');
+  await choose(page, 'Auto-close stale issues after', '6 months');
+  await choose(page, 'Auto-archive completed issues, cycles, and projects after', '6 months');
   await page.getByRole('button', { name: 'Save issue automations' }).click();
   await expect(page.getByText('Issue automations saved')).toBeVisible();
 
