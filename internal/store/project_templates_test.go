@@ -29,7 +29,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	template, err := s.CreateProjectTemplate(project.Slug, "Launch plan")
+	template, err := s.CreateProjectTemplate(project.Slug, CreateTemplateInput{Name: "Launch plan"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 		t.Fatalf("listed templates %#v", listed)
 	}
 	t.Cleanup(func() { _ = reopened.Close() })
-	if _, err := reopened.CreateProjectTemplate(project.Slug, "Launch plan"); !errors.Is(err, ErrConflict) {
+	if _, err := reopened.CreateProjectTemplate(project.Slug, CreateTemplateInput{Name: "Launch plan"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate template error %v", err)
 	}
 	if err := reopened.DeleteProjectTemplate(template.Slug); err != nil {
@@ -92,7 +92,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 
 func TestCreateProjectTemplateRequiresExistingProject(t *testing.T) {
 	s := openTest(t)
-	if _, err := s.CreateProjectTemplate("missing", "Template"); !errors.Is(err, ErrNotFound) {
+	if _, err := s.CreateProjectTemplate("missing", CreateTemplateInput{Name: "Template"}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing project error %v", err)
 	}
 }

@@ -2,7 +2,8 @@ package httpapi
 
 import (
 	"net/http"
-	"strings"
+
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listIssueTemplates(w http.ResponseWriter, _ *http.Request) {
@@ -15,14 +16,12 @@ func (s *Server) listIssueTemplates(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) createIssueTemplate(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Name string `json:"name"`
-	}
+	var in model.CreateTemplateInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	template, err := s.store.CreateIssueTemplate(r.PathValue("id"), strings.TrimSpace(in.Name))
+	template, err := s.store.CreateIssueTemplate(r.PathValue("id"), in)
 	if err != nil {
 		writeError(w, err)
 		return

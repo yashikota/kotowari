@@ -91,7 +91,7 @@ func TestIssueTemplateRoundTripAndNameConflicts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	template, err := s.CreateIssueTemplate(issue.Identifier, "Release checklist")
+	template, err := s.CreateIssueTemplate(issue.Identifier, CreateTemplateInput{Name: "Release checklist"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestIssueTemplateRoundTripAndNameConflicts(t *testing.T) {
 		len(template.Labels) != 1 || template.Labels[0] != "Bug" {
 		t.Fatalf("template did not preserve issue data: %#v", template)
 	}
-	if _, err := s.CreateIssueTemplate(issue.Identifier, "Release checklist"); !errors.Is(err, ErrConflict) {
+	if _, err := s.CreateIssueTemplate(issue.Identifier, CreateTemplateInput{Name: "Release checklist"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate template name error %v", err)
 	}
 	if err := s.Close(); err != nil {
@@ -141,7 +141,7 @@ func TestIssueTemplateProvenanceCanBeFilteredAndSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	template, err := s.CreateIssueTemplate(source.Identifier, "Release checklist")
+	template, err := s.CreateIssueTemplate(source.Identifier, CreateTemplateInput{Name: "Release checklist"})
 	if err != nil {
 		t.Fatal(err)
 	}

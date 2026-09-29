@@ -14,3 +14,8 @@ type IssueTemplate struct {
 	Estimate *int     `json:"estimate,omitempty"`
 	Labels   []string `json:"labels"`
 }
+
+// CreateTemplateInput names a new issue or project template.
+type CreateTemplateInput struct {
+	Name string `json:"name"`
+}

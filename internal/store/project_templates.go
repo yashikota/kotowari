@@ -51,8 +51,8 @@ func (s *Store) ListProjectTemplates() ([]ProjectTemplate, error) {
 
 // CreateProjectTemplate captures reusable project properties without changing
 // the source project. Dates and dependency links are intentionally not copied.
-func (s *Store) CreateProjectTemplate(projectSlug, name string) (ProjectTemplate, error) {
-	name = strings.TrimSpace(name)
+func (s *Store) CreateProjectTemplate(projectSlug string, in CreateTemplateInput) (ProjectTemplate, error) {
+	name := strings.TrimSpace(in.Name)
 	slug := issueTemplateSlug(name)
 	if name == "" || slug == "" || len([]rune(name)) > 100 {
 		return ProjectTemplate{}, validationf("template name must contain 1 to 100 characters")

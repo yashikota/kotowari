@@ -35,8 +35,8 @@ func (s *Store) ListIssueTemplates() ([]IssueTemplate, error) {
 
 // CreateIssueTemplate captures an issue as a reusable template without
 // removing or changing the source issue.
-func (s *Store) CreateIssueTemplate(identifier, name string) (IssueTemplate, error) {
-	name = strings.TrimSpace(name)
+func (s *Store) CreateIssueTemplate(identifier string, in CreateTemplateInput) (IssueTemplate, error) {
+	name := strings.TrimSpace(in.Name)
 	slug := issueTemplateSlug(name)
 	if name == "" || slug == "" || len([]rune(name)) > 100 {
 		return IssueTemplate{}, validationf("template name must contain 1 to 100 characters")
