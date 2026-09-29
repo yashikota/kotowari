@@ -308,6 +308,8 @@ Projects一覧とProject View Builderが共有するTimelineモデル型・月�
 
 Project boardのグループ生成・配置計算とview契約型は `project-board.ts` に置き、domain側からboard view componentへの型依存を作らない。
 
+Project一覧とProject View Builderで共有するsearch queryの検証・正規化は `project-route-search.ts` に置き、routerはroute構成を担当する。
+
 ProjectListControlsのpresenter/view契約は `project-list-controls.ts` に置き、componentを参照せずにpresenterとfilter表示モデルから共有する。ProjectFilterPickerの選択状態をactive chipへ変換する処理は `project-filter-chips.ts` に置き、カテゴリ別の入力UIは `ProjectFilterEditor.tsx` に分ける。
 
 Initiative一覧と詳細はroute単位で `InitiativesPages.tsx` と `InitiativeDetailPages.tsx` に分ける。両方で使うstatus・health・color選択肢は `initiative-options.ts` を共有する。
