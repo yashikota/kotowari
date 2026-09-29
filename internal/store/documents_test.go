@@ -32,11 +32,11 @@ func TestDocumentConflictHistoryAndUnrelatedFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	next, err := s.SaveDocument("adrs", a.Identifier, "body", "external", base.Revision)
+	next, err := s.SaveDocument(SaveDocumentInput{Kind: "adrs", ID: a.Identifier, Field: "body", Body: "external", Revision: base.Revision})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.SaveDocument("adrs", a.Identifier, "body", "stale", base.Revision); !errors.Is(err, ErrConflict) {
+	if _, err := s.SaveDocument(SaveDocumentInput{Kind: "adrs", ID: a.Identifier, Field: "body", Body: "stale", Revision: base.Revision}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("want conflict, got %v", err)
 	}
 	got, err := s.Document("adrs", a.Identifier, "body")
@@ -47,7 +47,7 @@ func TestDocumentConflictHistoryAndUnrelatedFiles(t *testing.T) {
 	if err != nil || len(history) != 1 || strings.TrimSpace(history[0].Body) != "initial" {
 		t.Fatalf("%+v %v", history, err)
 	}
-	if _, err := s.SaveDocument("adrs", a.Identifier, "body", history[0].Body, next.Revision); err != nil {
+	if _, err := s.SaveDocument(SaveDocumentInput{Kind: "adrs", ID: a.Identifier, Field: "body", Body: history[0].Body, Revision: next.Revision}); err != nil {
 		t.Fatal(err)
 	}
 	after, err := os.ReadFile(path)

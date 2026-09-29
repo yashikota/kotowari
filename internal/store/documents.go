@@ -60,29 +60,29 @@ func (s *Store) Document(kind, id, field string) (Document, error) {
 	return out, err
 }
 
-func (s *Store) SaveDocument(kind, id, field, body, revision string) (Document, error) {
-	if field == "body" && body != "" && !strings.HasSuffix(body, "\n") {
-		body += "\n"
+func (s *Store) SaveDocument(in SaveDocumentInput) (Document, error) {
+	if in.Field == "body" && in.Body != "" && !strings.HasSuffix(in.Body, "\n") {
+		in.Body += "\n"
 	}
 	var out Document
 	err := s.mutate(func(m *mem) error {
-		b, at, key, err := document(m, kind, id, field)
+		b, at, key, err := document(m, in.Kind, in.ID, in.Field)
 		if err != nil {
 			return err
 		}
-		if revision == "" || revision != bodyRevision(*b) {
+		if in.Revision == "" || in.Revision != bodyRevision(*b) {
 			return fmt.Errorf("%w: document changed; compare your draft with the current document", ErrConflict)
 		}
-		if body != *b {
-			old := Document{Body: *b, Revision: revision, SavedAt: time.Now().UTC().Format(time.RFC3339Nano)}
+		if in.Body != *b {
+			old := Document{Body: *b, Revision: in.Revision, SavedAt: time.Now().UTC().Format(time.RFC3339Nano)}
 			raw, err := json.Marshal(old)
 			if err != nil {
 				return err
 			}
-			if err := atomicWrite(filepath.Join(s.root, ".history", kind, key, field, revision+".json"), raw); err != nil {
+			if err := atomicWrite(filepath.Join(s.root, ".history", in.Kind, key, in.Field, in.Revision+".json"), raw); err != nil {
 				return err
 			}
-			*b = body
+			*b = in.Body
 			*at = domain.Now()
 			m.bump(*at)
 		}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/yashikota/kotowari/internal/domain"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) getDocument(w http.ResponseWriter, r *http.Request) {
@@ -21,16 +22,16 @@ func (s *Server) getDocument(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, out)
 }
 func (s *Server) saveDocument(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Body     string `json:"body"`
-		Revision string `json:"revision"`
-	}
+	var in model.SaveDocumentInput
 	r.Body = http.MaxBytesReader(w, r.Body, 4<<20)
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, 400, map[string]string{"error": "invalid document"})
 		return
 	}
-	out, err := s.store.SaveDocument(r.PathValue("kind"), r.PathValue("id"), r.PathValue("field"), in.Body, in.Revision)
+	in.Kind = r.PathValue("kind")
+	in.ID = r.PathValue("id")
+	in.Field = r.PathValue("field")
+	out, err := s.store.SaveDocument(in)
 	if err != nil {
 		writeError(w, err)
 		return
