@@ -1,69 +1,18 @@
 package store
 
 import (
-	"strings"
-	"time"
-
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
 func (s *Store) CreateIssue(in CreateIssueInput) (Issue, error) {
-	in.Title = strings.TrimSpace(in.Title)
-	if in.Title == "" {
-		return Issue{}, validationf("title required")
-	}
-	if in.Status == "" {
-		in.Status = "backlog"
-	}
-	if !domain.ValidIssueStatus(in.Status) {
-		return Issue{}, validationf("invalid status")
-	}
-	if !domain.ValidPriority(in.Priority) {
-		return Issue{}, validationf("invalid priority")
-	}
-	if !domain.ValidIssueType(in.Type) {
-		return Issue{}, validationf("invalid issue type")
-	}
-	if !domain.ValidEstimate(in.Estimate) {
-		return Issue{}, validationf("invalid estimate")
-	}
-	if !domain.ValidIssueAssignee(in.Assignee) {
-		return Issue{}, validationf("invalid issue assignee")
-	}
-	if in.TemplateSlug != "" {
-		if issueTemplateSlug(in.TemplateSlug) != in.TemplateSlug {
-			return Issue{}, validationf("invalid issue template")
-		}
-		templates, err := s.ListIssueTemplates()
-		if err != nil {
-			return Issue{}, err
-		}
-		found := false
-		for _, template := range templates {
-			if template.Slug == in.TemplateSlug {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return Issue{}, validationf("issue template not found")
-		}
-	}
-	now := domain.Now()
-	automationNow, _ := time.Parse(time.RFC3339, now)
-	normalizedLinks, err := normalizeIssueLinks(in.ExternalLinks)
+	prepared, err := s.prepareCreateIssueInput(in)
 	if err != nil {
 		return Issue{}, err
 	}
-	externalLinks := make([]IssueLink, 0, len(normalizedLinks))
-	for index, link := range normalizedLinks {
-		externalLinks = append(externalLinks, IssueLink{
-			ID: int64(index + 1), URL: link.URL, Title: link.Title, Kind: link.Kind, CreatedAt: now,
-		})
-	}
-	if strings.TrimSpace(in.Body) == "" {
-		in.Body = templateBody(s.root, "ISSUE.md", "")
-	}
+	in = prepared.input
+	now := prepared.now
+	automationNow := prepared.automationNow
+	externalLinks := prepared.externalLinks
 	var out Issue
 	err = s.mutate(func(m *mem) error {
 		workflowState, ok := resolveIssueWorkflowStatus(m.Workspace, in.Status, in.WorkflowStatus)
