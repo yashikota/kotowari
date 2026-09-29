@@ -20,6 +20,13 @@ func (s *Store) CreateMilestone(projectSlug, name string, targetDate *string) (M
 }
 
 func (s *Store) CreateMilestoneWithDescription(projectSlug, name, description string, targetDate *string) (Milestone, error) {
+	return s.CreateMilestoneFromInput(CreateMilestoneInput{
+		ProjectSlug: projectSlug, Name: name, Description: description, TargetDate: targetDate,
+	})
+}
+
+func (s *Store) CreateMilestoneFromInput(in CreateMilestoneInput) (Milestone, error) {
+	projectSlug, name, description, targetDate := in.ProjectSlug, in.Name, in.Description, in.TargetDate
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return Milestone{}, validationf("milestone name required")
@@ -64,6 +71,13 @@ func (s *Store) UpdateMilestone(projectSlug string, milestoneID int64, name *str
 }
 
 func (s *Store) UpdateMilestoneDetails(projectSlug string, milestoneID int64, name, description *string, targetDate **string) (Milestone, error) {
+	return s.UpdateMilestoneFromInput(UpdateMilestoneInput{
+		ProjectSlug: projectSlug, ID: milestoneID, Name: name, Description: description, TargetDate: targetDate,
+	})
+}
+
+func (s *Store) UpdateMilestoneFromInput(in UpdateMilestoneInput) (Milestone, error) {
+	projectSlug, milestoneID, name, description, targetDate := in.ProjectSlug, in.ID, in.Name, in.Description, in.TargetDate
 	if name != nil && strings.TrimSpace(*name) == "" {
 		return Milestone{}, validationf("milestone name required")
 	}

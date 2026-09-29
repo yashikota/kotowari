@@ -3,6 +3,8 @@ package httpapi
 import (
 	"net/http"
 	"strconv"
+
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) createMilestone(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +17,10 @@ func (s *Server) createMilestone(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateMilestoneWithDescription(r.PathValue("slug"), in.Name, in.Description, in.TargetDate)
+	out, err := s.store.CreateMilestoneFromInput(model.CreateMilestoneInput{
+		ProjectSlug: r.PathValue("slug"), Name: in.Name,
+		Description: in.Description, TargetDate: in.TargetDate,
+	})
 	if err != nil {
 		writeError(w, err)
 		return
@@ -39,7 +44,10 @@ func (s *Server) patchMilestone(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	out, err := s.store.UpdateMilestoneDetails(r.PathValue("slug"), id, name, description, targetDate)
+	out, err := s.store.UpdateMilestoneFromInput(model.UpdateMilestoneInput{
+		ProjectSlug: r.PathValue("slug"), ID: id,
+		Name: name, Description: description, TargetDate: targetDate,
+	})
 	if err != nil {
 		writeError(w, err)
 		return

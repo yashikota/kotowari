@@ -97,6 +97,21 @@ type MilestoneInput struct {
 	TargetDate  *string `json:"targetDate,omitempty"`
 }
 
+type CreateMilestoneInput struct {
+	ProjectSlug string
+	Name        string
+	Description string
+	TargetDate  *string
+}
+
+type UpdateMilestoneInput struct {
+	ProjectSlug string
+	ID          int64
+	Name        *string
+	Description *string
+	TargetDate  **string
+}
+
 type ProjectCreationOptions struct {
 	TemplateSlug string              `json:"templateSlug,omitempty"`
 	Lead         string              `json:"lead,omitempty"`
