@@ -289,6 +289,7 @@ handler から保存データ構造を直接変更しない。
 永続化は `persist.go` のロック付き snapshot/mutate、`persist_load.go` の読み込み、`persist_save.go` の書き込み、`persist_entities.go` の Markdown entity 読み込み、`persist_refs.go` の参照解決に分ける。
 Project の作成入力と更新入力は `projects_create.go` と `projects_update.go`、icon・labelの検証は `project_validation.go` に置く。旧位置引数APIのadapterは `projects_compat.go` に隔離し、新規コードは入力structとFromInput APIを使う。依存関係と Milestone、View の作成・更新・検証、全文検索もそれぞれ専用ファイルへ置き、Project/View の基本 CRUD や保存処理に混在させない。
 Issue の親子階層、外部リンク、コメント、添付、活動履歴も別の責務として分け、活動履歴の一覧用モデルは `internal/model/model_activities.go` に定義する。
+Issue の作成・更新は `issues_create.go` と `issues_update.go`、読取・削除は `issues.go` に分ける。更新用patch判定も更新実装の近くに置く。
 新しい領域を追加するときは、モデル・ドメイン操作・永続化変換を同じ責務の近くに置き、handler が `mem` や TOML DTO に依存しないようにする。
 
 Release 用 SPA は `web/e2e/copy-dist.mjs` で `internal/webembed/dist` にコピーする。
