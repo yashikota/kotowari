@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
+import type { ProjectListControlsModel } from '../project-list-controls.ts';
 import { buildProjectTimelineModel, defaultProjectTimelineStart } from '../project-timeline.ts';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';

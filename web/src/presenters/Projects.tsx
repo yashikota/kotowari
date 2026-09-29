@@ -4,7 +4,7 @@ import { api } from '../api.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
 
-import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
+import type { ProjectListControlsModel } from '../project-list-controls.ts';
 import {
   buildProjectTimelineModel,
   defaultProjectTimelineStart,
