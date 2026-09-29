@@ -26,18 +26,12 @@ func (s *Server) ensureCycleSchedule(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) createCycle(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		StartsAt string `json:"startsAt"`
-		EndsAt   string `json:"endsAt"`
-		Status   string `json:"status"`
-	}
+	var in model.CreateCycleInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateCycle(model.CreateCycleInput{
-		StartsAt: in.StartsAt, EndsAt: in.EndsAt, Status: in.Status,
-	})
+	out, err := s.store.CreateCycle(in)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -79,26 +73,12 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid cycle number"})
 		return
 	}
-	var in struct {
-		Name                   *string `json:"name"`
-		Description            *string `json:"description"`
-		StartsAt               *string `json:"startsAt"`
-		EndsAt                 *string `json:"endsAt"`
-		Status                 *string `json:"status"`
-		IsFavorite             *bool   `json:"isFavorite"`
-		NotifyOnIssueAdded     *bool   `json:"notifyOnIssueAdded"`
-		NotifyOnIssueCompleted *bool   `json:"notifyOnIssueCompleted"`
-		Archived               *bool   `json:"archived"`
-	}
+	var in model.UpdateCycleInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.UpdateCycle(n, model.UpdateCycleInput{
-		Name: in.Name, Description: in.Description, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
-		Status: in.Status, IsFavorite: in.IsFavorite,
-		NotifyOnIssueAdded: in.NotifyOnIssueAdded, NotifyOnIssueCompleted: in.NotifyOnIssueCompleted, Archived: in.Archived,
-	})
+	out, err := s.store.UpdateCycle(n, in)
 	if err != nil {
 		writeError(w, err)
 		return

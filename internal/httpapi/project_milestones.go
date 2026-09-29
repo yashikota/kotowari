@@ -8,19 +8,13 @@ import (
 )
 
 func (s *Server) createMilestone(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Name        string  `json:"name"`
-		Description string  `json:"description"`
-		TargetDate  *string `json:"targetDate"`
-	}
+	var in model.CreateMilestoneInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateMilestone(model.CreateMilestoneInput{
-		ProjectSlug: r.PathValue("slug"), Name: in.Name,
-		Description: in.Description, TargetDate: in.TargetDate,
-	})
+	in.ProjectSlug = r.PathValue("slug")
+	out, err := s.store.CreateMilestone(in)
 	if err != nil {
 		writeError(w, err)
 		return

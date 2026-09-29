@@ -19,19 +19,19 @@ type Cycle struct {
 }
 
 type CreateCycleInput struct {
-	StartsAt string
-	EndsAt   string
-	Status   string
+	StartsAt string `json:"startsAt"`
+	EndsAt   string `json:"endsAt"`
+	Status   string `json:"status"`
 }
 
 type UpdateCycleInput struct {
-	Name                   *string
-	Description            *string
-	StartsAt               *string
-	EndsAt                 *string
-	Status                 *string
-	IsFavorite             *bool
-	NotifyOnIssueAdded     *bool
-	NotifyOnIssueCompleted *bool
-	Archived               *bool
+	Name                   *string `json:"name"`
+	Description            *string `json:"description"`
+	StartsAt               *string `json:"startsAt"`
+	EndsAt                 *string `json:"endsAt"`
+	Status                 *string `json:"status"`
+	IsFavorite             *bool   `json:"isFavorite"`
+	NotifyOnIssueAdded     *bool   `json:"notifyOnIssueAdded"`
+	NotifyOnIssueCompleted *bool   `json:"notifyOnIssueCompleted"`
+	Archived               *bool   `json:"archived"`
 }

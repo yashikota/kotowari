@@ -108,10 +108,10 @@ type MilestoneInput struct {
 }
 
 type CreateMilestoneInput struct {
-	ProjectSlug string
-	Name        string
-	Description string
-	TargetDate  *string
+	ProjectSlug string  `json:"-"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	TargetDate  *string `json:"targetDate"`
 }
 
 type UpdateMilestoneInput struct {

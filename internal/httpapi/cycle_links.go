@@ -13,16 +13,12 @@ func (s *Server) addCycleLink(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid cycle number"})
 		return
 	}
-	var in struct {
-		URL   string `json:"url"`
-		Title string `json:"title"`
-		Kind  string `json:"kind"`
-	}
+	var in model.CreateIssueLinkInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	resource, err := s.store.AddCycleLink(number, model.CreateIssueLinkInput{URL: in.URL, Title: in.Title, Kind: in.Kind})
+	resource, err := s.store.AddCycleLink(number, in)
 	if err != nil {
 		writeError(w, err)
 		return
