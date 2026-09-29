@@ -8,13 +8,13 @@ import (
 func TestCreateProjectWithMilestones(t *testing.T) {
 	s := openTest(t)
 	targetDate := "2026-12-01"
-	project, err := s.CreateProjectWithWorkflowAndOptions(
-		"Release plan", "release-plan", "", "", "", "", "planned", "", 0, nil, nil, nil,
-		ProjectCreationOptions{Milestones: []MilestoneInput{
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Release plan", Slug: "release-plan", Status: "planned",
+		Options: ProjectCreationOptions{Milestones: []MilestoneInput{
 			{Name: "Beta", Description: "Private preview", TargetDate: &targetDate},
 			{Name: "Launch", Description: "Public release"},
 		}},
-	)
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,10 +26,10 @@ func TestCreateProjectWithMilestones(t *testing.T) {
 		*project.Milestones[0].TargetDate != targetDate || project.Milestones[1].Name != "Launch" {
 		t.Fatalf("created milestone details %#v", project.Milestones)
 	}
-	if _, err := s.CreateProjectWithWorkflowAndOptions(
-		"Duplicate milestones", "duplicate-milestones", "", "", "", "", "planned", "", 0, nil, nil, nil,
-		ProjectCreationOptions{Milestones: []MilestoneInput{{Name: "Beta"}, {Name: " beta "}}},
-	); !errors.Is(err, ErrConflict) {
+	if _, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Duplicate milestones", Slug: "duplicate-milestones", Status: "planned",
+		Options: ProjectCreationOptions{Milestones: []MilestoneInput{{Name: "Beta"}, {Name: " beta "}}},
+	}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate milestone names: %v", err)
 	}
 	if _, err := s.GetProject("duplicate-milestones"); !errors.Is(err, ErrNotFound) {
@@ -39,7 +39,7 @@ func TestCreateProjectWithMilestones(t *testing.T) {
 
 func TestMilestoneDescriptionPersistsAndUpdates(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProject("Roadmap", "roadmap", "", "planned", nil, nil)
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Roadmap", Slug: "roadmap", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}

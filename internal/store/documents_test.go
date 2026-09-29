@@ -83,7 +83,7 @@ func TestAssetChangesContentHash(t *testing.T) {
 
 func TestADRProjectAndBodySearch(t *testing.T) {
 	s := openTest(t)
-	p, err := s.CreateProject("Project", "project", "", "", nil, nil)
+	p, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Project", Slug: "project"})
 	if err != nil {
 		t.Fatal(err)
 	}

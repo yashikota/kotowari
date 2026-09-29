@@ -344,7 +344,7 @@ func TestRecurringIssueFromNewInputPreservesInitialRelations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	project, err := s.CreateProject("Release", "release", "", "started", nil, nil)
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Release", Slug: "release", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}

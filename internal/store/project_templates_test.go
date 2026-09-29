@@ -17,13 +17,14 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 	}
 	startDate := "2026-09-01"
 	targetDate := "2026-10-01"
-	project, err := s.CreateProjectWithWorkflowAndOptions(
-		"Launch", "launch", "A short summary", "rocket", "blue", "## Brief\nShip the new flow.",
-		"started", "started", 2, &startDate, &targetDate, []string{label.Name},
-		ProjectCreationOptions{Lead: "self", Milestones: []MilestoneInput{{
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Launch", Slug: "launch", Summary: "A short summary", Icon: "rocket", IconColor: "blue",
+		Description: "## Brief\nShip the new flow.", Status: "started", WorkflowStatus: "started", Priority: 2,
+		StartDate: &startDate, TargetDate: &targetDate, Labels: []string{label.Name},
+		Options: ProjectCreationOptions{Lead: "self", Milestones: []MilestoneInput{{
 			Name: "Beta", Description: "Validate with users.", TargetDate: &targetDate,
 		}}},
-	)
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,21 +41,23 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 		template.Milestones[0] != (ProjectTemplateMilestone{Name: "Beta", Description: "Validate with users."}) {
 		t.Fatalf("created template %#v", template)
 	}
-	fromTemplate, err := s.CreateProjectWithWorkflowAndOptions(
-		"Reused launch", "reused-launch", template.Summary, template.Icon, template.IconColor,
-		template.Description, template.Status, template.WorkflowStatus, template.Priority,
-		nil, nil, template.Labels, ProjectCreationOptions{TemplateSlug: template.Slug, Lead: template.Lead},
-	)
+	fromTemplate, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Reused launch", Slug: "reused-launch", Summary: template.Summary,
+		Icon: template.Icon, IconColor: template.IconColor, Description: template.Description,
+		Status: template.Status, WorkflowStatus: template.WorkflowStatus, Priority: template.Priority,
+		Labels:  template.Labels,
+		Options: ProjectCreationOptions{TemplateSlug: template.Slug, Lead: template.Lead},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if fromTemplate.TemplateSlug != template.Slug || fromTemplate.Lead != "self" {
 		t.Fatalf("created project template origin %q, want %q", fromTemplate.TemplateSlug, template.Slug)
 	}
-	if _, err := s.CreateProjectWithWorkflowAndOptions(
-		"Invalid origin", "invalid-origin", "", "", "", "", "planned", "planned", 0, nil, nil, nil,
-		ProjectCreationOptions{TemplateSlug: "../escape"},
-	); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Invalid origin", Slug: "invalid-origin", Status: "planned", WorkflowStatus: "planned",
+		Options: ProjectCreationOptions{TemplateSlug: "../escape"},
+	}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid template origin error %v", err)
 	}
 	if err := s.Close(); err != nil {

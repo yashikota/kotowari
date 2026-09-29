@@ -7,11 +7,11 @@ import (
 
 func TestInitiativeProjectsPersistAndAreUnlinkedOnDelete(t *testing.T) {
 	s := openTest(t)
-	first, err := s.CreateProject("First", "first", "", "started", nil, nil)
+	first, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "First", Slug: "first", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.CreateProject("Second", "second", "", "planned", nil, nil)
+	second, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Second", Slug: "second", Status: "planned"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestInitiativeUpdatesPersistHealthAndActivityHistory(t *testing.T) {
 
 func TestProjectInitiativePropertyUpdatesBothSides(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProject("Roadmap", "roadmap", "", "started", nil, nil)
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Roadmap", Slug: "roadmap", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +198,9 @@ func TestProjectInitiativePropertyUpdatesBothSides(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assigned, err := s.UpdateProjectWithWorkflowAndInitiatives(project.Slug, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &[]string{initiative.Slug})
+	assigned, err := s.UpdateProjectFromInput(ProjectUpdateInput{
+		Slug: project.Slug, InitiativeSlugs: &[]string{initiative.Slug},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,10 +211,14 @@ func TestProjectInitiativePropertyUpdatesBothSides(t *testing.T) {
 	if err != nil || len(initiative.ProjectSlugs) != 1 || initiative.ProjectSlugs[0] != project.Slug {
 		t.Fatalf("initiative projects %#v (%v)", initiative.ProjectSlugs, err)
 	}
-	if _, err := s.UpdateProjectWithWorkflowAndInitiatives(project.Slug, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &[]string{"missing"}); !errors.Is(err, ErrNotFound) {
+	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{
+		Slug: project.Slug, InitiativeSlugs: &[]string{"missing"},
+	}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing initiative assignment error %v", err)
 	}
-	if _, err := s.UpdateProjectWithWorkflowAndInitiatives(project.Slug, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, &[]string{}); err != nil {
+	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{
+		Slug: project.Slug, InitiativeSlugs: &[]string{},
+	}); err != nil {
 		t.Fatal(err)
 	}
 	initiative, err = s.GetInitiative(initiative.Slug)

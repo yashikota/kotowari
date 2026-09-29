@@ -8,9 +8,9 @@ import (
 
 func TestProjectCubeAppearancePersists(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectWithAppearance(
-		"Linear-style project", "linear-style-project", "", "cube", "blue", "", "planned", 0, nil, nil, nil,
-	)
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Linear-style project", Slug: "linear-style-project", Icon: "cube", IconColor: "blue", Status: "planned",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,14 +39,16 @@ func TestProjectWorkflowStatusesPersistAndProtectUsedStates(t *testing.T) {
 	if _, err := s.UpdateProjectWorkflowStatuses(configured); err != nil {
 		t.Fatal(err)
 	}
-	project, err := s.CreateProjectWithWorkflow("Project review", "project-review", "", "", "", "", "started", "in-review", 2, nil, nil, nil)
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Project review", Slug: "project-review", Status: "started", WorkflowStatus: "in-review", Priority: 2,
+	})
 	if err != nil || project.Status != "started" || project.WorkflowStatus != "in-review" {
 		t.Fatalf("custom project workflow state = %#v, error %v", project, err)
 	}
 	if _, err := s.UpdateProjectWorkflowStatuses(defaults); !errors.Is(err, ErrConflict) {
 		t.Fatalf("removing a used state should conflict, got %v", err)
 	}
-	updated, err := s.UpdateProjectWithWorkflow(project.Slug, nil, nil, nil, nil, nil, nil, stringPtr("completed"), nil, nil, nil, nil, nil)
+	updated, err := s.UpdateProjectFromInput(ProjectUpdateInput{Slug: project.Slug, WorkflowStatus: stringPtr("completed")})
 	if err != nil || updated.Status != "completed" || updated.WorkflowStatus != "completed" || updated.CompletedAt == nil {
 		t.Fatalf("project completion transition = %#v, error %v", updated, err)
 	}
@@ -62,7 +64,7 @@ func TestProjectWorkflowStatusesPersistAndProtectUsedStates(t *testing.T) {
 
 func TestProjectWorkflowCustomFilterAndLegacyDefault(t *testing.T) {
 	s := openTest(t)
-	project, err := s.CreateProjectWithAppearance("Started", "started", "", "", "", "", "started", 0, nil, nil, nil)
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{Name: "Started", Slug: "started", Status: "started"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +77,7 @@ func TestProjectWorkflowCustomFilterAndLegacyDefault(t *testing.T) {
 	if _, err := s.UpdateProjectWorkflowStatuses(statuses); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.UpdateProjectWithWorkflow(project.Slug, nil, nil, nil, nil, nil, nil, stringPtr(custom.ID), nil, nil, nil, nil, nil); err != nil {
+	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{Slug: project.Slug, WorkflowStatus: stringPtr(custom.ID)}); err != nil {
 		t.Fatal(err)
 	}
 	projectID := project.ID
@@ -106,11 +108,13 @@ func TestProjectWorkflowDefaultCategoryCannotMoveAndProjectActivityUsesStateIDs(
 	if _, err := s.UpdateProjectWorkflowStatuses(statuses); err != nil {
 		t.Fatal(err)
 	}
-	project, err := s.CreateProjectWithWorkflow("Doing project", "doing-project", "", "", "", "", "started", "doing", 0, nil, nil, nil)
+	project, err := s.CreateProjectFromInput(ProjectCreateInput{
+		Name: "Doing project", Slug: "doing-project", Status: "started", WorkflowStatus: "doing",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.UpdateProjectWithWorkflow(project.Slug, nil, nil, nil, nil, nil, nil, stringPtr("planned"), nil, nil, nil, nil, nil); err != nil {
+	if _, err := s.UpdateProjectFromInput(ProjectUpdateInput{Slug: project.Slug, WorkflowStatus: stringPtr("planned")}); err != nil {
 		t.Fatal(err)
 	}
 	items, err := s.ListProjectActivities(project.Slug)
