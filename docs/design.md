@@ -298,7 +298,7 @@ CI と Release は同じコピー手順の後に GoReleaser snapshot を実行�
 
 Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。Projects一覧の新規作成フォーム、テンプレート、ラベル、Milestone、依存Projectは `useProjectComposer.ts` に分ける。Project詳細のMilestone CRUD UIは `ProjectMilestonesSection.tsx`、Project間依存の追加・一覧・解除は `ProjectDependenciesSection.tsx`、ADR/Pageの関連文書一覧は `ProjectDocumentsSection.tsx` にまとめ、Project detail viewはこれらを他の詳細sectionと共に配置する。Cycle詳細の編集・日付・リンクdialogは `CycleDetailDialogs.tsx`、resource一覧UIは `CycleResourcesSection.tsx`、進捗表示の集計・breakdown選択・chart操作は `useCycleProgressPresenter.ts`、resourceのPage解決・CRUDは `useCycleResourcesPresenter.ts` に分け、Cycle detail viewとpresenterは画面構成と他のCycle操作を担当する。複数画面で共有するCycle URLや表示用処理は `projectCycleHelpers.ts` に置く。
 
-Config画面のWorkspace・Cycle・Issue automation設定は `useConfigWorkspaceSettings.ts`、IssueとProject workflowのdraft、status編集・保存処理は `useConfigWorkflowSettings.ts` に分け、status編集UIは `ConfigWorkflowSettingsSection.tsx` に置く。
+Config画面のWorkspace基本設定、Cycle設定、Issue automation設定は `useConfigWorkspaceSettings.ts`、`useConfigCycleSettings.ts`、`useConfigIssueAutomationSettings.ts` に分ける。IssueとProject workflowのdraft、status編集・保存処理は `useConfigWorkflowSettings.ts` に分け、status編集UIは `ConfigWorkflowSettingsSection.tsx` に置く。
 
 Issue filter presenter から検索条件の表示用chip生成を `issue-filter-chips.ts` に分ける。検索条件と選択肢、翻訳関数を受け取り表示モデルへ変換し、filter menu はchip型をこの表示モデル境界から参照する。Advanced filterの値候補は `issue-filter-choices.ts` で、AI filterのquery・適用状態は `useIssueAIFilterPresenter.ts` で扱う。`IssueFilterMenu.tsx` はカテゴリ検索、メニュー状態、chip表示を担当し、各カテゴリの入力UIは `IssueFilterCategoryEditor.tsx` に分ける。選択肢一覧・label chip・単一選択の再利用UIは `IssueFilterControls.tsx` に置く。
 

@@ -72,13 +72,13 @@ export function ConfigPageView({
             <Stack gap="xl">
               <Stack gap="md" component="section" aria-label={t('config.workspace')}>
                 <Title order={4}>{t('config.workspace')}</Title>
-                <Box component="form" onSubmit={handlers.onSubmit0}>
+                <Box component="form" onSubmit={handlers.onSaveWorkspace}>
                   <Stack gap="md" maw={480}>
                     <TextInput
                       id="config-ws-name"
                       label={t('config.name')}
                       value={workspace.name}
-                      onChange={handlers.Workspace_name_onChange1}
+                      onChange={handlers.onWorkspaceNameChange}
                     />
                     <Select
                       id="config-ws-tz"
@@ -87,7 +87,7 @@ export function ConfigPageView({
                       searchable
                       nothingFoundMessage={t('config.noTimezone')}
                       value={workspace.timezone}
-                      onChange={handlers.Timezone_onChange2}
+                      onChange={handlers.onWorkspaceTimezoneChange}
                       data={timeZones}
                     />
                     <Select
@@ -95,7 +95,7 @@ export function ConfigPageView({
                       label={t('config.language')}
                       aria-label={t('config.language')}
                       value={workspace.locale}
-                      onChange={handlers.Locale_onChange3}
+                      onChange={handlers.onWorkspaceLocaleChange}
                       data={languages}
                     />
                     <Group>

@@ -2,7 +2,7 @@ import { useLoaderData } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMantineColorScheme } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMachineFlag, useOverlay } from '../application/Root.tsx';
 import type { Diagnostic, Workspace } from '../types.ts';
 import { isWebCodingToolURLTemplate, useCodingToolPreferences } from '../coding-tools.ts';
@@ -17,7 +17,10 @@ import {
   SIDEBAR_ITEM_IDS,
 } from '../preferences.ts';
 import { sidebarSettingsGroups } from '../sidebar.ts';
+import { normalizeWorkspace } from '../i18n/locale.ts';
 import { useConfigWorkflowSettings } from './useConfigWorkflowSettings.ts';
+import { useConfigCycleSettings } from './useConfigCycleSettings.ts';
+import { useConfigIssueAutomationSettings } from './useConfigIssueAutomationSettings.ts';
 import { useConfigWorkspaceSettings } from './useConfigWorkspaceSettings.ts';
 
 type ConfigData = {
@@ -42,12 +45,20 @@ export function useConfigPagePresenter() {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const normalizedWorkspace = useMemo(() => normalizeWorkspace(data.workspace), [data.workspace]);
   const workspaceSettings = useConfigWorkspaceSettings({
     initialWorkspace: data.workspace,
     setError,
     setSaved,
   });
+  const cycleSettings = useConfigCycleSettings(normalizedWorkspace.cycleSettings);
+  const issueAutomationSettings = useConfigIssueAutomationSettings(
+    normalizedWorkspace.issueAutomationSettings,
+  );
   const { data: workspaceSettingsData, handlers: workspaceSettingsHandlers } = workspaceSettings;
+  const { data: cycleSettingsData, handlers: cycleSettingsHandlers } = cycleSettings;
+  const { data: issueAutomationSettingsData, handlers: issueAutomationSettingsHandlers } =
+    issueAutomationSettings;
 
   useEffect(() => {
     setCodingToolDraft(codingToolPreferences);
@@ -56,6 +67,8 @@ export function useConfigPagePresenter() {
   return {
     _view: 0 as const,
     ...workspaceSettingsData,
+    ...cycleSettingsData,
+    ...issueAutomationSettingsData,
     preferences,
     codingToolDraft,
     codingToolError,
@@ -73,6 +86,8 @@ export function useConfigPagePresenter() {
     saved,
     handlers: {
       ...workspaceSettingsHandlers,
+      ...cycleSettingsHandlers,
+      ...issueAutomationSettingsHandlers,
       onDefaultHomeChange: (value: string | null) => {
         if (
           value === 'home' ||
