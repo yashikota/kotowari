@@ -279,6 +279,7 @@ ACP プロセスの作業ディレクトリはワークスペースとする。
 Issue API のCRUD、コメント/反応、活動履歴は別のhandlerファイルに置く。
 Issue一覧handlerのquery parameter parsingは `server_issues_list.go` に置き、CRUD handlerと分ける。
 ADRとIssueの双方向リンクhandlerは `adr_links.go` にまとめ、ADRのCRUD/publish handlerと分ける。
+StoreのADR↔Issue相互リンク更新と参照同期も `internal/store/adr_links.go` に置き、ADR本文と状態のCRUDから分ける。
 CLI は `internal/cli/cli.go` にコマンド定義を置き、各コマンドの処理は初期化、ADR、一覧、Workspace、serve の領域別ファイルに分ける。
 
 `internal/store` はファイル永続化とドメイン操作の境界であり、Workspace、Project、Cycle、Issue の読み書きは領域別のファイルに分ける。
