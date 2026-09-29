@@ -8,10 +8,6 @@ type IssueAutomationSettings = model.IssueAutomationSettings
 type IssueWorkflowStatus = model.IssueWorkflowStatus
 type ProjectWorkflowStatus = model.ProjectWorkflowStatus
 
-func defaultCycleSettings() CycleSettings {
-	return model.DefaultCycleSettings()
-}
-
 func normalizedCycleSettings(settings *CycleSettings) CycleSettings {
 	return model.NormalizeCycleSettings(settings)
 }
