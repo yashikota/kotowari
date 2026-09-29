@@ -298,7 +298,7 @@ CI と Release は同じコピー手順の後に GoReleaser snapshot を実行�
 
 Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。複数画面で共有するCycle URLや進捗表示の処理は `projectCycleHelpers.ts` に置く。
 
-Issue 詳細の履歴とコメント欄は `IssueActivitySection.tsx`、操作ダイアログは `IssueDetailDialogs.tsx`、属性パネルは `IssuePropertiesPanel.tsx` に分け、Issue 詳細本体は画面構成を担当する。各子コンポーネントには表示に必要なPresenter項目だけを渡す。
+Issue 詳細のヘッダーと操作メニューは `IssueDetailHeader.tsx`、履歴とコメント欄は `IssueActivitySection.tsx`、操作ダイアログは `IssueDetailDialogs.tsx`、属性パネルは `IssuePropertiesPanel.tsx` に分け、Issue 詳細本体は画面構成を担当する。各子コンポーネントには表示に必要なPresenter項目だけを渡す。
 
 ## 代替案
 
