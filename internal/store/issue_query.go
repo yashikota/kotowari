@@ -54,6 +54,7 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 		dateRangeStart = day.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 	customDueDate := strings.TrimPrefix(f.DueDate, "on:")
+	dates := issueQueryDates{asOf: asOf, rangeEnd: rangeEnd, dateAsOf: dateAsOf, dateRangeStart: dateRangeStart, statusAgeAnchor: statusAgeAnchor, statusAgeDays: statusAgeDays, customDueDate: customDueDate}
 	err := s.snapshot(func(m *mem) error {
 		for _, iss := range m.Issues {
 			if len(f.Statuses) > 0 {
@@ -78,43 +79,8 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 			if f.Archived != nil && (*f.Archived != (iss.ArchivedAt != nil)) {
 				continue
 			}
-			if f.DateRange != "" {
-				date := ""
-				switch f.DateField {
-				case "createdAt":
-					date = iss.CreatedAt
-				case "updatedAt":
-					date = iss.UpdatedAt
-				case "startedAt":
-					if iss.StartedAt != nil {
-						date = *iss.StartedAt
-					}
-				case "completedAt":
-					if iss.CompletedAt != nil {
-						date = *iss.CompletedAt
-					}
-				case "timeInCurrentStatus":
-					date = iss.StatusChangedAt
-				}
-				if f.DateField == "timeInCurrentStatus" {
-					changedAt, err := time.Parse(time.RFC3339, date)
-					if err != nil || changedAt.After(statusAgeAnchor.Add(-time.Duration(statusAgeDays[f.DateRange])*24*time.Hour)) {
-						continue
-					}
-				} else {
-					if len(date) > 10 {
-						date = date[:10]
-					}
-					matches := false
-					if strings.HasPrefix(f.DateRange, "on:") {
-						matches = date == strings.TrimPrefix(f.DateRange, "on:")
-					} else if dateRangeStart != "" {
-						matches = date != "" && date >= dateRangeStart && date <= dateAsOf
-					}
-					if !matches {
-						continue
-					}
-				}
+			if !dates.matchesDateRange(f, iss) {
+				continue
 			}
 			if f.Content != "" {
 				needle := strings.ToLower(strings.TrimSpace(f.Content))
@@ -136,22 +102,8 @@ func (s *Store) ListIssues(f IssueFilter) ([]Issue, error) {
 			if len(f.TemplateSlugs) > 0 && !matchesIssueTemplateSlugs(iss, f.TemplateSlugs) {
 				continue
 			}
-			if f.DueDate != "" {
-				date := ""
-				if iss.DueDate != nil {
-					date = *iss.DueDate
-					if len(date) > 10 {
-						date = date[:10]
-					}
-				}
-				matches := f.DueDate == "none" && date == "" ||
-					f.DueDate == "overdue" && date != "" && date < asOf && iss.Status != "done" && iss.Status != "canceled" ||
-					f.DueDate == "today" && date == asOf ||
-					strings.HasPrefix(f.DueDate, "on:") && date == customDueDate ||
-					rangeEnd != "" && date > asOf && date <= rangeEnd
-				if !matches {
-					continue
-				}
+			if !dates.matchesDueDate(f, iss) {
+				continue
 			}
 			if f.Status != "" && iss.Status != f.Status && iss.WorkflowStatus != f.Status {
 				continue
