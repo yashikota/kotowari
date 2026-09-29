@@ -304,7 +304,7 @@ Issue filter presenter から検索条件の表示用chip生成を `issue-filter
 
 Projects一覧とProject View Builderが共有するTimelineモデル型・月送り・週番号とレイアウト計算は `project-timeline.ts` に置く。Timeline view component は表示だけを担当し、presenter側で重複していた計算をこの境界に集約する。
 
-ProjectListControlsのpresenter/view契約は `project-list-controls.ts` に置き、componentを参照せずにpresenterとfilter表示モデルから共有する。ProjectFilterPickerの選択状態をactive chipへ変換する処理は `project-filter-chips.ts` に置く。
+ProjectListControlsのpresenter/view契約は `project-list-controls.ts` に置き、componentを参照せずにpresenterとfilter表示モデルから共有する。ProjectFilterPickerの選択状態をactive chipへ変換する処理は `project-filter-chips.ts` に置き、カテゴリ別の入力UIは `ProjectFilterEditor.tsx` に分ける。
 
 ShellのWorkspace情報、Cycle/Project/View/Initiative一覧、favorite Issue一覧、sidebar badgeの同期は `useShellWorkspace.ts`、Paletteの検索とコマンド候補は `useShellPalette.ts`、Cycle切替とナビゲーション状態は `useShellCycleNavigation.ts`、Issue composerの入力・draft・submitは `useShellIssueComposer.ts` が担当する。Sidebarのナビゲーション表示は `ShellSidebar.tsx`、Issue作成、draft破棄、関連リンクのdialog表示は `IssueComposerOverlays.tsx` に分け、Shell presenter と `ShellView` は画面間で共有するオーバーレイとナビゲーションを構成する。
 
