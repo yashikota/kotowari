@@ -7,74 +7,20 @@ import (
 )
 
 func (s *Store) CreateProjectFromInput(in ProjectCreateInput) (Project, error) {
+	prepared, err := s.prepareProjectCreateInput(in)
+	if err != nil {
+		return Project{}, err
+	}
+	in = prepared.input
 	name, slug, summary := in.Name, in.Slug, in.Summary
 	icon, iconColor, description := in.Icon, in.IconColor, in.Description
 	status, workflowStatus, priority := in.Status, in.WorkflowStatus, in.Priority
 	start, target, labels, options := in.StartDate, in.TargetDate, in.Labels, in.Options
-	name = strings.TrimSpace(name)
-	slug = strings.TrimSpace(slug)
-	if name == "" {
-		return Project{}, validationf("name required")
-	}
-	if !domain.ValidSlug(slug) {
-		return Project{}, validationf("invalid slug")
-	}
-	if status == "" {
-		status = "planned"
-	}
-	if !domain.ValidProjectStatus(status) {
-		return Project{}, validationf("invalid status")
-	}
-	if !domain.ValidPriority(priority) {
-		return Project{}, validationf("invalid priority")
-	}
-	if !validProjectIcon(icon) || !validProjectIconColor(iconColor) {
-		return Project{}, validationf("invalid project appearance")
-	}
-	if options.TemplateSlug != "" && issueTemplateSlug(options.TemplateSlug) != options.TemplateSlug {
-		return Project{}, validationf("invalid project template identifier")
-	}
-	if !validProjectLead(options.Lead) {
-		return Project{}, validationf("invalid project lead")
-	}
-	if !validMilestoneDate(start) || !validMilestoneDate(target) {
-		return Project{}, validationf("project dates must use YYYY-MM-DD")
-	}
-	seenMilestones := make(map[string]struct{}, len(options.Milestones))
-	for _, milestone := range options.Milestones {
-		milestoneName := strings.TrimSpace(milestone.Name)
-		if milestoneName == "" {
-			return Project{}, validationf("milestone name required")
-		}
-		if !validMilestoneDate(milestone.TargetDate) {
-			return Project{}, validationf("invalid milestone target date")
-		}
-		key := strings.ToLower(milestoneName)
-		if _, exists := seenMilestones[key]; exists {
-			return Project{}, errf(ErrConflict, "milestone name")
-		}
-		seenMilestones[key] = struct{}{}
-	}
-	dependencies := make([]ProjectDependency, 0, len(options.Dependencies))
-	seenDependencies := make(map[string]struct{}, len(options.Dependencies))
-	for _, dependency := range options.Dependencies {
-		dependencySlug := strings.TrimSpace(dependency.ProjectSlug)
-		if dependencySlug == "" || dependencySlug == slug {
-			return Project{}, validationf("invalid project dependency")
-		}
-		if dependency.Kind != "blocks" && dependency.Kind != "blocked_by" && dependency.Kind != "related" {
-			return Project{}, validationf("invalid project dependency kind")
-		}
-		if _, exists := seenDependencies[dependencySlug]; exists {
-			return Project{}, errf(ErrConflict, "project dependency already exists")
-		}
-		seenDependencies[dependencySlug] = struct{}{}
-		dependencies = append(dependencies, ProjectDependency{ProjectSlug: dependencySlug, Kind: dependency.Kind})
-	}
+	dependencies := prepared.dependencies
 	now := domain.Now()
 	var completedAt *string
 	var out Project
-	err := s.mutate(func(m *mem) error {
+	err = s.mutate(func(m *mem) error {
 		resolvedStatus, ok := resolveProjectWorkflowStatus(m.Workspace, status, workflowStatus)
 		if !ok {
 			return validationf("invalid project workflow status")
