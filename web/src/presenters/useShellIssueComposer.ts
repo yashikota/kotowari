@@ -8,7 +8,6 @@ import { isSubmitShortcut } from '../keymap.ts';
 import { workflowStatusCategory, useIssueWorkflow } from '../workflow.tsx';
 import type {
   Issue,
-  IssueLink,
   IssueTemplate,
   Label,
   Project,
@@ -25,6 +24,7 @@ import {
 } from '../issue-drafts.ts';
 import { useIssueComposerParent } from './useIssueComposerParent.ts';
 import { useIssueComposerAttachments } from './useIssueComposerAttachments.ts';
+import { useIssueComposerLinks } from './useIssueComposerLinks.ts';
 
 type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
 
@@ -64,18 +64,13 @@ export function useShellIssueComposer({
   const [issueEstimate, setIssueEstimate] = useState('');
   const [issueBody, setIssueBody] = useState('');
   const attachments = useIssueComposerAttachments();
+  const issueLinks = useIssueComposerLinks();
   const [issueDueDate, setIssueDueDate] = useState('');
   const [issueDueDateOpen, setIssueDueDateOpen] = useState(false);
   const [issueRecurringOpen, setIssueRecurringOpen] = useState(false);
   const [issueRecurringFirstDueDate, setIssueRecurringFirstDueDate] = useState('');
   const [issueRecurringInterval, setIssueRecurringInterval] = useState('1');
   const [issueRecurringUnit, setIssueRecurringUnit] = useState<RecurringIssue['unit']>('week');
-  const [issueExternalLinks, setIssueExternalLinks] = useState<
-    Pick<IssueLink, 'url' | 'title' | 'kind'>[]
-  >([]);
-  const [issueLinkOpen, setIssueLinkOpen] = useState(false);
-  const [issueLinkURL, setIssueLinkURL] = useState('');
-  const [issueLinkTitle, setIssueLinkTitle] = useState('');
   const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
   const issueParent = useIssueComposerParent(open);
   const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
@@ -109,7 +104,7 @@ export function useShellIssueComposer({
       templateSlug: issueTemplateSlug,
       parentId: issueParent.id,
       parentIdentifier: issueParent.identifier,
-      externalLinks: issueExternalLinks.map((link) => ({ ...link })),
+      externalLinks: issueLinks.links.map((link) => ({ ...link })),
       recurringOpen: issueRecurringOpen,
       recurringFirstDueDate: issueRecurringFirstDueDate,
       recurringInterval: issueRecurringInterval,
@@ -130,7 +125,6 @@ export function useShellIssueComposer({
     issueDraftId,
     issueDueDate,
     issueEstimate,
-    issueExternalLinks,
     issueLabelNames,
     issueParent.id,
     issueParent.identifier,
@@ -144,6 +138,7 @@ export function useShellIssueComposer({
     issueTemplateSlug,
     issueTitle,
     issueType,
+    issueLinks.links,
   ]);
 
   function closeCreateIssue() {
@@ -222,10 +217,7 @@ export function useShellIssueComposer({
     setIssueRecurringFirstDueDate('');
     setIssueRecurringInterval('1');
     setIssueRecurringUnit('week');
-    setIssueExternalLinks([]);
-    setIssueLinkOpen(false);
-    setIssueLinkURL('');
-    setIssueLinkTitle('');
+    issueLinks.reset();
     setIssueLabelNames(prefill.labelNames ?? []);
     issueParent.reset(
       prefill.parent
@@ -270,7 +262,7 @@ export function useShellIssueComposer({
       identifier: draft.parentIdentifier,
       open: Boolean(draft.parentId),
     });
-    setIssueExternalLinks(draft.externalLinks.map((link) => ({ ...link })));
+    issueLinks.reset(draft.externalLinks);
     setIssueRecurringOpen(draft.recurringOpen);
     setIssueRecurringFirstDueDate(draft.recurringFirstDueDate);
     setIssueRecurringInterval(draft.recurringInterval);
@@ -306,10 +298,7 @@ export function useShellIssueComposer({
     setIssueRecurringFirstDueDate(firstDueDate);
     setIssueRecurringInterval('1');
     setIssueRecurringUnit('week');
-    setIssueExternalLinks(draft.links);
-    setIssueLinkOpen(false);
-    setIssueLinkURL('');
-    setIssueLinkTitle('');
+    issueLinks.reset(draft.links);
     setIssueLabelNames([]);
     issueParent.reset();
     setIssueTemplateSlug('');
@@ -320,7 +309,7 @@ export function useShellIssueComposer({
 
   async function submitIssue() {
     const title = issueTitle.trim();
-    if (!title || issueParent.loading || issueLinkOpen || attachments.error) return;
+    if (!title || issueParent.loading || issueLinks.isOpen || attachments.error) return;
     const recurrenceInterval = Number(issueRecurringInterval);
     if (
       issueRecurringOpen &&
@@ -348,7 +337,7 @@ export function useShellIssueComposer({
         .map((label) => label.id),
       dueDate: issueRecurringOpen ? undefined : issueDueDate || undefined,
       parentId: issueParent.id,
-      links: issueExternalLinks,
+      links: issueLinks.links,
       templateSlug: issueTemplateSlug || undefined,
       recurring: issueRecurringOpen
         ? {
@@ -374,10 +363,7 @@ export function useShellIssueComposer({
     setIssueRecurringFirstDueDate('');
     setIssueRecurringInterval('1');
     setIssueRecurringUnit('week');
-    setIssueExternalLinks([]);
-    setIssueLinkOpen(false);
-    setIssueLinkURL('');
-    setIssueLinkTitle('');
+    issueLinks.reset();
     issueParent.reset();
     setIssueStatus('todo');
     setIssuePriority(0);
@@ -432,17 +418,17 @@ export function useShellIssueComposer({
       issueRecurringUnit,
       issueSubmitDisabled:
         issueParent.loading ||
-        issueLinkOpen ||
+        issueLinks.isOpen ||
         Boolean(attachments.error) ||
         (issueRecurringOpen &&
           (!issueRecurringFirstDueDate ||
             !Number.isInteger(Number(issueRecurringInterval)) ||
             Number(issueRecurringInterval) < 1 ||
             Number(issueRecurringInterval) > 365)),
-      issueExternalLinks,
-      issueLinkOpen,
-      issueLinkURL,
-      issueLinkTitle,
+      issueExternalLinks: issueLinks.links,
+      issueLinkOpen: issueLinks.isOpen,
+      issueLinkURL: issueLinks.url,
+      issueLinkTitle: issueLinks.title,
       issueParentIdentifier: issueParent.identifier,
       issueParentOpen: issueParent.isOpen,
       issueParentQuery: issueParent.query,
@@ -543,36 +529,12 @@ export function useShellIssueComposer({
       onIssueRecurringUnitChange: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setIssueRecurringUnit(e.target.value as RecurringIssue['unit']),
-      onOpenIssueLink: () => {
-        setIssueLinkURL('');
-        setIssueLinkTitle('');
-        setIssueLinkOpen(true);
-      },
-      onCloseIssueLink: () => setIssueLinkOpen(false),
-      onIssueLinkURLChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueLinkURL(e.target.value),
-      onIssueLinkTitleChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueLinkTitle(e.target.value),
-      onAddIssueLink: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const url = issueLinkURL.trim();
-        if (!url || issueExternalLinks.some((link) => link.url === url)) return;
-        setIssueExternalLinks((current) => [
-          ...current,
-          {
-            url,
-            ...(issueLinkTitle.trim() ? { title: issueLinkTitle.trim() } : {}),
-            kind: 'link' as const,
-          },
-        ]);
-        setIssueLinkOpen(false);
-        setIssueLinkURL('');
-        setIssueLinkTitle('');
-      },
-      onRemoveIssueLink: (url: string) =>
-        setIssueExternalLinks((current) => current.filter((link) => link.url !== url)),
+      onOpenIssueLink: issueLinks.open,
+      onCloseIssueLink: issueLinks.close,
+      onIssueLinkURLChange: issueLinks.onURLChange,
+      onIssueLinkTitleChange: issueLinks.onTitleChange,
+      onAddIssueLink: issueLinks.add,
+      onRemoveIssueLink: issueLinks.remove,
       Issue_parentSearch_onChange36: issueParent.onQueryChange,
       Issue_parent_onChange37: issueParent.onChange,
       Issue_type_onChange32: (value: string | null) =>
