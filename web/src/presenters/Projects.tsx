@@ -1,5 +1,5 @@
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { api } from '../api.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
@@ -13,10 +13,16 @@ import {
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectViews } from '../project-views.ts';
-import type { ProjectBoardGrouping, ProjectViewSearch } from '../project-view-search.ts';
+import type {
+  ProjectBoardGrouping,
+  ProjectGroupBy,
+  ProjectViewSearch,
+} from '../project-view-search.ts';
 import type { ProjectSavedView } from '../project-views.ts';
 import { matchesProjectViewSearch } from '../project-view-filtering.ts';
 import { groupProjects } from '../project-grouping.ts';
+import type { ProjectGroupValue } from '../project-grouping.ts';
+import { projectGroupLabel } from '../project-group-label.ts';
 import { manualProjectOrder, sortProjectList } from '../project-ordering.ts';
 import {
   buildProjectBoardLayout,
@@ -223,34 +229,25 @@ export function useProjectsPagePresenter() {
   }, [projects, search, projectWorkflowStatuses]);
 
   const groupBy = search.groupBy ?? 'none';
+  const formatProjectGroupLabel = useCallback(
+    (by: ProjectGroupBy, value: ProjectGroupValue) =>
+      projectGroupLabel(by, value, {
+        language: i18n.language,
+        translate: i18n.t,
+        statusLabel: (status) =>
+          projectWorkflowStatusLabel(status, projectWorkflowStatuses, i18n.t),
+        priorityLabel,
+      }),
+    [projectWorkflowStatuses, i18n.language],
+  );
   const projectGroups = useMemo(() => {
     return groupProjects(
       filteredProjects,
       groupBy,
       projectWorkflowStatuses.map((status) => status.id),
-      (by, value) => {
-        if (value === null) {
-          if (by === 'labels') return i18n.t('projectList.groupNoLabel');
-          if (by === 'lead') return i18n.t('projectList.leadUnassigned');
-          if (by === 'startDate' || by === 'targetDate') return i18n.t('projectList.groupNoDate');
-          if (by === 'health') return i18n.t('projectHealth.status.none');
-        }
-        if (by === 'status')
-          return projectWorkflowStatusLabel(value ?? '', projectWorkflowStatuses, i18n.t);
-        if (by === 'priority') return priorityLabel(Number(value));
-        if (by === 'lead') return i18n.t('projectList.leadYou');
-        if (by === 'health') return i18n.t(`projectHealth.status.${value}`);
-        if (by === 'startDate' || by === 'targetDate') {
-          const [year, month, day] = (value ?? '').split('-').map(Number);
-          return new Intl.DateTimeFormat(i18n.language, {
-            dateStyle: 'medium',
-            timeZone: 'UTC',
-          }).format(new Date(Date.UTC(year, month - 1, day)));
-        }
-        return value ?? '';
-      },
+      formatProjectGroupLabel,
     );
-  }, [filteredProjects, groupBy, projectWorkflowStatuses, i18n.language]);
+  }, [filteredProjects, formatProjectGroupLabel, groupBy, projectWorkflowStatuses]);
 
   const view = search.view ?? 'list';
   const columnsBy: ProjectBoardGrouping = search.columnsBy ?? 'status';
@@ -268,37 +265,17 @@ export function useProjectsPagePresenter() {
         showEmpty: showEmptyColumns,
         preferredOrder: projectBoardSearchOrder(search, columnsBy),
         hiddenKeys: projectBoardSearchHidden(search, columnsBy),
-        labelFor: (by, value) => {
-          if (value === null) {
-            if (by === 'labels') return i18n.t('projectList.groupNoLabel');
-            if (by === 'lead') return i18n.t('projectList.leadUnassigned');
-            if (by === 'startDate' || by === 'targetDate') return i18n.t('projectList.groupNoDate');
-            if (by === 'health') return i18n.t('projectHealth.status.none');
-          }
-          if (by === 'status')
-            return projectWorkflowStatusLabel(value ?? '', projectWorkflowStatuses, i18n.t);
-          if (by === 'priority') return priorityLabel(Number(value));
-          if (by === 'lead') return i18n.t('projectList.leadYou');
-          if (by === 'health') return i18n.t(`projectHealth.status.${value}`);
-          if (by === 'startDate' || by === 'targetDate') {
-            const [year, month, day] = (value ?? '').split('-').map(Number);
-            return new Intl.DateTimeFormat(i18n.language, {
-              dateStyle: 'medium',
-              timeZone: 'UTC',
-            }).format(new Date(Date.UTC(year, month - 1, day)));
-          }
-          return value ?? '';
-        },
+        labelFor: formatProjectGroupLabel,
       }),
     [
       columnsBy,
       availableProjectLabels,
       filteredProjects,
       projectWorkflowStatuses,
+      formatProjectGroupLabel,
       rowsBy,
       search,
       showEmptyColumns,
-      i18n.language,
     ],
   );
   const projectBoardGroups = boardLayout.groups;
