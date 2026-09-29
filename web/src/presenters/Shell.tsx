@@ -47,6 +47,7 @@ import {
 } from '../issue-drafts.ts';
 import { useShellWorkspace } from './useShellWorkspace.ts';
 import { useShellPalette } from './useShellPalette.ts';
+import { useShellCycleNavigation } from './useShellCycleNavigation.ts';
 
 type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
 
@@ -75,7 +76,7 @@ function localDateValue(date: Date): string {
 }
 
 export function useShellPresenter() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const send = useIntent();
   const navigate = useNavigate();
   const router = useRouter();
@@ -142,8 +143,6 @@ export function useShellPresenter() {
     pathname === '/cycles' ||
     pathname === '/initiatives' ||
     pathname === '/views';
-  const [cycleNavigationOpen, setCycleNavigationOpen] = useState(false);
-  const [cycleNavigationQuery, setCycleNavigationQuery] = useState('');
   const [sidebarCustomizationOpen, setSidebarCustomizationOpen] =
     useMachineFlag('sidebar-customization');
   const { overlay, set: setOverlay } = useOverlay();
@@ -510,43 +509,6 @@ export function useShellPresenter() {
     if (pathname === '/config') return 'Settings';
     return workspaceName || 'Workspace';
   })();
-  const currentCycleNumber = isCycleDetail ? Number(pathname.slice('/cycles/'.length)) : 0;
-  const currentCycle = cycles.find((cycle) => cycle.number === currentCycleNumber);
-  const currentCycleName = currentCycle?.name || t('field.cycleN', { number: currentCycleNumber });
-  const cycleListScope =
-    pathname === '/cycles' && (routeSearch.scope === 'current' || routeSearch.scope === 'upcoming')
-      ? routeSearch.scope
-      : undefined;
-  const cycleNavigationOptions = (() => {
-    const query = cycleNavigationQuery.trim().toLocaleLowerCase(i18n.language);
-    const matches = cycles.filter((candidate) => {
-      if (candidate.number === currentCycleNumber) return false;
-      if (!query) return true;
-      const name = candidate.name || t('field.cycleN', { number: candidate.number });
-      return `${name} ${candidate.number}`.toLocaleLowerCase(i18n.language).includes(query);
-    });
-    const next = matches
-      .filter(
-        (candidate) => candidate.status === 'upcoming' && candidate.number > currentCycleNumber,
-      )
-      .sort((a, b) => a.number - b.number);
-    const previous = matches
-      .filter(
-        (candidate) => candidate.status === 'completed' && candidate.number < currentCycleNumber,
-      )
-      .sort((a, b) => b.number - a.number);
-    return {
-      next: query ? next : next.slice(0, 1),
-      previous: query ? previous : previous.slice(0, 1),
-    };
-  })();
-
-  function navigateToCycle(number: number) {
-    setCycleNavigationOpen(false);
-    setCycleNavigationQuery('');
-    void navigate({ to: '/cycles/$number', params: { number: String(number) } });
-  }
-
   function openCreateIssue(prefill: IssueCreateContext = {}) {
     issueDraftIdRef.current = '';
     setIssueDraftId('');
@@ -967,6 +929,16 @@ export function useShellPresenter() {
     });
   }
 
+  const cycleNavigationState = useShellCycleNavigation({
+    pathname,
+    scope:
+      routeSearch.scope === 'current' || routeSearch.scope === 'upcoming'
+        ? routeSearch.scope
+        : undefined,
+    cycles,
+  });
+  const { data: cycleNavigationData, handlers: cycleNavigationHandlers } = cycleNavigationState;
+
   return {
     _view: 0 as const,
     workspaceName,
@@ -977,13 +949,7 @@ export function useShellPresenter() {
     issueViewFavorite,
     isCycleDetail,
     isCycleList: pathname === '/cycles',
-    currentCycleName,
-    currentCycleStatus: currentCycle?.status,
-    cycleListScope,
-    cycleNavigationOpen,
-    cycleNavigationQuery,
-    nextCycles: cycleNavigationOptions.next,
-    previousCycles: cycleNavigationOptions.previous,
+    ...cycleNavigationData,
     isPageOwnedHeader,
     mobileNavigationOpen,
     sidebarCollapsed: preferences.sidebarCollapsed,
@@ -1067,12 +1033,7 @@ export function useShellPresenter() {
     adrLinkIssue,
     error,
     handlers: {
-      onCycleNavigationOpenChange: (opened: boolean) => {
-        setCycleNavigationOpen(opened);
-        if (!opened) setCycleNavigationQuery('');
-      },
-      onCycleNavigationQueryChange: (query: string) => setCycleNavigationQuery(query),
-      onNavigateCycle: navigateToCycle,
+      ...cycleNavigationHandlers,
       onToggleIssueViewFavorite: () => {
         if (!issueView) return;
         const favorites = preferences.favoriteIssueViews;
