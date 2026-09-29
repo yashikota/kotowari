@@ -2198,19 +2198,19 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	issue, err = s.ToggleIssueReaction(issue.Identifier, "👍")
+	issue, err = s.ToggleIssueReaction(issue.Identifier, ToggleReactionInput{Emoji: "👍"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	issue, err = s.ToggleIssueReaction(issue.Identifier, "🫠")
+	issue, err = s.ToggleIssueReaction(issue.Identifier, ToggleReactionInput{Emoji: "🫠"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment, err = s.ToggleCommentReaction(issue.Identifier, comment.ID, "❤️")
+	comment, err = s.ToggleCommentReaction(issue.Identifier, comment.ID, ToggleReactionInput{Emoji: "❤️"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment, err = s.ToggleCommentReaction(issue.Identifier, comment.ID, "👩🏽‍💻")
+	comment, err = s.ToggleCommentReaction(issue.Identifier, comment.ID, ToggleReactionInput{Emoji: "👩🏽‍💻"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2218,7 +2218,7 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 		len(comment.Reactions) != 2 || comment.Reactions[0] != "❤️" || comment.Reactions[1] != "👩🏽‍💻" {
 		t.Fatalf("reactions issue=%#v comment=%#v", issue.Reactions, comment.Reactions)
 	}
-	if _, err := s.ToggleIssueReaction(issue.Identifier, "script"); !errors.Is(err, ErrValidation) {
+	if _, err := s.ToggleIssueReaction(issue.Identifier, ToggleReactionInput{Emoji: "script"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid issue reaction: %v", err)
 	}
 
@@ -2241,11 +2241,11 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 		t.Fatalf("reactions after reload: issue=%#v comments=%#v", persistedIssue.Reactions, persistedComments)
 	}
 
-	issue, err = reopened.ToggleIssueReaction(issue.Identifier, "👍")
+	issue, err = reopened.ToggleIssueReaction(issue.Identifier, ToggleReactionInput{Emoji: "👍"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment, err = reopened.ToggleCommentReaction(issue.Identifier, comment.ID, "❤️")
+	comment, err = reopened.ToggleCommentReaction(issue.Identifier, comment.ID, ToggleReactionInput{Emoji: "❤️"})
 	if err != nil {
 		t.Fatal(err)
 	}

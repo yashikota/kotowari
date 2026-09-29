@@ -68,14 +68,12 @@ func (s *Server) deleteComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) toggleIssueReaction(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Emoji string `json:"emoji"`
-	}
+	var in model.ToggleReactionInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.ToggleIssueReaction(r.PathValue("id"), in.Emoji)
+	out, err := s.store.ToggleIssueReaction(r.PathValue("id"), in)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -89,14 +87,12 @@ func (s *Server) toggleCommentReaction(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid comment id"})
 		return
 	}
-	var in struct {
-		Emoji string `json:"emoji"`
-	}
+	var in model.ToggleReactionInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.ToggleCommentReaction(r.PathValue("id"), commentID, in.Emoji)
+	out, err := s.store.ToggleCommentReaction(r.PathValue("id"), commentID, in)
 	if err != nil {
 		writeError(w, err)
 		return

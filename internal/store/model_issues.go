@@ -13,4 +13,5 @@ type Comment = model.Comment
 type CommentAttachment = model.CommentAttachment
 type CreateCommentInput = model.CreateCommentInput
 type UpdateCommentInput = model.UpdateCommentInput
+type ToggleReactionInput = model.ToggleReactionInput
 type Activity = model.Activity

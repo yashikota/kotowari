@@ -112,7 +112,8 @@ func toggleReaction(current []string, emoji string) ([]string, bool) {
 	return append(append([]string{}, current...), emoji), true
 }
 
-func (s *Store) ToggleIssueReaction(identifier, emoji string) (Issue, error) {
+func (s *Store) ToggleIssueReaction(identifier string, in ToggleReactionInput) (Issue, error) {
+	emoji := in.Emoji
 	if !validReactionEmoji(emoji) {
 		return Issue{}, validationf("invalid reaction")
 	}
@@ -143,7 +144,8 @@ func (s *Store) ToggleIssueReaction(identifier, emoji string) (Issue, error) {
 	return out, err
 }
 
-func (s *Store) ToggleCommentReaction(identifier string, commentID int64, emoji string) (Comment, error) {
+func (s *Store) ToggleCommentReaction(identifier string, commentID int64, in ToggleReactionInput) (Comment, error) {
+	emoji := in.Emoji
 	if commentID < 1 {
 		return Comment{}, validationf("invalid comment id")
 	}

@@ -113,6 +113,10 @@ type UpdateCommentInput struct {
 	Body string `json:"body"`
 }
 
+type ToggleReactionInput struct {
+	Emoji string `json:"emoji"`
+}
+
 type Activity struct {
 	ID         int64           `json:"id"`
 	EntityType string          `json:"entityType"`
