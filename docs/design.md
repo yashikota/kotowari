@@ -282,7 +282,7 @@ ADRとIssueの双方向リンクhandlerは `adr_links.go` にまとめ、ADRのC
 CLI は `internal/cli/cli.go` にコマンド定義を置き、各コマンドの処理は初期化、ADR、一覧、Workspace、serve の領域別ファイルに分ける。
 
 `internal/store` はファイル永続化とドメイン操作の境界であり、Workspace、Project、Cycle、Issue の読み書きは領域別のファイルに分ける。
-Issue の検索条件評価は更新処理と分離する。
+Issue の検索条件評価は更新処理と分離する。Query値の型検証と正規化は `issue_filter_validation.go`、候補ごとの評価と並べ替えは `issue_query.go` に置く。
 Recurring Issue のフォーム入力・slug正規化は `recurring_issue_input.go`、due date計算と生成処理は `recurring_issue_schedule.go`、TOML frontmatterの読み書きと検証は `recurring_issue_codec.go` に分け、`recurring_issues.go` はテンプレート一覧・既存Issueからの作成・有効化・削除を担当する。
 関連データを一貫して更新する必要があるため、各操作は `Store.mutate` を通して Workspace 全体のロックと保存を共有する。
 handler から保存データ構造を直接変更しない。
