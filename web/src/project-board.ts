@@ -260,3 +260,48 @@ export function moveProjectBoardGroup(
   next.splice(Math.max(0, Math.min(destinationIndex, next.length)), 0, group);
   return next;
 }
+
+export function projectBoardProjectPatch(
+  project: Project,
+  groups: readonly Pick<ProjectBoardGroup, 'groupBy' | 'value'>[],
+): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  for (const group of groups) {
+    if (!group.groupBy) continue;
+    if (
+      group.groupBy === 'status' &&
+      typeof group.value === 'string' &&
+      group.value !== (project.workflowStatus ?? project.status)
+    ) {
+      patch.workflowStatus = group.value;
+    } else if (
+      group.groupBy === 'priority' &&
+      typeof group.value === 'string' &&
+      Number(group.value) !== project.priority
+    ) {
+      patch.priority = Number(group.value);
+    } else if (group.groupBy === 'lead' && project.lead !== (group.value ?? '')) {
+      patch.lead = group.value ?? '';
+    } else if (group.groupBy === 'labels') {
+      const nextLabels = group.value ? [group.value] : [];
+      if (JSON.stringify(project.labels ?? []) !== JSON.stringify(nextLabels)) {
+        patch.labels = nextLabels;
+      }
+    } else if (group.groupBy === 'health' && (project.health ?? '') !== (group.value ?? '')) {
+      patch.health = group.value ?? '';
+    } else if (
+      group.groupBy === 'startDate' &&
+      (project.startDate ?? null) !== (group.value ?? null)
+    ) {
+      if (group.value === null) patch.clearStartDate = true;
+      else patch.startDate = group.value;
+    } else if (
+      group.groupBy === 'targetDate' &&
+      (project.targetDate ?? null) !== (group.value ?? null)
+    ) {
+      if (group.value === null) patch.clearTargetDate = true;
+      else patch.targetDate = group.value;
+    }
+  }
+  return patch;
+}

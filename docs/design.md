@@ -306,7 +306,7 @@ Issue一覧のlist presenterは `IssueList.tsx`、workflow statusごとのcolumn
 
 Projects一覧とProject View Builderが共有するTimelineモデル型・月送り・週番号とレイアウト計算は `project-timeline.ts` に置く。Timeline view component は表示だけを担当し、presenter側で重複していた計算をこの境界に集約する。
 
-Project boardのグループ生成・配置計算とview契約型は `project-board.ts` に置き、domain側からboard view componentへの型依存を作らない。
+Project boardのグループ生成・配置計算・移動時にProject patchへ変換する処理とview契約型は `project-board.ts` に置き、domain側からboard view componentへの型依存を作らない。
 
 Project一覧とProject View Builderで共有するsearch queryの検証・正規化は `project-route-search.ts` に置き、routerはroute構成を担当する。
 

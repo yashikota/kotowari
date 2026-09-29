@@ -21,6 +21,7 @@ import { manualProjectOrder, sortProjectList } from '../project-ordering.ts';
 import {
   buildProjectBoardLayout,
   moveProjectBoardGroup,
+  projectBoardProjectPatch,
   projectBoardHiddenPatch,
   projectBoardOrderPatch,
   projectBoardSearchHidden,
@@ -348,48 +349,7 @@ export function useProjectsPagePresenter() {
     const row =
       rowsBy === 'none' ? undefined : projectBoard.rows.find((item) => item.key === rowKey);
     if (!column) return;
-    const changes: Record<string, unknown> = {};
-    const updates = [
-      { groupBy: column.groupBy, value: column.value },
-      ...(row ? [{ groupBy: row.groupBy, value: row.value }] : []),
-    ];
-    for (const update of updates) {
-      if (!update.groupBy) continue;
-      if (
-        update.groupBy === 'status' &&
-        typeof update.value === 'string' &&
-        update.value !== (project.workflowStatus ?? project.status)
-      ) {
-        changes.workflowStatus = update.value;
-      } else if (
-        update.groupBy === 'priority' &&
-        typeof update.value === 'string' &&
-        Number(update.value) !== project.priority
-      ) {
-        changes.priority = Number(update.value);
-      } else if (update.groupBy === 'lead' && project.lead !== (update.value ?? '')) {
-        changes.lead = update.value ?? '';
-      } else if (update.groupBy === 'labels') {
-        const nextLabels = update.value ? [update.value] : [];
-        if (JSON.stringify(project.labels ?? []) !== JSON.stringify(nextLabels)) {
-          changes.labels = nextLabels;
-        }
-      } else if (update.groupBy === 'health' && (project.health ?? '') !== (update.value ?? '')) {
-        changes.health = update.value ?? '';
-      } else if (
-        update.groupBy === 'startDate' &&
-        (project.startDate ?? null) !== (update.value ?? null)
-      ) {
-        if (update.value === null) changes.clearStartDate = true;
-        else changes.startDate = update.value;
-      } else if (
-        update.groupBy === 'targetDate' &&
-        (project.targetDate ?? null) !== (update.value ?? null)
-      ) {
-        if (update.value === null) changes.clearTargetDate = true;
-        else changes.targetDate = update.value;
-      }
-    }
+    const changes = projectBoardProjectPatch(project, [column, ...(row ? [row] : [])]);
     if (!Object.keys(changes).length) return;
     await api.patchProject(projectSlug, changes);
     await router.invalidate();
