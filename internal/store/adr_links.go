@@ -1,6 +1,10 @@
 package store
 
-import "github.com/yashikota/kotowari/internal/domain"
+import (
+	"sort"
+
+	"github.com/yashikota/kotowari/internal/domain"
+)
 
 func (s *Store) LinkIssueADR(issueIdent string, adrNumber int) error {
 	return s.mutate(func(m *mem) error {
@@ -80,4 +84,84 @@ func syncIssueADRLinks(m *mem, adrNumber int, prev, next []int) {
 			linkIssueToADR(m, n, adrNumber)
 		}
 	}
+}
+
+func containsInt(in []int, n int) bool {
+	for _, v := range in {
+		if v == n {
+			return true
+		}
+	}
+	return false
+}
+
+func adrByNumber(m *mem, n int) (ADR, bool) {
+	for _, a := range m.ADRs {
+		if a.Number == n {
+			return a, true
+		}
+	}
+	return ADR{}, false
+}
+
+func issueByNumber(m *mem, n int) (Issue, bool) {
+	for _, iss := range m.Issues {
+		if iss.Number == n {
+			return iss, true
+		}
+	}
+	return Issue{}, false
+}
+
+func applySupersedes(m *mem, old *int, successor int, now string) error {
+	if old == nil {
+		return nil
+	}
+	n := *old
+	if n < 1 {
+		return validationf("invalid supersedes")
+	}
+	if successor > 0 && n == successor {
+		return validationf("ADR cannot supersede itself")
+	}
+	i := indexADR(m, domain.Ident(m.adrPrefix(), n))
+	if i < 0 {
+		return validationf("superseded ADR %d not found", n)
+	}
+	m.ADRs[i].Status = "superseded"
+	m.ADRs[i].UpdatedAt = now
+	return nil
+}
+
+func uniqueInts(in []int) []int {
+	seen := map[int]struct{}{}
+	var out []int
+	for _, n := range in {
+		if n < 1 {
+			continue
+		}
+		if _, ok := seen[n]; ok {
+			continue
+		}
+		seen[n] = struct{}{}
+		out = append(out, n)
+	}
+	sort.Ints(out)
+	if out == nil {
+		out = []int{}
+	}
+	return out
+}
+
+func removeInt(in []int, n int) []int {
+	var out []int
+	for _, v := range in {
+		if v != n {
+			out = append(out, v)
+		}
+	}
+	if out == nil {
+		out = []int{}
+	}
+	return out
 }
