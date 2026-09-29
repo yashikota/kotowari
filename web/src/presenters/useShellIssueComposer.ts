@@ -24,6 +24,7 @@ import {
   type IssueDraft,
 } from '../issue-drafts.ts';
 import { useIssueComposerParent } from './useIssueComposerParent.ts';
+import { useIssueComposerAttachments } from './useIssueComposerAttachments.ts';
 
 type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
 
@@ -62,8 +63,7 @@ export function useShellIssueComposer({
   const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
   const [issueEstimate, setIssueEstimate] = useState('');
   const [issueBody, setIssueBody] = useState('');
-  const [issueAttachments, setIssueAttachments] = useState<File[]>([]);
-  const [issueAttachmentError, setIssueAttachmentError] = useState('');
+  const attachments = useIssueComposerAttachments();
   const [issueDueDate, setIssueDueDate] = useState('');
   const [issueDueDateOpen, setIssueDueDateOpen] = useState(false);
   const [issueRecurringOpen, setIssueRecurringOpen] = useState(false);
@@ -215,8 +215,7 @@ export function useShellIssueComposer({
     setIssuePriority(prefill.priority ?? 0);
     setIssueType(prefill.type ?? '');
     setIssueEstimate(prefill.estimate == null ? '' : String(prefill.estimate));
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
+    attachments.clear();
     setIssueDueDate('');
     setIssueDueDateOpen(false);
     setIssueRecurringOpen(false);
@@ -276,8 +275,7 @@ export function useShellIssueComposer({
     setIssueRecurringFirstDueDate(draft.recurringFirstDueDate);
     setIssueRecurringInterval(draft.recurringInterval);
     setIssueRecurringUnit(draft.recurringUnit);
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
+    attachments.clear();
     setIssueCreateMore(false);
     setOpen(true);
   });
@@ -301,8 +299,7 @@ export function useShellIssueComposer({
     setIssueAssignee(draft.assignee ?? '');
     setIssueType('');
     setIssueEstimate('');
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
+    attachments.clear();
     setIssueDueDate('');
     setIssueDueDateOpen(false);
     setIssueRecurringOpen(true);
@@ -323,7 +320,7 @@ export function useShellIssueComposer({
 
   async function submitIssue() {
     const title = issueTitle.trim();
-    if (!title || issueParent.loading || issueLinkOpen || issueAttachmentError) return;
+    if (!title || issueParent.loading || issueLinkOpen || attachments.error) return;
     const recurrenceInterval = Number(issueRecurringInterval);
     if (
       issueRecurringOpen &&
@@ -367,18 +364,10 @@ export function useShellIssueComposer({
     issueDraftIdRef.current = '';
     setIssueDraftId('');
     setIssueDraftSaved(false);
-    let attachmentUploadFailed = false;
-    if (issueAttachments.length > 0) {
-      try {
-        await api.addIssueAttachments(issue.identifier, issueAttachments);
-      } catch {
-        attachmentUploadFailed = true;
-      }
-    }
+    const attachmentUploadFailed = await attachments.upload(issue.identifier);
     setIssueTitle('');
     setIssueBody('');
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
+    attachments.clear();
     setIssueDueDate('');
     setIssueDueDateOpen(false);
     setIssueRecurringOpen(false);
@@ -433,8 +422,8 @@ export function useShellIssueComposer({
       issueType,
       issueEstimate,
       issueBody,
-      issueAttachments,
-      issueAttachmentError,
+      issueAttachments: attachments.files,
+      issueAttachmentError: attachments.error,
       issueDueDate,
       issueDueDateOpen,
       issueRecurringOpen,
@@ -444,7 +433,7 @@ export function useShellIssueComposer({
       issueSubmitDisabled:
         issueParent.loading ||
         issueLinkOpen ||
-        Boolean(issueAttachmentError) ||
+        Boolean(attachments.error) ||
         (issueRecurringOpen &&
           (!issueRecurringFirstDueDate ||
             !Number.isInteger(Number(issueRecurringInterval)) ||
@@ -591,25 +580,7 @@ export function useShellIssueComposer({
       Issue_estimate_onChange33: (value: string | null) =>
         setIssueEstimate(value && value !== 'none' ? value : ''),
       Issue_labels_onChange34: (values: string[]) => setIssueLabelNames(values),
-      Issue_attachments_onChange: (files: File[]) => {
-        if (files.length > 10) {
-          setIssueAttachments([]);
-          setIssueAttachmentError(t('issueAttachments.tooMany'));
-          return;
-        }
-        if (files.some((file) => file.size === 0)) {
-          setIssueAttachments([]);
-          setIssueAttachmentError(t('issueAttachments.emptyFile'));
-          return;
-        }
-        if (files.some((file) => file.size > 20 * 1024 * 1024)) {
-          setIssueAttachments([]);
-          setIssueAttachmentError(t('issueAttachments.tooLarge'));
-          return;
-        }
-        setIssueAttachments(files);
-        setIssueAttachmentError('');
-      },
+      Issue_attachments_onChange: attachments.onChange,
       Issue_project_onChange16: (value: string | null) =>
         setIssueProjectId(value && value !== 'none' ? value : ''),
       Issue_assignee_onChange: (value: string | null) =>
