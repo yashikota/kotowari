@@ -40,7 +40,7 @@ func copyTemplateFiles(destRoot string, overwrite bool) error {
 
 func createTemplateFile(path, conflictMessage string, write func() error) error {
 	if _, err := os.Stat(path); err == nil {
-		return errf(ErrConflict, conflictMessage)
+		return errf(ErrConflict, "%s", conflictMessage)
 	} else if !os.IsNotExist(err) {
 		return err
 	}
