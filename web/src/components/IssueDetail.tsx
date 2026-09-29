@@ -1,26 +1,15 @@
-import { Link } from '@tanstack/react-router';
 import {
   ActionIcon,
   Alert,
   Box,
   Button,
   Group,
-  Menu,
-  NativeSelect,
   Stack,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
-import {
-  IconChevronDown,
-  IconChevronRight,
-  IconExternalLink,
-  IconFileText,
-  IconPaperclip,
-  IconPlus,
-  IconTrash,
-} from '@tabler/icons-react';
+import { IconPaperclip, IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -30,8 +19,11 @@ import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
 import { IssueDetailDialogs } from './IssueDetailDialogs.tsx';
 import { IssueActivitySection } from './IssueActivitySection.tsx';
+import { IssueADRsSection } from './IssueADRsSection.tsx';
 import { IssueDetailHeader } from './IssueDetailHeader.tsx';
 import { IssuePropertiesPanel } from './IssuePropertiesPanel.tsx';
+import { IssueRelationsSection } from './IssueRelationsSection.tsx';
+import { IssueResourcesSection } from './IssueResourcesSection.tsx';
 import layoutStyles from './IssueDetail.module.css';
 import { IssueAttachmentList } from './IssueAttachmentList.tsx';
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
@@ -90,25 +82,15 @@ export function IssueDetailView({
       const {
         identifier,
         issue,
-        pages,
         reactionPickerTarget,
         reactionError,
         issueAttachmentError,
         issueAttachmentBusy,
         issueFilesInputRef,
         subTitle,
-        adrPick,
         historyRequest,
         subIssueEditorOpen,
-        relationsEditorOpen,
         children,
-        linkedAdrs,
-        unlinkedAdrs,
-        resourcesCollapsed,
-        relationTarget,
-        relationKind,
-        relationIssues,
-        relationTargetOptions,
         handlers,
       } = model;
       return (
@@ -280,263 +262,10 @@ export function IssueDetailView({
                 </Box>
               </Stack>
 
-              {relationIssues.length > 0 || relationsEditorOpen ? (
-                <Box component="section" aria-label={t('issueRelations.heading')} py="xs">
-                  {relationIssues.length > 0 ? (
-                    <Stack gap="xs" role="list" aria-label={t('issueRelations.heading')}>
-                      {relationIssues.map(({ relation, target }) => (
-                        <Group
-                          key={relation.id}
-                          justify="space-between"
-                          wrap="nowrap"
-                          role="listitem"
-                        >
-                          <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-                            <MetaBadge>{t(`issueRelations.${relation.kind}`)}</MetaBadge>
-                            <Link
-                              to="/issues/$identifier"
-                              params={{ identifier: target.identifier }}
-                            >
-                              {target.identifier} {target.title}
-                            </Link>
-                          </Group>
-                          <Button
-                            type="button"
-                            variant="subtle"
-                            color="gray"
-                            size="compact-sm"
-                            aria-label={t('issueRelations.remove', {
-                              identifier: target.identifier,
-                            })}
-                            onClick={() => handlers.onRemoveRelation33(relation)}
-                          >
-                            <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                          </Button>
-                        </Group>
-                      ))}
-                    </Stack>
-                  ) : null}
-                  {relationsEditorOpen ? (
-                    <form onSubmit={handlers.Relation_onSubmit32}>
-                      <Stack gap="xs">
-                        <Group align="flex-end" wrap="wrap">
-                          <NativeSelect
-                            aria-label={t('issueRelations.kindLabel')}
-                            value={relationKind}
-                            onChange={handlers.Relation_kind_onChange31}
-                            data={(['related', 'blocks', 'blockedBy', 'duplicateOf'] as const).map(
-                              (kind) => ({
-                                value: kind,
-                                label: t(`issueRelations.${kind}`),
-                              }),
-                            )}
-                          />
-                          <NativeSelect
-                            aria-label={t('issueRelations.issueLabel')}
-                            value={relationTarget}
-                            onChange={handlers.Relation_target_onChange30}
-                            data={[
-                              { value: '', label: t('issueRelations.chooseIssue') },
-                              ...relationTargetOptions.map((candidate) => ({
-                                value: candidate.identifier,
-                                label: `${candidate.identifier} ${candidate.title}`,
-                              })),
-                            ]}
-                            style={{ flex: '1 1 240px' }}
-                          />
-                        </Group>
-                        <Group justify="flex-end" gap="xs">
-                          <Button
-                            type="button"
-                            variant="default"
-                            size="xs"
-                            onClick={handlers.onCloseRelationsEditor}
-                          >
-                            {t('issueSubIssues.cancel')}
-                          </Button>
-                          <Button type="submit" size="xs" disabled={!relationTarget}>
-                            {t('issueRelations.add')}
-                          </Button>
-                        </Group>
-                      </Stack>
-                    </form>
-                  ) : null}
-                </Box>
-              ) : null}
-
-              {issue.externalLinks.length > 0 ? (
-                <Section
-                  title={t('issueLinks.resourcesHeading')}
-                  ariaLabel={t('issueLinks.resourcesHeading')}
-                  action={
-                    <Group gap={4}>
-                      <ActionIcon
-                        type="button"
-                        variant="subtle"
-                        color="gray"
-                        aria-label={
-                          resourcesCollapsed
-                            ? t('issueLinks.expandResources')
-                            : t('issueLinks.collapseResources')
-                        }
-                        aria-expanded={!resourcesCollapsed}
-                        aria-controls="issue-resources-content"
-                        onClick={handlers.onToggleResources}
-                      >
-                        {resourcesCollapsed ? (
-                          <IconChevronRight size={14} stroke={1.8} aria-hidden="true" />
-                        ) : (
-                          <IconChevronDown size={14} stroke={1.8} aria-hidden="true" />
-                        )}
-                      </ActionIcon>
-                      <Menu position="bottom-end" shadow="md" withinPortal>
-                        <Menu.Target>
-                          <ActionIcon
-                            type="button"
-                            variant="subtle"
-                            color="gray"
-                            aria-label={t('issueLinks.addResource')}
-                            title={t('issueLinks.addResource')}
-                          >
-                            <IconPlus size={15} stroke={1.8} aria-hidden="true" />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown aria-label={t('issueLinks.addResource')}>
-                          <Menu.Item onClick={() => handlers.onOpenExternalLink('link')}>
-                            {t('issueActions.addLink')}
-                          </Menu.Item>
-                          <Menu.Item onClick={() => handlers.onOpenExternalLink('pullRequest')}>
-                            {t('issueActions.addPullRequest')}
-                          </Menu.Item>
-                          <Menu.Item onClick={handlers.Create_document_onClick44}>
-                            {t('issueActions.addDocument')}
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </Group>
-                  }
-                >
-                  {resourcesCollapsed ? null : (
-                    <Box id="issue-resources-content">
-                      <Stack gap="xs" role="list" aria-label={t('issueLinks.heading')}>
-                        {issue.externalLinks.map((link) => {
-                          let pageSlug: string | null = null;
-                          try {
-                            const url = new URL(link.url);
-                            const pageMarker = '/pages/';
-                            const markerIndex = url.pathname.lastIndexOf(pageMarker);
-                            if (url.origin === window.location.origin && markerIndex >= 0) {
-                              const candidate = url.pathname.slice(markerIndex + pageMarker.length);
-                              if (candidate && !candidate.includes('/')) {
-                                pageSlug = decodeURIComponent(candidate);
-                              }
-                            }
-                          } catch {
-                            pageSlug = null;
-                          }
-                          const page = pageSlug
-                            ? pages.find((item) => item.slug === pageSlug)
-                            : null;
-                          const title = page?.title || link.title || link.url;
-                          return (
-                            <Group
-                              key={link.id}
-                              justify="space-between"
-                              wrap="nowrap"
-                              role="listitem"
-                            >
-                              <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-                                {pageSlug ? (
-                                  <IconFileText size={15} stroke={1.7} aria-hidden="true" />
-                                ) : (
-                                  <IconExternalLink size={15} stroke={1.7} aria-hidden="true" />
-                                )}
-                                {pageSlug ? (
-                                  <Link to="/pages/$slug" params={{ slug: pageSlug }}>
-                                    {title}
-                                  </Link>
-                                ) : (
-                                  <a href={link.url} target="_blank" rel="noreferrer">
-                                    {title}
-                                  </a>
-                                )}
-                                <MetaBadge>{t(`issueLinks.${link.kind}`)}</MetaBadge>
-                              </Group>
-                              <Button
-                                type="button"
-                                variant="subtle"
-                                color="gray"
-                                size="compact-sm"
-                                aria-label={t('issueLinks.remove', { title })}
-                                onClick={() => handlers.onRemoveExternalLink28(link)}
-                              >
-                                <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                              </Button>
-                            </Group>
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-                  )}
-                </Section>
-              ) : null}
-
+              <IssueRelationsSection model={model} />
+              <IssueResourcesSection model={model} />
               <IssueActivitySection model={model} noteRef={noteRef} />
-              <Section title={t('nav.adrs')}>
-                {linkedAdrs.length === 0 ? (
-                  <Text c="dimmed" size="sm">
-                    {t('ui.noLinkedDecisions')}
-                  </Text>
-                ) : (
-                  <Stack gap="xs" role="list">
-                    {linkedAdrs.map((a) => (
-                      <Group key={a.identifier} justify="space-between" wrap="nowrap">
-                        <Group gap="sm" wrap="nowrap">
-                          <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
-                            {a.identifier}
-                          </Link>
-                          <Text>{a.title}</Text>
-                          <MetaBadge>{a.status}</MetaBadge>
-                        </Group>
-                        <Button
-                          type="button"
-                          variant="subtle"
-                          aria-label={t('issueADRs.unlink', { identifier: a.identifier })}
-                          onClick={() => handlers.onClick14(a)}
-                        >
-                          {t('ui.unlink')}
-                        </Button>
-                      </Group>
-                    ))}
-                  </Stack>
-                )}
-                <Group align="flex-end" wrap="wrap">
-                  <NativeSelect
-                    aria-label={t('ui.linkAdr')}
-                    value={adrPick}
-                    onChange={handlers.Link_ADR_onChange15}
-                    data={[
-                      { value: '', label: t('issueADRs.choose') },
-                      ...unlinkedAdrs.map((a) => ({
-                        value: String(a.number),
-                        label: `${a.identifier} ${a.title}`,
-                      })),
-                    ]}
-                    style={{ flex: 1, minWidth: 200 }}
-                  />
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    disabled={!adrPick}
-                    onClick={handlers.onClick16}
-                  >
-                    {t('ui.link')}
-                  </Button>
-                  <Button type="button" variant="subtle" onClick={handlers.onClick17}>
-                    {t('ui.newAdr')}
-                  </Button>
-                </Group>
-              </Section>
+              <IssueADRsSection model={model} />
               <Box pt="sm" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
                 <AIPanel
                   kind="issues"
