@@ -1,5 +1,4 @@
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import type * as React from 'react';
 import { useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import {
@@ -21,16 +20,13 @@ import { useIssueDetailData } from './useIssueDetailData.ts';
 import { useIssueDetailDueDate } from './useIssueDetailDueDate.ts';
 import { useIssueDetailConversions } from './useIssueDetailConversions.ts';
 import { useIssueDetailLabels } from './useIssueDetailLabels.ts';
+import { useIssueDetailProperties } from './useIssueDetailProperties.ts';
 import { useIssueDetailRelations } from './useIssueDetailRelations.ts';
 import { useIssueDetailReminders } from './useIssueDetailReminders.ts';
 import { useIssueDetailResources } from './useIssueDetailResources.ts';
 import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
 
-const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
-
-export type IssueOptionalProperty = 'dueDate' | 'milestone' | 'parent' | 'type';
-export type IssuePropertyMenu = 'status' | 'priority' | 'labels' | 'estimate' | null;
-type OptionalPropertyOverrides = Record<string, Partial<Record<IssueOptionalProperty, boolean>>>;
+export type { IssueOptionalProperty, IssuePropertyMenu } from './useIssueDetailProperties.ts';
 
 type Props = {
   identifier: string;
@@ -41,19 +37,6 @@ type Props = {
   issueListScrollTop?: number;
   issueListLayout?: 'list' | 'board';
 };
-
-function readOptionalPropertyOverrides(): OptionalPropertyOverrides {
-  if (typeof window === 'undefined') return {};
-  try {
-    const stored: unknown = JSON.parse(
-      window.localStorage.getItem(ISSUE_PROPERTY_VISIBILITY_KEY) ?? '{}',
-    );
-    if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) return {};
-    return stored as OptionalPropertyOverrides;
-  } catch {
-    return {};
-  }
-}
 
 export function useIssueDetailPresenter({
   identifier,
@@ -113,10 +96,7 @@ export function useIssueDetailPresenter({
   const [descriptionFocus, setDescriptionFocus] = useState({ identifier, request: 0 });
   const descriptionFocusRequest =
     descriptionFocus.identifier === identifier ? descriptionFocus.request : 0;
-  const [optionalPropertyOverrides, setOptionalPropertyOverrides] =
-    useState<OptionalPropertyOverrides>(readOptionalPropertyOverrides);
   const [issueOptionsOpen, setIssueOptionsOpen] = useState(false);
-  const [issuePropertyMenu, setIssuePropertyMenu] = useState<IssuePropertyMenu>(null);
 
   const relationsState = useIssueDetailRelations({
     identifier,
@@ -151,6 +131,8 @@ export function useIssueDetailPresenter({
 
   const labelsState = useIssueDetailLabels({ issue, labels, setLabels, patch });
   const { data: labelsData, handlers: labelsHandlers } = labelsState;
+  const propertiesState = useIssueDetailProperties({ identifier, issue, setIssue, patch });
+  const { data: propertiesData, handlers: propertiesHandlers } = propertiesState;
 
   const dueDateState = useIssueDetailDueDate({
     issue,
@@ -181,14 +163,6 @@ export function useIssueDetailPresenter({
     return { _view: 1 as const, handlers: {} };
   }
 
-  const due = issue.dueDate?.slice(0, 10) ?? '';
-  const propertyOverrides = optionalPropertyOverrides[identifier] ?? {};
-  const optionalIssuePropertyVisibility: Record<IssueOptionalProperty, boolean> = {
-    dueDate: propertyOverrides.dueDate ?? Boolean(due),
-    milestone: propertyOverrides.milestone ?? issue.milestoneId != null,
-    parent: propertyOverrides.parent ?? issue.parentId != null,
-    type: propertyOverrides.type ?? Boolean(issue.type),
-  };
   const milestones = projects.find((project) => project.id === issue.projectId)?.milestones ?? [];
   const issueURL =
     typeof window === 'undefined'
@@ -251,8 +225,6 @@ export function useIssueDetailPresenter({
     issueReturnTo,
     issue,
     isSubscribed,
-    issuePropertyMenu,
-    optionalIssuePropertyVisibility,
     issues,
     ...timelineData,
     ...relationsData,
@@ -261,6 +233,7 @@ export function useIssueDetailPresenter({
     ...remindersData,
     ...conversionsData,
     ...labelsData,
+    ...propertiesData,
     projects,
     milestones,
     cycles,
@@ -273,7 +246,6 @@ export function useIssueDetailPresenter({
     historyRequest,
     descriptionFocusRequest,
     issueOptionsOpen,
-    due,
     hasUpcomingCycle: cycles.some((cycle) => new Date(cycle.startsAt) > new Date()),
     handlers: {
       onReturnToList: () => {
@@ -328,51 +300,11 @@ export function useIssueDetailPresenter({
         }),
       onClick2: () => remove(),
       onArchiveIssue: () => toggleArchive(),
-      Issue_title_onChange3: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssue({ ...issue, title: e.target.value }),
-      Issue_title_onBlur4: () => patch({ title: issue.title }),
-      Status_onChange5: (value: string | null) =>
-        value ? patch({ workflowStatus: value }) : undefined,
-      onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setIssuePropertyMenu(property),
-      onCloseIssuePropertyMenu: () => setIssuePropertyMenu(null),
-      onToggleIssuePropertyMenu: (property: Exclude<IssuePropertyMenu, null>) =>
-        setIssuePropertyMenu((current) => (current === property ? null : property)),
       onFocusDescription: () =>
         setDescriptionFocus((current) => ({
           identifier,
           request: current.identifier === identifier ? current.request + 1 : 1,
         })),
-      Assignee_onChange: (value: string | null) =>
-        patch({ assignee: value === 'self' || value === 'agent' ? value : null }),
-      Type_onChange14: (value: string | null) =>
-        patch({ type: value && value !== 'none' ? value : '' }),
-      Priority_onChange6: (value: string | null) =>
-        value ? patch({ priority: Number(value) }) : undefined,
-      Estimate_onChange15: (value: string | null) =>
-        patch({ estimate: value && value !== 'none' ? Number(value) : null }),
-      Project_onChange7: (value: string | null) =>
-        patch({ projectId: value && value !== 'none' ? Number(value) : null }),
-      Milestone_onChange43: (value: string | null) =>
-        patch({ milestoneId: value && value !== 'none' ? Number(value) : null }),
-      Cycle_onChange8: (value: string | null) =>
-        patch({ cycleId: value && value !== 'none' ? Number(value) : null }),
-      Parent_onChange9: (value: string | null) =>
-        patch({ parentId: value && value !== 'none' ? Number(value) : null }),
-      Due_date_onChange10: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => patch({ dueDate: e.target.value ? e.target.value : null }),
-      onToggleIssueOptionalProperty: (property: IssueOptionalProperty) => {
-        const nextOverrides = {
-          ...optionalPropertyOverrides,
-          [identifier]: {
-            ...propertyOverrides,
-            [property]: !optionalIssuePropertyVisibility[property],
-          },
-        };
-        setOptionalPropertyOverrides(nextOverrides);
-        window.localStorage.setItem(ISSUE_PROPERTY_VISIBILITY_KEY, JSON.stringify(nextOverrides));
-      },
       onClick17: () => sendIntent('adr.create', { issueNumber: issue.number }),
       onToggleFavorite: async () => {
         await patch({ isFavorite: !issue.isFavorite });
@@ -420,6 +352,7 @@ export function useIssueDetailPresenter({
       ...remindersHandlers,
       ...conversionsHandlers,
       ...labelsHandlers,
+      ...propertiesHandlers,
       ...timelineHandlers,
     },
   };
