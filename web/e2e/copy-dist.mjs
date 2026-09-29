@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,6 +11,9 @@ if (!existsSync(source)) throw new Error('Build web/dist before copying the embe
 if (!target.startsWith(`${root}${sep}`) || target === root)
   throw new Error('Embedded asset output must stay inside the project');
 
-rmSync(target, { recursive: true, force: true });
 mkdirSync(target, { recursive: true });
+for (const entry of readdirSync(target)) {
+  if (entry === '.keep') continue;
+  rmSync(resolve(target, entry), { recursive: true, force: true });
+}
 cpSync(source, target, { recursive: true });

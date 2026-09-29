@@ -31,25 +31,21 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Require main for manual releases
+        if: >-
+          github.event_name == 'workflow_dispatch' &&
+          github.ref != 'refs/heads/main' &&
+          startsWith(github.ref, 'refs/tags/v') == false
+        run: |
+          echo "::error::Manual releases must be dispatched from main."
+          exit 1
+
       - name: Setup svu
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
         with:
           repo: caarlos0/svu
-
-      - name: Create and push tag
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-        id: tag
-        env:
-          BUMP_TYPE: ${{ inputs.bump_type }}
-        run: |
-          set -euo pipefail
-          version=$(svu "$BUMP_TYPE")
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "$version"
-          git push origin "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          tag: v3.2.4
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -67,13 +63,52 @@ jobs:
           cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Build SPA
-        run: pnpm install --dir web && pnpm --dir web exec vp build && rm -rf internal/webembed/dist && mkdir -p internal/webembed/dist && cp -a web/dist/. internal/webembed/dist/ && touch internal/webembed/dist/.keep
+        run: pnpm install --dir web --frozen-lockfile && pnpm --dir web exec vp build && node web/e2e/copy-dist.mjs
+
+      - name: Verify release build inputs
+        run: |
+          go build ./...
+          git diff --exit-code -- internal/webembed/dist/.keep
+
+      - name: Build release artifacts (snapshot)
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          distribution: goreleaser
+          version: v2.18.2
+          args: release --snapshot --clean
+
+      - name: Create and push tag
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        id: tag
+        env:
+          BUMP_TYPE: ${{ inputs.bump_type }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          version=""
+          if [[ "$RUN_ATTEMPT" -gt 1 ]]; then
+            version=$(git tag --points-at "$GITHUB_SHA" --sort=-version:refname | head -n 1 || true)
+          fi
+          if [[ -z "$version" ]]; then
+            version=$(svu "$BUMP_TYPE")
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          existing_commit=$(git rev-list -n 1 "$version" 2>/dev/null || true)
+          if [[ -z "$existing_commit" ]]; then
+            git tag "$version" "$GITHUB_SHA"
+          elif [[ "$existing_commit" != "$GITHUB_SHA" ]]; then
+            echo "::error::Tag $version already points to a different commit."
+            exit 1
+          fi
+          git push origin "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
-          version: '~> v2'
+          version: v2.18.2
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

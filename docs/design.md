@@ -272,6 +272,20 @@ KOTOWARI_ACP_COMMAND='["codex-acp"]' kotowari serve
 ACP プロセスの作業ディレクトリはワークスペースとする。
 サーバーの終了時は起動したプロセスを終了する。
 
+## Go の実装境界
+
+`internal/httpapi/server.go` はルーティング、Origin 判定、SPA 配信、共通 JSON 応答を担当する。
+各 API handler は Workspace、Project、Cycle、Issue、Page、View などの機能単位のファイルに置く。
+
+`internal/store` はファイル永続化とドメイン操作の境界であり、Workspace、Project、Cycle、Issue の読み書きは領域別のファイルに分ける。
+Issue の検索条件評価は更新処理と分離する。
+関連データを一貫して更新する必要があるため、各操作は `Store.mutate` を通して Workspace 全体のロックと保存を共有する。
+handler から保存データ構造を直接変更しない。
+
+Release 用 SPA は `web/e2e/copy-dist.mjs` で `internal/webembed/dist` にコピーする。
+`.keep` は空ディレクトリを Git に保持するための追跡ファイルなので、生成物の入れ替えでも内容を変えない。
+CI と Release は同じコピー手順の後に GoReleaser snapshot を実行し、配布対象のクロスビルドが成功してから Release workflow がタグを作る。
+
 ## 代替案
 
 Issue 番号と ADR 番号を同一にする案は採らない。
