@@ -227,13 +227,13 @@ export function ConfigPageView({
               <Stack gap="md" component="section" aria-label={t('config.application')}>
                 <Title order={4}>{t('config.application')}</Title>
                 <Stack gap="xs" maw={480}>
-                  <Button variant="light" onClick={handlers.onClick3}>
+                  <Button variant="light" onClick={handlers.onOpenCommandPalette}>
                     <Group justify="space-between" w="100%" wrap="nowrap">
                       <span>{t('config.commandPalette')}</span>
                       <Kbd>Mod+K</Kbd>
                     </Group>
                   </Button>
-                  <Button variant="light" onClick={handlers.onClick4}>
+                  <Button variant="light" onClick={handlers.onOpenKeyboardShortcuts}>
                     <Group justify="space-between" w="100%" wrap="nowrap">
                       <span>{t('config.keyboardShortcuts')}</span>
                       <Kbd>?</Kbd>
