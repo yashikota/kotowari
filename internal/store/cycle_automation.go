@@ -1,6 +1,11 @@
 package store
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/yashikota/kotowari/internal/domain"
+)
 
 func cycleForIssueAutomation(m *mem, issue Issue, now time.Time) *Cycle {
 	settings := normalizedCycleSettings(m.Workspace.CycleSettings)
@@ -118,4 +123,41 @@ func autoAssignIssueCycle(m *mem, issue *Issue, now time.Time) {
 	issue.CycleID = &id
 	issue.CycleNumber = &number
 	issue.CycleAddedAt = &addedAt
+}
+
+func addCycleNotification(m *mem, cycleID *int64, issue Issue, action, now string) {
+	if cycleID == nil {
+		return
+	}
+	cycle, ok := cycleByID(m, *cycleID)
+	if !ok {
+		return
+	}
+	if (action == "cycle_issue_added" && !cycle.NotifyOnIssueAdded) ||
+		(action == "cycle_issue_completed" && !cycle.NotifyOnIssueCompleted) {
+		return
+	}
+	cycleName := cycle.Name
+	if cycleName == "" {
+		cycleName = fmt.Sprintf("Cycle %d", cycle.Number)
+	}
+	addActivity(m, "cycle", cycle.ID, action, map[string]any{
+		"issueIdentifier": issue.Identifier,
+		"issueTitle":      issue.Title,
+		"cycle":           cycleName,
+	}, now)
+}
+
+func ensureSingleActive(m *mem, id int64, status string) {
+	if status != "active" {
+		return
+	}
+	now := domain.Now()
+	for i := range m.Cycles {
+		if m.Cycles[i].Status == "active" && m.Cycles[i].ID != id {
+			m.Cycles[i].Status = "completed"
+			m.Cycles[i].UpdatedAt = now
+			m.Cycles[i].CompletedAt = &now
+		}
+	}
 }

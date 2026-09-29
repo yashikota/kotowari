@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -96,73 +95,6 @@ func (s *Store) CreateCycle(startsAt, endsAt, status string) (Cycle, error) {
 	return out, err
 }
 
-func (s *Store) AddCycleLink(number int, in CreateIssueLinkInput) (IssueLink, error) {
-	in.URL = strings.TrimSpace(in.URL)
-	in.Title = strings.TrimSpace(in.Title)
-	in.Kind = strings.TrimSpace(in.Kind)
-	parsed, err := url.Parse(in.URL)
-	if err != nil || !parsed.IsAbs() || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
-		return IssueLink{}, validationf("link URL must be an absolute http or https URL")
-	}
-	if in.Kind == "" {
-		in.Kind = "link"
-	}
-	if in.Kind != "link" && in.Kind != "document" {
-		return IssueLink{}, validationf("invalid cycle resource kind")
-	}
-	var out IssueLink
-	err = s.mutate(func(m *mem) error {
-		i := indexCycle(m, number)
-		if i < 0 {
-			return ErrNotFound
-		}
-		cycle := m.Cycles[i]
-		for _, existing := range cycle.Resources {
-			if existing.URL == in.URL {
-				return errf(ErrConflict, "resource already exists")
-			}
-		}
-		var id int64 = 1
-		for _, existing := range cycle.Resources {
-			if existing.ID >= id {
-				id = existing.ID + 1
-			}
-		}
-		now := domain.Now()
-		out = IssueLink{ID: id, URL: in.URL, Title: in.Title, Kind: in.Kind, CreatedAt: now}
-		cycle.Resources = append(cycle.Resources, out)
-		cycle.UpdatedAt = now
-		m.Cycles[i] = cycle
-		m.bump(now)
-		return nil
-	})
-	return out, err
-}
-
-func (s *Store) RemoveCycleLink(number int, linkID int64) error {
-	if linkID < 1 {
-		return validationf("invalid resource id")
-	}
-	return s.mutate(func(m *mem) error {
-		i := indexCycle(m, number)
-		if i < 0 {
-			return ErrNotFound
-		}
-		cycle := m.Cycles[i]
-		for index, resource := range cycle.Resources {
-			if resource.ID != linkID {
-				continue
-			}
-			cycle.Resources = append(cycle.Resources[:index], cycle.Resources[index+1:]...)
-			cycle.UpdatedAt = domain.Now()
-			m.Cycles[i] = cycle
-			m.bump(cycle.UpdatedAt)
-			return nil
-		}
-		return ErrNotFound
-	})
-}
-
 func (s *Store) UpdateCycle(number int, in UpdateCycleInput) (Cycle, error) {
 	var out Cycle
 	err := s.mutate(func(m *mem) error {
@@ -246,41 +178,4 @@ func (s *Store) UpdateCycle(number int, in UpdateCycleInput) (Cycle, error) {
 		return nil
 	})
 	return out, err
-}
-
-func addCycleNotification(m *mem, cycleID *int64, issue Issue, action, now string) {
-	if cycleID == nil {
-		return
-	}
-	cycle, ok := cycleByID(m, *cycleID)
-	if !ok {
-		return
-	}
-	if (action == "cycle_issue_added" && !cycle.NotifyOnIssueAdded) ||
-		(action == "cycle_issue_completed" && !cycle.NotifyOnIssueCompleted) {
-		return
-	}
-	cycleName := cycle.Name
-	if cycleName == "" {
-		cycleName = fmt.Sprintf("Cycle %d", cycle.Number)
-	}
-	addActivity(m, "cycle", cycle.ID, action, map[string]any{
-		"issueIdentifier": issue.Identifier,
-		"issueTitle":      issue.Title,
-		"cycle":           cycleName,
-	}, now)
-}
-
-func ensureSingleActive(m *mem, id int64, status string) {
-	if status != "active" {
-		return
-	}
-	now := domain.Now()
-	for i := range m.Cycles {
-		if m.Cycles[i].Status == "active" && m.Cycles[i].ID != id {
-			m.Cycles[i].Status = "completed"
-			m.Cycles[i].UpdatedAt = now
-			m.Cycles[i].CompletedAt = &now
-		}
-	}
 }
