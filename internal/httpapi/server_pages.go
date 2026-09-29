@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"net/http"
+
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listPages(w http.ResponseWriter, _ *http.Request) {
@@ -28,7 +30,10 @@ func (s *Server) createPage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreatePage(in.Title, in.Slug, in.Body, in.Status, in.ParentID, in.ProjectID, in.Date, in.Tags)
+	out, err := s.store.CreatePageFromInput(model.CreatePageInput{
+		Title: in.Title, Slug: in.Slug, Body: in.Body, Status: in.Status,
+		ParentID: in.ParentID, ProjectID: in.ProjectID, Date: in.Date, Tags: in.Tags,
+	})
 	if err != nil {
 		writeError(w, err)
 		return
@@ -56,7 +61,10 @@ func (s *Server) patchPage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	out, err := s.store.UpdatePage(r.PathValue("slug"), title, body, status, parentID, projectID, date, tags)
+	out, err := s.store.UpdatePageFromInput(model.UpdatePageInput{
+		Slug: r.PathValue("slug"), Title: title, Body: body, Status: status,
+		ParentID: parentID, ProjectID: projectID, Date: date, Tags: tags,
+	})
 	if err != nil {
 		writeError(w, err)
 		return

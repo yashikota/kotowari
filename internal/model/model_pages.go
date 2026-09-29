@@ -15,3 +15,25 @@ type Page struct {
 	CreatedAt   string   `json:"createdAt"`
 	UpdatedAt   string   `json:"updatedAt"`
 }
+
+type CreatePageInput struct {
+	Title     string
+	Slug      string
+	Body      string
+	Status    string
+	ParentID  *int64
+	ProjectID *int64
+	Date      *string
+	Tags      []string
+}
+
+type UpdatePageInput struct {
+	Slug      string
+	Title     *string
+	Body      *string
+	Status    *string
+	ParentID  **int64
+	ProjectID **int64
+	Date      **string
+	Tags      *[]string
+}
