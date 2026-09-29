@@ -1,4 +1,3 @@
-import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useState, useSyncExternalStore } from 'react';
@@ -14,15 +13,14 @@ import { buildCodingToolURL, useCodingToolPreferences } from '../coding-tools.ts
 import { signals } from '../application/mediator.ts';
 import { useIntent } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
-import type { Label } from '../types.ts';
 import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
-import { LABEL_COLORS } from '../label-colors.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
 import { useIssueDetailDueDate } from './useIssueDetailDueDate.ts';
 import { useIssueDetailConversions } from './useIssueDetailConversions.ts';
+import { useIssueDetailLabels } from './useIssueDetailLabels.ts';
 import { useIssueDetailRelations } from './useIssueDetailRelations.ts';
 import { useIssueDetailReminders } from './useIssueDetailReminders.ts';
 import { useIssueDetailResources } from './useIssueDetailResources.ts';
@@ -110,8 +108,6 @@ export function useIssueDetailPresenter({
     () => issueSubscriptions.has(identifier),
     () => false,
   );
-  const [labelName, setLabelName] = useState('');
-  const [focusLabel, setFocusLabel] = useState(0);
   const [copied, setCopied] = useState(false);
   const [historyRequest, setHistoryRequest] = useState(0);
   const [descriptionFocus, setDescriptionFocus] = useState({ identifier, request: 0 });
@@ -153,6 +149,9 @@ export function useIssueDetailPresenter({
     await refreshActivities();
   }
 
+  const labelsState = useIssueDetailLabels({ issue, labels, setLabels, patch });
+  const { data: labelsData, handlers: labelsHandlers } = labelsState;
+
   const dueDateState = useIssueDetailDueDate({
     issue,
     cycles,
@@ -190,28 +189,12 @@ export function useIssueDetailPresenter({
     parent: propertyOverrides.parent ?? issue.parentId != null,
     type: propertyOverrides.type ?? Boolean(issue.type),
   };
-  const selectedLabelIds = new Set(issue.labels.map((l) => l.id));
   const milestones = projects.find((project) => project.id === issue.projectId)?.milestones ?? [];
   const issueURL =
     typeof window === 'undefined'
       ? `/issues/${encodeURIComponent(identifier)}`
       : new URL(`/issues/${encodeURIComponent(identifier)}`, window.location.origin).href;
   const codingToolURL = buildCodingToolURL(issue, codingToolPreferences, issueURL);
-  async function addLabel() {
-    const name = labelName.trim();
-    if (!name) {
-      return;
-    }
-    const created = await api.createLabel({
-      name,
-      color: LABEL_COLORS[labels.length % LABEL_COLORS.length] ?? '#c4a574',
-    });
-    setLabelName('');
-    setFocusLabel((n) => n + 1);
-    setLabels(await api.labels());
-    await patch({ labelIds: [...(issue?.labels ?? []).map((l) => l.id), created.id] });
-  }
-
   async function remove() {
     if (!window.confirm(i18n.t('issueActions.deleteConfirmation', { identifier }))) {
       return;
@@ -277,13 +260,12 @@ export function useIssueDetailPresenter({
     ...dueDateData,
     ...remindersData,
     ...conversionsData,
+    ...labelsData,
     projects,
     milestones,
     cycles,
     pages,
     labels,
-    labelName,
-    focusLabel,
     codingToolName: codingToolPreferences.customLinkName,
     codingToolURL,
     timeZone,
@@ -293,7 +275,6 @@ export function useIssueDetailPresenter({
     issueOptionsOpen,
     due,
     hasUpcomingCycle: cycles.some((cycle) => new Date(cycle.startsAt) > new Date()),
-    selectedLabelIds,
     handlers: {
       onReturnToList: () => {
         return router.history.push(issueReturnTo, {
@@ -392,27 +373,6 @@ export function useIssueDetailPresenter({
         setOptionalPropertyOverrides(nextOverrides);
         window.localStorage.setItem(ISSUE_PROPERTY_VISIBILITY_KEY, JSON.stringify(nextOverrides));
       },
-      onToggleIssueLabel: (label: Label) => {
-        const isSelected = issue.labels.some((current) => current.id === label.id);
-        const next = isSelected
-          ? issue.labels.filter((current) => current.id !== label.id).map((current) => current.id)
-          : [...issue.labels.map((current) => current.id), label.id];
-        return patch({ labelIds: next });
-      },
-      onLabelQueryChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setLabelName(e.target.value),
-      onLabelQueryKeyDown: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onKeyDown']>>[0],
-      ) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-
-        if (isSubmitShortcut(e)) {
-          e.preventDefault();
-          return addLabel();
-        }
-      },
-      onCreateLabel: () => addLabel(),
       onClick17: () => sendIntent('adr.create', { issueNumber: issue.number }),
       onToggleFavorite: async () => {
         await patch({ isFavorite: !issue.isFavorite });
@@ -459,6 +419,7 @@ export function useIssueDetailPresenter({
       ...dueDateHandlers,
       ...remindersHandlers,
       ...conversionsHandlers,
+      ...labelsHandlers,
       ...timelineHandlers,
     },
   };
