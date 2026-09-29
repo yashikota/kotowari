@@ -1,4 +1,3 @@
-import type { ProjectBoardModel } from './components/ProjectBoardView.tsx';
 import { compareProjectGroupValues, projectGroupValues } from './project-grouping.ts';
 import type { ProjectGroupValue } from './project-grouping.ts';
 import type { Project } from './types.ts';
@@ -10,6 +9,22 @@ export type ProjectBoardGroup = {
   visible: boolean;
   groupBy?: ProjectBoardGrouping;
   value?: ProjectGroupValue;
+};
+
+export type ProjectBoardModel = {
+  columns: {
+    key: string;
+    label: string;
+    groupBy?: ProjectBoardGrouping;
+    value?: ProjectGroupValue;
+  }[];
+  rows: {
+    key: string;
+    label: string;
+    groupBy?: ProjectBoardGrouping;
+    value?: ProjectGroupValue;
+    cells: Record<string, Project[]>;
+  }[];
 };
 
 export const PROJECT_BOARD_GROUPINGS: ProjectBoardGrouping[] = [

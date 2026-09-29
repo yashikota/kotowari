@@ -4,25 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { priorityLabel } from '../i18n/labels.ts';
 import { formatCalendarDate } from '../time.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
+import type { ProjectBoardModel } from '../project-board.ts';
 import type { Project } from '../types.ts';
 import { ProjectIconMark } from './ProjectIcon.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
-
-export type ProjectBoardModel = {
-  columns: {
-    key: string;
-    label: string;
-    groupBy?: import('../project-views.ts').ProjectBoardGrouping;
-    value?: string | null;
-  }[];
-  rows: {
-    key: string;
-    label: string;
-    groupBy?: import('../project-views.ts').ProjectBoardGrouping;
-    value?: string | null;
-    cells: Record<string, Project[]>;
-  }[];
-};
 
 export function ProjectBoardView({
   model,

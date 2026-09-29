@@ -306,6 +306,8 @@ Issue一覧のlist presenterは `IssueList.tsx`、workflow statusごとのcolumn
 
 Projects一覧とProject View Builderが共有するTimelineモデル型・月送り・週番号とレイアウト計算は `project-timeline.ts` に置く。Timeline view component は表示だけを担当し、presenter側で重複していた計算をこの境界に集約する。
 
+Project boardのグループ生成・配置計算とview契約型は `project-board.ts` に置き、domain側からboard view componentへの型依存を作らない。
+
 ProjectListControlsのpresenter/view契約は `project-list-controls.ts` に置き、componentを参照せずにpresenterとfilter表示モデルから共有する。ProjectFilterPickerの選択状態をactive chipへ変換する処理は `project-filter-chips.ts` に置き、カテゴリ別の入力UIは `ProjectFilterEditor.tsx` に分ける。
 
 Initiative一覧と詳細はroute単位で `InitiativesPages.tsx` と `InitiativeDetailPages.tsx` に分ける。両方で使うstatus・health・color選択肢は `initiative-options.ts` を共有する。
