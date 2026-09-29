@@ -274,7 +274,7 @@ const initiativeRoute = createRoute({
     return { initiative, projects, labels, activities };
   },
   component: lazyRouteComponent(
-    () => import('./pages/InitiativesPages.tsx'),
+    () => import('./pages/InitiativeDetailPages.tsx'),
     'InitiativeDetailPage',
   ),
 });
