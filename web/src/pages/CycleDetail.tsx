@@ -1,14 +1,10 @@
-import { Link } from '@tanstack/react-router';
 import { ActionIcon, Box, Button, Group, Menu, Stack, Text } from '@mantine/core';
 import {
-  IconExternalLink,
   IconDotsVertical,
-  IconFileText,
   IconLayoutSidebarRightCollapse,
   IconLayoutSidebarRightExpand,
   IconPlus,
   IconStar,
-  IconTrash,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,11 +15,12 @@ import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { CycleProgressChart } from '../components/CycleProgressChart.tsx';
 import { CycleProgressBreakdown } from '../components/CycleProgressBreakdown.tsx';
 import { CycleDetailDialogs } from '../components/CycleDetailDialogs.tsx';
+import { CycleResourcesSection } from '../components/CycleResourcesSection.tsx';
 
 import { CycleDateRangeControl } from '../components/CycleDateRangeControl.tsx';
 
 import { CYCLE_STATUSES } from '../types.ts';
-import { MetaBadge, Pane, SplitLayout } from '../mantine-ui.tsx';
+import { Pane, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 
@@ -332,66 +329,12 @@ export function CycleDetailPageView({
                         </Group>
                       </Group>
                     </Stack>
-                    <Stack component="section" aria-label={t('cycle.resourcesHeading')} gap="sm">
-                      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-                        <Menu withinPortal shadow="md" position="bottom-end">
-                          <Menu.Target>
-                            <Button type="button" size="compact-sm" variant="subtle">
-                              {t('cycle.addDocumentOrLink')}
-                            </Button>
-                          </Menu.Target>
-                          <Menu.Dropdown>
-                            <Menu.Item onClick={handlers.onCreateDocument}>
-                              {t('cycle.createDocument')}
-                            </Menu.Item>
-                            <Menu.Item onClick={handlers.onOpenResourceLink}>
-                              {t('cycle.addLink')}
-                            </Menu.Item>
-                          </Menu.Dropdown>
-                        </Menu>
-                      </Group>
-                      {resources.length > 0 ? (
-                        <Stack gap="xs" role="list" aria-label={t('cycle.resourcesHeading')}>
-                          {resources.map((resource) => (
-                            <Group
-                              key={resource.id}
-                              justify="space-between"
-                              wrap="nowrap"
-                              role="listitem"
-                            >
-                              <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                                {resource.pageSlug ? (
-                                  <IconFileText size={15} aria-hidden="true" />
-                                ) : (
-                                  <IconExternalLink size={15} aria-hidden="true" />
-                                )}
-                                {resource.pageSlug ? (
-                                  <Link to="/pages/$slug" params={{ slug: resource.pageSlug }}>
-                                    {resource.displayTitle}
-                                  </Link>
-                                ) : (
-                                  <a href={resource.url} target="_blank" rel="noreferrer">
-                                    {resource.displayTitle}
-                                  </a>
-                                )}
-                                <MetaBadge>{t(`issueLinks.${resource.kind}`)}</MetaBadge>
-                              </Group>
-                              <ActionIcon
-                                type="button"
-                                variant="subtle"
-                                color="gray"
-                                aria-label={t('cycle.removeResource', {
-                                  title: resource.displayTitle,
-                                })}
-                                onClick={() => handlers.onRemoveResource(resource.id)}
-                              >
-                                <IconTrash size={15} />
-                              </ActionIcon>
-                            </Group>
-                          ))}
-                        </Stack>
-                      ) : null}
-                    </Stack>
+                    <CycleResourcesSection
+                      resources={resources}
+                      onCreateDocument={handlers.onCreateDocument}
+                      onOpenAddLink={handlers.onOpenResourceLink}
+                      onRemove={handlers.onRemoveResource}
+                    />
                     <CycleProgressSummary
                       scope={scope}
                       started={started}
