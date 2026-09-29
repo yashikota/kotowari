@@ -21,6 +21,7 @@ import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { HealthUpdateFeed } from '../components/HealthUpdateFeed.tsx';
 import { HealthUpdateComposer } from '../components/HealthUpdateComposer.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
+import { ProjectMilestonesSection } from '../components/ProjectMilestonesSection.tsx';
 
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
@@ -351,112 +352,22 @@ export function ProjectDetailPageView({
                     </Stack>
                   )}
                 </Section>
-                <Section title={t('projectMilestones.heading')}>
-                  <Box
-                    component="form"
-                    aria-label={t('projectMilestones.heading')}
-                    onSubmit={handlers.onCreateMilestone}
-                  >
-                    <Group gap="xs" align="flex-end" wrap="wrap">
-                      <TextInput
-                        aria-label={t('projectMilestones.name')}
-                        placeholder={t('projectMilestones.namePlaceholder')}
-                        value={milestoneName}
-                        onChange={handlers.onMilestoneNameDraftChange}
-                        size="sm"
-                        style={{ flex: '1 1 220px' }}
-                      />
-                      <Textarea
-                        aria-label={t('projectMilestones.description')}
-                        placeholder={t('projectMilestones.descriptionPlaceholder')}
-                        value={milestoneDescription}
-                        onChange={handlers.onMilestoneDescriptionDraftChange}
-                        minRows={1}
-                        autosize
-                        size="sm"
-                        style={{ flex: '1 1 220px' }}
-                      />
-                      <TextInput
-                        type="date"
-                        aria-label={t('projectMilestones.targetDate')}
-                        value={milestoneTargetDate}
-                        onChange={handlers.onMilestoneTargetDateDraftChange}
-                        size="sm"
-                      />
-                      <Button type="submit" variant="default" size="sm">
-                        {t('projectMilestones.add')}
-                      </Button>
-                    </Group>
-                  </Box>
-                  {project.milestones.length === 0 ? (
-                    <Text size="sm" c="dimmed" mt="sm">
-                      {t('projectMilestones.empty')}
-                    </Text>
-                  ) : (
-                    <Stack
-                      component="ul"
-                      gap="xs"
-                      mt="sm"
-                      style={{
-                        listStyle: 'none',
-                        margin: 'var(--mantine-spacing-sm) 0 0',
-                        padding: 0,
-                      }}
-                    >
-                      {project.milestones.map((milestone) => (
-                        <Stack component="li" key={milestone.id} gap="xs">
-                          <Group gap="xs" wrap="wrap">
-                            <TextInput
-                              aria-label={`${t('projectMilestones.name')}: ${milestone.name}`}
-                              value={milestone.name}
-                              onChange={(event) =>
-                                handlers.onMilestoneNameChange(milestone.id, event)
-                              }
-                              onBlur={() => handlers.onMilestoneNameBlur(milestone.id)}
-                              size="sm"
-                              style={{ flex: '1 1 220px' }}
-                            />
-                            <TextInput
-                              type="date"
-                              aria-label={`${t('projectMilestones.targetDate')}: ${milestone.name}`}
-                              value={milestone.targetDate?.slice(0, 10) ?? ''}
-                              onChange={(event) =>
-                                handlers.onMilestoneTargetDateChange(milestone.id, event)
-                              }
-                              onBlur={() => handlers.onMilestoneTargetDateBlur(milestone.id)}
-                              size="sm"
-                            />
-                            <ActionIcon
-                              type="button"
-                              variant="subtle"
-                              color="red"
-                              aria-label={t('projectMilestones.remove', { name: milestone.name })}
-                              onClick={() =>
-                                handlers.onRemoveMilestone(milestone.id, milestone.name)
-                              }
-                            >
-                              <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                            </ActionIcon>
-                          </Group>
-                          <Textarea
-                            aria-label={`${t('projectMilestones.description')}: ${milestone.name}`}
-                            placeholder={t('projectMilestones.descriptionPlaceholder')}
-                            defaultValue={milestone.description ?? ''}
-                            onBlur={(event) =>
-                              handlers.onMilestoneDescriptionBlur(
-                                milestone.id,
-                                event.currentTarget.value,
-                              )
-                            }
-                            minRows={1}
-                            autosize
-                            size="sm"
-                          />
-                        </Stack>
-                      ))}
-                    </Stack>
-                  )}
-                </Section>
+                <ProjectMilestonesSection
+                  milestones={project.milestones}
+                  name={milestoneName}
+                  description={milestoneDescription}
+                  targetDate={milestoneTargetDate}
+                  onCreate={handlers.onCreateMilestone}
+                  onDraftNameChange={handlers.onMilestoneNameDraftChange}
+                  onDraftDescriptionChange={handlers.onMilestoneDescriptionDraftChange}
+                  onDraftTargetDateChange={handlers.onMilestoneTargetDateDraftChange}
+                  onNameChange={handlers.onMilestoneNameChange}
+                  onNameBlur={handlers.onMilestoneNameBlur}
+                  onTargetDateChange={handlers.onMilestoneTargetDateChange}
+                  onTargetDateBlur={handlers.onMilestoneTargetDateBlur}
+                  onDescriptionBlur={handlers.onMilestoneDescriptionBlur}
+                  onRemove={handlers.onRemoveMilestone}
+                />
                 <Stack gap="md" aria-label={t('ui.projectDocuments')}>
                   <Section
                     title={t('nav.adrs')}
