@@ -1,23 +1,8 @@
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Group,
-  Menu,
-  Popover,
-  ScrollArea,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  UnstyledButton,
-  type SelectProps,
-} from '@mantine/core';
+import { ActionIcon, Box, Group, Menu, Text, TextInput } from '@mantine/core';
 import {
   IconCalendarEvent,
   IconChartBar,
   IconCheck,
-  IconChevronDown,
   IconFolder,
   IconFlag,
   IconGitBranch,
@@ -26,13 +11,17 @@ import {
   IconTag,
   IconUser,
 } from '@tabler/icons-react';
-import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { priorityLabel } from '../i18n/labels.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssuePropertiesPanel.module.css';
 import type { IssueOptionalProperty, useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
+import { IssueLabelsProperty } from './IssueLabelsProperty.tsx';
+import {
+  IssuePropertyRow as PropertyRow,
+  IssuePropertySelect as PropertySelect,
+} from './IssuePropertyControls.tsx';
 
 type IssueDetailModel = Extract<ReturnType<typeof useIssueDetailPresenter>, { _view: 2 }>;
 
@@ -71,14 +60,6 @@ export function IssuePropertiesPanel({
     due,
     handlers,
   } = model;
-  const selectedLabels = labels.filter((label) => selectedLabelIds.has(label.id));
-  const labelQuery = labelName.trim().toLocaleLowerCase();
-  const visibleLabels = labels.filter((label) =>
-    label.name.toLocaleLowerCase().includes(labelQuery),
-  );
-  const canCreateLabel =
-    labelQuery.length > 0 &&
-    !labels.some((label) => label.name.trim().toLocaleLowerCase() === labelQuery);
   const statusLabel = workflowStatusLabel(issue.workflowStatus ?? issue.status, workflowStatuses);
   const priorityValueLabel = priorityLabel(issue.priority);
   const assigneeValueLabel =
@@ -253,129 +234,18 @@ export function IssuePropertiesPanel({
           </PropertyRow>
         </Box>
 
-        <Box
-          role="group"
-          aria-label={t('issueProperties.labels')}
-          className={`${styles.section} ${styles.labelsSection}`}
-        >
-          <Text component="h3" className={styles.heading}>
-            {t('issueProperties.labels')}
-          </Text>
-          <PropertyRow
-            label={t('issueProperties.labels')}
-            icon={<IconTag size={14} stroke={1.7} />}
-            className={styles.labelsRow}
-          >
-            <Popover
-              position="bottom-start"
-              shadow="md"
-              width={264}
-              withinPortal
-              opened={issuePropertyMenu === 'labels'}
-              onChange={(opened) => handlers.onOpenIssuePropertyMenu(opened ? 'labels' : null)}
-            >
-              <Popover.Target>
-                <UnstyledButton
-                  type="button"
-                  aria-label={t('issueProperties.changeLabels')}
-                  aria-expanded={issuePropertyMenu === 'labels'}
-                  className={styles.labelPickerTarget}
-                  onClick={() => handlers.onToggleIssuePropertyMenu('labels')}
-                >
-                  <Group gap={4} wrap="nowrap" className={styles.selectedLabels}>
-                    {selectedLabels.length > 0 ? (
-                      selectedLabels.map((label) => (
-                        <span
-                          key={label.id}
-                          className={styles.labelPill}
-                          style={{
-                            backgroundColor: `color-mix(in srgb, ${label.color} 18%, transparent)`,
-                          }}
-                        >
-                          {label.name}
-                        </span>
-                      ))
-                    ) : (
-                      <Text size="xs" c="dimmed" truncate>
-                        {t('issueProperties.addLabel')}
-                      </Text>
-                    )}
-                  </Group>
-                  {selectedLabels.length > 0 ? (
-                    <IconChevronDown size={13} stroke={1.8} aria-hidden="true" />
-                  ) : null}
-                </UnstyledButton>
-              </Popover.Target>
-              <Popover.Dropdown
-                role="dialog"
-                aria-label={t('issueProperties.changeLabels')}
-                className={styles.labelPicker}
-              >
-                <TextInput
-                  aria-label={t('issueProperties.changeLabels')}
-                  placeholder={t('issueProperties.findOrCreateLabel')}
-                  autoFocus={issuePropertyMenu === 'labels'}
-                  value={labelName}
-                  onChange={handlers.onLabelQueryChange}
-                  onKeyDown={handlers.onLabelQueryKeyDown}
-                  size="xs"
-                  mb="xs"
-                />
-                <ScrollArea.Autosize mah={196} type="auto">
-                  <Stack gap={2}>
-                    {visibleLabels.map((label) => {
-                      const selected = selectedLabelIds.has(label.id);
-                      return (
-                        <UnstyledButton
-                          key={label.id}
-                          type="button"
-                          role="checkbox"
-                          aria-label={label.name}
-                          aria-checked={selected}
-                          onClick={() => handlers.onToggleIssueLabel(label)}
-                          className={styles.labelOption}
-                        >
-                          <Group gap="xs" wrap="nowrap">
-                            <Box
-                              w={8}
-                              h={8}
-                              style={{
-                                flex: '0 0 auto',
-                                borderRadius: '50%',
-                                backgroundColor: label.color,
-                              }}
-                            />
-                            <Text size="xs" truncate>
-                              {label.name}
-                            </Text>
-                            {selected ? <IconCheck size={14} className={styles.check} /> : null}
-                          </Group>
-                        </UnstyledButton>
-                      );
-                    })}
-                    {visibleLabels.length === 0 ? (
-                      <Text size="xs" c="dimmed" p="xs">
-                        {t('issueProperties.noLabelsFound')}
-                      </Text>
-                    ) : null}
-                  </Stack>
-                </ScrollArea.Autosize>
-                {canCreateLabel ? (
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    size="compact-xs"
-                    fullWidth
-                    mt="xs"
-                    onClick={handlers.onCreateLabel}
-                  >
-                    {t('issueProperties.createLabel', { name: labelName.trim() })}
-                  </Button>
-                ) : null}
-              </Popover.Dropdown>
-            </Popover>
-          </PropertyRow>
-        </Box>
+        <IssueLabelsProperty
+          labels={labels}
+          selectedLabelIds={selectedLabelIds}
+          labelName={labelName}
+          opened={issuePropertyMenu === 'labels'}
+          onOpenChange={(opened) => handlers.onOpenIssuePropertyMenu(opened ? 'labels' : null)}
+          onToggleOpen={() => handlers.onToggleIssuePropertyMenu('labels')}
+          onLabelQueryChange={handlers.onLabelQueryChange}
+          onLabelQueryKeyDown={handlers.onLabelQueryKeyDown}
+          onToggleLabel={handlers.onToggleIssueLabel}
+          onCreateLabel={handlers.onCreateLabel}
+        />
 
         <Box
           role="group"
@@ -541,61 +411,5 @@ export function IssuePropertiesPanel({
         </Box>
       </Box>
     </Box>
-  );
-}
-
-function PropertyRow({
-  label,
-  icon,
-  children,
-  className,
-}: {
-  label: string;
-  icon: ReactNode;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={[styles.row, className].filter(Boolean).join(' ')}>
-      <div className={styles.label}>
-        <Text component="span" size="sm" c="dimmed" truncate className={styles.labelText}>
-          {label}
-        </Text>
-      </div>
-      <div className={styles.value}>
-        <span className={styles.icon} aria-hidden="true">
-          {icon}
-        </span>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function PropertySelect({
-  compactChars = 10,
-  compactLabel,
-  ...props
-}: SelectProps<string> & { compactChars?: number; compactLabel?: string }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (props.dropdownOpened) inputRef.current?.focus();
-  }, [props.dropdownOpened]);
-  const labelWidth = Array.from(compactLabel ?? props.value ?? '').reduce(
-    (width, character) => width + ((character.codePointAt(0) ?? 0) <= 0xff ? 1 : 2),
-    0,
-  );
-  const inputWidth = Math.max(4, Math.min(compactChars, labelWidth + 2));
-  return (
-    <Select
-      {...props}
-      ref={inputRef}
-      size="sm"
-      className={styles.select}
-      classNames={{ input: styles.input, option: styles.option, dropdown: styles.dropdown }}
-      styles={{ input: { width: `${inputWidth}ch` } }}
-      rightSection={null}
-      withCheckIcon={false}
-    />
   );
 }
