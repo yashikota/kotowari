@@ -8,17 +8,12 @@ import (
 )
 
 func (s *Server) addIssueRelation(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		TargetIdentifier string `json:"targetIdentifier"`
-		Kind             string `json:"kind"`
-	}
+	var in model.CreateIssueRelationInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	relation, err := s.store.AddIssueRelation(r.PathValue("id"), model.CreateIssueRelationInput{
-		TargetIdentifier: in.TargetIdentifier, Kind: in.Kind,
-	})
+	relation, err := s.store.AddIssueRelation(r.PathValue("id"), in)
 	if err != nil {
 		writeError(w, err)
 		return

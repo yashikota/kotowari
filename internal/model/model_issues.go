@@ -82,8 +82,8 @@ type IssueRelation struct {
 }
 
 type CreateIssueRelationInput struct {
-	TargetIdentifier string
-	Kind             string
+	TargetIdentifier string `json:"targetIdentifier"`
+	Kind             string `json:"kind"`
 }
 
 type Comment struct {

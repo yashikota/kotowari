@@ -8,18 +8,12 @@ import (
 )
 
 func (s *Server) addIssueLink(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		URL   string `json:"url"`
-		Title string `json:"title"`
-		Kind  string `json:"kind"`
-	}
+	var in model.CreateIssueLinkInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	link, err := s.store.AddIssueLink(r.PathValue("id"), model.CreateIssueLinkInput{
-		URL: in.URL, Title: in.Title, Kind: in.Kind,
-	})
+	link, err := s.store.AddIssueLink(r.PathValue("id"), in)
 	if err != nil {
 		writeError(w, err)
 		return
