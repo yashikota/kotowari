@@ -1,14 +1,9 @@
-import { useLoaderData, useRouter } from '@tanstack/react-router';
+import { useLoaderData } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMantineColorScheme } from '@mantine/core';
-import { useEffect, useMemo, useState } from 'react';
-import { api } from '../api.ts';
-import { signals } from '../application/mediator.ts';
+import { useEffect, useState } from 'react';
 import { useMachineFlag, useOverlay } from '../application/Root.tsx';
-import { applyLocale } from '../i18n/index.ts';
-import { languageOptions, normalizeWorkspace, resolveLocale } from '../i18n/locale.ts';
-import { timeZoneOptions, systemTimeZone } from '../time.ts';
 import type { Diagnostic, Workspace } from '../types.ts';
 import { isWebCodingToolURLTemplate, useCodingToolPreferences } from '../coding-tools.ts';
 import type { CodingToolPreferences } from '../coding-tools.ts';
@@ -23,6 +18,7 @@ import {
 } from '../preferences.ts';
 import { sidebarSettingsGroups } from '../sidebar.ts';
 import { useConfigWorkflowSettings } from './useConfigWorkflowSettings.ts';
+import { useConfigWorkspaceSettings } from './useConfigWorkspaceSettings.ts';
 
 type ConfigData = {
   workspace: Workspace;
@@ -32,23 +28,11 @@ type ConfigData = {
 export function useConfigPagePresenter() {
   const data = useLoaderData({ from: '/config' }) as ConfigData;
   const { t } = useTranslation();
-  const router = useRouter();
   const workflowSettings = useConfigWorkflowSettings();
   const { data: workflowSettingsData, handlers: workflowSettingsHandlers } = workflowSettings;
   const { set: setOverlay } = useOverlay();
   const [sidebarCustomizationOpen, setSidebarCustomizationOpen] =
     useMachineFlag('sidebar-customization');
-  const [workspace, setWorkspace] = useState(() => normalizeWorkspace(data.workspace));
-  const [cycleSettings, setCycleSettings] = useState(
-    () => normalizeWorkspace(data.workspace).cycleSettings,
-  );
-  const [cycleSettingsError, setCycleSettingsError] = useState('');
-  const [cycleSettingsSaved, setCycleSettingsSaved] = useState(false);
-  const [issueAutomationSettings, setIssueAutomationSettings] = useState(
-    () => normalizeWorkspace(data.workspace).issueAutomationSettings,
-  );
-  const [issueAutomationSettingsError, setIssueAutomationSettingsError] = useState('');
-  const [issueAutomationSettingsSaved, setIssueAutomationSettingsSaved] = useState(false);
   const { preferences, update: updatePreferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences, update: updateCodingToolPreferences } =
     useCodingToolPreferences();
@@ -58,34 +42,20 @@ export function useConfigPagePresenter() {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    setWorkspace(normalizeWorkspace(data.workspace));
-    setCycleSettings(normalizeWorkspace(data.workspace).cycleSettings);
-    setIssueAutomationSettings(normalizeWorkspace(data.workspace).issueAutomationSettings);
-  }, [data.workspace]);
+  const workspaceSettings = useConfigWorkspaceSettings({
+    initialWorkspace: data.workspace,
+    setError,
+    setSaved,
+  });
+  const { data: workspaceSettingsData, handlers: workspaceSettingsHandlers } = workspaceSettings;
 
   useEffect(() => {
     setCodingToolDraft(codingToolPreferences);
   }, [codingToolPreferences]);
 
-  const timeZones = useMemo(() => timeZoneOptions(workspace.timezone), [workspace.timezone]);
-  const languages = useMemo(
-    () => languageOptions(resolveLocale(workspace.locale)),
-    [workspace.locale],
-  );
-
   return {
     _view: 0 as const,
-    workspace,
-    cycleSettings,
-    cycleSettingsError,
-    cycleSettingsSaved,
-    issueAutomationSettings,
-    issueAutomationSettingsError,
-    issueAutomationSettingsSaved,
-    timeZones,
-    languages,
+    ...workspaceSettingsData,
     preferences,
     codingToolDraft,
     codingToolError,
@@ -102,172 +72,7 @@ export function useConfigPagePresenter() {
     error,
     saved,
     handlers: {
-      onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
-        e.preventDefault();
-        setSaved(false);
-        return api
-          .patchWorkspace({
-            name: workspace.name,
-            timezone: workspace.timezone,
-            locale: workspace.locale,
-          })
-          .then(async (next) => {
-            setWorkspace(normalizeWorkspace(next));
-            applyLocale(next.locale);
-            setSaved(true);
-            signals.dispatchEvent(new Event('kotowari:refresh'));
-            await router.invalidate();
-          })
-          .catch((err: unknown) => setError(err instanceof Error ? err.message : 'save failed'));
-      },
-      onSaveCycleSettings: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setCycleSettingsError('');
-        setCycleSettingsSaved(false);
-        void api
-          .patchWorkspace({ cycleSettings })
-          .then(async (next) => {
-            const normalized = normalizeWorkspace(next);
-            setCycleSettings(normalized.cycleSettings);
-            await api.ensureCycleSchedule();
-            setCycleSettingsSaved(true);
-            signals.dispatchEvent(new Event('kotowari:refresh'));
-            await router.invalidate();
-          })
-          .catch((err: unknown) =>
-            setCycleSettingsError(
-              err instanceof Error ? err.message : t('config.cycleSettingsSaveFailed'),
-            ),
-          );
-      },
-      onCycleDurationChange: (value: string | null) => {
-        if (value && Number.isInteger(Number(value))) {
-          setCycleSettingsSaved(false);
-          setCycleSettings((current) => ({ ...current, durationDays: Number(value) }));
-        }
-      },
-      onCycleCooldownChange: (value: string | null) => {
-        if (value && Number.isInteger(Number(value))) {
-          setCycleSettingsSaved(false);
-          setCycleSettings((current) => ({ ...current, cooldownDays: Number(value) }));
-        }
-      },
-      onCycleStartDayChange: (value: string | null) => {
-        if (
-          value === 'sunday' ||
-          value === 'monday' ||
-          value === 'tuesday' ||
-          value === 'wednesday' ||
-          value === 'thursday' ||
-          value === 'friday' ||
-          value === 'saturday'
-        ) {
-          setCycleSettingsSaved(false);
-          setCycleSettings((current) => ({ ...current, startDay: value }));
-        }
-      },
-      onCycleAutoCreateAheadChange: (value: string | null) => {
-        if (value && Number.isInteger(Number(value))) {
-          setCycleSettingsSaved(false);
-          setCycleSettings((current) => ({ ...current, autoCreateAhead: Number(value) }));
-        }
-      },
-      onCycleAutoAddActiveIssuesChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
-        setCycleSettingsSaved(false);
-        setCycleSettings((current) => ({
-          ...current,
-          autoAddActiveIssues: e.currentTarget.checked,
-        }));
-      },
-      onCycleAutoAddCompletedIssuesChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
-        setCycleSettingsSaved(false);
-        setCycleSettings((current) => ({
-          ...current,
-          autoAddCompletedIssues: e.currentTarget.checked,
-        }));
-      },
-      onSaveIssueAutomationSettings: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIssueAutomationSettingsError('');
-        setIssueAutomationSettingsSaved(false);
-        void api
-          .patchWorkspace({ issueAutomationSettings })
-          .then(async (next) => {
-            const normalized = normalizeWorkspace(next);
-            setIssueAutomationSettings(normalized.issueAutomationSettings);
-            setIssueAutomationSettingsSaved(true);
-            signals.dispatchEvent(new Event('kotowari:refresh'));
-            await router.invalidate();
-          })
-          .catch((err: unknown) =>
-            setIssueAutomationSettingsError(
-              err instanceof Error ? err.message : t('config.issueAutomationSettingsSaveFailed'),
-            ),
-          );
-      },
-      onAutoCloseParentIssuesChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
-          autoCloseParentIssues: e.currentTarget.checked,
-        }));
-      },
-      onAutoCloseSubIssuesChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
-          autoCloseSubIssues: e.currentTarget.checked,
-        }));
-      },
-      onStatusProgressionOrderChange: (value: string | null) => {
-        if (value !== 'first' && value !== 'last' && value !== 'no_action') {
-          return;
-        }
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
-          statusProgressionOrder: value,
-        }));
-      },
-      onAutoCloseStaleIssuesAfterMonthsChange: (value: string | null) => {
-        const months = Number(value);
-        if (value === null || ![0, 1, 3, 6, 12].includes(months)) {
-          return;
-        }
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
-          autoCloseStaleIssuesAfterMonths: months,
-        }));
-      },
-      onAutoArchiveClosedIssuesAfterMonthsChange: (value: string | null) => {
-        const months = Number(value);
-        if (value === null || ![0, 1, 3, 6, 12].includes(months)) {
-          return;
-        }
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
-          autoArchiveClosedIssuesAfterMonths: months,
-          autoArchiveCompletedProjectsAfterMonths: months,
-          autoArchiveCompletedCyclesAfterMonths: months,
-        }));
-      },
-      Workspace_name_onChange1: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setWorkspace({ ...workspace, name: e.target.value }),
-      Timezone_onChange2: (value: string | null) =>
-        setWorkspace({ ...workspace, timezone: value ?? systemTimeZone() }),
-      Locale_onChange3: (value: string | null) =>
-        setWorkspace({ ...workspace, locale: resolveLocale(value) }),
+      ...workspaceSettingsHandlers,
       onDefaultHomeChange: (value: string | null) => {
         if (
           value === 'home' ||

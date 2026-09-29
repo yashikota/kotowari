@@ -298,7 +298,7 @@ CI と Release は同じコピー手順の後に GoReleaser snapshot を実行�
 
 Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。Projects一覧の新規作成フォーム、テンプレート、ラベル、Milestone、依存Projectは `useProjectComposer.ts` に分ける。複数画面で共有するCycle URLや進捗表示の処理は `projectCycleHelpers.ts` に置く。
 
-Config画面のIssueとProject workflow設定のdraft、status編集・保存処理は `useConfigWorkflowSettings.ts` にまとめる。
+Config画面のWorkspace・Cycle・Issue automation設定は `useConfigWorkspaceSettings.ts`、IssueとProject workflowのdraft、status編集・保存処理は `useConfigWorkflowSettings.ts` に分ける。
 
 ShellのWorkspace情報、Cycle/Project/View/Initiative一覧、favorite Issue一覧、sidebar badgeの同期は `useShellWorkspace.ts`、Paletteの検索とコマンド候補は `useShellPalette.ts`、Cycle切替とナビゲーション状態は `useShellCycleNavigation.ts`、Issue composerの入力・draft・submitは `useShellIssueComposer.ts` が担当する。Sidebarのナビゲーション表示は `ShellSidebar.tsx`、Issue作成、draft破棄、関連リンクのdialog表示は `IssueComposerOverlays.tsx` に分け、Shell presenter と `ShellView` は画面間で共有するオーバーレイとナビゲーションを構成する。
 
