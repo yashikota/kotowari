@@ -15,7 +15,6 @@ import { signals } from '../application/mediator.ts';
 import { useIntent } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
 import type { Label } from '../types.ts';
-import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
@@ -23,7 +22,9 @@ import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { LABEL_COLORS } from '../label-colors.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
 import { useIssueDetailDueDate } from './useIssueDetailDueDate.ts';
+import { useIssueDetailConversions } from './useIssueDetailConversions.ts';
 import { useIssueDetailRelations } from './useIssueDetailRelations.ts';
+import { useIssueDetailReminders } from './useIssueDetailReminders.ts';
 import { useIssueDetailResources } from './useIssueDetailResources.ts';
 import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
 
@@ -66,7 +67,6 @@ export function useIssueDetailPresenter({
   issueListLayout = 'list',
 }: Props) {
   const sendIntent = useIntent();
-  const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const { preferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences } = useCodingToolPreferences();
@@ -119,20 +119,8 @@ export function useIssueDetailPresenter({
     descriptionFocus.identifier === identifier ? descriptionFocus.request : 0;
   const [optionalPropertyOverrides, setOptionalPropertyOverrides] =
     useState<OptionalPropertyOverrides>(readOptionalPropertyOverrides);
-  const [customReminderOpen, setCustomReminderOpen] = useState(false);
-  const [customReminderValue, setCustomReminderValue] = useState('');
   const [issueOptionsOpen, setIssueOptionsOpen] = useState(false);
-  const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
   const [issuePropertyMenu, setIssuePropertyMenu] = useState<IssuePropertyMenu>(null);
-  const [templateOpen, setTemplateOpen] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-  const [projectConversionOpen, setProjectConversionOpen] = useState(false);
-  const [projectConversionName, setProjectConversionName] = useState('');
-  const [projectConversionDescription, setProjectConversionDescription] = useState('');
-  const [projectConversionStatus, setProjectConversionStatus] = useState('planned');
-  const [projectConversionPriority, setProjectConversionPriority] = useState(0);
-  const [projectConversionStartDate, setProjectConversionStartDate] = useState('');
-  const [projectConversionTargetDate, setProjectConversionTargetDate] = useState('');
 
   const relationsState = useIssueDetailRelations({
     identifier,
@@ -172,47 +160,20 @@ export function useIssueDetailPresenter({
     onCloseIssueOptions: () => setIssueOptionsOpen(false),
   });
   const { data: dueDateData, handlers: dueDateHandlers } = dueDateState;
-
-  function reminderPreset(kind: 'hour' | 'tomorrow' | 'week' | 'month' | 'cycle') {
-    const now = new Date();
-    const next = new Date(now);
-    if (kind === 'hour') {
-      next.setHours(next.getHours() + 1);
-      next.setSeconds(0, 0);
-    }
-    if (kind === 'tomorrow') next.setDate(next.getDate() + 1);
-    if (kind === 'week') {
-      const daysToMonday = (8 - next.getDay()) % 7 || 7;
-      next.setDate(next.getDate() + daysToMonday);
-    }
-    if (kind === 'month') next.setMonth(next.getMonth() + 1);
-    if (kind === 'cycle') {
-      const upcoming = cycles
-        .filter((cycle) => new Date(cycle.startsAt) > now)
-        .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
-      if (!upcoming) return;
-      next.setTime(new Date(upcoming.startsAt).getTime());
-    }
-    if (kind !== 'hour') next.setHours(9, 0, 0, 0);
-    return next;
-  }
-
-  async function setReminder(value: Date | null) {
-    await patch({ reminderAt: value ? value.toISOString() : null });
-    setCustomReminderOpen(false);
-    setIssueOptionsOpen(false);
-  }
-
-  function formatLocalDateTime(value: string | null) {
-    if (!value) return '';
-    const date = new Date(value);
-    const parts = [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ];
-    return `${parts[0]}-${parts[1]}-${parts[2]}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  }
+  const remindersState = useIssueDetailReminders({
+    issue,
+    cycles,
+    patch,
+    setIssueOptionsOpen,
+  });
+  const { data: remindersData, handlers: remindersHandlers } = remindersState;
+  const conversionsState = useIssueDetailConversions({
+    identifier,
+    issue,
+    setError,
+    onCloseIssueOptions: () => setIssueOptionsOpen(false),
+  });
+  const { data: conversionsData, handlers: conversionsHandlers } = conversionsState;
 
   if (error) {
     return { _view: 0 as const, error, handlers: {} };
@@ -299,36 +260,6 @@ export function useIssueDetailPresenter({
     });
   }
 
-  async function createIssueTemplate() {
-    const name = templateName.trim();
-    if (!name) return;
-    await api.createIssueTemplate(identifier, name);
-    setTemplateOpen(false);
-    setTemplateName('');
-  }
-
-  async function createProjectFromIssue() {
-    const name = projectConversionName.trim();
-    if (!name) return;
-    try {
-      const result = await api.convertIssueToProject(identifier, {
-        name,
-        description: projectConversionDescription,
-        status: projectWorkflowStatusCategory(projectConversionStatus, projectWorkflowStatuses),
-        workflowStatus: projectConversionStatus,
-        priority: projectConversionPriority,
-        ...(projectConversionStartDate ? { startDate: projectConversionStartDate } : {}),
-        ...(projectConversionTargetDate ? { targetDate: projectConversionTargetDate } : {}),
-      });
-      setProjectConversionOpen(false);
-      await router.invalidate();
-      signals.dispatchEvent(new Event('kotowari:refresh'));
-      await navigate({ to: '/projects/$slug', params: { slug: result.project.slug } });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'failed to convert issue to project');
-    }
-  }
-
   return {
     _view: 2 as const,
     identifier,
@@ -344,6 +275,8 @@ export function useIssueDetailPresenter({
     ...relationsData,
     ...resourcesData,
     ...dueDateData,
+    ...remindersData,
+    ...conversionsData,
     projects,
     milestones,
     cycles,
@@ -357,20 +290,7 @@ export function useIssueDetailPresenter({
     copied,
     historyRequest,
     descriptionFocusRequest,
-    customReminderOpen,
-    customReminderValue,
     issueOptionsOpen,
-    reminderMenuOpen,
-    templateOpen,
-    templateName,
-    projectConversionOpen,
-    projectConversionName,
-    projectConversionDescription,
-    projectConversionStatus,
-    projectWorkflowStatuses,
-    projectConversionPriority,
-    projectConversionStartDate,
-    projectConversionTargetDate,
     due,
     hasUpcomingCycle: cycles.some((cycle) => new Date(cycle.startsAt) > new Date()),
     selectedLabelIds,
@@ -523,64 +443,6 @@ export function useIssueDetailPresenter({
       },
       onOpenCodingToolSettings: () => navigate({ to: '/config' }),
       Make_copy_onClick42: () => makeCopy(),
-      onOpenConvertToTemplate: () => {
-        setIssueOptionsOpen(false);
-        setTemplateName(issue.title);
-        setTemplateOpen(true);
-      },
-      onCloseConvertToTemplate: () => setTemplateOpen(false),
-      onOpenConvertToProject: () => {
-        setIssueOptionsOpen(false);
-        setProjectConversionName(issue.title);
-        setProjectConversionDescription(issue.body);
-        setProjectConversionStatus(
-          issue.status === 'in_progress'
-            ? 'started'
-            : issue.status === 'done'
-              ? 'completed'
-              : issue.status === 'canceled'
-                ? 'canceled'
-                : 'planned',
-        );
-        setProjectConversionPriority(issue.priority);
-        setProjectConversionStartDate('');
-        setProjectConversionTargetDate(issue.dueDate?.slice(0, 10) ?? '');
-        setProjectConversionOpen(true);
-      },
-      onCloseConvertToProject: () => setProjectConversionOpen(false),
-      Project_conversion_name_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setProjectConversionName(e.target.value),
-      Project_conversion_description_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setProjectConversionDescription(e.target.value),
-      Project_conversion_status_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setProjectConversionStatus(e.target.value),
-      Project_conversion_priority_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setProjectConversionPriority(Number(e.target.value)),
-      Project_conversion_start_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setProjectConversionStartDate(e.target.value),
-      Project_conversion_target_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setProjectConversionTargetDate(e.target.value),
-      onCreateProjectFromIssue: (
-        e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
-      ) => {
-        e.preventDefault();
-        return createProjectFromIssue();
-      },
-      onTemplateNameChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setTemplateName(e.target.value),
-      onCreateIssueTemplate: (
-        e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
-      ) => {
-        e.preventDefault();
-        return createIssueTemplate();
-      },
       onOpenRecurringIssue: () => {
         setIssueOptionsOpen(false);
         return sendIntent('issue.createRecurring', {
@@ -592,39 +454,11 @@ export function useIssueDetailPresenter({
         });
       },
       Show_description_history_onClick50: () => setHistoryRequest((current) => current + 1),
-      onSetReminder: (kind: 'hour' | 'tomorrow' | 'week' | 'month' | 'cycle') => {
-        const date = reminderPreset(kind);
-        return date ? setReminder(date) : undefined;
-      },
-      onOpenCustomReminder: () => {
-        setCustomReminderValue(
-          formatLocalDateTime(issue.reminderAt) ||
-            formatLocalDateTime(new Date(Date.now() + 60 * 60 * 1000).toISOString()),
-        );
-        setCustomReminderOpen(true);
-        setIssueOptionsOpen(false);
-      },
-      onCloseCustomReminder: () => setCustomReminderOpen(false),
-      onOpenIssueReminderMenu: () => {
-        setIssueOptionsOpen(true);
-        setReminderMenuOpen(true);
-      },
-      onReminderMenuChange: (opened: boolean) => setReminderMenuOpen(opened),
-      onIssueOptionsChange: (opened: boolean) => {
-        setIssueOptionsOpen(opened);
-        if (!opened) setReminderMenuOpen(false);
-      },
-      onCustomReminderChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setCustomReminderValue(e.target.value),
-      onCustomReminderSave: () => {
-        const value = new Date(customReminderValue);
-        return Number.isNaN(value.getTime()) ? undefined : setReminder(value);
-      },
-      onClearReminder: () => setReminder(null),
       ...relationsHandlers,
       ...resourcesHandlers,
       ...dueDateHandlers,
+      ...remindersHandlers,
+      ...conversionsHandlers,
       ...timelineHandlers,
     },
   };
