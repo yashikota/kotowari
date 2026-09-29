@@ -43,19 +43,8 @@ func (p projectPatchRequest) updateInput(slug string) model.ProjectUpdateInput {
 		Slug: slug, Name: p.Name, Summary: p.Summary, Icon: p.Icon, IconColor: p.IconColor,
 		Description: p.Description, Status: p.Status, WorkflowStatus: p.WorkflowStatus,
 		Health: p.Health, Lead: p.Lead, Priority: p.Priority,
-		StartDate:  projectDatePatch(p.ClearStart, p.StartDate),
-		TargetDate: projectDatePatch(p.ClearTarget, p.TargetDate),
+		StartDate:  patchOptionalString(p.ClearStart, p.StartDate),
+		TargetDate: patchOptionalString(p.ClearTarget, p.TargetDate),
 		Labels:     p.Labels, InitiativeSlugs: p.InitiativeSlugs,
 	}
-}
-
-func projectDatePatch(clear bool, value *string) **string {
-	if clear {
-		var nilValue *string
-		return &nilValue
-	}
-	if value == nil {
-		return nil
-	}
-	return &value
 }
