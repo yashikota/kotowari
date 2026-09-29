@@ -127,3 +127,31 @@ func (s *Store) normalizeIssueFilter(f IssueFilter) (IssueFilter, error) {
 	}
 	return f, nil
 }
+
+func validIssueLabelOperator(operator string) bool {
+	switch operator {
+	case "includeAny", "includeAll", "excludeAny", "excludeAll":
+		return true
+	default:
+		return false
+	}
+}
+
+func defaultIssueLabelOperator(labels []string) string {
+	if len(labels) > 1 {
+		return "includeAll"
+	}
+	return "includeAny"
+}
+
+func validateAddedToCycle(values []string) error {
+	if len(values) > 3 {
+		return validationf("too many added-to-cycle filters")
+	}
+	for _, value := range values {
+		if value != "planned" && value != "during" && value != "after" {
+			return validationf("invalid added-to-cycle filter")
+		}
+	}
+	return nil
+}
