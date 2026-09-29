@@ -27,37 +27,27 @@ import {
   type SidebarItemId,
   type SidebarLocation,
 } from '../preferences.ts';
-import {
-  INBOX_STATE_EVENT,
-  INBOX_STATE_KEY,
-  parseInboxState,
-  unreadInboxBadgeCount,
-} from '../inbox-state.ts';
-import { listLinkedPullRequests } from '../reviews.ts';
 import type { IssueCreateContext } from '../issue-list.ts';
 import type {
-  Cycle,
   Issue,
   IssueLink,
   IssueTemplate,
-  Initiative,
   Label,
   Project,
   RecurringIssue,
   RecurringIssueDraft,
   SearchHit,
-  View,
 } from '../types.ts';
 import { useIssueWorkflow, workflowStatusCategory } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import {
   deleteAllIssueDrafts,
   deleteIssueDraft,
-  ISSUE_DRAFTS_EVENT,
   listIssueDrafts,
   saveIssueDraft,
   type IssueDraft,
 } from '../issue-drafts.ts';
+import { useShellWorkspace } from './useShellWorkspace.ts';
 
 type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
 
@@ -155,14 +145,6 @@ export function useShellPresenter() {
     pathname === '/views';
   const [cycleNavigationOpen, setCycleNavigationOpen] = useState(false);
   const [cycleNavigationQuery, setCycleNavigationQuery] = useState('');
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [initiatives, setInitiatives] = useState<Initiative[]>([]);
-  const [views, setViews] = useState<View[]>([]);
-  const [favoriteIssues, setFavoriteIssues] = useState<Issue[]>([]);
-  const [workspaceName, setWorkspaceName] = useState('');
-  const [sidebarBadgeCounts, setSidebarBadgeCounts] = useState<
-    Partial<Record<SidebarItemId, number>>
-  >({});
   const [sidebarCustomizationOpen, setSidebarCustomizationOpen] =
     useMachineFlag('sidebar-customization');
   const { overlay, set: setOverlay } = useOverlay();
@@ -234,6 +216,8 @@ export function useShellPresenter() {
   const [issueDraftDiscardRequest, setIssueDraftDiscardRequest] =
     useState<IssueDraftDiscardRequest | null>(null);
   const [savedIssueDraft, setSavedIssueDraft] = useState<IssueDraft | null>(null);
+  const { cycles, initiatives, views, favoriteIssues, workspaceName, sidebarBadgeCounts } =
+    useShellWorkspace({ setError, setProjects });
 
   const saveCurrentIssueDraft = useCallback(() => {
     const title = issueTitle.trim();
@@ -335,75 +319,6 @@ export function useShellPresenter() {
   useEffect(() => {
     if (createIssue && issueTitle.trim()) saveCurrentIssueDraft();
   }, [createIssue, issueTitle, saveCurrentIssueDraft]);
-
-  const loadWorkspace = useCallback(async () => {
-    try {
-      const [ws, cyc, vs, proj, favorites, initiativeList] = await Promise.all([
-        api.workspace(),
-        api.cycles(),
-        api.views(),
-        api.projects(),
-        api.issues('?favorite=true'),
-        api.initiatives(),
-      ]);
-      setWorkspaceName(ws.name);
-      setCycles(cyc);
-      setViews(vs);
-      setProjects(proj);
-      setFavoriteIssues(favorites);
-      setInitiatives(initiativeList);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'failed to load workspace');
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadWorkspace();
-    signals.addEventListener('kotowari:refresh', loadWorkspace);
-    return () => signals.removeEventListener('kotowari:refresh', loadWorkspace);
-  }, [loadWorkspace]);
-
-  useEffect(() => {
-    let active = true;
-    const refreshBadges = async () => {
-      try {
-        const [activities, issues] = await Promise.all([api.inboxActivities(), api.issues()]);
-        if (!active) return;
-        const inboxState = parseInboxState(window.localStorage.getItem(INBOX_STATE_KEY));
-        setSidebarBadgeCounts({
-          '/inbox': unreadInboxBadgeCount(activities, inboxState),
-          '/reviews': listLinkedPullRequests(issues).length,
-          '/drafts': listIssueDrafts().length,
-        });
-      } catch {
-        if (active) setSidebarBadgeCounts({ '/drafts': listIssueDrafts().length });
-      }
-    };
-    const onInboxStateChange = () => void refreshBadges();
-    void refreshBadges();
-    window.addEventListener(INBOX_STATE_EVENT, onInboxStateChange);
-    window.addEventListener('storage', onInboxStateChange);
-    signals.addEventListener('kotowari:refresh', onInboxStateChange);
-    return () => {
-      active = false;
-      window.removeEventListener(INBOX_STATE_EVENT, onInboxStateChange);
-      window.removeEventListener('storage', onInboxStateChange);
-      signals.removeEventListener('kotowari:refresh', onInboxStateChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const refreshDraftBadge = () => {
-      setSidebarBadgeCounts((current) => ({ ...current, '/drafts': listIssueDrafts().length }));
-    };
-    refreshDraftBadge();
-    window.addEventListener(ISSUE_DRAFTS_EVENT, refreshDraftBadge);
-    window.addEventListener('storage', refreshDraftBadge);
-    return () => {
-      window.removeEventListener(ISSUE_DRAFTS_EVENT, refreshDraftBadge);
-      window.removeEventListener('storage', refreshDraftBadge);
-    };
-  }, []);
 
   useEffect(() => {
     if (!createIssue) {
