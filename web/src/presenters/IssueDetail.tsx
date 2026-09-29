@@ -1,7 +1,7 @@
 import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import {
   issueBranchName,
@@ -14,7 +14,7 @@ import { buildCodingToolURL, useCodingToolPreferences } from '../coding-tools.ts
 import { signals } from '../application/mediator.ts';
 import { useIntent } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
-import type { ADR, Issue, IssueLink, IssueRelation, Label } from '../types.ts';
+import type { ADR, IssueLink, Label } from '../types.ts';
 import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
@@ -22,21 +22,14 @@ import { autoAssignOnStartedTransition } from '../application/issue-assignment.t
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { LABEL_COLORS } from '../label-colors.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
+import { useIssueDetailRelations } from './useIssueDetailRelations.ts';
 import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
 
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
 
-type RelatedIssueKind = 'issue' | 'subIssue' | 'parent' | 'blocked' | 'blocking';
 export type IssueOptionalProperty = 'dueDate' | 'milestone' | 'parent' | 'type';
 export type IssuePropertyMenu = 'status' | 'priority' | 'labels' | 'estimate' | null;
 type OptionalPropertyOverrides = Record<string, Partial<Record<IssueOptionalProperty, boolean>>>;
-type MarkAsKind =
-  | 'parentOf'
-  | 'subIssueOf'
-  | 'relatedTo'
-  | 'blockedBy'
-  | 'blocking'
-  | 'duplicateOf';
 
 type Props = {
   identifier: string;
@@ -116,10 +109,7 @@ export function useIssueDetailPresenter({
     () => issueSubscriptions.has(identifier),
     () => false,
   );
-  const [subTitle, setSubTitle] = useState('');
-  const [subIssueEditorOpen, setSubIssueEditorOpen] = useState(false);
   const [labelName, setLabelName] = useState('');
-  const [focusSub, setFocusSub] = useState(0);
   const [focusLabel, setFocusLabel] = useState(0);
   const [adrPick, setAdrPick] = useState('');
   const [externalLinkURL, setExternalLinkURL] = useState('');
@@ -129,9 +119,6 @@ export function useIssueDetailPresenter({
   const [resourcesCollapsed, setResourcesCollapsed] = useState(false);
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [dueDateValue, setDueDateValue] = useState('');
-  const [relationTarget, setRelationTarget] = useState('');
-  const [relationKind, setRelationKind] = useState<IssueRelation['kind']>('related');
-  const [relationsEditorOpen, setRelationsEditorOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [historyRequest, setHistoryRequest] = useState(0);
   const [descriptionFocus, setDescriptionFocus] = useState({ identifier, request: 0 });
@@ -144,9 +131,6 @@ export function useIssueDetailPresenter({
   const [issueOptionsOpen, setIssueOptionsOpen] = useState(false);
   const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
   const [issuePropertyMenu, setIssuePropertyMenu] = useState<IssuePropertyMenu>(null);
-  const [relatedIssueKind, setRelatedIssueKind] = useState<RelatedIssueKind | null>(null);
-  const [relatedIssueTitle, setRelatedIssueTitle] = useState('');
-  const [markAsKind, setMarkAsKind] = useState<MarkAsKind | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [projectConversionOpen, setProjectConversionOpen] = useState(false);
@@ -157,12 +141,14 @@ export function useIssueDetailPresenter({
   const [projectConversionStartDate, setProjectConversionStartDate] = useState('');
   const [projectConversionTargetDate, setProjectConversionTargetDate] = useState('');
 
-  useEffect(() => {
-    setSubTitle('');
-    setSubIssueEditorOpen(false);
-    setRelationTarget('');
-    setRelationsEditorOpen(false);
-  }, [identifier]);
+  const relationsState = useIssueDetailRelations({
+    identifier,
+    issue,
+    issues,
+    reload,
+    onCloseIssueOptions: () => setIssueOptionsOpen(false),
+  });
+  const { data: relationsData, handlers: relationsHandlers } = relationsState;
 
   async function patch(body: Record<string, unknown>) {
     const adjustedBody = issue
@@ -236,60 +222,13 @@ export function useIssueDetailPresenter({
   };
   const selectedLabelIds = new Set(issue.labels.map((l) => l.id));
   const milestones = projects.find((project) => project.id === issue.projectId)?.milestones ?? [];
-  const children = issues.filter((i) => i.parentId === issue.id);
-  const relationIssues = issue.relations.flatMap((relation) => {
-    const target = issues.find((candidate) => candidate.identifier === relation.targetIdentifier);
-    return target ? [{ relation, target }] : [];
-  });
-  const relationTargetOptions = issues.filter(
-    (candidate) =>
-      candidate.id !== issue.id &&
-      !issue.relations.some((relation) => relation.targetIdentifier === candidate.identifier),
-  );
   const issueURL =
     typeof window === 'undefined'
       ? `/issues/${encodeURIComponent(identifier)}`
       : new URL(`/issues/${encodeURIComponent(identifier)}`, window.location.origin).href;
   const codingToolURL = buildCodingToolURL(issue, codingToolPreferences, issueURL);
-  const markAsForbiddenIds = new Set<number>();
-  if (markAsKind === 'parentOf') {
-    let ancestorId = issue.parentId;
-    while (ancestorId != null && !markAsForbiddenIds.has(ancestorId)) {
-      markAsForbiddenIds.add(ancestorId);
-      ancestorId = issues.find((candidate) => candidate.id === ancestorId)?.parentId ?? null;
-    }
-  } else if (markAsKind === 'subIssueOf') {
-    const pending = [issue.id];
-    while (pending.length > 0) {
-      const parentId = pending.pop()!;
-      for (const child of issues.filter((candidate) => candidate.parentId === parentId)) {
-        if (!markAsForbiddenIds.has(child.id)) {
-          markAsForbiddenIds.add(child.id);
-          pending.push(child.id);
-        }
-      }
-    }
-  }
-  const markAsIssueOptions = issues.filter(
-    (candidate) => candidate.id !== issue.id && !markAsForbiddenIds.has(candidate.id),
-  );
-  const parentOptions = issues.filter((i) => i.id !== issue.id);
-  const parentId = issue.id;
   const linkedAdrs = adrs.filter((a) => (issue.adrNumbers ?? []).includes(a.number));
   const unlinkedAdrs = adrs.filter((a) => !(issue.adrNumbers ?? []).includes(a.number));
-
-  async function addSubIssue() {
-    const title = subTitle.trim();
-    if (!title) {
-      return;
-    }
-    await api.createIssue({ title, parentId });
-    setSubTitle('');
-    setSubIssueEditorOpen(false);
-    await router.invalidate();
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-    await reload();
-  }
 
   async function addLabel() {
     const name = labelName.trim();
@@ -404,24 +343,6 @@ export function useIssueDetailPresenter({
     await reload();
   }
 
-  async function addRelation() {
-    if (!relationTarget) return;
-    await api.addIssueRelation(identifier, {
-      targetIdentifier: relationTarget,
-      kind: relationKind,
-    });
-    setRelationTarget('');
-    setRelationsEditorOpen(false);
-    await reload();
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-  }
-
-  async function removeRelation(relation: IssueRelation) {
-    await api.removeIssueRelation(identifier, relation.id);
-    await reload();
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-  }
-
   async function remove() {
     if (!window.confirm(i18n.t('issueActions.deleteConfirmation', { identifier }))) {
       return;
@@ -470,67 +391,6 @@ export function useIssueDetailPresenter({
     });
   }
 
-  async function createRelatedIssue() {
-    const title = relatedIssueTitle.trim();
-    if (!title || !relatedIssueKind) return;
-
-    const related = await api.createIssue({
-      title,
-      status: 'todo',
-      projectId: issue.projectId ?? undefined,
-      cycleId: issue.cycleId ?? undefined,
-      parentId: relatedIssueKind === 'subIssue' ? issue.id : undefined,
-    });
-
-    if (relatedIssueKind === 'parent') {
-      await api.patchIssue(identifier, { parentId: related.id });
-    } else if (relatedIssueKind !== 'subIssue') {
-      const kind: IssueRelation['kind'] =
-        relatedIssueKind === 'blocked'
-          ? 'blocks'
-          : relatedIssueKind === 'blocking'
-            ? 'blockedBy'
-            : 'related';
-      await api.addIssueRelation(identifier, {
-        targetIdentifier: related.identifier,
-        kind,
-      });
-    }
-
-    setRelatedIssueKind(null);
-    setRelatedIssueTitle('');
-    await router.invalidate();
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-    await reload();
-  }
-
-  async function markAs(targetIdentifier: string | null) {
-    if (!targetIdentifier || !markAsKind) return;
-    const target = issues.find((candidate) => candidate.identifier === targetIdentifier);
-    if (!target) return;
-
-    if (markAsKind === 'parentOf') {
-      await api.patchIssue(target.identifier, { parentId: issue.id });
-    } else if (markAsKind === 'subIssueOf') {
-      await api.patchIssue(identifier, { parentId: target.id });
-    } else {
-      const kind: IssueRelation['kind'] =
-        markAsKind === 'relatedTo'
-          ? 'related'
-          : markAsKind === 'blockedBy'
-            ? 'blockedBy'
-            : markAsKind === 'blocking'
-              ? 'blocks'
-              : 'duplicateOf';
-      await api.addIssueRelation(identifier, { targetIdentifier, kind });
-    }
-
-    setMarkAsKind(null);
-    await router.invalidate();
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-    await reload();
-  }
-
   async function createIssueTemplate() {
     const name = templateName.trim();
     if (!name) return;
@@ -573,16 +433,14 @@ export function useIssueDetailPresenter({
     optionalIssuePropertyVisibility,
     issues,
     ...timelineData,
+    ...relationsData,
     projects,
     milestones,
     cycles,
     pages,
     labels,
     adrs,
-    subTitle,
-    subIssueEditorOpen,
     labelName,
-    focusSub,
     focusLabel,
     adrPick,
     externalLinkURL,
@@ -592,11 +450,6 @@ export function useIssueDetailPresenter({
     resourcesCollapsed,
     dueDateOpen,
     dueDateValue,
-    relationTarget,
-    relationKind,
-    relationsEditorOpen,
-    relationIssues,
-    relationTargetOptions,
     codingToolName: codingToolPreferences.customLinkName,
     codingToolURL,
     timeZone,
@@ -607,10 +460,6 @@ export function useIssueDetailPresenter({
     customReminderValue,
     issueOptionsOpen,
     reminderMenuOpen,
-    relatedIssueKind,
-    relatedIssueTitle,
-    markAsKind,
-    markAsIssueOptions,
     templateOpen,
     templateName,
     projectConversionOpen,
@@ -624,9 +473,6 @@ export function useIssueDetailPresenter({
     due,
     hasUpcomingCycle: cycles.some((cycle) => new Date(cycle.startsAt) > new Date()),
     selectedLabelIds,
-    children,
-    parentOptions,
-    parentId,
     linkedAdrs,
     unlinkedAdrs,
     handlers: {
@@ -802,21 +648,6 @@ export function useIssueDetailPresenter({
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },
       Subscription_onClick: () => issueSubscriptions.toggle(identifier),
-      Relation_target_onChange30: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setRelationTarget(e.target.value),
-      Relation_kind_onChange31: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setRelationKind(e.target.value as IssueRelation['kind']),
-      onOpenRelationsEditor: () => setRelationsEditorOpen(true),
-      onCloseRelationsEditor: () => setRelationsEditorOpen(false),
-      Relation_onSubmit32: (
-        e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
-      ) => {
-        e.preventDefault();
-        return addRelation();
-      },
-      onRemoveRelation33: (relation: IssueRelation) => removeRelation(relation),
       Copy_id_onClick34: () => copyText(issue.identifier),
       Copy_url_onClick35: () => copyText(window.location.href),
       Copy_title_onClick36: () => copyText(issue.title),
@@ -841,27 +672,6 @@ export function useIssueDetailPresenter({
       },
       onOpenCodingToolSettings: () => navigate({ to: '/config' }),
       Make_copy_onClick42: () => makeCopy(),
-      onOpenCreateRelated: (kind: RelatedIssueKind) => {
-        setIssueOptionsOpen(false);
-        setRelatedIssueTitle('');
-        setRelatedIssueKind(kind);
-      },
-      onCloseCreateRelated: () => setRelatedIssueKind(null),
-      onRelatedIssueTitleChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setRelatedIssueTitle(e.target.value),
-      onCreateRelatedSubmit: (
-        e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
-      ) => {
-        e.preventDefault();
-        return createRelatedIssue();
-      },
-      onOpenMarkAs: (kind: MarkAsKind) => {
-        setIssueOptionsOpen(false);
-        setMarkAsKind(kind);
-      },
-      onCloseMarkAs: () => setMarkAsKind(null),
-      onSelectMarkAs: (value: string | null) => markAs(value),
       onOpenConvertToTemplate: () => {
         setIssueOptionsOpen(false);
         setTemplateName(issue.title);
@@ -961,33 +771,7 @@ export function useIssueDetailPresenter({
         return Number.isNaN(value.getTime()) ? undefined : setReminder(value);
       },
       onClearReminder: () => setReminder(null),
-      onClick18: (c: Issue) =>
-        navigate({
-          to: '/issues/$identifier',
-          params: { identifier: c.identifier },
-        }),
-      onOpenSubIssueEditor: () => {
-        setSubIssueEditorOpen(true);
-        setFocusSub((n) => n + 1);
-      },
-      onCloseSubIssueEditor: () => {
-        setSubIssueEditorOpen(false);
-        setSubTitle('');
-      },
-      onCreateSubIssue: () => addSubIssue(),
-      New_sub_issue_onChange19: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setSubTitle(e.target.value),
-      New_sub_issue_onKeyDown20: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
-      ) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-
-        if (isSubmitShortcut(e)) {
-          e.preventDefault();
-          return addSubIssue();
-        }
-      },
+      ...relationsHandlers,
       ...timelineHandlers,
     },
   };
