@@ -60,9 +60,21 @@ func (s *Session) State() State {
 	defer s.mu.Unlock()
 	out := s.state
 	out.Events = append([]Event{}, out.Events...)
+	for i := range out.Events {
+		out.Events[i].Data = cloneRawMessage(out.Events[i].Data)
+	}
 	out.Permissions = append([]Permission{}, out.Permissions...)
+	for i := range out.Permissions {
+		out.Permissions[i].ID = cloneRawMessage(out.Permissions[i].ID)
+		out.Permissions[i].Params = cloneRawMessage(out.Permissions[i].Params)
+	}
 	return out
 }
+
+func cloneRawMessage(data json.RawMessage) json.RawMessage {
+	return append(json.RawMessage(nil), data...)
+}
+
 func (s *Session) persistLocked() {
 	b, err := json.Marshal(s.state)
 	if err != nil {
@@ -85,12 +97,14 @@ func (s *Session) receive(method string, id, params json.RawMessage) {
 	s.mu.Lock()
 	c := s.client
 	if method == "session/update" {
-		s.state.Events = append(s.state.Events, Event{Kind: "update", Data: params})
+		s.state.Events = append(s.state.Events, Event{Kind: "update", Data: cloneRawMessage(params)})
 		s.mu.Unlock()
 		return
 	}
 	if method == "session/request_permission" && len(id) > 0 {
-		s.state.Permissions = append(s.state.Permissions, Permission{ID: id, Params: params})
+		s.state.Permissions = append(s.state.Permissions, Permission{
+			ID: cloneRawMessage(id), Params: cloneRawMessage(params),
+		})
 		s.mu.Unlock()
 		return
 	}
