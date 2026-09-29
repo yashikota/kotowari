@@ -14,7 +14,6 @@ import type {
   Project,
   RecurringIssue,
   RecurringIssueDraft,
-  SearchHit,
 } from '../types.ts';
 import type { IssueCreateContext } from '../issue-list.ts';
 import {
@@ -24,6 +23,7 @@ import {
   saveIssueDraft,
   type IssueDraft,
 } from '../issue-drafts.ts';
+import { useIssueComposerParent } from './useIssueComposerParent.ts';
 
 type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
 
@@ -77,14 +77,7 @@ export function useShellIssueComposer({
   const [issueLinkURL, setIssueLinkURL] = useState('');
   const [issueLinkTitle, setIssueLinkTitle] = useState('');
   const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
-  const [issueParentId, setIssueParentId] = useState<number | undefined>();
-  const [issueParentOpen, setIssueParentOpen] = useState(false);
-  const [issueParentIdentifier, setIssueParentIdentifier] = useState('');
-  const [issueParentQuery, setIssueParentQuery] = useState('');
-  const [issueParentResults, setIssueParentResults] = useState<SearchHit[]>([]);
-  const [selectedParentIssue, setSelectedParentIssue] = useState<SearchHit | null>(null);
-  const [issueParentLoading, setIssueParentLoading] = useState(false);
-  const parentLookupVersion = useRef(0);
+  const issueParent = useIssueComposerParent(open);
   const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
   const [issueTemplateSlug, setIssueTemplateSlug] = useState('');
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
@@ -114,8 +107,8 @@ export function useShellIssueComposer({
       dueDate: issueDueDate,
       labelNames: [...issueLabelNames],
       templateSlug: issueTemplateSlug,
-      parentId: issueParentId,
-      parentIdentifier: issueParentIdentifier,
+      parentId: issueParent.id,
+      parentIdentifier: issueParent.identifier,
       externalLinks: issueExternalLinks.map((link) => ({ ...link })),
       recurringOpen: issueRecurringOpen,
       recurringFirstDueDate: issueRecurringFirstDueDate,
@@ -139,8 +132,8 @@ export function useShellIssueComposer({
     issueEstimate,
     issueExternalLinks,
     issueLabelNames,
-    issueParentId,
-    issueParentIdentifier,
+    issueParent.id,
+    issueParent.identifier,
     issuePriority,
     issueProjectId,
     issueRecurringFirstDueDate,
@@ -211,30 +204,6 @@ export function useShellIssueComposer({
       });
   }, [open, setProjects]);
 
-  useEffect(() => {
-    const query = issueParentQuery.trim();
-    if (!open || !query) {
-      setIssueParentResults([]);
-      return;
-    }
-    let active = true;
-    const timer = window.setTimeout(() => {
-      void api
-        .search(query)
-        .then((hits) => {
-          if (active)
-            setIssueParentResults(hits.filter((hit) => hit.kind === 'issue').slice(0, 20));
-        })
-        .catch(() => {
-          if (active) setIssueParentResults([]);
-        });
-    }, 100);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [open, issueParentQuery]);
-
   function openCreateIssue(prefill: IssueCreateContext = {}) {
     issueDraftIdRef.current = '';
     setIssueDraftId('');
@@ -259,15 +228,15 @@ export function useShellIssueComposer({
     setIssueLinkURL('');
     setIssueLinkTitle('');
     setIssueLabelNames(prefill.labelNames ?? []);
-    setIssueParentId(prefill.parent?.id);
-    setIssueParentOpen(Boolean(prefill.parent));
-    setIssueParentIdentifier(prefill.parent?.identifier ?? '');
-    setIssueParentQuery('');
-    setIssueParentResults([]);
-    setIssueParentLoading(false);
-    parentLookupVersion.current += 1;
-    setSelectedParentIssue(
-      prefill.parent ? { kind: 'issue', id: prefill.parent.identifier, title: '' } : null,
+    issueParent.reset(
+      prefill.parent
+        ? {
+            id: prefill.parent.id,
+            identifier: prefill.parent.identifier,
+            open: true,
+            selected: { kind: 'issue', id: prefill.parent.identifier, title: '' },
+          }
+        : undefined,
     );
     setIssueTemplateSlug('');
     setIssueProjectId(prefill.projectId ? String(prefill.projectId) : '');
@@ -297,14 +266,11 @@ export function useShellIssueComposer({
     setIssueDueDateOpen(Boolean(draft.dueDate));
     setIssueLabelNames([...draft.labelNames]);
     setIssueTemplateSlug(draft.templateSlug);
-    setIssueParentId(draft.parentId);
-    setIssueParentIdentifier(draft.parentIdentifier);
-    setIssueParentQuery('');
-    setIssueParentResults([]);
-    setIssueParentOpen(Boolean(draft.parentId));
-    setIssueParentLoading(false);
-    parentLookupVersion.current += 1;
-    setSelectedParentIssue(null);
+    issueParent.reset({
+      id: draft.parentId,
+      identifier: draft.parentIdentifier,
+      open: Boolean(draft.parentId),
+    });
     setIssueExternalLinks(draft.externalLinks.map((link) => ({ ...link })));
     setIssueRecurringOpen(draft.recurringOpen);
     setIssueRecurringFirstDueDate(draft.recurringFirstDueDate);
@@ -348,13 +314,7 @@ export function useShellIssueComposer({
     setIssueLinkURL('');
     setIssueLinkTitle('');
     setIssueLabelNames([]);
-    setIssueParentId(undefined);
-    setIssueParentOpen(false);
-    setIssueParentIdentifier('');
-    setIssueParentQuery('');
-    setSelectedParentIssue(null);
-    setIssueParentLoading(false);
-    parentLookupVersion.current += 1;
+    issueParent.reset();
     setIssueTemplateSlug('');
     setIssueProjectId('');
     setIssueCycleId('');
@@ -363,7 +323,7 @@ export function useShellIssueComposer({
 
   async function submitIssue() {
     const title = issueTitle.trim();
-    if (!title || issueParentLoading || issueLinkOpen || issueAttachmentError) return;
+    if (!title || issueParent.loading || issueLinkOpen || issueAttachmentError) return;
     const recurrenceInterval = Number(issueRecurringInterval);
     if (
       issueRecurringOpen &&
@@ -390,7 +350,7 @@ export function useShellIssueComposer({
         .filter((label) => issueLabelNames.includes(label.name))
         .map((label) => label.id),
       dueDate: issueRecurringOpen ? undefined : issueDueDate || undefined,
-      parentId: issueParentId,
+      parentId: issueParent.id,
       links: issueExternalLinks,
       templateSlug: issueTemplateSlug || undefined,
       recurring: issueRecurringOpen
@@ -429,13 +389,7 @@ export function useShellIssueComposer({
     setIssueLinkOpen(false);
     setIssueLinkURL('');
     setIssueLinkTitle('');
-    setIssueParentId(undefined);
-    setIssueParentOpen(false);
-    setIssueParentIdentifier('');
-    setIssueParentQuery('');
-    setSelectedParentIssue(null);
-    setIssueParentLoading(false);
-    parentLookupVersion.current += 1;
+    issueParent.reset();
     setIssueStatus('todo');
     setIssuePriority(0);
     setIssueType('');
@@ -488,7 +442,7 @@ export function useShellIssueComposer({
       issueRecurringInterval,
       issueRecurringUnit,
       issueSubmitDisabled:
-        issueParentLoading ||
+        issueParent.loading ||
         issueLinkOpen ||
         Boolean(issueAttachmentError) ||
         (issueRecurringOpen &&
@@ -500,14 +454,11 @@ export function useShellIssueComposer({
       issueLinkOpen,
       issueLinkURL,
       issueLinkTitle,
-      issueParentIdentifier,
-      issueParentOpen,
-      issueParentQuery,
-      issueParentLoading,
-      issueParentOptions: [
-        ...(selectedParentIssue ? [selectedParentIssue] : []),
-        ...issueParentResults.filter((hit) => hit.id !== selectedParentIssue?.id),
-      ].map((hit) => ({ value: hit.id, label: hit.title ? `${hit.id} ${hit.title}` : hit.id })),
+      issueParentIdentifier: issueParent.identifier,
+      issueParentOpen: issueParent.isOpen,
+      issueParentQuery: issueParent.query,
+      issueParentLoading: issueParent.loading,
+      issueParentOptions: issueParent.options,
       issueLabelNames,
       issueTemplates,
       issueTemplateSlug,
@@ -584,7 +535,7 @@ export function useShellIssueComposer({
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssueDueDate(e.target.value),
       onOpenIssueDueDate: () => setIssueDueDateOpen(true),
-      onOpenIssueParent: () => setIssueParentOpen(true),
+      onOpenIssueParent: issueParent.onOpen,
       onEnableIssueRecurring: () => {
         const firstDueDate = new Date();
         firstDueDate.setDate(firstDueDate.getDate() + 6);
@@ -633,36 +584,8 @@ export function useShellIssueComposer({
       },
       onRemoveIssueLink: (url: string) =>
         setIssueExternalLinks((current) => current.filter((link) => link.url !== url)),
-      Issue_parentSearch_onChange36: (value: string) => setIssueParentQuery(value),
-      Issue_parent_onChange37: (identifier: string | null) => {
-        const lookupVersion = ++parentLookupVersion.current;
-        setIssueParentIdentifier(identifier ?? '');
-        setIssueParentQuery('');
-        if (!identifier) {
-          setIssueParentId(undefined);
-          setIssueParentOpen(false);
-          setSelectedParentIssue(null);
-          setIssueParentLoading(false);
-          return;
-        }
-        const parent = issueParentResults.find((hit) => hit.id === identifier) ?? null;
-        setSelectedParentIssue(parent);
-        setIssueParentLoading(true);
-        void api
-          .issue(identifier)
-          .then((parentIssue) => {
-            if (lookupVersion !== parentLookupVersion.current) return;
-            setIssueParentId(parentIssue.id);
-            setIssueParentLoading(false);
-          })
-          .catch(() => {
-            if (lookupVersion !== parentLookupVersion.current) return;
-            setIssueParentId(undefined);
-            setIssueParentIdentifier('');
-            setSelectedParentIssue(null);
-            setIssueParentLoading(false);
-          });
-      },
+      Issue_parentSearch_onChange36: issueParent.onQueryChange,
+      Issue_parent_onChange37: issueParent.onChange,
       Issue_type_onChange32: (value: string | null) =>
         setIssueType(value && value !== 'none' ? (value as Issue['type']) : ''),
       Issue_estimate_onChange33: (value: string | null) =>
