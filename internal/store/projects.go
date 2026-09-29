@@ -121,6 +121,18 @@ func (s *Store) CreateProjectWithWorkflow(name, slug, summary, icon, iconColor, 
 }
 
 func (s *Store) CreateProjectWithWorkflowAndOptions(name, slug, summary, icon, iconColor, description, status, workflowStatus string, priority int, start, target *string, labels []string, options ProjectCreationOptions) (Project, error) {
+	return s.CreateProjectFromInput(ProjectCreateInput{
+		Name: name, Slug: slug, Summary: summary, Icon: icon, IconColor: iconColor,
+		Description: description, Status: status, WorkflowStatus: workflowStatus,
+		Priority: priority, StartDate: start, TargetDate: target, Labels: labels, Options: options,
+	})
+}
+
+func (s *Store) CreateProjectFromInput(in ProjectCreateInput) (Project, error) {
+	name, slug, summary := in.Name, in.Slug, in.Summary
+	icon, iconColor, description := in.Icon, in.IconColor, in.Description
+	status, workflowStatus, priority := in.Status, in.WorkflowStatus, in.Priority
+	start, target, labels, options := in.StartDate, in.TargetDate, in.Labels, in.Options
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
@@ -623,6 +635,20 @@ func (s *Store) UpdateProjectWithWorkflowAndInitiatives(slug string, name, summa
 }
 
 func (s *Store) UpdateProjectWithWorkflowInitiativesAndLead(slug string, name, summary, icon, iconColor, description, status, workflowStatus, health, lead *string, priority *int, start, target **string, labels, initiativeSlugs *[]string) (Project, error) {
+	return s.UpdateProjectFromInput(ProjectUpdateInput{
+		Slug: slug, Name: name, Summary: summary, Icon: icon, IconColor: iconColor,
+		Description: description, Status: status, WorkflowStatus: workflowStatus,
+		Health: health, Lead: lead, Priority: priority, StartDate: start, TargetDate: target,
+		Labels: labels, InitiativeSlugs: initiativeSlugs,
+	})
+}
+
+func (s *Store) UpdateProjectFromInput(in ProjectUpdateInput) (Project, error) {
+	slug, name, summary := in.Slug, in.Name, in.Summary
+	icon, iconColor, description := in.Icon, in.IconColor, in.Description
+	status, workflowStatus, health, lead := in.Status, in.WorkflowStatus, in.Health, in.Lead
+	priority, start, target := in.Priority, in.StartDate, in.TargetDate
+	labels, initiativeSlugs := in.Labels, in.InitiativeSlugs
 	if lead != nil && !validProjectLead(*lead) {
 		return Project{}, validationf("invalid project lead")
 	}

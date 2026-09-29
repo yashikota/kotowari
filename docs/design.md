@@ -282,6 +282,10 @@ Issue の検索条件評価は更新処理と分離する。
 関連データを一貫して更新する必要があるため、各操作は `Store.mutate` を通して Workspace 全体のロックと保存を共有する。
 handler から保存データ構造を直接変更しない。
 
+`store.go` は Store の生成・終了とエラー境界だけを持つ。公開モデルと入力型は `model_<domain>.go` に置き、集約状態は `state.go`、TOML 保存用 DTO は `persist_model.go` に隔離する。Project の作成・更新は項目名付きの入力型で渡し、長い位置引数を handler に持ち込まない。
+永続化は `persist.go` のロック付き snapshot/mutate、`persist_load.go` の読み込み、`persist_save.go` の書き込み、`persist_entities.go` の Markdown entity 読み込み、`persist_refs.go` の参照解決に分ける。
+新しい領域を追加するときは、モデル・ドメイン操作・永続化変換を同じ責務の近くに置き、handler が `mem` や TOML DTO に依存しないようにする。
+
 Release 用 SPA は `web/e2e/copy-dist.mjs` で `internal/webembed/dist` にコピーする。
 `.keep` は空ディレクトリを Git に保持するための追跡ファイルなので、生成物の入れ替えでも内容を変えない。
 CI と Release は同じコピー手順の後に GoReleaser snapshot を実行し、配布対象のクロスビルドが成功してから Release workflow がタグを作る。

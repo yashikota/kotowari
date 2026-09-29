@@ -38,7 +38,16 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectWithWorkflowAndOptions(in.Name, in.Slug, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Priority, in.StartDate, in.TargetDate, in.Labels, store.ProjectCreationOptions{TemplateSlug: in.TemplateSlug, Lead: in.Lead, Milestones: in.Milestones, Dependencies: in.Dependencies})
+	out, err := s.store.CreateProjectFromInput(store.ProjectCreateInput{
+		Name: in.Name, Slug: in.Slug, Summary: in.Summary, Icon: in.Icon,
+		IconColor: in.IconColor, Description: in.Description, Status: in.Status,
+		WorkflowStatus: in.WorkflowStatus, Priority: in.Priority,
+		StartDate: in.StartDate, TargetDate: in.TargetDate, Labels: in.Labels,
+		Options: store.ProjectCreationOptions{
+			TemplateSlug: in.TemplateSlug, Lead: in.Lead,
+			Milestones: in.Milestones, Dependencies: in.Dependencies,
+		},
+	})
 	if err != nil {
 		writeError(w, err)
 		return
@@ -123,7 +132,13 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateProjectWithWorkflowInitiativesAndLead(r.PathValue("slug"), in.Name, in.Summary, in.Icon, in.IconColor, in.Description, in.Status, in.WorkflowStatus, in.Health, in.Lead, in.Priority, start, target, in.Labels, in.InitiativeSlugs)
+	out, err := s.store.UpdateProjectFromInput(store.ProjectUpdateInput{
+		Slug: r.PathValue("slug"), Name: in.Name, Summary: in.Summary,
+		Icon: in.Icon, IconColor: in.IconColor, Description: in.Description,
+		Status: in.Status, WorkflowStatus: in.WorkflowStatus, Health: in.Health,
+		Lead: in.Lead, Priority: in.Priority, StartDate: start, TargetDate: target,
+		Labels: in.Labels, InitiativeSlugs: in.InitiativeSlugs,
+	})
 	if err != nil {
 		writeError(w, err)
 		return
