@@ -2,7 +2,7 @@ import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, parseIssueSearch } from '../api.ts';
 import { queryCache } from '../application/cache.ts';
 import { resetIssueProjection } from '../application/issues.ts';
@@ -25,31 +25,12 @@ import {
   type SidebarItemId,
   type SidebarLocation,
 } from '../preferences.ts';
-import type { IssueCreateContext } from '../issue-list.ts';
-import type {
-  Issue,
-  IssueLink,
-  IssueTemplate,
-  Label,
-  Project,
-  RecurringIssue,
-  RecurringIssueDraft,
-  SearchHit,
-} from '../types.ts';
-import { useIssueWorkflow, workflowStatusCategory } from '../workflow.tsx';
+import type { Project } from '../types.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
-import {
-  deleteAllIssueDrafts,
-  deleteIssueDraft,
-  listIssueDrafts,
-  saveIssueDraft,
-  type IssueDraft,
-} from '../issue-drafts.ts';
 import { useShellWorkspace } from './useShellWorkspace.ts';
 import { useShellPalette } from './useShellPalette.ts';
 import { useShellCycleNavigation } from './useShellCycleNavigation.ts';
-
-type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
+import { useShellIssueComposer } from './useShellIssueComposer.ts';
 
 function slugify(s: string): string {
   return s
@@ -71,10 +52,6 @@ function issueNumberFromIdent(id: string | null): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
-function localDateValue(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
 export function useShellPresenter() {
   const { t } = useTranslation();
   const send = useIntent();
@@ -82,7 +59,6 @@ export function useShellPresenter() {
   const router = useRouter();
   const { preferences, update: updatePreferences } = usePersonalPreferences();
   const defaultIssueAssignee: '' | 'self' = preferences.autoAssignToSelf ? 'self' : '';
-  const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   useEffect(() => {
     let revision = '';
     let active = true;
@@ -154,46 +130,6 @@ export function useShellPresenter() {
   const setCreateADR = setOverlay('adr');
   const createPage = overlay === 'page';
   const setCreatePage = setOverlay('page');
-  const [issueTitle, setIssueTitle] = useState('');
-  const [issueDraftId, setIssueDraftId] = useState('');
-  const issueDraftIdRef = useRef('');
-  const [issueDraftSaved, setIssueDraftSaved] = useState(false);
-  const [issueCreateMore, setIssueCreateMore] = useState(false);
-  const [issueCreateMoreFocusRequest, setIssueCreateMoreFocusRequest] = useState(0);
-  const [issueStatus, setIssueStatus] = useState('todo');
-  const [issuePriority, setIssuePriority] = useState(0);
-  const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
-  const [issueEstimate, setIssueEstimate] = useState('');
-  const [issueBody, setIssueBody] = useState('');
-  const [issueAttachments, setIssueAttachments] = useState<File[]>([]);
-  const [issueAttachmentError, setIssueAttachmentError] = useState('');
-  const [issueDueDate, setIssueDueDate] = useState('');
-  const [issueDueDateOpen, setIssueDueDateOpen] = useState(false);
-  const [issueRecurringOpen, setIssueRecurringOpen] = useState(false);
-  const [issueRecurringFirstDueDate, setIssueRecurringFirstDueDate] = useState('');
-  const [issueRecurringInterval, setIssueRecurringInterval] = useState('1');
-  const [issueRecurringUnit, setIssueRecurringUnit] = useState<RecurringIssue['unit']>('week');
-  const [issueExternalLinks, setIssueExternalLinks] = useState<
-    Pick<IssueLink, 'url' | 'title' | 'kind'>[]
-  >([]);
-  const [issueLinkOpen, setIssueLinkOpen] = useState(false);
-  const [issueLinkURL, setIssueLinkURL] = useState('');
-  const [issueLinkTitle, setIssueLinkTitle] = useState('');
-  const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
-  const [issueParentId, setIssueParentId] = useState<number | undefined>();
-  const [issueParentOpen, setIssueParentOpen] = useState(false);
-  const [issueParentIdentifier, setIssueParentIdentifier] = useState('');
-  const [issueParentQuery, setIssueParentQuery] = useState('');
-  const [issueParentResults, setIssueParentResults] = useState<SearchHit[]>([]);
-  const [selectedParentIssue, setSelectedParentIssue] = useState<SearchHit | null>(null);
-  const [issueParentLoading, setIssueParentLoading] = useState(false);
-  const parentLookupVersion = useRef(0);
-  const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
-  const [issueTemplateSlug, setIssueTemplateSlug] = useState('');
-  const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
-  const [issueProjectId, setIssueProjectId] = useState('');
-  const [issueCycleId, setIssueCycleId] = useState('');
-  const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>(defaultIssueAssignee);
   const helpOpen = overlay === 'help';
   const setHelpOpen = setOverlay('help');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -208,241 +144,23 @@ export function useShellPresenter() {
   const [favoritesOpen, setFavoritesOpen] = useState(true);
   const [teamsOpen, setTeamsOpen] = useState(true);
   const [teamNavigationOpen, setTeamNavigationOpen] = useState(true);
-  const [issueDraftDiscardRequest, setIssueDraftDiscardRequest] =
-    useState<IssueDraftDiscardRequest | null>(null);
-  const [savedIssueDraft, setSavedIssueDraft] = useState<IssueDraft | null>(null);
   const { cycles, initiatives, views, favoriteIssues, workspaceName, sidebarBadgeCounts } =
     useShellWorkspace({ setError, setProjects });
-
-  const saveCurrentIssueDraft = useCallback(() => {
-    const title = issueTitle.trim();
-    if (!title) return null;
-    const now = new Date().toISOString();
-    const currentDraftId = issueDraftIdRef.current || issueDraftId;
-    const draft: IssueDraft = {
-      id: currentDraftId || crypto.randomUUID(),
-      title,
-      body: issueBody,
-      status: issueStatus,
-      priority: issuePriority,
-      assignee: issueAssignee,
-      type: issueType ?? '',
-      estimate: issueEstimate,
-      projectId: issueProjectId,
-      cycleId: issueCycleId,
-      dueDate: issueDueDate,
-      labelNames: [...issueLabelNames],
-      templateSlug: issueTemplateSlug,
-      parentId: issueParentId,
-      parentIdentifier: issueParentIdentifier,
-      externalLinks: issueExternalLinks.map((link) => ({ ...link })),
-      recurringOpen: issueRecurringOpen,
-      recurringFirstDueDate: issueRecurringFirstDueDate,
-      recurringInterval: issueRecurringInterval,
-      recurringUnit: issueRecurringUnit,
-      createdAt: now,
-      updatedAt: now,
-    };
-    saveIssueDraft(draft);
-    if (!currentDraftId) {
-      issueDraftIdRef.current = draft.id;
-      setIssueDraftId(draft.id);
-    }
-    return draft;
-  }, [
-    issueAssignee,
-    issueBody,
-    issueCycleId,
-    issueDraftId,
-    issueDueDate,
-    issueEstimate,
-    issueExternalLinks,
-    issueLabelNames,
-    issueParentId,
-    issueParentIdentifier,
-    issuePriority,
-    issueProjectId,
-    issueRecurringFirstDueDate,
-    issueRecurringInterval,
-    issueRecurringOpen,
-    issueRecurringUnit,
-    issueStatus,
-    issueTemplateSlug,
-    issueTitle,
-    issueType,
-  ]);
-
-  function closeCreateIssue() {
-    saveCurrentIssueDraft();
-    setCreateIssue(false);
-  }
-
-  function saveIssueDraftAndClose() {
-    const draft = saveCurrentIssueDraft();
-    if (!draft) return;
-    setIssueDraftSaved(true);
-    setCreateIssue(false);
-    setSavedIssueDraft(draft);
-  }
-
-  function confirmIssueDraftDiscard() {
-    const request = issueDraftDiscardRequest;
-    if (!request) return;
-
-    const discardedCurrentDraft = request.kind === 'all' || request.id === issueDraftIdRef.current;
-    if (request.kind === 'all') deleteAllIssueDrafts();
-    else deleteIssueDraft(request.id);
-
-    if (discardedCurrentDraft && createIssue) {
-      issueDraftIdRef.current = '';
-      setIssueDraftId('');
-      setIssueDraftSaved(false);
-      setIssueTitle('');
-      setIssueBody('');
-      setCreateIssue(false);
-    }
-    setSavedIssueDraft(null);
-    setIssueDraftDiscardRequest(null);
-  }
-
-  useEffect(() => {
-    if (!savedIssueDraft) return;
-    const timeout = window.setTimeout(() => setSavedIssueDraft(null), 5000);
-    return () => window.clearTimeout(timeout);
-  }, [savedIssueDraft]);
-
-  useEffect(() => {
-    if (createIssue && issueTitle.trim()) saveCurrentIssueDraft();
-  }, [createIssue, issueTitle, saveCurrentIssueDraft]);
-
-  useEffect(() => {
-    if (!createIssue) {
-      return;
-    }
-    void Promise.all([api.projects(), api.issueTemplates(), api.labels()])
-      .then(([nextProjects, templates, nextLabels]) => {
-        setProjects(nextProjects);
-        setIssueTemplates(templates);
-        setAvailableLabels(nextLabels);
-      })
-      .catch(() => {
-        setProjects([]);
-        setIssueTemplates([]);
-        setAvailableLabels([]);
-      });
-  }, [createIssue]);
-
-  useEffect(() => {
-    const query = issueParentQuery.trim();
-    if (!createIssue || !query) {
-      setIssueParentResults([]);
-      return;
-    }
-    let active = true;
-    const timer = window.setTimeout(() => {
-      void api
-        .search(query)
-        .then((hits) => {
-          if (active)
-            setIssueParentResults(hits.filter((hit) => hit.kind === 'issue').slice(0, 20));
-        })
-        .catch(() => {
-          if (active) setIssueParentResults([]);
-        });
-    }, 100);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [createIssue, issueParentQuery]);
-
+  const issueComposerState = useShellIssueComposer({
+    open: createIssue,
+    setOpen: setCreateIssue,
+    defaultIssueAssignee,
+    setProjects,
+    setError,
+  });
+  const {
+    data: issueComposerData,
+    handlers: issueComposerHandlers,
+    openCreateIssue,
+    closeCreateIssue,
+  } = issueComposerState;
+  const { issueWorkflowStatuses } = issueComposerData;
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
-  useIntentHandler('issue.create', (value) => {
-    const detail = (value ?? {}) as IssueCreateContext;
-    openCreateIssue(detail);
-  });
-  useIntentHandler('issue.openDraft', (value) => {
-    const draft = value as IssueDraft;
-    issueDraftIdRef.current = draft.id;
-    setIssueDraftId(draft.id);
-    setIssueDraftSaved(true);
-    setIssueTitle(draft.title);
-    setIssueBody(draft.body);
-    setIssueStatus(draft.status);
-    setIssuePriority(draft.priority);
-    setIssueAssignee(draft.assignee);
-    setIssueType(draft.type);
-    setIssueEstimate(draft.estimate);
-    setIssueProjectId(draft.projectId);
-    setIssueCycleId(draft.cycleId);
-    setIssueDueDate(draft.dueDate);
-    setIssueDueDateOpen(Boolean(draft.dueDate));
-    setIssueLabelNames([...draft.labelNames]);
-    setIssueTemplateSlug(draft.templateSlug);
-    setIssueParentId(draft.parentId);
-    setIssueParentIdentifier(draft.parentIdentifier);
-    setIssueParentQuery('');
-    setIssueParentResults([]);
-    setIssueParentOpen(Boolean(draft.parentId));
-    setIssueParentLoading(false);
-    parentLookupVersion.current += 1;
-    setSelectedParentIssue(null);
-    setIssueExternalLinks(draft.externalLinks.map((link) => ({ ...link })));
-    setIssueRecurringOpen(draft.recurringOpen);
-    setIssueRecurringFirstDueDate(draft.recurringFirstDueDate);
-    setIssueRecurringInterval(draft.recurringInterval);
-    setIssueRecurringUnit(draft.recurringUnit);
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
-    setIssueCreateMore(false);
-    setCreateIssue(true);
-  });
-  useIntentHandler('issue.requestDiscardDraft', (value) => {
-    const request = value as IssueDraftDiscardRequest;
-    if (request.kind === 'all' || request.kind === 'draft') {
-      setIssueDraftDiscardRequest(request);
-    }
-  });
-  useIntentHandler('issue.createRecurring', (value) => {
-    const draft = value as RecurringIssueDraft;
-    const firstDueDate = localDateValue(new Date());
-    issueDraftIdRef.current = '';
-    setIssueDraftId('');
-    setIssueDraftSaved(false);
-    setIssueCreateMore(false);
-    setIssueTitle(draft.title);
-    setIssueBody(draft.body);
-    setIssueStatus(
-      issueWorkflowStatuses.find((status) => status.category === 'backlog')?.id ?? 'backlog',
-    );
-    setIssuePriority(draft.priority);
-    setIssueAssignee(draft.assignee ?? '');
-    setIssueType('');
-    setIssueEstimate('');
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
-    setIssueDueDate('');
-    setIssueDueDateOpen(false);
-    setIssueRecurringOpen(true);
-    setIssueRecurringFirstDueDate(firstDueDate);
-    setIssueRecurringInterval('1');
-    setIssueRecurringUnit('week');
-    setIssueExternalLinks(draft.links);
-    setIssueLinkOpen(false);
-    setIssueLinkURL('');
-    setIssueLinkTitle('');
-    setIssueLabelNames([]);
-    setIssueParentId(undefined);
-    setIssueParentOpen(false);
-    setIssueParentIdentifier('');
-    setIssueParentQuery('');
-    setSelectedParentIssue(null);
-    setIssueParentLoading(false);
-    setIssueTemplateSlug('');
-    setIssueProjectId('');
-    setIssueCycleId('');
-    setCreateIssue(true);
-  });
   useIntentHandler('adr.create', (value) => {
     const detail = (value ?? {}) as { issueNumber?: number };
     setAdrLinkIssue(detail.issueNumber);
@@ -509,46 +227,6 @@ export function useShellPresenter() {
     if (pathname === '/config') return 'Settings';
     return workspaceName || 'Workspace';
   })();
-  function openCreateIssue(prefill: IssueCreateContext = {}) {
-    issueDraftIdRef.current = '';
-    setIssueDraftId('');
-    setIssueDraftSaved(false);
-    setIssueCreateMore(false);
-    setIssueTitle('');
-    setIssueBody('');
-    setIssueStatus(prefill.status ?? 'todo');
-    setIssuePriority(prefill.priority ?? 0);
-    setIssueType(prefill.type ?? '');
-    setIssueEstimate(prefill.estimate == null ? '' : String(prefill.estimate));
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
-    setIssueDueDate('');
-    setIssueDueDateOpen(false);
-    setIssueRecurringOpen(false);
-    setIssueRecurringFirstDueDate('');
-    setIssueRecurringInterval('1');
-    setIssueRecurringUnit('week');
-    setIssueExternalLinks([]);
-    setIssueLinkOpen(false);
-    setIssueLinkURL('');
-    setIssueLinkTitle('');
-    setIssueLabelNames(prefill.labelNames ?? []);
-    setIssueParentId(prefill.parent?.id);
-    setIssueParentOpen(Boolean(prefill.parent));
-    setIssueParentIdentifier(prefill.parent?.identifier ?? '');
-    setIssueParentQuery('');
-    setIssueParentResults([]);
-    setIssueParentLoading(false);
-    parentLookupVersion.current += 1;
-    setSelectedParentIssue(
-      prefill.parent ? { kind: 'issue', id: prefill.parent.identifier, title: '' } : null,
-    );
-    setIssueTemplateSlug('');
-    setIssueProjectId(prefill.projectId ? String(prefill.projectId) : '');
-    setIssueCycleId(prefill.cycleId ? String(prefill.cycleId) : '');
-    setIssueAssignee(prefill.assignee ?? defaultIssueAssignee);
-    setCreateIssue(true);
-  }
 
   const runCommand = useCallback(
     async (id: string) => {
@@ -702,7 +380,16 @@ export function useShellPresenter() {
         });
       }
     },
-    [currentIdentifier, cycles, navigate, router, pathname, defaultIssueAssignee],
+    [
+      currentIdentifier,
+      cycles,
+      navigate,
+      router,
+      pathname,
+      defaultIssueAssignee,
+      issueWorkflowStatuses,
+      openCreateIssue,
+    ],
   );
 
   useIntentHandler('navigation.sidebar.toggle', () =>
@@ -788,109 +475,8 @@ export function useShellPresenter() {
     return e.defaultPrevented;
   });
 
-  useIntentHandler('submit:Issue', submitIssue);
   useIntentHandler('submit:ADR', submitADR);
   useIntentHandler('submit:Page', submitPage);
-  async function submitIssue() {
-    const title = issueTitle.trim();
-    if (!title || issueParentLoading || issueLinkOpen || issueAttachmentError) {
-      return;
-    }
-    const recurrenceInterval = Number(issueRecurringInterval);
-    if (
-      issueRecurringOpen &&
-      (!issueRecurringFirstDueDate ||
-        !Number.isInteger(recurrenceInterval) ||
-        recurrenceInterval < 1 ||
-        recurrenceInterval > 365)
-    ) {
-      return;
-    }
-    const createMore = issueCreateMore && !issueRecurringOpen;
-    const issue: Issue = await api.createIssue({
-      title,
-      body: issueBody,
-      status: workflowStatusCategory(issueStatus, issueWorkflowStatuses),
-      workflowStatus: issueStatus,
-      assignee: issueAssignee || undefined,
-      priority: issuePriority,
-      type: issueType || undefined,
-      estimate: issueEstimate ? Number(issueEstimate) : null,
-      projectId: issueProjectId ? Number(issueProjectId) : undefined,
-      cycleId: issueCycleId ? Number(issueCycleId) : undefined,
-      labelIds: availableLabels
-        .filter((label) => issueLabelNames.includes(label.name))
-        .map((label) => label.id),
-      dueDate: issueRecurringOpen ? undefined : issueDueDate || undefined,
-      parentId: issueParentId,
-      links: issueExternalLinks,
-      templateSlug: issueTemplateSlug || undefined,
-      recurring: issueRecurringOpen
-        ? {
-            name: title,
-            firstDueDate: issueRecurringFirstDueDate,
-            interval: recurrenceInterval,
-            unit: issueRecurringUnit,
-          }
-        : undefined,
-    });
-    const submittedDraftId = issueDraftIdRef.current || issueDraftId;
-    if (submittedDraftId) deleteIssueDraft(submittedDraftId);
-    issueDraftIdRef.current = '';
-    setIssueDraftId('');
-    setIssueDraftSaved(false);
-    let attachmentUploadFailed = false;
-    if (issueAttachments.length > 0) {
-      try {
-        await api.addIssueAttachments(issue.identifier, issueAttachments);
-      } catch {
-        attachmentUploadFailed = true;
-      }
-    }
-    setIssueTitle('');
-    setIssueBody('');
-    setIssueAttachments([]);
-    setIssueAttachmentError('');
-    setIssueDueDate('');
-    setIssueDueDateOpen(false);
-    setIssueRecurringOpen(false);
-    setIssueRecurringFirstDueDate('');
-    setIssueRecurringInterval('1');
-    setIssueRecurringUnit('week');
-    setIssueExternalLinks([]);
-    setIssueLinkOpen(false);
-    setIssueLinkURL('');
-    setIssueLinkTitle('');
-    setIssueParentId(undefined);
-    setIssueParentOpen(false);
-    setIssueParentIdentifier('');
-    setIssueParentQuery('');
-    setSelectedParentIssue(null);
-    setIssueParentLoading(false);
-    setIssueStatus('todo');
-    setIssuePriority(0);
-    setIssueType('');
-    setIssueEstimate('');
-    setIssueLabelNames([]);
-    setIssueTemplateSlug('');
-    setIssueProjectId('');
-    setIssueCycleId('');
-    setIssueAssignee(defaultIssueAssignee);
-    if (createMore) {
-      setIssueCreateMoreFocusRequest((request) => request + 1);
-    } else {
-      setIssueCreateMore(false);
-      setCreateIssue(false);
-    }
-    if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
-    await router.invalidate();
-    if (createMore) return;
-    await navigate({
-      to: '/issues/$identifier',
-      params: { identifier: issue.identifier },
-      state: { autofocus: 'title' },
-    });
-  }
 
   async function submitADR() {
     const title = adrTitle.trim();
@@ -977,55 +563,7 @@ export function useShellPresenter() {
     createIssue,
     createADR,
     createPage,
-    issueTitle,
-    issueDraftId,
-    issueDraftSaved,
-    savedIssueDraft,
-    issueDraftDiscardRequest,
-    issueCreateMore,
-    issueCreateMoreFocusRequest,
-    issueStatus,
-    issueWorkflowStatuses,
-    issuePriority,
-    issueAssignee,
-    issueType,
-    issueEstimate,
-    issueBody,
-    issueAttachments,
-    issueAttachmentError,
-    issueDueDate,
-    issueDueDateOpen,
-    issueRecurringOpen,
-    issueRecurringFirstDueDate,
-    issueRecurringInterval,
-    issueRecurringUnit,
-    issueSubmitDisabled:
-      issueParentLoading ||
-      issueLinkOpen ||
-      Boolean(issueAttachmentError) ||
-      (issueRecurringOpen &&
-        (!issueRecurringFirstDueDate ||
-          !Number.isInteger(Number(issueRecurringInterval)) ||
-          Number(issueRecurringInterval) < 1 ||
-          Number(issueRecurringInterval) > 365)),
-    issueExternalLinks,
-    issueLinkOpen,
-    issueLinkURL,
-    issueLinkTitle,
-    issueParentIdentifier,
-    issueParentOpen,
-    issueParentQuery,
-    issueParentLoading,
-    issueParentOptions: [
-      ...(selectedParentIssue ? [selectedParentIssue] : []),
-      ...issueParentResults.filter((hit) => hit.id !== selectedParentIssue?.id),
-    ].map((hit) => ({ value: hit.id, label: hit.title ? `${hit.id} ${hit.title}` : hit.id })),
-    issueLabelNames,
-    issueTemplates,
-    issueTemplateSlug,
-    availableLabels,
-    issueProjectId,
-    issueCycleId,
+    ...issueComposerData,
     helpOpen,
     projects,
     pageTitle,
@@ -1043,10 +581,6 @@ export function useShellPresenter() {
             : [...favorites, issueView],
         });
       },
-      submitIssue: () => send('submit:Issue'),
-      Issue_createMore_onChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueCreateMore(e.target.checked),
       submitADR: () => send('submit:ADR'),
       submitPage: () => send('submit:Page'),
       onClick0: () =>
@@ -1061,21 +595,7 @@ export function useShellPresenter() {
         setPaletteOpen(true);
       },
       onOpenSearch: () => navigate({ to: '/search', search: {} }),
-      onCreateIssue: () => openCreateIssue(),
-      onSaveIssueDraft: saveIssueDraftAndClose,
-      onRequestDiscardCurrentDraft: () => {
-        const id = issueDraftIdRef.current || issueDraftId;
-        if (id) send('issue.requestDiscardDraft', { kind: 'draft', id });
-      },
-      onOpenSavedIssueDraft: () => {
-        if (!savedIssueDraft) return;
-        const draft = listIssueDrafts().find((candidate) => candidate.id === savedIssueDraft.id);
-        setSavedIssueDraft(null);
-        if (draft) send('issue.openDraft', draft);
-      },
-      onDismissSavedIssueDraft: () => setSavedIssueDraft(null),
-      onCancelIssueDraftDiscard: () => setIssueDraftDiscardRequest(null),
-      onConfirmIssueDraftDiscard: confirmIssueDraftDiscard,
+      ...issueComposerHandlers,
       onDismissError: () => setError(''),
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onToggleSidebar: () => send('navigation.sidebar.toggle'),
@@ -1125,165 +645,6 @@ export function useShellPresenter() {
         mediator.setQuickOpenTarget(null);
       },
       onClose9: () => setHelpOpen(false),
-      onClick10: closeCreateIssue,
-      Create_issue_onClick11: (
-        e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
-      ) => e.stopPropagation(),
-      Issue_title_onChange12: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setIssueTitle(e.target.value),
-      Issue_title_onKeyDown13: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
-      ) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-
-        if (isSubmitShortcut(e)) {
-          e.preventDefault();
-          return send('submit:Issue');
-        }
-      },
-      Issue_status_onChange14: (value: string | null) => setIssueStatus(value ?? 'todo'),
-      Issue_priority_onChange15: (value: string | null) => setIssuePriority(Number(value ?? '0')),
-      Issue_template_onChange30: (slug: string | null) => {
-        const template = issueTemplates.find((candidate) => candidate.slug === slug);
-        setIssueTemplateSlug(template?.slug ?? '');
-        if (!template) {
-          setIssueTitle('');
-          setIssueBody('');
-          setIssueStatus('todo');
-          setIssuePriority(0);
-          setIssueAssignee(defaultIssueAssignee);
-          setIssueType('');
-          setIssueEstimate('');
-          setIssueLabelNames([]);
-          return;
-        }
-        setIssueTitle(template.title);
-        setIssueBody(template.body);
-        setIssueStatus(template.status);
-        setIssuePriority(template.priority);
-        setIssueAssignee(template.assignee ?? '');
-        setIssueType(template.type ?? '');
-        setIssueEstimate(template.estimate == null ? '' : String(template.estimate));
-        const available = new Set(availableLabels.map((label) => label.name));
-        setIssueLabelNames(template.labels.filter((name) => available.has(name)));
-      },
-      Issue_body_onChange31: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setIssueBody(e.target.value),
-      Issue_dueDate_onChange35: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueDueDate(e.target.value),
-      onOpenIssueDueDate: () => setIssueDueDateOpen(true),
-      onOpenIssueParent: () => setIssueParentOpen(true),
-      onEnableIssueRecurring: () => {
-        const firstDueDate = new Date();
-        firstDueDate.setDate(firstDueDate.getDate() + 6);
-        setIssueRecurringFirstDueDate(localDateValue(firstDueDate));
-        setIssueRecurringInterval('1');
-        setIssueRecurringUnit('week');
-        setIssueRecurringOpen(true);
-      },
-      onClearIssueRecurring: () => setIssueRecurringOpen(false),
-      onIssueRecurringFirstDueDateChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueRecurringFirstDueDate(e.target.value),
-      onIssueRecurringIntervalChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueRecurringInterval(e.target.value),
-      onIssueRecurringUnitChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setIssueRecurringUnit(e.target.value as RecurringIssue['unit']),
-      onOpenIssueLink: () => {
-        setIssueLinkURL('');
-        setIssueLinkTitle('');
-        setIssueLinkOpen(true);
-      },
-      onCloseIssueLink: () => setIssueLinkOpen(false),
-      onIssueLinkURLChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueLinkURL(e.target.value),
-      onIssueLinkTitleChange: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setIssueLinkTitle(e.target.value),
-      onAddIssueLink: (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const url = issueLinkURL.trim();
-        if (!url || issueExternalLinks.some((link) => link.url === url)) return;
-        setIssueExternalLinks((current) => [
-          ...current,
-          {
-            url,
-            ...(issueLinkTitle.trim() ? { title: issueLinkTitle.trim() } : {}),
-            kind: 'link' as const,
-          },
-        ]);
-        setIssueLinkOpen(false);
-        setIssueLinkURL('');
-        setIssueLinkTitle('');
-      },
-      onRemoveIssueLink: (url: string) =>
-        setIssueExternalLinks((current) => current.filter((link) => link.url !== url)),
-      Issue_parentSearch_onChange36: (value: string) => setIssueParentQuery(value),
-      Issue_parent_onChange37: (identifier: string | null) => {
-        const lookupVersion = ++parentLookupVersion.current;
-        setIssueParentIdentifier(identifier ?? '');
-        setIssueParentQuery('');
-        if (!identifier) {
-          setIssueParentId(undefined);
-          setIssueParentOpen(false);
-          setSelectedParentIssue(null);
-          setIssueParentLoading(false);
-          return;
-        }
-        const parent = issueParentResults.find((hit) => hit.id === identifier) ?? null;
-        setSelectedParentIssue(parent);
-        setIssueParentLoading(true);
-        void api
-          .issue(identifier)
-          .then((issue) => {
-            if (lookupVersion !== parentLookupVersion.current) return;
-            setIssueParentId(issue.id);
-            setIssueParentLoading(false);
-          })
-          .catch(() => {
-            if (lookupVersion !== parentLookupVersion.current) return;
-            setIssueParentId(undefined);
-            setIssueParentIdentifier('');
-            setSelectedParentIssue(null);
-            setIssueParentLoading(false);
-          });
-      },
-      Issue_type_onChange32: (value: string | null) =>
-        setIssueType(value && value !== 'none' ? (value as Issue['type']) : ''),
-      Issue_estimate_onChange33: (value: string | null) =>
-        setIssueEstimate(value && value !== 'none' ? value : ''),
-      Issue_labels_onChange34: (values: string[]) => setIssueLabelNames(values),
-      Issue_attachments_onChange: (files: File[]) => {
-        if (files.length > 10) {
-          setIssueAttachments([]);
-          setIssueAttachmentError(t('issueAttachments.tooMany'));
-          return;
-        }
-        if (files.some((file) => file.size === 0)) {
-          setIssueAttachments([]);
-          setIssueAttachmentError(t('issueAttachments.emptyFile'));
-          return;
-        }
-        if (files.some((file) => file.size > 20 * 1024 * 1024)) {
-          setIssueAttachments([]);
-          setIssueAttachmentError(t('issueAttachments.tooLarge'));
-          return;
-        }
-        setIssueAttachments(files);
-        setIssueAttachmentError('');
-      },
-      Issue_project_onChange16: (value: string | null) =>
-        setIssueProjectId(value && value !== 'none' ? value : ''),
-      Issue_assignee_onChange: (value: string | null) =>
-        setIssueAssignee(value === 'self' || value === 'agent' ? value : ''),
-      Issue_cycle_onChange17: (value: string | null) =>
-        setIssueCycleId(value && value !== 'none' ? value : ''),
       onClick18: () => setCreateADR(false),
       Create_ADR_onClick19: (
         e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
