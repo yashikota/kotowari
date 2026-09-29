@@ -443,7 +443,7 @@ export function useShellIssueComposer({
     },
     handlers: {
       submitIssue: () => send('submit:Issue'),
-      Issue_createMore_onChange: (
+      onComposerCreateMoreChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssueCreateMore(e.target.checked),
       onCreateIssue: () => openCreateIssue(),
@@ -461,14 +461,11 @@ export function useShellIssueComposer({
       onDismissSavedIssueDraft: () => setSavedIssueDraft(null),
       onCancelIssueDraftDiscard: () => setIssueDraftDiscardRequest(null),
       onConfirmIssueDraftDiscard: confirmIssueDraftDiscard,
-      onClick10: closeCreateIssue,
-      Create_issue_onClick11: (
-        e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
-      ) => e.stopPropagation(),
-      Issue_title_onChange12: (
+      onCloseCreateIssue: closeCreateIssue,
+      onComposerTitleChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setIssueTitle(e.target.value),
-      Issue_title_onKeyDown13: (
+      onComposerTitleKeyDown: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
       ) => {
         if (e.nativeEvent.isComposing || e.keyCode === 229) return;
@@ -477,9 +474,9 @@ export function useShellIssueComposer({
           return send('submit:Issue');
         }
       },
-      Issue_status_onChange14: (value: string | null) => setIssueStatus(value ?? 'todo'),
-      Issue_priority_onChange15: (value: string | null) => setIssuePriority(Number(value ?? '0')),
-      Issue_template_onChange30: (slug: string | null) => {
+      onComposerStatusChange: (value: string | null) => setIssueStatus(value ?? 'todo'),
+      onComposerPriorityChange: (value: string | null) => setIssuePriority(Number(value ?? '0')),
+      onComposerTemplateChange: (slug: string | null) => {
         const template = issueTemplates.find((candidate) => candidate.slug === slug);
         setIssueTemplateSlug(template?.slug ?? '');
         if (!template) {
@@ -503,10 +500,10 @@ export function useShellIssueComposer({
         const available = new Set(availableLabels.map((label) => label.name));
         setIssueLabelNames(template.labels.filter((name) => available.has(name)));
       },
-      Issue_body_onChange31: (
+      onComposerBodyChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setIssueBody(e.target.value),
-      Issue_dueDate_onChange35: (
+      onComposerDueDateChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssueDueDate(e.target.value),
       onOpenIssueDueDate: () => setIssueDueDateOpen(true),
@@ -535,19 +532,19 @@ export function useShellIssueComposer({
       onIssueLinkTitleChange: issueLinks.onTitleChange,
       onAddIssueLink: issueLinks.add,
       onRemoveIssueLink: issueLinks.remove,
-      Issue_parentSearch_onChange36: issueParent.onQueryChange,
-      Issue_parent_onChange37: issueParent.onChange,
-      Issue_type_onChange32: (value: string | null) =>
+      onComposerParentSearchChange: issueParent.onQueryChange,
+      onComposerParentChange: issueParent.onChange,
+      onComposerTypeChange: (value: string | null) =>
         setIssueType(value && value !== 'none' ? (value as Issue['type']) : ''),
-      Issue_estimate_onChange33: (value: string | null) =>
+      onComposerEstimateChange: (value: string | null) =>
         setIssueEstimate(value && value !== 'none' ? value : ''),
-      Issue_labels_onChange34: (values: string[]) => setIssueLabelNames(values),
-      Issue_attachments_onChange: attachments.onChange,
-      Issue_project_onChange16: (value: string | null) =>
+      onComposerLabelsChange: (values: string[]) => setIssueLabelNames(values),
+      onComposerAttachmentsChange: attachments.onChange,
+      onComposerProjectChange: (value: string | null) =>
         setIssueProjectId(value && value !== 'none' ? value : ''),
-      Issue_assignee_onChange: (value: string | null) =>
+      onComposerAssigneeChange: (value: string | null) =>
         setIssueAssignee(value === 'self' || value === 'agent' ? value : ''),
-      Issue_cycle_onChange17: (value: string | null) =>
+      onComposerCycleChange: (value: string | null) =>
         setIssueCycleId(value && value !== 'none' ? value : ''),
     },
   };

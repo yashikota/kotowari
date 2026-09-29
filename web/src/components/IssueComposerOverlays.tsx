@@ -48,7 +48,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
     <>
       <Modal
         opened={createIssue}
-        onClose={handlers.onClick10}
+        onClose={handlers.onCloseCreateIssue}
         title={t('modal.createIssue')}
         size="xl"
         centered
@@ -86,15 +86,15 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
             aria-label={t('modal.issueTitle')}
             placeholder={t('modal.issueTitle')}
             value={issueTitle}
-            onChange={handlers.Issue_title_onChange12}
-            onKeyDown={handlers.Issue_title_onKeyDown13}
+            onChange={handlers.onComposerTitleChange}
+            onKeyDown={handlers.onComposerTitleKeyDown}
           />
           <Textarea
             aria-label={t('modal.issueDescription')}
             placeholder={t('modal.issueDescription')}
             rows={4}
             value={model.issueBody}
-            onChange={handlers.Issue_body_onChange31}
+            onChange={handlers.onComposerBodyChange}
           />
           <IssueCreateProperties
             status={issueStatus}
@@ -111,15 +111,15 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
             cycles={cycles}
             templates={model.issueTemplates}
             labels={model.availableLabels}
-            onStatusChange={handlers.Issue_status_onChange14}
-            onPriorityChange={handlers.Issue_priority_onChange15}
-            onAssigneeChange={handlers.Issue_assignee_onChange}
-            onProjectChange={handlers.Issue_project_onChange16}
-            onEstimateChange={handlers.Issue_estimate_onChange33}
-            onTypeChange={handlers.Issue_type_onChange32}
-            onCycleChange={handlers.Issue_cycle_onChange17}
-            onTemplateChange={handlers.Issue_template_onChange30}
-            onLabelsChange={handlers.Issue_labels_onChange34}
+            onStatusChange={handlers.onComposerStatusChange}
+            onPriorityChange={handlers.onComposerPriorityChange}
+            onAssigneeChange={handlers.onComposerAssigneeChange}
+            onProjectChange={handlers.onComposerProjectChange}
+            onEstimateChange={handlers.onComposerEstimateChange}
+            onTypeChange={handlers.onComposerTypeChange}
+            onCycleChange={handlers.onComposerCycleChange}
+            onTemplateChange={handlers.onComposerTemplateChange}
+            onLabelsChange={handlers.onComposerLabelsChange}
           />
           <Group justify="flex-end" align="center">
             <Menu position="bottom-end" withinPortal>
@@ -153,7 +153,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
               aria-label={t('issueProperties.dueDate')}
               label={t('issueProperties.dueDate')}
               value={model.issueDueDate}
-              onChange={handlers.Issue_dueDate_onChange35}
+              onChange={handlers.onComposerDueDateChange}
             />
           ) : null}
           {model.issueRecurringOpen ? (
@@ -206,8 +206,8 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
               value={model.issueParentIdentifier || null}
               data={model.issueParentOptions}
               nothingFoundMessage={t('issueProperties.noIssuesFound')}
-              onSearchChange={handlers.Issue_parentSearch_onChange36}
-              onChange={handlers.Issue_parent_onChange37}
+              onSearchChange={handlers.onComposerParentSearchChange}
+              onChange={handlers.onComposerParentChange}
             />
           ) : null}
           {model.issueExternalLinks.length > 0 ? (
@@ -248,7 +248,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
               aria-label={t('issueAttachments.attachToNewIssue')}
               placeholder={t('issueAttachments.attachToNewIssue')}
               value={model.issueAttachments}
-              onChange={handlers.Issue_attachments_onChange}
+              onChange={handlers.onComposerAttachmentsChange}
               leftSection={<IconPaperclip size={14} aria-hidden />}
               multiple
               clearable
@@ -264,7 +264,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
                   size="sm"
                   label={t('modal.createMore')}
                   checked={model.issueCreateMore}
-                  onChange={handlers.Issue_createMore_onChange}
+                  onChange={handlers.onComposerCreateMoreChange}
                 />
               ) : null}
               <Button
