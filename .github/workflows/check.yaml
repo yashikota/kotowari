@@ -39,22 +39,8 @@ jobs:
         with:
           aqua_version: v2.60.1
 
-      - name: Install web deps
-        run: pnpm install --dir web --frozen-lockfile
-
-      - name: Verify embedded release assets stay clean
-        run: |
-          pnpm --dir web exec vp build
-          node web/e2e/copy-dist.mjs
-          go build ./...
-          git diff --exit-code -- internal/webembed/dist/.keep
-
-      - name: Build release artifacts (snapshot)
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-        with:
-          distribution: goreleaser
-          version: v2.18.2
-          args: release --snapshot --clean
+      - name: Build and validate release snapshot
+        uses: ./.github/actions/release-snapshot
 
       - name: Check
         run: task check

@@ -1,0 +1,25 @@
+name: Prepare and build release snapshot
+description: Build the embedded SPA and verify the same release inputs in CI and Release.
+runs:
+  using: composite
+  steps:
+    - name: Install web dependencies
+      shell: bash
+      run: pnpm install --dir web --frozen-lockfile
+    - name: Build SPA
+      shell: bash
+      run: pnpm --dir web exec vp build
+    - name: Copy SPA into the Go embed directory
+      shell: bash
+      run: node web/e2e/copy-dist.mjs
+    - name: Verify release build inputs
+      shell: bash
+      run: |
+        go build ./...
+        git diff --exit-code -- internal/webembed/dist/.keep
+    - name: Build release artifacts (snapshot)
+      uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+      with:
+        distribution: goreleaser
+        version: v2.18.2
+        args: release --snapshot --clean

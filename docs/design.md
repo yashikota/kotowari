@@ -296,7 +296,7 @@ Issue の作成・更新は `issues_create.go` と `issues_update.go`、読取�
 
 Release 用 SPA は `web/e2e/copy-dist.mjs` で `internal/webembed/dist` にコピーする。
 `.keep` は空ディレクトリを Git に保持するための追跡ファイルなので、生成物の入れ替えでも内容を変えない。
-CI と Release は同じコピー手順の後に GoReleaser snapshot を実行し、配布対象のクロスビルドが成功してから Release workflow がタグを作る。
+CI と Release は `.github/actions/release-snapshot` を共有し、SPAのembed、Go build、GoReleaser snapshotを同じ手順で検証する。Release workflowはこのpreflight後にタグを作る。
 
 ## Web の実装境界
 
