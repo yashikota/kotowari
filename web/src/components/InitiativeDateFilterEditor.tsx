@@ -1,11 +1,9 @@
 import { Badge, Button, Group, Stack } from '@mantine/core';
 import { IconChevronRight } from '@tabler/icons-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { InitiativeDateField, InitiativeDateFilters } from '../initiative-list.ts';
-import type { SearchDateFilter, SearchDateGranularity, SearchDateRange } from '../search.ts';
+import type { SearchDateFilter } from '../search.ts';
 import { SEARCH_DATE_WINDOWS } from '../search.ts';
-import { SearchDateTimeframeDialog } from './SearchDateTimeframeDialog.tsx';
 
 export function InitiativeDateFilterEditor({
   open,
@@ -13,6 +11,7 @@ export function InitiativeDateFilterEditor({
   dateFilters,
   dateFieldLabels,
   onActiveDateFieldChange,
+  onCustomDateOpen,
   onDateFilterChange,
   applyFilterChange,
   clearDateFilter,
@@ -22,24 +21,12 @@ export function InitiativeDateFilterEditor({
   dateFilters: InitiativeDateFilters;
   dateFieldLabels: Record<InitiativeDateField, string>;
   onActiveDateFieldChange: (field: InitiativeDateField | null) => void;
+  onCustomDateOpen: (field: InitiativeDateField) => void;
   onDateFilterChange: (field: InitiativeDateField, filter: SearchDateFilter | undefined) => void;
   applyFilterChange: (update: () => void) => void;
   clearDateFilter: (field: InitiativeDateField) => void;
 }) {
   const { t } = useTranslation();
-  const [customDateField, setCustomDateField] = useState<InitiativeDateField | null>(null);
-  const [customDateInput, setCustomDateInput] = useState('');
-  const [customDateGranularity, setCustomDateGranularity] =
-    useState<SearchDateGranularity>('quarter');
-
-  function applyCustomDate(range: SearchDateRange) {
-    if (!customDateField) return;
-    const field = customDateField;
-    setCustomDateField(null);
-    applyFilterChange(() =>
-      onDateFilterChange(field, { operator: 'in', value: { kind: 'range', ...range } }),
-    );
-  }
 
   return (
     <>
@@ -90,11 +77,7 @@ export function InitiativeDateFilterEditor({
               fullWidth
               justify="space-between"
               rightSection={<IconChevronRight size={14} aria-hidden="true" />}
-              onClick={() => {
-                setCustomDateInput('');
-                setCustomDateGranularity('quarter');
-                setCustomDateField(activeDateField);
-              }}
+              onClick={() => onCustomDateOpen(activeDateField)}
             >
               {t('searchPage.filters.customTimeframe')}
             </Button>
@@ -132,17 +115,6 @@ export function InitiativeDateFilterEditor({
           </Stack>
         )
       ) : null}
-      <SearchDateTimeframeDialog
-        field={null}
-        opened={customDateField !== null}
-        title={customDateField ? dateFieldLabels[customDateField] : undefined}
-        value={customDateInput}
-        granularity={customDateGranularity}
-        onValueChange={setCustomDateInput}
-        onGranularityChange={setCustomDateGranularity}
-        onCancel={() => setCustomDateField(null)}
-        onApply={applyCustomDate}
-      />
     </>
   );
 }

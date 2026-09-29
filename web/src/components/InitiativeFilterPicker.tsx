@@ -34,7 +34,12 @@ import type {
   InitiativeProjectFilter,
 } from '../initiative-list.ts';
 import type { ProjectFilterField, ProjectFilterGroup } from '../project-view-search.ts';
-import { SEARCH_DATE_WINDOWS, type SearchDateFilter } from '../search.ts';
+import {
+  SEARCH_DATE_WINDOWS,
+  type SearchDateFilter,
+  type SearchDateGranularity,
+  type SearchDateRange,
+} from '../search.ts';
 import type { InitiativeStatus, ProjectHealth } from '../types.ts';
 import {
   buildInitiativeFilterChips,
@@ -44,6 +49,7 @@ import {
 } from '../initiative-filter-chips.ts';
 import { AdvancedProjectFilterBuilder } from './AdvancedProjectFilterBuilder.tsx';
 import { InitiativeDateFilterEditor } from './InitiativeDateFilterEditor.tsx';
+import { SearchDateTimeframeDialog } from './SearchDateTimeframeDialog.tsx';
 
 const STATUSES: InitiativeStatus[] = ['proposed', 'planned', 'active', 'completed', 'canceled'];
 const HEALTH_STATUSES: ProjectHealth[] = ['on_track', 'at_risk', 'off_track'];
@@ -108,6 +114,10 @@ export function InitiativeFilterPicker({
   const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<InitiativeFilterKey | null>(null);
   const [activeDateField, setActiveDateField] = useState<InitiativeDateField | null>(null);
+  const [customDateField, setCustomDateField] = useState<InitiativeDateField | null>(null);
+  const [customDateInput, setCustomDateInput] = useState('');
+  const [customDateGranularity, setCustomDateGranularity] =
+    useState<SearchDateGranularity>('quarter');
   const [filterQuery, setFilterQuery] = useState('');
   const dateFieldLabels: Record<InitiativeDateField, string> = {
     created: t('initiativeList.dateField.created'),
@@ -182,6 +192,21 @@ export function InitiativeFilterPicker({
   function applyFilterChange(update: () => void) {
     update();
     closeFilterPicker();
+  }
+
+  function openCustomDate(field: InitiativeDateField) {
+    setCustomDateInput('');
+    setCustomDateGranularity('quarter');
+    setCustomDateField(field);
+  }
+
+  function applyCustomDate(range: SearchDateRange) {
+    if (!customDateField) return;
+    const field = customDateField;
+    setCustomDateField(null);
+    applyFilterChange(() =>
+      handlers.onDateFilterChange(field, { operator: 'in', value: { kind: 'range', ...range } }),
+    );
   }
 
   return (
@@ -458,6 +483,7 @@ export function InitiativeFilterPicker({
                     dateFilters={dateFilters}
                     dateFieldLabels={dateFieldLabels}
                     onActiveDateFieldChange={setActiveDateField}
+                    onCustomDateOpen={openCustomDate}
                     onDateFilterChange={handlers.onDateFilterChange}
                     applyFilterChange={applyFilterChange}
                     clearDateFilter={clearDateFilter}
@@ -535,6 +561,17 @@ export function InitiativeFilterPicker({
           </Popover.Dropdown>
         </Popover>
       </Group>
+      <SearchDateTimeframeDialog
+        field={null}
+        opened={customDateField !== null}
+        title={customDateField ? dateFieldLabels[customDateField] : undefined}
+        value={customDateInput}
+        granularity={customDateGranularity}
+        onValueChange={setCustomDateInput}
+        onGranularityChange={setCustomDateGranularity}
+        onCancel={() => setCustomDateField(null)}
+        onApply={applyCustomDate}
+      />
       {activeFilterChips.length > 0 ? (
         <Group role="group" aria-label={t('initiativeList.activeFilters')} gap={4} wrap="wrap">
           {activeFilterChips.map(({ filter, key, label, value, dateField }) => (
