@@ -300,7 +300,7 @@ Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画
 
 Config画面のWorkspace・Cycle・Issue automation設定は `useConfigWorkspaceSettings.ts`、IssueとProject workflowのdraft、status編集・保存処理は `useConfigWorkflowSettings.ts` に分け、status編集UIは `ConfigWorkflowSettingsSection.tsx` に置く。
 
-Issue filter presenter から検索条件の表示用chip生成を `issue-filter-chips.ts` に分ける。検索条件と選択肢、翻訳関数を受け取り表示モデルへ変換し、filter menu はchip型をこの表示モデル境界から参照する。`IssueFilterMenu.tsx` はカテゴリ検索、メニュー状態、chip表示を担当し、各カテゴリの入力UIは `IssueFilterCategoryEditor.tsx` に分ける。
+Issue filter presenter から検索条件の表示用chip生成を `issue-filter-chips.ts` に分ける。検索条件と選択肢、翻訳関数を受け取り表示モデルへ変換し、filter menu はchip型をこの表示モデル境界から参照する。`IssueFilterMenu.tsx` はカテゴリ検索、メニュー状態、chip表示を担当し、各カテゴリの入力UIは `IssueFilterCategoryEditor.tsx` に分ける。選択肢一覧・label chip・単一選択の再利用UIは `IssueFilterControls.tsx` に置く。
 
 ShellのWorkspace情報、Cycle/Project/View/Initiative一覧、favorite Issue一覧、sidebar badgeの同期は `useShellWorkspace.ts`、Paletteの検索とコマンド候補は `useShellPalette.ts`、Cycle切替とナビゲーション状態は `useShellCycleNavigation.ts`、Issue composerの入力・draft・submitは `useShellIssueComposer.ts` が担当する。Sidebarのナビゲーション表示は `ShellSidebar.tsx`、Issue作成、draft破棄、関連リンクのdialog表示は `IssueComposerOverlays.tsx` に分け、Shell presenter と `ShellView` は画面間で共有するオーバーレイとナビゲーションを構成する。
 
