@@ -300,7 +300,7 @@ Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画
 
 Config画面のWorkspace・Cycle・Issue automation設定は `useConfigWorkspaceSettings.ts`、IssueとProject workflowのdraft、status編集・保存処理は `useConfigWorkflowSettings.ts` に分け、status編集UIは `ConfigWorkflowSettingsSection.tsx` に置く。
 
-Issue filter presenter から検索条件の表示用chip生成を `issue-filter-chips.ts` に分ける。検索条件と選択肢、翻訳関数を受け取り表示モデルへ変換し、filter menu はchip型をこの表示モデル境界から参照する。`IssueFilterMenu.tsx` はカテゴリ検索、メニュー状態、chip表示を担当し、各カテゴリの入力UIは `IssueFilterCategoryEditor.tsx` に分ける。選択肢一覧・label chip・単一選択の再利用UIは `IssueFilterControls.tsx` に置く。
+Issue filter presenter から検索条件の表示用chip生成を `issue-filter-chips.ts` に分ける。検索条件と選択肢、翻訳関数を受け取り表示モデルへ変換し、filter menu はchip型をこの表示モデル境界から参照する。Advanced filterの値候補は `issue-filter-choices.ts` で構築する。`IssueFilterMenu.tsx` はカテゴリ検索、メニュー状態、chip表示を担当し、各カテゴリの入力UIは `IssueFilterCategoryEditor.tsx` に分ける。選択肢一覧・label chip・単一選択の再利用UIは `IssueFilterControls.tsx` に置く。
 
 Issue一覧のlist presenterは `IssueList.tsx`、workflow statusごとのcolumn生成・board操作は `IssueBoard.ts` に分ける。Board列のprops型は `issue-board.ts` に置き、presenterとviewの間でcomponentを経由せず共有する。
 

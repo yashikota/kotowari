@@ -13,7 +13,7 @@ import {
   toggleIssueProjectLabel,
   toggleIssueTemplate,
 } from '../issue-filter-transitions.ts';
-import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
+import { buildIssueFilterChoices } from '../issue-filter-choices.ts';
 import { buildIssueFilterChips } from '../issue-filter-chips.ts';
 import { interpretIssueFilterQuery } from '../issue-filter-query.ts';
 import type {
@@ -31,8 +31,8 @@ import type {
   Label,
   Project,
 } from '../types.ts';
-import type { IssueFilterChoices, IssueFilterGroup } from '../issue-advanced-filter.ts';
-import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
+import type { IssueFilterGroup } from '../issue-advanced-filter.ts';
+import { useIssueWorkflow } from '../workflow.tsx';
 import { useProjectWorkflow } from '../project-workflow.tsx';
 
 function searchKey(search: IssueSearch): string {
@@ -206,70 +206,13 @@ export function useIssueFiltersPresenter({
   const selectedLinkSources = search.linkSources ?? [];
   const selectedTemplateSlugs = search.templateSlugs ?? [];
   const selectedAddedToCycle = search.addedToCycle ?? [];
-  const advancedFilterChoices: IssueFilterChoices = {
-    status: workflowStatuses.map((status) => ({
-      value: status.id,
-      label: workflowStatusLabel(status.id, workflowStatuses),
-    })),
-    assignee: [
-      { value: 'self', label: t('issueAssignment.you') },
-      { value: 'agent', label: t('issueAssignment.agent') },
-      { value: 'none', label: t('issueAssignment.unassigned') },
-    ],
-    priority: [0, 1, 2, 3, 4].map((priority) => ({
-      value: String(priority),
-      label: priorityLabel(priority),
-    })),
-    type: (['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
-      value: type,
-      label: issueTypeLabel(type),
-    })),
-    estimate: [
-      { value: 'none', label: t('issueProperties.noEstimate') },
-      ...[0, 1, 2, 3, 5, 8].map((estimate) => ({
-        value: String(estimate),
-        label: String(estimate),
-      })),
-    ],
-    project: [
-      { value: 'none', label: t('field.noProject') },
-      ...projects.map((project) => ({
-        value: project.slug || String(project.id),
-        label: project.name,
-      })),
-    ],
-    cycle: [
-      { value: 'none', label: t('field.noCycle') },
-      ...cycles.map((cycle) => ({
-        value: String(cycle.id),
-        label: cycle.name || t('field.cycleN', { number: cycle.number }),
-      })),
-    ],
-    label: [
-      { value: 'none', label: t('issueProperties.noLabels') },
-      ...labels.map((label) => ({ value: label.name, label: label.name })),
-    ],
-    relation: [
-      'parent',
-      'subissue',
-      'blocked',
-      'blocking',
-      'recurring',
-      'related',
-      'duplicate',
-    ].map((relation) => ({
-      value: relation,
-      label: t(`filters.relationValue.${relation}`),
-    })),
-    links: [
-      { value: 'yes', label: t('issueFilters.hasAny') },
-      { value: 'no', label: t('issueFilters.hasNone') },
-    ],
-    recurring: [
-      { value: 'yes', label: t('issueFilters.hasAny') },
-      { value: 'no', label: t('issueFilters.hasNone') },
-    ],
-  };
+  const advancedFilterChoices = buildIssueFilterChoices({
+    workflowStatuses,
+    projects,
+    cycles,
+    labels,
+    t,
+  });
 
   function set(patch: IssueSearch) {
     const next = { ...searchRef.current, ...patch };
