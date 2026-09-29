@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router';
 import {
   ActionIcon,
   Box,
@@ -23,12 +22,13 @@ import { HealthUpdateComposer } from '../components/HealthUpdateComposer.tsx';
 import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
 import { ProjectMilestonesSection } from '../components/ProjectMilestonesSection.tsx';
 import { ProjectDependenciesSection } from '../components/ProjectDependenciesSection.tsx';
+import { ProjectDocumentsSection } from '../components/ProjectDocumentsSection.tsx';
 
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 import { priorityLabel } from '../i18n/labels.ts';
 
-import { LabelChip, MetaBadge, PageHeader, Pane, Section, SplitLayout } from '../mantine-ui.tsx';
+import { LabelChip, PageHeader, Pane, Section, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -282,59 +282,13 @@ export function ProjectDetailPageView({
                   onDescriptionBlur={handlers.onMilestoneDescriptionBlur}
                   onRemove={handlers.onRemoveMilestone}
                 />
-                <Stack gap="md" aria-label={t('ui.projectDocuments')}>
-                  <Section
-                    title={t('nav.adrs')}
-                    action={
-                      <Button
-                        type="button"
-                        variant="subtle"
-                        size="xs"
-                        onClick={handlers.onCreateADR}
-                      >
-                        {t('ui.newAdr')}
-                      </Button>
-                    }
-                  >
-                    <Stack
-                      gap="xs"
-                      component="ul"
-                      style={{ listStyle: 'none', margin: 0, padding: 0 }}
-                    >
-                      {data.adrs
-                        .filter(
-                          (a) =>
-                            a.projectSlug === slug ||
-                            data.issues.some((i) => a.issueNumbers.includes(i.number)),
-                        )
-                        .map((a) => (
-                          <Group component="li" key={a.identifier} gap="xs" wrap="wrap">
-                            <Link to="/adrs/$identifier" params={{ identifier: a.identifier }}>
-                              {a.identifier} {a.title}
-                            </Link>
-                            <MetaBadge>{a.status}</MetaBadge>
-                          </Group>
-                        ))}
-                    </Stack>
-                  </Section>
-                  <Section title={t('nav.pages')}>
-                    <Stack
-                      gap="xs"
-                      component="ul"
-                      style={{ listStyle: 'none', margin: 0, padding: 0 }}
-                    >
-                      {data.pages
-                        .filter((p) => p.projectSlug === slug)
-                        .map((p) => (
-                          <Text component="li" key={p.slug} size="sm">
-                            <Link to="/pages/$slug" params={{ slug: p.slug }}>
-                              {p.title}
-                            </Link>
-                          </Text>
-                        ))}
-                    </Stack>
-                  </Section>
-                </Stack>
+                <ProjectDocumentsSection
+                  projectSlug={slug}
+                  adrs={data.adrs}
+                  pages={data.pages}
+                  issues={data.issues}
+                  onCreateADR={handlers.onCreateADR}
+                />
                 <IssueList
                   issues={data.issues}
                   selectedId={selected}
