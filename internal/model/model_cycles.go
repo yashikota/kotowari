@@ -18,6 +18,12 @@ type Cycle struct {
 	UpdatedAt              string      `json:"updatedAt" toml:"updatedAt"`
 }
 
+type CreateCycleInput struct {
+	StartsAt string
+	EndsAt   string
+	Status   string
+}
+
 type UpdateCycleInput struct {
 	Name                   *string
 	Description            *string

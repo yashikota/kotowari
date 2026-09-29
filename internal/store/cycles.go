@@ -52,6 +52,11 @@ func (s *Store) GetCycle(number int) (Cycle, error) {
 }
 
 func (s *Store) CreateCycle(startsAt, endsAt, status string) (Cycle, error) {
+	return s.CreateCycleFromInput(CreateCycleInput{StartsAt: startsAt, EndsAt: endsAt, Status: status})
+}
+
+func (s *Store) CreateCycleFromInput(in CreateCycleInput) (Cycle, error) {
+	startsAt, endsAt, status := in.StartsAt, in.EndsAt, in.Status
 	if err := parseTime(startsAt); err != nil {
 		return Cycle{}, err
 	}
