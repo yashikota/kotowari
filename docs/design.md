@@ -298,7 +298,7 @@ CI と Release は同じコピー手順の後に GoReleaser snapshot を実行�
 
 Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。複数画面で共有するCycle URLや進捗表示の処理は `projectCycleHelpers.ts` に置く。
 
-Issue 詳細のIssue/Workspace取得状態と再読込は `useIssueDetailData.ts`、コメント・活動履歴・反応・Issue添付は `useIssueDetailTimeline.ts`、子IssueとIssue間の関係を扱う状態・操作は `useIssueDetailRelations.ts`、ADR・外部リンク・Pageリソースは `useIssueDetailResources.ts` に分ける。ヘッダーと操作メニューは `IssueDetailHeader.tsx`、サブIssueの一覧・作成は `IssueSubIssuesSection.tsx`、Issue間の関係は `IssueRelationsSection.tsx`、外部リンクとPageリソースは `IssueResourcesSection.tsx`、ADRリンクは `IssueADRsSection.tsx`、履歴とコメント欄は `IssueActivitySection.tsx`、操作ダイアログは `IssueDetailDialogs.tsx`、属性パネルは `IssuePropertiesPanel.tsx` に分け、Issue 詳細本体は画面構成を担当する。各子コンポーネントには表示に必要なPresenter項目だけを渡す。
+Issue 詳細のIssue/Workspace取得状態と再読込は `useIssueDetailData.ts`、コメント・活動履歴・反応・Issue添付は `useIssueDetailTimeline.ts`、子IssueとIssue間の関係を扱う状態・操作は `useIssueDetailRelations.ts`、ADR・外部リンク・Pageリソースは `useIssueDetailResources.ts`、Due Dateの状態と操作は `useIssueDetailDueDate.ts` に分ける。ヘッダーと操作メニューは `IssueDetailHeader.tsx`、サブIssueの一覧・作成は `IssueSubIssuesSection.tsx`、Issue間の関係は `IssueRelationsSection.tsx`、外部リンクとPageリソースは `IssueResourcesSection.tsx`、ADRリンクは `IssueADRsSection.tsx`、履歴とコメント欄は `IssueActivitySection.tsx`、操作ダイアログは `IssueDetailDialogs.tsx`、属性パネルは `IssuePropertiesPanel.tsx` に分け、Issue 詳細本体は画面構成を担当する。各子コンポーネントには表示に必要なPresenter項目だけを渡す。
 
 ## 代替案
 

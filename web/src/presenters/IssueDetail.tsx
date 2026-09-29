@@ -22,6 +22,7 @@ import { autoAssignOnStartedTransition } from '../application/issue-assignment.t
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { LABEL_COLORS } from '../label-colors.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
+import { useIssueDetailDueDate } from './useIssueDetailDueDate.ts';
 import { useIssueDetailRelations } from './useIssueDetailRelations.ts';
 import { useIssueDetailResources } from './useIssueDetailResources.ts';
 import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
@@ -111,8 +112,6 @@ export function useIssueDetailPresenter({
   );
   const [labelName, setLabelName] = useState('');
   const [focusLabel, setFocusLabel] = useState(0);
-  const [dueDateOpen, setDueDateOpen] = useState(false);
-  const [dueDateValue, setDueDateValue] = useState('');
   const [copied, setCopied] = useState(false);
   const [historyRequest, setHistoryRequest] = useState(0);
   const [descriptionFocus, setDescriptionFocus] = useState({ identifier, request: 0 });
@@ -165,6 +164,14 @@ export function useIssueDetailPresenter({
     setIssue(next);
     await refreshActivities();
   }
+
+  const dueDateState = useIssueDetailDueDate({
+    issue,
+    cycles,
+    patch,
+    onCloseIssueOptions: () => setIssueOptionsOpen(false),
+  });
+  const { data: dueDateData, handlers: dueDateHandlers } = dueDateState;
 
   function reminderPreset(kind: 'hour' | 'tomorrow' | 'week' | 'month' | 'cycle') {
     const now = new Date();
@@ -242,34 +249,6 @@ export function useIssueDetailPresenter({
     setFocusLabel((n) => n + 1);
     setLabels(await api.labels());
     await patch({ labelIds: [...(issue?.labels ?? []).map((l) => l.id), created.id] });
-  }
-
-  function localDateValue(date: Date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  }
-
-  function dueDatePreset(kind: 'tomorrow' | 'week' | 'cycle') {
-    const date = new Date();
-    if (kind === 'cycle') {
-      const nextCycle = cycles
-        .filter((cycle) => new Date(cycle.startsAt) > date)
-        .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
-      return nextCycle?.endsAt.slice(0, 10) ?? null;
-    }
-    date.setDate(date.getDate() + (kind === 'tomorrow' ? 1 : 7));
-    return localDateValue(date);
-  }
-
-  function openDueDate() {
-    setIssueOptionsOpen(false);
-    setDueDateValue(issue?.dueDate ?? '');
-    setDueDateOpen(true);
-  }
-
-  async function saveDueDate(value: string | null) {
-    await patch({ dueDate: value });
-    setDueDateOpen(false);
-    setIssueOptionsOpen(false);
   }
 
   async function remove() {
@@ -364,6 +343,7 @@ export function useIssueDetailPresenter({
     ...timelineData,
     ...relationsData,
     ...resourcesData,
+    ...dueDateData,
     projects,
     milestones,
     cycles,
@@ -371,8 +351,6 @@ export function useIssueDetailPresenter({
     labels,
     labelName,
     focusLabel,
-    dueDateOpen,
-    dueDateValue,
     codingToolName: codingToolPreferences.customLinkName,
     codingToolURL,
     timeZone,
@@ -516,16 +494,6 @@ export function useIssueDetailPresenter({
       },
       onCreateLabel: () => addLabel(),
       onClick17: () => sendIntent('adr.create', { issueNumber: issue.number }),
-      onOpenDueDate: () => openDueDate(),
-      onSetDueDatePreset: (kind: 'tomorrow' | 'week' | 'cycle') => {
-        const value = dueDatePreset(kind);
-        return value ? saveDueDate(value) : undefined;
-      },
-      onDueDateChange: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) =>
-        setDueDateValue(e.target.value),
-      onCloseDueDate: () => setDueDateOpen(false),
-      onSaveDueDate: () => saveDueDate(dueDateValue || null),
-      onClearDueDate: () => saveDueDate(null),
       onToggleFavorite: async () => {
         await patch({ isFavorite: !issue.isFavorite });
         signals.dispatchEvent(new Event('kotowari:refresh'));
@@ -656,6 +624,7 @@ export function useIssueDetailPresenter({
       onClearReminder: () => setReminder(null),
       ...relationsHandlers,
       ...resourcesHandlers,
+      ...dueDateHandlers,
       ...timelineHandlers,
     },
   };
