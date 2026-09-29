@@ -5,7 +5,11 @@ import { useKeyboard } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
 
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
-import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
+import {
+  buildProjectTimelineModel,
+  defaultProjectTimelineStart,
+  shiftProjectTimelineMonth,
+} from '../project-timeline.ts';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { useProjectViews } from '../project-views.ts';
@@ -29,27 +33,6 @@ import { priorityLabel } from '../i18n/labels.ts';
 import type { Issue, Initiative, Label, Project, ProjectTemplate, Workspace } from '../types.ts';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { useProjectComposer } from './useProjectComposer.ts';
-
-const DAY_MS = 86_400_000;
-
-function monthKey(year: number, month: number) {
-  const value = new Date(Date.UTC(year, month, 1));
-  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftMonthKey(key: string, offset: number) {
-  const [year, month] = key.split('-').map(Number);
-  return monthKey(year, month - 1 + offset);
-}
-
-function monthOrdinal(key: string) {
-  const [year, month] = key.split('-').map(Number);
-  return Date.UTC(year, month - 1, 1) / DAY_MS;
-}
-
-function dateOrdinal(value: Date) {
-  return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) / DAY_MS;
-}
 
 export function useProjectsPagePresenter() {
   const data = useLoaderData({ from: '/projects' }) as {
@@ -371,60 +354,16 @@ export function useProjectsPagePresenter() {
   const projectBoardGroups = boardLayout.groups;
   const projectBoard = boardLayout.model;
 
-  const timelineStart =
-    search.timelineStart ??
-    shiftMonthKey(monthKey(new Date().getFullYear(), new Date().getMonth()), -8);
-  const projectTimeline = useMemo<ProjectTimelineModel>(() => {
-    const startOrdinal = monthOrdinal(timelineStart);
-    const endOrdinal = monthOrdinal(shiftMonthKey(timelineStart, 16));
-    const totalDays = endOrdinal - startOrdinal;
-    const months = Array.from({ length: 16 }, (_, index) => {
-      const key = shiftMonthKey(timelineStart, index);
-      const monthStart = monthOrdinal(key);
-      const nextMonth = monthOrdinal(shiftMonthKey(key, 1));
-      const [year, month] = key.split('-').map(Number);
-      return {
-        key,
-        label: new Intl.DateTimeFormat(i18n.language, { month: 'short', timeZone: 'UTC' }).format(
-          new Date(Date.UTC(year, month - 1, 1)),
-        ),
-        year: String(year),
-        left: ((monthStart - startOrdinal) / totalDays) * 100,
-        width: ((nextMonth - monthStart) / totalDays) * 100,
-      };
-    });
-    const firstDayOfWeek = new Date(startOrdinal * DAY_MS).getUTCDay();
-    const firstWeekStart = startOrdinal - ((firstDayOfWeek + 6) % 7);
-    const weeks: ProjectTimelineModel['weeks'] = [];
-    for (let weekStart = firstWeekStart; weekStart < endOrdinal; weekStart += 7) {
-      const visibleStart = Math.max(weekStart, startOrdinal);
-      const visibleEnd = Math.min(weekStart + 7, endOrdinal);
-      const thursday = new Date(weekStart * DAY_MS);
-      thursday.setUTCDate(thursday.getUTCDate() + 3);
-      const januaryFourth = Date.UTC(thursday.getUTCFullYear(), 0, 4) / DAY_MS;
-      const weekOneMonday =
-        januaryFourth - ((new Date(januaryFourth * DAY_MS).getUTCDay() + 6) % 7);
-      const weekNumber = Math.floor((weekStart - weekOneMonday) / 7) + 1;
-      weeks.push({
-        key: String(weekStart),
-        label: `W${String(weekNumber).padStart(2, '0')}`,
-        left: ((visibleStart - startOrdinal) / totalDays) * 100,
-        width: ((visibleEnd - visibleStart) / totalDays) * 100,
-      });
-    }
-    const todayOrdinal = dateOrdinal(new Date());
-    return {
-      startMonth: timelineStart,
-      totalDays,
-      months,
-      weeks,
-      todayPosition:
-        todayOrdinal >= startOrdinal && todayOrdinal < endOrdinal
-          ? ((todayOrdinal - startOrdinal) / totalDays) * 100
-          : null,
-      groups: projectGroups,
-    };
-  }, [projectGroups, timelineStart]);
+  const timelineStart = search.timelineStart ?? defaultProjectTimelineStart();
+  const projectTimeline = useMemo(
+    () =>
+      buildProjectTimelineModel({
+        startMonth: timelineStart,
+        language: i18n.language,
+        groups: projectGroups,
+      }),
+    [projectGroups, timelineStart, i18n.language],
+  );
 
   const filterCount =
     statusFilters.length +
@@ -764,9 +703,9 @@ export function useProjectsPagePresenter() {
       onUpdateActiveProjectView: updateActiveProjectView,
       onDeleteActiveProjectView: deleteActiveProjectView,
       onTimelinePrevious: () =>
-        void updateProjectSearch({ timelineStart: shiftMonthKey(timelineStart, -4) }),
+        void updateProjectSearch({ timelineStart: shiftProjectTimelineMonth(timelineStart, -4) }),
       onTimelineNext: () =>
-        void updateProjectSearch({ timelineStart: shiftMonthKey(timelineStart, 4) }),
+        void updateProjectSearch({ timelineStart: shiftProjectTimelineMonth(timelineStart, 4) }),
       onTimelineToday: () => void updateProjectSearch({ timelineStart: undefined }),
       onReorderProject: reorderProject,
       onMoveProjectOnBoard: moveProjectOnBoard,

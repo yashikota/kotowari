@@ -3,20 +3,13 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useLayoutEffect, useRef } from 'react';
 import type { Project } from '../types.ts';
+import type { ProjectTimelineModel } from '../project-timeline.ts';
+export type { ProjectTimelineModel } from '../project-timeline.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
 import { formatCalendarDate } from '../time.ts';
 import { priorityLabel } from '../i18n/labels.ts';
 import { ProjectIconMark } from './ProjectIcon.tsx';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
-
-export type ProjectTimelineModel = {
-  startMonth: string;
-  totalDays: number;
-  todayPosition: number | null;
-  months: { key: string; label: string; year: string; left: number; width: number }[];
-  weeks: { key: string; label: string; left: number; width: number }[];
-  groups: { key: string; label: string; projects: Project[] }[];
-};
 
 const STATUS_COLORS: Record<string, string> = {
   started: 'indigo',

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { ProjectListControlsModel } from '../components/ProjectListControls.tsx';
-import type { ProjectTimelineModel } from '../components/ProjectTimelineView.tsx';
+import { buildProjectTimelineModel, defaultProjectTimelineStart } from '../project-timeline.ts';
 import { useProjectWorkflow, projectWorkflowStatusLabel } from '../project-workflow.tsx';
 import { DEFAULT_PROJECT_DISPLAY_PROPERTIES } from '../project-display.ts';
 import type { ProjectDisplayProperty } from '../project-display.ts';
@@ -33,27 +33,6 @@ type BuilderData = {
   labels: import('../types.ts').Label[];
   issues: import('../types.ts').Issue[];
 };
-
-const DAY_MS = 86_400_000;
-
-function monthKey(year: number, month: number) {
-  const value = new Date(Date.UTC(year, month, 1));
-  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftMonthKey(key: string, offset: number) {
-  const [year, month] = key.split('-').map(Number);
-  return monthKey(year, month - 1 + offset);
-}
-
-function monthOrdinal(key: string) {
-  const [year, month] = key.split('-').map(Number);
-  return Date.UTC(year, month - 1, 1) / DAY_MS;
-}
-
-function dateOrdinal(date: Date) {
-  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS;
-}
 
 function compactSearch(search: ProjectViewSearch): ProjectViewSearch {
   return Object.fromEntries(
@@ -185,61 +164,16 @@ export function useProjectViewBuilderPresenter() {
     );
   }, [filteredProjects, search.groupBy, statuses, t, i18n.language]);
 
-  const timelineStart =
-    search.timelineStart ??
-    shiftMonthKey(monthKey(new Date().getFullYear(), new Date().getMonth()), -8);
-  const projectTimeline = useMemo<ProjectTimelineModel>(() => {
-    const startOrdinal = monthOrdinal(timelineStart);
-    const endOrdinal = monthOrdinal(shiftMonthKey(timelineStart, 16));
-    const totalDays = endOrdinal - startOrdinal;
-    const months = Array.from({ length: 16 }, (_, index) => {
-      const key = shiftMonthKey(timelineStart, index);
-      const monthStart = monthOrdinal(key);
-      const nextMonth = monthOrdinal(shiftMonthKey(key, 1));
-      const [year, month] = key.split('-').map(Number);
-      return {
-        key,
-        label: new Intl.DateTimeFormat(i18n.language, {
-          month: 'short',
-          timeZone: 'UTC',
-        }).format(new Date(Date.UTC(year, month - 1, 1))),
-        year: String(year),
-        left: ((monthStart - startOrdinal) / totalDays) * 100,
-        width: ((nextMonth - monthStart) / totalDays) * 100,
-      };
-    });
-    const firstDayOfWeek = new Date(startOrdinal * DAY_MS).getUTCDay();
-    const firstWeekStart = startOrdinal - ((firstDayOfWeek + 6) % 7);
-    const weeks: ProjectTimelineModel['weeks'] = [];
-    for (let weekStart = firstWeekStart; weekStart < endOrdinal; weekStart += 7) {
-      const visibleStart = Math.max(weekStart, startOrdinal);
-      const visibleEnd = Math.min(weekStart + 7, endOrdinal);
-      const thursday = new Date(weekStart * DAY_MS);
-      thursday.setUTCDate(thursday.getUTCDate() + 3);
-      const januaryFourth = Date.UTC(thursday.getUTCFullYear(), 0, 4) / DAY_MS;
-      const weekOneMonday =
-        januaryFourth - ((new Date(januaryFourth * DAY_MS).getUTCDay() + 6) % 7);
-      const weekNumber = Math.floor((weekStart - weekOneMonday) / 7) + 1;
-      weeks.push({
-        key: String(weekStart),
-        label: `W${String(weekNumber).padStart(2, '0')}`,
-        left: ((visibleStart - startOrdinal) / totalDays) * 100,
-        width: ((visibleEnd - visibleStart) / totalDays) * 100,
-      });
-    }
-    const todayOrdinal = dateOrdinal(new Date());
-    return {
-      startMonth: timelineStart,
-      totalDays,
-      months,
-      weeks,
-      todayPosition:
-        todayOrdinal >= startOrdinal && todayOrdinal < endOrdinal
-          ? ((todayOrdinal - startOrdinal) / totalDays) * 100
-          : null,
-      groups,
-    };
-  }, [groups, i18n.language, timelineStart]);
+  const timelineStart = search.timelineStart ?? defaultProjectTimelineStart();
+  const projectTimeline = useMemo(
+    () =>
+      buildProjectTimelineModel({
+        startMonth: timelineStart,
+        language: i18n.language,
+        groups: groups,
+      }),
+    [groups, timelineStart, i18n.language],
+  );
 
   const columnsBy: ProjectBoardGrouping = search.columnsBy ?? 'status';
   const rowsBy = search.rowsBy ?? 'none';
