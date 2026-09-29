@@ -9,6 +9,7 @@ import type * as React from 'react';
 import { useMemo, useState } from 'react';
 import { api } from '../api.ts';
 import type { IssueSearch } from '../issue-search.ts';
+import { patchIssueOptimistically } from '../application/issues.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
@@ -484,7 +485,7 @@ export function useCycleDetailPagePresenter() {
           issueWorkflowStatuses,
           preferences.autoAssignOnStart,
         );
-        await api.patchIssue(identifier, patch);
+        await patchIssueOptimistically(identifier, patch);
         await router.invalidate();
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },

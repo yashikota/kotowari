@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.ts';
 import { parseIssueSearch } from '../issue-search.ts';
-import { queryCache } from '../application/cache.ts';
-import { resetIssueProjection } from '../application/issues.ts';
+import { queryCache } from '../query-cache.ts';
+import { patchIssueOptimistically, resetIssueProjection } from '../application/issues.ts';
 import { mediator, signals } from '../application/mediator.ts';
 import {
   useIntent,
@@ -316,7 +316,7 @@ export function useShellPresenter() {
           issueWorkflowStatuses,
           preferences.autoAssignOnStart,
         );
-        await api.patchIssue(currentIdentifier, patch);
+        await patchIssueOptimistically(currentIdentifier, patch);
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
         await navigate({
@@ -327,14 +327,14 @@ export function useShellPresenter() {
       if (id.startsWith('assign-cycle:') && currentIdentifier) {
         const raw = id.slice('assign-cycle:'.length);
         const cycleId = raw === 'none' ? null : Number(raw);
-        await api.patchIssue(currentIdentifier, { cycleId });
+        await patchIssueOptimistically(currentIdentifier, { cycleId });
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
       }
       if (id.startsWith('assign-project:') && currentIdentifier) {
         const raw = id.slice('assign-project:'.length);
         const projectId = raw === 'none' ? null : Number(raw);
-        await api.patchIssue(currentIdentifier, { projectId });
+        await patchIssueOptimistically(currentIdentifier, { projectId });
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate();
       }
@@ -467,7 +467,7 @@ export function useShellPresenter() {
     }
     if (action.startsWith('priority-') && currentIdentifier) {
       const n = Number(action.slice(-1));
-      void api.patchIssue(currentIdentifier, { priority: n }).then(() => {
+      void patchIssueOptimistically(currentIdentifier, { priority: n }).then(() => {
         signals.dispatchEvent(new Event('kotowari:refresh'));
         return router.invalidate();
       });

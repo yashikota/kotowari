@@ -1,6 +1,7 @@
 import { useMemo, useSyncExternalStore } from 'react';
+import { api } from '../api.ts';
 import type { Issue } from '../types.ts';
-import { queryCache } from './cache.ts';
+import { queryCache } from '../query-cache.ts';
 
 const patches = new Map<string, { patch: Partial<Issue>; confirmed?: string }>();
 const listeners = new Set<() => void>();
@@ -59,6 +60,10 @@ export async function updateIssue(
     }
     throw error;
   }
+}
+
+export function patchIssueOptimistically(id: string, patch: Record<string, unknown>) {
+  return updateIssue(id, patch, () => api.patchIssue(id, patch));
 }
 
 export function resetIssueProjection() {

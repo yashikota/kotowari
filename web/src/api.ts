@@ -1,5 +1,4 @@
-import { queryCache } from './application/cache.ts';
-import { updateIssue } from './application/issues.ts';
+import { queryCache } from './query-cache.ts';
 import type {
   Activity,
   Comment,
@@ -160,12 +159,10 @@ export const api = {
     };
   }) => req<Issue>('/api/issues', { method: 'POST', body: JSON.stringify(body) }),
   patchIssue: (id: string, body: Record<string, unknown>) =>
-    updateIssue(id, body, () =>
-      req<Issue>(`/api/issues/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(body),
-      }),
-    ),
+    req<Issue>(`/api/issues/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
   deleteIssue: (id: string) => req<void>(`/api/issues/${id}`, { method: 'DELETE' }),
   addIssueLink: (id: string, body: { url: string; title?: string; kind?: IssueLink['kind'] }) =>
     req<IssueLink>(`/api/issues/${id}/links`, { method: 'POST', body: JSON.stringify(body) }),

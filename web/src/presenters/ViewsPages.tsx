@@ -9,6 +9,7 @@ import type * as React from 'react';
 import { useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import type { IssueSearch } from '../issue-search.ts';
+import { patchIssueOptimistically } from '../application/issues.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
@@ -282,7 +283,7 @@ export function useViewPagePresenter() {
           issueWorkflowStatuses,
           preferences.autoAssignOnStart,
         );
-        await api.patchIssue(id, patch);
+        await patchIssueOptimistically(id, patch);
         await router.invalidate();
       },
     },

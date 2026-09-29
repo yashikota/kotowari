@@ -3,6 +3,7 @@ import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import { isSubmitShortcut } from '../keymap.ts';
 import { api } from '../api.ts';
+import { patchIssueOptimistically } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
 import type { Issue, IssueRelation } from '../types.ts';
 
@@ -137,7 +138,7 @@ export function useIssueDetailRelations({
     });
 
     if (relatedIssueKind === 'parent') {
-      await api.patchIssue(identifier, { parentId: related.id });
+      await patchIssueOptimistically(identifier, { parentId: related.id });
     } else if (relatedIssueKind !== 'subIssue') {
       const kind: IssueRelation['kind'] =
         relatedIssueKind === 'blocked'
@@ -164,9 +165,9 @@ export function useIssueDetailRelations({
     if (!target) return;
 
     if (markAsKind === 'parentOf') {
-      await api.patchIssue(target.identifier, { parentId: issue.id });
+      await patchIssueOptimistically(target.identifier, { parentId: issue.id });
     } else if (markAsKind === 'subIssueOf') {
-      await api.patchIssue(identifier, { parentId: target.id });
+      await patchIssueOptimistically(identifier, { parentId: target.id });
     } else {
       const kind: IssueRelation['kind'] =
         markAsKind === 'relatedTo'

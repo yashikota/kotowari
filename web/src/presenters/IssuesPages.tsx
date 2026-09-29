@@ -11,6 +11,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import { parseIssueSearch } from '../issue-search.ts';
 import type { IssueSearch } from '../issue-search.ts';
+import { patchIssueOptimistically } from '../application/issues.ts';
 import {
   buildIssueFacetOptions,
   DEFAULT_DISPLAY_PROPERTIES,
@@ -457,7 +458,7 @@ export function useIssuesPagePresenter() {
           issueWorkflowStatuses,
           preferences.autoAssignOnStart,
         );
-        await api.patchIssue(id, patch);
+        await patchIssueOptimistically(id, patch);
         await router.invalidate();
       },
     },
@@ -557,7 +558,7 @@ export function useBoardPagePresenter() {
             issueWorkflowStatuses,
             preferences.autoAssignOnStart,
           );
-          return api.patchIssue(id, patch).then(() => router.invalidate());
+          return patchIssueOptimistically(id, patch).then(() => router.invalidate());
         });
       },
     },

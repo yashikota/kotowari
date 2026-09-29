@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
+import { patchIssueOptimistically } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
 import type { Issue } from '../types.ts';
 
@@ -26,7 +27,7 @@ export function useRemindersPresenter() {
   }, []);
 
   async function clearReminder(identifier: string) {
-    await api.patchIssue(identifier, { reminderAt: null });
+    await patchIssueOptimistically(identifier, { reminderAt: null });
     await reload();
   }
 

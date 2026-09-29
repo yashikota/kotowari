@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
-import { queryCache } from '../application/cache.ts';
+import { queryCache } from '../query-cache.ts';
 import {
   buildInitiativeList,
   DEFAULT_INITIATIVE_DISPLAY_PROPERTIES,

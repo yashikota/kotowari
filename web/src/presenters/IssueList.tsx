@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { api } from '../api.ts';
 import { setPendingAgentPrompt } from '../agent-prompt.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
-import { useIssueProjection } from '../application/issues.ts';
+import { patchIssueOptimistically, useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import {
   issueBranchName,
@@ -140,7 +140,7 @@ export function useIssueListPresenter({
           workflowStatuses,
           preferences.autoAssignOnStart,
         );
-        await api.patchIssue(id, adjustedPatch);
+        await patchIssueOptimistically(id, adjustedPatch);
       }),
     );
     await router.invalidate();
@@ -157,7 +157,8 @@ export function useIssueListPresenter({
             ? labelIds
             : [...labelIds, labelId]
           : labelIds.filter((id) => id !== labelId);
-        if (next.length !== labelIds.length) await api.patchIssue(identifier, { labelIds: next });
+        if (next.length !== labelIds.length)
+          await patchIssueOptimistically(identifier, { labelIds: next });
       }),
     );
     await router.invalidate();

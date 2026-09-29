@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { queryCache } from '../application/cache.ts';
+import { queryCache } from '../query-cache.ts';
 import { useMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import { renderMarkdown } from '../markdown.ts';

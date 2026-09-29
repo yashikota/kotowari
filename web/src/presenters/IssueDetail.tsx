@@ -1,6 +1,7 @@
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
+import { patchIssueOptimistically } from '../application/issues.ts';
 import {
   issueBranchName,
   issueMarkdown,
@@ -124,7 +125,7 @@ export function useIssueDetailPresenter({
           preferences.autoAssignOnStart,
         )
       : body;
-    const next = await api.patchIssue(identifier, adjustedBody);
+    const next = await patchIssueOptimistically(identifier, adjustedBody);
     setIssue(next);
     await refreshActivities();
   }
