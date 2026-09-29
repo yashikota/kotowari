@@ -57,42 +57,18 @@ func (s *Store) CreateInitiativeWithOptions(name, slug, description, status, col
 }
 
 func (s *Store) CreateInitiativeFromInput(in CreateInitiativeInput) (Initiative, error) {
-	name := strings.TrimSpace(in.Name)
-	slug := strings.TrimSpace(in.Slug)
-	description := strings.TrimSpace(in.Description)
+	var err error
+	in, err = normalizeInitiativeCreateInput(in)
+	if err != nil {
+		return Initiative{}, err
+	}
+	name, slug, description := in.Name, in.Slug, in.Description
 	status, color := in.Status, in.Color
 	start, target := in.StartDate, in.TargetDate
 	projectSlugs, health, priority, labels := in.ProjectSlugs, in.Health, in.Priority, in.Labels
-	if name == "" || utf8.RuneCountInString(name) > 120 {
-		return Initiative{}, validationf("initiative name must contain 1 to 120 characters")
-	}
-	if !domain.ValidSlug(slug) {
-		return Initiative{}, validationf("invalid slug")
-	}
-	if status == "" {
-		status = "planned"
-	}
-	if !validInitiativeStatus(status) {
-		return Initiative{}, validationf("invalid initiative status")
-	}
-	if !validProjectIconColor(color) {
-		return Initiative{}, validationf("invalid initiative color")
-	}
-	if !domain.ValidProjectHealth(health) {
-		return Initiative{}, validationf("invalid initiative health")
-	}
-	if !domain.ValidPriority(priority) {
-		return Initiative{}, validationf("invalid initiative priority")
-	}
-	if !validInitiativeDates(start, target) {
-		return Initiative{}, validationf("initiative dates must use YYYY-MM-DD and start before target")
-	}
-	if utf8.RuneCountInString(description) > 20000 {
-		return Initiative{}, validationf("initiative description is too long")
-	}
 	now := domain.Now()
 	var out Initiative
-	err := s.mutate(func(m *mem) error {
+	err = s.mutate(func(m *mem) error {
 		if initiativeIndex(m, slug) >= 0 {
 			return errf(ErrConflict, "initiative slug")
 		}
