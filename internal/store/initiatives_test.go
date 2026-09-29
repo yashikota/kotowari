@@ -112,7 +112,7 @@ func TestProposedInitiativeStatusPersists(t *testing.T) {
 
 func TestInitiativePriorityHealthLabelsAndCompletionPersist(t *testing.T) {
 	s := openTest(t)
-	label, err := s.CreateLabel("Initiative QA", "#7950f2")
+	label, err := s.CreateLabel(CreateLabelInput{Name: "Initiative QA", Color: "#7950f2"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,11 @@ type Label struct {
 	Color string `json:"color" toml:"color"`
 }
 
+type CreateLabelInput struct {
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
 type Project struct {
 	ID              int64               `json:"id" toml:"id"`
 	Name            string              `json:"name" toml:"name"`

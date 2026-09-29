@@ -237,11 +237,11 @@ func TestViewFileAndSearch(t *testing.T) {
 
 func TestIssueLabelFilterOperators(t *testing.T) {
 	s := openTest(t)
-	a, err := s.CreateLabel("Operator A", "#123456")
+	a, err := s.CreateLabel(CreateLabelInput{Name: "Operator A", Color: "#123456"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := s.CreateLabel("Operator B", "#654321")
+	b, err := s.CreateLabel(CreateLabelInput{Name: "Operator B", Color: "#654321"})
 	if err != nil {
 		t.Fatal(err)
 	}

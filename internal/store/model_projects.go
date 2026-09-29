@@ -3,6 +3,7 @@ package store
 import "github.com/yashikota/kotowari/internal/model"
 
 type Label = model.Label
+type CreateLabelInput = model.CreateLabelInput
 type Project = model.Project
 type PostHealthUpdateInput = model.PostHealthUpdateInput
 type Initiative = model.Initiative

@@ -1013,7 +1013,7 @@ func TestListIssuesByMilestoneNameAndSaveFilter(t *testing.T) {
 
 func TestProjectLabelsFilterLinkedIssuesAndPersistWithViews(t *testing.T) {
 	s := openTest(t)
-	label, err := s.CreateLabel("Launch", "#336699")
+	label, err := s.CreateLabel(CreateLabelInput{Name: "Launch", Color: "#336699"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1329,19 +1329,19 @@ func TestCycleNotificationSubscriptionsDeliverIssueEventsToInbox(t *testing.T) {
 
 func TestCreateLabelValidation(t *testing.T) {
 	s := openTest(t)
-	if _, err := s.CreateLabel(" ", "#aabbcc"); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateLabel(CreateLabelInput{Name: " ", Color: "#aabbcc"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty name: %v", err)
 	}
-	if _, err := s.CreateLabel("Ok", "red"); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateLabel(CreateLabelInput{Name: "Ok", Color: "red"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("bad color: %v", err)
 	}
-	if _, err := s.CreateLabel("Ok", "#gg0000"); !errors.Is(err, ErrValidation) {
+	if _, err := s.CreateLabel(CreateLabelInput{Name: "Ok", Color: "#gg0000"}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("non-hex color: %v", err)
 	}
-	if _, err := s.CreateLabel("Bug", "#aabbcc"); !errors.Is(err, ErrConflict) {
+	if _, err := s.CreateLabel(CreateLabelInput{Name: "Bug", Color: "#aabbcc"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("duplicate seeded name: %v", err)
 	}
-	got, err := s.CreateLabel("Harbor", "#6B9BD1")
+	got, err := s.CreateLabel(CreateLabelInput{Name: "Harbor", Color: "#6B9BD1"})
 	if err != nil {
 		t.Fatal(err)
 	}

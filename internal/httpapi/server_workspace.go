@@ -98,15 +98,12 @@ func (s *Server) listLabels(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) createLabel(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Name  string `json:"name"`
-		Color string `json:"color"`
-	}
+	var in model.CreateLabelInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateLabel(in.Name, in.Color)
+	out, err := s.store.CreateLabel(in)
 	if err != nil {
 		writeError(w, err)
 		return

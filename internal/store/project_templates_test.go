@@ -11,7 +11,7 @@ func TestProjectTemplateRoundTripAndDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	label, err := s.CreateLabel("Release", "#336699")
+	label, err := s.CreateLabel(CreateLabelInput{Name: "Release", Color: "#336699"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -118,20 +118,20 @@ func (s *Store) ListLabels() ([]Label, error) {
 	return out, err
 }
 
-func (s *Store) CreateLabel(name, color string) (Label, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
+func (s *Store) CreateLabel(in CreateLabelInput) (Label, error) {
+	in.Name = strings.TrimSpace(in.Name)
+	if in.Name == "" {
 		return Label{}, validationf("name required")
 	}
-	if !validColor(color) {
+	if !validColor(in.Color) {
 		return Label{}, validationf("color must be #RRGGBB")
 	}
 	var out Label
 	err := s.mutate(func(m *mem) error {
-		if _, ok := labelByName(m, name); ok {
+		if _, ok := labelByName(m, in.Name); ok {
 			return errf(ErrConflict, "label name")
 		}
-		out = Label{ID: m.nextID(), Name: name, Color: color}
+		out = Label{ID: m.nextID(), Name: in.Name, Color: in.Color}
 		m.Labels = append(m.Labels, out)
 		m.bump(domain.Now())
 		return nil
