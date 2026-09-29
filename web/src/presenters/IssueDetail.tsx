@@ -11,28 +11,17 @@ import {
 } from '../issue-actions.ts';
 import { setPendingAgentPrompt } from '../agent-prompt.ts';
 import { buildCodingToolURL, useCodingToolPreferences } from '../coding-tools.ts';
-import { cachedIssue, useIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
 import { useIntent } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
-import type {
-  ADR,
-  Activity,
-  Comment,
-  Cycle,
-  Issue,
-  IssueLink,
-  IssueRelation,
-  Label,
-  Page,
-  Project,
-} from '../types.ts';
+import type { ADR, Issue, IssueLink, IssueRelation, Label } from '../types.ts';
 import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-workflow.tsx';
 import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { LABEL_COLORS } from '../label-colors.ts';
+import { useIssueDetailData } from './useIssueDetailData.ts';
 
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
 
@@ -88,26 +77,35 @@ export function useIssueDetailPresenter({
   const navigate = useNavigate();
   const router = useRouter();
   const navigationIndex = navigationIds.indexOf(identifier);
+  const [error, setError] = useState('');
+  const {
+    issue,
+    setIssue,
+    issues,
+    comments,
+    setComments,
+    activities,
+    setActivities,
+    projects,
+    cycles,
+    pages,
+    labels,
+    setLabels,
+    adrs,
+    timeZone,
+    reload,
+  } = useIssueDetailData(identifier, (loadError) =>
+    setError(loadError instanceof Error ? loadError.message : 'load failed'),
+  );
   const isSubscribed = useSyncExternalStore(
     issueSubscriptions.subscribe,
     () => issueSubscriptions.has(identifier),
     () => false,
   );
-  const [storedIssue, setIssue] = useState<Issue | null>(() => cachedIssue(identifier));
-  const issue = useIssueProjection(storedIssue ? [storedIssue] : [])[0] ?? null;
-  const generation = useRef(0);
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentDraft, setEditingCommentDraft] = useState('');
   const [reactionPickerTarget, setReactionPickerTarget] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState('');
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [pages, setPages] = useState<Page[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
-  const [adrs, setAdrs] = useState<ADR[]>([]);
   const [draft, setDraft] = useState('');
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [commentError, setCommentError] = useState('');
@@ -132,7 +130,6 @@ export function useIssueDetailPresenter({
   const [relationTarget, setRelationTarget] = useState('');
   const [relationKind, setRelationKind] = useState<IssueRelation['kind']>('related');
   const [relationsEditorOpen, setRelationsEditorOpen] = useState(false);
-  const [timeZone, setTimeZone] = useState('UTC');
   const [copied, setCopied] = useState(false);
   const [historyRequest, setHistoryRequest] = useState(0);
   const [descriptionFocus, setDescriptionFocus] = useState({ identifier, request: 0 });
@@ -157,46 +154,6 @@ export function useIssueDetailPresenter({
   const [projectConversionPriority, setProjectConversionPriority] = useState(0);
   const [projectConversionStartDate, setProjectConversionStartDate] = useState('');
   const [projectConversionTargetDate, setProjectConversionTargetDate] = useState('');
-  const [error, setError] = useState('');
-
-  async function reload() {
-    const token = ++generation.current;
-    const [iss, all, com, act, proj, cyc, labs, allAdrs, allPages, ws] = await Promise.all([
-      api.issue(identifier),
-      api.issues(),
-      api.comments(identifier),
-      api.activities(identifier),
-      api.projects(),
-      api.cycles(),
-      api.labels(),
-      api.adrs(),
-      api.pages(),
-      api.workspace(),
-    ]);
-    if (token !== generation.current) return;
-    setIssue(iss);
-    setIssues(all);
-    setComments(com);
-    setActivities(act);
-    setProjects(proj);
-    setCycles(cyc);
-    setLabels(labs);
-    setAdrs(allAdrs);
-    setPages(allPages);
-    setTimeZone(ws.timezone || 'UTC');
-  }
-
-  useEffect(() => {
-    void reload().catch((e: unknown) => setError(e instanceof Error ? e.message : 'load failed'));
-    function onRefresh() {
-      void reload().catch(() => undefined);
-    }
-    signals.addEventListener('kotowari:refresh', onRefresh);
-    return () => {
-      generation.current++;
-      signals.removeEventListener('kotowari:refresh', onRefresh);
-    };
-  }, [identifier]);
 
   useEffect(() => {
     setDraft('');
