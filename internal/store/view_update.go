@@ -162,13 +162,8 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 			v.LabelOperator = in.LabelOperator
 		}
 		if in.ProjectLabels != nil {
-			if len(in.ProjectLabels) > 32 {
-				return validationf("too many project labels in filter")
-			}
-			for _, name := range in.ProjectLabels {
-				if utf8.RuneCountInString(name) > 100 {
-					return validationf("project label filter is too long")
-				}
+			if err := validateViewProjectLabels(in.ProjectLabels); err != nil {
+				return err
 			}
 			v.ProjectLabels = in.ProjectLabels
 		}
@@ -252,13 +247,8 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 			}
 		}
 		if in.LinkSources != nil {
-			if len(in.LinkSources) > 32 {
-				return validationf("too many issue link sources in filter")
-			}
-			for _, source := range in.LinkSources {
-				if !domain.ValidIssueLinkSource(source) {
-					return validationf("invalid issue link source filter")
-				}
+			if err := validateViewLinkSources(in.LinkSources); err != nil {
+				return err
 			}
 			v.LinkSources = normalizeIssueLinkSources(in.LinkSources)
 		}
@@ -269,26 +259,18 @@ func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
 			v.TemplateSlugs = normalizeIssueTemplateSlugs(in.TemplateSlugs)
 		}
 		if in.Content != nil {
-			content := *in.Content
-			if utf8.RuneCountInString(content) > 512 {
-				return validationf("content filter is too long")
+			content, err := normalizeViewTextFilter(in.Content, "content")
+			if err != nil {
+				return err
 			}
-			if strings.TrimSpace(content) == "" {
-				v.Content = nil
-			} else {
-				v.Content = &content
-			}
+			v.Content = content
 		}
 		if in.MilestoneName != nil {
-			milestoneName := *in.MilestoneName
-			if utf8.RuneCountInString(milestoneName) > 512 {
-				return validationf("milestone name filter is too long")
+			milestoneName, err := normalizeViewTextFilter(in.MilestoneName, "milestone name")
+			if err != nil {
+				return err
 			}
-			if strings.TrimSpace(milestoneName) == "" {
-				v.MilestoneName = nil
-			} else {
-				v.MilestoneName = &milestoneName
-			}
+			v.MilestoneName = milestoneName
 		}
 		if in.DateField != nil || in.DateRange != nil {
 			dateField, dateRange := v.DateField, v.DateRange

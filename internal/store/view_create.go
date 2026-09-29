@@ -139,13 +139,8 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.Relation != nil && !domain.ValidIssueRelationFilter(*in.Relation) {
 		return View{}, validationf("invalid issue relation filter")
 	}
-	if len(in.LinkSources) > 32 {
-		return View{}, validationf("too many issue link sources in filter")
-	}
-	for _, source := range in.LinkSources {
-		if !domain.ValidIssueLinkSource(source) {
-			return View{}, validationf("invalid issue link source filter")
-		}
+	if err := validateViewLinkSources(in.LinkSources); err != nil {
+		return View{}, err
 	}
 	if err := validateIssueTemplateSlugs(in.TemplateSlugs); err != nil {
 		return View{}, err
@@ -162,36 +157,25 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	if in.ProjectPriority != nil && !domain.ValidPriority(*in.ProjectPriority) {
 		return View{}, validationf("invalid project priority")
 	}
-	if in.Content != nil {
-		content := *in.Content
-		if utf8.RuneCountInString(content) > 512 {
-			return View{}, validationf("content filter is too long")
-		}
-		if strings.TrimSpace(content) == "" {
-			in.Content = nil
-		}
+	var err error
+	in.Content, err = normalizeViewTextFilter(in.Content, "content")
+	if err != nil {
+		return View{}, err
 	}
-	if in.MilestoneName != nil {
-		milestoneName := *in.MilestoneName
-		if utf8.RuneCountInString(milestoneName) > 512 {
-			return View{}, validationf("milestone name filter is too long")
-		}
-		if strings.TrimSpace(milestoneName) == "" {
-			in.MilestoneName = nil
-		}
+	in.MilestoneName, err = normalizeViewTextFilter(in.MilestoneName, "milestone name")
+	if err != nil {
+		return View{}, err
 	}
 	in.LinkSources = normalizeIssueLinkSources(in.LinkSources)
 	in.TemplateSlugs = normalizeIssueTemplateSlugs(in.TemplateSlugs)
-	if len(in.ProjectLabels) > 32 {
-		return View{}, validationf("too many project labels in filter")
+	if err := validateViewProjectLabelCount(in.ProjectLabels); err != nil {
+		return View{}, err
 	}
 	if err := validateAddedToCycle(in.AddedToCycle); err != nil {
 		return View{}, err
 	}
-	for _, name := range in.ProjectLabels {
-		if utf8.RuneCountInString(name) > 100 {
-			return View{}, validationf("project label filter is too long")
-		}
+	if err := validateViewProjectLabelNames(in.ProjectLabels); err != nil {
+		return View{}, err
 	}
 	dateField, dateRange := "", ""
 	if in.DateField != nil {
@@ -221,7 +205,7 @@ func (s *Store) CreateView(in CreateViewInput) (View, error) {
 	}
 	now := domain.Now()
 	var out View
-	err := s.mutate(func(m *mem) error {
+	err = s.mutate(func(m *mem) error {
 		if _, ok := viewBySlug(m, in.Slug); ok {
 			return errf(ErrConflict, "slug %q exists", in.Slug)
 		}
