@@ -3,6 +3,8 @@ package store
 import (
 	"strings"
 	"time"
+
+	"github.com/yashikota/kotowari/internal/domain"
 )
 
 type issueQueryDates struct {
@@ -13,6 +15,58 @@ type issueQueryDates struct {
 	statusAgeAnchor time.Time
 	statusAgeDays   map[string]int
 	customDueDate   string
+}
+
+func newIssueQueryDates(filter IssueFilter) (issueQueryDates, error) {
+	asOf := filter.DueDateAsOf
+	if filter.DueDate != "" && !domain.ValidDueDateFilter(filter.DueDate) {
+		return issueQueryDates{}, validationf("invalid due date filter")
+	}
+	if asOf != "" && !domain.ValidDate(asOf) {
+		return issueQueryDates{}, validationf("invalid date filter anchor")
+	}
+	if asOf == "" {
+		asOf = domain.Now()[:10]
+	}
+	dateAsOf := filter.DateAsOf
+	if dateAsOf == "" {
+		dateAsOf = asOf
+	}
+	if !domain.ValidIssueDateFilter(filter.DateField, filter.DateRange) {
+		return issueQueryDates{}, validationf("invalid issue date filter")
+	}
+	if dateAsOf != "" && !domain.ValidDate(dateAsOf) {
+		return issueQueryDates{}, validationf("invalid date filter anchor")
+	}
+
+	rangeDays := map[string]int{"tomorrow": 1, "threeDays": 3, "week": 7, "month": 30, "quarter": 90}
+	rangeEnd := ""
+	if days := rangeDays[filter.DueDate]; days > 0 {
+		day, err := time.Parse("2006-01-02", asOf)
+		if err != nil {
+			return issueQueryDates{}, validationf("invalid date filter anchor")
+		}
+		rangeEnd = day.AddDate(0, 0, days).Format("2006-01-02")
+	}
+	dateRangeDays := map[string]int{"dayAgo": 1, "threeDaysAgo": 3, "weekAgo": 7, "twoWeeksAgo": 14, "monthAgo": 30, "quarterAgo": 90, "halfYearAgo": 180, "yearAgo": 365}
+	statusAgeDays := map[string]int{"dayAgo": 1, "weekAgo": 7, "twoWeeksAgo": 14, "monthAgo": 30, "quarterAgo": 90, "halfYearAgo": 180}
+	dateRangeStart := ""
+	if days := dateRangeDays[filter.DateRange]; days > 0 {
+		day, err := time.Parse("2006-01-02", dateAsOf)
+		if err != nil {
+			return issueQueryDates{}, validationf("invalid date filter anchor")
+		}
+		dateRangeStart = day.AddDate(0, 0, -days).Format("2006-01-02")
+	}
+	return issueQueryDates{
+		asOf:            asOf,
+		rangeEnd:        rangeEnd,
+		dateAsOf:        dateAsOf,
+		dateRangeStart:  dateRangeStart,
+		statusAgeAnchor: time.Now().UTC(),
+		statusAgeDays:   statusAgeDays,
+		customDueDate:   strings.TrimPrefix(filter.DueDate, "on:"),
+	}, nil
 }
 
 func (dates issueQueryDates) matchesDateRange(f IssueFilter, iss Issue) bool {

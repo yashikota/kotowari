@@ -2,6 +2,34 @@ package store
 
 import "time"
 
+func matchesIssueCycleFilters(m *mem, issue Issue, filter IssueFilter) bool {
+	if filter.CycleNumber != 0 {
+		matches := issue.CycleNumber != nil && *issue.CycleNumber == filter.CycleNumber
+		if !matches && issue.CycleID != nil {
+			if cycle, found := cycleByID(m, *issue.CycleID); found && cycle.Number == filter.CycleNumber {
+				matches = true
+			}
+		}
+		if !matches {
+			return false
+		}
+	}
+	if len(filter.AddedToCycle) > 0 {
+		phase := addedToCyclePhase(m, issue)
+		matches := false
+		for _, wanted := range filter.AddedToCycle {
+			if phase == wanted {
+				matches = true
+				break
+			}
+		}
+		if !matches {
+			return false
+		}
+	}
+	return true
+}
+
 func addedToCyclePhase(m *mem, issue Issue) string {
 	cycle, found := Cycle{}, false
 	if issue.CycleID != nil {
