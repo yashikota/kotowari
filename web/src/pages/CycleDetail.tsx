@@ -123,7 +123,7 @@ export function CycleDetailPageView({
                       size="compact-sm"
                       variant="subtle"
                       leftSection={<IconPlus size={14} aria-hidden="true" />}
-                      onClick={handlers.onClick1}
+                      onClick={handlers.onCreateCycleIssue}
                     >
                       {t('cycle.newIssue')}
                     </Button>
@@ -170,7 +170,7 @@ export function CycleDetailPageView({
                     <IssueList
                       issues={issues}
                       selectedId={selected}
-                      onSelect={handlers.onSelect2}
+                      onSelect={handlers.onSelectCycleIssue}
                       groupBy={groupBy}
                       orderBy={orderBy}
                       subGroupBy={subGroupBy}

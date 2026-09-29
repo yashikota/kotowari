@@ -15,13 +15,6 @@ import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
 
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
-import {
-  cycleProgressBreakdown,
-  type CycleProgressBreakdownBy,
-  matchesCycleProgressBreakdown,
-  cycleProgressPointIndexAtRatio,
-  cycleProgressTimeline,
-} from '../cycle-progress.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import type { IssueNavigationState } from '../focus.ts';
 import {
@@ -44,13 +37,8 @@ import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
-import {
-  cycleCalendarFeedURL,
-  cycleIssueGroupLabel,
-  cycleURL,
-  readCycleProgressOpen,
-  writeCycleProgressOpen,
-} from './projectCycleHelpers.ts';
+import { cycleCalendarFeedURL, cycleIssueGroupLabel, cycleURL } from './projectCycleHelpers.ts';
+import { useCycleProgressPresenter } from './useCycleProgressPresenter.ts';
 
 export function useCycleDetailPagePresenter() {
   const sendIntent = useIntent();
@@ -78,29 +66,13 @@ export function useCycleDetailPagePresenter() {
   );
   const [cycle, setCycle] = useState(data.cycle);
   const [cycleDetailsOpen, setCycleDetailsOpen] = useState(true);
-  const [cycleProgressOpen, setCycleProgressOpen] = useState(readCycleProgressOpen);
-  const [breakdownBy, setBreakdownBy] = useState<CycleProgressBreakdownBy>('assignee');
-  const [activeBreakdownFilterKey, setActiveBreakdownFilterKey] = useState<string | null>(null);
-  const [activeProgressIndex, setActiveProgressIndex] = useState<number | null>(null);
+  const cycleProgress = useCycleProgressPresenter({
+    cycle,
+    issues: data.cycleIssues,
+    activities: data.activities,
+    projects: data.projects,
+  });
   const googleCalendarURL = cycleGoogleCalendarURL(cycle, cycleURL(cycle.number));
-  const progressTimeline = cycleProgressTimeline(cycle, data.cycleIssues, data.activities);
-  const breakdownItems = cycleProgressBreakdown(data.cycleIssues, breakdownBy, data.projects);
-  const asOf = Math.min(Date.parse(cycle.endsAt), Math.max(Date.parse(cycle.startsAt), Date.now()));
-  const currentProgressIndex = progressTimeline.reduce(
-    (index, point, pointIndex) => (Date.parse(point.at) <= asOf ? pointIndex : index),
-    0,
-  );
-  const activeProgressPoint =
-    activeProgressIndex == null ? null : (progressTimeline[activeProgressIndex] ?? null);
-  const progress = progressTimeline.reduce(
-    (current, point) => (Date.parse(point.at) <= asOf ? point : current),
-    progressTimeline[0] ?? { at: cycle.startsAt, scope: 0, started: 0, completed: 0 },
-  );
-  const scope = progress.scope;
-  const started = progress.started;
-  const done = progress.completed;
-  const startedPercent = scope ? Math.round((started / scope) * 100) : 0;
-  const completionPercent = scope ? Math.round((done / scope) * 100) : 0;
   const [groupBy, setGroupBy] = useState<IssueGroupBy>('status');
   const [layout, setLayout] = useState<IssueLayout>(locationState.issueListLayout ?? 'list');
   const [orderBy, setOrderBy] = useState<IssueOrderBy>('priority');
@@ -189,11 +161,7 @@ export function useCycleDetailPagePresenter() {
     includeNestedIssueMatches(matchingIssues, data.issues, nestedSubIssues),
     completedIssues,
     data.cycles,
-  ).filter(
-    (issue) =>
-      activeBreakdownFilterKey == null ||
-      matchesCycleProgressBreakdown(issue, breakdownBy, activeBreakdownFilterKey),
-  );
+  ).filter(cycleProgress.includesIssue);
   const groupOptions = useMemo(
     () =>
       issueGroupOptions(issues, groupBy, issueWorkflowStatuses, showEmptyGroups).map((group) => ({
@@ -344,19 +312,19 @@ export function useCycleDetailPagePresenter() {
     selected: selectedId,
     cycle,
     cycleDetailsOpen,
-    cycleProgressOpen,
+    cycleProgressOpen: cycleProgress.expanded,
     googleCalendarURL,
     resources,
-    progressTimeline,
-    activeProgressPoint,
-    breakdownBy,
-    breakdownItems,
-    activeBreakdownFilterKey,
-    scope,
-    started,
-    startedPercent,
-    done,
-    completionPercent,
+    progressTimeline: cycleProgress.progressTimeline,
+    activeProgressPoint: cycleProgress.activeProgressPoint,
+    breakdownBy: cycleProgress.breakdownBy,
+    breakdownItems: cycleProgress.breakdownItems,
+    activeBreakdownFilterKey: cycleProgress.activeBreakdownFilterKey,
+    scope: cycleProgress.scope,
+    started: cycleProgress.started,
+    startedPercent: cycleProgress.startedPercent,
+    done: cycleProgress.done,
+    completionPercent: cycleProgress.completionPercent,
     groupBy,
     layout,
     orderBy,
@@ -394,41 +362,16 @@ export function useCycleDetailPagePresenter() {
         if (cycle.status === 'completed' || value <= cycle.startsAt.slice(0, 10)) return;
         await save({ endsAt: dateAtUTCStart(value) });
       },
-      onClick1: () => sendIntent('issue.create', { cycleId: cycle.id }),
+      onCreateCycleIssue: () => sendIntent('issue.create', { cycleId: cycle.id }),
       onToggleCycleDetails: () => setCycleDetailsOpen((open) => !open),
-      onToggleCycleProgress: () =>
-        setCycleProgressOpen((open) => {
-          const next = !open;
-          writeCycleProgressOpen(next);
-          return next;
-        }),
-      onCycleBreakdownChange: (by: CycleProgressBreakdownBy) => {
-        setBreakdownBy(by);
-        setActiveBreakdownFilterKey(null);
-      },
-      onCycleBreakdownFilterToggle: (key: string) =>
-        setActiveBreakdownFilterKey((current) => (current === key ? null : key)),
-      onProgressPointerMove: (ratio: number) =>
-        setActiveProgressIndex(cycleProgressPointIndexAtRatio(progressTimeline, ratio)),
-      onProgressPointerLeave: () => setActiveProgressIndex(null),
-      onProgressFocus: () => setActiveProgressIndex((current) => current ?? currentProgressIndex),
-      onProgressBlur: () => setActiveProgressIndex(null),
-      onProgressKeyDown: (event: React.KeyboardEvent<SVGSVGElement>) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          setActiveProgressIndex(null);
-          return;
-        }
-        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-        event.preventDefault();
-        setActiveProgressIndex((current) => {
-          const lastIndex = progressTimeline.length - 1;
-          const index = current ?? currentProgressIndex;
-          if (event.key === 'Home') return 0;
-          if (event.key === 'End') return Math.max(0, lastIndex);
-          return Math.min(lastIndex, Math.max(0, index + (event.key === 'ArrowRight' ? 1 : -1)));
-        });
-      },
+      onToggleCycleProgress: cycleProgress.onToggleExpanded,
+      onCycleBreakdownChange: cycleProgress.onBreakdownChange,
+      onCycleBreakdownFilterToggle: cycleProgress.onBreakdownFilterToggle,
+      onProgressPointerMove: cycleProgress.onProgressPointerMove,
+      onProgressPointerLeave: cycleProgress.onProgressPointerLeave,
+      onProgressFocus: cycleProgress.onProgressFocus,
+      onProgressBlur: cycleProgress.onProgressBlur,
+      onProgressKeyDown: cycleProgress.onProgressKeyDown,
       onFilterChange: (next: IssueSearch) =>
         navigate({
           to: '/cycles/$number',
@@ -546,7 +489,7 @@ export function useCycleDetailPagePresenter() {
         setResourceTitle(e.target.value),
       onAddResourceLink: addResourceLink,
       onRemoveResource: (resourceId: number) => removeResource(resourceId),
-      onSelect2: (
+      onSelectCycleIssue: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {
         const handle: NonNullable<React.ComponentProps<typeof IssueList>['onSelect']> = setSelected;
