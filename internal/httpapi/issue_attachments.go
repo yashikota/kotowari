@@ -30,7 +30,7 @@ func (s *Server) addCommentWithFiles(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "body or attachment required"})
 		return
 	}
-	out, err := s.store.AddCommentWithAttachments(r.PathValue("id"), body, attachments)
+	out, err := s.store.AddComment(r.PathValue("id"), model.CreateCommentInput{Body: body, Attachments: attachments})
 	if err != nil {
 		deleteSavedAttachments(s, attachments)
 		writeError(w, err)

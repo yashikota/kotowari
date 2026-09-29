@@ -11,4 +11,6 @@ type IssueRelation = model.IssueRelation
 type CreateIssueRelationInput = model.CreateIssueRelationInput
 type Comment = model.Comment
 type CommentAttachment = model.CommentAttachment
+type CreateCommentInput = model.CreateCommentInput
+type UpdateCommentInput = model.UpdateCommentInput
 type Activity = model.Activity

@@ -23,12 +23,9 @@ func (s *Store) ListComments(identifier string) ([]Comment, error) {
 	return out, err
 }
 
-func (s *Store) AddComment(identifier, body string) (Comment, error) {
-	return s.AddCommentWithAttachments(identifier, body, nil)
-}
-
-func (s *Store) AddCommentWithAttachments(identifier, body string, attachments []CommentAttachment) (Comment, error) {
-	body = strings.TrimSpace(body)
+func (s *Store) AddComment(identifier string, in CreateCommentInput) (Comment, error) {
+	body := strings.TrimSpace(in.Body)
+	attachments := in.Attachments
 	if body == "" && len(attachments) == 0 {
 		return Comment{}, validationf("body required")
 	}
@@ -71,8 +68,8 @@ func (s *Store) AddCommentWithAttachments(identifier, body string, attachments [
 	return out, err
 }
 
-func (s *Store) UpdateComment(identifier string, commentID int64, body string) (Comment, error) {
-	body = strings.TrimSpace(body)
+func (s *Store) UpdateComment(identifier string, commentID int64, in UpdateCommentInput) (Comment, error) {
+	body := strings.TrimSpace(in.Body)
 	if commentID < 1 {
 		return Comment{}, validationf("invalid comment id")
 	}

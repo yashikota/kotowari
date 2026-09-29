@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listComments(w http.ResponseWriter, r *http.Request) {
@@ -20,14 +22,12 @@ func (s *Server) addComment(w http.ResponseWriter, r *http.Request) {
 		s.addCommentWithFiles(w, r)
 		return
 	}
-	var in struct {
-		Body string `json:"body"`
-	}
+	var in model.CreateCommentInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.AddComment(r.PathValue("id"), in.Body)
+	out, err := s.store.AddComment(r.PathValue("id"), in)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -41,14 +41,12 @@ func (s *Server) patchComment(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid comment id"})
 		return
 	}
-	var in struct {
-		Body string `json:"body"`
-	}
+	var in model.UpdateCommentInput
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.UpdateComment(r.PathValue("id"), commentID, in.Body)
+	out, err := s.store.UpdateComment(r.PathValue("id"), commentID, in)
 	if err != nil {
 		writeError(w, err)
 		return

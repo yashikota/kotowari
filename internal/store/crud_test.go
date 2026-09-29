@@ -421,7 +421,7 @@ func TestIssueArchiveLifecycle(t *testing.T) {
 	if _, err := s.UpdateIssue(created.Identifier, PatchIssueInput{Title: &title}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("editing archived issue: %v", err)
 	}
-	if _, err := s.AddComment(created.Identifier, "not allowed"); !errors.Is(err, ErrConflict) {
+	if _, err := s.AddComment(created.Identifier, CreateCommentInput{Body: "not allowed"}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("commenting on archived issue: %v", err)
 	}
 	if _, err := s.AddIssueLink(created.Identifier, CreateIssueLinkInput{URL: "https://example.test"}); !errors.Is(err, ErrConflict) {
@@ -506,7 +506,7 @@ func TestListRecentIssueActivitiesEnrichesAndLimits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AddComment(first.Identifier, "review this change"); err != nil {
+	if _, err := s.AddComment(first.Identifier, CreateCommentInput{Body: "review this change"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1745,7 +1745,7 @@ func TestSearchFindsIssueByCommentContent(t *testing.T) {
 		t.Fatal(err)
 	}
 	const query = "comment-only-search-token"
-	if _, err := s.AddComment(issue.Identifier, "A note containing "+query+" for later reference."); err != nil {
+	if _, err := s.AddComment(issue.Identifier, CreateCommentInput{Body: "A note containing " + query + " for later reference."}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2156,17 +2156,17 @@ func TestCommentsEmptyAndAdd(t *testing.T) {
 	if cs == nil || len(cs) != 0 {
 		t.Fatalf("empty comments %#v", cs)
 	}
-	if _, err := s.AddComment(iss.Identifier, "  "); !errors.Is(err, ErrValidation) {
+	if _, err := s.AddComment(iss.Identifier, CreateCommentInput{Body: "  "}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("empty body: %v", err)
 	}
-	c, err := s.AddComment(iss.Identifier, "remember this")
+	c, err := s.AddComment(iss.Identifier, CreateCommentInput{Body: "remember this"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if c.Body != "remember this" || c.IssueID != iss.ID {
 		t.Fatalf("%#v", c)
 	}
-	edited, err := s.UpdateComment(iss.Identifier, c.ID, "edited note")
+	edited, err := s.UpdateComment(iss.Identifier, c.ID, UpdateCommentInput{Body: "edited note"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2194,7 +2194,7 @@ func TestIssueAndCommentReactionsToggleAndPersist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment, err := s.AddComment(issue.Identifier, "A note")
+	comment, err := s.AddComment(issue.Identifier, CreateCommentInput{Body: "A note"})
 	if err != nil {
 		t.Fatal(err)
 	}

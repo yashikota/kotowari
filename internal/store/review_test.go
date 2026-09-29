@@ -15,7 +15,7 @@ func TestCommentAliasesPersistCanonicalSequence(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, alias := range []string{"1", "SEN-1", "ISS-1"} {
-		c, err := s.AddComment(alias, alias)
+		c, err := s.AddComment(alias, CreateCommentInput{Body: alias})
 		if err != nil || c.ID != int64(i+1) {
 			t.Fatalf("%+v %v", c, err)
 		}

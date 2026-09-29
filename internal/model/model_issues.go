@@ -103,6 +103,16 @@ type CommentAttachment struct {
 	Size      int64  `json:"size" toml:"size"`
 }
 
+type CreateCommentInput struct {
+	Body string `json:"body"`
+	// Attachments are assembled by multipart upload handlers, not comment JSON.
+	Attachments []CommentAttachment `json:"-"`
+}
+
+type UpdateCommentInput struct {
+	Body string `json:"body"`
+}
+
 type Activity struct {
 	ID         int64           `json:"id"`
 	EntityType string          `json:"entityType"`
