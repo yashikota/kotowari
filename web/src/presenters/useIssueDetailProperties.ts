@@ -1,11 +1,14 @@
 import type * as React from 'react';
 import { useState } from 'react';
+import type {
+  IssueOptionalProperty,
+  IssuePropertyMenu,
+  OptionalIssuePropertyVisibility,
+} from '../issue-property-model.ts';
 import type { Issue } from '../types.ts';
 
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
 
-export type IssueOptionalProperty = 'dueDate' | 'milestone' | 'parent' | 'type';
-export type IssuePropertyMenu = 'status' | 'priority' | 'labels' | 'estimate' | null;
 type OptionalPropertyOverrides = Record<string, Partial<Record<IssueOptionalProperty, boolean>>>;
 
 type Props = {
@@ -34,7 +37,7 @@ export function useIssueDetailProperties({ identifier, issue, setIssue, patch }:
   const [issuePropertyMenu, setIssuePropertyMenu] = useState<IssuePropertyMenu>(null);
   const due = issue?.dueDate?.slice(0, 10) ?? '';
   const propertyOverrides = optionalPropertyOverrides[identifier] ?? {};
-  const optionalIssuePropertyVisibility: Record<IssueOptionalProperty, boolean> = {
+  const optionalIssuePropertyVisibility: OptionalIssuePropertyVisibility = {
     dueDate: propertyOverrides.dueDate ?? Boolean(due),
     milestone: propertyOverrides.milestone ?? issue?.milestoneId != null,
     parent: propertyOverrides.parent ?? issue?.parentId != null,

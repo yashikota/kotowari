@@ -1,23 +1,13 @@
-import { ActionIcon, Box, Group, Menu, Text, TextInput } from '@mantine/core';
-import {
-  IconCalendarEvent,
-  IconChartBar,
-  IconCheck,
-  IconFolder,
-  IconFlag,
-  IconGitBranch,
-  IconPlus,
-  IconRefresh,
-  IconTag,
-  IconUser,
-} from '@tabler/icons-react';
+import { Box, Group, Text } from '@mantine/core';
+import { IconChartBar, IconFolder, IconRefresh, IconUser } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { priorityLabel } from '../i18n/labels.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssuePropertiesPanel.module.css';
-import type { IssueOptionalProperty, useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
+import type { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
 import { IssueLabelsProperty } from './IssueLabelsProperty.tsx';
+import { IssueOptionalProperties } from './IssueOptionalProperties.tsx';
 import {
   IssuePropertyRow as PropertyRow,
   IssuePropertySelect as PropertySelect,
@@ -77,27 +67,6 @@ export function IssuePropertiesPanel({
   const cycleValueLabel = currentCycle
     ? t('field.cycleN', { number: currentCycle.number })
     : t('field.noCycle');
-  const optionalProperties: Array<{
-    key: IssueOptionalProperty;
-    label: string;
-    disabled: boolean;
-  }> = [
-    { key: 'dueDate', label: t('issueProperties.dueDate'), disabled: false },
-    { key: 'type', label: t('field.type'), disabled: false },
-    {
-      key: 'milestone',
-      label: t('field.milestone'),
-      disabled:
-        !optionalIssuePropertyVisibility.milestone &&
-        (issue.projectId == null || milestones.length === 0),
-    },
-    {
-      key: 'parent',
-      label: t('issueProperties.parent'),
-      disabled: !optionalIssuePropertyVisibility.parent && parentOptions.length === 0,
-    },
-  ];
-
   return (
     <Box component="section" aria-label={t('issueProperties.ariaLabel')} className={styles.aside}>
       <Box className={styles.properties}>
@@ -281,134 +250,18 @@ export function IssuePropertiesPanel({
           </PropertyRow>
         </Box>
 
-        <Box
-          role="group"
-          aria-label={t('issueProperties.optionalProperties')}
-          className={styles.optionalProperties}
-        >
-          {optionalIssuePropertyVisibility.type ? (
-            <PropertyRow label={t('field.type')} icon={<IconTag size={14} stroke={1.7} />}>
-              <PropertySelect
-                compactChars={12}
-                compactLabel={
-                  issue.type ? t(`issueType.${issue.type}`) : t('issueProperties.noType')
-                }
-                aria-label={t('field.type')}
-                value={issue.type ?? 'none'}
-                onChange={handlers.Type_onChange14}
-                data={[
-                  { value: 'none', label: t('issueProperties.noType') },
-                  ...(['bug', 'feature', 'improvement', 'task'] as const).map((type) => ({
-                    value: type,
-                    label: t(`issueType.${type}`),
-                  })),
-                ]}
-              />
-            </PropertyRow>
-          ) : null}
-
-          {optionalIssuePropertyVisibility.parent ? (
-            <PropertyRow
-              label={t('issueProperties.parent')}
-              icon={<IconGitBranch size={14} stroke={1.7} />}
-            >
-              <PropertySelect
-                compactChars={14}
-                compactLabel={
-                  parentOptions.find((parent) => parent.id === issue.parentId)?.identifier ??
-                  t('issueProperties.noParent')
-                }
-                aria-label={t('issueProperties.parent')}
-                value={issue.parentId != null ? String(issue.parentId) : 'none'}
-                onChange={handlers.Parent_onChange9}
-                data={[
-                  { value: 'none', label: t('issueProperties.noParent') },
-                  ...parentOptions.map((parent) => ({
-                    value: String(parent.id),
-                    label: `${parent.identifier} ${parent.title}`,
-                  })),
-                ]}
-                searchable
-                nothingFoundMessage={t('issueProperties.noIssuesFound')}
-              />
-            </PropertyRow>
-          ) : null}
-
-          {optionalIssuePropertyVisibility.dueDate ? (
-            <PropertyRow
-              label={t('issueProperties.dueDate')}
-              icon={<IconCalendarEvent size={14} stroke={1.7} />}
-              className={styles.dueDateRow}
-            >
-              <TextInput
-                size="sm"
-                type="date"
-                aria-label={t('issueProperties.dueDate')}
-                value={due}
-                onChange={handlers.Due_date_onChange10}
-                classNames={{ input: styles.input, root: styles.dateInput }}
-              />
-            </PropertyRow>
-          ) : null}
-
-          {optionalIssuePropertyVisibility.milestone ? (
-            <PropertyRow label={t('field.milestone')} icon={<IconFlag size={14} stroke={1.7} />}>
-              <PropertySelect
-                compactChars={14}
-                compactLabel={
-                  milestones.find((milestone) => milestone.id === issue.milestoneId)?.name ??
-                  t('issueProperties.noMilestone')
-                }
-                aria-label={t('field.milestone')}
-                value={issue.milestoneId != null ? String(issue.milestoneId) : 'none'}
-                onChange={handlers.Milestone_onChange43}
-                data={[
-                  { value: 'none', label: t('issueProperties.noMilestone') },
-                  ...milestones.map((milestone) => ({
-                    value: String(milestone.id),
-                    label: milestone.name,
-                  })),
-                ]}
-                searchable
-                disabled={issue.projectId == null || milestones.length === 0}
-                nothingFoundMessage={t('issueProperties.noMilestonesFound')}
-              />
-            </PropertyRow>
-          ) : null}
-
-          <Menu position="bottom-start" withinPortal>
-            <Menu.Target>
-              <ActionIcon
-                type="button"
-                variant="subtle"
-                color="gray"
-                size="sm"
-                className={styles.addPropertyButton}
-                aria-label={t('issueProperties.addProperty')}
-                title={t('issueProperties.addProperty')}
-              >
-                <IconPlus size={14} stroke={1.8} aria-hidden="true" />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown aria-label={t('issueProperties.addProperty')}>
-              <Menu.Label>{t('issueProperties.optionalProperties')}</Menu.Label>
-              {optionalProperties.map(({ key, label, disabled }) => {
-                const visible = optionalIssuePropertyVisibility[key];
-                return (
-                  <Menu.Item
-                    key={key}
-                    aria-pressed={visible}
-                    disabled={disabled}
-                    rightSection={visible ? <IconCheck size={14} aria-hidden="true" /> : null}
-                    onClick={() => handlers.onToggleIssueOptionalProperty(key)}
-                  >
-                    {label}
-                  </Menu.Item>
-                );
-              })}
-            </Menu.Dropdown>
-          </Menu>
-        </Box>
+        <IssueOptionalProperties
+          issue={issue}
+          visibility={optionalIssuePropertyVisibility}
+          due={due}
+          milestones={milestones}
+          parentOptions={parentOptions}
+          onTypeChange={handlers.Type_onChange14}
+          onParentChange={handlers.Parent_onChange9}
+          onDueDateChange={handlers.Due_date_onChange10}
+          onMilestoneChange={handlers.Milestone_onChange43}
+          onToggleProperty={handlers.onToggleIssueOptionalProperty}
+        />
       </Box>
     </Box>
   );

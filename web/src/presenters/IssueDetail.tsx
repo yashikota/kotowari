@@ -27,7 +27,7 @@ import { useIssueDetailReminders } from './useIssueDetailReminders.ts';
 import { useIssueDetailResources } from './useIssueDetailResources.ts';
 import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
 
-export type { IssueOptionalProperty, IssuePropertyMenu } from './useIssueDetailProperties.ts';
+export type { IssueOptionalProperty, IssuePropertyMenu } from '../issue-property-model.ts';
 
 type Props = {
   identifier: string;
