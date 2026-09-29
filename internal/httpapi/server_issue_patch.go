@@ -8,7 +8,7 @@ import (
 func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 	in, err := decodeIssuePatch(r)
 	if err != nil {
-		var fieldErr *issuePatchFieldError
+		var fieldErr *patchFieldError
 		message := "invalid json"
 		if errors.As(err, &fieldErr) {
 			message = fieldErr.Error()
@@ -22,12 +22,4 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
-}
-
-type issuePatchFieldError struct {
-	field string
-}
-
-func (e *issuePatchFieldError) Error() string {
-	return "invalid " + e.field
 }

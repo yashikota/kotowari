@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 )
@@ -30,40 +29,15 @@ func (s *Server) patchMilestone(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid milestone id"})
 		return
 	}
-	raw := map[string]json.RawMessage{}
-	if err := decodeJSON(r, &raw); err != nil {
+	var request milestonePatchRequest
+	if err := decodeJSON(r, &request); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	var name *string
-	var description *string
-	if value, ok := raw["name"]; ok {
-		var decoded string
-		if err := json.Unmarshal(value, &decoded); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid milestone name"})
-			return
-		}
-		name = &decoded
-	}
-	if value, ok := raw["description"]; ok {
-		decoded, err := unmarshalOptString(value)
-		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid description"})
-			return
-		}
-		if decoded == nil {
-			decoded = new(string)
-		}
-		description = decoded
-	}
-	var targetDate **string
-	if value, ok := raw["targetDate"]; ok {
-		decoded, err := unmarshalOptString(value)
-		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid targetDate"})
-			return
-		}
-		targetDate = &decoded
+	name, description, targetDate, err := request.values()
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
 	}
 	out, err := s.store.UpdateMilestoneDetails(r.PathValue("slug"), id, name, description, targetDate)
 	if err != nil {

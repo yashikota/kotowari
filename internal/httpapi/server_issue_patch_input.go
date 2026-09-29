@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -39,30 +38,30 @@ func decodeIssuePatch(r *http.Request) (model.PatchIssueInput, error) {
 		raw   json.RawMessage
 		apply func() error
 	}{
-		{request.Title, func() error { return assignIssuePatchField(request.Title, "title", &input.Title) }},
-		{request.Body, func() error { return assignIssuePatchField(request.Body, "body", &input.Body) }},
-		{request.Status, func() error { return assignIssuePatchField(request.Status, "status", &input.Status) }},
+		{request.Title, func() error { return assignPatchField(request.Title, "title", &input.Title) }},
+		{request.Body, func() error { return assignPatchField(request.Body, "body", &input.Body) }},
+		{request.Status, func() error { return assignPatchField(request.Status, "status", &input.Status) }},
 		{request.WorkflowStatus, func() error {
-			return assignIssuePatchField(request.WorkflowStatus, "workflow status", &input.WorkflowStatus)
+			return assignPatchField(request.WorkflowStatus, "workflow status", &input.WorkflowStatus)
 		}},
-		{request.Assignee, func() error { return assignIssuePatchField(request.Assignee, "assignee", &input.Assignee) }},
-		{request.Type, func() error { return assignIssuePatchField(request.Type, "type", &input.Type) }},
-		{request.Priority, func() error { return assignIssuePatchField(request.Priority, "priority", &input.Priority) }},
-		{request.Estimate, func() error { return assignIssuePatchNullableField(request.Estimate, "estimate", &input.Estimate) }},
-		{request.ProjectID, func() error { return assignIssuePatchNullableField(request.ProjectID, "projectId", &input.ProjectID) }},
+		{request.Assignee, func() error { return assignPatchField(request.Assignee, "assignee", &input.Assignee) }},
+		{request.Type, func() error { return assignPatchField(request.Type, "type", &input.Type) }},
+		{request.Priority, func() error { return assignPatchField(request.Priority, "priority", &input.Priority) }},
+		{request.Estimate, func() error { return assignNullablePatchField(request.Estimate, "estimate", &input.Estimate) }},
+		{request.ProjectID, func() error { return assignNullablePatchField(request.ProjectID, "projectId", &input.ProjectID) }},
 		{request.MilestoneID, func() error {
-			return assignIssuePatchNullableField(request.MilestoneID, "milestoneId", &input.MilestoneID)
+			return assignNullablePatchField(request.MilestoneID, "milestoneId", &input.MilestoneID)
 		}},
-		{request.CycleID, func() error { return assignIssuePatchNullableField(request.CycleID, "cycleId", &input.CycleID) }},
-		{request.ParentID, func() error { return assignIssuePatchNullableField(request.ParentID, "parentId", &input.ParentID) }},
-		{request.DueDate, func() error { return assignIssuePatchNullableField(request.DueDate, "dueDate", &input.DueDate) }},
+		{request.CycleID, func() error { return assignNullablePatchField(request.CycleID, "cycleId", &input.CycleID) }},
+		{request.ParentID, func() error { return assignNullablePatchField(request.ParentID, "parentId", &input.ParentID) }},
+		{request.DueDate, func() error { return assignNullablePatchField(request.DueDate, "dueDate", &input.DueDate) }},
 		{request.ReminderAt, func() error {
-			return assignIssuePatchNullableField(request.ReminderAt, "reminderAt", &input.ReminderAt)
+			return assignNullablePatchField(request.ReminderAt, "reminderAt", &input.ReminderAt)
 		}},
-		{request.LabelIDs, func() error { return assignIssuePatchField(request.LabelIDs, "labelIds", &input.LabelIDs) }},
-		{request.SortOrder, func() error { return assignIssuePatchField(request.SortOrder, "sortOrder", &input.SortOrder) }},
-		{request.IsFavorite, func() error { return assignIssuePatchField(request.IsFavorite, "favorite", &input.IsFavorite) }},
-		{request.Archived, func() error { return assignIssuePatchField(request.Archived, "archived", &input.Archived) }},
+		{request.LabelIDs, func() error { return assignPatchField(request.LabelIDs, "labelIds", &input.LabelIDs) }},
+		{request.SortOrder, func() error { return assignPatchField(request.SortOrder, "sortOrder", &input.SortOrder) }},
+		{request.IsFavorite, func() error { return assignPatchField(request.IsFavorite, "favorite", &input.IsFavorite) }},
+		{request.Archived, func() error { return assignPatchField(request.Archived, "archived", &input.Archived) }},
 	}
 	for _, field := range fields {
 		if field.raw == nil {
@@ -73,26 +72,4 @@ func decodeIssuePatch(r *http.Request) (model.PatchIssueInput, error) {
 		}
 	}
 	return input, nil
-}
-
-func assignIssuePatchField[T any](raw json.RawMessage, name string, target **T) error {
-	value := new(T)
-	if err := json.Unmarshal(raw, value); err != nil {
-		return &issuePatchFieldError{field: name}
-	}
-	*target = value
-	return nil
-}
-
-func assignIssuePatchNullableField[T any](raw json.RawMessage, name string, target ***T) error {
-	var value *T
-	if !bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
-		decoded := new(T)
-		if err := json.Unmarshal(raw, decoded); err != nil {
-			return &issuePatchFieldError{field: name}
-		}
-		value = decoded
-	}
-	*target = &value
-	return nil
 }
