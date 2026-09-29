@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/yashikota/kotowari/internal/model"
@@ -53,91 +52,15 @@ func (s *Server) getADR(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) patchADR(w http.ResponseWriter, r *http.Request) {
-	raw := map[string]json.RawMessage{}
-	if err := decodeJSON(r, &raw); err != nil {
+	var request adrPatchRequest
+	if err := decodeJSON(r, &request); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	in := model.PatchADRInput{}
-	if v, ok := raw["projectSlug"]; ok {
-		slug, err := unmarshalOptString(v)
-		if err != nil {
-			writeJSON(w, 400, map[string]string{"error": "invalid projectSlug"})
-			return
-		}
-		in.ProjectSlug = &slug
-	}
-	if v, ok := raw["title"]; ok {
-		var s string
-		if err := json.Unmarshal(v, &s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid title"})
-			return
-		}
-		in.Title = &s
-	}
-	if v, ok := raw["body"]; ok {
-		var s string
-		if err := json.Unmarshal(v, &s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid body"})
-			return
-		}
-		in.Body = &s
-	}
-	if v, ok := raw["publishBody"]; ok {
-		var s string
-		if err := json.Unmarshal(v, &s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid publishBody"})
-			return
-		}
-		in.PublishBody = &s
-	}
-	if v, ok := raw["status"]; ok {
-		var s string
-		if err := json.Unmarshal(v, &s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid status"})
-			return
-		}
-		in.Status = &s
-	}
-	if v, ok := raw["evaluation"]; ok {
-		var s string
-		if err := json.Unmarshal(v, &s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid evaluation"})
-			return
-		}
-		in.Evaluation = &s
-	}
-	if v, ok := raw["replay"]; ok {
-		var s string
-		if err := json.Unmarshal(v, &s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid replay"})
-			return
-		}
-		in.Replay = &s
-	}
-	if v, ok := raw["workload"]; ok {
-		var s string
-		if err := json.Unmarshal(v, &s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid workload"})
-			return
-		}
-		in.Workload = &s
-	}
-	if v, ok := raw["supersedes"]; ok {
-		n, err := unmarshalOptInt(v)
-		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid supersedes"})
-			return
-		}
-		in.Supersedes = &n
-	}
-	if v, ok := raw["issueNumbers"]; ok {
-		var nums []int
-		if err := json.Unmarshal(v, &nums); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid issueNumbers"})
-			return
-		}
-		in.IssueNumbers = &nums
+	in, err := request.input()
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
 	}
 	out, err := s.store.UpdateADR(r.PathValue("id"), in)
 	if err != nil {
@@ -165,15 +88,4 @@ func (s *Server) publishADR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
-}
-
-func unmarshalOptInt(raw json.RawMessage) (*int, error) {
-	if string(raw) == "null" {
-		return nil, nil
-	}
-	var n int
-	if err := json.Unmarshal(raw, &n); err != nil {
-		return nil, err
-	}
-	return &n, nil
 }
