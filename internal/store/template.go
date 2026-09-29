@@ -38,6 +38,15 @@ func copyTemplateFiles(destRoot string, overwrite bool) error {
 	})
 }
 
+func createTemplateFile(path, conflictMessage string, write func() error) error {
+	if _, err := os.Stat(path); err == nil {
+		return errf(ErrConflict, conflictMessage)
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	return write()
+}
+
 func templateBody(root, name, fallback string) string {
 	raw := ""
 	if b, err := os.ReadFile(filepath.Join(root, "TEMPLATE", name)); err == nil {

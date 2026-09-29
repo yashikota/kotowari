@@ -46,7 +46,7 @@ func (s *Store) CreateRecurringIssueFromInput(issueInput CreateIssueInput, in Cr
 		in.Name = issueInput.Title
 	}
 	var slug string
-	in, slug, err = uniqueRecurringIssueInput(s.root, in)
+	in, slug, err = normalizeCreateRecurringIssueInput(in)
 	if err != nil {
 		return RecurringIssue{}, err
 	}
@@ -104,17 +104,7 @@ func (s *Store) CreateRecurringIssueFromInput(issueInput CreateIssueInput, in Cr
 		return RecurringIssue{}, err
 	}
 
-	path := filepath.Join(s.root, "TEMPLATE", "RECURRING-"+slug+".md")
-	s.mu.Lock()
-	if _, err := os.Stat(path); err == nil {
-		s.mu.Unlock()
-		return RecurringIssue{}, errf(ErrConflict, "recurring issue name already exists")
-	} else if !os.IsNotExist(err) {
-		s.mu.Unlock()
-		return RecurringIssue{}, err
-	}
-	err = writeRecurringIssue(path, recurring)
-	s.mu.Unlock()
+	in, slug, err = s.createUniqueRecurringIssueFile(in, recurring)
 	if err != nil {
 		return RecurringIssue{}, err
 	}

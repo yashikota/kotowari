@@ -55,11 +55,6 @@ func (s *Store) CreateIssueTemplate(identifier, name string) (IssueTemplate, err
 		return IssueTemplate{}, err
 	}
 	path := filepath.Join(s.root, "TEMPLATE", "ISSUE-"+slug+".md")
-	if _, err := os.Stat(path); err == nil {
-		return IssueTemplate{}, errf(ErrConflict, "template name already exists")
-	} else if !os.IsNotExist(err) {
-		return IssueTemplate{}, err
-	}
 	labels := make([]string, 0, len(issue.Labels))
 	for _, label := range issue.Labels {
 		labels = append(labels, label.Name)
@@ -69,7 +64,9 @@ func (s *Store) CreateIssueTemplate(identifier, name string) (IssueTemplate, err
 		Status: issue.Status, Assignee: issue.Assignee, Type: issue.Type, Priority: issue.Priority,
 		Estimate: issue.Estimate, Labels: labels,
 	}
-	if err := writeIssueTemplate(path, template); err != nil {
+	if err := createTemplateFile(path, "template name already exists", func() error {
+		return writeIssueTemplate(path, template)
+	}); err != nil {
 		return IssueTemplate{}, err
 	}
 	return template, nil

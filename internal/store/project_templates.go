@@ -69,11 +69,6 @@ func (s *Store) CreateProjectTemplate(projectSlug, name string) (ProjectTemplate
 		return ProjectTemplate{}, ErrNotFound
 	}
 	path := filepath.Join(s.root, "TEMPLATE", "PROJECT-"+slug+".md")
-	if _, err := os.Stat(path); err == nil {
-		return ProjectTemplate{}, errf(ErrConflict, "template name already exists")
-	} else if !os.IsNotExist(err) {
-		return ProjectTemplate{}, err
-	}
 	milestones := make([]ProjectTemplateMilestone, 0, len(project.Milestones))
 	for _, milestone := range project.Milestones {
 		milestones = append(milestones, ProjectTemplateMilestone{
@@ -88,7 +83,9 @@ func (s *Store) CreateProjectTemplate(projectSlug, name string) (ProjectTemplate
 		Priority: project.Priority, Labels: append([]string{}, project.Labels...),
 		Milestones: milestones,
 	}
-	if err := writeProjectTemplate(path, template); err != nil {
+	if err := createTemplateFile(path, "template name already exists", func() error {
+		return writeProjectTemplate(path, template)
+	}); err != nil {
 		return ProjectTemplate{}, err
 	}
 	return template, nil

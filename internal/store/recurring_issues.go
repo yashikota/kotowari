@@ -40,50 +40,7 @@ func (s *Store) CreateRecurringIssue(identifier string, in CreateRecurringIssueI
 	if err != nil {
 		return RecurringIssue{}, err
 	}
-	s.mu.Lock()
-	m, err := load(s.root)
-	if err != nil {
-		s.mu.Unlock()
-		return RecurringIssue{}, err
-	}
-	issue, ok := issueByIdent(m, identifier)
-	if !ok {
-		s.mu.Unlock()
-		return RecurringIssue{}, ErrNotFound
-	}
-	if err := ensureIssueActive(issue); err != nil {
-		s.mu.Unlock()
-		return RecurringIssue{}, err
-	}
-	path := filepath.Join(s.root, "TEMPLATE", "RECURRING-"+slug+".md")
-	if _, err := os.Stat(path); err == nil {
-		s.mu.Unlock()
-		return RecurringIssue{}, errf(ErrConflict, "recurring issue name already exists")
-	} else if !os.IsNotExist(err) {
-		s.mu.Unlock()
-		return RecurringIssue{}, err
-	}
-	labels := make([]string, 0, len(issue.Labels))
-	for _, label := range issue.Labels {
-		labels = append(labels, label.Name)
-	}
-	recurring := RecurringIssue{
-		Slug: slug, Name: in.Name, Title: issue.Title, Body: issue.Body,
-		Status: "backlog", Assignee: issue.Assignee, Type: issue.Type, Priority: issue.Priority,
-		Estimate: issue.Estimate, ProjectSlug: issue.ProjectSlug, Labels: labels,
-		Links:        issueLinksForRecurring(issue.ExternalLinks),
-		FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,
-		NextDueDate: in.FirstDueDate, Enabled: true,
-	}
-	if issue.ProjectID != nil {
-		if project, ok := projectByID(m, *issue.ProjectID); ok {
-			slug := project.Slug
-			recurring.ProjectSlug = &slug
-		}
-	}
-	err = writeRecurringIssue(path, recurring)
-	s.mu.Unlock()
-	if err != nil {
+	if err := s.createRecurringIssueFromIssue(identifier, in, slug); err != nil {
 		return RecurringIssue{}, err
 	}
 	if err := s.ProcessDueRecurringIssues(); err != nil {
@@ -99,6 +56,64 @@ func (s *Store) CreateRecurringIssue(identifier string, in CreateRecurringIssueI
 		}
 	}
 	return RecurringIssue{}, ErrNotFound
+}
+
+func (s *Store) createRecurringIssueFromIssue(identifier string, in CreateRecurringIssueInput, slug string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	m, err := load(s.root)
+	if err != nil {
+		return err
+	}
+	issue, ok := issueByIdent(m, identifier)
+	if !ok {
+		return ErrNotFound
+	}
+	if err := ensureIssueActive(issue); err != nil {
+		return err
+	}
+	labels := make([]string, 0, len(issue.Labels))
+	for _, label := range issue.Labels {
+		labels = append(labels, label.Name)
+	}
+	recurring := RecurringIssue{
+		Slug: slug, Name: in.Name, Title: issue.Title, Body: issue.Body,
+		Status: "backlog", Assignee: issue.Assignee, Type: issue.Type, Priority: issue.Priority,
+		Estimate: issue.Estimate, ProjectSlug: issue.ProjectSlug, Labels: labels,
+		Links:        issueLinksForRecurring(issue.ExternalLinks),
+		FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,
+		NextDueDate: in.FirstDueDate, Enabled: true,
+	}
+	if issue.ProjectID != nil {
+		if project, ok := projectByID(m, *issue.ProjectID); ok {
+			projectSlug := project.Slug
+			recurring.ProjectSlug = &projectSlug
+		}
+	}
+	path := filepath.Join(s.root, "TEMPLATE", "RECURRING-"+slug+".md")
+	return createTemplateFile(path, "recurring issue name already exists", func() error {
+		return writeRecurringIssue(path, recurring)
+	})
+}
+
+func (s *Store) createUniqueRecurringIssueFile(in CreateRecurringIssueInput, recurring RecurringIssue) (CreateRecurringIssueInput, string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	in, slug, err := uniqueRecurringIssueInput(s.root, in)
+	if err != nil {
+		return CreateRecurringIssueInput{}, "", err
+	}
+	recurring.Slug = slug
+	recurring.Name = in.Name
+	path := filepath.Join(s.root, "TEMPLATE", "RECURRING-"+slug+".md")
+	if err := createTemplateFile(path, "recurring issue name already exists", func() error {
+		return writeRecurringIssue(path, recurring)
+	}); err != nil {
+		return CreateRecurringIssueInput{}, "", err
+	}
+	return in, slug, nil
 }
 
 func (s *Store) SetRecurringIssueEnabled(slug string, enabled bool) (RecurringIssue, error) {
