@@ -296,7 +296,7 @@ CI と Release は同じコピー手順の後に GoReleaser snapshot を実行�
 
 ## Web の実装境界
 
-Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。Projects一覧の新規作成フォーム、テンプレート、ラベル、Milestone、依存Projectは `useProjectComposer.ts` に分ける。Project詳細のMilestone CRUD UIは `ProjectMilestonesSection.tsx`、Project間依存の追加・一覧・解除は `ProjectDependenciesSection.tsx` にまとめ、Project detail viewはこれらを他の詳細sectionと共に配置する。複数画面で共有するCycle URLや進捗表示の処理は `projectCycleHelpers.ts` に置く。
+Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。Projects一覧の新規作成フォーム、テンプレート、ラベル、Milestone、依存Projectは `useProjectComposer.ts` に分ける。Project詳細のMilestone CRUD UIは `ProjectMilestonesSection.tsx`、Project間依存の追加・一覧・解除は `ProjectDependenciesSection.tsx`、ADR/Pageの関連文書一覧は `ProjectDocumentsSection.tsx` にまとめ、Project detail viewはこれらを他の詳細sectionと共に配置する。Cycle詳細の編集・日付・リンクdialogは `CycleDetailDialogs.tsx`、進捗表示の集計・breakdown選択・chart操作は `useCycleProgressPresenter.ts`、resourceのPage解決・CRUDは `useCycleResourcesPresenter.ts` に分け、Cycle detail viewとpresenterは画面構成と他のCycle操作を担当する。複数画面で共有するCycle URLや表示用処理は `projectCycleHelpers.ts` に置く。
 
 Config画面のWorkspace・Cycle・Issue automation設定は `useConfigWorkspaceSettings.ts`、IssueとProject workflowのdraft、status編集・保存処理は `useConfigWorkflowSettings.ts` に分け、status編集UIは `ConfigWorkflowSettingsSection.tsx` に置く。
 

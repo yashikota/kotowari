@@ -12,7 +12,6 @@ import type { IssueSearch } from '../issue-search.ts';
 import { patchIssueOptimistically } from '../application/issues.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
-import i18n from '../i18n/index.ts';
 
 import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
 import { IssueList } from '../components/IssueList.tsx';
@@ -39,6 +38,7 @@ import { autoAssignOnStartedTransition } from '../application/issue-assignment.t
 
 import { cycleCalendarFeedURL, cycleIssueGroupLabel, cycleURL } from './projectCycleHelpers.ts';
 import { useCycleProgressPresenter } from './useCycleProgressPresenter.ts';
+import { useCycleResourcesPresenter } from './useCycleResourcesPresenter.ts';
 
 export function useCycleDetailPagePresenter() {
   const sendIntent = useIntent();
@@ -92,10 +92,6 @@ export function useCycleDetailPagePresenter() {
   ]);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
-  const [resourceLinkOpen, setResourceLinkOpen] = useState(false);
-  const [resourceURL, setResourceURL] = useState('');
-  const [resourceTitle, setResourceTitle] = useState('');
-  const [resourceError, setResourceError] = useState('');
   const [cycleLinkCopied, setCycleLinkCopied] = useState(false);
   const [calendarFeedCopied, setCalendarFeedCopied] = useState(false);
   const [nameDraft, setNameDraft] = useState(cycle.name ?? `Cycle ${cycle.number}`);
@@ -187,66 +183,12 @@ export function useCycleDetailPagePresenter() {
     signals.dispatchEvent(new Event('kotowari:refresh'));
   }
 
-  function pageSlugForResource(url: string): string | null {
-    try {
-      const parsed = new URL(url);
-      const marker = '/pages/';
-      const markerIndex = parsed.pathname.lastIndexOf(marker);
-      if (parsed.origin !== window.location.origin || markerIndex < 0) return null;
-      const candidate = parsed.pathname.slice(markerIndex + marker.length);
-      return candidate && !candidate.includes('/') ? decodeURIComponent(candidate) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  const resources = (cycle.resources ?? []).map((resource) => {
-    const pageSlug = pageSlugForResource(resource.url);
-    const page = pageSlug ? data.pages.find((item) => item.slug === pageSlug) : undefined;
-    return {
-      ...resource,
-      pageSlug,
-      displayTitle: page?.title || resource.title || resource.url,
-    };
+  const cycleResources = useCycleResourcesPresenter({
+    cycle,
+    pages: data.pages,
+    refreshCycle,
+    navigateToPage: (slug) => navigate({ to: '/pages/$slug', params: { slug } }),
   });
-
-  async function createCycleDocument() {
-    const title = i18n.t('issueActions.newDocumentTitle');
-    const page = await api.createPage({ title, slug: `document-${Date.now()}` });
-    const href = new URL(
-      `${import.meta.env.BASE_URL}pages/${encodeURIComponent(page.slug)}`,
-      window.location.origin,
-    ).toString();
-    await api.addCycleResource(cycle.number, { url: href, title, kind: 'document' });
-    await refreshCycle();
-    await navigate({ to: '/pages/$slug', params: { slug: page.slug } });
-  }
-
-  function openResourceLink() {
-    setResourceURL('');
-    setResourceTitle('');
-    setResourceError('');
-    setResourceLinkOpen(true);
-  }
-
-  async function addResourceLink(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    try {
-      await api.addCycleResource(cycle.number, {
-        url: resourceURL.trim(),
-        title: resourceTitle.trim() || undefined,
-      });
-      setResourceLinkOpen(false);
-      await refreshCycle();
-    } catch {
-      setResourceError(i18n.t('cycle.resourceAddFailed'));
-    }
-  }
-
-  async function removeResource(resourceId: number) {
-    await api.removeCycleResource(cycle.number, resourceId);
-    await refreshCycle();
-  }
 
   function dateAtUTCStart(value: string) {
     return `${value}T00:00:00Z`;
@@ -314,7 +256,7 @@ export function useCycleDetailPagePresenter() {
     cycleDetailsOpen,
     cycleProgressOpen: cycleProgress.expanded,
     googleCalendarURL,
-    resources,
+    resources: cycleResources.resources,
     progressTimeline: cycleProgress.progressTimeline,
     activeProgressPoint: cycleProgress.activeProgressPoint,
     breakdownBy: cycleProgress.breakdownBy,
@@ -341,10 +283,10 @@ export function useCycleDetailPagePresenter() {
     displayProperties,
     metadataOpen,
     datesOpen,
-    resourceLinkOpen,
-    resourceURL,
-    resourceTitle,
-    resourceError,
+    resourceLinkOpen: cycleResources.resourceLinkOpen,
+    resourceURL: cycleResources.resourceURL,
+    resourceTitle: cycleResources.resourceTitle,
+    resourceError: cycleResources.resourceError,
     cycleLinkCopied,
     calendarFeedCopied,
     nameDraft,
@@ -480,15 +422,13 @@ export function useCycleDetailPagePresenter() {
       onExportCalendar: exportCalendar,
       onCopyCalendarFeed: copyCycleCalendarFeed,
       onCopyLink: copyCycleLink,
-      onCreateDocument: createCycleDocument,
-      onOpenResourceLink: openResourceLink,
-      onCloseResourceLink: () => setResourceLinkOpen(false),
-      onResourceURLChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setResourceURL(e.target.value),
-      onResourceTitleChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setResourceTitle(e.target.value),
-      onAddResourceLink: addResourceLink,
-      onRemoveResource: (resourceId: number) => removeResource(resourceId),
+      onCreateDocument: cycleResources.onCreateDocument,
+      onOpenResourceLink: cycleResources.onOpenResourceLink,
+      onCloseResourceLink: cycleResources.onCloseResourceLink,
+      onResourceURLChange: cycleResources.onResourceURLChange,
+      onResourceTitleChange: cycleResources.onResourceTitleChange,
+      onAddResourceLink: cycleResources.onAddResourceLink,
+      onRemoveResource: cycleResources.onRemoveResource,
       onSelectCycleIssue: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {
