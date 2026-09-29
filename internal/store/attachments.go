@@ -10,7 +10,7 @@ func validCommentAttachmentID(id string) bool {
 		return false
 	}
 	for _, char := range id {
-		if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
+		if (char < '0' || char > '9') && (char < 'a' || char > 'f') {
 			return false
 		}
 	}

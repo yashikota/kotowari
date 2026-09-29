@@ -49,9 +49,20 @@ func (s *Store) CreateInitiativeWithProjects(name, slug, description, status, co
 }
 
 func (s *Store) CreateInitiativeWithOptions(name, slug, description, status, color string, start, target *string, projectSlugs []string, health string, priority int, labels []string) (Initiative, error) {
-	name = strings.TrimSpace(name)
-	slug = strings.TrimSpace(slug)
-	description = strings.TrimSpace(description)
+	return s.CreateInitiativeFromInput(CreateInitiativeInput{
+		Name: name, Slug: slug, Description: description, Status: status, Color: color,
+		StartDate: start, TargetDate: target, ProjectSlugs: projectSlugs,
+		Health: health, Priority: priority, Labels: labels,
+	})
+}
+
+func (s *Store) CreateInitiativeFromInput(in CreateInitiativeInput) (Initiative, error) {
+	name := strings.TrimSpace(in.Name)
+	slug := strings.TrimSpace(in.Slug)
+	description := strings.TrimSpace(in.Description)
+	status, color := in.Status, in.Color
+	start, target := in.StartDate, in.TargetDate
+	projectSlugs, health, priority, labels := in.ProjectSlugs, in.Health, in.Priority, in.Labels
 	if name == "" || utf8.RuneCountInString(name) > 120 {
 		return Initiative{}, validationf("initiative name must contain 1 to 120 characters")
 	}

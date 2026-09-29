@@ -55,6 +55,20 @@ type Initiative struct {
 	UpdatedAt       string   `json:"updatedAt" toml:"updated_at"`
 }
 
+type CreateInitiativeInput struct {
+	Name         string
+	Slug         string
+	Description  string
+	Status       string
+	Color        string
+	StartDate    *string
+	TargetDate   *string
+	ProjectSlugs []string
+	Health       string
+	Priority     int
+	Labels       []string
+}
+
 type UpdateInitiativeInput struct {
 	Name         *string
 	Description  *string

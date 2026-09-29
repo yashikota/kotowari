@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"net/http"
+
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listInitiatives(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +68,11 @@ func (s *Server) createInitiative(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateInitiativeWithOptions(in.Name, in.Slug, in.Description, in.Status, in.Color, in.StartDate, in.TargetDate, in.ProjectSlugs, in.Health, in.Priority, in.Labels)
+	out, err := s.store.CreateInitiativeFromInput(model.CreateInitiativeInput{
+		Name: in.Name, Slug: in.Slug, Description: in.Description, Status: in.Status, Color: in.Color,
+		StartDate: in.StartDate, TargetDate: in.TargetDate, ProjectSlugs: in.ProjectSlugs,
+		Health: in.Health, Priority: in.Priority, Labels: in.Labels,
+	})
 	if err != nil {
 		writeError(w, err)
 		return
