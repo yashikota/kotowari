@@ -8,16 +8,6 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-type CreateProjectFromIssueInput struct {
-	Name           string
-	Description    string
-	Status         string
-	WorkflowStatus string
-	Priority       int
-	StartDate      *string
-	TargetDate     *string
-}
-
 // CreateProjectFromIssue atomically creates a project and carries the source
 // issue into it. The issue itself is preserved as the project's first piece of
 // work, rather than being discarded during conversion.

@@ -287,7 +287,7 @@ handler から保存データ構造を直接変更しない。
 `internal/model` は永続化実装に依存しない共有モデルと入力型を持つ。HTTP/CLI はこの型を使い、Store は移行中の互換aliasを `model_<domain>.go` に置く。`store.go` は Store の生成・終了とエラー境界だけを持ち、集約状態は `state.go`、TOML 保存用 DTO は `persist_model.go` に隔離する。Project の作成・更新は項目名付きの入力型で渡し、長い位置引数を handler に持ち込まない。
 永続化は `persist.go` のロック付き snapshot/mutate、`persist_load.go` の読み込み、`persist_save.go` の書き込み、`persist_entities.go` の Markdown entity 読み込み、`persist_refs.go` の参照解決に分ける。
 Project の依存関係と Milestone、View の作成・更新・検証、全文検索はそれぞれ専用ファイルへ置き、Project/View の基本 CRUD や保存処理に混在させない。
-Issue の親子階層、外部リンク、コメント、添付、活動履歴も別の責務として分け、活動履歴の一覧用モデルは `model_activities.go` に定義する。
+Issue の親子階層、外部リンク、コメント、添付、活動履歴も別の責務として分け、活動履歴の一覧用モデルは `internal/model/model_activities.go` に定義する。
 新しい領域を追加するときは、モデル・ドメイン操作・永続化変換を同じ責務の近くに置き、handler が `mem` や TOML DTO に依存しないようにする。
 
 Release 用 SPA は `web/e2e/copy-dist.mjs` で `internal/webembed/dist` にコピーする。

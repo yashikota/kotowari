@@ -13,12 +13,6 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-type Document struct {
-	Body     string `json:"body"`
-	Revision string `json:"revision"`
-	SavedAt  string `json:"savedAt,omitempty"`
-}
-
 func document(m *mem, kind, id, field string) (*string, *string, string, error) {
 	if field != "body" && (kind != "adrs" || field != "publishBody") {
 		return nil, nil, "", validationf("invalid document field")

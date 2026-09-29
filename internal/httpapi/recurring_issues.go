@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listRecurringIssues(w http.ResponseWriter, _ *http.Request) {
@@ -30,7 +30,7 @@ func (s *Server) createRecurringIssue(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	item, err := s.store.CreateRecurringIssue(r.PathValue("id"), store.CreateRecurringIssueInput{
+	item, err := s.store.CreateRecurringIssue(r.PathValue("id"), model.CreateRecurringIssueInput{
 		Name: in.Name, FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,
 	})
 	if err != nil {

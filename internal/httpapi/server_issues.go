@@ -8,7 +8,6 @@ import (
 
 	"github.com/yashikota/kotowari/internal/domain"
 	"github.com/yashikota/kotowari/internal/model"
-	"github.com/yashikota/kotowari/internal/store"
 )
 
 func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +175,7 @@ func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 		LabelIDs       []int64                          `json:"labelIds"`
 		Links          []model.CreateIssueLinkInput     `json:"links"`
 		TemplateSlug   string                           `json:"templateSlug"`
-		Recurring      *store.CreateRecurringIssueInput `json:"recurring"`
+		Recurring      *model.CreateRecurringIssueInput `json:"recurring"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})

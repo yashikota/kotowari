@@ -14,27 +14,6 @@ import (
 // RecurringIssue describes a single-user local schedule. Each generated issue
 // remains an ordinary Markdown issue and records the schedule slug in its
 // frontmatter so missed runs can recover without creating duplicates.
-type RecurringIssue struct {
-	Slug                string                 `json:"slug"`
-	Name                string                 `json:"name"`
-	Title               string                 `json:"title"`
-	Body                string                 `json:"body"`
-	Status              string                 `json:"status"`
-	Assignee            string                 `json:"assignee,omitempty"`
-	Type                string                 `json:"type,omitempty"`
-	Priority            int                    `json:"priority"`
-	Estimate            *int                   `json:"estimate,omitempty"`
-	ProjectSlug         *string                `json:"projectSlug,omitempty"`
-	Labels              []string               `json:"labels"`
-	Links               []CreateIssueLinkInput `json:"links,omitempty"`
-	FirstDueDate        string                 `json:"firstDueDate"`
-	Interval            int                    `json:"interval"`
-	Unit                string                 `json:"unit"`
-	NextDueDate         string                 `json:"nextDueDate"`
-	LastIssueIdentifier string                 `json:"lastIssueIdentifier,omitempty"`
-	Enabled             bool                   `json:"enabled"`
-}
-
 type recurringIssueFM struct {
 	Name                string                 `toml:"name"`
 	Title               string                 `toml:"title"`
@@ -52,13 +31,6 @@ type recurringIssueFM struct {
 	NextDueDate         string                 `toml:"next_due_date"`
 	LastIssueIdentifier string                 `toml:"last_issue,omitempty"`
 	Enabled             bool                   `toml:"enabled"`
-}
-
-type CreateRecurringIssueInput struct {
-	Name         string `json:"name"`
-	FirstDueDate string `json:"firstDueDate"`
-	Interval     int    `json:"interval"`
-	Unit         string `json:"unit"`
 }
 
 func (s *Store) ListRecurringIssues() ([]RecurringIssue, error) {

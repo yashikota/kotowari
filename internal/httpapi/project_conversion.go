@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) createProjectFromIssue(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +20,7 @@ func (s *Server) createProjectFromIssue(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	project, issue, err := s.store.CreateProjectFromIssue(r.PathValue("id"), store.CreateProjectFromIssueInput{
+	project, issue, err := s.store.CreateProjectFromIssue(r.PathValue("id"), model.CreateProjectFromIssueInput{
 		Name: in.Name, Description: in.Description, Status: in.Status, WorkflowStatus: in.WorkflowStatus, Priority: in.Priority,
 		StartDate: in.StartDate, TargetDate: in.TargetDate,
 	})
