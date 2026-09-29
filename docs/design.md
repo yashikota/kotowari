@@ -298,7 +298,7 @@ CI と Release は同じコピー手順の後に GoReleaser snapshot を実行�
 
 Project と Cycle の各画面は、ルート用 view を `web/src/pages/`、画面状態と操作をまとめる presenter を `web/src/presenters/` の同名領域に分ける。複数画面で共有するCycle URLや進捗表示の処理は `projectCycleHelpers.ts` に置く。
 
-ShellのWorkspace情報、Cycle/Project/View/Initiative一覧、favorite Issue一覧、sidebar badgeの同期は `useShellWorkspace.ts` が担当する。Shell presenter は画面間で共有するオーバーレイとナビゲーションを構成する。
+ShellのWorkspace情報、Cycle/Project/View/Initiative一覧、favorite Issue一覧、sidebar badgeの同期は `useShellWorkspace.ts`、Paletteの検索とコマンド候補は `useShellPalette.ts` が担当する。Shell presenter は画面間で共有するオーバーレイとナビゲーションを構成する。
 
 Issue 詳細のIssue/Workspace取得状態と再読込は `useIssueDetailData.ts`、Issue属性の編集・表示切替は `useIssueDetailProperties.ts`、コメント・活動履歴・反応・Issue添付は `useIssueDetailTimeline.ts`、子IssueとIssue間の関係を扱う状態・操作は `useIssueDetailRelations.ts`、ADR・外部リンク・Pageリソースは `useIssueDetailResources.ts`、Due Dateは `useIssueDetailDueDate.ts`、Reminderは `useIssueDetailReminders.ts`、IssueからTemplate/Projectへの変換は `useIssueDetailConversions.ts`、ラベル編集は `useIssueDetailLabels.ts` に分ける。ヘッダーと操作メニューは `IssueDetailHeader.tsx`、サブIssueの一覧・作成は `IssueSubIssuesSection.tsx`、Issue間の関係は `IssueRelationsSection.tsx`、外部リンクとPageリソースは `IssueResourcesSection.tsx`、ADRリンクは `IssueADRsSection.tsx`、履歴とコメント欄は `IssueActivitySection.tsx`、操作ダイアログは `IssueDetailDialogs.tsx`、属性パネルは `IssuePropertiesPanel.tsx` に分け、Issue 詳細本体は画面構成を担当する。各子コンポーネントには表示に必要なPresenter項目だけを渡す。
 
