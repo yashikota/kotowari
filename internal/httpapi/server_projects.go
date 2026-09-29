@@ -65,36 +65,12 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Name            *string   `json:"name"`
-		Summary         *string   `json:"summary"`
-		Icon            *string   `json:"icon"`
-		IconColor       *string   `json:"iconColor"`
-		Description     *string   `json:"description"`
-		Status          *string   `json:"status"`
-		WorkflowStatus  *string   `json:"workflowStatus"`
-		IsFavorite      *bool     `json:"isFavorite"`
-		Lead            *string   `json:"lead"`
-		Health          *string   `json:"health"`
-		Priority        *int      `json:"priority"`
-		StartDate       *string   `json:"startDate"`
-		TargetDate      *string   `json:"targetDate"`
-		Labels          *[]string `json:"labels"`
-		InitiativeSlugs *[]string `json:"initiativeSlugs"`
-		Archived        *bool     `json:"archived"`
-		ClearStart      bool      `json:"clearStartDate"`
-		ClearTarget     bool      `json:"clearTargetDate"`
-	}
+	var in projectPatchRequest
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	archiveOnly := in.Archived != nil && in.Name == nil && in.Summary == nil && in.Icon == nil &&
-		in.IconColor == nil && in.Description == nil && in.Status == nil && in.WorkflowStatus == nil &&
-		in.IsFavorite == nil && in.Lead == nil && in.Health == nil && in.Priority == nil &&
-		in.StartDate == nil && in.TargetDate == nil && in.Labels == nil && in.InitiativeSlugs == nil &&
-		!in.ClearStart && !in.ClearTarget
-	if archiveOnly {
+	if in.archiveOnly() {
 		out, err := s.store.SetProjectArchived(r.PathValue("slug"), *in.Archived)
 		if err != nil {
 			writeError(w, err)
@@ -103,11 +79,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, out)
 		return
 	}
-	hasContentPatch := in.Name != nil || in.Summary != nil || in.Icon != nil || in.IconColor != nil ||
-		in.Description != nil || in.Status != nil || in.WorkflowStatus != nil || in.Lead != nil ||
-		in.Health != nil || in.Priority != nil || in.StartDate != nil || in.TargetDate != nil ||
-		in.Labels != nil || in.InitiativeSlugs != nil || in.Archived != nil || in.ClearStart || in.ClearTarget
-	if in.IsFavorite != nil && !hasContentPatch {
+	if in.IsFavorite != nil && !in.hasContentPatch() {
 		out, err := s.store.UpdateProjectFavorite(r.PathValue("slug"), *in.IsFavorite)
 		if err == nil {
 			out, err = s.store.GetProject(r.PathValue("slug"))
@@ -119,26 +91,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, out)
 		return
 	}
-	var start, target **string
-	if in.ClearStart {
-		var nils *string
-		start = &nils
-	} else if in.StartDate != nil {
-		start = &in.StartDate
-	}
-	if in.ClearTarget {
-		var nils *string
-		target = &nils
-	} else if in.TargetDate != nil {
-		target = &in.TargetDate
-	}
-	out, err := s.store.UpdateProjectFromInput(model.ProjectUpdateInput{
-		Slug: r.PathValue("slug"), Name: in.Name, Summary: in.Summary,
-		Icon: in.Icon, IconColor: in.IconColor, Description: in.Description,
-		Status: in.Status, WorkflowStatus: in.WorkflowStatus, Health: in.Health,
-		Lead: in.Lead, Priority: in.Priority, StartDate: start, TargetDate: target,
-		Labels: in.Labels, InitiativeSlugs: in.InitiativeSlugs,
-	})
+	out, err := s.store.UpdateProjectFromInput(in.updateInput(r.PathValue("slug")))
 	if err != nil {
 		writeError(w, err)
 		return
