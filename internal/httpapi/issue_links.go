@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) addIssueLink(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,7 @@ func (s *Server) addIssueLink(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	link, err := s.store.AddIssueLink(r.PathValue("id"), store.CreateIssueLinkInput{
+	link, err := s.store.AddIssueLink(r.PathValue("id"), model.CreateIssueLinkInput{
 		URL: in.URL, Title: in.Title, Kind: in.Kind,
 	})
 	if err != nil {

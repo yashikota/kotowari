@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) cycleCalendarFeed(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +60,7 @@ func (s *Server) cycleCalendarFeed(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(content))
 }
 
-func cycleCalendarICS(cycle store.Cycle, eventURL string, generatedAt time.Time) (string, error) {
+func cycleCalendarICS(cycle model.Cycle, eventURL string, generatedAt time.Time) (string, error) {
 	start, err := parseCycleCalendarDate(cycle.StartsAt)
 	if err != nil {
 		return "", err

@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
@@ -31,19 +31,19 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		StartDate      *string                   `json:"startDate"`
 		TargetDate     *string                   `json:"targetDate"`
 		Labels         []string                  `json:"labels"`
-		Milestones     []store.MilestoneInput    `json:"milestones"`
-		Dependencies   []store.ProjectDependency `json:"dependencies"`
+		Milestones     []model.MilestoneInput    `json:"milestones"`
+		Dependencies   []model.ProjectDependency `json:"dependencies"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProjectFromInput(store.ProjectCreateInput{
+	out, err := s.store.CreateProjectFromInput(model.ProjectCreateInput{
 		Name: in.Name, Slug: in.Slug, Summary: in.Summary, Icon: in.Icon,
 		IconColor: in.IconColor, Description: in.Description, Status: in.Status,
 		WorkflowStatus: in.WorkflowStatus, Priority: in.Priority,
 		StartDate: in.StartDate, TargetDate: in.TargetDate, Labels: in.Labels,
-		Options: store.ProjectCreationOptions{
+		Options: model.ProjectCreationOptions{
 			TemplateSlug: in.TemplateSlug, Lead: in.Lead,
 			Milestones: in.Milestones, Dependencies: in.Dependencies,
 		},
@@ -132,7 +132,7 @@ func (s *Server) patchProject(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateProjectFromInput(store.ProjectUpdateInput{
+	out, err := s.store.UpdateProjectFromInput(model.ProjectUpdateInput{
 		Slug: r.PathValue("slug"), Name: in.Name, Summary: in.Summary,
 		Icon: in.Icon, IconColor: in.IconColor, Description: in.Description,
 		Status: in.Status, WorkflowStatus: in.WorkflowStatus, Health: in.Health,

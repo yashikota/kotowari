@@ -3,10 +3,10 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
-func viewInput(r *http.Request) (store.CreateViewInput, error) {
+func viewInput(r *http.Request) (model.CreateViewInput, error) {
 	var in struct {
 		Name                string                 `json:"name"`
 		Slug                string                 `json:"slug"`
@@ -50,12 +50,12 @@ func viewInput(r *http.Request) (store.CreateViewInput, error) {
 		ProjectPriority     *int                   `json:"projectPriority"`
 		AddedToCycle        []string               `json:"addedToCycle"`
 		AdvancedFilter      *bool                  `json:"advancedFilter"`
-		AdvancedFilterGroup *store.IssueFilterNode `json:"advancedFilterGroup"`
+		AdvancedFilterGroup *model.IssueFilterNode `json:"advancedFilterGroup"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
-		return store.CreateViewInput{}, err
+		return model.CreateViewInput{}, err
 	}
-	return store.CreateViewInput{
+	return model.CreateViewInput{
 		Name: in.Name, Slug: in.Slug, IsFavorite: in.IsFavorite, Description: in.Description, Icon: in.Icon, Display: in.Display, GroupBy: in.GroupBy, SubGroupBy: in.SubGroupBy, OrderBy: in.OrderBy,
 		Direction: in.Direction, CompletedIssues: in.CompletedIssues, ShowSubIssues: in.ShowSubIssues,
 		NestedSubIssues: in.NestedSubIssues, ShowEmptyGroups: in.ShowEmptyGroups, DisplayProperties: in.DisplayProperties,
@@ -153,7 +153,7 @@ func (s *Server) patchView(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-func hasViewContentPatch(in store.CreateViewInput) bool {
+func hasViewContentPatch(in model.CreateViewInput) bool {
 	return in.Name != "" || in.Description != nil || in.Icon != nil || in.Display != "" || in.GroupBy != "" ||
 		in.OrderBy != "" || in.SubGroupBy != "" || in.Direction != "" || in.CompletedIssues != "" ||
 		in.ShowSubIssues != nil || in.NestedSubIssues != "" || in.ShowEmptyGroups != nil || in.DisplayProperties != nil ||

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) addCycleLink(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +22,7 @@ func (s *Server) addCycleLink(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	resource, err := s.store.AddCycleLink(number, store.CreateIssueLinkInput{URL: in.URL, Title: in.Title, Kind: in.Kind})
+	resource, err := s.store.AddCycleLink(number, model.CreateIssueLinkInput{URL: in.URL, Title: in.Title, Kind: in.Kind})
 	if err != nil {
 		writeError(w, err)
 		return

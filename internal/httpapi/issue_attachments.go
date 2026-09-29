@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 const (
@@ -57,7 +57,7 @@ func (s *Server) addIssueAttachments(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, out)
 }
 
-func (s *Server) readAttachments(w http.ResponseWriter, r *http.Request) (string, []store.CommentAttachment, bool) {
+func (s *Server) readAttachments(w http.ResponseWriter, r *http.Request) (string, []model.CommentAttachment, bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxAttachmentUploadSize)
 	if err := r.ParseMultipartForm(8 << 20); err != nil {
 		var tooLarge *http.MaxBytesError
@@ -77,7 +77,7 @@ func (s *Server) readAttachments(w http.ResponseWriter, r *http.Request) (string
 		return "", nil, false
 	}
 
-	attachments := make([]store.CommentAttachment, 0, len(files))
+	attachments := make([]model.CommentAttachment, 0, len(files))
 	for _, header := range files {
 		if header.Size > maxAttachmentSize {
 			deleteSavedAttachments(s, attachments)
@@ -108,7 +108,7 @@ func (s *Server) readAttachments(w http.ResponseWriter, r *http.Request) (string
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not save attachment"})
 			return "", nil, false
 		}
-		attachment := store.CommentAttachment{
+		attachment := model.CommentAttachment{
 			ID: id, Name: safeAttachmentName(header.Filename),
 			MediaType: http.DetectContentType(data), Size: int64(len(data)),
 		}
@@ -202,7 +202,7 @@ func safeAttachmentName(name string) string {
 	return name
 }
 
-func deleteSavedAttachments(s *Server, attachments []store.CommentAttachment) {
+func deleteSavedAttachments(s *Server, attachments []model.CommentAttachment) {
 	for _, attachment := range attachments {
 		_ = s.store.DeleteCommentAttachment(attachment.ID)
 	}

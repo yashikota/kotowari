@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/yashikota/kotowari/internal/domain"
+	"github.com/yashikota/kotowari/internal/model"
 	"github.com/yashikota/kotowari/internal/store"
 )
 
@@ -47,7 +48,7 @@ func cmdADRNew(stdout io.Writer, title string, supersedes int, status string, is
 		return err
 	}
 	defer func() { _ = st.Close() }()
-	in := store.CreateADRInput{Title: title, Status: status}
+	in := model.CreateADRInput{Title: title, Status: status}
 	if supersedes > 0 {
 		in.Supersedes = &supersedes
 	}
@@ -86,11 +87,11 @@ func cmdADRSetStatus(stdout io.Writer, id, status string, by int) error {
 		}
 		n := old.Number
 		sp := &n
-		if _, err := st.UpdateADR(strconv.Itoa(by), store.PatchADRInput{Supersedes: &sp}); err != nil {
+		if _, err := st.UpdateADR(strconv.Itoa(by), model.PatchADRInput{Supersedes: &sp}); err != nil {
 			return err
 		}
 	}
-	in := store.PatchADRInput{Status: &status}
+	in := model.PatchADRInput{Status: &status}
 	out, err := st.UpdateADR(id, in)
 	if err != nil {
 		return err

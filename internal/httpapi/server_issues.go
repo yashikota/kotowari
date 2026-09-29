@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/yashikota/kotowari/internal/domain"
+	"github.com/yashikota/kotowari/internal/model"
 	"github.com/yashikota/kotowari/internal/store"
 )
 
@@ -50,7 +51,7 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 			estimates = append(estimates, estimate)
 		}
 	}
-	f := store.IssueFilter{Status: q.Get("status"), Statuses: statuses, Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus"), Priorities: priorities, Estimates: estimates, LabelOperator: q.Get("labelOperator")}
+	f := model.IssueFilter{Status: q.Get("status"), Statuses: statuses, Assignee: q.Get("assignee"), ProjectSlug: q.Get("project"), Type: q.Get("type"), DueDate: q.Get("dueDate"), DueDateAsOf: q.Get("asOf"), Relation: q.Get("relation"), LinkSources: linkSources, TemplateSlugs: templateSlugs, Content: q.Get("content"), MilestoneName: q.Get("milestoneName"), DateField: q.Get("dateField"), DateRange: q.Get("dateRange"), DateAsOf: q.Get("dateAsOf"), ProjectStatus: q.Get("projectStatus"), Priorities: priorities, Estimates: estimates, LabelOperator: q.Get("labelOperator")}
 	if f.Assignee != "" && f.Assignee != "none" && !domain.ValidIssueAssignee(f.Assignee) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid assignee filter"})
 		return
@@ -173,7 +174,7 @@ func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 		ParentID       *int64                           `json:"parentId"`
 		DueDate        *string                          `json:"dueDate"`
 		LabelIDs       []int64                          `json:"labelIds"`
-		Links          []store.CreateIssueLinkInput     `json:"links"`
+		Links          []model.CreateIssueLinkInput     `json:"links"`
 		TemplateSlug   string                           `json:"templateSlug"`
 		Recurring      *store.CreateRecurringIssueInput `json:"recurring"`
 	}
@@ -181,7 +182,7 @@ func (s *Server) createIssue(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	issueInput := store.CreateIssueInput{
+	issueInput := model.CreateIssueInput{
 		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus, Assignee: in.Assignee, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
 		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID, ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs, ExternalLinks: in.Links, TemplateSlug: in.TemplateSlug,
 	}
@@ -222,7 +223,7 @@ func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	in := store.PatchIssueInput{}
+	in := model.PatchIssueInput{}
 	if v, ok := raw["title"]; ok {
 		var s string
 		if err := json.Unmarshal(v, &s); err != nil {

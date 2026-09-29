@@ -5,7 +5,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func cmdList(stdout io.Writer, issues, adrs, long bool, status string) error {
@@ -18,7 +18,7 @@ func cmdList(stdout io.Writer, issues, adrs, long bool, status string) error {
 	}
 	defer func() { _ = st.Close() }()
 	if issues {
-		list, err := st.ListIssues(store.IssueFilter{Status: status})
+		list, err := st.ListIssues(model.IssueFilter{Status: status})
 		if err != nil {
 			return err
 		}

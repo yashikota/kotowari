@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listADRs(w http.ResponseWriter, _ *http.Request) {
@@ -33,7 +33,7 @@ func (s *Server) createADR(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateADR(store.CreateADRInput{
+	out, err := s.store.CreateADR(model.CreateADRInput{
 		ProjectSlug: in.ProjectSlug, Title: in.Title, Body: in.Body, Status: in.Status, Evaluation: in.Evaluation,
 		Replay: in.Replay, Workload: in.Workload, IssueNumbers: in.IssueNumbers, Supersedes: in.Supersedes,
 	})
@@ -59,7 +59,7 @@ func (s *Server) patchADR(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	in := store.PatchADRInput{}
+	in := model.PatchADRInput{}
 	if v, ok := raw["projectSlug"]; ok {
 		slug, err := unmarshalOptString(v)
 		if err != nil {

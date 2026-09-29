@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listInitiatives(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +108,7 @@ func (s *Server) patchInitiative(w http.ResponseWriter, r *http.Request) {
 	} else if in.TargetDate != nil {
 		target = &in.TargetDate
 	}
-	out, err := s.store.UpdateInitiative(r.PathValue("slug"), store.UpdateInitiativeInput{
+	out, err := s.store.UpdateInitiative(r.PathValue("slug"), model.UpdateInitiativeInput{
 		Name: in.Name, Description: in.Description, Status: in.Status, Color: in.Color,
 		Health: in.Health, Priority: in.Priority, Labels: in.Labels,
 		StartDate: start, TargetDate: target, ProjectSlugs: in.ProjectSlugs,

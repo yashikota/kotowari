@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) listCycles(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +92,7 @@ func (s *Server) patchCycle(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.UpdateCycle(n, store.UpdateCycleInput{
+	out, err := s.store.UpdateCycle(n, model.UpdateCycleInput{
 		Name: in.Name, Description: in.Description, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
 		Status: in.Status, IsFavorite: in.IsFavorite,
 		NotifyOnIssueAdded: in.NotifyOnIssueAdded, NotifyOnIssueCompleted: in.NotifyOnIssueCompleted, Archived: in.Archived,

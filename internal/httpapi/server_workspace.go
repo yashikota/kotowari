@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/yashikota/kotowari/internal/store"
+	"github.com/yashikota/kotowari/internal/model"
 )
 
 func (s *Server) getWorkspace(w http.ResponseWriter, _ *http.Request) {
@@ -26,7 +26,7 @@ func (s *Server) listIssueWorkflowStatuses(w http.ResponseWriter, _ *http.Reques
 
 func (s *Server) updateIssueWorkflowStatuses(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Statuses []store.IssueWorkflowStatus `json:"statuses"`
+		Statuses []model.IssueWorkflowStatus `json:"statuses"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
@@ -51,7 +51,7 @@ func (s *Server) listProjectWorkflowStatuses(w http.ResponseWriter, _ *http.Requ
 
 func (s *Server) updateProjectWorkflowStatuses(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Statuses []store.ProjectWorkflowStatus `json:"statuses"`
+		Statuses []model.ProjectWorkflowStatus `json:"statuses"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
@@ -82,8 +82,8 @@ func (s *Server) patchWorkspace(w http.ResponseWriter, r *http.Request) {
 		URL                     *string                        `json:"url"`
 		Description             *string                        `json:"description"`
 		GitHubURL               *string                        `json:"githubUrl"`
-		CycleSettings           *store.CycleSettings           `json:"cycleSettings"`
-		IssueAutomationSettings *store.IssueAutomationSettings `json:"issueAutomationSettings"`
+		CycleSettings           *model.CycleSettings           `json:"cycleSettings"`
+		IssueAutomationSettings *model.IssueAutomationSettings `json:"issueAutomationSettings"`
 	}
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
