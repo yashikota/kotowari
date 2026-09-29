@@ -4,6 +4,18 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   page,
   request,
 }) => {
+  const initiativeSlugPrefix = 'e2e-initiative-list-';
+  const previousInitiatives = await request.get('/api/initiatives');
+  expect(previousInitiatives.ok(), await previousInitiatives.text()).toBeTruthy();
+  const existingInitiatives = (await previousInitiatives.json()) as Array<{ slug: string }>;
+  for (const initiative of existingInitiatives) {
+    if (!initiative.slug.startsWith(initiativeSlugPrefix)) continue;
+    const response = await request.delete(
+      `/api/initiatives/${encodeURIComponent(initiative.slug)}`,
+    );
+    expect(response.ok(), await response.text()).toBeTruthy();
+  }
+
   await page.goto('/initiatives');
   await expect(
     page.getByText(
@@ -28,6 +40,9 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   const label = `initiative-${stamp}`;
   const detailLabel = `initiative-detail-${stamp}`;
   const projectSlug = `initiative-list-project-${stamp}`;
+  const activeSlug = `${initiativeSlugPrefix}active-${stamp}`;
+  const plannedSlug = `${initiativeSlugPrefix}planned-${stamp}`;
+  const proposedSlug = `${initiativeSlugPrefix}proposed-${stamp}`;
   const labelResponse = await request.post('/api/labels', {
     data: { name: label, color: '#7950f2' },
   });
@@ -50,7 +65,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   const activeResponse = await request.post('/api/initiatives', {
     data: {
       name: activeName,
-      slug: `active-initiative-${stamp}`,
+      slug: activeSlug,
       status: 'active',
       description: 'Ship the next version',
       targetDate: '2026-11-20',
@@ -65,7 +80,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   const plannedResponse = await request.post('/api/initiatives', {
     data: {
       name: plannedName,
-      slug: `planned-initiative-${stamp}`,
+      slug: plannedSlug,
       status: 'planned',
       targetDate: '2026-12-10',
       priority: 3,
@@ -75,7 +90,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   const proposedResponse = await request.post('/api/initiatives', {
     data: {
       name: proposedName,
-      slug: `proposed-initiative-${stamp}`,
+      slug: proposedSlug,
       status: 'proposed',
     },
   });
@@ -208,7 +223,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect
     .poll(async () => {
-      const response = await request.get(`/api/initiatives/active-initiative-${stamp}`);
+      const response = await request.get(`/api/initiatives/${activeSlug}`);
       return (await response.json()) as {
         status: string;
         priority: number;
@@ -225,7 +240,7 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
     });
   await expect
     .poll(async () => {
-      const response = await request.get(`/api/initiatives/active-initiative-${stamp}`);
+      const response = await request.get(`/api/initiatives/${activeSlug}`);
       return (await response.json()) as { completedAt?: string };
     })
     .toHaveProperty('completedAt');
