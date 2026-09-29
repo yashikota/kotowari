@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router';
 import {
   ActionIcon,
   Box,
@@ -14,20 +13,14 @@ import {
 } from '@mantine/core';
 import {
   IconArchive,
-  IconClock,
-  IconBell,
   IconCheck,
-  IconCircleDot,
   IconChevronDown,
-  IconChevronLeft,
   IconDots,
-  IconInbox,
-  IconMessage,
-  IconPaperclip,
   IconAdjustments,
   IconSettings,
   IconTrash,
 } from '@tabler/icons-react';
+import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope } from '../application/Root.tsx';
@@ -38,6 +31,8 @@ import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 import { useInboxPresenter } from '../presenters/Inbox.tsx';
 import type { InboxActivity } from '../types.ts';
 import { INBOX_PRIORITY_TYPES, type InboxPriorityType } from '../inbox-state.ts';
+import { InboxActivityDetails } from './InboxActivityDetails.tsx';
+import { InboxActivityIcon } from './InboxActivityIcon.tsx';
 import styles from './InboxPages.module.css';
 
 type InboxModel = ReturnType<typeof useInboxPresenter>;
@@ -54,15 +49,6 @@ function activityGroup(
   if (daysAgo === 1) return 'yesterday';
   if (daysAgo < 7) return 'thisWeek';
   return 'earlier';
-}
-
-function activityIcon(action: string) {
-  if (action.startsWith('cycle_issue_')) return <IconCircleDot size={15} aria-hidden />;
-  if (action.startsWith('comment')) return <IconMessage size={15} aria-hidden />;
-  if (action.includes('reaction')) return <IconBell size={15} aria-hidden />;
-  if (action.startsWith('attachment_')) return <IconPaperclip size={15} aria-hidden />;
-  if (action === 'status_changed') return <IconCircleDot size={15} aria-hidden />;
-  return <IconInbox size={15} aria-hidden />;
 }
 
 function InboxPageView({ model }: { model: InboxModel }) {
@@ -106,7 +92,6 @@ function InboxPageView({ model }: { model: InboxModel }) {
     reviews: t('inbox.priorityReviews'),
     updateReminders: t('inbox.priorityUpdateReminders'),
   };
-  const selected = model.selectedActivity;
   const hasFilters = Object.values(model.filters).some((values) => values.length > 0);
   const emptyMessage = model.onlyUnread || hasFilters ? t('inbox.emptyFiltered') : t('inbox.empty');
 
@@ -468,7 +453,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
                               onClick={() => model.handlers.onSelect(activity.id)}
                             >
                               <span className={styles.activityIcon} aria-hidden>
-                                {activityIcon(activity.action)}
+                                <InboxActivityIcon action={activity.action} />
                               </span>
                               <span className={styles.activityContent}>
                                 <span className={styles.activityTitle}>
@@ -498,129 +483,7 @@ function InboxPageView({ model }: { model: InboxModel }) {
           </ScrollArea>
         </Box>
 
-        <Box component="section" aria-label={t('inbox.details')} className={styles.detailPane}>
-          {selected ? (
-            <>
-              <Group
-                justify="space-between"
-                align="center"
-                wrap="nowrap"
-                className={styles.detailToolbar}
-              >
-                <Group gap="xs" wrap="nowrap">
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    size="compact-sm"
-                    leftSection={<IconChevronLeft size={14} />}
-                    className={styles.mobileBack}
-                    onClick={model.handlers.onCloseSelected}
-                  >
-                    {t('inbox.back')}
-                  </Button>
-                  <Text size="xs" c="dimmed">
-                    {t('inbox.issueActivity')}
-                  </Text>
-                </Group>
-                <Group gap={4} wrap="nowrap">
-                  <Menu
-                    opened={model.snoozeMenuOpen}
-                    onChange={model.handlers.onSetSnoozeMenuOpen}
-                    position="bottom-end"
-                    withinPortal
-                  >
-                    <Menu.Target>
-                      <ActionIcon
-                        type="button"
-                        variant="subtle"
-                        color="gray"
-                        aria-label={t('inbox.snooze')}
-                      >
-                        <IconClock size={15} aria-hidden />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      <Menu.Label>{t('inbox.snoozeUntil')}</Menu.Label>
-                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('one-hour')}>
-                        {t('inbox.snoozeOneHour')}
-                      </Menu.Item>
-                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('later-today')}>
-                        {t('inbox.snoozeLaterToday')}
-                      </Menu.Item>
-                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('tomorrow')}>
-                        {t('inbox.snoozeTomorrow')}
-                      </Menu.Item>
-                      <Menu.Item onClick={() => model.handlers.onSnoozeSelected('next-week')}>
-                        {t('inbox.snoozeNextWeek')}
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    aria-label={t('inbox.deleteNotification')}
-                    onClick={model.handlers.onDeleteSelected}
-                  >
-                    <IconTrash size={15} aria-hidden />
-                  </ActionIcon>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    aria-label={t(model.selectedIsRead ? 'inbox.markUnread' : 'inbox.markRead')}
-                    onClick={model.handlers.onMarkSelectedRead}
-                  >
-                    <IconCheck size={15} aria-hidden />
-                  </ActionIcon>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    color="gray"
-                    aria-label={t('inbox.archive')}
-                    onClick={model.handlers.onArchiveSelected}
-                  >
-                    <IconArchive size={15} aria-hidden />
-                  </ActionIcon>
-                </Group>
-              </Group>
-              <Stack gap="md" className={styles.detailContent}>
-                <Group gap="xs" c="dimmed">
-                  {activityIcon(selected.action)}
-                  <Text size="xs">
-                    {selected.identifier} · {formatRelativeTime(selected.createdAt, i18n.language)}
-                  </Text>
-                </Group>
-                <Title order={2} size="lg" fw={550}>
-                  {selected.title}
-                </Title>
-                <Text size="sm">{formatActivity(selected.action, selected.payload)}</Text>
-                {model.commentPreview ? (
-                  <Box className={styles.commentPreview}>
-                    <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-                      {model.commentPreview}
-                    </Text>
-                  </Box>
-                ) : null}
-                <Link
-                  to="/issues/$identifier"
-                  params={{ identifier: selected.identifier }}
-                  className={styles.openIssue}
-                >
-                  {t('inbox.openIssue')}
-                </Link>
-              </Stack>
-            </>
-          ) : (
-            <Box className={styles.noSelection}>
-              <IconInbox size={42} stroke={1.2} aria-hidden />
-              <Text size="sm" c="dimmed">
-                {t('inbox.noSelection')}
-              </Text>
-            </Box>
-          )}
-        </Box>
+        <InboxActivityDetails model={model} />
       </Box>
       <Modal
         opened={model.deleteConfirmation !== null}
