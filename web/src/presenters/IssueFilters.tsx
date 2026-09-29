@@ -3,6 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMachineFlag, useRootMachineFlag } from '../application/Root.tsx';
 import type { IssueSearch } from '../issue-search.ts';
+import {
+  clearIssueSearchFilters,
+  removeIssueFilter,
+  setIssueLabelOperator,
+  toggleIssueAddedToCycle,
+  toggleIssueLabel,
+  toggleIssueLinkSource,
+  toggleIssueProjectLabel,
+  toggleIssueTemplate,
+} from '../issue-filter-transitions.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import { buildIssueFilterChips } from '../issue-filter-chips.ts';
 import { interpretIssueFilterQuery } from '../issue-filter-query.ts';
@@ -451,20 +461,8 @@ export function useIssueFiltersPresenter({
         set({ dueDate: value ? (value as NonNullable<IssueSearch['dueDate']>) : undefined }),
       onRelationChange: (value: string) =>
         set({ relation: value ? (value as NonNullable<IssueSearch['relation']>) : undefined }),
-      onToggleLinkSource: (value: string) => {
-        const current = searchRef.current.linkSources ?? [];
-        const next = current.includes(value)
-          ? current.filter((source) => source !== value)
-          : [...current, value];
-        set({ linkSources: next.length > 0 ? next : undefined });
-      },
-      onToggleTemplateSlug: (value: string) => {
-        const current = searchRef.current.templateSlugs ?? [];
-        const next = current.includes(value)
-          ? current.filter((slug) => slug !== value)
-          : [...current, value];
-        set({ templateSlugs: next.length > 0 ? next : undefined });
-      },
+      onToggleLinkSource: (value: string) => set(toggleIssueLinkSource(searchRef.current, value)),
+      onToggleTemplateSlug: (value: string) => set(toggleIssueTemplate(searchRef.current, value)),
       onContentChange: (value: string) => set({ content: value.trim() ? value : undefined }),
       onMilestoneNameChange: (value: string) =>
         set({ milestoneName: value.trim() ? value : undefined }),
@@ -524,158 +522,21 @@ export function useIssueFiltersPresenter({
       onDisplayPropertyToggle: (value: IssueDisplayProperty) => onDisplayPropertyToggle?.(value),
       onDetailsToggle: () => onDetailsToggle?.(),
       onClearFilters: () => {
-        set({
-          status: undefined,
-          statuses: undefined,
-          priority: undefined,
-          priorities: undefined,
-          assignee: undefined,
-          subscribers: undefined,
-          project: undefined,
-          cycle: undefined,
-          type: undefined,
-          estimate: undefined,
-          estimates: undefined,
-          noEstimate: undefined,
-          dueDate: undefined,
-          relation: undefined,
-          linkSources: undefined,
-          templateSlugs: undefined,
-          content: undefined,
-          milestoneName: undefined,
-          dateField: undefined,
-          dateRange: undefined,
-          projectStatus: undefined,
-          projectPriority: undefined,
-          projectLabels: undefined,
-          addedToCycle: undefined,
-          advancedFilter: undefined,
-          advancedFilterGroup: undefined,
-          labels: undefined,
-          labelOperator: undefined,
-        });
+        set(clearIssueSearchFilters());
         onFind?.('');
       },
       onRemoveFilter: (key: string) => {
-        if (key.startsWith('linkSource:')) {
-          const current = searchRef.current.linkSources ?? [];
-          const next = current.filter((source) => source !== key.slice('linkSource:'.length));
-          set({ linkSources: next.length > 0 ? next : undefined });
-          return;
-        }
-        if (key.startsWith('template:')) {
-          const current = searchRef.current.templateSlugs ?? [];
-          const next = current.filter((slug) => slug !== key.slice('template:'.length));
-          set({ templateSlugs: next.length > 0 ? next : undefined });
-          return;
-        }
-        if (key.startsWith('label:')) {
-          const currentLabels = (searchRef.current.labels ?? '')
-            .split(',')
-            .map((label) => label.trim())
-            .filter(Boolean);
-          const next = currentLabels.filter((label) => label !== key.slice(6));
-          const nextOperator =
-            next.length === 0
-              ? undefined
-              : next.length === 1 && searchRef.current.labelOperator === 'includeAll'
-                ? 'includeAny'
-                : searchRef.current.labelOperator;
-          set({
-            labels: next.length > 0 ? next.join(',') : undefined,
-            labelOperator: nextOperator,
-          });
-        } else if (key.startsWith('projectLabel:')) {
-          const currentLabels = searchRef.current.projectLabels ?? [];
-          const next = currentLabels.filter((label) => label !== key.slice(13));
-          set({ projectLabels: next.length > 0 ? next : undefined });
-        } else if (key.startsWith('addedToCycle:')) {
-          const current = searchRef.current.addedToCycle ?? [];
-          const next = current.filter((phase) => phase !== key.slice('addedToCycle:'.length));
-          set({ addedToCycle: next.length ? next : undefined });
-        } else if (
-          key === 'status' ||
-          key === 'statuses' ||
-          key === 'priority' ||
-          key === 'priorities' ||
-          key === 'assignee' ||
-          key === 'subscribers' ||
-          key === 'project' ||
-          key === 'cycle' ||
-          key === 'priority' ||
-          key === 'type' ||
-          key === 'estimate' ||
-          key === 'estimates' ||
-          key === 'noEstimate' ||
-          key === 'dueDate' ||
-          key === 'relation' ||
-          key === 'content' ||
-          key === 'milestoneName' ||
-          key === 'date' ||
-          key === 'projectStatus' ||
-          key === 'projectPriority' ||
-          key === 'advancedFilter'
-        ) {
-          if (key === 'advancedFilter') {
-            set({ advancedFilter: undefined, advancedFilterGroup: undefined });
-          } else if (key === 'status' || key === 'statuses') {
-            set({ status: undefined, statuses: undefined });
-          } else if (key === 'priority' || key === 'priorities') {
-            set({ priority: undefined, priorities: undefined });
-          } else if (key === 'subscribers') {
-            set({ subscribers: undefined });
-          } else if (key === 'estimate' || key === 'estimates' || key === 'noEstimate') {
-            set({ estimate: undefined, estimates: undefined, noEstimate: undefined });
-          } else {
-            set({ [key]: undefined });
-          }
-        }
+        const patch = removeIssueFilter(searchRef.current, key);
+        if (patch) set(patch);
       },
-      onToggleLabel: (name: string) => {
-        const currentLabels = (searchRef.current.labels ?? '')
-          .split(',')
-          .map((label) => label.trim())
-          .filter(Boolean);
-        const next = currentLabels.includes(name)
-          ? currentLabels.filter((label) => label !== name)
-          : [...currentLabels, name];
-        const currentOperator =
-          searchRef.current.labelOperator ??
-          (currentLabels.length > 1 ? 'includeAll' : 'includeAny');
-        const nextOperator =
-          next.length === 0
-            ? undefined
-            : next.length > 1 && currentLabels.length < 2 && currentOperator === 'includeAny'
-              ? 'includeAll'
-              : next.length === 1 && currentOperator === 'includeAll'
-                ? 'includeAny'
-                : currentOperator;
-        set({ labels: next.length ? next.join(',') : undefined, labelOperator: nextOperator });
-      },
+      onToggleLabel: (name: string) => set(toggleIssueLabel(searchRef.current, name)),
       onLabelOperatorChange: (value: string) => {
-        if (['includeAny', 'includeAll', 'excludeAny', 'excludeAll'].includes(value)) {
-          set({ labelOperator: value as NonNullable<IssueSearch['labelOperator']> });
-        }
+        const patch = setIssueLabelOperator(value);
+        if (patch) set(patch);
       },
-      onToggleProjectLabel: (name: string) => {
-        const current = searchRef.current.projectLabels ?? [];
-        const next =
-          name === '__none__'
-            ? current.includes('__none__')
-              ? []
-              : ['__none__']
-            : current.includes(name)
-              ? current.filter((label) => label !== name && label !== '__none__')
-              : [...current.filter((label) => label !== '__none__'), name];
-        set({ projectLabels: next.length ? next : undefined });
-      },
-      onToggleAddedToCycle: (phase: NonNullable<IssueSearch['addedToCycle']>[number]) => {
-        const current = searchRef.current.addedToCycle ?? [];
-        const next = current.includes(phase)
-          ? current.filter((value) => value !== phase)
-          : [...current, phase];
-        set({ addedToCycle: next.length ? next : undefined });
-      },
+      onToggleProjectLabel: (name: string) => set(toggleIssueProjectLabel(searchRef.current, name)),
+      onToggleAddedToCycle: (phase: NonNullable<IssueSearch['addedToCycle']>[number]) =>
+        set(toggleIssueAddedToCycle(searchRef.current, phase)),
     },
   };
 }
