@@ -52,6 +52,39 @@ type CreateIssueInput struct {
 	RecurringSlug  *string
 }
 
+// CreateIssueRequest is the HTTP payload for creating an issue. Its links and
+// recurring fields describe API behavior that is translated into the Store
+// input separately.
+type CreateIssueRequest struct {
+	Title          string                     `json:"title"`
+	Body           string                     `json:"body"`
+	Status         string                     `json:"status"`
+	WorkflowStatus string                     `json:"workflowStatus"`
+	Assignee       string                     `json:"assignee"`
+	Type           string                     `json:"type"`
+	Priority       int                        `json:"priority"`
+	Estimate       *int                       `json:"estimate"`
+	ProjectID      *int64                     `json:"projectId"`
+	MilestoneID    *int64                     `json:"milestoneId"`
+	CycleID        *int64                     `json:"cycleId"`
+	ParentID       *int64                     `json:"parentId"`
+	DueDate        *string                    `json:"dueDate"`
+	LabelIDs       []int64                    `json:"labelIds"`
+	Links          []CreateIssueLinkInput     `json:"links"`
+	TemplateSlug   string                     `json:"templateSlug"`
+	Recurring      *CreateRecurringIssueInput `json:"recurring"`
+}
+
+func (in CreateIssueRequest) IssueInput() CreateIssueInput {
+	return CreateIssueInput{
+		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus,
+		Assignee: in.Assignee, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
+		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID,
+		ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs,
+		ExternalLinks: in.Links, TemplateSlug: in.TemplateSlug,
+	}
+}
+
 type PatchIssueInput struct {
 	Title          *string
 	Body           *string

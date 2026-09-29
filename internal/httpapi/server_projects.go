@@ -16,38 +16,12 @@ func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Name           string                    `json:"name"`
-		Slug           string                    `json:"slug"`
-		Summary        string                    `json:"summary"`
-		Icon           string                    `json:"icon"`
-		IconColor      string                    `json:"iconColor"`
-		Description    string                    `json:"description"`
-		Status         string                    `json:"status"`
-		WorkflowStatus string                    `json:"workflowStatus"`
-		TemplateSlug   string                    `json:"templateSlug"`
-		Lead           string                    `json:"lead"`
-		Priority       int                       `json:"priority"`
-		StartDate      *string                   `json:"startDate"`
-		TargetDate     *string                   `json:"targetDate"`
-		Labels         []string                  `json:"labels"`
-		Milestones     []model.MilestoneInput    `json:"milestones"`
-		Dependencies   []model.ProjectDependency `json:"dependencies"`
-	}
+	var in model.CreateProjectRequest
 	if err := decodeJSON(r, &in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	out, err := s.store.CreateProject(model.ProjectCreateInput{
-		Name: in.Name, Slug: in.Slug, Summary: in.Summary, Icon: in.Icon,
-		IconColor: in.IconColor, Description: in.Description, Status: in.Status,
-		WorkflowStatus: in.WorkflowStatus, Priority: in.Priority,
-		StartDate: in.StartDate, TargetDate: in.TargetDate, Labels: in.Labels,
-		Options: model.ProjectCreationOptions{
-			TemplateSlug: in.TemplateSlug, Lead: in.Lead,
-			Milestones: in.Milestones, Dependencies: in.Dependencies,
-		},
-	})
+	out, err := s.store.CreateProject(in.ProjectInput())
 	if err != nil {
 		writeError(w, err)
 		return

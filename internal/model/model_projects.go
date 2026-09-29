@@ -145,6 +145,40 @@ type ProjectCreateInput struct {
 	Options        ProjectCreationOptions
 }
 
+// CreateProjectRequest is the flattened HTTP payload. Project creation
+// options are grouped in ProjectCreateInput for Store operations.
+type CreateProjectRequest struct {
+	Name           string              `json:"name"`
+	Slug           string              `json:"slug"`
+	Summary        string              `json:"summary"`
+	Icon           string              `json:"icon"`
+	IconColor      string              `json:"iconColor"`
+	Description    string              `json:"description"`
+	Status         string              `json:"status"`
+	WorkflowStatus string              `json:"workflowStatus"`
+	TemplateSlug   string              `json:"templateSlug"`
+	Lead           string              `json:"lead"`
+	Priority       int                 `json:"priority"`
+	StartDate      *string             `json:"startDate"`
+	TargetDate     *string             `json:"targetDate"`
+	Labels         []string            `json:"labels"`
+	Milestones     []MilestoneInput    `json:"milestones"`
+	Dependencies   []ProjectDependency `json:"dependencies"`
+}
+
+func (in CreateProjectRequest) ProjectInput() ProjectCreateInput {
+	return ProjectCreateInput{
+		Name: in.Name, Slug: in.Slug, Summary: in.Summary, Icon: in.Icon,
+		IconColor: in.IconColor, Description: in.Description, Status: in.Status,
+		WorkflowStatus: in.WorkflowStatus, Priority: in.Priority,
+		StartDate: in.StartDate, TargetDate: in.TargetDate, Labels: in.Labels,
+		Options: ProjectCreationOptions{
+			TemplateSlug: in.TemplateSlug, Lead: in.Lead,
+			Milestones: in.Milestones, Dependencies: in.Dependencies,
+		},
+	}
+}
+
 type ProjectUpdateInput struct {
 	Slug            string
 	Name            *string
