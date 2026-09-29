@@ -1,16 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Group,
-  Menu,
-  Modal,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-} from '@mantine/core';
+import { ActionIcon, Box, Button, Group, Menu, Stack, Text } from '@mantine/core';
 import {
   IconExternalLink,
   IconDotsVertical,
@@ -29,6 +18,7 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { CycleProgressSummary } from '../components/CycleProgressSummary.tsx';
 import { CycleProgressChart } from '../components/CycleProgressChart.tsx';
 import { CycleProgressBreakdown } from '../components/CycleProgressBreakdown.tsx';
+import { CycleDetailDialogs } from '../components/CycleDetailDialogs.tsx';
 
 import { CycleDateRangeControl } from '../components/CycleDateRangeControl.tsx';
 
@@ -436,111 +426,32 @@ export function CycleDetailPageView({
               ) : null}
             </SplitLayout>
           </Box>
-          <Modal
-            opened={metadataOpen}
-            onClose={handlers.onCloseMetadata}
-            title={t('cycle.editNameAndDescription')}
-            centered
-          >
-            <Box component="form" onSubmit={handlers.onSaveMetadata}>
-              <Stack>
-                <TextInput
-                  required
-                  maxLength={120}
-                  label={t('cycle.name')}
-                  value={nameDraft}
-                  onChange={handlers.onNameChange}
-                />
-                <Textarea
-                  label={t('cycle.description')}
-                  value={descriptionDraft}
-                  onChange={handlers.onDescriptionChange}
-                  minRows={3}
-                  autosize
-                />
-                <Group justify="flex-end">
-                  <Button type="button" variant="default" onClick={handlers.onCloseMetadata}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={!nameDraft.trim()}>
-                    {t('common.save')}
-                  </Button>
-                </Group>
-              </Stack>
-            </Box>
-          </Modal>
-          <Modal
-            opened={datesOpen}
-            onClose={handlers.onCloseDates}
-            title={t('cycle.changeDates')}
-            centered
-          >
-            <Box component="form" onSubmit={handlers.onSaveDates}>
-              <Stack>
-                <TextInput
-                  type="date"
-                  label={t('cycle.startDate')}
-                  value={startDateDraft}
-                  disabled={cycle.status === 'active'}
-                  onChange={handlers.onStartDateChange}
-                />
-                {cycle.status === 'active' ? (
-                  <Text size="xs" c="dimmed">
-                    {t('cycle.activeStartDateHint')}
-                  </Text>
-                ) : null}
-                <TextInput
-                  type="date"
-                  label={t('cycle.endDate')}
-                  value={endDateDraft}
-                  onChange={handlers.onEndDateChange}
-                />
-                <Group justify="flex-end">
-                  <Button type="button" variant="default" onClick={handlers.onCloseDates}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={!datesValid}>
-                    {t('common.save')}
-                  </Button>
-                </Group>
-              </Stack>
-            </Box>
-          </Modal>
-          <Modal
-            opened={resourceLinkOpen}
-            onClose={handlers.onCloseResourceLink}
-            title={t('cycle.addLinkTitle')}
-            centered
-          >
-            <Box component="form" onSubmit={handlers.onAddResourceLink}>
-              <Stack>
-                <TextInput
-                  type="url"
-                  required
-                  label={t('cycle.url')}
-                  placeholder={t('ui.urlPlaceholder')}
-                  value={resourceURL}
-                  onChange={handlers.onResourceURLChange}
-                />
-                <TextInput
-                  label={t('cycle.linkTitle')}
-                  value={resourceTitle}
-                  onChange={handlers.onResourceTitleChange}
-                />
-                {resourceError ? (
-                  <Text size="sm" c="red" role="alert">
-                    {resourceError}
-                  </Text>
-                ) : null}
-                <Group justify="flex-end">
-                  <Button type="button" variant="default" onClick={handlers.onCloseResourceLink}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit">{t('cycle.saveLink')}</Button>
-                </Group>
-              </Stack>
-            </Box>
-          </Modal>
+          <CycleDetailDialogs
+            cycleStatus={cycle.status}
+            metadataOpen={metadataOpen}
+            datesOpen={datesOpen}
+            resourceLinkOpen={resourceLinkOpen}
+            nameDraft={nameDraft}
+            descriptionDraft={descriptionDraft}
+            startDateDraft={startDateDraft}
+            endDateDraft={endDateDraft}
+            datesValid={datesValid}
+            resourceURL={resourceURL}
+            resourceTitle={resourceTitle}
+            resourceError={resourceError}
+            onCloseMetadata={handlers.onCloseMetadata}
+            onSaveMetadata={handlers.onSaveMetadata}
+            onNameChange={handlers.onNameChange}
+            onDescriptionChange={handlers.onDescriptionChange}
+            onCloseDates={handlers.onCloseDates}
+            onSaveDates={handlers.onSaveDates}
+            onStartDateChange={handlers.onStartDateChange}
+            onEndDateChange={handlers.onEndDateChange}
+            onCloseResourceLink={handlers.onCloseResourceLink}
+            onAddResourceLink={handlers.onAddResourceLink}
+            onResourceURLChange={handlers.onResourceURLChange}
+            onResourceTitleChange={handlers.onResourceTitleChange}
+          />
         </Box>
       );
     }
