@@ -17,6 +17,7 @@ import type { ProjectBoardGrouping, ProjectViewSearch } from '../project-view-se
 import type { ProjectSavedView } from '../project-views.ts';
 import { matchesProjectViewSearch } from '../project-view-filtering.ts';
 import { groupProjects } from '../project-grouping.ts';
+import { manualProjectOrder, sortProjectList } from '../project-ordering.ts';
 import {
   buildProjectBoardLayout,
   moveProjectBoardGroup,
@@ -209,65 +210,16 @@ export function useProjectsPagePresenter() {
     return counts;
   }, [data.issues]);
   const filteredProjects = useMemo(() => {
-    const projectsToSort = projects.filter((project) => matchesProjectViewSearch(project, search));
-    const orderBy = search.orderBy ?? 'manual';
-    const direction = search.direction === 'desc' ? -1 : 1;
-    const originalOrder = new Map(projects.map((project, index) => [project.slug, index]));
-    const manualOrder = new Map((search.manualOrder ?? []).map((slug, index) => [slug, index]));
-    const statusOrder = new Map(projectWorkflowStatuses.map((item, index) => [item.id, index]));
-    projectsToSort.sort((left, right) => {
-      let result = 0;
-      if (orderBy === 'manual') {
-        const leftIndex = manualOrder.get(left.slug);
-        const rightIndex = manualOrder.get(right.slug);
-        if (leftIndex !== undefined || rightIndex !== undefined) {
-          if (leftIndex === undefined) return 1;
-          if (rightIndex === undefined) return -1;
-          result = leftIndex - rightIndex;
-        } else {
-          result = (originalOrder.get(left.slug) ?? 0) - (originalOrder.get(right.slug) ?? 0);
-        }
-      } else if (orderBy === 'priority') {
-        const rank = (value: number) => (value === 0 ? 5 : value);
-        result = rank(left.priority) - rank(right.priority);
-      } else if (orderBy === 'status') {
-        result =
-          (statusOrder.get(left.workflowStatus ?? left.status) ?? 0) -
-          (statusOrder.get(right.workflowStatus ?? right.status) ?? 0);
-      } else if (orderBy === 'healthUpdated') {
-        const leftDate = left.healthUpdatedAt || '';
-        const rightDate = right.healthUpdatedAt || '';
-        if (!leftDate || !rightDate) {
-          if (leftDate !== rightDate) return leftDate ? -1 : 1;
-        } else result = leftDate.localeCompare(rightDate);
-      } else {
-        const field =
-          orderBy === 'name'
-            ? 'name'
-            : orderBy === 'startDate'
-              ? 'startDate'
-              : orderBy === 'targetDate'
-                ? 'targetDate'
-                : orderBy === 'created'
-                  ? 'createdAt'
-                  : 'updatedAt';
-        const value = (project: Project) => project[field] ?? '';
-        result = value(left).localeCompare(value(right));
-      }
-      return result === 0 ? left.slug.localeCompare(right.slug) : result * direction;
-    });
-    return projectsToSort;
-  }, [
-    projects,
-    search.closed,
-    search.dateField,
-    search.dateFrom,
-    search.dateTo,
-    search.direction,
-    search.orderBy,
-    search,
-    projectWorkflowStatuses,
-  ]);
+    const matching = projects.filter((project) => matchesProjectViewSearch(project, search));
+    return sortProjectList(
+      matching,
+      projects,
+      search.orderBy ?? 'manual',
+      search.direction ?? 'asc',
+      search.manualOrder,
+      projectWorkflowStatuses.map((status) => status.id),
+    );
+  }, [projects, search, projectWorkflowStatuses]);
 
   const groupBy = search.groupBy ?? 'none';
   const projectGroups = useMemo(() => {
@@ -378,19 +330,7 @@ export function useProjectsPagePresenter() {
     (search.specificProject ? 1 : 0);
   function reorderProject(source: string, target: string, direction: -1 | 1) {
     if ((search.orderBy ?? 'manual') !== 'manual' || source === target) return;
-    const originalOrder = new Map(projects.map((project, index) => [project.slug, index]));
-    const currentOrder = projects
-      .map((project) => project.slug)
-      .sort((left, right) => {
-        const leftIndex = search.manualOrder?.indexOf(left) ?? -1;
-        const rightIndex = search.manualOrder?.indexOf(right) ?? -1;
-        if (leftIndex >= 0 || rightIndex >= 0) {
-          if (leftIndex < 0) return 1;
-          if (rightIndex < 0) return -1;
-          return leftIndex - rightIndex;
-        }
-        return (originalOrder.get(left) ?? 0) - (originalOrder.get(right) ?? 0);
-      });
+    const currentOrder = manualProjectOrder(projects, search.manualOrder);
     const sourceIndex = currentOrder.indexOf(source);
     const targetIndex = currentOrder.indexOf(target);
     if (sourceIndex < 0 || targetIndex < 0) return;

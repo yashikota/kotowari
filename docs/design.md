@@ -314,6 +314,8 @@ Project viewのsearch型、advanced filter parser、title検索はReact hookやl
 
 ProjectListControlsのpresenter/view契約は `project-list-controls.ts` に置き、componentを参照せずにpresenterとfilter表示モデルから共有する。ProjectFilterPickerの選択状態をactive chipへ変換する処理は `project-filter-chips.ts` に置き、カテゴリ別の入力UIは `ProjectFilterEditor.tsx` に分ける。
 
+Projects一覧のproperty sortとmanual order規則は `project-ordering.ts` に置き、表示順とdrag reorderで同じmanual order処理を使う。
+
 Initiative一覧と詳細はroute単位で `InitiativesPages.tsx` と `InitiativeDetailPages.tsx` に分ける。両方で使うstatus・health・color選択肢は `initiative-options.ts` を共有する。
 
 Inboxの選択中activity detail paneは `InboxActivityDetails.tsx`、actionからアイコンを選ぶ処理は `InboxActivityIcon.tsx`、priority inboxと表示設定の操作は `InboxDisplayOptionsMenu.tsx` に分ける。`InboxPages.tsx` はtoolbar、activity list、ページレイアウトを構成する。
