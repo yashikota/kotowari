@@ -8,7 +8,8 @@ import styles from './IssueBoardColumn.module.css';
 import { IssueSelectionToolbar } from './IssueSelectionToolbar.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
-import { useIssueBoardPresenter, useIssueListPresenter } from '../presenters/IssueList.tsx';
+import { useIssueBoardPresenter } from '../presenters/IssueBoard.ts';
+import { useIssueListPresenter } from '../presenters/IssueList.tsx';
 
 export function IssueListView({
   model,

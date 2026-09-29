@@ -302,6 +302,8 @@ Config画面のWorkspace・Cycle・Issue automation設定は `useConfigWorkspace
 
 Issue filter presenter から検索条件の表示用chip生成を `issue-filter-chips.ts` に分ける。検索条件と選択肢、翻訳関数を受け取り表示モデルへ変換し、filter menu はchip型をこの表示モデル境界から参照する。`IssueFilterMenu.tsx` はカテゴリ検索、メニュー状態、chip表示を担当し、各カテゴリの入力UIは `IssueFilterCategoryEditor.tsx` に分ける。選択肢一覧・label chip・単一選択の再利用UIは `IssueFilterControls.tsx` に置く。
 
+Issue一覧のlist presenterは `IssueList.tsx`、workflow statusごとのcolumn生成・board操作は `IssueBoard.ts` に分ける。Board列のprops型は `issue-board.ts` に置き、presenterとviewの間でcomponentを経由せず共有する。
+
 Projects一覧とProject View Builderが共有するTimelineモデル型・月送り・週番号とレイアウト計算は `project-timeline.ts` に置く。Timeline view component は表示だけを担当し、presenter側で重複していた計算をこの境界に集約する。
 
 ProjectListControlsのpresenter/view契約は `project-list-controls.ts` に置き、componentを参照せずにpresenterとfilter表示モデルから共有する。ProjectFilterPickerの選択状態をactive chipへ変換する処理は `project-filter-chips.ts` に置き、カテゴリ別の入力UIは `ProjectFilterEditor.tsx` に分ける。

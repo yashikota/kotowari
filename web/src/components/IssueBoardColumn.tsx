@@ -1,23 +1,13 @@
 import { Box, Group, ScrollArea, Text, UnstyledButton } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { isOverdue, localToday } from '../due.ts';
-import type { Issue, IssueStatus } from '../types.ts';
 import { useIssueWorkflow, workflowStatusLabel } from '../workflow.tsx';
 import { PresenterScope, useActions } from '../application/Root.tsx';
-import { useBoardColumnPresenter } from '../presenters/IssueList.tsx';
+import { useBoardColumnPresenter } from '../presenters/IssueBoard.ts';
+import type { IssueBoardColumnProps } from '../issue-board.ts';
+export type { IssueBoardColumnProps } from '../issue-board.ts';
 import { IssueLabelPill, IssuePriorityIcon, IssueStatusIcon } from './issue-ui.tsx';
 import styles from './IssueBoardColumn.module.css';
-
-export type IssueBoardColumnProps = {
-  issues: Issue[];
-  status: string;
-  category: IssueStatus;
-  name: string;
-  dragId: string | null;
-  onDrag: (id: string | null) => void;
-  onOpen: (id: string) => void;
-  onMove: (id: string, status: string, sortOrder: number) => void;
-};
 
 export function IssueBoardColumn(props: IssueBoardColumnProps) {
   return (
