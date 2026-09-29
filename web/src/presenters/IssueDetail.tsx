@@ -14,7 +14,7 @@ import { buildCodingToolURL, useCodingToolPreferences } from '../coding-tools.ts
 import { signals } from '../application/mediator.ts';
 import { useIntent } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
-import type { ADR, IssueLink, Label } from '../types.ts';
+import type { Label } from '../types.ts';
 import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
@@ -23,6 +23,7 @@ import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { LABEL_COLORS } from '../label-colors.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
 import { useIssueDetailRelations } from './useIssueDetailRelations.ts';
+import { useIssueDetailResources } from './useIssueDetailResources.ts';
 import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
 
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
@@ -91,7 +92,6 @@ export function useIssueDetailPresenter({
     pages,
     labels,
     setLabels,
-    adrs,
     timeZone,
     reload: reloadData,
   } = issueData;
@@ -111,12 +111,6 @@ export function useIssueDetailPresenter({
   );
   const [labelName, setLabelName] = useState('');
   const [focusLabel, setFocusLabel] = useState(0);
-  const [adrPick, setAdrPick] = useState('');
-  const [externalLinkURL, setExternalLinkURL] = useState('');
-  const [externalLinkTitle, setExternalLinkTitle] = useState('');
-  const [externalLinkKind, setExternalLinkKind] = useState<IssueLink['kind']>('link');
-  const [externalLinkOpen, setExternalLinkOpen] = useState(false);
-  const [resourcesCollapsed, setResourcesCollapsed] = useState(false);
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [dueDateValue, setDueDateValue] = useState('');
   const [copied, setCopied] = useState(false);
@@ -149,6 +143,14 @@ export function useIssueDetailPresenter({
     onCloseIssueOptions: () => setIssueOptionsOpen(false),
   });
   const { data: relationsData, handlers: relationsHandlers } = relationsState;
+  const resourcesState = useIssueDetailResources({
+    identifier,
+    issue,
+    adrs: issueData.adrs,
+    reload,
+    onCloseIssueOptions: () => setIssueOptionsOpen(false),
+  });
+  const { data: resourcesData, handlers: resourcesHandlers } = resourcesState;
 
   async function patch(body: Record<string, unknown>) {
     const adjustedBody = issue
@@ -227,9 +229,6 @@ export function useIssueDetailPresenter({
       ? `/issues/${encodeURIComponent(identifier)}`
       : new URL(`/issues/${encodeURIComponent(identifier)}`, window.location.origin).href;
   const codingToolURL = buildCodingToolURL(issue, codingToolPreferences, issueURL);
-  const linkedAdrs = adrs.filter((a) => (issue.adrNumbers ?? []).includes(a.number));
-  const unlinkedAdrs = adrs.filter((a) => !(issue.adrNumbers ?? []).includes(a.number));
-
   async function addLabel() {
     const name = labelName.trim();
     if (!name) {
@@ -243,36 +242,6 @@ export function useIssueDetailPresenter({
     setFocusLabel((n) => n + 1);
     setLabels(await api.labels());
     await patch({ labelIds: [...(issue?.labels ?? []).map((l) => l.id), created.id] });
-  }
-
-  async function addExternalLink() {
-    const url = externalLinkURL.trim();
-    if (!url) return;
-    await api.addIssueLink(identifier, {
-      url,
-      title: externalLinkTitle.trim() || undefined,
-      kind: externalLinkKind,
-    });
-    setExternalLinkURL('');
-    setExternalLinkTitle('');
-    setExternalLinkKind('link');
-    setExternalLinkOpen(false);
-    await reload();
-  }
-
-  async function createIssueDocument() {
-    if (!issue) return;
-    setIssueOptionsOpen(false);
-    const title = i18n.t('issueActions.newDocumentTitle');
-    const page = await api.createPage({ title, slug: `document-${Date.now()}` });
-    const href = new URL(
-      `${import.meta.env.BASE_URL}pages/${encodeURIComponent(page.slug)}`,
-      window.location.origin,
-    ).toString();
-    await api.addIssueLink(identifier, { url: href, title, kind: 'document' });
-    await reload();
-    await router.invalidate();
-    await navigate({ to: '/pages/$slug', params: { slug: page.slug } });
   }
 
   function localDateValue(date: Date) {
@@ -291,41 +260,6 @@ export function useIssueDetailPresenter({
     return localDateValue(date);
   }
 
-  function openExternalLink(kind: IssueLink['kind']) {
-    setIssueOptionsOpen(false);
-    setExternalLinkKind(kind);
-    setExternalLinkURL('');
-    setExternalLinkTitle('');
-    setExternalLinkOpen(true);
-  }
-
-  function openLinkedCode() {
-    if (!issue) return;
-    const pullRequest = issue.externalLinks.find((link) => link.kind === 'pullRequest');
-    const githubIssue = issue.externalLinks.find((link) => {
-      if (link.kind !== 'link') return false;
-      try {
-        const url = new URL(link.url);
-        return (
-          url.protocol === 'https:' &&
-          url.hostname.toLowerCase() === 'github.com' &&
-          /^\/[^/]+\/[^/]+\/issues\/\d+(?:\/|$)/i.test(url.pathname)
-        );
-      } catch {
-        return false;
-      }
-    });
-    const candidate = pullRequest ?? githubIssue;
-    if (!candidate) return;
-    try {
-      const url = new URL(candidate.url);
-      if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
-      window.open(url.href, '_blank', 'noopener,noreferrer');
-    } catch {
-      // Ignore malformed links rather than turning a keyboard shortcut into navigation.
-    }
-  }
-
   function openDueDate() {
     setIssueOptionsOpen(false);
     setDueDateValue(issue?.dueDate ?? '');
@@ -336,11 +270,6 @@ export function useIssueDetailPresenter({
     await patch({ dueDate: value });
     setDueDateOpen(false);
     setIssueOptionsOpen(false);
-  }
-
-  async function removeExternalLink(link: IssueLink) {
-    await api.removeIssueLink(identifier, link.id);
-    await reload();
   }
 
   async function remove() {
@@ -434,20 +363,14 @@ export function useIssueDetailPresenter({
     issues,
     ...timelineData,
     ...relationsData,
+    ...resourcesData,
     projects,
     milestones,
     cycles,
     pages,
     labels,
-    adrs,
     labelName,
     focusLabel,
-    adrPick,
-    externalLinkURL,
-    externalLinkTitle,
-    externalLinkKind,
-    externalLinkOpen,
-    resourcesCollapsed,
     dueDateOpen,
     dueDateValue,
     codingToolName: codingToolPreferences.customLinkName,
@@ -473,8 +396,6 @@ export function useIssueDetailPresenter({
     due,
     hasUpcomingCycle: cycles.some((cycle) => new Date(cycle.startsAt) > new Date()),
     selectedLabelIds,
-    linkedAdrs,
-    unlinkedAdrs,
     handlers: {
       onReturnToList: () => {
         return router.history.push(issueReturnTo, {
@@ -594,45 +515,7 @@ export function useIssueDetailPresenter({
         }
       },
       onCreateLabel: () => addLabel(),
-      onClick14: (a: ADR) => {
-        return api.unlinkIssueADR(identifier, a.number).then(() => reload());
-      },
-      Link_ADR_onChange15: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setAdrPick(e.target.value),
-      onClick16: () => {
-        const n = Number(adrPick);
-        if (!n) {
-          return;
-        }
-        return api.linkIssueADR(identifier, n).then(async () => {
-          setAdrPick('');
-          await reload();
-          await router.invalidate();
-        });
-      },
       onClick17: () => sendIntent('adr.create', { issueNumber: issue.number }),
-      External_link_URL_onChange24: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setExternalLinkURL(e.target.value),
-      External_link_title_onChange25: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setExternalLinkTitle(e.target.value),
-      External_link_kind_onChange26: (
-        e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setExternalLinkKind(e.target.value as IssueLink['kind']),
-      onOpenExternalLink: (kind: IssueLink['kind']) => openExternalLink(kind),
-      Open_linked_code_onClick: () => openLinkedCode(),
-      onCloseExternalLink: () => setExternalLinkOpen(false),
-      onToggleResources: () => setResourcesCollapsed((current) => !current),
-      External_link_onSubmit27: (
-        e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
-      ) => {
-        e.preventDefault();
-        return addExternalLink();
-      },
-      onRemoveExternalLink28: (link: IssueLink) => removeExternalLink(link),
-      Create_document_onClick44: () => createIssueDocument(),
       onOpenDueDate: () => openDueDate(),
       onSetDueDatePreset: (kind: 'tomorrow' | 'week' | 'cycle') => {
         const value = dueDatePreset(kind);
@@ -772,6 +655,7 @@ export function useIssueDetailPresenter({
       },
       onClearReminder: () => setReminder(null),
       ...relationsHandlers,
+      ...resourcesHandlers,
       ...timelineHandlers,
     },
   };
