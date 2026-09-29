@@ -94,8 +94,8 @@ export function IssueDetailView({
                 ref={titleRef}
                 aria-label={t('ui.issueTitle')}
                 value={issue.title}
-                onChange={handlers.Issue_title_onChange3}
-                onBlur={handlers.Issue_title_onBlur4}
+                onChange={handlers.onTitleChange}
+                onBlur={handlers.onTitleBlur}
                 variant="unstyled"
                 styles={{
                   input: {

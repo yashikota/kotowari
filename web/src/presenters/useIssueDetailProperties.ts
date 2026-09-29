@@ -47,37 +47,34 @@ export function useIssueDetailProperties({ identifier, issue, setIssue, patch }:
   return {
     data: { due, issuePropertyMenu, optionalIssuePropertyVisibility },
     handlers: {
-      Issue_title_onChange3: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
+      onTitleChange: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) => {
         if (issue) setIssue({ ...issue, title: e.target.value });
       },
-      Issue_title_onBlur4: () => (issue ? patch({ title: issue.title }) : undefined),
-      Status_onChange5: (value: string | null) =>
+      onTitleBlur: () => (issue ? patch({ title: issue.title }) : undefined),
+      onStatusChange: (value: string | null) =>
         value ? patch({ workflowStatus: value }) : undefined,
       onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setIssuePropertyMenu(property),
       onCloseIssuePropertyMenu: () => setIssuePropertyMenu(null),
       onToggleIssuePropertyMenu: (property: Exclude<IssuePropertyMenu, null>) =>
         setIssuePropertyMenu((current) => (current === property ? null : property)),
-      Assignee_onChange: (value: string | null) =>
+      onAssigneeChange: (value: string | null) =>
         patch({ assignee: value === 'self' || value === 'agent' ? value : null }),
-      Type_onChange14: (value: string | null) =>
+      onTypeChange: (value: string | null) =>
         patch({ type: value && value !== 'none' ? value : '' }),
-      Priority_onChange6: (value: string | null) =>
+      onPriorityChange: (value: string | null) =>
         value ? patch({ priority: Number(value) }) : undefined,
-      Estimate_onChange15: (value: string | null) =>
+      onEstimateChange: (value: string | null) =>
         patch({ estimate: value && value !== 'none' ? Number(value) : null }),
-      Project_onChange7: (value: string | null) =>
+      onProjectChange: (value: string | null) =>
         patch({ projectId: value && value !== 'none' ? Number(value) : null }),
-      Milestone_onChange43: (value: string | null) =>
+      onMilestoneChange: (value: string | null) =>
         patch({ milestoneId: value && value !== 'none' ? Number(value) : null }),
-      Cycle_onChange8: (value: string | null) =>
+      onCycleChange: (value: string | null) =>
         patch({ cycleId: value && value !== 'none' ? Number(value) : null }),
-      Parent_onChange9: (value: string | null) =>
+      onParentChange: (value: string | null) =>
         patch({ parentId: value && value !== 'none' ? Number(value) : null }),
-      Due_date_onChange10: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => patch({ dueDate: e.target.value ? e.target.value : null }),
+      onDueDateChange: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) =>
+        patch({ dueDate: e.target.value ? e.target.value : null }),
       onToggleIssueOptionalProperty: (property: IssueOptionalProperty) => {
         const nextOverrides = {
           ...optionalPropertyOverrides,

@@ -53,11 +53,11 @@ export function IssuePropertiesPanel({
           cycles={cycles}
           onOpenProperty={handlers.onOpenIssuePropertyMenu}
           onCloseProperty={handlers.onCloseIssuePropertyMenu}
-          onStatusChange={handlers.Status_onChange5}
-          onPriorityChange={handlers.Priority_onChange6}
-          onAssigneeChange={handlers.Assignee_onChange}
-          onEstimateChange={handlers.Estimate_onChange15}
-          onCycleChange={handlers.Cycle_onChange8}
+          onStatusChange={handlers.onStatusChange}
+          onPriorityChange={handlers.onPriorityChange}
+          onAssigneeChange={handlers.onAssigneeChange}
+          onEstimateChange={handlers.onEstimateChange}
+          onCycleChange={handlers.onCycleChange}
         />
         <IssueLabelsProperty
           labels={labels}
@@ -74,7 +74,7 @@ export function IssuePropertiesPanel({
         <IssueProjectProperty
           issue={issue}
           projects={projects}
-          onChange={handlers.Project_onChange7}
+          onChange={handlers.onProjectChange}
         />
         <IssueOptionalProperties
           issue={issue}
@@ -82,10 +82,10 @@ export function IssuePropertiesPanel({
           due={due}
           milestones={milestones}
           parentOptions={parentOptions}
-          onTypeChange={handlers.Type_onChange14}
-          onParentChange={handlers.Parent_onChange9}
-          onDueDateChange={handlers.Due_date_onChange10}
-          onMilestoneChange={handlers.Milestone_onChange43}
+          onTypeChange={handlers.onTypeChange}
+          onParentChange={handlers.onParentChange}
+          onDueDateChange={handlers.onDueDateChange}
+          onMilestoneChange={handlers.onMilestoneChange}
           onToggleProperty={handlers.onToggleIssueOptionalProperty}
         />
       </Box>
