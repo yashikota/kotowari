@@ -277,6 +277,7 @@ ACP プロセスの作業ディレクトリはワークスペースとする。
 `internal/httpapi/server.go` はルーティング、Origin 判定、SPA 配信、共通 JSON 応答を担当する。
 各 API handler は Workspace、Project、Cycle、Issue、Page、View などの機能単位のファイルに置く。
 Issue API のCRUD、コメント/反応、活動履歴は別のhandlerファイルに置く。
+Issue一覧handlerのquery parameter parsingは `server_issues_list.go` に置き、CRUD handlerと分ける。
 ADRとIssueの双方向リンクhandlerは `adr_links.go` にまとめ、ADRのCRUD/publish handlerと分ける。
 CLI は `internal/cli/cli.go` にコマンド定義を置き、各コマンドの処理は初期化、ADR、一覧、Workspace、serve の領域別ファイルに分ける。
 
