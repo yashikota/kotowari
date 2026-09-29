@@ -1,6 +1,6 @@
 import { Group, Tabs } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import type { IssueSearch } from '../api.ts';
+import type { IssueSearch } from '../issue-search.ts';
 import styles from './IssueViewTabs.module.css';
 
 export type MyIssuesTab = NonNullable<IssueSearch['myIssuesTab']>;

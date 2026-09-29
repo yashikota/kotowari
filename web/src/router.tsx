@@ -8,7 +8,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Alert, Stack, Text } from '@mantine/core';
 import { Shell } from './components/Shell.tsx';
-import { api, issuesQuery, parseIssueSearch, searchToFilter, type IssueSearch } from './api.ts';
+import { api } from './api.ts';
+import { issuesQuery, parseIssueSearch, searchToFilter } from './issue-search.ts';
+import type { IssueSearch } from './issue-search.ts';
 import { EmptyState } from './mantine-ui.tsx';
 import { PresenterScope } from './application/Root.tsx';
 import { defaultHomeHref, getPersonalPreferences } from './preferences.ts';

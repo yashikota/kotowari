@@ -1,6 +1,6 @@
 import { Group, Stack, Text, TextInput } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import type { IssueSearch } from '../api.ts';
+import type { IssueSearch } from '../issue-search.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import type {
   Cycle,

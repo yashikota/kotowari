@@ -35,7 +35,7 @@ import {
   IconUser,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import type { IssueSearch } from '../api.ts';
+import type { IssueSearch } from '../issue-search.ts';
 import type {
   Cycle,
   IssueLinkSource,

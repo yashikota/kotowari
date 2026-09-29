@@ -322,6 +322,8 @@ InitiativeFilterPickerで選択条件からfilter countとchip表示モデルを
 
 ShellのWorkspace情報、Cycle/Project/View/Initiative一覧、favorite Issue一覧、sidebar badgeの同期は `useShellWorkspace.ts`、Paletteの検索とコマンド候補は `useShellPalette.ts`、Cycle切替とナビゲーション状態は `useShellCycleNavigation.ts`、Issue composerの入力・draft・submitは `useShellIssueComposer.ts` が担当する。Sidebarのナビゲーション表示は `ShellSidebar.tsx`、Issue作成、draft破棄、関連リンクのdialog表示は `IssueComposerOverlays.tsx` に分け、Shell presenter と `ShellView` は画面間で共有するオーバーレイとナビゲーションを構成する。
 
+Issue listのURL search型、query検証、filterへの変換は `issue-search.ts` に置く。`api.ts` はHTTP endpoint呼び出しと共通transportに集中する。
+
 Issue 詳細のIssue/Workspace取得状態と再読込は `useIssueDetailData.ts`、Issue属性の編集・表示切替は `useIssueDetailProperties.ts`、コメント・活動履歴・反応・Issue添付は `useIssueDetailTimeline.ts`、子IssueとIssue間の関係を扱う状態・操作は `useIssueDetailRelations.ts`、ADR・外部リンク・Pageリソースは `useIssueDetailResources.ts`、Due Dateは `useIssueDetailDueDate.ts`、Reminderは `useIssueDetailReminders.ts`、IssueからTemplate/Projectへの変換は `useIssueDetailConversions.ts`、ラベル編集は `useIssueDetailLabels.ts` に分ける。ヘッダーと操作メニューは `IssueDetailHeader.tsx`、サブIssueの一覧・作成は `IssueSubIssuesSection.tsx`、Issue間の関係は `IssueRelationsSection.tsx`、外部リンクとPageリソースは `IssueResourcesSection.tsx`、ADRリンクは `IssueADRsSection.tsx`、履歴とコメント欄は `IssueActivitySection.tsx`、操作ダイアログは `IssueDetailDialogs.tsx`、属性パネルは `IssuePropertiesPanel.tsx` に分け、Issue 詳細本体は画面構成を担当する。各子コンポーネントには表示に必要なPresenter項目だけを渡す。
 
 ## 代替案

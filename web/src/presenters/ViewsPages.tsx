@@ -7,7 +7,8 @@ import {
 } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useState, useSyncExternalStore } from 'react';
-import { api, type IssueSearch } from '../api.ts';
+import { api } from '../api.ts';
+import type { IssueSearch } from '../issue-search.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';

@@ -2,7 +2,7 @@ import type * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMachineFlag, useRootMachineFlag } from '../application/Root.tsx';
-import type { IssueSearch } from '../api.ts';
+import type { IssueSearch } from '../issue-search.ts';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import { buildIssueFilterChips } from '../issue-filter-chips.ts';
 import { interpretIssueFilterQuery } from '../issue-filter-query.ts';

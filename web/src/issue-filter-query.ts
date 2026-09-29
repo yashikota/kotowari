@@ -1,4 +1,4 @@
-import type { IssueSearch } from './api.ts';
+import type { IssueSearch } from './issue-search.ts';
 import type { IssueFilterGroup } from './issue-advanced-filter.ts';
 
 function normalizeQuery(query: string): string {

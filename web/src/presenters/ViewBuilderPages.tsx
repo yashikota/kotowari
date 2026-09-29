@@ -8,7 +8,9 @@ import {
 } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type * as React from 'react';
-import { api, searchToFilter, type IssueSearch } from '../api.ts';
+import { api } from '../api.ts';
+import { searchToFilter } from '../issue-search.ts';
+import type { IssueSearch } from '../issue-search.ts';
 import {
   DEFAULT_DISPLAY_PROPERTIES,
   type IssueDisplayProperty,
