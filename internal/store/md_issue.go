@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/yashikota/kotowari/internal/domain"
 )
 
 type issueFM struct {
@@ -42,19 +41,6 @@ type issueFM struct {
 	Comments       []commentFM         `toml:"comments,omitempty"`
 }
 
-type adrFM struct {
-	Project    *string `toml:"project,omitempty"`
-	Title      string  `toml:"title"`
-	Status     string  `toml:"status"`
-	Evaluation string  `toml:"evaluation,omitempty"`
-	Replay     string  `toml:"replay,omitempty"`
-	Workload   string  `toml:"workload,omitempty"`
-	Supersedes *int    `toml:"supersedes,omitempty"`
-	Issues     []int   `toml:"issues,omitempty"`
-	Created    string  `toml:"created"`
-	Updated    string  `toml:"updated"`
-}
-
 type commentFM struct {
 	ID          int64               `toml:"id"`
 	Created     string              `toml:"created"`
@@ -62,38 +48,6 @@ type commentFM struct {
 	Body        string              `toml:"body"`
 	Attachments []CommentAttachment `toml:"attachments,omitempty"`
 	Reactions   []string            `toml:"reactions,omitempty"`
-}
-
-type pageFM struct {
-	ID      int64    `toml:"id"`
-	Title   string   `toml:"title"`
-	Slug    string   `toml:"slug"`
-	Status  string   `toml:"status"`
-	Date    *string  `toml:"date,omitempty"`
-	Tags    []string `toml:"tags"`
-	Project *string  `toml:"project,omitempty"`
-	Parent  *string  `toml:"parent,omitempty"`
-	Created string   `toml:"created"`
-	Updated string   `toml:"updated"`
-}
-
-func splitFrontmatter(raw string) (block, body string, err error) {
-	s := strings.ReplaceAll(raw, "\r\n", "\n")
-	if strings.HasPrefix(s, "---\n") {
-		return "", "", fmt.Errorf("yaml frontmatter is not supported; use +++ TOML")
-	}
-	if !strings.HasPrefix(s, "+++\n") {
-		return "", strings.TrimPrefix(s, "+++\n"), nil
-	}
-	rest := s[4:]
-	idx := strings.Index(rest, "\n+++")
-	if idx < 0 {
-		return "", "", fmt.Errorf("unterminated frontmatter")
-	}
-	block = rest[:idx]
-	body = strings.TrimPrefix(rest[idx+4:], "\n")
-	body = strings.TrimPrefix(body, "\n")
-	return block, body, nil
 }
 
 func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, error) {
@@ -189,98 +143,6 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 	return iss, comments, nil
 }
 
-func parsePageMarkdown(raw string, m *mem) (Page, error) {
-	block, body, err := splitFrontmatter(raw)
-	if err != nil {
-		return Page{}, err
-	}
-	var fm pageFM
-	if strings.TrimSpace(block) != "" {
-		if err := toml.Unmarshal([]byte(block), &fm); err != nil {
-			return Page{}, err
-		}
-	}
-	if fm.Status == "" {
-		fm.Status = "proposed"
-	}
-	if fm.Tags == nil {
-		fm.Tags = []string{}
-	}
-	if fm.Created == "" {
-		fm.Created = domain.Now()
-	}
-	if fm.Updated == "" {
-		fm.Updated = fm.Created
-	}
-	p := Page{
-		ID:          fm.ID,
-		Title:       fm.Title,
-		Slug:        fm.Slug,
-		Body:        body,
-		Status:      fm.Status,
-		Date:        fm.Date,
-		Tags:        fm.Tags,
-		ProjectSlug: fm.Project,
-		ParentSlug:  fm.Parent,
-		CreatedAt:   fm.Created,
-		UpdatedAt:   fm.Updated,
-	}
-	if p.ID == 0 {
-		p.ID = m.nextID()
-	} else {
-		m.observeID(p.ID)
-	}
-	return p, nil
-}
-
-func parseADRMarkdown(n int, ident, raw string, m *mem) (ADR, error) {
-	block, body, err := splitFrontmatter(raw)
-	if err != nil {
-		return ADR{}, err
-	}
-	var fm adrFM
-	if strings.TrimSpace(block) != "" {
-		if err := toml.Unmarshal([]byte(block), &fm); err != nil {
-			return ADR{}, err
-		}
-	}
-	if fm.Status == "" {
-		fm.Status = "proposed"
-	}
-	return ADR{
-		ProjectSlug:  fm.Project,
-		ID:           int64(n),
-		Number:       n,
-		Identifier:   ident,
-		Title:        fm.Title,
-		Body:         body,
-		Status:       fm.Status,
-		Evaluation:   fm.Evaluation,
-		Replay:       fm.Replay,
-		Workload:     fm.Workload,
-		Supersedes:   fm.Supersedes,
-		IssueNumbers: fm.Issues,
-		CreatedAt:    fm.Created,
-		UpdatedAt:    fm.Updated,
-	}, nil
-}
-
-func renderADRMarkdown(a ADR) string {
-	fm := adrFM{
-		Project:    a.ProjectSlug,
-		Title:      a.Title,
-		Status:     a.Status,
-		Evaluation: a.Evaluation,
-		Replay:     a.Replay,
-		Workload:   a.Workload,
-		Supersedes: a.Supersedes,
-		Issues:     a.IssueNumbers,
-		Created:    a.CreatedAt,
-		Updated:    a.UpdatedAt,
-	}
-	return marshalDoc(fm, a.Body)
-}
-
 func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 	fm := issueFM{
 		Title:          iss.Title,
@@ -344,65 +206,4 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		})
 	}
 	return marshalDoc(fm, iss.Body)
-}
-
-func renderPageMarkdown(p Page, m *mem) string {
-	fm := pageFM{
-		ID:      p.ID,
-		Title:   p.Title,
-		Slug:    p.Slug,
-		Status:  p.Status,
-		Date:    p.Date,
-		Tags:    p.Tags,
-		Created: p.CreatedAt,
-		Updated: p.UpdatedAt,
-	}
-	if fm.Tags == nil {
-		fm.Tags = []string{}
-	}
-	if p.ProjectID != nil {
-		if proj, ok := projectByID(m, *p.ProjectID); ok {
-			slug := proj.Slug
-			fm.Project = &slug
-		}
-	} else if p.ProjectSlug != nil {
-		fm.Project = p.ProjectSlug
-	}
-	if p.ParentID != nil {
-		if parent, ok := pageByID(m, *p.ParentID); ok {
-			slug := parent.Slug
-			fm.Parent = &slug
-		}
-	} else if p.ParentSlug != nil {
-		fm.Parent = p.ParentSlug
-	}
-	return marshalDoc(fm, p.Body)
-}
-
-func marshalDoc(fm any, body string) string {
-	b, err := toml.Marshal(fm)
-	if err != nil {
-		b = []byte{}
-	}
-	var out strings.Builder
-	out.WriteString("+++\n")
-	out.Write(b)
-	if len(b) > 0 && !strings.HasSuffix(string(b), "\n") {
-		out.WriteByte('\n')
-	}
-	out.WriteString("+++\n\n")
-	out.WriteString(body)
-	if body != "" && !strings.HasSuffix(body, "\n") {
-		out.WriteByte('\n')
-	}
-	return out.String()
-}
-
-func labelByName(m *mem, name string) (Label, bool) {
-	for _, l := range m.Labels {
-		if l.Name == name {
-			return l, true
-		}
-	}
-	return Label{}, false
 }
