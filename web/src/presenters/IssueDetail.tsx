@@ -1,7 +1,7 @@
-import { isCommentSubmitShortcut, isSubmitShortcut } from '../keymap.ts';
+import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import {
   issueBranchName,
@@ -16,12 +16,13 @@ import { useIntent } from '../application/Root.tsx';
 import i18n from '../i18n/index.ts';
 import type { ADR, Issue, IssueLink, IssueRelation, Label } from '../types.ts';
 import { useProjectWorkflow, projectWorkflowStatusCategory } from '../project-workflow.tsx';
-import { convertTextEmoticons, usePersonalPreferences } from '../preferences.ts';
+import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { LABEL_COLORS } from '../label-colors.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
+import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
 
 const ISSUE_PROPERTY_VISIBILITY_KEY = 'kotowari.issue-property-visibility.v1';
 
@@ -78,14 +79,20 @@ export function useIssueDetailPresenter({
   const router = useRouter();
   const navigationIndex = navigationIds.indexOf(identifier);
   const [error, setError] = useState('');
+  const issueData = useIssueDetailData(identifier, (loadError) =>
+    setError(loadError instanceof Error ? loadError.message : 'load failed'),
+  );
+  const timelineState = useIssueDetailTimeline({
+    identifier,
+    commentSubmitShortcut: preferences.commentSubmitShortcut,
+    convertEmoticons: preferences.convertEmoticons,
+    setIssue: issueData.setIssue,
+    setLoadError: setError,
+  });
   const {
     issue,
     setIssue,
     issues,
-    comments,
-    setComments,
-    activities,
-    setActivities,
     projects,
     cycles,
     pages,
@@ -93,32 +100,27 @@ export function useIssueDetailPresenter({
     setLabels,
     adrs,
     timeZone,
-    reload,
-  } = useIssueDetailData(identifier, (loadError) =>
-    setError(loadError instanceof Error ? loadError.message : 'load failed'),
-  );
+    reload: reloadData,
+  } = issueData;
+  const {
+    data: timelineData,
+    reload: reloadTimeline,
+    refreshActivities,
+    handlers: timelineHandlers,
+  } = timelineState;
+  async function reload() {
+    await Promise.all([reloadData(), reloadTimeline()]);
+  }
   const isSubscribed = useSyncExternalStore(
     issueSubscriptions.subscribe,
     () => issueSubscriptions.has(identifier),
     () => false,
   );
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
-  const [editingCommentDraft, setEditingCommentDraft] = useState('');
-  const [reactionPickerTarget, setReactionPickerTarget] = useState<string | null>(null);
-  const [reactionError, setReactionError] = useState('');
-  const [draft, setDraft] = useState('');
-  const [commentFiles, setCommentFiles] = useState<File[]>([]);
-  const [commentError, setCommentError] = useState('');
-  const commentFilesInputRef = useRef<HTMLInputElement>(null);
-  const [issueAttachmentError, setIssueAttachmentError] = useState('');
-  const [issueAttachmentBusy, setIssueAttachmentBusy] = useState(false);
-  const issueFilesInputRef = useRef<HTMLInputElement>(null);
   const [subTitle, setSubTitle] = useState('');
   const [subIssueEditorOpen, setSubIssueEditorOpen] = useState(false);
   const [labelName, setLabelName] = useState('');
   const [focusSub, setFocusSub] = useState(0);
   const [focusLabel, setFocusLabel] = useState(0);
-  const [focusNote, setFocusNote] = useState(0);
   const [adrPick, setAdrPick] = useState('');
   const [externalLinkURL, setExternalLinkURL] = useState('');
   const [externalLinkTitle, setExternalLinkTitle] = useState('');
@@ -156,15 +158,6 @@ export function useIssueDetailPresenter({
   const [projectConversionTargetDate, setProjectConversionTargetDate] = useState('');
 
   useEffect(() => {
-    setDraft('');
-    setCommentFiles([]);
-    setCommentError('');
-    setEditingCommentId(null);
-    setEditingCommentDraft('');
-    setReactionPickerTarget(null);
-    setReactionError('');
-    setIssueAttachmentError('');
-    setIssueAttachmentBusy(false);
     setSubTitle('');
     setSubIssueEditorOpen(false);
     setRelationTarget('');
@@ -182,7 +175,7 @@ export function useIssueDetailPresenter({
       : body;
     const next = await api.patchIssue(identifier, adjustedBody);
     setIssue(next);
-    setActivities(await api.activities(identifier));
+    await refreshActivities();
   }
 
   function reminderPreset(kind: 'hour' | 'tomorrow' | 'week' | 'month' | 'cycle') {
@@ -568,134 +561,6 @@ export function useIssueDetailPresenter({
     }
   }
 
-  async function submitComment() {
-    const body = (preferences.convertEmoticons ? convertTextEmoticons(draft) : draft).trim();
-    const files = commentFiles;
-    if (!body && files.length === 0) return;
-    setCommentError('');
-    try {
-      if (files.length) await api.addCommentWithAttachments(identifier, body, files);
-      else await api.addComment(identifier, body);
-      setDraft('');
-      setCommentFiles([]);
-      if (commentFilesInputRef.current) commentFilesInputRef.current.value = '';
-      setFocusNote((current) => current + 1);
-      const [nextComments, nextActivities] = await Promise.all([
-        api.comments(identifier),
-        api.activities(identifier),
-      ]);
-      setComments(nextComments);
-      setActivities(nextActivities);
-    } catch {
-      setCommentError(i18n.t('issueAttachments.uploadFailed'));
-    }
-  }
-
-  async function saveCommentEdit(commentId: number) {
-    const body = (
-      preferences.convertEmoticons ? convertTextEmoticons(editingCommentDraft) : editingCommentDraft
-    ).trim();
-    setCommentError('');
-    try {
-      const updated = await api.updateComment(identifier, commentId, body);
-      setComments((current) =>
-        current.map((comment) => (comment.id === commentId ? updated : comment)),
-      );
-      setEditingCommentId(null);
-      setEditingCommentDraft('');
-      setActivities(await api.activities(identifier));
-    } catch {
-      setCommentError(i18n.t('issueComments.updateFailed'));
-    }
-  }
-
-  async function deleteComment(commentId: number) {
-    if (!window.confirm(i18n.t('issueComments.confirmDelete'))) return;
-    setCommentError('');
-    try {
-      await api.deleteComment(identifier, commentId);
-      setComments((current) => current.filter((comment) => comment.id !== commentId));
-      setActivities(await api.activities(identifier));
-    } catch {
-      setCommentError(i18n.t('issueComments.deleteFailed'));
-    }
-  }
-
-  async function toggleReaction(target: string, emoji: string) {
-    setReactionError('');
-    try {
-      if (target === 'issue') {
-        setIssue(await api.toggleIssueReaction(identifier, emoji));
-      } else {
-        const commentId = Number(target.slice('comment:'.length));
-        const updated = await api.toggleCommentReaction(identifier, commentId, emoji);
-        setComments((current) =>
-          current.map((comment) => (comment.id === commentId ? updated : comment)),
-        );
-      }
-      setReactionPickerTarget(null);
-      setActivities(await api.activities(identifier));
-    } catch {
-      setReactionError(i18n.t('reactions.updateFailed'));
-    }
-  }
-
-  async function uploadIssueAttachments(files: File[]) {
-    if (files.length === 0 || issueAttachmentBusy) return;
-    setIssueAttachmentError('');
-    if (files.some((file) => file.size > 20 * 1024 * 1024)) {
-      setIssueAttachmentError(i18n.t('issueAttachments.tooLarge'));
-      return;
-    }
-    if (files.length > 10) {
-      setIssueAttachmentError(i18n.t('issueAttachments.tooMany'));
-      return;
-    }
-    setIssueAttachmentBusy(true);
-    try {
-      await api.addIssueAttachments(identifier, files);
-      setIssue(await api.issue(identifier));
-      setActivities(await api.activities(identifier));
-    } catch {
-      setIssueAttachmentError(i18n.t('issueAttachments.uploadFailed'));
-    } finally {
-      setIssueAttachmentBusy(false);
-    }
-  }
-
-  async function removeIssueAttachment(attachmentId: string) {
-    setIssueAttachmentError('');
-    try {
-      await api.deleteIssueAttachment(identifier, attachmentId);
-      setIssue(await api.issue(identifier));
-      setActivities(await api.activities(identifier));
-    } catch {
-      setIssueAttachmentError(i18n.t('issueAttachments.deleteFailed'));
-    }
-  }
-
-  const timeline = [
-    ...activities
-      .filter((activity) => activity.action !== 'commented')
-      .map((activity) => ({
-        kind: 'activity' as const,
-        id: activity.id,
-        createdAt: activity.createdAt,
-        activity,
-      })),
-    ...comments.map((comment) => ({
-      kind: 'comment' as const,
-      id: comment.id,
-      createdAt: comment.createdAt,
-      comment,
-    })),
-  ].sort(
-    (left, right) =>
-      left.createdAt.localeCompare(right.createdAt) ||
-      Number(left.kind === 'comment') - Number(right.kind === 'comment') ||
-      left.id - right.id,
-  );
-
   return {
     _view: 2 as const,
     identifier,
@@ -707,31 +572,18 @@ export function useIssueDetailPresenter({
     issuePropertyMenu,
     optionalIssuePropertyVisibility,
     issues,
-    timeline,
-    editingCommentId,
-    editingCommentDraft,
-    reactionPickerTarget,
-    reactionError,
-    commentFiles,
-    commentError,
-    commentFilesInputRef,
-    issueAttachmentError,
-    issueAttachmentBusy,
-    issueFilesInputRef,
-    commentSubmitShortcut: preferences.commentSubmitShortcut,
+    ...timelineData,
     projects,
     milestones,
     cycles,
     pages,
     labels,
     adrs,
-    draft,
     subTitle,
     subIssueEditorOpen,
     labelName,
     focusSub,
     focusLabel,
-    focusNote,
     adrPick,
     externalLinkURL,
     externalLinkTitle,
@@ -1136,67 +988,7 @@ export function useIssueDetailPresenter({
           return addSubIssue();
         }
       },
-      New_note_onChange21: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setDraft(e.target.value),
-      New_note_onKeyDown22: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
-      ) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-
-        if (isCommentSubmitShortcut(e, preferences.commentSubmitShortcut)) {
-          e.preventDefault();
-          return submitComment();
-        }
-      },
-      onChooseCommentFiles: () => commentFilesInputRef.current?.click(),
-      onCommentFilesChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selected = Array.from(e.currentTarget.files ?? []);
-        e.currentTarget.value = '';
-        if (selected.some((file) => file.size > 20 * 1024 * 1024)) {
-          setCommentError(i18n.t('issueAttachments.tooLarge'));
-          return;
-        }
-        if (commentFiles.length + selected.length > 10) {
-          setCommentError(i18n.t('issueAttachments.tooMany'));
-          return;
-        }
-        setCommentError('');
-        setCommentFiles((current) => [...current, ...selected]);
-      },
-      onRemoveCommentFile: (index: number) => {
-        setCommentError('');
-        setCommentFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
-      },
-      onSubmitComment: () => submitComment(),
-      onEditComment: (commentId: number, body: string) => {
-        setEditingCommentId(commentId);
-        setEditingCommentDraft(body);
-        setCommentError('');
-      },
-      onChangeCommentEdit: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
-        setEditingCommentDraft(e.currentTarget.value),
-      onCancelCommentEdit: () => {
-        setEditingCommentId(null);
-        setEditingCommentDraft('');
-      },
-      onSaveCommentEdit: (commentId: number) => saveCommentEdit(commentId),
-      onDeleteComment: (commentId: number) => deleteComment(commentId),
-      onReactionPickerChange: (target: string, opened: boolean) => {
-        setReactionPickerTarget((current) => {
-          if (opened) return target;
-          return current === target ? null : current;
-        });
-      },
-      onSelectReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
-      onToggleReaction: (target: string, emoji: string) => toggleReaction(target, emoji),
-      onChooseIssueFiles: () => issueFilesInputRef.current?.click(),
-      onIssueFilesChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selected = Array.from(e.currentTarget.files ?? []);
-        e.currentTarget.value = '';
-        return uploadIssueAttachments(selected);
-      },
-      onRemoveIssueAttachment: (attachmentId: string) => removeIssueAttachment(attachmentId),
+      ...timelineHandlers,
     },
   };
 }

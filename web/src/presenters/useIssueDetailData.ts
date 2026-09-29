@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.ts';
 import { cachedIssue, useIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
-import type { ADR, Activity, Comment, Cycle, Issue, Label, Page, Project } from '../types.ts';
+import type { ADR, Cycle, Issue, Label, Page, Project } from '../types.ts';
 
 type LoadErrorHandler = (error: unknown) => void;
 
@@ -11,8 +11,6 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
   const issue = useIssueProjection(storedIssue ? [storedIssue] : [])[0] ?? null;
   const generation = useRef(0);
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
@@ -22,34 +20,20 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
 
   async function reload() {
     const token = ++generation.current;
-    const [
-      nextIssue,
-      allIssues,
-      nextComments,
-      nextActivities,
-      allProjects,
-      allCycles,
-      allLabels,
-      allAdrs,
-      allPages,
-      workspace,
-    ] = await Promise.all([
-      api.issue(identifier),
-      api.issues(),
-      api.comments(identifier),
-      api.activities(identifier),
-      api.projects(),
-      api.cycles(),
-      api.labels(),
-      api.adrs(),
-      api.pages(),
-      api.workspace(),
-    ]);
+    const [nextIssue, allIssues, allProjects, allCycles, allLabels, allAdrs, allPages, workspace] =
+      await Promise.all([
+        api.issue(identifier),
+        api.issues(),
+        api.projects(),
+        api.cycles(),
+        api.labels(),
+        api.adrs(),
+        api.pages(),
+        api.workspace(),
+      ]);
     if (token !== generation.current) return;
     setIssue(nextIssue);
     setIssues(allIssues);
-    setComments(nextComments);
-    setActivities(nextActivities);
     setProjects(allProjects);
     setCycles(allCycles);
     setLabels(allLabels);
@@ -74,10 +58,6 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
     issue,
     setIssue,
     issues,
-    comments,
-    setComments,
-    activities,
-    setActivities,
     projects,
     cycles,
     pages,
