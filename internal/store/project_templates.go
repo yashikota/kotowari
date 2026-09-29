@@ -58,8 +58,8 @@ func (s *Store) CreateProjectTemplate(projectSlug string, in CreateTemplateInput
 		return ProjectTemplate{}, validationf("template name must contain 1 to 100 characters")
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	m, err := load(s.root)
 	if err != nil {
 		return ProjectTemplate{}, err
@@ -95,8 +95,8 @@ func (s *Store) DeleteProjectTemplate(slug string) error {
 	if issueTemplateSlug(slug) != slug || slug == "" {
 		return validationf("invalid template identifier")
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	err := os.Remove(filepath.Join(s.root, "TEMPLATE", "PROJECT-"+slug+".md"))
 	if os.IsNotExist(err) {
 		return ErrNotFound

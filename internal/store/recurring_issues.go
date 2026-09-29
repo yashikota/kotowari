@@ -59,8 +59,8 @@ func (s *Store) CreateRecurringIssue(identifier string, in CreateRecurringIssueI
 }
 
 func (s *Store) createRecurringIssueFromIssue(identifier string, in CreateRecurringIssueInput, slug string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 
 	m, err := load(s.root)
 	if err != nil {
@@ -98,8 +98,8 @@ func (s *Store) createRecurringIssueFromIssue(identifier string, in CreateRecurr
 }
 
 func (s *Store) createUniqueRecurringIssueFile(in CreateRecurringIssueInput, recurring RecurringIssue) (CreateRecurringIssueInput, string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 
 	in, slug, err := uniqueRecurringIssueInput(s.root, in)
 	if err != nil {
@@ -123,10 +123,10 @@ func (s *Store) SetRecurringIssueEnabled(slug string, in SetRecurringIssueEnable
 	if in.Enabled == nil {
 		return RecurringIssue{}, validationf("enabled is required")
 	}
-	s.recurringMu.Lock()
-	defer s.recurringMu.Unlock()
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.recurringMu.Lock()
+	defer s.state.recurringMu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	path := filepath.Join(s.root, "TEMPLATE", "RECURRING-"+slug+".md")
 	recurring, err := readRecurringIssue(path)
 	if os.IsNotExist(err) {
@@ -147,10 +147,10 @@ func (s *Store) DeleteRecurringIssue(slug string) error {
 	if issueTemplateSlug(slug) != slug || slug == "" {
 		return validationf("invalid recurring issue identifier")
 	}
-	s.recurringMu.Lock()
-	defer s.recurringMu.Unlock()
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.recurringMu.Lock()
+	defer s.state.recurringMu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	err := os.Remove(filepath.Join(s.root, "TEMPLATE", "RECURRING-"+slug+".md"))
 	if os.IsNotExist(err) {
 		return ErrNotFound

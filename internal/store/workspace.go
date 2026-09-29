@@ -102,9 +102,9 @@ func (s *Store) UpdateWorkspace(in UpdateWorkspaceInput) (Workspace, error) {
 		return nil
 	})
 	if err == nil && in.IssueAutomationSettings != nil {
-		s.issueAutomationMu.Lock()
-		s.lastIssueAutomation = time.Time{}
-		s.issueAutomationMu.Unlock()
+		s.state.issueAutomationMu.Lock()
+		s.state.lastIssueAutomation = time.Time{}
+		s.state.issueAutomationMu.Unlock()
 	}
 	return ws, err
 }

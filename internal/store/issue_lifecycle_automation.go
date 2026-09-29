@@ -12,14 +12,14 @@ const issueAutomationCheckInterval = time.Hour
 // caller can run this during the app's revision poll; the store throttles checks
 // so a live UI does not scan the workspace on every poll.
 func (s *Store) ProcessIssueAutomations() error {
-	s.issueAutomationMu.Lock()
-	defer s.issueAutomationMu.Unlock()
+	s.state.issueAutomationMu.Lock()
+	defer s.state.issueAutomationMu.Unlock()
 
 	now := time.Now().UTC()
-	if !s.lastIssueAutomation.IsZero() && now.Sub(s.lastIssueAutomation) < issueAutomationCheckInterval {
+	if !s.state.lastIssueAutomation.IsZero() && now.Sub(s.state.lastIssueAutomation) < issueAutomationCheckInterval {
 		return nil
 	}
-	s.lastIssueAutomation = now
+	s.state.lastIssueAutomation = now
 
 	return s.mutate(func(m *mem) error {
 		settings := normalizedIssueAutomationSettings(m.Workspace.IssueAutomationSettings)

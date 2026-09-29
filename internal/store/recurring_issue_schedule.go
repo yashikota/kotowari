@@ -10,8 +10,8 @@ import (
 // recover safely if the app stopped between creating an issue and updating its
 // schedule file.
 func (s *Store) ProcessDueRecurringIssues() error {
-	s.recurringMu.Lock()
-	defer s.recurringMu.Unlock()
+	s.state.recurringMu.Lock()
+	defer s.state.recurringMu.Unlock()
 	recurring, err := s.ListRecurringIssues()
 	if err != nil {
 		return err
@@ -106,8 +106,8 @@ func (s *Store) createRecurringInstance(schedule RecurringIssue, dueDate string)
 }
 
 func (s *Store) persistRecurringIssue(recurring RecurringIssue) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	return writeRecurringIssue(filepath.Join(s.root, "TEMPLATE", "RECURRING-"+recurring.Slug+".md"), recurring)
 }
 

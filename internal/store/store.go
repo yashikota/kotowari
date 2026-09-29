@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -16,18 +18,35 @@ var (
 )
 
 type Store struct {
+	state *workspaceState
+	root  string
+}
+
+type workspaceState struct {
 	mu                  sync.Mutex
 	recurringMu         sync.Mutex
 	issueAutomationMu   sync.Mutex
 	lastIssueAutomation time.Time
-	root                string
 }
+
+var (
+	workspaceStatesMu sync.Mutex
+	// Keep each root's lock bundle for the process lifetime so reopening a
+	// workspace cannot create a second lock while an older Store still exists.
+	workspaceStates = make(map[string]*workspaceState)
+)
 
 func Open(root string) (*Store, error) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, err
 	}
-	s := &Store{root: root}
+	state, err := workspaceStateForRoot(root)
+	if err != nil {
+		return nil, err
+	}
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	s := &Store{root: root, state: state}
 	marker := filepath.Join(root, "workspace.toml")
 	if _, err := os.Stat(marker); err != nil {
 		if _, yamlErr := os.Stat(filepath.Join(root, "workspace.yaml")); yamlErr == nil {
@@ -50,6 +69,30 @@ func Open(root string) (*Store, error) {
 		}
 	}
 	return s, nil
+}
+
+func workspaceStateForRoot(root string) (*workspaceState, error) {
+	absolute, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	canonical, err := filepath.EvalSymlinks(absolute)
+	if err != nil {
+		return nil, err
+	}
+	key := filepath.Clean(canonical)
+	if runtime.GOOS == "windows" {
+		key = strings.ToLower(key)
+	}
+
+	workspaceStatesMu.Lock()
+	defer workspaceStatesMu.Unlock()
+	state := workspaceStates[key]
+	if state == nil {
+		state = &workspaceState{}
+		workspaceStates[key] = state
+	}
+	return state, nil
 }
 
 func (s *Store) Close() error { return nil }

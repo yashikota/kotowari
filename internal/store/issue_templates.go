@@ -41,8 +41,8 @@ func (s *Store) CreateIssueTemplate(identifier string, in CreateTemplateInput) (
 	if name == "" || slug == "" || len([]rune(name)) > 100 {
 		return IssueTemplate{}, validationf("template name must contain 1 to 100 characters")
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	m, err := load(s.root)
 	if err != nil {
 		return IssueTemplate{}, err
@@ -76,8 +76,8 @@ func (s *Store) DeleteIssueTemplate(slug string) error {
 	if issueTemplateSlug(slug) != slug || slug == "" {
 		return validationf("invalid template identifier")
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	err := os.Remove(filepath.Join(s.root, "TEMPLATE", "ISSUE-"+slug+".md"))
 	if os.IsNotExist(err) {
 		return ErrNotFound

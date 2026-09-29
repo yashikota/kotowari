@@ -13,8 +13,8 @@ func errf(kind error, format string, args ...any) error {
 }
 
 func (s *Store) snapshot(fn func(*mem) error) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	m, err := load(s.root)
 	if err != nil {
 		return err
@@ -28,8 +28,8 @@ func (s *Store) snapshot(fn func(*mem) error) error {
 }
 
 func (s *Store) mutate(fn func(*mem) error) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.state.mu.Lock()
+	defer s.state.mu.Unlock()
 	m, err := load(s.root)
 	if err != nil {
 		return err
