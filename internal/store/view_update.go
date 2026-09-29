@@ -4,7 +4,7 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-func (s *Store) UpdateView(slug string, in CreateViewInput) (View, error) {
+func (s *Store) UpdateView(slug string, in UpdateViewInput) (View, error) {
 	if in.LabelOperator != "" && !validIssueLabelOperator(in.LabelOperator) {
 		return View{}, validationf("invalid label operator")
 	}

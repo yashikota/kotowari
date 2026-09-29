@@ -148,3 +148,5 @@ type CreateViewInput struct {
 	AdvancedFilter      *bool
 	AdvancedFilterGroup *IssueFilterNode
 }
+
+type UpdateViewInput CreateViewInput

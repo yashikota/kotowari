@@ -191,7 +191,7 @@ func TestIssueTemplateProvenanceCanBeFilteredAndSaved(t *testing.T) {
 		len(view.Filter().TemplateSlugs) != 1 {
 		t.Fatalf("saved template filter = %#v", view)
 	}
-	view, err = s.UpdateView(view.Slug, CreateViewInput{TemplateSlugs: []string{}})
+	view, err = s.UpdateView(view.Slug, UpdateViewInput{TemplateSlugs: []string{}})
 	if err != nil {
 		t.Fatal(err)
 	}

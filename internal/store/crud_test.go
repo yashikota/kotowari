@@ -247,7 +247,7 @@ func TestIssueStatusFilterMatchesAnySelectedWorkflowStatusAndPersistsOnViews(t *
 		t.Fatalf("persisted view statuses = %#v, err = %v", persisted.Statuses, err)
 	}
 	clear := []string{}
-	updated, err := reopened.UpdateView(view.Slug, CreateViewInput{Statuses: clear})
+	updated, err := reopened.UpdateView(view.Slug, UpdateViewInput{Statuses: clear})
 	if err != nil || len(updated.Statuses) != 0 || len(updated.Filter().Statuses) != 0 {
 		t.Fatalf("cleared view statuses = %#v, err = %v", updated.Statuses, err)
 	}
@@ -259,12 +259,12 @@ func TestIssueStatusFilterMatchesAnySelectedWorkflowStatusAndPersistsOnViews(t *
 	if err != nil {
 		t.Fatal(err)
 	}
-	updated, err = reopened.UpdateView(singleView.Slug, CreateViewInput{Status: &singleStatus, Statuses: clear})
+	updated, err = reopened.UpdateView(singleView.Slug, UpdateViewInput{Status: &singleStatus, Statuses: clear})
 	if err != nil || updated.Status == nil || *updated.Status != singleStatus || len(updated.Statuses) != 0 {
 		t.Fatalf("single-status view update = %#v, err = %v", updated, err)
 	}
 	emptyStatus := ""
-	updated, err = reopened.UpdateView(singleView.Slug, CreateViewInput{Status: &emptyStatus, Statuses: clear})
+	updated, err = reopened.UpdateView(singleView.Slug, UpdateViewInput{Status: &emptyStatus, Statuses: clear})
 	if err != nil || updated.Status != nil || len(updated.Statuses) != 0 {
 		t.Fatalf("cleared single-status view = %#v, err = %v", updated, err)
 	}
@@ -379,17 +379,17 @@ func TestIssueEstimateFilterIncludesUnestimatedIssuesAndPersistsOnViews(t *testi
 		t.Fatalf("legacy estimate plus no-estimate view = %#v, err = %v", legacyView, err)
 	}
 
-	updated, err := reopened.UpdateView(view.Slug, CreateViewInput{Estimate: &legacyEstimate, Estimates: []int{}, NoEstimate: new(bool)})
+	updated, err := reopened.UpdateView(view.Slug, UpdateViewInput{Estimate: &legacyEstimate, Estimates: []int{}, NoEstimate: new(bool)})
 	if err != nil || updated.Estimate == nil || *updated.Estimate != legacyEstimate || len(updated.Estimates) != 0 || updated.NoEstimate {
 		t.Fatalf("single estimate update = %#v, err = %v", updated, err)
 	}
 	clearEstimate := -1
-	updated, err = reopened.UpdateView(view.Slug, CreateViewInput{Estimate: &clearEstimate, Estimates: []int{}, NoEstimate: &includeNoEstimate})
+	updated, err = reopened.UpdateView(view.Slug, UpdateViewInput{Estimate: &clearEstimate, Estimates: []int{}, NoEstimate: &includeNoEstimate})
 	if err != nil || updated.Estimate != nil || len(updated.Estimates) != 0 || !updated.NoEstimate {
 		t.Fatalf("no-estimate-only view update = %#v, err = %v", updated, err)
 	}
 	excludeNoEstimate := false
-	updated, err = reopened.UpdateView(view.Slug, CreateViewInput{Estimate: &clearEstimate, Estimates: []int{}, NoEstimate: &excludeNoEstimate})
+	updated, err = reopened.UpdateView(view.Slug, UpdateViewInput{Estimate: &clearEstimate, Estimates: []int{}, NoEstimate: &excludeNoEstimate})
 	if err != nil || updated.Estimate != nil || len(updated.Estimates) != 0 || updated.NoEstimate {
 		t.Fatalf("cleared estimate view = %#v, err = %v", updated, err)
 	}
@@ -955,7 +955,7 @@ func TestListIssuesByLinkSourceAndSaveFilter(t *testing.T) {
 	if len(view.LinkSources) != 1 || view.LinkSources[0] != "github" || len(view.Filter().LinkSources) != 1 {
 		t.Fatalf("saved link-source filter %#v", view)
 	}
-	view, err = s.UpdateView(view.Slug, CreateViewInput{LinkSources: []string{}})
+	view, err = s.UpdateView(view.Slug, UpdateViewInput{LinkSources: []string{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1000,7 +1000,7 @@ func TestListIssuesByMilestoneNameAndSaveFilter(t *testing.T) {
 		t.Fatalf("saved milestone filter %#v", view)
 	}
 	cleared := ""
-	view, err = s.UpdateView(view.Slug, CreateViewInput{MilestoneName: &cleared})
+	view, err = s.UpdateView(view.Slug, UpdateViewInput{MilestoneName: &cleared})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1834,7 +1834,7 @@ func TestViewDisplayOptionsPersist(t *testing.T) {
 		t.Fatal(err)
 	}
 	showSubIssues = true
-	_, err = s.UpdateView(created.Slug, CreateViewInput{
+	_, err = s.UpdateView(created.Slug, UpdateViewInput{
 		Description: stringPointer("Updated sprint scope"), Icon: stringPointer("target"),
 		ShowSubIssues: &showSubIssues, ShowEmptyGroups: boolPointer(false),
 		DisplayProperties: []string{"priority", "estimate", "updated"},
@@ -1914,7 +1914,7 @@ func TestViewAssigneeFilterPersistsAndClears(t *testing.T) {
 	}
 
 	none := "none"
-	view, err = s.UpdateView(view.Slug, CreateViewInput{Assignee: &none})
+	view, err = s.UpdateView(view.Slug, UpdateViewInput{Assignee: &none})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1923,7 +1923,7 @@ func TestViewAssigneeFilterPersistsAndClears(t *testing.T) {
 	}
 
 	clear := ""
-	view, err = s.UpdateView(view.Slug, CreateViewInput{Assignee: &clear})
+	view, err = s.UpdateView(view.Slug, UpdateViewInput{Assignee: &clear})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1957,7 +1957,7 @@ func TestViewSubscriberFilterPersistsAndClears(t *testing.T) {
 	}
 
 	none := "none"
-	view, err = reopened.UpdateView(view.Slug, CreateViewInput{Subscriber: &none})
+	view, err = reopened.UpdateView(view.Slug, UpdateViewInput{Subscriber: &none})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1966,7 +1966,7 @@ func TestViewSubscriberFilterPersistsAndClears(t *testing.T) {
 	}
 
 	clear := ""
-	view, err = reopened.UpdateView(view.Slug, CreateViewInput{Subscriber: &clear})
+	view, err = reopened.UpdateView(view.Slug, UpdateViewInput{Subscriber: &clear})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1975,7 +1975,7 @@ func TestViewSubscriberFilterPersistsAndClears(t *testing.T) {
 	}
 
 	invalid := "someone-else"
-	if _, err := reopened.UpdateView(view.Slug, CreateViewInput{Subscriber: &invalid}); !errors.Is(err, ErrValidation) {
+	if _, err := reopened.UpdateView(view.Slug, UpdateViewInput{Subscriber: &invalid}); !errors.Is(err, ErrValidation) {
 		t.Fatalf("invalid subscriber filter error = %v", err)
 	}
 }

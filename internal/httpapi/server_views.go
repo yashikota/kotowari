@@ -135,7 +135,7 @@ func (s *Server) patchView(w http.ResponseWriter, r *http.Request) {
 	}
 	favorite := in.IsFavorite
 	in.IsFavorite = nil
-	out, err := s.store.UpdateView(r.PathValue("slug"), in)
+	out, err := s.store.UpdateView(r.PathValue("slug"), model.UpdateViewInput(in))
 	if err != nil {
 		writeError(w, err)
 		return

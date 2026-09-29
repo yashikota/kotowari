@@ -7,7 +7,7 @@ import (
 	"github.com/yashikota/kotowari/internal/domain"
 )
 
-func applyViewPresentationPatch(v *View, in CreateViewInput) error {
+func applyViewPresentationPatch(v *View, in UpdateViewInput) error {
 	if name := strings.TrimSpace(in.Name); name != "" {
 		v.Name = name
 	}

@@ -2,7 +2,7 @@ package store
 
 import "github.com/yashikota/kotowari/internal/domain"
 
-func applyViewAdvancedFilterPatch(v *View, in CreateViewInput) error {
+func applyViewAdvancedFilterPatch(v *View, in UpdateViewInput) error {
 	if in.AdvancedFilter != nil {
 		v.AdvancedFilter = *in.AdvancedFilter
 	}
@@ -15,7 +15,7 @@ func applyViewAdvancedFilterPatch(v *View, in CreateViewInput) error {
 	return nil
 }
 
-func applyViewFilterPatch(v *View, m *mem, in CreateViewInput) error {
+func applyViewFilterPatch(v *View, m *mem, in UpdateViewInput) error {
 	if in.Status != nil {
 		if *in.Status == "" {
 			v.Status = nil
