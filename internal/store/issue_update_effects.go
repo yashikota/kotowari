@@ -6,19 +6,19 @@ import (
 )
 
 type issueUpdateSnapshot struct {
-	status, workflowStatus, assignee, typeName string
-	priority                                   int
-	estimate                                   *int
-	labels                                     []Label
-	favorite, archived                         bool
-	reminderAt, dueDate                        *string
-	projectID, milestoneID, cycleID, parentID  *int64
-	milestoneName                              *string
+	title, status, workflowStatus, assignee, typeName string
+	priority                                          int
+	estimate                                          *int
+	labels                                            []Label
+	favorite, archived                                bool
+	reminderAt, dueDate                               *string
+	projectID, milestoneID, cycleID, parentID         *int64
+	milestoneName                                     *string
 }
 
 func snapshotIssueUpdate(issue Issue) issueUpdateSnapshot {
 	return issueUpdateSnapshot{
-		status: issue.Status, workflowStatus: issue.WorkflowStatus, assignee: issue.Assignee, typeName: issue.Type,
+		title: issue.Title, status: issue.Status, workflowStatus: issue.WorkflowStatus, assignee: issue.Assignee, typeName: issue.Type,
 		priority: issue.Priority, estimate: issue.Estimate, labels: append([]Label(nil), issue.Labels...),
 		favorite: issue.IsFavorite, archived: issue.ArchivedAt != nil,
 		reminderAt: issue.ReminderAt, dueDate: issue.DueDate, projectID: issue.ProjectID, milestoneID: issue.MilestoneID,
@@ -69,6 +69,9 @@ func applyIssueUpdateTransitions(m *mem, iss *Issue, in PatchIssueInput, before 
 }
 
 func recordIssueUpdateActivities(m *mem, iss Issue, in PatchIssueInput, before issueUpdateSnapshot, now string) {
+	if before.title != iss.Title {
+		addActivity(m, "issue", iss.ID, "title_changed", map[string]any{"from": before.title, "to": iss.Title}, now)
+	}
 	if iss.WorkflowStatus != before.workflowStatus {
 		addActivity(m, "issue", iss.ID, "status_changed", map[string]any{"from": before.workflowStatus, "to": iss.WorkflowStatus}, now)
 	}

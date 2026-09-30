@@ -1246,6 +1246,67 @@ func TestIssueParentChangesAreRecordedInTimelineAndInbox(t *testing.T) {
 	}
 }
 
+func TestIssueTitleChangesAreRecordedInTimelineAndInbox(t *testing.T) {
+	s := openTest(t)
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Original issue title"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	firstTitle := "Updated issue title"
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{Title: &firstTitle}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{Title: &firstTitle}); err != nil {
+		t.Fatal(err)
+	}
+	secondTitle := "Final issue title"
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{Title: &secondTitle}); err != nil {
+		t.Fatal(err)
+	}
+
+	activities, err := s.ListActivities(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var changes []Activity
+	for _, activity := range activities {
+		if activity.Action == "title_changed" {
+			changes = append(changes, activity)
+		}
+	}
+	if len(changes) != 2 {
+		t.Fatalf("title change events = %#v, want 2", changes)
+	}
+	var latest, previous map[string]string
+	if err := json.Unmarshal(changes[0].Payload, &latest); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(changes[1].Payload, &previous); err != nil {
+		t.Fatal(err)
+	}
+	if latest["from"] != firstTitle || latest["to"] != secondTitle {
+		t.Fatalf("latest title change payload = %#v", latest)
+	}
+	if previous["from"] != "Original issue title" || previous["to"] != firstTitle {
+		t.Fatalf("first title change payload = %#v", previous)
+	}
+
+	inbox, err := s.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inboxChanges := 0
+	for _, activity := range inbox {
+		if activity.EntityType == "issue" && activity.Identifier == issue.Identifier && activity.Action == "title_changed" {
+			inboxChanges++
+		}
+	}
+	if inboxChanges != 2 {
+		t.Fatalf("title change inbox events = %d, want 2", inboxChanges)
+	}
+}
+
 func TestListIssuesByTypeAndEstimate(t *testing.T) {
 	s := openTest(t)
 	one, three, eight := 1, 3, 8

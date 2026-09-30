@@ -1694,6 +1694,7 @@
     "cycleChanged": "サイクルを{{from}}から{{to}}に変更しました",
     "projectChanged": "プロジェクトを{{from}}から{{to}}に変更しました",
     "parentChanged": "親イシューを{{from}}から{{to}}に変更しました",
+    "titleChanged": "タイトルを{{from}}から{{to}}に変更しました",
     "priorityChanged": "優先度を{{from}}から{{to}}に変更しました",
     "dueDateChanged": "期限を{{from}}から{{to}}に変更しました",
     "labelAdded": "ラベル「{{label}}」を追加",

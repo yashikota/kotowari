@@ -44,6 +44,11 @@ export function formatActivity(
     const to = typeof payload.to === 'string' && payload.to ? payload.to : noParent;
     return i18n.t('activity.parentChanged', { from, to });
   }
+  if (action === 'title_changed') {
+    const from = typeof payload.from === 'string' ? payload.from : '';
+    const to = typeof payload.to === 'string' ? payload.to : '';
+    return i18n.t('activity.titleChanged', { from, to });
+  }
   if (action === 'cycle_issue_added' || action === 'cycle_issue_completed') {
     const cycle = typeof payload.cycle === 'string' ? payload.cycle : '';
     return i18n.t(`activity.${action}`, { cycle });

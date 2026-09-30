@@ -53,6 +53,12 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes issue title changes', () => {
+    expect(formatActivity('title_changed', { from: 'Old title', to: 'New title' })).toBe(
+      'Title changed from Old title to New title',
+    );
+  });
+
   it('describes priority changes, including no priority', () => {
     expect(formatActivity('priority_changed', { from: 0, to: 2 })).toBe(
       'Priority changed from No priority to High',
