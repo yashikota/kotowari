@@ -18,6 +18,7 @@ type issueQueryDates struct {
 }
 
 func newIssueQueryDates(filter IssueFilter) (issueQueryDates, error) {
+	dateAsOfProvided := filter.DateAsOf != ""
 	asOf := filter.DueDateAsOf
 	if filter.DueDate != "" && !domain.ValidDueDateFilter(filter.DueDate) {
 		return issueQueryDates{}, validationf("invalid due date filter")
@@ -58,14 +59,19 @@ func newIssueQueryDates(filter IssueFilter) (issueQueryDates, error) {
 		}
 		dateRangeStart = day.AddDate(0, 0, -days).Format("2006-01-02")
 	}
-	statusAgeAnchor, err := time.Parse("2006-01-02", dateAsOf)
-	if err != nil {
-		return issueQueryDates{}, validationf("invalid date filter anchor")
+	var statusAgeAnchor time.Time
+	if filter.DateField == "timeInCurrentStatus" && !dateAsOfProvided {
+		// Status age is elapsed time, so relative filters without an explicit
+		// anchor use the current instant rather than the start/end of a date.
+		statusAgeAnchor = time.Now().UTC()
+	} else {
+		anchoredStatusAge, err := time.Parse("2006-01-02", dateAsOf)
+		if err != nil {
+			return issueQueryDates{}, validationf("invalid date filter anchor")
+		}
+		// Explicit DateAsOf values keep anchored status-age filters stable.
+		statusAgeAnchor = anchoredStatusAge.AddDate(0, 0, 1)
 	}
-	// DateAsOf represents a calendar day, so evaluate status age at its end.
-	// Using wall-clock time here makes anchored filters change as the test or
-	// application runs, even when the filter's date is fixed.
-	statusAgeAnchor = statusAgeAnchor.AddDate(0, 0, 1)
 	return issueQueryDates{
 		asOf:            asOf,
 		rangeEnd:        rangeEnd,

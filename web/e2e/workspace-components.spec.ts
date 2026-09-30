@@ -1248,6 +1248,7 @@ test('time-in-current-status filters by elapsed status time and persist on a sav
   await chooseIssueFilterOption(page, 'Filter issue date', 'Time in current status');
   await chooseIssueFilterOption(page, 'Filter date timeframe', 'At least 1 day');
   await expect(page).toHaveURL(/dateRange=dayAgo/);
+  await expect(page).not.toHaveURL(/dateAsOf=/);
   await expect(
     page
       .getByRole('group', { name: 'Filter date timeframe' })

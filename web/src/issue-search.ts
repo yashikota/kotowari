@@ -93,7 +93,9 @@ export function issuesQuery(filter: {
   if (filter.dateField && filter.dateRange && filter.dateRange !== 'custom') {
     q.set('dateField', filter.dateField);
     q.set('dateRange', filter.dateRange);
-    q.set('dateAsOf', filter.dateAsOf ?? localDateValue(new Date()));
+    if (filter.dateAsOf != null || filter.dateField !== 'timeInCurrentStatus') {
+      q.set('dateAsOf', filter.dateAsOf ?? localDateValue(new Date()));
+    }
   }
   if (filter.projectStatus) q.set('projectStatus', filter.projectStatus);
   if (filter.projectPriority != null) q.set('projectPriority', String(filter.projectPriority));

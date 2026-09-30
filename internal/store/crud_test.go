@@ -1582,6 +1582,25 @@ func TestListIssuesByDateFieldAndTimeframe(t *testing.T) {
 	if err != nil || len(got) != 0 {
 		t.Fatalf("combined status-age and issue-status filter: %#v, error %v", got, err)
 	}
+	recentStatusAt := time.Now().UTC().Add(-23 * time.Hour).Format(time.RFC3339)
+	oldStatusAt := time.Now().UTC().Add(-25 * time.Hour).Format(time.RFC3339)
+	if err := s.mutate(func(m *mem) error {
+		for i := range m.Issues {
+			switch m.Issues[i].Identifier {
+			case recent.Identifier:
+				m.Issues[i].StatusChangedAt = recentStatusAt
+			case old.Identifier:
+				m.Issues[i].StatusChangedAt = oldStatusAt
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err = s.ListIssues(IssueFilter{DateField: "timeInCurrentStatus", DateRange: "dayAgo"})
+	if err != nil || len(got) != 1 || got[0].Identifier != old.Identifier {
+		t.Fatalf("elapsed status age without an anchor: %#v, error %v", got, err)
+	}
 	got, err = s.ListIssues(IssueFilter{DateField: "startedAt", DateRange: "on:2026-09-20", DateAsOf: "2026-09-25"})
 	if err != nil || len(got) != 1 || got[0].Identifier != started.Identifier {
 		t.Fatalf("started on custom date: %#v, error %v", got, err)
