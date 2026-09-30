@@ -73,6 +73,18 @@ function issueSiblingsInGroup(rows: IssueListRow[], identifier: string): Issue[]
   );
 }
 
+function issueGroupKey(rows: IssueListRow[], identifier: string): string | null {
+  let groupKey: string | null = null;
+  for (const row of rows) {
+    if (row.kind === 'group') {
+      groupKey = row.key;
+    } else if (row.issue.identifier === identifier) {
+      return groupKey;
+    }
+  }
+  return null;
+}
+
 export function useIssueListPresenter({
   issues: initialIssues,
   selectedId,
@@ -109,6 +121,27 @@ export function useIssueListPresenter({
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
   const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
+  const expandedRows = useMemo(
+    () =>
+      buildIssueListRows(issues, new Set(), groupBy, {
+        subGroupBy,
+        showEmptyGroups,
+        issueStatuses: workflowStatuses,
+        activeCycleId: cycles.find((cycle) => cycle.status === 'active')?.id,
+        groupOrder,
+        hiddenGroups: new Set(hiddenGroups),
+      }),
+    [
+      issues,
+      groupBy,
+      subGroupBy,
+      showEmptyGroups,
+      workflowStatuses,
+      cycles,
+      groupOrder,
+      hiddenGroups,
+    ],
+  );
   const rows = buildIssueListRows(issues, new Set(collapsedGroups), groupBy, {
     subGroupBy,
     showEmptyGroups,
@@ -317,6 +350,36 @@ export function useIssueListPresenter({
     if (action === 'clear-filters') {
       e.preventDefault();
       sendIntent('issues.filters.clear');
+      return true;
+    }
+    if (action === 'toggle-group' || action === 'toggle-groups') {
+      const groupKeys = expandedRows
+        .filter((row): row is Extract<IssueListRow, { kind: 'group' }> => row.kind === 'group')
+        .map((row) => row.key);
+      if (groupKeys.length === 0) return false;
+      e.preventDefault();
+      if (action === 'toggle-groups') {
+        setCollapsedGroups((current) =>
+          groupKeys.every((key) => current.includes(key)) ? [] : groupKeys,
+        );
+      } else {
+        const focusedGroupKey =
+          e.target instanceof Element
+            ? e.target.closest<HTMLElement>('[data-issue-group-key]')?.dataset.issueGroupKey
+            : undefined;
+        const key = focusedGroupKey ?? issueGroupKey(expandedRows, selectedId ?? '');
+        if (!key) return true;
+        setCollapsedGroups((current) =>
+          current.includes(key) ? current.filter((value) => value !== key) : [...current, key],
+        );
+      }
+      return true;
+    }
+    if (action === 'select-group') {
+      const selectedGroupIssues = issueSiblingsInGroup(rows, selectedId ?? '');
+      if (selectedGroupIssues.length === 0) return false;
+      e.preventDefault();
+      setBulkSelectedIds(selectedGroupIssues.map((issue) => issue.identifier));
       return true;
     }
     if (action === 'escape' && bulkSelectedIds.length > 0) {

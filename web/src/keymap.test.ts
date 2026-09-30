@@ -95,6 +95,34 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
   });
 
+  it('maps shortcuts to collapse issue groups and select a whole group', () => {
+    const body = el('BODY');
+    expect(actionFromKeyboard({ key: 't', ctrlKey: false, metaKey: false, target: body })).toBe(
+      'toggle-group',
+    );
+    expect(
+      actionFromKeyboard({ key: 'T', altKey: true, ctrlKey: false, metaKey: false, target: body }),
+    ).toBe('toggle-groups');
+    expect(
+      actionFromKeyboard({ key: 't', ctrlKey: false, metaKey: false, target: el('INPUT') }),
+    ).toBeNull();
+    expect(
+      actionFromKeyboard({ key: 't', altKey: true, ctrlKey: true, metaKey: false, target: body }),
+    ).toBeNull();
+    expect(
+      actionFromKeyboard({ key: 'a', altKey: true, ctrlKey: true, metaKey: false, target: body }),
+    ).toBe('select-group');
+    expect(
+      actionFromKeyboard({
+        key: 'a',
+        altKey: true,
+        ctrlKey: true,
+        metaKey: false,
+        target: el('INPUT'),
+      }),
+    ).toBeNull();
+  });
+
   it('maps list motion and create keys', () => {
     const body = el('BODY');
     expect(

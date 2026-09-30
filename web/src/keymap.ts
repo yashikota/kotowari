@@ -8,6 +8,7 @@ export type KeyAction =
   | 'move-down'
   | 'move-up'
   | 'select'
+  | 'select-group'
   | 'open'
   | 'escape'
   | 'status'
@@ -24,6 +25,8 @@ export type KeyAction =
   | 'toggle-sidebar'
   | 'toggle-right-sidebar'
   | 'toggle-layout'
+  | 'toggle-group'
+  | 'toggle-groups'
   | 'copy-page-url';
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
@@ -776,6 +779,26 @@ export function actionFromKeyboard(event: {
     return 'clear-filters';
   }
   if (
+    event.altKey &&
+    !event.shiftKey &&
+    !mod &&
+    !event.repeat &&
+    event.key.toLowerCase() === 't' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'toggle-groups';
+  }
+  if (
+    mod &&
+    event.altKey &&
+    !event.shiftKey &&
+    !event.repeat &&
+    event.key.toLowerCase() === 'a' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'select-group';
+  }
+  if (
     event.shiftKey &&
     !event.altKey &&
     !mod &&
@@ -795,6 +818,9 @@ export function actionFromKeyboard(event: {
   }
   if (!event.shiftKey && event.key.toLowerCase() === 'f') {
     return 'add-filter';
+  }
+  if (!event.shiftKey && event.key.toLowerCase() === 't') {
+    return 'toggle-group';
   }
   if (event.key === '[') {
     return 'toggle-sidebar';

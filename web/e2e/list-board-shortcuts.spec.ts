@@ -161,6 +161,56 @@ test('manual issue-list shortcuts reorder issues within their group', async ({ p
     .toBe(true);
 });
 
+test('issue-list shortcuts collapse one group or all groups', async ({ page, request }) => {
+  const stamp = Date.now();
+  for (const [index, priority] of [2, 2, 3].entries()) {
+    const created = await request.post('/api/issues', {
+      data: { title: `Group shortcuts ${stamp} ${index}`, priority },
+    });
+    expect(created.ok(), await created.text()).toBeTruthy();
+  }
+
+  await page.goto('/issues?groupBy=priority&orderBy=manual');
+  await fillIssueSearch(page, String(stamp));
+  const priorityTwo = page.locator('[data-issue-group-key="priority:2"]');
+  const priorityThree = page.locator('[data-issue-group-key="priority:3"]');
+  await expect(priorityTwo).toHaveAttribute('aria-expanded', 'true');
+  await expect(priorityThree).toHaveAttribute('aria-expanded', 'true');
+
+  await priorityTwo.focus();
+  await page.keyboard.press('t');
+  await expect(priorityTwo).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('t');
+  await expect(priorityTwo).toHaveAttribute('aria-expanded', 'true');
+
+  await page.keyboard.press('Alt+t');
+  await expect(priorityTwo).toHaveAttribute('aria-expanded', 'false');
+  await expect(priorityThree).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Alt+t');
+  await expect(priorityTwo).toHaveAttribute('aria-expanded', 'true');
+  await expect(priorityThree).toHaveAttribute('aria-expanded', 'true');
+
+  const groupIssues = await request.get('/api/issues');
+  expect(groupIssues.ok(), await groupIssues.text()).toBeTruthy();
+  const matchingIssues = (
+    (await groupIssues.json()) as { identifier: string; title: string; priority: number }[]
+  ).filter((issue) => issue.title.includes(`Group shortcuts ${stamp}`));
+  const groupMembers = matchingIssues.filter((issue) => issue.priority === 2);
+  const otherGroupMember = matchingIssues.find((issue) => issue.priority === 3);
+  expect(groupMembers).toHaveLength(2);
+  expect(otherGroupMember).toBeDefined();
+  const [first, second] = groupMembers;
+  if (!first || !second || !otherGroupMember) throw new Error('Expected three test issues');
+  await page.getByRole('listbox', { name: 'Issues' }).focus();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Control+Alt+a');
+  await expect(page.getByRole('checkbox', { name: `Select ${first.identifier}` })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: `Select ${second.identifier}` })).toBeChecked();
+  await expect(
+    page.getByRole('checkbox', { name: `Select ${otherGroupMember.identifier}` }),
+  ).not.toBeChecked();
+});
+
 test('board arrows move focus between issues and status columns', async ({ page, request }) => {
   const stamp = Date.now();
   for (const index of [0, 1]) {

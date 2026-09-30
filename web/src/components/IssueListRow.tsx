@@ -115,6 +115,7 @@ export function IssueGroupRow({
         aria-label={i18n.t('ui.issueGroupCount', { label, count: row.count })}
         aria-description={cycleDateRange}
         aria-expanded={!row.collapsed}
+        data-issue-group-key={row.key}
         onClick={() => onToggle(row.key)}
         classNames={{ root: styles.groupButton, inner: styles.groupButtonInner }}
       >
