@@ -4,6 +4,7 @@ import type { NavShortcutAction } from './nav.ts';
 export type KeyAction =
   | 'palette'
   | 'new-issue'
+  | 'new-issue-from-template'
   | 'new-adr'
   | 'move-down'
   | 'move-up'
@@ -749,6 +750,16 @@ export function actionFromKeyboard(event: {
   }
   if (mod && event.key === '/') {
     return 'help';
+  }
+  if (
+    event.altKey &&
+    !event.shiftKey &&
+    !mod &&
+    !event.repeat &&
+    event.key.toLowerCase() === 'c' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'new-issue-from-template';
   }
   if (
     mod &&

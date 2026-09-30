@@ -158,6 +158,7 @@ export function useShellPresenter() {
     data: issueComposerData,
     handlers: issueComposerHandlers,
     openCreateIssue,
+    openCreateIssueFromTemplate,
     closeCreateIssue,
   } = issueComposerState;
   const { issueWorkflowStatuses } = issueComposerData;
@@ -451,6 +452,10 @@ export function useShellPresenter() {
     if (action === 'new-issue') {
       e.preventDefault();
       openCreateIssue();
+    }
+    if (action === 'new-issue-from-template') {
+      e.preventDefault();
+      openCreateIssueFromTemplate();
     }
     if (action === 'new-adr') {
       e.preventDefault();

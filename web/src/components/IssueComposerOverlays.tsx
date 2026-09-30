@@ -110,7 +110,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
           )}
           <Textarea
             ref={issueTitleRef}
-            data-autofocus
+            data-autofocus={!model.issueTemplatePickerRequested || undefined}
             rows={1}
             aria-label={t('modal.issueTitle')}
             placeholder={t('modal.issueTitle')}
@@ -134,6 +134,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
             type={model.issueType}
             cycleId={issueCycleId}
             templateSlug={model.issueTemplateSlug}
+            templatePickerRequested={model.issueTemplatePickerRequested}
             labelNames={model.issueLabelNames}
             workflowStatuses={model.issueWorkflowStatuses}
             projects={projects}

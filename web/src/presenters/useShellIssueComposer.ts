@@ -76,6 +76,7 @@ export function useShellIssueComposer({
   const issueParent = useIssueComposerParent(open);
   const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
   const [issueTemplateSlug, setIssueTemplateSlug] = useState('');
+  const [issueTemplatePickerRequested, setIssueTemplatePickerRequested] = useState(false);
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
@@ -145,6 +146,7 @@ export function useShellIssueComposer({
   function closeCreateIssue() {
     saveCurrentIssueDraft();
     setIssueComposerExpanded(false);
+    setIssueTemplatePickerRequested(false);
     setOpen(false);
   }
 
@@ -204,6 +206,7 @@ export function useShellIssueComposer({
   }, [open, setProjects]);
 
   function openCreateIssue(prefill: IssueCreateContext = {}) {
+    setIssueTemplatePickerRequested(false);
     issueDraftIdRef.current = '';
     setIssueDraftId('');
     setIssueDraftSaved(false);
@@ -239,6 +242,11 @@ export function useShellIssueComposer({
     setIssueCycleId(prefill.cycleId ? String(prefill.cycleId) : '');
     setIssueAssignee(prefill.assignee ?? defaultIssueAssignee);
     setOpen(true);
+  }
+
+  function openCreateIssueFromTemplate() {
+    openCreateIssue();
+    setIssueTemplatePickerRequested(true);
   }
 
   useIntentHandler('issue.create', (value) => {
@@ -399,6 +407,7 @@ export function useShellIssueComposer({
 
   return {
     openCreateIssue,
+    openCreateIssueFromTemplate,
     closeCreateIssue,
     data: {
       issueTitle,
@@ -445,6 +454,7 @@ export function useShellIssueComposer({
       issueLabelNames,
       issueTemplates,
       issueTemplateSlug,
+      issueTemplatePickerRequested,
       availableLabels,
       issueProjectId,
       issueCycleId,

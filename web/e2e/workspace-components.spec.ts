@@ -2052,10 +2052,11 @@ test('issues can be converted into reusable workspace templates', async ({ page,
 
   await page.goto('/templates');
   await expect(page.getByRole('listitem').filter({ hasText: templateName })).toBeVisible();
-  await page.getByRole('button', { name: 'Create issue' }).click();
+  await page.goto('/issues');
+  await page.keyboard.press('Alt+c');
   const createDialog = page.getByRole('dialog', { name: 'Create issue' });
   const templatePicker = createDialog.getByRole('combobox', { name: 'Issue template' });
-  await templatePicker.click();
+  await expect(templatePicker).toBeFocused();
   await page.getByRole('option', { name: templateName }).click();
   await expect(createDialog.getByRole('textbox', { name: 'Issue title' })).toHaveValue(sourceTitle);
   await expect(createDialog.getByRole('textbox', { name: 'Description' })).toContainText(

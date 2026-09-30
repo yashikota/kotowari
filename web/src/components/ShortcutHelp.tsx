@@ -16,6 +16,7 @@ export function ShortcutHelpView({
     { keys: 'Ctrl/⌘+Enter', action: t('ui.shortcutSendOrCreate') },
     { keys: 'Enter (text)', action: t('ui.shortcutInsertLine') },
     { keys: 'c', action: t('modal.createIssue') },
+    { keys: 'Alt+C', action: t('ui.shortcutNewIssueFromTemplate') },
     { keys: 'p', action: t('ui.shortcutPriorityOrAdr') },
     { keys: t('ui.shortcutProjectSequence'), action: t('ui.shortcutCreateProject') },
     { keys: t('ui.shortcutGoInboxKeys'), action: t('nav.inbox') },

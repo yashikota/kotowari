@@ -2170,6 +2170,7 @@
     "shortcutToggleIssueLayout": "リスト表示とボード表示を切り替え",
     "shortcutCopyPageURL": "現在のページURLをコピー",
     "shortcutShowDisplayOptions": "イシューの表示オプションを開く",
+    "shortcutNewIssueFromTemplate": "テンプレートから課題を作成",
     "shortcutMoveIssueBetweenColumns": "選択中のイシューを隣のボード列に移動",
     "shortcutNavigateBoardIssues": "ボード上のイシュー間でフォーカスを移動",
     "shortcutReorderIssueInGroup": "選択中のイシューを同じグループ内で並べ替え",

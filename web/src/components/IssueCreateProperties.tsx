@@ -27,6 +27,7 @@ function PropertySelect({
   searchable = false,
   clearable = false,
   placeholder,
+  autoFocus = false,
 }: {
   label: string;
   value: string | null;
@@ -37,6 +38,7 @@ function PropertySelect({
   searchable?: boolean;
   clearable?: boolean;
   placeholder?: string;
+  autoFocus?: boolean;
 }) {
   return (
     <Select
@@ -52,6 +54,7 @@ function PropertySelect({
       searchable={searchable}
       clearable={clearable}
       placeholder={placeholder}
+      autoFocus={autoFocus}
       allowDeselect={false}
       comboboxProps={{ withinPortal: false, shadow: 'md' }}
       styles={{ input: { height: 34, minHeight: 34, paddingInlineStart: 32 } }}
@@ -68,6 +71,7 @@ export function IssueCreateProperties({
   type,
   cycleId,
   templateSlug,
+  templatePickerRequested,
   labelNames,
   workflowStatuses,
   projects,
@@ -92,6 +96,7 @@ export function IssueCreateProperties({
   type: string | undefined;
   cycleId: string;
   templateSlug: string;
+  templatePickerRequested: boolean;
   labelNames: string[];
   workflowStatuses: IssueWorkflowStatus[];
   projects: Project[];
@@ -234,6 +239,7 @@ export function IssueCreateProperties({
           width={150}
           searchable
           clearable
+          autoFocus={templatePickerRequested}
           placeholder={t('modal.noIssueTemplate')}
         />
       </div>

@@ -394,6 +394,27 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
   });
 
+  it('opens the issue composer at the template picker with Alt+C', () => {
+    expect(
+      actionFromKeyboard({
+        key: 'c',
+        altKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        target: el('BODY'),
+      }),
+    ).toBe('new-issue-from-template');
+    expect(
+      actionFromKeyboard({
+        key: 'c',
+        altKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        target: el('INPUT'),
+      }),
+    ).toBeNull();
+  });
+
   it('lets Escape through while typing and ignores other keys', () => {
     const input = el('INPUT');
     expect(
