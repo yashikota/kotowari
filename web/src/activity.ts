@@ -187,3 +187,21 @@ export function formatActivity(
   }
   return action;
 }
+
+export function formatPriorityActivityGroup(
+  activities: Array<{ payload: Record<string, unknown> }>,
+): string {
+  const first = activities[0];
+  if (!first) return '';
+  const priorityText = (value: unknown) => priorityLabel(typeof value === 'number' ? value : 0);
+  const sequence = activities
+    .map((activity) => priorityText(activity.payload.to))
+    .map((priority, index) =>
+      index === 0 ? priority : i18n.t('activity.prioritySequenceNext', { priority }),
+    )
+    .join(i18n.t('activity.prioritySequenceJoiner'));
+  return i18n.t('activity.priorityChangedSequence', {
+    from: priorityText(first.payload.from),
+    sequence,
+  });
+}

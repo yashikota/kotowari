@@ -7,6 +7,7 @@ import { signals } from '../application/mediator.ts';
 import { convertTextEmoticons } from '../preferences.ts';
 import i18n from '../i18n/index.ts';
 import type { Activity, Comment, Issue } from '../types.ts';
+import { groupPriorityActivityHistory, type IssueTimelineEntry } from '../activity-history.ts';
 
 type CommentSubmitShortcut = Parameters<typeof isCommentSubmitShortcut>[1];
 
@@ -183,7 +184,7 @@ export function useIssueDetailTimeline({
     }
   }
 
-  const timeline = [
+  const timelineEntries = [
     ...activities
       .filter((activity) => activity.action !== 'commented')
       .map((activity) => ({
@@ -204,6 +205,7 @@ export function useIssueDetailTimeline({
       Number(left.kind === 'comment') - Number(right.kind === 'comment') ||
       left.id - right.id,
   );
+  const timeline: IssueTimelineEntry[] = groupPriorityActivityHistory(timelineEntries);
 
   return {
     data: {

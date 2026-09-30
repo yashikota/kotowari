@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vite-plus/test';
-import { formatActivity } from './activity.ts';
+import { formatActivity, formatPriorityActivityGroup } from './activity.ts';
 import i18n from './i18n/index.ts';
 
 beforeAll(async () => {
@@ -66,6 +66,15 @@ describe('formatActivity', () => {
     expect(formatActivity('priority_changed', { from: 2, to: 1 })).toBe(
       'Priority changed from High to Urgent',
     );
+  });
+
+  it('summarizes grouped priority changes as a sequence', () => {
+    expect(
+      formatPriorityActivityGroup([
+        { payload: { from: 0, to: 2 } },
+        { payload: { from: 2, to: 4 } },
+      ]),
+    ).toBe('Priority changed from No priority to High, then Low');
   });
 
   it('describes due date changes and removal', () => {

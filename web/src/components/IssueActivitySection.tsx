@@ -20,7 +20,7 @@ import {
   IconUser,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { formatActivity } from '../activity.ts';
+import { formatActivity, formatPriorityActivityGroup } from '../activity.ts';
 import { useFocusWhen } from '../focus.ts';
 import { MarkdownContent, Section } from '../mantine-ui.tsx';
 import { renderMarkdown } from '../markdown.ts';
@@ -159,6 +159,78 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                     })}
                   </Text>
                 </Text>
+              </Group>
+            );
+          }
+
+          if (entry.kind === 'priority-group') {
+            const locale = i18n.resolvedLanguage ?? i18n.language;
+            const summary = formatPriorityActivityGroup(entry.activities).replace(
+              /^\p{Lu}/u,
+              (letter) => letter.toLocaleLowerCase(locale),
+            );
+            return (
+              <Group
+                key={`priority-group-${entry.id}`}
+                gap="xs"
+                wrap="nowrap"
+                align="flex-start"
+                data-testid="issue-activity-group"
+              >
+                <ActivityAvatar />
+                <details style={{ flex: 1, minWidth: 0 }}>
+                  <summary
+                    data-testid="issue-activity-entry"
+                    style={{ cursor: 'pointer', minWidth: 0 }}
+                  >
+                    <Text size="sm" style={{ minWidth: 0 }}>
+                      <Text span fw={550}>
+                        {t('issueComments.you')}
+                      </Text>{' '}
+                      {summary}{' '}
+                      <Text span c="dimmed" size="sm">
+                        ·{' '}
+                        {formatRelativeTime(entry.createdAt, locale, {
+                          numeric: 'always',
+                          style: 'narrow',
+                        })}
+                      </Text>
+                    </Text>
+                  </summary>
+                  <Stack gap="xs" mt="xs" ml="sm">
+                    {entry.activities.map((activity) => {
+                      const action = formatActivity(
+                        activity.action,
+                        activity.payload,
+                        workflowStatuses,
+                      ).replace(/^\p{Lu}/u, (letter) => letter.toLocaleLowerCase(locale));
+                      return (
+                        <Group
+                          key={`priority-history-${activity.id}`}
+                          gap="xs"
+                          wrap="nowrap"
+                          align="flex-start"
+                          data-testid="issue-activity-history-entry"
+                        >
+                          <ActivityAvatar />
+                          <Text size="sm" style={{ flex: 1, minWidth: 0 }}>
+                            <Text span fw={550}>
+                              {t('issueComments.you')}
+                            </Text>{' '}
+                            {action}{' '}
+                            <Text span c="dimmed" size="sm">
+                              ·{' '}
+                              {formatRelativeTime(activity.createdAt, locale, {
+                                numeric: 'always',
+                                style: 'narrow',
+                              })}
+                            </Text>
+                          </Text>
+                        </Group>
+                      );
+                    })}
+                  </Stack>
+                </details>
               </Group>
             );
           }
