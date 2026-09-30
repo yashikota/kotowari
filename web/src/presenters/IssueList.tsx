@@ -5,6 +5,7 @@ import { setPendingAgentPrompt } from '../agent-prompt.ts';
 import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import { patchIssueOptimistically, useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
+import { sortOrderForDrop } from '../board.ts';
 import {
   issueBranchName,
   issueMarkdown,
@@ -52,6 +53,25 @@ type Props = {
   cycles?: Cycle[];
   labels?: Label[];
 };
+
+function issueSiblingsInGroup(rows: IssueListRow[], identifier: string): Issue[] {
+  const groups = new Map<string, Issue[]>();
+  let groupKey = '';
+  for (const row of rows) {
+    if (row.kind === 'group') {
+      groupKey = row.key;
+      continue;
+    }
+    const siblings = groups.get(groupKey) ?? [];
+    siblings.push(row.issue);
+    groups.set(groupKey, siblings);
+  }
+  return (
+    [...groups.values()].find((siblings) =>
+      siblings.some((issue) => issue.identifier === identifier),
+    ) ?? []
+  );
+}
 
 export function useIssueListPresenter({
   issues: initialIssues,
@@ -237,6 +257,38 @@ export function useIssueListPresenter({
   }
 
   useKeyboard((e) => {
+    if (
+      orderBy === 'manual' &&
+      e.altKey &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.isComposing &&
+      !e.defaultPrevented &&
+      !isTypingTarget(e.target) &&
+      (e.key === 'ArrowUp' || e.key === 'ArrowDown')
+    ) {
+      const issue = issueRows.find((row) => row.issue.identifier === selectedId)?.issue;
+      if (!issue || !selectedId) return false;
+      const siblings = issueSiblingsInGroup(rows, selectedId);
+      const currentIndex = siblings.findIndex((item) => item.identifier === selectedId);
+      const direction = e.key === 'ArrowUp' ? -1 : 1;
+      const nextIndex = e.shiftKey
+        ? direction < 0
+          ? 0
+          : siblings.length - 1
+        : currentIndex + direction;
+      e.preventDefault();
+      if (nextIndex < 0 || nextIndex >= siblings.length || nextIndex === currentIndex) return true;
+      const rest = siblings.filter((item) => item.identifier !== selectedId);
+      const beforeId = rest[nextIndex]?.identifier ?? null;
+      void (async () => {
+        await patchIssueOptimistically(selectedId, {
+          sortOrder: sortOrderForDrop(siblings, selectedId, beforeId),
+        });
+        await router.invalidate();
+      })();
+      return true;
+    }
     if (
       (e.ctrlKey || e.metaKey) &&
       !e.altKey &&
