@@ -93,6 +93,24 @@ describe('actionFromKeyboard', () => {
         target: el('TEXTAREA'),
       }),
     ).toBeNull();
+    expect(
+      actionFromKeyboard({
+        key: 'V',
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: true,
+        target: body,
+      }),
+    ).toBe('show-display-options');
+    expect(
+      actionFromKeyboard({
+        key: 'V',
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: true,
+        target: el('TEXTAREA'),
+      }),
+    ).toBeNull();
   });
 
   it('maps shortcuts to collapse issue groups and select a whole group', () => {

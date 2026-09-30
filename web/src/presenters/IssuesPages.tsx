@@ -29,7 +29,7 @@ import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import { copyPageURL } from '../copy-page-url.ts';
 import type { IssueNavigationState } from '../focus.ts';
-import { useIntentHandler, useKeyboard } from '../application/Root.tsx';
+import { useIntentHandler, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
@@ -159,6 +159,7 @@ export function useIssuesPagePresenter() {
   const showEmptyGroups = search.showEmptyGroups ?? false;
   const displayProperties = search.displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES];
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [, setDisplayOptionsOpen] = useRootMachineFlag('issues.displayOptions');
   const [facet, setFacet] = useState<IssueFacetType>('assignees');
   const [selected, setSelected] = useState<string | null>(
     locationState.issueListSelectedId ?? null,
@@ -219,6 +220,11 @@ export function useIssuesPagePresenter() {
     if (action === 'toggle-layout') {
       event.preventDefault();
       void updateIssueDisplay({ layout: layout === 'list' ? 'board' : 'list' });
+      return true;
+    }
+    if (action === 'show-display-options') {
+      event.preventDefault();
+      setDisplayOptionsOpen(true);
       return true;
     }
     if (action === 'toggle-right-sidebar') {

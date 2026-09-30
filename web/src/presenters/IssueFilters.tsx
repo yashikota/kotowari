@@ -1,7 +1,7 @@
 import type * as React from 'react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMachineFlag, useRootMachineFlag } from '../application/Root.tsx';
+import { useRootMachineFlag } from '../application/Root.tsx';
 import type { IssueSearch } from '../issue-search.ts';
 import {
   clearIssueSearchFilters,
@@ -185,9 +185,15 @@ export function useIssueFiltersPresenter({
     }
   }
   const [filterOpened, setFilterOpened] = useRootMachineFlag('issues.filterMenu');
-  const [displayOpened, setDisplayOpened] = useMachineFlag('display');
+  const [displayOpened, setDisplayOpened] = useRootMachineFlag('issues.displayOptions');
 
-  useEffect(() => () => setFilterOpened(false), [setFilterOpened]);
+  useEffect(
+    () => () => {
+      setFilterOpened(false);
+      setDisplayOpened(false);
+    },
+    [setFilterOpened, setDisplayOpened],
+  );
 
   function set(patch: IssueSearch) {
     const next = { ...searchRef.current, ...patch };

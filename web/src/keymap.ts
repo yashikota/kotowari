@@ -25,6 +25,7 @@ export type KeyAction =
   | 'toggle-sidebar'
   | 'toggle-right-sidebar'
   | 'toggle-layout'
+  | 'show-display-options'
   | 'toggle-group'
   | 'toggle-groups'
   | 'copy-page-url';
@@ -827,6 +828,9 @@ export function actionFromKeyboard(event: {
   }
   if (event.key === ']') {
     return 'toggle-right-sidebar';
+  }
+  if (event.shiftKey && event.key.toLowerCase() === 'v') {
+    return 'show-display-options';
   }
   if (event.shiftKey) {
     switch (event.key) {

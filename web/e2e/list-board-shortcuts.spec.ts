@@ -17,10 +17,17 @@ test('issue list shortcuts switch layouts and copy the current page URL', async 
 
   await page.keyboard.press('Control+b');
   await expect(page).toHaveURL(/layout=list/);
+  await page.keyboard.press('Shift+v');
+  await expect(page.getByRole('button', { name: 'Display options' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await page.keyboard.press('Escape');
   await page.keyboard.press('?');
   const shortcuts = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
   await expect(shortcuts).toContainText('Switch between list and board layouts');
   await expect(shortcuts).toContainText('Copy the current page URL');
+  await expect(shortcuts).toContainText('Open issue display options');
 });
 
 test('saved issue views switch layouts with the keyboard and save the new layout', async ({
@@ -59,6 +66,7 @@ test('board shortcut moves the focused issue into the adjacent status column', a
   const issue = (await created.json()) as { identifier: string };
 
   await page.goto('/issues?layout=board');
+  await fillIssueSearch(page, title);
   const todoColumn = page.getByRole('region', { name: 'Todo issues' });
   const card = todoColumn.getByRole('button').filter({ hasText: issue.identifier });
   await expect(card).toBeVisible();
@@ -93,6 +101,7 @@ test('manual board shortcuts reorder issues within their status column', async (
   const second = (await secondResponse.json()) as { identifier: string };
 
   await page.goto('/issues?layout=board');
+  await fillIssueSearch(page, String(stamp));
   const todoColumn = page.getByRole('region', { name: 'Todo issues' });
   const firstCard = todoColumn.getByRole('button').filter({ hasText: first.identifier });
   const secondCard = todoColumn.getByRole('button').filter({ hasText: second.identifier });
@@ -225,6 +234,7 @@ test('board arrows move focus between issues and status columns', async ({ page,
   expect(inProgress.ok(), await inProgress.text()).toBeTruthy();
 
   await page.goto('/issues?layout=board');
+  await fillIssueSearch(page, String(stamp));
   const todoCards = page
     .getByRole('region', { name: 'Todo issues' })
     .locator('[data-issue-board-card]');

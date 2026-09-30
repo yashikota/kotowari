@@ -55,6 +55,7 @@ export function ShortcutHelpView({
     { keys: 'j / k', action: t('ui.shortcutMoveSelection') },
     { keys: 'Ctrl/⌘+B', action: t('ui.shortcutToggleIssueLayout') },
     { keys: 'Ctrl/⌘+Shift+C', action: t('ui.shortcutCopyPageURL') },
+    { keys: 'Shift+V', action: t('ui.shortcutShowDisplayOptions') },
     { keys: 'Ctrl/⌘+← / →', action: t('ui.shortcutMoveIssueBetweenColumns') },
     { keys: '↑ / ↓ / ← / →', action: t('ui.shortcutNavigateBoardIssues') },
     { keys: 'Alt+↑ / ↓', action: t('ui.shortcutReorderIssueInGroup') },
