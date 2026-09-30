@@ -129,6 +129,10 @@ export function useCyclesPagePresenter() {
         onChangeDates: () => openCycleDates(cycle),
         onStartCycleToday: () =>
           updateCycle(cycle.number, { startsAt: `${todayValue}T00:00:00Z`, status: 'active' }),
+        onToggleIssueAddedNotifications: () =>
+          updateCycle(cycle.number, { notifyOnIssueAdded: !cycle.notifyOnIssueAdded }),
+        onToggleIssueCompletedNotifications: () =>
+          updateCycle(cycle.number, { notifyOnIssueCompleted: !cycle.notifyOnIssueCompleted }),
         onToggleFavorite: () => updateCycle(cycle.number, { isFavorite: !cycle.isFavorite }),
         onCopyLink: () => copyCycleLink(cycle.number),
         onExportCalendar: () => exportCalendar(cycle),

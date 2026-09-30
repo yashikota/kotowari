@@ -15,6 +15,8 @@ type CycleSummary = Cycle & {
   onEdit: () => void;
   onChangeDates: () => void;
   onStartCycleToday: () => void;
+  onToggleIssueAddedNotifications: () => void;
+  onToggleIssueCompletedNotifications: () => void;
   onToggleFavorite: () => void;
   onCopyLink: () => void;
   onExportCalendar: () => void;
@@ -99,6 +101,27 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
           {cycle.status === 'upcoming' ? (
             <Menu.Item onClick={cycle.onStartCycleToday}>{t('cycle.startToday')}</Menu.Item>
           ) : null}
+          <Menu.Sub>
+            <Menu.Sub.Target>
+              <Menu.Sub.Item>{t('cycle.subscribeNotifications')}</Menu.Sub.Item>
+            </Menu.Sub.Target>
+            <Menu.Sub.Dropdown>
+              <Menu.CheckboxItem
+                checked={!!cycle.notifyOnIssueAdded}
+                closeMenuOnClick={false}
+                onChange={cycle.onToggleIssueAddedNotifications}
+              >
+                {t('cycle.notifyIssueAdded')}
+              </Menu.CheckboxItem>
+              <Menu.CheckboxItem
+                checked={!!cycle.notifyOnIssueCompleted}
+                closeMenuOnClick={false}
+                onChange={cycle.onToggleIssueCompletedNotifications}
+              >
+                {t('cycle.notifyIssueCompleted')}
+              </Menu.CheckboxItem>
+            </Menu.Sub.Dropdown>
+          </Menu.Sub>
           <Menu.Item onClick={cycle.onToggleFavorite}>
             {cycle.isFavorite ? t('cycle.removeFavorite') : t('cycle.favorite')}
           </Menu.Item>

@@ -164,8 +164,9 @@ test('cycle notification subscriptions persist and deliver matching events to th
   expect(cycleResponse.ok(), await cycleResponse.text()).toBeTruthy();
   const cycle = (await cycleResponse.json()) as { id: number; number: number; name: string };
 
-  await page.goto(`/cycles/${cycle.number}`);
-  await page.getByRole('button', { name: 'Cycle options' }).click();
+  await page.goto('/cycles');
+  const cycleRow = page.getByRole('region', { name: cycle.name });
+  await cycleRow.getByRole('button', { name: 'Cycle options' }).click();
   await page.getByRole('menuitem', { name: 'Subscribe to cycle notifications' }).hover();
   const addedPreference = page.getByRole('menuitemcheckbox', {
     name: 'An issue is added to the current cycle',
@@ -186,6 +187,13 @@ test('cycle notification subscriptions persist and deliver matching events to th
     .toMatchObject({ notifyOnIssueAdded: true, notifyOnIssueCompleted: true });
 
   await page.reload();
+  const refreshedCycleRow = page.getByRole('region', { name: cycle.name });
+  await refreshedCycleRow.getByRole('button', { name: 'Cycle options' }).click();
+  await page.getByRole('menuitem', { name: 'Subscribe to cycle notifications' }).hover();
+  await expect(addedPreference).toHaveAttribute('aria-checked', 'true');
+  await expect(completedPreference).toHaveAttribute('aria-checked', 'true');
+
+  await page.goto(`/cycles/${cycle.number}`);
   await page.getByRole('button', { name: 'Cycle options' }).click();
   await page.getByRole('menuitem', { name: 'Subscribe to cycle notifications' }).hover();
   await expect(addedPreference).toHaveAttribute('aria-checked', 'true');
