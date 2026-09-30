@@ -152,7 +152,7 @@ function IssueListBinding({ hideProjectSlug, ...props }: Parameters<typeof Issue
 export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoardPresenter> }) {
   switch (model._view) {
     case 0: {
-      const { dragId, columns, handlers } = model;
+      const { dragId, columns, canReorder, handlers } = model;
       return (
         <Group align="stretch" gap="md" wrap="nowrap" className={styles.board}>
           {columns.map((column) => (
@@ -164,6 +164,7 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
               onOpen={handlers.onOpen1}
               onMove={handlers.onMove2}
               onMoveToAdjacentColumn={handlers.onMoveToAdjacentColumn3}
+              canReorder={canReorder}
             />
           ))}
         </Group>

@@ -5,6 +5,7 @@ export type IssueBoardColumnProps = {
   status: string;
   category: IssueStatus;
   name: string;
+  canReorder: boolean;
   dragId: string | null;
   onDrag: (id: string | null) => void;
   onOpen: (id: string) => void;

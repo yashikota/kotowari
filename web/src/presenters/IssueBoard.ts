@@ -78,6 +78,7 @@ export function useIssueBoardPresenter({
     onMove,
     dragId,
     columns,
+    canReorder: orderBy === 'manual',
     handlers: {
       onDrag0: (...args: Parameters<IssueBoardColumnProps['onDrag']>) => {
         const handle: IssueBoardColumnProps['onDrag'] = setDragId;
@@ -108,6 +109,7 @@ export function useBoardColumnPresenter({
   status,
   category,
   name,
+  canReorder,
   dragId,
   onDrag,
   onOpen,
@@ -152,6 +154,30 @@ export function useBoardColumnPresenter({
       },
       onClick6: (issue: Issue) => onOpen(issue.identifier),
       onKeyDown7: (issue: Issue, event: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (
+          canReorder &&
+          event.altKey &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          (event.key === 'ArrowUp' || event.key === 'ArrowDown')
+        ) {
+          const currentIndex = issues.findIndex((item) => item.identifier === issue.identifier);
+          const direction = event.key === 'ArrowUp' ? -1 : 1;
+          const nextIndex = event.shiftKey
+            ? direction < 0
+              ? 0
+              : issues.length - 1
+            : currentIndex + direction;
+          if (nextIndex < 0 || nextIndex >= issues.length || nextIndex === currentIndex) {
+            event.preventDefault();
+            return true;
+          }
+          const rest = issues.filter((item) => item.identifier !== issue.identifier);
+          const beforeId = rest[nextIndex]?.identifier ?? null;
+          event.preventDefault();
+          onMove(issue.identifier, status, sortOrderForDrop(issues, issue.identifier, beforeId));
+          return true;
+        }
         if (
           event.defaultPrevented ||
           !(event.ctrlKey || event.metaKey) ||

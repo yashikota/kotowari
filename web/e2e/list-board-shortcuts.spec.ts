@@ -75,6 +75,53 @@ test('board shortcut moves the focused issue into the adjacent status column', a
   );
 });
 
+test('manual board shortcuts reorder issues within their status column', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const firstResponse = await request.post('/api/issues', {
+    data: { title: `Board order ${stamp} first`, status: 'todo' },
+  });
+  const secondResponse = await request.post('/api/issues', {
+    data: { title: `Board order ${stamp} second`, status: 'todo' },
+  });
+  expect(firstResponse.ok(), await firstResponse.text()).toBeTruthy();
+  expect(secondResponse.ok(), await secondResponse.text()).toBeTruthy();
+  const first = (await firstResponse.json()) as { identifier: string };
+  const second = (await secondResponse.json()) as { identifier: string };
+
+  await page.goto('/issues?layout=board');
+  const todoColumn = page.getByRole('region', { name: 'Todo issues' });
+  const firstCard = todoColumn.getByRole('button').filter({ hasText: first.identifier });
+  const secondCard = todoColumn.getByRole('button').filter({ hasText: second.identifier });
+  await expect(firstCard).toBeVisible();
+  await expect(secondCard).toBeVisible();
+
+  async function issueSortOrder(identifier: string) {
+    const response = await request.get(`/api/issues/${identifier}`);
+    return ((await response.json()) as { sortOrder: number }).sortOrder;
+  }
+
+  await secondCard.focus();
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect
+    .poll(
+      async () =>
+        (await issueSortOrder(second.identifier)) < (await issueSortOrder(first.identifier)),
+    )
+    .toBe(true);
+
+  await secondCard.focus();
+  await page.keyboard.press('Alt+Shift+ArrowDown');
+  await expect
+    .poll(
+      async () =>
+        (await issueSortOrder(second.identifier)) > (await issueSortOrder(first.identifier)),
+    )
+    .toBe(true);
+});
+
 test('cycle issue lists switch layouts and copy their current page URL', async ({
   page,
   request,
