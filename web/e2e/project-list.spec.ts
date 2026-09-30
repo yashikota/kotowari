@@ -415,12 +415,13 @@ test('project list and saved-view previews group by labels, health, and dates', 
   await expect(groupByName(expectedTargetDate)).toContainText(labeledName);
   await expect(groupByName('No date')).toContainText(unassignedName);
 
-  await page.goto('/projects');
+  await page.goto('/projects?direction=asc');
   await page.getByRole('button', { name: 'Display options' }).click();
   await page.getByRole('combobox', { name: 'Ordering' }).click();
   await page.getByRole('option', { name: 'Health updated', exact: true }).click();
   await page.getByRole('button', { name: 'Display options' }).click();
   await expect(page).toHaveURL(/orderBy=healthUpdated/);
+  await expect(page).toHaveURL(/direction=asc/);
   const expectedHealthOrder = [
     ...healthUpdateProjects.map((project) => ({ slug: project.slug, at: project.healthUpdatedAt })),
     { slug: unassignedSlug, at: undefined },
