@@ -1399,6 +1399,7 @@ test('project summary is distinct from description through creation and editing'
   const descriptionField = page.getByLabel('Project description');
   await expect(summaryField).toHaveValue(summary);
   await expect(descriptionField).toHaveValue(description);
+  await expect(descriptionField).toBeFocused();
   await summaryField.fill(revisedSummary);
   await expect(summaryField).toHaveValue(revisedSummary);
   await page.getByRole('button', { name: 'Choose project icon' }).click();
