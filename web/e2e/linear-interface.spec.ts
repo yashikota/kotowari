@@ -103,20 +103,35 @@ test('AI filter date prompt includes due dates only inside its requested window'
   await expect(issueList.getByRole('option', { name: new RegExp(outsideTitle) })).toHaveCount(0);
 });
 
-test('issue display property chips persist as personal view state', async ({ page }) => {
+test('issue display property chips persist as personal view state', async ({ page, request }) => {
+  const stamp = Date.now();
+  const agentTitle = `Creator display agent ${stamp}`;
+  const selfTitle = `Creator display self ${stamp}`;
+  for (const data of [
+    { title: agentTitle, creator: 'agent' },
+    { title: selfTitle, creator: 'self' },
+  ]) {
+    const response = await request.post('/api/issues', { data });
+    expect(response.ok()).toBeTruthy();
+  }
+
   await page.goto('/issues');
   await page.getByRole('button', { name: 'Display options' }).click();
 
   const properties = page.getByRole('group', { name: 'Display properties' });
   const dueDate = properties.getByRole('button', { name: 'Due date', exact: true });
   const milestone = properties.getByRole('button', { name: 'Milestone', exact: true });
+  const creator = properties.getByRole('button', { name: 'Creator', exact: true });
   await expect(dueDate).toHaveAttribute('aria-pressed', 'true');
   await expect(milestone).toHaveAttribute('aria-pressed', 'false');
+  await expect(creator).toHaveAttribute('aria-pressed', 'false');
 
   await dueDate.click();
   await milestone.click();
+  await creator.click();
   await expect(dueDate).toHaveAttribute('aria-pressed', 'false');
   await expect(milestone).toHaveAttribute('aria-pressed', 'true');
+  await expect(creator).toHaveAttribute('aria-pressed', 'true');
   await expect(page).toHaveURL(/displayProperties=/);
 
   await page.reload();
@@ -129,6 +144,16 @@ test('issue display property chips persist as personal view state', async ({ pag
     'aria-pressed',
     'true',
   );
+  await expect(properties.getByRole('button', { name: 'Creator', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Display options' }).click();
+  const issueList = page.getByRole('listbox', { name: 'Issues' });
+  await expect(issueList.getByRole('option', { name: new RegExp(agentTitle) })).toContainText(
+    'Agent',
+  );
+  await expect(issueList.getByRole('option', { name: new RegExp(selfTitle) })).toContainText('You');
 });
 
 test('issue filters use a searchable category menu with a scoped editor', async ({ page }) => {
