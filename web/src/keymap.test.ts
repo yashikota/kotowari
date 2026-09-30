@@ -515,6 +515,7 @@ describe('global navigation keyboard sequence', () => {
     ['j', 'agent'],
     ['d', 'drafts'],
     ['m', 'my-issues'],
+    ['a', 'active-issues'],
     ['b', 'backlog'],
     ['e', 'all-issues'],
     ['c', 'cycles'],

@@ -30,6 +30,7 @@ const GLOBAL_NAVIGATION_HREF: Record<GlobalNavigationAction, string> = {
   agent: '/agent',
   drafts: '/drafts',
   'my-issues': '/issues?assignee=self&myIssuesTab=assigned',
+  'active-issues': '/issues?view=active',
   backlog: '/issues?status=backlog',
   'all-issues': '/issues',
   cycles: '/cycles',

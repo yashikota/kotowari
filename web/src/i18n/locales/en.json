@@ -2109,6 +2109,8 @@
     "shortcutGoReviewsKeys": "G, then R",
     "shortcutGoAgentKeys": "G, then J",
     "shortcutGoDraftsKeys": "G, then D",
+    "shortcutGoActiveIssuesKeys": "G, then A",
+    "shortcutGoActiveIssues": "Active issues",
     "shortcutGoMyIssuesKeys": "G, then M",
     "shortcutGoBacklogKeys": "G, then B",
     "shortcutGoIssuesKeys": "G, then E",

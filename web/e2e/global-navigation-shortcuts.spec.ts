@@ -11,6 +11,7 @@ test('Linear-style G sequences navigate to supported personal and workspace view
     ['j', /\/agent(?:$|[?#])/],
     ['d', /\/drafts(?:$|[?#])/],
     ['m', /\/issues\?assignee=self(?:$|&)/],
+    ['a', /\/issues\?view=active(?:$|&)/],
     ['b', /\/issues\?status=backlog(?:$|&)/],
     ['e', /\/issues(?:$|[?#])/],
     ['c', /\/cycles(?:$|[?#])/],
@@ -36,6 +37,8 @@ test('Linear-style G sequences navigate to supported personal and workspace view
   await expect(shortcuts).toBeVisible();
   await expect(shortcuts).toContainText('G, then I');
   await expect(shortcuts).toContainText('G, then D');
+  await expect(shortcuts).toContainText('G, then A');
+  await expect(shortcuts).toContainText('Active issues');
   await expect(shortcuts).toContainText('G, then W');
   await expect(shortcuts).toContainText('Alt+U');
   await expect(shortcuts).toContainText('Mark all as read');

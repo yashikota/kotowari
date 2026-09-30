@@ -23,6 +23,7 @@ export function ShortcutHelpView({
     { keys: t('ui.shortcutGoAgentKeys'), action: t('nav.agent') },
     { keys: t('ui.shortcutGoDraftsKeys'), action: t('nav.drafts') },
     { keys: t('ui.shortcutGoMyIssuesKeys'), action: t('nav.myIssues') },
+    { keys: t('ui.shortcutGoActiveIssuesKeys'), action: t('ui.shortcutGoActiveIssues') },
     { keys: t('ui.shortcutGoBacklogKeys'), action: t('issueStatus.backlog') },
     { keys: t('ui.shortcutGoIssuesKeys'), action: t('nav.issues') },
     { keys: t('ui.shortcutGoCyclesKeys'), action: t('nav.cycles') },

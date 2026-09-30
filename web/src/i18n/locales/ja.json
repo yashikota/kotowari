@@ -2097,6 +2097,8 @@
     "shortcutGoReviewsKeys": "G、続けてR",
     "shortcutGoAgentKeys": "G、続けてJ",
     "shortcutGoDraftsKeys": "G、続けてD",
+    "shortcutGoActiveIssuesKeys": "G、続けてA",
+    "shortcutGoActiveIssues": "進行中のイシュー",
     "shortcutGoMyIssuesKeys": "G、続けてM",
     "shortcutGoBacklogKeys": "G、続けてB",
     "shortcutGoIssuesKeys": "G、続けてE",
