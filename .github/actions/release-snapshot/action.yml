@@ -16,7 +16,11 @@ runs:
       shell: bash
       run: |
         go build ./...
-        git diff --exit-code -- internal/webembed/dist/.keep
+        if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+          git status --short --untracked-files=all
+          echo "::error::Release snapshot generation left the working tree dirty."
+          exit 1
+        fi
     - name: Build release artifacts (snapshot)
       uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
       with:
