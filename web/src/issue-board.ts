@@ -12,6 +12,7 @@ export type IssueBoardColumnProps = {
   onToggleSelection: (id: string, checked: boolean, shiftKey?: boolean) => void;
   onExtendSelection: (anchorId: string, targetId: string) => void;
   onSelectAll: () => void;
+  onSelectColumn: () => void;
   onClearSelection: () => void;
   onOpen: (id: string) => void;
   onMove: (id: string, status: string, sortOrder: number) => void;

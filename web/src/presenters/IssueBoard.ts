@@ -10,6 +10,8 @@ import type { Cycle, Issue, Label, Project } from '../types.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { useIssueBulkActions } from './IssueBulkActions.ts';
+import { useKeyboard } from '../application/Root.tsx';
+import { isTypingTarget } from '../keymap.ts';
 
 type BoardProps = {
   issues: Issue[];
@@ -156,6 +158,15 @@ export function useIssueBoardPresenter({
         selectionRange.current = null;
         setBulkSelectedIds(issueIds);
       },
+      onSelectColumn11: (status: string) => {
+        const columnIssueIds = columns
+          .find((column) => column.status === status)
+          ?.issues.map((issue) => issue.identifier);
+        if (!columnIssueIds?.length) return;
+        selectionAnchorId.current = columnIssueIds[0] ?? null;
+        selectionRange.current = null;
+        setBulkSelectedIds(columnIssueIds);
+      },
       onClearBulkSelection9: bulkActions.handlers.onClearBulkSelection,
       onOpen3: (id: string) =>
         onOpen(id, {
@@ -190,12 +201,51 @@ export function useBoardColumnPresenter({
   onToggleSelection,
   onExtendSelection,
   onSelectAll,
+  onSelectColumn,
   onClearSelection,
   onOpen,
   onMove,
   onMoveToAdjacentColumn,
 }: IssueBoardColumnProps) {
   const windowed = useWindowedRows(issues.length, 100);
+  useKeyboard((event) => {
+    if (event.defaultPrevented || event.isComposing || isTypingTarget(event.target)) return false;
+    const modified = event.ctrlKey || event.metaKey;
+    if (
+      modified &&
+      event.altKey &&
+      !event.shiftKey &&
+      !event.repeat &&
+      event.key.toLowerCase() === 'a'
+    ) {
+      event.preventDefault();
+      onSelectColumn();
+      return true;
+    }
+    if (
+      modified &&
+      !event.altKey &&
+      !event.shiftKey &&
+      !event.repeat &&
+      event.key.toLowerCase() === 'a'
+    ) {
+      event.preventDefault();
+      onSelectAll();
+      return true;
+    }
+    if (
+      !modified &&
+      !event.altKey &&
+      !event.shiftKey &&
+      event.key === 'Escape' &&
+      bulkSelectedIdSet.size > 0
+    ) {
+      event.preventDefault();
+      onClearSelection();
+      return true;
+    }
+    return false;
+  });
   function drop(beforeId: string | null) {
     if (dragId) onMove(dragId, status, sortOrderForDrop(issues, dragId, beforeId));
     onDrag(null);
@@ -287,23 +337,6 @@ export function useBoardColumnPresenter({
             onToggleSelection(issue.identifier, !bulkSelectedIdSet.has(issue.identifier));
             return true;
           }
-          if (event.key === 'Escape' && bulkSelectedIdSet.size > 0) {
-            event.preventDefault();
-            onClearSelection();
-            return true;
-          }
-        }
-        if (
-          (event.ctrlKey || event.metaKey) &&
-          !event.altKey &&
-          !event.shiftKey &&
-          !event.repeat &&
-          !event.nativeEvent.isComposing &&
-          event.key.toLowerCase() === 'a'
-        ) {
-          event.preventDefault();
-          onSelectAll();
-          return true;
         }
         if (
           canReorder &&

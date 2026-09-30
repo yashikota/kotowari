@@ -202,6 +202,38 @@ test('issue board bulk actions update the selected issues', async ({ page, reque
   }
 });
 
+test('issue board selects all issues in the focused status column', async ({ page, request }) => {
+  const stamp = Date.now();
+  const todoIds: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Board column selection ${stamp} todo ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    todoIds.push(((await response.json()) as { identifier: string }).identifier);
+  }
+  const activeResponse = await request.post('/api/issues', {
+    data: { title: `Board column selection ${stamp} active`, status: 'in_progress' },
+  });
+  expect(activeResponse.ok()).toBeTruthy();
+  const activeId = ((await activeResponse.json()) as { identifier: string }).identifier;
+
+  await page.goto('/issues?layout=board');
+  await fillIssueSearch(page, String(stamp));
+  const todoColumn = page.getByRole('region', { name: 'Todo issues' });
+  const todoCards = todoColumn.locator('[data-issue-board-card]');
+  await expect(todoCards).toHaveCount(2);
+  await todoCards.first().focus();
+  await expect(todoCards.first()).toBeFocused();
+  await page.keyboard.press('Control+Alt+a');
+
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+  for (const identifier of todoIds) {
+    await expect(page.getByRole('checkbox', { name: `Select ${identifier}` })).toBeChecked();
+  }
+  await expect(page.getByRole('checkbox', { name: `Select ${activeId}` })).not.toBeChecked();
+});
+
 test('issue list can assign selected issues to Agent', async ({ page, request }) => {
   const stamp = Date.now();
   const identifiers: string[] = [];

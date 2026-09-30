@@ -181,6 +181,7 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
                 onToggleSelection={handlers.onToggleSelection1}
                 onExtendSelection={handlers.onExtendSelection2}
                 onSelectAll={handlers.onSelectAll10}
+                onSelectColumn={() => handlers.onSelectColumn11(column.status)}
                 onClearSelection={handlers.onClearBulkSelection9}
                 onOpen={handlers.onOpen3}
                 onMove={handlers.onMove4}
