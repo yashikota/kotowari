@@ -58,6 +58,15 @@ test('issue creation keeps Linear-style compact properties usable on desktop and
   expect(desktopEstimate!.y).toBeGreaterThan(desktopStatus!.y);
   expect(desktopTemplate!.x).toBeGreaterThan(desktopCycle!.x);
 
+  await dialog.getByRole('button', { name: 'Expand issue composer' }).click();
+  const expandedDialog = await dialog.boundingBox();
+  expect(expandedDialog).not.toBeNull();
+  expect(expandedDialog!.width).toBeGreaterThanOrEqual(1362);
+  await dialog.getByRole('button', { name: 'Collapse issue composer' }).click();
+  const collapsedDialog = await dialog.boundingBox();
+  expect(collapsedDialog).not.toBeNull();
+  expect(collapsedDialog!.width).toBeLessThan(expandedDialog!.width);
+
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileDialog = await dialog.boundingBox();
   expect(mobileDialog).not.toBeNull();

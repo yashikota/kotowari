@@ -53,6 +53,7 @@ export function useShellIssueComposer({
   const router = useRouter();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const [issueTitle, setIssueTitle] = useState('');
+  const [issueComposerExpanded, setIssueComposerExpanded] = useState(false);
   const [issueDraftId, setIssueDraftId] = useState('');
   const issueDraftIdRef = useRef('');
   const [issueDraftSaved, setIssueDraftSaved] = useState(false);
@@ -143,6 +144,7 @@ export function useShellIssueComposer({
 
   function closeCreateIssue() {
     saveCurrentIssueDraft();
+    setIssueComposerExpanded(false);
     setOpen(false);
   }
 
@@ -150,6 +152,7 @@ export function useShellIssueComposer({
     const draft = saveCurrentIssueDraft();
     if (!draft) return;
     setIssueDraftSaved(true);
+    setIssueComposerExpanded(false);
     setOpen(false);
     setSavedIssueDraft(draft);
   }
@@ -168,6 +171,7 @@ export function useShellIssueComposer({
       setIssueDraftSaved(false);
       setIssueTitle('');
       setIssueBody('');
+      setIssueComposerExpanded(false);
       setOpen(false);
     }
     setSavedIssueDraft(null);
@@ -203,6 +207,7 @@ export function useShellIssueComposer({
     issueDraftIdRef.current = '';
     setIssueDraftId('');
     setIssueDraftSaved(false);
+    setIssueComposerExpanded(false);
     setIssueCreateMore(false);
     setIssueTitle('');
     setIssueBody('');
@@ -244,6 +249,7 @@ export function useShellIssueComposer({
     issueDraftIdRef.current = draft.id;
     setIssueDraftId(draft.id);
     setIssueDraftSaved(true);
+    setIssueComposerExpanded(false);
     setIssueTitle(draft.title);
     setIssueBody(draft.body);
     setIssueStatus(draft.status);
@@ -377,6 +383,7 @@ export function useShellIssueComposer({
     if (createMore) setIssueCreateMoreFocusRequest((request) => request + 1);
     else {
       setIssueCreateMore(false);
+      setIssueComposerExpanded(false);
       setOpen(false);
     }
     if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
@@ -395,6 +402,7 @@ export function useShellIssueComposer({
     closeCreateIssue,
     data: {
       issueTitle,
+      issueComposerExpanded,
       issueDraftId,
       issueDraftSaved,
       savedIssueDraft,
@@ -462,6 +470,7 @@ export function useShellIssueComposer({
       onCancelIssueDraftDiscard: () => setIssueDraftDiscardRequest(null),
       onConfirmIssueDraftDiscard: confirmIssueDraftDiscard,
       onCloseCreateIssue: closeCreateIssue,
+      onToggleIssueComposerExpanded: () => setIssueComposerExpanded((expanded) => !expanded),
       onComposerTitleChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setIssueTitle(e.target.value),

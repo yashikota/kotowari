@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Alert,
   Box,
   Button,
@@ -14,7 +15,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconPaperclip, IconRepeat } from '@tabler/icons-react';
+import { IconMaximize, IconMinimize, IconPaperclip, IconRepeat } from '@tabler/icons-react';
 import type { RefObject } from 'react';
 import type { useTranslation } from 'react-i18next';
 import { DraftDiscardDialog } from './DraftDiscardDialog.tsx';
@@ -49,8 +50,36 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
       <Modal
         opened={createIssue}
         onClose={handlers.onCloseCreateIssue}
-        title={t('modal.createIssue')}
+        title={
+          <Group justify="space-between" w="100%" pr="xl">
+            <Text component="span" fw={600}>
+              {t('modal.createIssue')}
+            </Text>
+            <ActionIcon
+              type="button"
+              variant="subtle"
+              aria-label={
+                model.issueComposerExpanded
+                  ? t('modal.collapseIssueComposer')
+                  : t('modal.expandIssueComposer')
+              }
+              title={
+                model.issueComposerExpanded
+                  ? t('modal.collapseIssueComposer')
+                  : t('modal.expandIssueComposer')
+              }
+              onClick={handlers.onToggleIssueComposerExpanded}
+            >
+              {model.issueComposerExpanded ? (
+                <IconMinimize size={16} aria-hidden="true" />
+              ) : (
+                <IconMaximize size={16} aria-hidden="true" />
+              )}
+            </ActionIcon>
+          </Group>
+        }
         size="xl"
+        fullScreen={model.issueComposerExpanded}
         centered
         autoFocus={false}
       >

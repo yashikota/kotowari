@@ -530,6 +530,8 @@
   },
   "modal": {
     "createIssue": "イシューを作成",
+    "expandIssueComposer": "作成画面を拡大",
+    "collapseIssueComposer": "作成画面を縮小",
     "saveDraft": "下書きを保存",
     "issueProperties": "イシューのプロパティ",
     "createAdr": "ADR を作成",

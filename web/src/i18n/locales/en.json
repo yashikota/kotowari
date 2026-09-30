@@ -538,6 +538,8 @@
   },
   "modal": {
     "createIssue": "Create issue",
+    "expandIssueComposer": "Expand issue composer",
+    "collapseIssueComposer": "Collapse issue composer",
     "saveDraft": "Save draft",
     "issueProperties": "Issue properties",
     "createAdr": "Create ADR",
