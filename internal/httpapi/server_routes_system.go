@@ -34,6 +34,8 @@ func (s *Server) registerDocumentRoutes() {
 func (s *Server) registerWorkspaceRoutes() {
 	s.mux.HandleFunc("GET /api/workspace", s.getWorkspace)
 	s.mux.HandleFunc("PATCH /api/workspace", s.patchWorkspace)
+	s.mux.HandleFunc("POST /api/workspace/resources", s.createWorkspaceResource)
+	s.mux.HandleFunc("DELETE /api/workspace/resources/{resourceId}", s.deleteWorkspaceResource)
 	s.mux.HandleFunc("GET /api/issue-workflow-statuses", s.listIssueWorkflowStatuses)
 	s.mux.HandleFunc("PUT /api/issue-workflow-statuses", s.updateIssueWorkflowStatuses)
 	s.mux.HandleFunc("GET /api/project-workflow-statuses", s.listProjectWorkflowStatuses)

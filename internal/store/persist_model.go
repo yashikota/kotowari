@@ -11,6 +11,7 @@ type workspaceFile struct {
 	IssueAutomationSettings *IssueAutomationSettings `toml:"issueAutomationSettings,omitempty"`
 	IssueStatuses           []IssueWorkflowStatus    `toml:"issueStatuses,omitempty"`
 	ProjectStatuses         []ProjectWorkflowStatus  `toml:"projectStatuses,omitempty"`
+	Resources               []WorkspaceResource      `toml:"resources,omitempty"`
 	IssuePrefix             string                   `toml:"issuePrefix,omitempty"`
 	ADRPrefix               string                   `toml:"adrPrefix,omitempty"`
 	IssueCounter            int                      `toml:"issueCounter"`

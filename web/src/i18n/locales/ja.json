@@ -371,7 +371,16 @@
     "openIssues": "未完了イシュー",
     "totalIssues": "合計 {{count}} 件",
     "projects": "プロジェクト",
-    "adrs": "ADR"
+    "adrs": "ADR",
+    "resources": "リソース",
+    "addResource": "リソースを追加",
+    "addLink": "リンクを追加",
+    "noResources": "リソースはまだありません。",
+    "resourceURL": "URL",
+    "resourceURLPlaceholder": "https://…",
+    "resourceTitle": "タイトル（任意）",
+    "resourceTitlePlaceholder": "リンクの名前",
+    "removeResource": "リソース「{{title}}」を削除"
   },
   "config": {
     "title": "設定",

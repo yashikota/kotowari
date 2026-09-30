@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
 import { useMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
+import i18n from '../i18n/index.ts';
 import { normalizeWorkspace } from '../i18n/locale.ts';
 import type { Workspace } from '../types.ts';
 
@@ -25,6 +26,10 @@ export function useHomePagePresenter() {
   const [workspace, setWorkspace] = useState(() => normalizeWorkspace(data.workspace));
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [resourceOpen, setResourceOpen] = useState(false);
+  const [resourceURL, setResourceURL] = useState('');
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceSaving, setResourceSaving] = useState(false);
   const [urlEditing, setUrlEditing] = useMachineFlag('url-editor');
   const [githubEditing, setGithubEditing] = useMachineFlag('github-editor');
 
@@ -38,6 +43,10 @@ export function useHomePagePresenter() {
     counts: data.counts,
     error,
     saved,
+    resourceOpen,
+    resourceURL,
+    resourceTitle,
+    resourceSaving,
     urlEditing,
     githubEditing,
     handlers: {
@@ -45,6 +54,57 @@ export function useHomePagePresenter() {
       onBlurUrl: () => setUrlEditing(false),
       onEditGithub: () => setGithubEditing(true),
       onBlurGithub: () => setGithubEditing(false),
+      onOpenResource: () => {
+        setError('');
+        setResourceURL('');
+        setResourceTitle('');
+        setResourceOpen(true);
+      },
+      onCloseResource: () => setResourceOpen(false),
+      onResourceURLChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setResourceURL(e.target.value),
+      onResourceTitleChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => setResourceTitle(e.target.value),
+      onCreateResource: (
+        e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
+      ) => {
+        e.preventDefault();
+        setResourceSaving(true);
+        setError('');
+        return api
+          .createWorkspaceResource({ url: resourceURL, title: resourceTitle })
+          .then(async (resource) => {
+            setWorkspace((current) => ({
+              ...current,
+              resources: [...current.resources, resource],
+            }));
+            setResourceOpen(false);
+            signals.dispatchEvent(new Event('kotowari:refresh'));
+            await router.invalidate();
+          })
+          .catch((err: unknown) =>
+            setError(err instanceof Error ? err.message : i18n.t('common.saveFailed')),
+          )
+          .finally(() => setResourceSaving(false));
+      },
+      onRemoveResource: (id: number) => {
+        setError('');
+        return api
+          .deleteWorkspaceResource(id)
+          .then(async () => {
+            setWorkspace((current) => ({
+              ...current,
+              resources: current.resources.filter((resource) => resource.id !== id),
+            }));
+            signals.dispatchEvent(new Event('kotowari:refresh'));
+            await router.invalidate();
+          })
+          .catch((err: unknown) =>
+            setError(err instanceof Error ? err.message : i18n.t('common.saveFailed')),
+          );
+      },
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
         e.preventDefault();
         setSaved(false);
@@ -61,7 +121,9 @@ export function useHomePagePresenter() {
             signals.dispatchEvent(new Event('kotowari:refresh'));
             await router.invalidate();
           })
-          .catch((err: unknown) => setError(err instanceof Error ? err.message : 'save failed'));
+          .catch((err: unknown) =>
+            setError(err instanceof Error ? err.message : i18n.t('common.saveFailed')),
+          );
       },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

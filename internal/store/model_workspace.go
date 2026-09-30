@@ -3,6 +3,8 @@ package store
 import "github.com/yashikota/kotowari/internal/model"
 
 type Workspace = model.Workspace
+type WorkspaceResource = model.WorkspaceResource
+type CreateWorkspaceResourceInput = model.CreateWorkspaceResourceInput
 type UpdateWorkspaceInput = model.UpdateWorkspaceInput
 type CycleSettings = model.CycleSettings
 type IssueAutomationSettings = model.IssueAutomationSettings

@@ -11,7 +11,20 @@ type Workspace struct {
 	IssueAutomationSettings IssueAutomationSettings `json:"issueAutomationSettings"`
 	IssueStatuses           []IssueWorkflowStatus   `json:"issueStatuses"`
 	ProjectStatuses         []ProjectWorkflowStatus `json:"projectStatuses"`
+	Resources               []WorkspaceResource     `json:"resources"`
 	UpdatedAt               string                  `json:"updatedAt"`
+}
+
+type WorkspaceResource struct {
+	ID        int64  `json:"id" toml:"id"`
+	URL       string `json:"url" toml:"url"`
+	Title     string `json:"title,omitempty" toml:"title,omitempty"`
+	CreatedAt string `json:"createdAt" toml:"created_at"`
+}
+
+type CreateWorkspaceResourceInput struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
 }
 
 type UpdateWorkspaceInput struct {

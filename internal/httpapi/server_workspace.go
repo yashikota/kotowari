@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/yashikota/kotowari/internal/model"
 )
@@ -86,6 +87,33 @@ func (s *Server) patchWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, ws)
+}
+
+func (s *Server) createWorkspaceResource(w http.ResponseWriter, r *http.Request) {
+	var in model.CreateWorkspaceResourceInput
+	if err := decodeJSON(r, &in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	resource, err := s.store.AddWorkspaceResource(in)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, resource)
+}
+
+func (s *Server) deleteWorkspaceResource(w http.ResponseWriter, r *http.Request) {
+	resourceID, err := strconv.ParseInt(r.PathValue("resourceId"), 10, 64)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid resource id"})
+		return
+	}
+	if err := s.store.RemoveWorkspaceResource(resourceID); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) listLabels(w http.ResponseWriter, _ *http.Request) {

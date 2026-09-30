@@ -390,7 +390,15 @@ export type Workspace = {
   issueAutomationSettings: IssueAutomationSettings;
   issueStatuses?: IssueWorkflowStatus[];
   projectStatuses?: ProjectWorkflowStatus[];
+  resources: WorkspaceResource[];
   updatedAt: string;
+};
+
+export type WorkspaceResource = {
+  id: number;
+  url: string;
+  title?: string;
+  createdAt: string;
 };
 
 export type IssueAutomationSettings = {

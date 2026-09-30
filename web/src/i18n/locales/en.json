@@ -377,7 +377,16 @@
     "openIssues": "Open issues",
     "totalIssues": "{{count}} total",
     "projects": "Projects",
-    "adrs": "ADRs"
+    "adrs": "ADRs",
+    "resources": "Resources",
+    "addResource": "Add resource",
+    "addLink": "Add link",
+    "noResources": "No resources yet.",
+    "resourceURL": "URL",
+    "resourceURLPlaceholder": "https://…",
+    "resourceTitle": "Title (optional)",
+    "resourceTitlePlaceholder": "Give this link a name",
+    "removeResource": "Remove resource {{title}}"
   },
   "config": {
     "title": "Config",

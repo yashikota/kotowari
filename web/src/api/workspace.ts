@@ -5,6 +5,7 @@ import type {
   Label,
   ProjectWorkflowStatus,
   Workspace,
+  WorkspaceResource,
 } from '../types.ts';
 export const workspaceApi = {
   workspace: () => req<Workspace>('/api/workspace'),
@@ -13,6 +14,13 @@ export const workspaceApi = {
       method: 'PATCH',
       body: JSON.stringify(body),
     }),
+  createWorkspaceResource: (body: { url: string; title?: string }) =>
+    req<WorkspaceResource>('/api/workspace/resources', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  deleteWorkspaceResource: (id: number) =>
+    req<void>(`/api/workspace/resources/${id}`, { method: 'DELETE' }),
   issueWorkflowStatuses: () => req<IssueWorkflowStatus[]>('/api/issue-workflow-statuses'),
   updateIssueWorkflowStatuses: (statuses: IssueWorkflowStatus[]) =>
     req<IssueWorkflowStatus[]>('/api/issue-workflow-statuses', {

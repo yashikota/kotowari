@@ -1,17 +1,20 @@
 import { Link } from '@tanstack/react-router';
 import {
+  ActionIcon,
   Alert,
   Anchor,
   Box,
   Button,
   Divider,
   Group,
+  Modal,
   Stack,
   Text,
   TextInput,
   Textarea,
 } from '@mantine/core';
 import { IconBrandGithub, IconLink } from '@tabler/icons-react';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -164,7 +167,19 @@ export function HomePageView({
 }) {
   switch (model._view) {
     case 0: {
-      const { workspace, counts, error, saved, urlEditing, githubEditing, handlers } = model;
+      const {
+        workspace,
+        counts,
+        error,
+        saved,
+        urlEditing,
+        githubEditing,
+        resourceOpen,
+        resourceURL,
+        resourceTitle,
+        resourceSaving,
+        handlers,
+      } = model;
 
       return (
         <SplitLayout single>
@@ -266,6 +281,88 @@ export function HomePageView({
                   {t('home.totalIssues', { count: counts.issues })}
                 </Text>
               </Group>
+
+              <Stack component="section" aria-label={t('home.resources')} gap="sm" mt={40}>
+                <Group justify="space-between" align="center">
+                  <Text fw={600}>{t('home.resources')}</Text>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    size="compact-sm"
+                    leftSection={<IconPlus size={16} aria-hidden />}
+                    onClick={handlers.onOpenResource}
+                  >
+                    {t('home.addResource')}
+                  </Button>
+                </Group>
+                {workspace.resources.length ? (
+                  <Stack gap={4}>
+                    {workspace.resources.map((resource) => (
+                      <Group key={resource.id} justify="space-between" wrap="nowrap" gap="sm">
+                        <Anchor
+                          href={resource.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          size="sm"
+                          truncate
+                        >
+                          {resource.title || resource.url}
+                        </Anchor>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          aria-label={t('home.removeResource', {
+                            title: resource.title || resource.url,
+                          })}
+                          onClick={() => handlers.onRemoveResource(resource.id)}
+                        >
+                          <IconTrash size={16} aria-hidden />
+                        </ActionIcon>
+                      </Group>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    {t('home.noResources')}
+                  </Text>
+                )}
+              </Stack>
+
+              <Modal
+                opened={resourceOpen}
+                onClose={handlers.onCloseResource}
+                title={t('home.addResource')}
+                centered
+              >
+                <Box component="form" onSubmit={handlers.onCreateResource}>
+                  <Stack gap="md">
+                    <TextInput
+                      autoFocus
+                      required
+                      type="url"
+                      label={t('home.resourceURL')}
+                      placeholder={t('home.resourceURLPlaceholder')}
+                      value={resourceURL}
+                      onChange={handlers.onResourceURLChange}
+                    />
+                    <TextInput
+                      label={t('home.resourceTitle')}
+                      placeholder={t('home.resourceTitlePlaceholder')}
+                      value={resourceTitle}
+                      onChange={handlers.onResourceTitleChange}
+                    />
+                    <Group justify="flex-end">
+                      <Button type="button" variant="default" onClick={handlers.onCloseResource}>
+                        {t('common.cancel')}
+                      </Button>
+                      <Button type="submit" loading={resourceSaving}>
+                        {t('home.addLink')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Box>
+              </Modal>
             </Box>
           </Pane>
         </SplitLayout>

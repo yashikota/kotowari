@@ -12,6 +12,7 @@ export function normalizeWorkspace(workspace: Workspace): Workspace {
   return {
     ...workspace,
     locale: resolveLocale(workspace.locale),
+    resources: workspace.resources ?? [],
     cycleSettings: workspace.cycleSettings ?? {
       durationDays: 7,
       cooldownDays: 0,

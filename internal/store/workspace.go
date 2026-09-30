@@ -32,6 +32,7 @@ func workspaceFrom(m *mem) Workspace {
 		IssueAutomationSettings: normalizedIssueAutomationSettings(m.Workspace.IssueAutomationSettings),
 		IssueStatuses:           issueWorkflowStatuses(m.Workspace),
 		ProjectStatuses:         projectWorkflowStatuses(m.Workspace),
+		Resources:               append([]WorkspaceResource{}, m.Workspace.Resources...),
 		UpdatedAt:               m.Workspace.UpdatedAt,
 	}
 }

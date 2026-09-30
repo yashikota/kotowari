@@ -56,6 +56,7 @@ let workspace: Workspace = {
   url: 'https://yashikota.github.io/kotowari/',
   description: 'Markdownで管理する、軽量なプロジェクトワークスペース',
   githubUrl: 'https://github.com/yashikota/kotowari',
+  resources: [],
   cycleSettings: {
     durationDays: 14,
     cooldownDays: 0,
@@ -702,6 +703,32 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   if (path === '/api/workspace') {
     if (method === 'PATCH') workspace = patch(workspace, body(init));
     return json(workspace);
+  }
+  if (path === '/api/workspace/resources' && method === 'POST') {
+    const value = body(init);
+    const url = text(value.url).trim();
+    if (!/^https?:\/\//i.test(url))
+      return json({ error: 'link URL must be an absolute http or https URL' }, 400);
+    if (workspace.resources.some((resource) => resource.url === url)) {
+      return json({ error: 'resource already exists' }, 409);
+    }
+    const resource = {
+      id: Math.max(0, ...workspace.resources.map((item) => item.id)) + 1,
+      url,
+      title: text(value.title).trim(),
+      createdAt: new Date().toISOString(),
+    };
+    workspace.resources.push(resource);
+    revision += 1;
+    return json(resource, 201);
+  }
+  match = path.match(/^\/api\/workspace\/resources\/(\d+)$/);
+  if (match && method === 'DELETE') {
+    const id = Number(match[1]);
+    if (!workspace.resources.some((resource) => resource.id === id)) return notFound();
+    workspace.resources = workspace.resources.filter((resource) => resource.id !== id);
+    revision += 1;
+    return json(null, 204);
   }
   if (path === '/api/cycles/ensure' && method === 'POST') {
     const settings = workspace.cycleSettings;
