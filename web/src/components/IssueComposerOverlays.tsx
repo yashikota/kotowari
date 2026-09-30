@@ -18,6 +18,7 @@ import {
 import { IconMaximize, IconMinimize, IconPaperclip, IconRepeat } from '@tabler/icons-react';
 import type { RefObject } from 'react';
 import type { useTranslation } from 'react-i18next';
+import { useFocusWhen } from '../focus.ts';
 import { DraftDiscardDialog } from './DraftDiscardDialog.tsx';
 import { IssueCreateProperties } from './IssueCreateProperties.tsx';
 import type { useShellPresenter } from '../presenters/Shell.tsx';
@@ -29,6 +30,10 @@ type Props = {
 };
 
 export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
+  const issueTemplateRef = useFocusWhen<HTMLInputElement>(
+    model.createIssue && model.issueTemplatePickerRequested,
+    [model.issueTemplatePickerRequested],
+  );
   const {
     createIssue,
     issueDraftSaved,
@@ -135,6 +140,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
             cycleId={issueCycleId}
             templateSlug={model.issueTemplateSlug}
             templatePickerRequested={model.issueTemplatePickerRequested}
+            templatePickerRef={issueTemplateRef}
             labelNames={model.issueLabelNames}
             workflowStatuses={model.issueWorkflowStatuses}
             projects={projects}

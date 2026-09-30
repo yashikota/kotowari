@@ -1999,6 +1999,7 @@ test('issue detail exposes Linear quick-copy actions and makes a property-preser
 
 test('V opens the new issue composer in full screen', async ({ page }) => {
   await page.goto('/issues');
+  await expect(page.getByRole('heading', { name: 'Issues', exact: true })).toBeVisible();
   await page.keyboard.press('v');
 
   const dialog = page.getByRole('dialog', { name: 'Create issue' });

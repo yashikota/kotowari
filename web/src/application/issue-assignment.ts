@@ -17,7 +17,13 @@ export function autoAssignOnStartedTransition(
   enabled: boolean,
 ): IssueStatusPatch {
   const destination = patch.workflowStatus ?? patch.status;
-  if (!enabled || issue.assignee || typeof destination !== 'string') return patch;
+  if (
+    !enabled ||
+    issue.assignee ||
+    Object.hasOwn(patch, 'assignee') ||
+    typeof destination !== 'string'
+  )
+    return patch;
 
   const currentStatus = issue.workflowStatus ?? issue.status;
   const currentCategory = statusCategory(currentStatus, statuses, issue.status);

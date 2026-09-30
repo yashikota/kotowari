@@ -26,6 +26,7 @@ import { useIssueDetailRelations } from './useIssueDetailRelations.ts';
 import { useIssueDetailReminders } from './useIssueDetailReminders.ts';
 import { useIssueDetailResources } from './useIssueDetailResources.ts';
 import { useIssueDetailTimeline } from './useIssueDetailTimeline.ts';
+import { useIssueDetailTemplateApply } from './useIssueDetailTemplateApply.ts';
 
 export type { IssueOptionalProperty, IssuePropertyMenu } from '../issue-property-model.ts';
 
@@ -156,6 +157,14 @@ export function useIssueDetailPresenter({
     onCloseIssueOptions: () => setIssueOptionsOpen(false),
   });
   const { data: conversionsData, handlers: conversionsHandlers } = conversionsState;
+  const templateApplyState = useIssueDetailTemplateApply({
+    issue,
+    labels,
+    patch,
+    setError,
+    onCloseIssueOptions: () => setIssueOptionsOpen(false),
+  });
+  const { data: templateApplyData, handlers: templateApplyHandlers } = templateApplyState;
 
   if (error) {
     return { _view: 0 as const, error, handlers: {} };
@@ -233,6 +242,7 @@ export function useIssueDetailPresenter({
     ...dueDateData,
     ...remindersData,
     ...conversionsData,
+    ...templateApplyData,
     ...labelsData,
     ...propertiesData,
     projects,
@@ -352,6 +362,7 @@ export function useIssueDetailPresenter({
       ...dueDateHandlers,
       ...remindersHandlers,
       ...conversionsHandlers,
+      ...templateApplyHandlers,
       ...labelsHandlers,
       ...propertiesHandlers,
       ...timelineHandlers,

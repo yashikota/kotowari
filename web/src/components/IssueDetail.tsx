@@ -7,6 +7,7 @@ import { Section } from '../mantine-ui.tsx';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
 import { IssueDetailDialogs } from './IssueDetailDialogs.tsx';
+import { IssueApplyTemplateDialog } from './IssueApplyTemplateDialog.tsx';
 import { IssueActivitySection } from './IssueActivitySection.tsx';
 import { IssueADRsSection } from './IssueADRsSection.tsx';
 import { IssueDetailHeader } from './IssueDetailHeader.tsx';
@@ -214,6 +215,7 @@ export function IssueDetailView({
             </Box>
           </Box>
           <IssueDetailDialogs model={model} />
+          <IssueApplyTemplateDialog model={model} />
         </Box>
       );
     }
@@ -297,6 +299,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
           break;
         case 'focus-comment':
           void sendIntent('onFocusComment', []);
+          break;
+        case 'apply-template':
+          void sendIntent('onOpenApplyTemplate', []);
           break;
         case 'toggle-favorite':
           void sendIntent('onToggleFavorite', []);

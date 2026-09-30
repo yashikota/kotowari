@@ -82,6 +82,7 @@ export function ShortcutHelpView({
     { keys: 'Ctrl/⌘+Shift+D', action: t('ui.shortcutClearIssueDueDate') },
     { keys: 'Shift+H', action: t('ui.shortcutSetIssueReminder') },
     { keys: 'Ctrl/⌘+Shift+I', action: t('ui.shortcutFocusIssueDescription') },
+    { keys: 'Ctrl/⌘+Alt+Shift+T', action: t('ui.shortcutApplyIssueTemplate') },
     { keys: 'Ctrl/⌘+M', action: t('ui.shortcutCommentOnIssue') },
     { keys: 'P, then S', action: t('ui.shortcutChangeProjectStatus') },
     { keys: 'P, then N', action: t('ui.shortcutChangeProjectInitiatives') },

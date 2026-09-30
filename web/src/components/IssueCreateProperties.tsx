@@ -11,7 +11,7 @@ import {
   IconUser,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { issueTypeLabel, priorityLabel } from '../i18n/labels.ts';
 import type { Cycle, IssueTemplate, IssueWorkflowStatus, Label, Project } from '../types.ts';
 import { workflowStatusLabel } from '../workflow.tsx';
@@ -28,6 +28,7 @@ function PropertySelect({
   clearable = false,
   placeholder,
   autoFocus = false,
+  inputRef,
 }: {
   label: string;
   value: string | null;
@@ -39,6 +40,7 @@ function PropertySelect({
   clearable?: boolean;
   placeholder?: string;
   autoFocus?: boolean;
+  inputRef?: RefObject<HTMLInputElement | null>;
 }) {
   return (
     <Select
@@ -55,6 +57,7 @@ function PropertySelect({
       clearable={clearable}
       placeholder={placeholder}
       autoFocus={autoFocus}
+      ref={inputRef}
       allowDeselect={false}
       comboboxProps={{ withinPortal: false, shadow: 'md' }}
       styles={{ input: { height: 34, minHeight: 34, paddingInlineStart: 32 } }}
@@ -72,6 +75,7 @@ export function IssueCreateProperties({
   cycleId,
   templateSlug,
   templatePickerRequested,
+  templatePickerRef,
   labelNames,
   workflowStatuses,
   projects,
@@ -97,6 +101,7 @@ export function IssueCreateProperties({
   cycleId: string;
   templateSlug: string;
   templatePickerRequested: boolean;
+  templatePickerRef: RefObject<HTMLInputElement | null>;
   labelNames: string[];
   workflowStatuses: IssueWorkflowStatus[];
   projects: Project[];
@@ -240,6 +245,7 @@ export function IssueCreateProperties({
           searchable
           clearable
           autoFocus={templatePickerRequested}
+          inputRef={templatePickerRef}
           placeholder={t('modal.noIssueTemplate')}
         />
       </div>

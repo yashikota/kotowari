@@ -60,6 +60,17 @@ describe('autoAssignOnStartedTransition', () => {
     ).toEqual({ workflowStatus: 'done' });
   });
 
+  it('preserves an explicit assignee while entering a started category', () => {
+    expect(
+      autoAssignOnStartedTransition(
+        issue,
+        { workflowStatus: 'in_progress', assignee: 'agent' },
+        workflowStatuses,
+        true,
+      ),
+    ).toEqual({ workflowStatus: 'in_progress', assignee: 'agent' });
+  });
+
   it('does not assign when the issue is already in a started category', () => {
     const startedIssue: Pick<Issue, 'assignee' | 'status' | 'workflowStatus'> = {
       ...issue,

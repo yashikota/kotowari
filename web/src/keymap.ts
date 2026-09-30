@@ -620,6 +620,7 @@ export type IssueDetailShortcut =
   | 'open-first-sub-issue'
   | 'focus-description'
   | 'focus-comment'
+  | 'apply-template'
   | 'toggle-favorite'
   | 'toggle-subscription'
   | 'open-cycle'
@@ -648,6 +649,7 @@ export function issueDetailShortcutFromKeyboard(event: {
 
   const key = event.key.toLowerCase();
   const modifier = event.metaKey || event.ctrlKey;
+  if (modifier && event.altKey && event.shiftKey && key === 't') return 'apply-template';
   if (event.altKey && !event.shiftKey && !modifier && key === 'f') return 'toggle-favorite';
   if (modifier && event.shiftKey && !event.altKey) {
     if (key === 'd') return 'clear-due-date';

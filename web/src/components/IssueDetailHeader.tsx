@@ -40,6 +40,7 @@ type IssueHeaderHandlers = Pick<
   | 'onNavigatePrevious'
   | 'onOpenCodingTool'
   | 'onOpenCodingToolSettings'
+  | 'onOpenApplyTemplate'
   | 'onOpenConvertToProject'
   | 'onOpenConvertToTemplate'
   | 'onOpenCreateRelated'
@@ -458,6 +459,15 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                     </Menu.Item>
                   </Menu.Sub.Dropdown>
                 </Menu.Sub>
+                <Menu.Item
+                  aria-keyshortcuts={`${modifierShortcut}+Alt+Shift+T`}
+                  onClick={handlers.onOpenApplyTemplate}
+                  rightSection={
+                    <CopyShortcut label={`${modifierKey} ${alternateKey} ${shiftKey} T`} />
+                  }
+                >
+                  {t('issueActions.applyTemplate')}
+                </Menu.Item>
                 <Menu.Item onClick={handlers.Make_copy_onClick42}>
                   {t('issueActions.makeCopy')}
                 </Menu.Item>
