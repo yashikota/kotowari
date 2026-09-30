@@ -484,6 +484,7 @@ export function useIssueListPresenter({
             : current.filter((selected) => selected !== id),
         ),
       onSetBulkStatus: (status: string) => updateSelectedIssues({ workflowStatus: status }),
+      onArchiveBulkIssues: () => updateSelectedIssues({ archived: true }),
       onSetBulkPriority: (priority: number) => updateSelectedIssues({ priority }),
       onSetBulkAssignee: (assignee: 'self' | 'agent' | '') => updateSelectedIssues({ assignee }),
       onSetBulkType: (type: Issue['type']) => updateSelectedIssues({ type }),

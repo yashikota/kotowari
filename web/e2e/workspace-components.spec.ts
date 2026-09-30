@@ -441,6 +441,42 @@ test('issue list selects multiple issues and applies bulk status changes', async
   await expect(rows).toHaveCount(2);
 });
 
+test('issue list archives all selected issues', async ({ page, request }) => {
+  const stamp = Date.now();
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Bulk archive ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    identifiers.push(((await response.json()) as { identifier: string }).identifier);
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  const rows = page.getByRole('listbox', { name: 'Issues' }).getByRole('option');
+  await expect(rows).toHaveCount(2);
+  for (const identifier of identifiers) {
+    await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+  }
+
+  await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Archive selected issues', exact: true }).click();
+
+  await expect
+    .poll(async () =>
+      Promise.all(
+        identifiers.map(async (identifier) => {
+          const issue = await request.get(`/api/issues/${identifier}`);
+          return ((await issue.json()) as { archivedAt: string | null }).archivedAt;
+        }),
+      ),
+    )
+    .toEqual(expect.arrayContaining([expect.any(String), expect.any(String)]));
+  await expect(rows).toHaveCount(0);
+  await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
+});
+
 test('issue list subscribes to and unsubscribes from selected issues', async ({
   page,
   request,

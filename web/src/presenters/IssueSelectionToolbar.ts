@@ -9,6 +9,7 @@ import type { IssueCopyKind } from '../issue-actions.ts';
 type Props = {
   selectedCount: number;
   onSetStatus: (status: string) => void;
+  onArchive: () => void;
   onSetPriority: (priority: number) => void;
   onSetAssignee: (assignee: 'self' | 'agent' | '') => void;
   onSetType: (type: IssueType) => void;
@@ -31,6 +32,7 @@ type Props = {
 export function useIssueSelectionToolbarPresenter({
   selectedCount,
   onSetStatus,
+  onArchive,
   onSetPriority,
   onSetAssignee,
   onSetType,
@@ -102,6 +104,7 @@ export function useIssueSelectionToolbarPresenter({
     ] as const,
     handlers: {
       onSetStatus: (status: string) => onSetStatus(status),
+      onArchive,
       onSetPriority: (priority: number) => onSetPriority(priority),
       onSetAssignee: (assignee: 'self' | 'agent' | '') => onSetAssignee(assignee),
       onSetType: (type: IssueType) => onSetType(type),

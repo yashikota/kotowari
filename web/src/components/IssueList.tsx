@@ -96,6 +96,7 @@ export function IssueListView({
               <IssueSelectionToolbar
                 selectedCount={bulkSelectedIds.length}
                 onSetStatus={handlers.onSetBulkStatus}
+                onArchive={handlers.onArchiveBulkIssues}
                 onSetPriority={handlers.onSetBulkPriority}
                 onSetAssignee={handlers.onSetBulkAssignee}
                 onSetType={handlers.onSetBulkType}
