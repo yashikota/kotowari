@@ -26,6 +26,15 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes cycle moves and clears', () => {
+    expect(formatActivity('cycle_changed', { from: 'Cycle 3', to: 'Cycle 4' })).toBe(
+      'Cycle changed from Cycle 3 to Cycle 4',
+    );
+    expect(formatActivity('cycle_changed', { from: 'Cycle 4', to: '' })).toBe(
+      'Cycle changed from Cycle 4 to No cycle',
+    );
+  });
+
   it('describes issue type and estimate changes', () => {
     expect(formatActivity('type_changed', { from: '', to: 'feature' })).toBe(
       'Type No type → Feature',

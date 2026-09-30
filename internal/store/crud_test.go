@@ -846,6 +846,80 @@ func TestIssueStatusChangedAtTracksOnlyStatusTransitions(t *testing.T) {
 	}
 }
 
+func TestIssueCycleChangesAreRecordedInTimelineAndInbox(t *testing.T) {
+	s := openTest(t)
+	now := time.Now()
+	firstCycle, err := s.CreateCycle(CreateCycleInput{
+		StartsAt: now.Add(-24 * time.Hour).UTC().Format(time.RFC3339),
+		EndsAt:   now.Add(24 * time.Hour).UTC().Format(time.RFC3339),
+		Status:   "upcoming",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondCycle, err := s.CreateCycle(CreateCycleInput{
+		StartsAt: now.Add(48 * time.Hour).UTC().Format(time.RFC3339),
+		EndsAt:   now.Add(72 * time.Hour).UTC().Format(time.RFC3339),
+		Status:   "upcoming",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Move through cycles", CycleID: &firstCycle.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondCycleID := &secondCycle.ID
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{CycleID: &secondCycleID}); err != nil {
+		t.Fatal(err)
+	}
+	var noCycle *int64
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{CycleID: &noCycle}); err != nil {
+		t.Fatal(err)
+	}
+
+	activities, err := s.ListActivities(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var changes []Activity
+	for _, activity := range activities {
+		if activity.Action == "cycle_changed" {
+			changes = append(changes, activity)
+		}
+	}
+	if len(changes) != 2 {
+		t.Fatalf("cycle change timeline events = %#v", changes)
+	}
+	var latest, previous map[string]string
+	if err := json.Unmarshal(changes[0].Payload, &latest); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(changes[1].Payload, &previous); err != nil {
+		t.Fatal(err)
+	}
+	if latest["from"] != secondCycle.Name || latest["to"] != "" {
+		t.Fatalf("cycle removal payload = %#v", latest)
+	}
+	if previous["from"] != firstCycle.Name || previous["to"] != secondCycle.Name {
+		t.Fatalf("cycle move payload = %#v", previous)
+	}
+
+	inbox, err := s.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var inboxChanges int
+	for _, activity := range inbox {
+		if activity.EntityType == "issue" && activity.Identifier == issue.Identifier && activity.Action == "cycle_changed" {
+			inboxChanges++
+		}
+	}
+	if inboxChanges != 2 {
+		t.Fatalf("cycle change inbox events = %d, want 2", inboxChanges)
+	}
+}
+
 func TestListIssuesByTypeAndEstimate(t *testing.T) {
 	s := openTest(t)
 	one, three, eight := 1, 3, 8

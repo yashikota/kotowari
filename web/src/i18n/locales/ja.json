@@ -1691,6 +1691,7 @@
     "created": "作成",
     "createdWithId": "{{id}} を作成",
     "statusChanged": "ステータス {{from}} → {{to}}",
+    "cycleChanged": "サイクルを{{from}}から{{to}}に変更しました",
     "cycle_issue_added": "{{cycle}}にイシューが追加されました",
     "cycle_issue_completed": "{{cycle}}のイシューが完了またはキャンセルされました",
     "typeChanged": "種別 {{from}} → {{to}}",

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -69,6 +70,10 @@ func recordIssueUpdateActivities(m *mem, iss Issue, in PatchIssueInput, before i
 		addActivity(m, "issue", iss.ID, "status_changed", map[string]any{"from": before.workflowStatus, "to": iss.WorkflowStatus}, now)
 	}
 	if !sameInt64(before.cycleID, iss.CycleID) {
+		addActivity(m, "issue", iss.ID, "cycle_changed", map[string]any{
+			"from": cycleActivityLabel(m, before.cycleID),
+			"to":   cycleActivityLabel(m, iss.CycleID),
+		}, now)
 		addCycleNotification(m, iss.CycleID, iss, "cycle_issue_added", now)
 	}
 	if iss.Status != before.status && (iss.Status == "done" || iss.Status == "canceled") {
@@ -116,4 +121,18 @@ func recordIssueUpdateActivities(m *mem, iss Issue, in PatchIssueInput, before i
 	if iss.Status != before.status || iss.WorkflowStatus != before.workflowStatus {
 		applyIssueCloseAutomation(m, iss.ID, now)
 	}
+}
+
+func cycleActivityLabel(m *mem, id *int64) string {
+	if id == nil {
+		return ""
+	}
+	cycle, ok := cycleByID(m, *id)
+	if !ok {
+		return ""
+	}
+	if cycle.Name != "" {
+		return cycle.Name
+	}
+	return fmt.Sprintf("Cycle %d", cycle.Number)
 }

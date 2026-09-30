@@ -1701,6 +1701,7 @@
     "created": "Created",
     "createdWithId": "Created {{id}}",
     "statusChanged": "Status {{from}} → {{to}}",
+    "cycleChanged": "Cycle changed from {{from}} to {{to}}",
     "cycle_issue_added": "Issue added to {{cycle}}",
     "cycle_issue_completed": "Issue marked completed or canceled in {{cycle}}",
     "typeChanged": "Type {{from}} → {{to}}",
