@@ -26,6 +26,10 @@ export function buildIssueFilterChoices({
       { value: 'self', label: t('issueAssignment.you') },
       { value: 'agent', label: t('issueAssignment.agent') },
     ],
+    autoClosed: [
+      { value: 'yes', label: t('issueFilters.autoClosedYes') },
+      { value: 'no', label: t('issueFilters.autoClosedNo') },
+    ],
     assignee: [
       { value: 'self', label: t('issueAssignment.you') },
       { value: 'agent', label: t('issueAssignment.agent') },

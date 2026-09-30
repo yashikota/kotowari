@@ -89,6 +89,7 @@ export type Issue = {
   createdAt: string;
   updatedAt: string;
   statusChangedAt?: string;
+  autoClosedAt?: string | null;
   startedAt?: string | null;
   completedAt: string | null;
   archivedAt?: string | null;

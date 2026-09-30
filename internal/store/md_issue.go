@@ -29,6 +29,7 @@ type issueFM struct {
 	Created        string              `toml:"created"`
 	Updated        string              `toml:"updated"`
 	StatusChanged  string              `toml:"status_changed,omitempty"`
+	AutoClosedAt   *string             `toml:"auto_closed_at,omitempty"`
 	Started        *string             `toml:"started_at,omitempty"`
 	Favorite       bool                `toml:"favorite,omitempty"`
 	Completed      *string             `toml:"completed,omitempty"`
@@ -108,6 +109,7 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		CreatedAt:        fm.Created,
 		UpdatedAt:        fm.Updated,
 		StatusChangedAt:  fm.StatusChanged,
+		AutoClosedAt:     fm.AutoClosedAt,
 		StartedAt:        fm.Started,
 		CompletedAt:      fm.Completed,
 		ArchivedAt:       fm.Archived,
@@ -170,6 +172,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		Created:        iss.CreatedAt,
 		Updated:        iss.UpdatedAt,
 		StatusChanged:  iss.StatusChangedAt,
+		AutoClosedAt:   iss.AutoClosedAt,
 		Started:        iss.StartedAt,
 		Favorite:       iss.IsFavorite,
 		Completed:      iss.CompletedAt,

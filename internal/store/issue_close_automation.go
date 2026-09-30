@@ -87,6 +87,8 @@ func closeIssueForAutomation(m *mem, issueID int64, now string) bool {
 	issue.Status = status.Category
 	issue.WorkflowStatus = status.ID
 	issue.StatusChangedAt = now
+	autoClosedAt := now
+	issue.AutoClosedAt = &autoClosedAt
 	issue.CompletedAt = completedAt(issue.Status, now, issue.CompletedAt)
 	issue.UpdatedAt = now
 	applyStatusProgressionOrder(m, &issue, oldWorkflowStatus)

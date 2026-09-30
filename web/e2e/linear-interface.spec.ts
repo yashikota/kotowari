@@ -505,6 +505,75 @@ test('advanced issue filters compare dates and search issue content', async ({ p
     .not.toBeNull();
 });
 
+test('auto-closed issue filters identify issues closed by workspace automation', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const workspaceResponse = await request.get('/api/workspace');
+  expect(workspaceResponse.ok()).toBeTruthy();
+  const workspace = (await workspaceResponse.json()) as {
+    issueAutomationSettings: Record<string, unknown>;
+  };
+  const originalSettings = workspace.issueAutomationSettings;
+  const enabledSettings = { ...originalSettings, autoCloseParentIssues: true };
+  const enabled = await request.patch('/api/workspace', {
+    data: { issueAutomationSettings: enabledSettings },
+  });
+  expect(enabled.ok()).toBeTruthy();
+
+  try {
+    const parentResponse = await request.post('/api/issues', {
+      data: { title: `Auto-closed parent ${stamp}`, status: 'todo' },
+    });
+    expect(parentResponse.ok()).toBeTruthy();
+    const parent = (await parentResponse.json()) as { id: number; identifier: string };
+    const childResponse = await request.post('/api/issues', {
+      data: { title: `Auto-closed child ${stamp}`, status: 'todo', parentId: parent.id },
+    });
+    expect(childResponse.ok()).toBeTruthy();
+    const child = (await childResponse.json()) as { identifier: string };
+    const completed = await request.patch(`/api/issues/${child.identifier}`, {
+      data: { status: 'done' },
+    });
+    expect(completed.ok()).toBeTruthy();
+
+    const parentAfterAutomation = await request.get(`/api/issues/${parent.identifier}`);
+    expect(parentAfterAutomation.ok()).toBeTruthy();
+    expect(await parentAfterAutomation.json()).toMatchObject({
+      status: 'done',
+      autoClosedAt: expect.any(String),
+    });
+    const childAfterManualClose = await request.get(`/api/issues/${child.identifier}`);
+    expect(childAfterManualClose.ok()).toBeTruthy();
+    expect(await childAfterManualClose.json()).not.toHaveProperty('autoClosedAt');
+
+    await page.goto('/issues');
+    await fillIssueSearch(page, String(stamp));
+    await page.getByRole('button', { name: 'Add filter', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Advanced filter', exact: true }).click();
+    const root = page.locator('#issue-advanced-filter-builder [aria-label="Filter group 1"]');
+    await root.getByRole('button', { name: 'Add condition' }).click();
+    await root.getByRole('combobox', { name: 'Group 1 condition 1 field' }).click();
+    await page.getByRole('option', { name: 'Auto-closed', exact: true }).click();
+    await root.getByRole('combobox', { name: 'Group 1 condition 1 value' }).click();
+    await page.getByRole('option', { name: 'Auto-closed', exact: true }).click();
+
+    const issues = page.getByRole('listbox', { name: 'Issues' });
+    await expect(
+      issues.getByRole('option', { name: new RegExp(`Auto-closed parent ${stamp}`) }),
+    ).toBeVisible();
+    await expect(
+      issues.getByRole('option', { name: new RegExp(`Auto-closed child ${stamp}`) }),
+    ).toHaveCount(0);
+  } finally {
+    const restored = await request.patch('/api/workspace', {
+      data: { issueAutomationSettings: originalSettings },
+    });
+    expect(restored.ok()).toBeTruthy();
+  }
+});
+
 test('issue details facets show counts and filter the visible issue list', async ({
   page,
   request,

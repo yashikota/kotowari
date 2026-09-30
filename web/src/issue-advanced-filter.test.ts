@@ -111,6 +111,25 @@ describe('issue advanced filters', () => {
     expect(matchesIssueFilterGroup(issue(), creatorFilter('self'))).toBe(true);
   });
 
+  it('filters automatically closed issues by their recorded closure source', () => {
+    const autoClosedFilter = {
+      kind: 'group' as const,
+      operator: 'and' as const,
+      children: [
+        {
+          kind: 'condition' as const,
+          field: 'autoClosed' as const,
+          operator: 'is' as const,
+          value: 'yes',
+        },
+      ],
+    };
+    expect(
+      matchesIssueFilterGroup(issue({ autoClosedAt: '2026-09-30T06:00:00Z' }), autoClosedFilter),
+    ).toBe(true);
+    expect(matchesIssueFilterGroup(issue(), autoClosedFilter)).toBe(false);
+  });
+
   it('handles not-equal, missing values, multi-labels, and incomplete builder rows', () => {
     const noAssignee = issue({ assignee: undefined, labels: [], estimate: null });
     expect(

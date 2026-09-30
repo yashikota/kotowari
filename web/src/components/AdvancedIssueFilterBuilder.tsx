@@ -39,7 +39,8 @@ function fieldLabel(field: IssueFilterField, t: ReturnType<typeof useTranslation
     field === 'identifier' ||
     field === 'content' ||
     field === 'links' ||
-    field === 'creator'
+    field === 'creator' ||
+    field === 'autoClosed'
   ) {
     return t(`issueFilters.${field}`);
   }
@@ -99,6 +100,7 @@ export function AdvancedIssueFilterBuilder({
   const fields: IssueFilterField[] = [
     'status',
     'creator',
+    'autoClosed',
     'assignee',
     'priority',
     'type',

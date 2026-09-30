@@ -3,6 +3,7 @@ import type { Issue } from './types.ts';
 export type IssueFilterField =
   | 'status'
   | 'creator'
+  | 'autoClosed'
   | 'assignee'
   | 'priority'
   | 'type'
@@ -56,6 +57,7 @@ export type IssueFilterChoices = Partial<Record<IssueFilterField, IssueFilterCho
 const ISSUE_FILTER_FIELDS = new Set<IssueFilterField>([
   'status',
   'creator',
+  'autoClosed',
   'assignee',
   'priority',
   'type',
@@ -176,6 +178,8 @@ function fieldValue(
       return issue.workflowStatus ?? issue.status;
     case 'creator':
       return issue.creator ?? 'self';
+    case 'autoClosed':
+      return issue.autoClosedAt ? 'yes' : 'no';
     case 'assignee':
       return issue.assignee ?? 'none';
     case 'priority':

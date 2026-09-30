@@ -42,6 +42,7 @@ type Issue struct {
 	CreatedAt        string              `json:"createdAt"`
 	UpdatedAt        string              `json:"updatedAt"`
 	StatusChangedAt  string              `json:"statusChangedAt"`
+	AutoClosedAt     *string             `json:"autoClosedAt,omitempty" toml:"auto_closed_at,omitempty"`
 	StartedAt        *string             `json:"startedAt,omitempty" toml:"started_at,omitempty"`
 	CompletedAt      *string             `json:"completedAt"`
 	ArchivedAt       *string             `json:"archivedAt"`

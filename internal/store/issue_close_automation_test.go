@@ -41,11 +41,11 @@ func TestIssueAutomationClosesParentWhenLastSubIssueCloses(t *testing.T) {
 		t.Fatal(err)
 	}
 	parent, err = s.GetIssue(parent.Identifier)
-	if err != nil || parent.Status != "done" || parent.CompletedAt == nil {
+	if err != nil || parent.Status != "done" || parent.CompletedAt == nil || parent.AutoClosedAt == nil {
 		t.Fatalf("parent was not closed after all sub-issues closed: %#v, %v", parent, err)
 	}
 	grandparent, err = s.GetIssue(grandparent.Identifier)
-	if err != nil || grandparent.Status != "done" {
+	if err != nil || grandparent.Status != "done" || grandparent.AutoClosedAt == nil {
 		t.Fatalf("parent close did not propagate to the grandparent: %#v, %v", grandparent, err)
 	}
 	activities, err := s.ListActivities(parent.Identifier)
@@ -98,13 +98,17 @@ func TestIssueAutomationClosesOpenSubIssuesWithTheirParent(t *testing.T) {
 	}
 	for _, identifier := range []string{child.Identifier, grandchild.Identifier} {
 		got, err := s.GetIssue(identifier)
-		if err != nil || got.Status != "done" {
+		if err != nil || got.Status != "done" || got.AutoClosedAt == nil {
 			t.Fatalf("sub-issue %s was not closed with its parent: %#v, %v", identifier, got, err)
 		}
 	}
 	archivedResult, err := s.GetIssue(archivedChild.Identifier)
 	if err != nil || archivedResult.Status == "done" || archivedResult.ArchivedAt == nil {
 		t.Fatalf("archived sub-issue was unexpectedly changed: %#v, %v", archivedResult, err)
+	}
+	manuallyClosedParent, err := s.GetIssue(parent.Identifier)
+	if err != nil || manuallyClosedParent.AutoClosedAt != nil {
+		t.Fatalf("manually closed parent was marked auto-closed: %#v, %v", manuallyClosedParent, err)
 	}
 }
 
