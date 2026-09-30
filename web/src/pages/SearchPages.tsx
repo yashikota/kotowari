@@ -30,10 +30,16 @@ import type { ReactNode } from 'react';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { SearchDateTimeframeDialog } from '../components/SearchDateTimeframeDialog.tsx';
 import { useFocusWhen } from '../focus.ts';
-import { SEARCH_DATE_WINDOWS } from '../search.ts';
+import { SEARCH_ASSIGNEES, SEARCH_DATE_WINDOWS, type SearchAssignee } from '../search.ts';
 import { ISSUE_STATUSES, type SearchHit } from '../types.ts';
 import { useSearchPagePresenter } from '../presenters/SearchPages.tsx';
 import styles from './SearchPages.module.css';
+
+const searchAssigneeLabels: Record<SearchAssignee, string> = {
+  self: 'issueAssignment.you',
+  agent: 'issueAssignment.agent',
+  none: 'issueAssignment.unassigned',
+};
 
 function SearchResultLink({ hit, children }: { hit: SearchHit; children: ReactNode }) {
   switch (hit.kind) {
@@ -103,6 +109,7 @@ function SearchPageView({
         order,
         includeArchived,
         statuses,
+        assignees,
         dates,
         customDateField,
         customDateInput,
@@ -182,6 +189,17 @@ function SearchPageView({
                           onChange={() => handlers.onToggleStatus(status)}
                         >
                           {t(`issueStatus.${status}`)}
+                        </Menu.CheckboxItem>
+                      ))}
+                      <Menu.Divider />
+                      <Menu.Label>{t('searchPage.filters.assignee')}</Menu.Label>
+                      {SEARCH_ASSIGNEES.map((assignee) => (
+                        <Menu.CheckboxItem
+                          key={assignee}
+                          checked={assignees.includes(assignee)}
+                          onChange={() => handlers.onToggleAssignee(assignee)}
+                        >
+                          {t(searchAssigneeLabels[assignee])}
                         </Menu.CheckboxItem>
                       ))}
                       <Menu.Divider />
@@ -297,6 +315,22 @@ function SearchPageView({
                     >
                       {t('searchPage.filters.statusValue', {
                         status: t(`issueStatus.${status}`),
+                      })}
+                      <IconX size={12} aria-hidden />
+                    </UnstyledButton>
+                  ))}
+                  {assignees.map((assignee) => (
+                    <UnstyledButton
+                      key={assignee}
+                      type="button"
+                      className={styles.filterChip}
+                      aria-label={t('searchPage.filters.removeAssignee', {
+                        assignee: t(searchAssigneeLabels[assignee]),
+                      })}
+                      onClick={() => handlers.onToggleAssignee(assignee)}
+                    >
+                      {t('searchPage.filters.assigneeValue', {
+                        assignee: t(searchAssigneeLabels[assignee]),
                       })}
                       <IconX size={12} aria-hidden />
                     </UnstyledButton>

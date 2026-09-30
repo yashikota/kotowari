@@ -11,6 +11,10 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 			return nil
 		}
 		for _, iss := range m.Issues {
+			assignee := iss.Assignee
+			if assignee == "" {
+				assignee = "none"
+			}
 			commentSnippet := ""
 			for _, comment := range m.Comments[iss.Identifier] {
 				if strings.Contains(strings.ToLower(comment.Body), q) {
@@ -24,7 +28,7 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 					snippet = commentSnippet
 				}
 				hits = append(hits, SearchHit{
-					Kind: "issue", ID: iss.Identifier, Title: iss.Title, Status: iss.Status,
+					Kind: "issue", ID: iss.Identifier, Title: iss.Title, Status: iss.Status, Assignee: assignee,
 					Archived:  iss.ArchivedAt != nil,
 					CreatedAt: iss.CreatedAt, UpdatedAt: iss.UpdatedAt,
 					Snippet: snippet,

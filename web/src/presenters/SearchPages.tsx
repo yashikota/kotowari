@@ -11,6 +11,7 @@ import {
   orderSearchHits,
   parseSearchDateFilter,
   serializeSearchDateFilter,
+  type SearchAssignee,
   type SearchDateField,
   type SearchDateFilter,
   type SearchDateFilters,
@@ -32,6 +33,7 @@ export function useSearchPagePresenter() {
   const order = search.ordering ?? 'relevance';
   const includeArchived = search.includeArchived ?? false;
   const statuses = (search.status?.split(',') ?? []) as IssueStatus[];
+  const assignees = (search.assignee?.split(',') ?? []) as SearchAssignee[];
   const dates: SearchDateFilters = {
     ...(parseSearchDateFilter(search.created)
       ? { created: parseSearchDateFilter(search.created) }
@@ -56,13 +58,18 @@ export function useSearchPagePresenter() {
     order,
     includeArchived,
     statuses,
+    assignees,
     dates,
     customDateField,
     customDateInput,
     customDateGranularity,
-    hasFilters: statuses.length > 0 || dates.created !== undefined || dates.updated !== undefined,
+    hasFilters:
+      statuses.length > 0 ||
+      assignees.length > 0 ||
+      dates.created !== undefined ||
+      dates.updated !== undefined,
     hits: orderSearchHits(
-      filterSearchHits(hits, tab, statuses, dates, Date.now(), includeArchived),
+      filterSearchHits(hits, tab, statuses, dates, Date.now(), includeArchived, assignees),
       order,
       search.q ?? '',
     ),
@@ -119,6 +126,16 @@ export function useSearchPagePresenter() {
             return { ...previous, status: statuses.length ? statuses.join(',') : undefined };
           },
         }),
+      onToggleAssignee: (assignee: SearchAssignee) =>
+        navigate({
+          search: (previous) => {
+            const next = new Set((previous.assignee?.split(',') ?? []) as SearchAssignee[]);
+            if (next.has(assignee)) next.delete(assignee);
+            else next.add(assignee);
+            const assignees = [...next];
+            return { ...previous, assignee: assignees.length ? assignees.join(',') : undefined };
+          },
+        }),
       onDateFilterChange: (field: SearchDateField, filter: SearchDateFilter | undefined) => {
         return navigate({
           search: (previous) => ({
@@ -172,6 +189,7 @@ export function useSearchPagePresenter() {
           search: (previous) => ({
             ...previous,
             status: undefined,
+            assignee: undefined,
             created: undefined,
             updated: undefined,
           }),

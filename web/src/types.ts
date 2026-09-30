@@ -410,6 +410,7 @@ export type SearchHit = {
   id: string;
   title: string;
   status?: IssueStatus;
+  assignee?: string;
   archived?: boolean;
   createdAt?: string;
   updatedAt?: string;

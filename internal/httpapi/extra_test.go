@@ -52,6 +52,26 @@ func TestCommandsAndSearch(t *testing.T) {
 	if len(hits) != 1 || hits[0]["kind"] != "issue" {
 		t.Fatalf("search %#v", hits)
 	}
+	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"AssignedFindable","assignee":"agent"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("create assigned issue %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/search?q=AssignedFindable", "")
+	if err := json.Unmarshal(rec.Body.Bytes(), &hits); err != nil {
+		t.Fatal(err)
+	}
+	if len(hits) != 1 || hits[0]["assignee"] != "agent" {
+		t.Fatalf("search assignee %#v", hits)
+	}
+	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"UnassignedFindable"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("create unassigned issue %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/search?q=UnassignedFindable", "")
+	if err := json.Unmarshal(rec.Body.Bytes(), &hits); err != nil {
+		t.Fatal(err)
+	}
+	if len(hits) != 1 || hits[0]["assignee"] != "none" {
+		t.Fatalf("search unassigned issue %#v", hits)
+	}
 }
 
 func TestCreateIssueWithExternalLinks(t *testing.T) {

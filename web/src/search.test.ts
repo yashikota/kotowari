@@ -43,10 +43,11 @@ describe('search page state', () => {
     expect(
       parseSearchPageSearch({
         status: 'todo,in_progress,todo,unknown',
+        assignee: 'agent,self,agent,unknown',
         created: 'P4D',
         updated: 'P1W',
       }),
-    ).toEqual({ status: 'todo,in_progress', updated: 'P1W' });
+    ).toEqual({ status: 'todo,in_progress', assignee: 'agent,self', updated: 'P1W' });
   });
 
   it('filters search categories like Linear tabs while retaining Kotowari-only views in All', () => {
@@ -74,6 +75,30 @@ describe('search page state', () => {
         (hit) => hit.id,
       ),
     ).toContain('APP-2');
+  });
+
+  it('filters issue results by one or more assignees', () => {
+    const assignedHits: SearchHit[] = [
+      { kind: 'issue', id: 'APP-1', title: 'Mine', assignee: 'self' },
+      { kind: 'issue', id: 'APP-2', title: 'Agent', assignee: 'agent' },
+      { kind: 'issue', id: 'APP-3', title: 'Unassigned', assignee: 'none' },
+      { kind: 'project', id: 'launch', title: 'Project' },
+    ];
+    expect(
+      filterSearchHits(assignedHits, 'all', [], {}, Date.now(), false, ['agent']).map(
+        (hit) => hit.id,
+      ),
+    ).toEqual(['APP-2']);
+    expect(
+      filterSearchHits(assignedHits, 'all', [], {}, Date.now(), false, ['self', 'none']).map(
+        (hit) => hit.id,
+      ),
+    ).toEqual(['APP-1', 'APP-3']);
+    expect(
+      filterSearchHits(assignedHits, 'all', [], {}, Date.now(), false, ['none']).map(
+        (hit) => hit.id,
+      ),
+    ).toEqual(['APP-3']);
   });
 
   it('combines created and updated date filters for issue results', () => {
