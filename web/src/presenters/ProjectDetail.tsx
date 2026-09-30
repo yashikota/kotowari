@@ -5,7 +5,7 @@ import { api } from '../api.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
-import { projectDetailSequenceFromKeyboard } from '../keymap.ts';
+import { projectDateShortcutFromKeyboard, projectDetailSequenceFromKeyboard } from '../keymap.ts';
 
 import { IssueList } from '../components/IssueList.tsx';
 
@@ -115,6 +115,8 @@ export function useProjectDetailPagePresenter() {
   const [focusProjectStatus, setFocusProjectStatus] = useState(0);
   const [focusProjectLead, setFocusProjectLead] = useState(0);
   const [focusProjectInitiatives, setFocusProjectInitiatives] = useState(0);
+  const [focusProjectStartDate, setFocusProjectStartDate] = useState(0);
+  const [focusProjectTargetDate, setFocusProjectTargetDate] = useState(0);
   const projectStatusSequenceSince = useRef<number | null>(null);
   const projectStatusSequenceSlug = useRef(slug);
 
@@ -129,6 +131,16 @@ export function useProjectDetailPagePresenter() {
     ) {
       projectStatusSequenceSince.current = null;
       return false;
+    }
+    const dateShortcut = projectDateShortcutFromKeyboard(event);
+    if (dateShortcut) {
+      event.preventDefault();
+      if (dateShortcut === 'focus-project-start-date') {
+        setFocusProjectStartDate((current) => current + 1);
+      } else {
+        setFocusProjectTargetDate((current) => current + 1);
+      }
+      return true;
     }
     const sequence = projectDetailSequenceFromKeyboard(
       event,
@@ -249,6 +261,8 @@ export function useProjectDetailPagePresenter() {
     focusProjectStatus,
     focusProjectLead,
     focusProjectInitiatives,
+    focusProjectStartDate,
+    focusProjectTargetDate,
     projectWorkflowStatuses,
     selected,
     project,

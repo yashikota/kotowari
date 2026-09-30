@@ -40,12 +40,16 @@ export function ProjectDetailPageView({
   statusRef,
   leadRef,
   initiativesRef,
+  startDateRef,
+  targetDateRef,
 }: {
   model: ReturnType<typeof useProjectDetailPagePresenter>;
   descriptionRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
   statusRef: ReturnType<typeof useFocusWhen<HTMLSelectElement>>;
   leadRef: ReturnType<typeof useFocusWhen<HTMLSelectElement>>;
   initiativesRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+  startDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+  targetDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
   const { t } = useTranslation();
   switch (model._view) {
@@ -215,6 +219,7 @@ export function ProjectDetailPageView({
                     ]}
                   />
                   <TextInput
+                    ref={startDateRef}
                     type="date"
                     aria-label={t('ui.startDate')}
                     label={t('ui.start')}
@@ -222,6 +227,7 @@ export function ProjectDetailPageView({
                     onChange={handlers.onStartDateChange}
                   />
                   <TextInput
+                    ref={targetDateRef}
                     type="date"
                     aria-label={t('ui.targetDate')}
                     label={t('ui.target')}
@@ -396,6 +402,12 @@ function ProjectDetailPageBinding() {
   const initiativesRef = useFocusWhen<HTMLInputElement>(model.focusProjectInitiatives > 0, [
     model.focusProjectInitiatives,
   ]);
+  const startDateRef = useFocusWhen<HTMLInputElement>(model.focusProjectStartDate > 0, [
+    model.focusProjectStartDate,
+  ]);
+  const targetDateRef = useFocusWhen<HTMLInputElement>(model.focusProjectTargetDate > 0, [
+    model.focusProjectTargetDate,
+  ]);
   return (
     <ProjectDetailPageView
       model={{ ...model, handlers } as typeof model}
@@ -403,6 +415,8 @@ function ProjectDetailPageBinding() {
       statusRef={statusRef}
       leadRef={leadRef}
       initiativesRef={initiativesRef}
+      startDateRef={startDateRef}
+      targetDateRef={targetDateRef}
     />
   );
 }

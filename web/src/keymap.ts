@@ -135,6 +135,34 @@ export function projectDetailSequenceFromKeyboard(
   return { action: null, pendingSince: null };
 }
 
+export function projectDateShortcutFromKeyboard(event: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  repeat?: boolean;
+  isComposing?: boolean;
+  defaultPrevented?: boolean;
+  target: EventTarget | null;
+}): 'focus-project-start-date' | 'focus-project-target-date' | null {
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.repeat ||
+    !(event.ctrlKey || event.metaKey) ||
+    !event.altKey ||
+    event.shiftKey ||
+    isTypingTarget(event.target)
+  ) {
+    return null;
+  }
+  const key = event.key.toLowerCase();
+  if (key === 's') return 'focus-project-start-date';
+  if (key === 'd') return 'focus-project-target-date';
+  return null;
+}
+
 export function initiativeDetailShortcutFromKeyboard(event: {
   key: string;
   metaKey: boolean;

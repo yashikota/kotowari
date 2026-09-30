@@ -12,6 +12,7 @@ import {
   isTypingTarget,
   issueCopyShortcutFromKeyboard,
   projectCreateSequenceFromKeyboard,
+  projectDateShortcutFromKeyboard,
   projectDetailSequenceFromKeyboard,
   quickOpenSequenceFromKeyboard,
 } from './keymap.ts';
@@ -849,6 +850,37 @@ describe('project status keyboard sequence', () => {
       action: null,
       pendingSince: null,
     });
+  });
+});
+
+describe('project date keyboard shortcuts', () => {
+  const shortcut = (
+    key: string,
+    overrides: Partial<Parameters<typeof projectDateShortcutFromKeyboard>[0]> = {},
+  ) =>
+    projectDateShortcutFromKeyboard({
+      key,
+      metaKey: false,
+      ctrlKey: false,
+      altKey: true,
+      target: el('BODY'),
+      ...overrides,
+    });
+
+  it('maps Ctrl/Meta+Alt+S and Ctrl/Meta+Alt+D to project dates', () => {
+    expect(shortcut('s', { ctrlKey: true })).toBe('focus-project-start-date');
+    expect(shortcut('s', { metaKey: true })).toBe('focus-project-start-date');
+    expect(shortcut('d', { ctrlKey: true })).toBe('focus-project-target-date');
+    expect(shortcut('d', { metaKey: true })).toBe('focus-project-target-date');
+  });
+
+  it('ignores typing, repeats, composition, and unrelated modifiers', () => {
+    expect(shortcut('s', { target: el('INPUT') })).toBeNull();
+    expect(shortcut('d', { repeat: true })).toBeNull();
+    expect(shortcut('d', { isComposing: true })).toBeNull();
+    expect(shortcut('s', { ctrlKey: true, shiftKey: true })).toBeNull();
+    expect(shortcut('s', { ctrlKey: true, altKey: false })).toBeNull();
+    expect(shortcut('x', { ctrlKey: true })).toBeNull();
   });
 });
 

@@ -74,6 +74,7 @@ export function ShortcutHelpView({
     { keys: 'P, then S', action: t('ui.shortcutChangeProjectStatus') },
     { keys: 'P, then N', action: t('ui.shortcutChangeProjectInitiatives') },
     { keys: 'P, then A', action: t('ui.shortcutChangeProjectLead') },
+    { keys: 'Ctrl/⌘+Alt+S', action: t('ui.shortcutSetProjectStartDate') },
     { keys: 'Ctrl/⌘+U', action: t('ui.shortcutOpenInitiativeUpdates') },
     { keys: 'Ctrl/⌘+Alt+D', action: t('ui.shortcutSetInitiativeTargetDate') },
     { keys: 'Ctrl/⌘+Shift+U', action: t('ui.shortcutWriteInitiativeUpdate') },
