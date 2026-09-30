@@ -148,6 +148,9 @@ export function ViewPageView({
                         orderBy={orderBy}
                         direction={direction}
                         showSubIssues={showSubIssues}
+                        projects={data.projects}
+                        cycles={data.cycles}
+                        labels={data.labels}
                       />
                     )}
                   </Box>

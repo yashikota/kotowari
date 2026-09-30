@@ -1,17 +1,15 @@
 import { useMemo, useRef, useState } from 'react';
-import { useRouter, useRouterState } from '@tanstack/react-router';
-import { api } from '../api.ts';
-import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
-import { patchIssueOptimistically, useIssueProjection } from '../application/issues.ts';
+import { useRouterState } from '@tanstack/react-router';
+import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
 import { sortIssues } from '../issue-list.ts';
 import type { IssueOrderBy } from '../issue-list.ts';
 import type { IssueBoardColumnProps } from '../issue-board.ts';
-import type { Issue } from '../types.ts';
+import type { Cycle, Issue, Label, Project } from '../types.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
-import { usePersonalPreferences } from '../preferences.ts';
+import { useIssueBulkActions } from './IssueBulkActions.ts';
 
 type BoardProps = {
   issues: Issue[];
@@ -22,6 +20,9 @@ type BoardProps = {
   direction?: 'asc' | 'desc';
   showSubIssues?: boolean;
   completedByRecency?: boolean;
+  projects?: Project[];
+  cycles?: Cycle[];
+  labels?: Label[];
 };
 
 function columnIssues(
@@ -46,10 +47,11 @@ export function useIssueBoardPresenter({
   direction,
   showSubIssues = true,
   completedByRecency = false,
+  projects = [],
+  cycles = [],
+  labels = [],
 }: BoardProps) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
-  const { preferences } = usePersonalPreferences();
-  const router = useRouter();
   const projectedIssues = useIssueProjection(initialIssues);
   const issues = showSubIssues
     ? projectedIssues
@@ -74,11 +76,6 @@ export function useIssueBoardPresenter({
   );
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
   const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
-  const issueById = new Map(
-    columns.flatMap((column) => column.issues).map((issue) => [issue.identifier, issue]),
-  );
-  const bulkSelectedArchived =
-    bulkSelectedIds.length > 0 && bulkSelectedIds.every((id) => issueById.get(id)?.archivedAt);
   function clearBulkSelection() {
     selectionAnchorId.current = null;
     selectionRange.current = null;
@@ -116,22 +113,11 @@ export function useIssueBoardPresenter({
       setBulkSelectedIds((current) => current.filter((selected) => selected !== id));
     }
   }
-  async function updateSelectedIssues(patch: Record<string, unknown>) {
-    await Promise.all(
-      bulkSelectedIds.map(async (id) => {
-        const issue = await api.issue(id);
-        const adjustedPatch = autoAssignOnStartedTransition(
-          issue,
-          patch,
-          workflowStatuses,
-          preferences.autoAssignOnStart,
-        );
-        await patchIssueOptimistically(id, adjustedPatch);
-      }),
-    );
-    await router.invalidate();
-    clearBulkSelection();
-  }
+  const bulkActions = useIssueBulkActions({
+    selectedIds: bulkSelectedIds,
+    visibleIssues: columns.flatMap((column) => column.issues),
+    onClear: clearBulkSelection,
+  });
   function moveToAdjacentColumn(id: string, status: string, direction: -1 | 1) {
     const columnIndex = columns.findIndex((column) => column.status === status);
     if (columnIndex < 0) return;
@@ -147,7 +133,11 @@ export function useIssueBoardPresenter({
     columns,
     bulkSelectedIds,
     bulkSelectedIdSet,
-    bulkSelectedArchived,
+    bulkSelectedArchived: bulkActions.bulkSelectedArchived,
+    removableLabels: bulkActions.removableLabels,
+    projects,
+    cycles,
+    labels,
     canReorder: orderBy === 'manual',
     handlers: {
       onDrag0: (...args: Parameters<IssueBoardColumnProps['onDrag']>) => {
@@ -166,7 +156,7 @@ export function useIssueBoardPresenter({
         selectionRange.current = null;
         setBulkSelectedIds(issueIds);
       },
-      onClearBulkSelection9: clearBulkSelection,
+      onClearBulkSelection9: bulkActions.handlers.onClearBulkSelection,
       onOpen3: (id: string) =>
         onOpen(id, {
           issueIds,
@@ -183,9 +173,7 @@ export function useIssueBoardPresenter({
       onMoveToAdjacentColumn5: (
         ...args: Parameters<IssueBoardColumnProps['onMoveToAdjacentColumn']>
       ) => moveToAdjacentColumn(...args),
-      onSetBulkStatus6: (status: string) => updateSelectedIssues({ workflowStatus: status }),
-      onSetBulkPriority7: (priority: number) => updateSelectedIssues({ priority }),
-      onArchiveBulkIssues8: () => updateSelectedIssues({ archived: !bulkSelectedArchived }),
+      ...bulkActions.handlers,
     },
   };
 }

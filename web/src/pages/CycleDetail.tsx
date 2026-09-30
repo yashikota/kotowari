@@ -190,6 +190,9 @@ export function CycleDetailPageView({
                         direction={direction}
                         showSubIssues={showSubIssues}
                         completedByRecency={completedByRecency}
+                        projects={data.projects}
+                        cycles={data.cycles}
+                        labels={data.labels}
                         onOpen={handlers.onBoardOpen}
                         onMove={handlers.onBoardMove}
                       />

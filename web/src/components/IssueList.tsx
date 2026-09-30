@@ -6,7 +6,6 @@ import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 import { IssueBoardColumn } from './IssueBoardColumn.tsx';
 import styles from './IssueBoardColumn.module.css';
 import { IssueSelectionToolbar } from './IssueSelectionToolbar.tsx';
-import { IssueBoardSelectionToolbar } from './IssueBoardSelectionToolbar.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueBoardPresenter } from '../presenters/IssueBoard.ts';
@@ -163,6 +162,10 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
         bulkSelectedIds,
         bulkSelectedIdSet,
         bulkSelectedArchived,
+        removableLabels,
+        projects,
+        cycles,
+        labels,
         handlers,
       } = model;
       return (
@@ -188,12 +191,27 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
           </Group>
           {bulkSelectedIds.length > 0 ? (
             <div className={styles.selectionToolbar}>
-              <IssueBoardSelectionToolbar
+              <IssueSelectionToolbar
                 selectedCount={bulkSelectedIds.length}
                 archived={bulkSelectedArchived}
-                onSetStatus={handlers.onSetBulkStatus6}
-                onArchive={handlers.onArchiveBulkIssues8}
-                onSetPriority={handlers.onSetBulkPriority7}
+                onSetStatus={handlers.onSetBulkStatus}
+                onArchive={handlers.onArchiveBulkIssues}
+                onSetPriority={handlers.onSetBulkPriority}
+                onSetAssignee={handlers.onSetBulkAssignee}
+                onSetType={handlers.onSetBulkType}
+                onSetEstimate={handlers.onSetBulkEstimate}
+                onSetDueDate={handlers.onSetBulkDueDate}
+                onSetSubscribed={handlers.onSetBulkSubscribed}
+                projects={projects}
+                cycles={cycles}
+                labels={labels}
+                removableLabels={removableLabels}
+                onSetProject={handlers.onSetBulkProject}
+                onSetCycle={handlers.onSetBulkCycle}
+                onAddLabel={handlers.onAddBulkLabel}
+                onRemoveLabel={handlers.onRemoveBulkLabel}
+                onCopyIssues={handlers.onCopyBulkIssues}
+                onAskAgent={handlers.onAskAgentAboutSelectedIssues}
                 onClear={handlers.onClearBulkSelection9}
               />
             </div>

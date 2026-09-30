@@ -1,19 +1,9 @@
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { api } from '../api.ts';
-import { setPendingAgentPrompt } from '../agent-prompt.ts';
 import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import { patchIssueOptimistically, useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
-import {
-  issueBranchName,
-  issueMarkdown,
-  renderIssuePrompt,
-  selectedIssuesAgentPrompt,
-} from '../issue-actions.ts';
-import type { IssueCopyKind } from '../issue-actions.ts';
-import { useCodingToolPreferences } from '../coding-tools.ts';
 import {
   buildIssueListRows,
   DEFAULT_DISPLAY_PROPERTIES,
@@ -28,9 +18,7 @@ import { localToday } from '../due.ts';
 import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
-import { usePersonalPreferences } from '../preferences.ts';
-import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
-import { issueSubscriptions } from '../issue-subscriptions.ts';
+import { useIssueBulkActions } from './IssueBulkActions.ts';
 
 type Props = {
   issues: Issue[];
@@ -108,9 +96,7 @@ export function useIssueListPresenter({
 }: Props) {
   const sendIntent = useIntent();
   const [, setIssueFilterMenuOpen] = useRootMachineFlag('issues.filterMenu');
-  const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const { statuses: workflowStatuses } = useIssueWorkflow();
-  const { preferences } = usePersonalPreferences();
   const projectedIssues = useIssueProjection(initialIssues);
   const visibleIssues = showSubIssues
     ? projectedIssues
@@ -157,14 +143,6 @@ export function useIssueListPresenter({
   );
   const ids = useMemo(() => issueRows.map((row) => row.issue.identifier), [issueRows]);
   const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
-  const issueById = new Map(issueRows.map(({ issue }) => [issue.identifier, issue]));
-  const bulkSelectedArchived =
-    bulkSelectedIds.length > 0 && bulkSelectedIds.every((id) => issueById.get(id)?.archivedAt);
-  const selectedLabelIds = new Set(
-    issueRows
-      .filter((row) => bulkSelectedIdSet.has(row.issue.identifier))
-      .flatMap((row) => row.issue.labels.map((label) => label.id)),
-  );
   const issuePositions = new Map(issueRows.map((row, index) => [row.issue.identifier, index + 1]));
   const childCounts = useMemo(() => {
     const counts = new Map<number, number>();
@@ -182,6 +160,13 @@ export function useIssueListPresenter({
     selectionRange.current = null;
     setBulkSelectedIds([]);
   }
+
+  const bulkActions = useIssueBulkActions({
+    selectedIds: bulkSelectedIds,
+    visibleIssues: issueRows.map((row) => row.issue),
+    onClear: clearBulkSelection,
+  });
+  const { bulkSelectedArchived, removableLabels } = bulkActions;
 
   function selectIssueRange(targetId: string) {
     const targetIndex = ids.indexOf(targetId);
@@ -234,109 +219,6 @@ export function useIssueListPresenter({
     issueListScrollTop: windowed.ref.current?.scrollTop ?? restoreScrollTop,
     issueListLayout: 'list' as const,
   });
-
-  async function updateSelectedIssues(patch: Record<string, unknown>) {
-    await Promise.all(
-      bulkSelectedIds.map(async (id) => {
-        const issue = await api.issue(id);
-        const adjustedPatch = autoAssignOnStartedTransition(
-          issue,
-          patch,
-          workflowStatuses,
-          preferences.autoAssignOnStart,
-        );
-        await patchIssueOptimistically(id, adjustedPatch);
-      }),
-    );
-    await router.invalidate();
-    clearBulkSelection();
-  }
-
-  async function updateSelectedLabels(labelId: number, add: boolean) {
-    await Promise.all(
-      bulkSelectedIds.map(async (identifier) => {
-        const issue = await api.issue(identifier);
-        const labelIds = issue.labels.map((label) => label.id);
-        const next = add
-          ? labelIds.includes(labelId)
-            ? labelIds
-            : [...labelIds, labelId]
-          : labelIds.filter((id) => id !== labelId);
-        if (next.length !== labelIds.length)
-          await patchIssueOptimistically(identifier, { labelIds: next });
-      }),
-    );
-    await router.invalidate();
-    clearBulkSelection();
-  }
-
-  async function copySelectedIssues(kind: IssueCopyKind) {
-    try {
-      const selectedIssues = await Promise.all(
-        bulkSelectedIds.map(async (identifier) => {
-          const visible = issueRows.find((row) => row.issue.identifier === identifier);
-          return visible?.issue ?? api.issue(identifier);
-        }),
-      );
-      if (kind === 'pullRequestUrls') {
-        const pullRequestUrls = Array.from(
-          new Set(
-            selectedIssues.flatMap((issue) =>
-              issue.externalLinks
-                .filter((link) => link.kind === 'pullRequest')
-                .map((link) => link.url),
-            ),
-          ),
-        );
-        await navigator.clipboard.writeText(pullRequestUrls.join('\n'));
-        return;
-      }
-      const copies = selectedIssues.map((issue) => {
-        const url = new URL(
-          `/issues/${encodeURIComponent(issue.identifier)}`,
-          window.location.origin,
-        ).toString();
-        switch (kind) {
-          case 'id':
-            return issue.identifier;
-          case 'url':
-            return url;
-          case 'title':
-            return issue.title;
-          case 'titleLink': {
-            const title = issue.title
-              .replaceAll('\\', '\\\\')
-              .replaceAll('[', '\\[')
-              .replaceAll(']', '\\]');
-            return `[${title}](${url})`;
-          }
-          case 'issueMarkdown':
-            return issueMarkdown(issue, url).trimEnd();
-          case 'markdown':
-            return issueMarkdown(issue, url, true).trimEnd();
-          case 'branch':
-            return issueBranchName(issue);
-          case 'prompt':
-            return renderIssuePrompt(issue, codingToolPreferences.promptTemplate, url);
-        }
-      });
-      const separator =
-        kind === 'markdown' || kind === 'issueMarkdown' || kind === 'prompt' ? '\n\n---\n\n' : '\n';
-      await navigator.clipboard.writeText(copies.join(separator));
-    } catch {
-      // Clipboard permissions can be unavailable in an embedded or insecure context.
-    }
-  }
-
-  function askAgentAboutSelectedIssues() {
-    const selectedIssues = bulkSelectedIds.flatMap((identifier) => {
-      const issue = issueRows.find((row) => row.issue.identifier === identifier)?.issue;
-      return issue ? [issue] : [];
-    });
-    if (selectedIssues.length === 0) return;
-    setPendingAgentPrompt(selectedIssuesAgentPrompt(selectedIssues, window.location.origin));
-    void navigate({ to: '/agent' });
-  }
 
   useKeyboard((e) => {
     if (
@@ -549,7 +431,7 @@ export function useIssueListPresenter({
     projects,
     cycles,
     labels,
-    removableLabels: labels.filter((label) => selectedLabelIds.has(label.id)),
+    removableLabels,
     handlers: {
       onClick0: (issue: Issue) => {
         onSelect(issue.identifier);
@@ -562,24 +444,7 @@ export function useIssueListPresenter({
         }
       },
       onToggleBulkSelection: toggleBulkSelection,
-      onSetBulkStatus: (status: string) => updateSelectedIssues({ workflowStatus: status }),
-      onArchiveBulkIssues: () => updateSelectedIssues({ archived: !bulkSelectedArchived }),
-      onSetBulkPriority: (priority: number) => updateSelectedIssues({ priority }),
-      onSetBulkAssignee: (assignee: 'self' | 'agent' | '') => updateSelectedIssues({ assignee }),
-      onSetBulkType: (type: Issue['type']) => updateSelectedIssues({ type }),
-      onSetBulkEstimate: (estimate: number | null) => updateSelectedIssues({ estimate }),
-      onSetBulkDueDate: (dueDate: string | null) => updateSelectedIssues({ dueDate }),
-      onSetBulkSubscribed: (subscribed: boolean) => {
-        issueSubscriptions.setMany(bulkSelectedIds, subscribed);
-        clearBulkSelection();
-      },
-      onSetBulkProject: (projectId: number | null) => updateSelectedIssues({ projectId }),
-      onSetBulkCycle: (cycleId: number | null) => updateSelectedIssues({ cycleId }),
-      onAddBulkLabel: (labelId: number) => updateSelectedLabels(labelId, true),
-      onRemoveBulkLabel: (labelId: number) => updateSelectedLabels(labelId, false),
-      onCopyBulkIssues: (kind: IssueCopyKind) => copySelectedIssues(kind),
-      onAskAgentAboutSelectedIssues: askAgentAboutSelectedIssues,
-      onClearBulkSelection: clearBulkSelection,
+      ...bulkActions.handlers,
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>
           current.includes(key) ? current.filter((value) => value !== key) : [...current, key],

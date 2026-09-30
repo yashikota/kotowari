@@ -158,6 +158,9 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
                         orderBy={orderBy}
                         direction={direction}
                         showSubIssues={showSubIssues}
+                        projects={data.projects}
+                        cycles={data.cycles}
+                        labels={data.labels}
                       />
                     )}
                   </Box>
@@ -272,6 +275,9 @@ export function BoardPageView({ model }: { model: ReturnType<typeof useBoardPage
                   onOpen={handlers.onOpen3}
                   onMove={handlers.onMove4}
                   find={find}
+                  projects={data.projects}
+                  cycles={data.cycles}
+                  labels={data.labels}
                 />
               )}
             </Pane>
