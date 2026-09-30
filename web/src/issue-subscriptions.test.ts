@@ -23,4 +23,19 @@ describe('issueSubscriptions', () => {
     issueSubscriptions.toggle('ENBU-4');
     expect(listener).toHaveBeenCalledTimes(1);
   });
+
+  it('sets several subscriptions idempotently with one notification', () => {
+    const listener = vi.fn();
+    const unsubscribe = issueSubscriptions.subscribe(listener);
+    issueSubscriptions.setMany(['ENBU-5', 'ENBU-6', 'ENBU-5'], true);
+    expect(issueSubscriptions.list()).toEqual(['ENBU-5', 'ENBU-6']);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    issueSubscriptions.setMany(['ENBU-5', 'ENBU-6'], true);
+    expect(listener).toHaveBeenCalledTimes(1);
+    issueSubscriptions.setMany(['ENBU-5', 'ENBU-6'], false);
+    expect(issueSubscriptions.list()).toEqual([]);
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+  });
 });

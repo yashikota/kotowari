@@ -441,6 +441,44 @@ test('issue list selects multiple issues and applies bulk status changes', async
   await expect(rows).toHaveCount(2);
 });
 
+test('issue list subscribes to and unsubscribes from selected issues', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Bulk subscriptions ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    identifiers.push(((await response.json()) as { identifier: string }).identifier);
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  const selectAll = async () => {
+    for (const identifier of identifiers) {
+      await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+    }
+    await page.getByRole('button', { name: 'Actions' }).click();
+  };
+  const storedSubscriptions = () =>
+    page.evaluate(
+      () => JSON.parse(localStorage.getItem('kotowari.issue-subscriptions.v1') ?? '[]') as string[],
+    );
+
+  await selectAll();
+  await page.getByRole('menuitem', { name: 'Subscribe', exact: true }).click();
+  await expect.poll(storedSubscriptions).toEqual(identifiers.sort());
+  await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
+
+  await selectAll();
+  await page.getByRole('menuitem', { name: 'Unsubscribe', exact: true }).click();
+  await expect.poll(storedSubscriptions).toEqual([]);
+  await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
+});
+
 test('issue selection opens a new Agent chat with safe, unsent issue context', async ({
   page,
   request,

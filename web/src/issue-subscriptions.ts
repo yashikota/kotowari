@@ -40,6 +40,28 @@ export const issueSubscriptions = {
     publishIssueSubscriptions();
     return subscriptions.has(identifier);
   },
+  setMany: (identifiers: string[], subscribed: boolean): void => {
+    const subscriptions = readIssueSubscriptions();
+    let changed = false;
+    for (const identifier of identifiers) {
+      if (subscribed) {
+        if (!subscriptions.has(identifier)) {
+          subscriptions.add(identifier);
+          changed = true;
+        }
+      } else if (subscriptions.delete(identifier)) {
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    memorySubscriptions = [...subscriptions].sort();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memorySubscriptions));
+    } catch {
+      // The in-memory view remains usable when browser storage is unavailable.
+    }
+    publishIssueSubscriptions();
+  },
   subscribe: (listener: () => void): (() => void) => {
     listeners.add(listener);
     if (typeof window !== 'undefined') window.addEventListener('storage', listener);

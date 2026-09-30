@@ -268,6 +268,14 @@ function IssueSelectionToolbarView({
               {t('ui.unassignSelectedIssues')}
             </Menu.Item>
             <Menu.Divider />
+            <Menu.Label>{t('issueSubscription.section')}</Menu.Label>
+            <Menu.Item onClick={() => handlers.onSetSubscribed(true)}>
+              {t('ui.subscribeSelectedIssues')}
+            </Menu.Item>
+            <Menu.Item onClick={() => handlers.onSetSubscribed(false)}>
+              {t('ui.unsubscribeSelectedIssues')}
+            </Menu.Item>
+            <Menu.Divider />
             <Menu.Label>{t('field.type')}</Menu.Label>
             {types.map((type) => (
               <Menu.Item key={type.value} onClick={() => handlers.onSetType(type.value)}>

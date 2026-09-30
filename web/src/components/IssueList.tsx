@@ -101,6 +101,7 @@ export function IssueListView({
                 onSetType={handlers.onSetBulkType}
                 onSetEstimate={handlers.onSetBulkEstimate}
                 onSetDueDate={handlers.onSetBulkDueDate}
+                onSetSubscribed={handlers.onSetBulkSubscribed}
                 projects={projects}
                 cycles={cycles}
                 labels={labels}

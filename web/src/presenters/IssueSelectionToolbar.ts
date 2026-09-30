@@ -14,6 +14,7 @@ type Props = {
   onSetType: (type: IssueType) => void;
   onSetEstimate: (estimate: number | null) => void;
   onSetDueDate: (dueDate: string | null) => void;
+  onSetSubscribed: (subscribed: boolean) => void;
   projects?: Project[];
   cycles?: Cycle[];
   labels?: Label[];
@@ -35,6 +36,7 @@ export function useIssueSelectionToolbarPresenter({
   onSetType,
   onSetEstimate,
   onSetDueDate,
+  onSetSubscribed,
   projects = [],
   cycles = [],
   labels = [],
@@ -105,6 +107,7 @@ export function useIssueSelectionToolbarPresenter({
       onSetType: (type: IssueType) => onSetType(type),
       onSetEstimate: (estimate: number | null) => onSetEstimate(estimate),
       onSetDueDate: (dueDate: string | null) => onSetDueDate(dueDate),
+      onSetSubscribed: (subscribed: boolean) => onSetSubscribed(subscribed),
       onDueDateChange: (dueDate: string) => setDueDateDraft(dueDate),
       onSetProject: (projectId: number | null) => onSetProject(projectId),
       onSetCycle: (cycleId: number | null) => onSetCycle(cycleId),

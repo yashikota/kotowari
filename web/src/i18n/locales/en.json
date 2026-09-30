@@ -708,7 +708,8 @@
   },
   "issueSubscription": {
     "subscribe": "Subscribe to issue",
-    "unsubscribe": "Unsubscribe from issue"
+    "unsubscribe": "Unsubscribe from issue",
+    "section": "Selected issues"
   },
   "myIssues": {
     "assigned": "Assigned",
@@ -2012,6 +2013,8 @@
     "setSelectedIssuePriority": "Set priority to {{priority}}",
     "assignSelectedIssuesToMe": "Assign to me",
     "unassignSelectedIssues": "Unassign",
+    "subscribeSelectedIssues": "Subscribe",
+    "unsubscribeSelectedIssues": "Unsubscribe",
     "setSelectedIssueType": "Set type to {{type}}",
     "setSelectedIssueEstimate": "Set estimate to {{estimate}}",
     "bulkProject": "Add to project…",

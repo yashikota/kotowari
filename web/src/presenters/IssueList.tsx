@@ -29,6 +29,7 @@ import type { Cycle, Issue, Label, Project } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import { issueSubscriptions } from '../issue-subscriptions.ts';
 
 type Props = {
   issues: Issue[];
@@ -357,6 +358,10 @@ export function useIssueListPresenter({
       onSetBulkType: (type: Issue['type']) => updateSelectedIssues({ type }),
       onSetBulkEstimate: (estimate: number | null) => updateSelectedIssues({ estimate }),
       onSetBulkDueDate: (dueDate: string | null) => updateSelectedIssues({ dueDate }),
+      onSetBulkSubscribed: (subscribed: boolean) => {
+        issueSubscriptions.setMany(bulkSelectedIds, subscribed);
+        setBulkSelectedIds([]);
+      },
       onSetBulkProject: (projectId: number | null) => updateSelectedIssues({ projectId }),
       onSetBulkCycle: (cycleId: number | null) => updateSelectedIssues({ cycleId }),
       onAddBulkLabel: (labelId: number) => updateSelectedLabels(labelId, true),
