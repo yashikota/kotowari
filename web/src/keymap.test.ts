@@ -15,6 +15,7 @@ import {
   projectCreateSequenceFromKeyboard,
   projectDateShortcutFromKeyboard,
   projectDetailSequenceFromKeyboard,
+  projectEntityShortcutFromKeyboard,
   quickOpenSequenceFromKeyboard,
 } from './keymap.ts';
 
@@ -890,6 +891,36 @@ describe('project date keyboard shortcuts', () => {
     expect(shortcut('s', { ctrlKey: true, shiftKey: true })).toBeNull();
     expect(shortcut('s', { ctrlKey: true, altKey: false })).toBeNull();
     expect(shortcut('x', { ctrlKey: true })).toBeNull();
+  });
+});
+
+describe('project detail shortcuts', () => {
+  const shortcut = (
+    key: string,
+    overrides: Partial<Parameters<typeof projectEntityShortcutFromKeyboard>[0]> = {},
+  ) =>
+    projectEntityShortcutFromKeyboard({
+      key,
+      metaKey: false,
+      ctrlKey: false,
+      target: el('BODY'),
+      ...overrides,
+    });
+
+  it('maps reminder, activity, and copy shortcuts', () => {
+    expect(shortcut('h', { shiftKey: true })).toBe('open-reminder-menu');
+    expect(shortcut('u', { ctrlKey: true })).toBe('focus-updates');
+    expect(shortcut('u', { metaKey: true })).toBe('focus-updates');
+    expect(shortcut('.', { ctrlKey: true })).toBe('copy-id');
+    expect(shortcut('<', { ctrlKey: true, shiftKey: true })).toBe('copy-url');
+    expect(shortcut('"', { metaKey: true, shiftKey: true })).toBe('copy-title');
+  });
+
+  it('ignores typing targets and unrelated modifiers', () => {
+    expect(shortcut('u', { ctrlKey: true, target: el('INPUT') })).toBeNull();
+    expect(shortcut('h', { shiftKey: true, target: el('TEXTAREA') })).toBeNull();
+    expect(shortcut('u', { ctrlKey: true, altKey: true })).toBeNull();
+    expect(shortcut('.', { ctrlKey: true, shiftKey: true })).toBeNull();
   });
 });
 

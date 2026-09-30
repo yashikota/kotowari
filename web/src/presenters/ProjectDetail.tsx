@@ -122,6 +122,7 @@ export function useProjectDetailPagePresenter() {
   const [focusProjectLabels, setFocusProjectLabels] = useState(0);
   const [focusProjectStartDate, setFocusProjectStartDate] = useState(0);
   const [focusProjectTargetDate, setFocusProjectTargetDate] = useState(0);
+  const [focusProjectUpdates, setFocusProjectUpdates] = useState(0);
   const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
   const [reminderError, setReminderError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -179,7 +180,9 @@ export function useProjectDetailPagePresenter() {
     if (entityShortcut) {
       event.preventDefault();
       if (entityShortcut === 'open-reminder-menu') setReminderMenuOpen(true);
-      else if (entityShortcut === 'copy-id') void copyProjectId();
+      else if (entityShortcut === 'focus-updates') {
+        setFocusProjectUpdates((current) => current + 1);
+      } else if (entityShortcut === 'copy-id') void copyProjectId();
       else if (entityShortcut === 'copy-url') void copyProjectURL();
       else void copyProjectTitle();
       return true;
@@ -323,6 +326,7 @@ export function useProjectDetailPagePresenter() {
     focusProjectLabels,
     focusProjectStartDate,
     focusProjectTargetDate,
+    focusProjectUpdates,
     reminderMenuOpen,
     reminderError,
     copied,

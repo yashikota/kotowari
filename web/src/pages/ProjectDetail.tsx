@@ -45,6 +45,7 @@ export function ProjectDetailPageView({
   labelsRef,
   startDateRef,
   targetDateRef,
+  updatesRef,
 }: {
   model: ReturnType<typeof useProjectDetailPagePresenter>;
   descriptionRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
@@ -54,6 +55,7 @@ export function ProjectDetailPageView({
   labelsRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
   startDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
   targetDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+  updatesRef: ReturnType<typeof useFocusWhen<HTMLDivElement>>;
 }) {
   const { t } = useTranslation();
   switch (model._view) {
@@ -372,12 +374,19 @@ export function ProjectDetailPageView({
                   cycles={data.cycles}
                   labels={data.labels}
                 />
-                <Section title={t('projectActivity.heading')}>
-                  <ProjectActivityFeed
-                    activities={projectActivityItems}
-                    emptyLabel={t('projectActivity.empty')}
-                  />
-                </Section>
+                <div
+                  ref={updatesRef}
+                  tabIndex={-1}
+                  role="region"
+                  aria-label={t('projectActivity.heading')}
+                >
+                  <Section title={t('projectActivity.heading')}>
+                    <ProjectActivityFeed
+                      activities={projectActivityItems}
+                      emptyLabel={t('projectActivity.empty')}
+                    />
+                  </Section>
+                </div>
               </Stack>
             </Pane>
           </SplitLayout>
@@ -469,6 +478,9 @@ function ProjectDetailPageBinding() {
   const targetDateRef = useFocusWhen<HTMLInputElement>(model.focusProjectTargetDate > 0, [
     model.focusProjectTargetDate,
   ]);
+  const updatesRef = useFocusWhen<HTMLDivElement>(model.focusProjectUpdates > 0, [
+    model.focusProjectUpdates,
+  ]);
   return (
     <ProjectDetailPageView
       model={{ ...model, handlers } as typeof model}
@@ -479,6 +491,7 @@ function ProjectDetailPageBinding() {
       labelsRef={labelsRef}
       startDateRef={startDateRef}
       targetDateRef={targetDateRef}
+      updatesRef={updatesRef}
     />
   );
 }

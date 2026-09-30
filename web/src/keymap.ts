@@ -179,7 +179,7 @@ export function projectEntityShortcutFromKeyboard(event: {
   isComposing?: boolean;
   defaultPrevented?: boolean;
   target: EventTarget | null;
-}): 'open-reminder-menu' | 'copy-id' | 'copy-url' | 'copy-title' | null {
+}): 'open-reminder-menu' | 'focus-updates' | 'copy-id' | 'copy-url' | 'copy-title' | null {
   if (event.defaultPrevented || event.isComposing || event.repeat || isTypingTarget(event.target)) {
     return null;
   }
@@ -188,6 +188,7 @@ export function projectEntityShortcutFromKeyboard(event: {
     return 'open-reminder-menu';
   }
   if (!(event.ctrlKey || event.metaKey) || event.altKey) return null;
+  if (key === 'u' && !event.shiftKey) return 'focus-updates';
   if (key === '.' && !event.shiftKey) return 'copy-id';
   if ((key === ',' || key === '<') && event.shiftKey) return 'copy-url';
   if ((key === "'" || key === '"') && event.shiftKey) return 'copy-title';

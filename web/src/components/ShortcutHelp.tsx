@@ -80,6 +80,7 @@ export function ShortcutHelpView({
     { keys: 'Ctrl/⌘+Shift+,', action: t('ui.shortcutCopyProjectURL') },
     { keys: "Ctrl/⌘+Shift+'", action: t('ui.shortcutCopyProjectTitle') },
     { keys: 'Ctrl/⌘+Alt+S', action: t('ui.shortcutSetProjectStartDate') },
+    { keys: 'Ctrl/⌘+U', action: t('ui.shortcutOpenProjectUpdates') },
     { keys: 'Ctrl/⌘+U', action: t('ui.shortcutOpenInitiativeUpdates') },
     { keys: 'Ctrl/⌘+Alt+D', action: t('ui.shortcutSetInitiativeTargetDate') },
     { keys: 'N, then O', action: t('ui.shortcutChangeInitiativeOwner') },
