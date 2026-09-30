@@ -410,6 +410,32 @@ test('Ctrl+Shift+U opens the initiative update composer', async ({ page, request
   await expect(page.getByRole('dialog', { name: 'Post an initiative update' })).toBeVisible();
 });
 
+test('Ctrl+Alt+D focuses the initiative target date', async ({ page, request }) => {
+  const slug = `initiative-target-date-shortcut-${Date.now()}`;
+  const created = await request.post('/api/initiatives', {
+    data: { name: 'Target date shortcut', slug, status: 'active' },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+
+  await page.goto(`/initiatives/${slug}`);
+  await page.getByRole('button', { name: 'Post update' }).first().focus();
+  await page.keyboard.press('Control+Alt+d');
+  await expect(page.getByLabel('Target date')).toBeFocused();
+});
+
+test('Ctrl+U focuses initiative updates and activity', async ({ page, request }) => {
+  const slug = `initiative-updates-focus-shortcut-${Date.now()}`;
+  const created = await request.post('/api/initiatives', {
+    data: { name: 'Updates focus shortcut', slug, status: 'active' },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+
+  await page.goto(`/initiatives/${slug}`);
+  await page.getByRole('button', { name: 'Post update' }).first().focus();
+  await page.keyboard.press('Control+u');
+  await expect(page.getByLabel('Updates')).toBeFocused();
+});
+
 test('initiative health updates post to a durable, newest-first history', async ({
   page,
   request,

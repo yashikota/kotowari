@@ -278,6 +278,8 @@ export function useInitiativeDetailPresenter() {
   const [color, setColor] = useState(initiative.color ?? 'purple');
   const [startDate, setStartDate] = useState(initiative.startDate ?? '');
   const [targetDate, setTargetDate] = useState(initiative.targetDate ?? '');
+  const [focusTargetDate, setFocusTargetDate] = useState(0);
+  const [focusUpdates, setFocusUpdates] = useState(0);
   const [priority, setPriority] = useState(initiative.priority ?? 0);
   const health = initiative.health ?? '';
   const [labels, setLabels] = useState(initiative.labels ?? []);
@@ -379,9 +381,12 @@ export function useInitiativeDetailPresenter() {
   }
 
   useKeyboard((event) => {
-    if (initiativeDetailShortcutFromKeyboard(event) !== 'write-update') return false;
+    const shortcut = initiativeDetailShortcutFromKeyboard(event);
+    if (!shortcut) return false;
     event.preventDefault();
-    openUpdate();
+    if (shortcut === 'write-update') openUpdate();
+    else if (shortcut === 'focus-target-date') setFocusTargetDate((value) => value + 1);
+    else setFocusUpdates((value) => value + 1);
     return true;
   });
 
@@ -395,6 +400,8 @@ export function useInitiativeDetailPresenter() {
     color,
     startDate,
     targetDate,
+    focusTargetDate,
+    focusUpdates,
     priority,
     health,
     updates,

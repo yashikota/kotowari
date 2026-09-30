@@ -145,19 +145,21 @@ export function initiativeDetailShortcutFromKeyboard(event: {
   isComposing?: boolean;
   defaultPrevented?: boolean;
   target: EventTarget | null;
-}): 'write-update' | null {
+}): 'write-update' | 'focus-target-date' | 'focus-updates' | null {
   if (
     event.defaultPrevented ||
     event.isComposing ||
     event.repeat ||
     !(event.ctrlKey || event.metaKey) ||
-    !event.shiftKey ||
-    event.altKey ||
     isTypingTarget(event.target)
   ) {
     return null;
   }
-  return event.key.toLowerCase() === 'u' ? 'write-update' : null;
+  const key = event.key.toLowerCase();
+  if (key === 'u' && event.shiftKey && !event.altKey) return 'write-update';
+  if (key === 'u' && !event.shiftKey && !event.altKey) return 'focus-updates';
+  if (key === 'd' && event.altKey && !event.shiftKey) return 'focus-target-date';
+  return null;
 }
 
 export function projectCreateSequenceFromKeyboard(

@@ -2155,6 +2155,8 @@
     "shortcutChangeProjectStatus": "Change project status",
     "shortcutChangeProjectInitiatives": "Change project initiatives",
     "shortcutChangeProjectLead": "Change project lead",
+    "shortcutOpenInitiativeUpdates": "Open initiative updates and activity",
+    "shortcutSetInitiativeTargetDate": "Set the initiative target date",
     "shortcutWriteInitiativeUpdate": "Write a new initiative update",
     "shortcutCreateSubIssue": "Create a sub-issue",
     "shortcutOpenParentIssue": "Open the parent issue",

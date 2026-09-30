@@ -20,12 +20,16 @@ import {
 } from '../initiative-options.ts';
 import { HealthUpdateComposer } from '../components/HealthUpdateComposer.tsx';
 import { HealthUpdateFeed } from '../components/HealthUpdateFeed.tsx';
+import { useFocusWhen } from '../focus.ts';
 import { useInitiativeDetailPresenter } from '../presenters/InitiativesPages.tsx';
 
 export function InitiativeDetailPageView({
   model,
 }: {
-  model: ReturnType<typeof useInitiativeDetailPresenter>;
+  model: ReturnType<typeof useInitiativeDetailPresenter> & {
+    targetDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+    updatesRef: ReturnType<typeof useFocusWhen<HTMLDivElement>>;
+  };
 }) {
   const { t } = useTranslation();
   const {
@@ -38,6 +42,8 @@ export function InitiativeDetailPageView({
     color,
     startDate,
     targetDate,
+    targetDateRef,
+    updatesRef,
     priority,
     health,
     updates,
@@ -121,6 +127,7 @@ export function InitiativeDetailPageView({
                 onChange={handlers.onStartDateChange}
               />
               <TextInput
+                ref={targetDateRef}
                 type="date"
                 label={t('initiatives.targetDate')}
                 value={targetDate}
@@ -211,7 +218,16 @@ export function InitiativeDetailPageView({
             </Group>
           </Stack>
         </form>
-        <Stack p="md" pt={0} maw={900} gap="sm" style={{ overflow: 'auto', minHeight: 0 }}>
+        <Stack
+          ref={updatesRef}
+          tabIndex={-1}
+          aria-label={t('initiativeUpdates.heading')}
+          p="md"
+          pt={0}
+          maw={900}
+          gap="sm"
+          style={{ overflow: 'auto', minHeight: 0 }}
+        >
           <Group justify="space-between" align="center">
             <Text size="lg" fw={600}>
               {t('initiativeUpdates.heading')}
@@ -259,5 +275,18 @@ export function InitiativeDetailPage() {
 function InitiativeDetailPageBinding() {
   const model = useInitiativeDetailPresenter();
   const handlers = useActions(model.handlers);
-  return <InitiativeDetailPageView model={{ ...model, handlers } as typeof model} />;
+  const targetDateRef = useFocusWhen<HTMLInputElement>(model.focusTargetDate > 0, [
+    model.focusTargetDate,
+  ]);
+  const updatesRef = useFocusWhen<HTMLDivElement>(model.focusUpdates > 0, [model.focusUpdates]);
+  return (
+    <InitiativeDetailPageView
+      model={
+        { ...model, handlers, targetDateRef, updatesRef } as typeof model & {
+          targetDateRef: typeof targetDateRef;
+          updatesRef: typeof updatesRef;
+        }
+      }
+    />
+  );
 }

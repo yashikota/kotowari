@@ -2143,6 +2143,8 @@
     "shortcutChangeProjectStatus": "プロジェクトのステータスを変更",
     "shortcutChangeProjectInitiatives": "プロジェクトのイニシアチブを変更",
     "shortcutChangeProjectLead": "プロジェクトのリードを変更",
+    "shortcutOpenInitiativeUpdates": "イニシアチブの更新とアクティビティを開く",
+    "shortcutSetInitiativeTargetDate": "イニシアチブの目標日を設定",
     "shortcutWriteInitiativeUpdate": "イニシアチブの更新を作成",
     "shortcutCreateSubIssue": "サブイシューを作成",
     "shortcutOpenParentIssue": "親イシューを開く",

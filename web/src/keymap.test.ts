@@ -870,12 +870,30 @@ describe('initiative detail keyboard shortcuts', () => {
     expect(shortcut({ metaKey: true })).toBe('write-update');
   });
 
+  it('focuses initiative updates with Ctrl+U or Meta+U', () => {
+    expect(shortcut({ ctrlKey: true, shiftKey: false })).toBe('focus-updates');
+    expect(shortcut({ metaKey: true, shiftKey: false })).toBe('focus-updates');
+  });
+
+  it('focuses the target date with Ctrl+Alt+D or Meta+Alt+D', () => {
+    expect(shortcut({ key: 'd', ctrlKey: true, shiftKey: false, altKey: true })).toBe(
+      'focus-target-date',
+    );
+    expect(shortcut({ key: 'd', metaKey: true, shiftKey: false, altKey: true })).toBe(
+      'focus-target-date',
+    );
+  });
+
   it('ignores typing, repeats, composition, and unrelated modifiers', () => {
     expect(shortcut({ target: el('TEXTAREA') })).toBeNull();
     expect(shortcut({ repeat: true })).toBeNull();
     expect(shortcut({ isComposing: true })).toBeNull();
-    expect(shortcut({ ctrlKey: true, shiftKey: false })).toBeNull();
+    expect(shortcut({ ctrlKey: true, shiftKey: false, altKey: true })).toBeNull();
     expect(shortcut({ ctrlKey: true, altKey: true })).toBeNull();
+    expect(
+      shortcut({ key: 'd', ctrlKey: true, shiftKey: false, altKey: true, target: el('INPUT') }),
+    ).toBeNull();
+    expect(shortcut({ key: 'd', ctrlKey: true, shiftKey: true, altKey: true })).toBeNull();
   });
 });
 
