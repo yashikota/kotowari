@@ -1,4 +1,5 @@
 import i18n from './i18n/index.ts';
+import { priorityLabel } from './i18n/labels.ts';
 import type { IssueWorkflowStatus } from './types.ts';
 import { workflowStatusLabel } from './workflow.tsx';
 
@@ -29,6 +30,11 @@ export function formatActivity(
   if (action === 'cycle_issue_added' || action === 'cycle_issue_completed') {
     const cycle = typeof payload.cycle === 'string' ? payload.cycle : '';
     return i18n.t(`activity.${action}`, { cycle });
+  }
+  if (action === 'priority_changed') {
+    const from = typeof payload.from === 'number' ? priorityLabel(payload.from) : '';
+    const to = typeof payload.to === 'number' ? priorityLabel(payload.to) : '';
+    return i18n.t('activity.priorityChanged', { from, to });
   }
   if (action === 'type_changed') {
     const from = typeof payload.from === 'string' ? payload.from : '';

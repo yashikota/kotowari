@@ -35,6 +35,15 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes priority changes, including no priority', () => {
+    expect(formatActivity('priority_changed', { from: 0, to: 2 })).toBe(
+      'Priority changed from No priority to High',
+    );
+    expect(formatActivity('priority_changed', { from: 2, to: 1 })).toBe(
+      'Priority changed from High to Urgent',
+    );
+  });
+
   it('describes issue type and estimate changes', () => {
     expect(formatActivity('type_changed', { from: '', to: 'feature' })).toBe(
       'Type No type → Feature',

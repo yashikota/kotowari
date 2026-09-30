@@ -7,6 +7,7 @@ import (
 
 type issueUpdateSnapshot struct {
 	status, workflowStatus, assignee, typeName string
+	priority                                   int
 	estimate                                   *int
 	favorite, archived                         bool
 	reminderAt, dueDate                        *string
@@ -17,7 +18,7 @@ type issueUpdateSnapshot struct {
 func snapshotIssueUpdate(issue Issue) issueUpdateSnapshot {
 	return issueUpdateSnapshot{
 		status: issue.Status, workflowStatus: issue.WorkflowStatus, assignee: issue.Assignee, typeName: issue.Type,
-		estimate: issue.Estimate, favorite: issue.IsFavorite, archived: issue.ArchivedAt != nil,
+		priority: issue.Priority, estimate: issue.Estimate, favorite: issue.IsFavorite, archived: issue.ArchivedAt != nil,
 		reminderAt: issue.ReminderAt, dueDate: issue.DueDate, milestoneID: issue.MilestoneID,
 		milestoneName: issue.MilestoneName, cycleID: issue.CycleID,
 	}
@@ -81,6 +82,9 @@ func recordIssueUpdateActivities(m *mem, iss Issue, in PatchIssueInput, before i
 	}
 	if in.Type != nil && *in.Type != before.typeName {
 		addActivity(m, "issue", iss.ID, "type_changed", map[string]any{"from": before.typeName, "to": iss.Type}, now)
+	}
+	if before.priority != iss.Priority {
+		addActivity(m, "issue", iss.ID, "priority_changed", map[string]any{"from": before.priority, "to": iss.Priority}, now)
 	}
 	if in.Estimate != nil && !sameEstimate(before.estimate, iss.Estimate) {
 		addActivity(m, "issue", iss.ID, "estimate_changed", map[string]any{"from": before.estimate, "to": iss.Estimate}, now)

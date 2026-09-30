@@ -920,6 +920,53 @@ func TestIssueCycleChangesAreRecordedInTimelineAndInbox(t *testing.T) {
 	}
 }
 
+func TestIssuePriorityChangesAreRecordedInTimelineAndInbox(t *testing.T) {
+	s := openTest(t)
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Track priority changes"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	highPriority := 2
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{Priority: &highPriority}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{Priority: &highPriority}); err != nil {
+		t.Fatal(err)
+	}
+
+	activities, err := s.ListActivities(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var changes []Activity
+	for i := range activities {
+		if activities[i].Action == "priority_changed" {
+			changes = append(changes, activities[i])
+		}
+	}
+	if len(changes) != 1 {
+		t.Fatalf("priority change events = %#v", changes)
+	}
+	var payload map[string]int
+	if err := json.Unmarshal(changes[0].Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["from"] != 0 || payload["to"] != highPriority {
+		t.Fatalf("priority change payload = %#v", payload)
+	}
+
+	inbox, err := s.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, activity := range inbox {
+		if activity.EntityType == "issue" && activity.Identifier == issue.Identifier && activity.Action == "priority_changed" {
+			return
+		}
+	}
+	t.Fatal("priority change was not recorded in the inbox")
+}
+
 func TestListIssuesByTypeAndEstimate(t *testing.T) {
 	s := openTest(t)
 	one, three, eight := 1, 3, 8
