@@ -90,14 +90,14 @@ export function ReactionPicker({
   const locale = (i18n.resolvedLanguage ?? i18n.language).startsWith('ja') ? 'ja' : 'en';
   const dataSource = locale === 'ja' ? jaEmojiDataUrl : enEmojiDataUrl;
   const basePickerI18n = locale === 'ja' ? jaPickerI18n : enPickerI18n;
-  const pickerI18n = useMemo<I18n>(
-    () => ({
+  const pickerI18n = useMemo<I18n>(() => {
+    const translate = i18n.getFixedT(locale);
+    return {
       ...basePickerI18n,
-      regionLabel: t('reactions.picker'),
-      searchLabel: t('reactions.search'),
-    }),
-    [basePickerI18n, t],
-  );
+      regionLabel: translate('reactions.picker'),
+      searchLabel: translate('reactions.search'),
+    };
+  }, [basePickerI18n, i18n, locale]);
   const opened = openedTarget === target;
   const [pickerHost, setPickerHost] = useState<HTMLDivElement | null>(null);
   const onSelectRef = useRef(onSelect);
