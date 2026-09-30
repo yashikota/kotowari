@@ -2151,6 +2151,7 @@
     "shortcutClearIssueDueDate": "Remove the issue due date",
     "shortcutSetIssueReminder": "Set a reminder for the issue",
     "shortcutFocusIssueDescription": "Focus the issue description",
+    "shortcutCommentOnIssue": "Focus the issue comment",
     "shortcutCreateSubIssue": "Create a sub-issue",
     "shortcutOpenParentIssue": "Open the parent issue",
     "shortcutToggleIssueResources": "Collapse or expand issue resources",

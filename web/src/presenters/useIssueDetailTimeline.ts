@@ -257,6 +257,7 @@ export function useIssueDetailTimeline({
         setCommentFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
       },
       onSubmitComment: () => submitComment(),
+      onFocusComment: () => setFocusNote((current) => current + 1),
       onEditComment: (commentId: number, body: string) => {
         setEditingCommentId(commentId);
         setEditingCommentDraft(body);

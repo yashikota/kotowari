@@ -718,6 +718,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['E', { shiftKey: true }, 'open-estimate'],
     ['P', { shiftKey: true }, 'open-project'],
     ['I', { metaKey: true, shiftKey: true }, 'focus-description'],
+    ['M', { ctrlKey: true }, 'focus-comment'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['S', { shiftKey: true }, 'toggle-subscription'],
     ['C', { shiftKey: true }, 'open-cycle'],

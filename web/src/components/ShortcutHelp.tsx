@@ -70,6 +70,7 @@ export function ShortcutHelpView({
     { keys: 'Ctrl/⌘+Shift+D', action: t('ui.shortcutClearIssueDueDate') },
     { keys: 'Shift+H', action: t('ui.shortcutSetIssueReminder') },
     { keys: 'Ctrl/⌘+Shift+I', action: t('ui.shortcutFocusIssueDescription') },
+    { keys: 'Ctrl/⌘+M', action: t('ui.shortcutCommentOnIssue') },
     { keys: 'Ctrl/⌘+Shift+O', action: t('ui.shortcutCreateSubIssue') },
     { keys: 'Ctrl/⌘+Shift+P', action: t('ui.shortcutSetParentIssue') },
     { keys: 'Ctrl/⌘+Shift+↑', action: t('ui.shortcutOpenParentIssue') },

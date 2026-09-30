@@ -2139,6 +2139,7 @@
     "shortcutClearIssueDueDate": "イシューの期限を削除",
     "shortcutSetIssueReminder": "イシューのリマインダーを設定",
     "shortcutFocusIssueDescription": "イシューの説明にフォーカス",
+    "shortcutCommentOnIssue": "イシューのコメント欄にフォーカス",
     "shortcutCreateSubIssue": "サブイシューを作成",
     "shortcutOpenParentIssue": "親イシューを開く",
     "shortcutToggleIssueResources": "イシューのリソース欄を折りたたむ／展開",

@@ -433,6 +433,7 @@ export type IssueDetailShortcut =
   | 'set-parent-issue'
   | 'open-first-sub-issue'
   | 'focus-description'
+  | 'focus-comment'
   | 'toggle-favorite'
   | 'toggle-subscription'
   | 'open-cycle'
@@ -471,6 +472,7 @@ export function issueDetailShortcutFromKeyboard(event: {
     if (key === 'i') return 'focus-description';
     if (key === 'p') return 'set-parent-issue';
   }
+  if (modifier && !event.altKey && !event.shiftKey && key === 'm') return 'focus-comment';
   if (modifier && event.altKey && !event.shiftKey && key === 'l') return 'add-link';
   if (modifier || event.altKey) return null;
   if (event.shiftKey) {

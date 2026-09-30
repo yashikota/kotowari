@@ -295,6 +295,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'focus-description':
           void sendIntent('onFocusDescription', []);
           break;
+        case 'focus-comment':
+          void sendIntent('onFocusComment', []);
+          break;
         case 'toggle-favorite':
           void sendIntent('onToggleFavorite', []);
           break;
