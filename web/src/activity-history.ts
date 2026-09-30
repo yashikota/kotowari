@@ -29,28 +29,40 @@ export type IssueTimelineEntry =
 export function groupPriorityActivityHistory(
   entries: Array<ActivityTimelineEntry | CommentTimelineEntry>,
 ): IssueTimelineEntry[] {
-  const priorityEntries = entries.filter(
-    (entry): entry is ActivityTimelineEntry =>
-      entry.kind === 'activity' && entry.activity.action === 'priority_changed',
-  );
-  if (priorityEntries.length < 2) return entries;
-
-  const latest = priorityEntries.at(-1);
-  if (!latest) return entries;
-  const group: PriorityActivityGroupEntry = {
-    kind: 'priority-group',
-    id: latest.id,
-    createdAt: latest.createdAt,
-    activities: priorityEntries.map((entry) => entry.activity),
-  };
-
   const grouped: IssueTimelineEntry[] = [];
-  for (const entry of entries) {
+  for (let index = 0; index < entries.length;) {
+    const entry = entries[index]!;
     if (entry.kind !== 'activity' || entry.activity.action !== 'priority_changed') {
       grouped.push(entry);
-    } else if (entry.id === latest.id) {
-      grouped.push(group);
+      index += 1;
+      continue;
     }
+
+    let end = index + 1;
+    while (end < entries.length) {
+      const candidate = entries[end];
+      if (candidate?.kind !== 'activity' || candidate.activity.action !== 'priority_changed') {
+        break;
+      }
+      end += 1;
+    }
+
+    const run = entries.slice(index, end);
+    if (run.length < 2) {
+      grouped.push(entry);
+      index = end;
+      continue;
+    }
+
+    const activities = run.flatMap((item) => (item.kind === 'activity' ? [item.activity] : []));
+    const latest = run.at(-1)!;
+    grouped.push({
+      kind: 'priority-group',
+      id: latest.id,
+      createdAt: latest.createdAt,
+      activities,
+    });
+    index = end;
   }
   return grouped;
 }

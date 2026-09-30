@@ -24,21 +24,31 @@ describe('groupPriorityActivityHistory', () => {
   it('puts repeated priority changes into one group at the latest change time', () => {
     const timeline = groupPriorityActivityHistory([
       activityEntry(1, 'priority_changed', '2026-01-01T00:00:00Z'),
+      activityEntry(2, 'priority_changed', '2026-01-02T00:00:00Z'),
       { kind: 'comment', id: comment.id, createdAt: comment.createdAt, comment },
       activityEntry(3, 'status_changed', '2026-01-03T00:00:00Z'),
-      activityEntry(4, 'priority_changed', '2026-01-04T00:00:00Z'),
     ]);
 
-    expect(timeline.map((entry) => entry.kind)).toEqual(['comment', 'activity', 'priority-group']);
-    const group = timeline[2];
+    expect(timeline.map((entry) => entry.kind)).toEqual(['priority-group', 'comment', 'activity']);
+    const group = timeline[0];
     expect(group).toMatchObject({
       kind: 'priority-group',
-      id: 4,
-      createdAt: '2026-01-04T00:00:00Z',
+      id: 2,
+      createdAt: '2026-01-02T00:00:00Z',
     });
     expect(group?.kind === 'priority-group' ? group.activities.map((item) => item.id) : []).toEqual(
-      [1, 4],
+      [1, 2],
     );
+  });
+
+  it('keeps priority changes separate when another timeline entry is between them', () => {
+    const timeline = groupPriorityActivityHistory([
+      activityEntry(1, 'priority_changed', '2026-01-01T00:00:00Z'),
+      activityEntry(2, 'status_changed', '2026-01-02T00:00:00Z'),
+      activityEntry(3, 'priority_changed', '2026-01-03T00:00:00Z'),
+    ]);
+
+    expect(timeline.map((entry) => entry.kind)).toEqual(['activity', 'activity', 'activity']);
   });
 
   it('leaves a single priority change as an ordinary activity', () => {
