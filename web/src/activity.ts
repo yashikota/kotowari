@@ -36,6 +36,21 @@ export function formatActivity(
     const to = typeof payload.to === 'number' ? priorityLabel(payload.to) : '';
     return i18n.t('activity.priorityChanged', { from, to });
   }
+  if (action === 'due_date_changed') {
+    const dueDateLabel = (value: unknown) => {
+      if (typeof value !== 'string' || !value) return i18n.t('issueProperties.noDueDate');
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: 'medium',
+        timeZone: 'UTC',
+      }).format(date);
+    };
+    return i18n.t('activity.dueDateChanged', {
+      from: dueDateLabel(payload.from),
+      to: dueDateLabel(payload.to),
+    });
+  }
   if (action === 'label_added' || action === 'label_removed') {
     const label = typeof payload.label === 'string' ? payload.label : '';
     return i18n.t(action === 'label_added' ? 'activity.labelAdded' : 'activity.labelRemoved', {

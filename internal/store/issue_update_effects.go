@@ -88,6 +88,16 @@ func recordIssueUpdateActivities(m *mem, iss Issue, in PatchIssueInput, before i
 	if before.priority != iss.Priority {
 		addActivity(m, "issue", iss.ID, "priority_changed", map[string]any{"from": before.priority, "to": iss.Priority}, now)
 	}
+	if !sameString(before.dueDate, iss.DueDate) {
+		from, to := "", ""
+		if before.dueDate != nil {
+			from = *before.dueDate
+		}
+		if iss.DueDate != nil {
+			to = *iss.DueDate
+		}
+		addActivity(m, "issue", iss.ID, "due_date_changed", map[string]any{"from": from, "to": to}, now)
+	}
 	if in.LabelIDs != nil {
 		beforeLabels := make(map[int64]string, len(before.labels))
 		for _, label := range before.labels {

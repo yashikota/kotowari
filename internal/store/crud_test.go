@@ -1036,6 +1036,68 @@ func TestIssueLabelChangesAreRecordedInTimelineAndInbox(t *testing.T) {
 	}
 }
 
+func TestIssueDueDateChangesAreRecordedInTimelineAndInbox(t *testing.T) {
+	s := openTest(t)
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Track due date changes"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dueDate := "2026-09-30"
+	dueDatePatch := &dueDate
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{DueDate: &dueDatePatch}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{DueDate: &dueDatePatch}); err != nil {
+		t.Fatal(err)
+	}
+	var clearDueDatePatch *string
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{DueDate: &clearDueDatePatch}); err != nil {
+		t.Fatal(err)
+	}
+
+	activities, err := s.ListActivities(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var changes []Activity
+	for _, activity := range activities {
+		if activity.Action == "due_date_changed" {
+			changes = append(changes, activity)
+		}
+	}
+	if len(changes) != 2 {
+		t.Fatalf("due date change events = %#v, want 2", changes)
+	}
+	var latest, previous map[string]string
+	if err := json.Unmarshal(changes[0].Payload, &latest); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(changes[1].Payload, &previous); err != nil {
+		t.Fatal(err)
+	}
+	if latest["from"] != dueDate || latest["to"] != "" {
+		t.Fatalf("due date removal payload = %#v", latest)
+	}
+	if previous["from"] != "" || previous["to"] != dueDate {
+		t.Fatalf("due date set payload = %#v", previous)
+	}
+
+	inbox, err := s.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inboxChanges := 0
+	for _, activity := range inbox {
+		if activity.EntityType == "issue" && activity.Identifier == issue.Identifier && activity.Action == "due_date_changed" {
+			inboxChanges++
+		}
+	}
+	if inboxChanges != 2 {
+		t.Fatalf("due date change inbox events = %d, want 2", inboxChanges)
+	}
+}
+
 func TestListIssuesByTypeAndEstimate(t *testing.T) {
 	s := openTest(t)
 	one, three, eight := 1, 3, 8

@@ -44,6 +44,15 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes due date changes and removal', () => {
+    expect(formatActivity('due_date_changed', { from: '', to: '2026-09-30' })).toBe(
+      'Due date changed from No due date to Sep 30, 2026',
+    );
+    expect(formatActivity('due_date_changed', { from: '2026-09-30', to: '' })).toBe(
+      'Due date changed from Sep 30, 2026 to No due date',
+    );
+  });
+
   it('describes label additions and removals', () => {
     expect(formatActivity('label_added', { label: 'Feature' })).toBe('Added label Feature');
     expect(formatActivity('label_removed', { label: 'Feature' })).toBe('Removed label Feature');
