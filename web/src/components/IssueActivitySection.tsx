@@ -28,6 +28,7 @@ import { formatRelativeTime } from '../time.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import type { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
 import { formatAttachmentSize, IssueAttachmentList } from './IssueAttachmentList.tsx';
+import { IssuePriorityIcon } from './issue-ui.tsx';
 import { ReactionPicker, ReactionSummary } from './ReactionPicker.tsx';
 
 type IssueDetailModel = Extract<ReturnType<typeof useIssueDetailPresenter>, { _view: 2 }>;
@@ -80,6 +81,25 @@ function ActivityAvatar() {
     >
       <IconUser size={12} stroke={1.8} />
     </Avatar>
+  );
+}
+
+function PriorityActivityIcon({ priority }: { priority: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      data-testid="issue-activity-priority-icon"
+      style={{
+        width: 20,
+        height: 20,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: '0 0 20px',
+      }}
+    >
+      <IssuePriorityIcon priority={priority} />
+    </span>
   );
 }
 
@@ -165,6 +185,7 @@ export function IssueActivitySection({ model, noteRef }: Props) {
 
           if (entry.kind === 'priority-group') {
             const locale = i18n.resolvedLanguage ?? i18n.language;
+            const finalPriority = entry.activities.at(-1)?.payload.to;
             const summary = formatPriorityActivityGroup(entry.activities).replace(
               /^\p{Lu}/u,
               (letter) => letter.toLocaleLowerCase(locale),
@@ -177,7 +198,9 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                 align="flex-start"
                 data-testid="issue-activity-group"
               >
-                <ActivityAvatar />
+                <PriorityActivityIcon
+                  priority={typeof finalPriority === 'number' ? finalPriority : 0}
+                />
                 <details style={{ flex: 1, minWidth: 0 }}>
                   <summary
                     data-testid="issue-activity-entry"
@@ -212,7 +235,11 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                           align="flex-start"
                           data-testid="issue-activity-history-entry"
                         >
-                          <ActivityAvatar />
+                          <PriorityActivityIcon
+                            priority={
+                              typeof activity.payload.to === 'number' ? activity.payload.to : 0
+                            }
+                          />
                           <Text size="sm" style={{ flex: 1, minWidth: 0 }}>
                             <Text span fw={550}>
                               {t('issueComments.you')}

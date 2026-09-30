@@ -60,6 +60,7 @@ test('repeated priority changes collapse into expandable activity history', asyn
   const activity = page.getByRole('region', { name: 'Activity' });
   const group = activity.getByTestId('issue-activity-group');
   await expect(group).toHaveCount(1);
+  await expect(group.getByTestId('issue-activity-priority-icon')).toHaveCount(3);
   const summary = group.getByTestId('issue-activity-entry');
   await expect(summary).toContainText('priority changed from No priority to High, then Low');
   const history = group.getByTestId('issue-activity-history-entry');
