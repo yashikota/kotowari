@@ -287,6 +287,7 @@ export function useInitiativeDetailPresenter() {
   const [focusTargetDate, setFocusTargetDate] = useState(0);
   const [focusUpdates, setFocusUpdates] = useState(0);
   const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [priority, setPriority] = useState(initiative.priority ?? 0);
   const health = initiative.health ?? '';
   const [labels, setLabels] = useState(initiative.labels ?? []);
@@ -417,6 +418,32 @@ export function useInitiativeDetailPresenter() {
     setReminderMenuOpen(false);
   }
 
+  async function copyText(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // Clipboard permission can be unavailable in an embedded or non-secure context.
+    }
+  }
+
+  function copyInitiativeId() {
+    return copyText(String(initiative.id));
+  }
+
+  function copyInitiativeURL() {
+    const url = new URL(
+      `/initiatives/${encodeURIComponent(initiative.slug)}`,
+      window.location.origin,
+    );
+    return copyText(url.href);
+  }
+
+  function copyInitiativeTitle() {
+    return copyText(initiative.name);
+  }
+
   useKeyboard((event) => {
     const ownerSequence = initiativeDetailSequenceFromKeyboard(
       event,
@@ -440,6 +467,9 @@ export function useInitiativeDetailPresenter() {
     else if (shortcut === 'focus-target-date') setFocusTargetDate((value) => value + 1);
     else if (shortcut === 'focus-updates') setFocusUpdates((value) => value + 1);
     else if (shortcut === 'open-reminder-menu') setReminderMenuOpen(true);
+    else if (shortcut === 'copy-id') void copyInitiativeId();
+    else if (shortcut === 'copy-url') void copyInitiativeURL();
+    else if (shortcut === 'copy-title') void copyInitiativeTitle();
     else void toggleFavorite();
     return true;
   });
@@ -459,6 +489,7 @@ export function useInitiativeDetailPresenter() {
     focusTargetDate,
     focusUpdates,
     reminderMenuOpen,
+    copied,
     priority,
     health,
     updates,
@@ -494,6 +525,9 @@ export function useInitiativeDetailPresenter() {
       onToggleFavorite: toggleFavorite,
       onSetReminder: setReminder,
       onReminderMenuChange: setReminderMenuOpen,
+      onCopyInitiativeId: copyInitiativeId,
+      onCopyInitiativeURL: copyInitiativeURL,
+      onCopyInitiativeTitle: copyInitiativeTitle,
       onCloseUpdate: () => setUpdateOpen(false),
       onUpdateHealthChange: (value: string | null) =>
         setUpdateHealth((value ?? 'on_track') as ProjectHealth),

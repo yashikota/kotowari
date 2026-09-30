@@ -3,6 +3,7 @@ import {
   Badge,
   Button,
   Group,
+  Menu,
   MultiSelect,
   Select,
   Stack,
@@ -10,7 +11,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconArrowLeft, IconStar, IconTrash } from '@tabler/icons-react';
+import { IconArrowLeft, IconDotsVertical, IconStar, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { InitiativeReminderMenu } from '../components/InitiativeReminderMenu.tsx';
@@ -57,6 +58,7 @@ export function InitiativeDetailPageView({
     projectSlugs,
     error,
     saving,
+    copied,
     updateOpen,
     updateHealth,
     updateBody,
@@ -77,6 +79,35 @@ export function InitiativeDetailPageView({
                 onMenuChange={handlers.onReminderMenuChange}
                 onSetReminder={handlers.onSetReminder}
               />
+              {copied ? (
+                <Text size="xs" c="dimmed" role="status">
+                  {t('ui.copied')}
+                </Text>
+              ) : null}
+              <Menu withinPortal position="bottom-end">
+                <Menu.Target>
+                  <ActionIcon
+                    type="button"
+                    variant="subtle"
+                    color="gray"
+                    aria-label={t('issueActions.moreActions')}
+                    title={t('issueActions.moreActions')}
+                  >
+                    <IconDotsVertical size={16} stroke={1.8} aria-hidden="true" />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item onClick={handlers.onCopyInitiativeId}>
+                    {t('issueActions.copyId')}
+                  </Menu.Item>
+                  <Menu.Item onClick={handlers.onCopyInitiativeURL}>
+                    {t('issueActions.copyUrl')}
+                  </Menu.Item>
+                  <Menu.Item onClick={handlers.onCopyInitiativeTitle}>
+                    {t('issueActions.copyTitle')}
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
               <ActionIcon
                 type="button"
                 variant="subtle"

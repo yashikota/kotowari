@@ -185,6 +185,9 @@ export function initiativeDetailShortcutFromKeyboard(event: {
   | 'focus-updates'
   | 'toggle-favorite'
   | 'open-reminder-menu'
+  | 'copy-id'
+  | 'copy-url'
+  | 'copy-title'
   | null {
   if (event.defaultPrevented || event.isComposing || event.repeat || isTypingTarget(event.target)) {
     return null;
@@ -197,6 +200,9 @@ export function initiativeDetailShortcutFromKeyboard(event: {
     return 'toggle-favorite';
   }
   if (!(event.ctrlKey || event.metaKey)) return null;
+  if (key === '.' && !event.shiftKey && !event.altKey) return 'copy-id';
+  if ((key === ',' || key === '<') && event.shiftKey && !event.altKey) return 'copy-url';
+  if ((key === "'" || key === '"') && event.shiftKey && !event.altKey) return 'copy-title';
   if (key === 'u' && event.shiftKey && !event.altKey) return 'write-update';
   if (key === 'u' && !event.shiftKey && !event.altKey) return 'focus-updates';
   if (key === 'd' && event.altKey && !event.shiftKey) return 'focus-target-date';
