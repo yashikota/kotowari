@@ -46,19 +46,21 @@ export function useConfigIssueAutomationSettings(initialSettings: IssueAutomatio
       onAutoCloseParentIssuesChange: (
         event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
+        const checked = event.currentTarget.checked;
         setIssueAutomationSettingsSaved(false);
         setIssueAutomationSettings((current) => ({
           ...current,
-          autoCloseParentIssues: event.currentTarget.checked,
+          autoCloseParentIssues: checked,
         }));
       },
       onAutoCloseSubIssuesChange: (
         event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
+        const checked = event.currentTarget.checked;
         setIssueAutomationSettingsSaved(false);
         setIssueAutomationSettings((current) => ({
           ...current,
-          autoCloseSubIssues: event.currentTarget.checked,
+          autoCloseSubIssues: checked,
         }));
       },
       onStatusProgressionOrderChange: (value: string | null) => {

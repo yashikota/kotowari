@@ -73,19 +73,21 @@ export function useConfigCycleSettings(initialSettings: CycleSettings) {
       onCycleAutoAddActiveIssuesChange: (
         event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
+        const checked = event.currentTarget.checked;
         setCycleSettingsSaved(false);
         setCycleSettings((current) => ({
           ...current,
-          autoAddActiveIssues: event.currentTarget.checked,
+          autoAddActiveIssues: checked,
         }));
       },
       onCycleAutoAddCompletedIssuesChange: (
         event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
+        const checked = event.currentTarget.checked;
         setCycleSettingsSaved(false);
         setCycleSettings((current) => ({
           ...current,
-          autoAddCompletedIssues: event.currentTarget.checked,
+          autoAddCompletedIssues: checked,
         }));
       },
     },

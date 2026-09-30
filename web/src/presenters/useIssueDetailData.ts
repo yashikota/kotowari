@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api.ts';
 import { cachedIssue, useIssueProjection } from '../application/issues.ts';
 import { signals } from '../application/mediator.ts';
@@ -8,6 +8,11 @@ type LoadErrorHandler = (error: unknown) => void;
 
 export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHandler) {
   const [storedIssue, setIssue] = useState<Issue | null>(() => cachedIssue(identifier));
+  const issueRevision = useRef(0);
+  const setLocalIssue = useCallback<typeof setIssue>((nextIssue) => {
+    issueRevision.current++;
+    setIssue(nextIssue);
+  }, []);
   const issue = useIssueProjection(storedIssue ? [storedIssue] : [])[0] ?? null;
   const generation = useRef(0);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -20,6 +25,7 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
 
   async function reload() {
     const token = ++generation.current;
+    const issueRevisionAtStart = issueRevision.current;
     const [nextIssue, allIssues, allProjects, allCycles, allLabels, allAdrs, allPages, workspace] =
       await Promise.all([
         api.issue(identifier),
@@ -32,7 +38,7 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
         api.workspace(),
       ]);
     if (token !== generation.current) return;
-    setIssue(nextIssue);
+    if (issueRevisionAtStart === issueRevision.current) setIssue(nextIssue);
     setIssues(allIssues);
     setProjects(allProjects);
     setCycles(allCycles);
@@ -56,7 +62,7 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
 
   return {
     issue,
-    setIssue,
+    setIssue: setLocalIssue,
     issues,
     projects,
     cycles,

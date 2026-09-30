@@ -8,10 +8,38 @@ test('issue title changes appear in the activity timeline and inbox', async ({ p
   expect(issueResponse.ok()).toBeTruthy();
   const issue = (await issueResponse.json()) as { identifier: string };
 
-  await page.goto(`/issues/${issue.identifier}`);
-  const title = page.getByLabel('Issue title', { exact: true });
-  await title.fill(updatedTitle);
-  await title.blur();
+  let releaseInitialRead!: () => void;
+  const initialRead = new Promise<void>((resolve) => {
+    releaseInitialRead = resolve;
+  });
+  const issueURL = `**/api/issues/${issue.identifier}`;
+  await page.route(issueURL, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    const response = await route.fetch();
+    await initialRead;
+    await route.fulfill({ response });
+  });
+
+  try {
+    await page.goto(`/issues/${issue.identifier}`);
+    const title = page.getByLabel('Issue title', { exact: true });
+    const patchResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith(`/api/issues/${issue.identifier}`) &&
+        response.request().method() === 'PATCH',
+    );
+    await title.fill(updatedTitle);
+    await title.blur();
+    expect((await patchResponse).ok()).toBeTruthy();
+    releaseInitialRead();
+    await expect(title).toHaveValue(updatedTitle);
+  } finally {
+    releaseInitialRead();
+    await page.unroute(issueURL);
+  }
 
   const activity = page.getByRole('region', { name: 'Activity' });
   await expect(
