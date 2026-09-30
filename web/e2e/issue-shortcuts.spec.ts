@@ -14,11 +14,12 @@ test('issue shortcuts delete with confirmation and restore archived issues', asy
   await expect(
     page.getByRole('heading', { name: new RegExp(deletedIssue.identifier) }),
   ).toBeVisible();
-  const confirmation = page.waitForEvent('dialog');
+  const confirmation = page.waitForEvent('dialog').then(async (dialog) => {
+    expect(dialog.type()).toBe('confirm');
+    await dialog.accept();
+  });
   await page.keyboard.press('Control+Delete');
-  const deleteDialog = await confirmation;
-  expect(deleteDialog.type()).toBe('confirm');
-  await deleteDialog.accept();
+  await confirmation;
   await expect(page).toHaveURL(/\/issues$/);
   expect((await request.get(`/api/issues/${deletedIssue.identifier}`)).status()).toBe(404);
 
@@ -38,10 +39,19 @@ test('issue shortcuts delete with confirmation and restore archived issues', asy
   const restoreResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith(`/api/issues/${restoredIssue.identifier}`) &&
-      response.request().method() === 'PATCH',
+      response.request().method() === 'PATCH' &&
+      response.request().postDataJSON()?.archived === false,
   );
-  await page.keyboard.press('Shift+3');
-  expect((await restoreResponse).ok()).toBeTruthy();
+  const restoreRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith(`/api/issues/${restoredIssue.identifier}`) &&
+      request.method() === 'PATCH' &&
+      request.postDataJSON()?.archived === false,
+  );
+  await page.keyboard.press('#');
+  await restoreRequest;
+  const restored = await restoreResponse;
+  expect(restored.ok(), await restored.text()).toBeTruthy();
   const issueAfterRestore = await request.get(`/api/issues/${restoredIssue.identifier}`);
   expect(await issueAfterRestore.json()).toMatchObject({ archivedAt: null, title: restoredTitle });
 });

@@ -653,7 +653,7 @@ export function issueDetailShortcutFromKeyboard(event: {
   const modifier = event.metaKey || event.ctrlKey;
   if (modifier && event.altKey && event.shiftKey && key === 't') return 'apply-template';
   if (modifier && !event.altKey && !event.shiftKey && key === 'delete') return 'delete-issue';
-  if (event.shiftKey && !modifier && !event.altKey && key === '#') return 'restore-issue';
+  if (!modifier && !event.altKey && key === '#') return 'restore-issue';
   if (event.altKey && !event.shiftKey && !modifier && key === 'f') return 'toggle-favorite';
   if (modifier && event.shiftKey && !event.altKey) {
     if (key === 'd') return 'clear-due-date';

@@ -840,6 +840,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['T', { ctrlKey: true, altKey: true, shiftKey: true }, 'apply-template'],
     ['Delete', { ctrlKey: true }, 'delete-issue'],
     ['#', { shiftKey: true }, 'restore-issue'],
+    ['#', {}, 'restore-issue'],
     ['M', { ctrlKey: true }, 'focus-comment'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['S', { shiftKey: true }, 'toggle-subscription'],
