@@ -156,6 +156,28 @@ test('issue display property chips persist as personal view state', async ({ pag
   await expect(issueList.getByRole('option', { name: new RegExp(selfTitle) })).toContainText('You');
 });
 
+test('focus grouping can be selected and places unplanned work in backlog', async ({
+  page,
+  request,
+}) => {
+  const title = `Focus backlog ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'backlog', assignee: 'self' },
+  });
+  expect(created.ok()).toBeTruthy();
+
+  await page.goto('/issues?assignee=self&groupBy=none');
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await page.getByRole('combobox', { name: 'Grouping', exact: true }).selectOption('focus');
+
+  await expect.poll(() => new URL(page.url()).searchParams.get('groupBy')).toBe('focus');
+  await expect(page.getByRole('button', { name: /^Backlog · \d+ issues?$/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Other cycles · \d+ issues?$/ })).toHaveCount(0);
+  await expect(
+    page.getByRole('listbox', { name: 'Issues' }).getByRole('option', { name: new RegExp(title) }),
+  ).toBeVisible();
+});
+
 test('issue filters use a searchable category menu with a scoped editor', async ({ page }) => {
   await page.goto('/issues');
 

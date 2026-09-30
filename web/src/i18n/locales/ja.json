@@ -1638,6 +1638,7 @@
     "properties": "表示プロパティ",
     "shortcut": "ショートカット: Ctrl/⌘ B でレイアウトを切り替え",
     "group": {
+      "focus": "フォーカス",
       "status": "ステータス",
       "assignee": "担当者",
       "agent": "エージェント",
@@ -1648,6 +1649,11 @@
       "parent": "親イシュー",
       "type": "種別",
       "estimate": "見積もり"
+    },
+    "focusGroup": {
+      "currentCycle": "現在のサイクル",
+      "backlog": "バックログ",
+      "otherCycles": "その他のサイクル"
     },
     "order": {
       "manual": "手動",

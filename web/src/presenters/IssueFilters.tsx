@@ -43,6 +43,7 @@ function searchKey(search: IssueSearch): string {
 
 const GROUP_BY: IssueGroupBy[] = [
   'none',
+  'focus',
   'priority',
   'status',
   'assignee',

@@ -16,6 +16,7 @@ export type IssueListRow =
 
 export const ISSUE_GROUP_BY_VALUES = [
   'none',
+  'focus',
   'status',
   'assignee',
   'agent',
@@ -208,6 +209,7 @@ export function buildIssueListRows(
     subGroupBy?: IssueGroupBy;
     showEmptyGroups?: boolean;
     issueStatuses?: IssueWorkflowStatus[];
+    activeCycleId?: number;
     groupOrder?: string[];
     hiddenGroups?: ReadonlySet<string>;
   } = {},
@@ -222,6 +224,7 @@ export function buildIssueListRows(
       grouping,
       options.showEmptyGroups ?? false,
       options.issueStatuses,
+      options.activeCycleId,
     );
     const groupOrder = options.groupOrder ?? [];
     const groupOrderIndex = new Map(groupOrder.map((key, index) => [key, index]));
@@ -235,7 +238,10 @@ export function buildIssueListRows(
       });
     }
     for (const groupInfo of groupInfos) {
-      const group = subset.filter((issue) => matchesGroup(issue, grouping, groupInfo));
+      const group = subset.filter((issue) =>
+        matchesGroup(issue, grouping, groupInfo, options.activeCycleId),
+      );
+      if (grouping === 'focus') group.sort(compareFocusedIssues);
       if (group.length === 0 && !options.showEmptyGroups) continue;
       const key = parentKey ? `${parentKey}/${groupInfo.key}` : groupInfo.key;
       if (level === 0 && options.hiddenGroups?.has(key)) continue;
@@ -274,7 +280,27 @@ function issueGroups(
   groupBy: IssueGroupBy,
   showEmptyGroups: boolean,
   issueStatuses?: IssueWorkflowStatus[],
+  activeCycleId?: number,
 ): GroupInfo[] {
+  if (groupBy === 'focus') {
+    const hasCurrentCycle = activeCycleId !== undefined;
+    const hasBacklog = issues.some((issue) => issue.cycleId == null);
+    const hasOtherCycles = issues.some(
+      (issue) => issue.cycleId != null && issue.cycleId !== activeCycleId,
+    );
+    return [
+      ...(hasCurrentCycle &&
+      (showEmptyGroups || issues.some((issue) => issue.cycleId === activeCycleId))
+        ? [{ key: 'focus:current', label: '', priority: null, status: null }]
+        : []),
+      ...(hasBacklog || showEmptyGroups
+        ? [{ key: 'focus:backlog', label: '', priority: null, status: null }]
+        : []),
+      ...(hasOtherCycles || showEmptyGroups
+        ? [{ key: 'focus:other', label: '', priority: null, status: null }]
+        : []),
+    ];
+  }
   if (groupBy === 'priority')
     return PRIORITY_ORDER.map((priority) => ({
       key: `priority:${priority}`,
@@ -404,7 +430,17 @@ function issueGroups(
     }));
 }
 
-function matchesGroup(issue: Issue, groupBy: IssueGroupBy, groupInfo: GroupInfo): boolean {
+function matchesGroup(
+  issue: Issue,
+  groupBy: IssueGroupBy,
+  groupInfo: GroupInfo,
+  activeCycleId?: number,
+): boolean {
+  if (groupBy === 'focus') {
+    if (groupInfo.key === 'focus:current') return issue.cycleId === activeCycleId;
+    if (groupInfo.key === 'focus:backlog') return issue.cycleId == null;
+    return issue.cycleId != null && issue.cycleId !== activeCycleId;
+  }
   if (groupBy === 'priority') return issue.priority === groupInfo.priority;
   if (groupBy === 'status') return (issue.workflowStatus ?? issue.status) === groupInfo.status;
   if (groupBy === 'assignee')
@@ -432,15 +468,44 @@ function matchesGroup(issue: Issue, groupBy: IssueGroupBy, groupInfo: GroupInfo)
   return (issue.parentIdentifier ?? 'No parent') === groupInfo.label;
 }
 
+function compareFocusedIssues(left: Issue, right: Issue): number {
+  const statusRank = (issue: Issue) =>
+    issue.status === 'in_progress'
+      ? 0
+      : issue.status === 'todo'
+        ? 1
+        : issue.status === 'backlog'
+          ? 2
+          : issue.status === 'done'
+            ? 3
+            : 4;
+  const statusDifference = statusRank(left) - statusRank(right);
+  if (statusDifference !== 0) return statusDifference;
+
+  const leftDueDate = left.dueDate?.slice(0, 10) ?? '';
+  const rightDueDate = right.dueDate?.slice(0, 10) ?? '';
+  if (leftDueDate !== rightDueDate) {
+    if (!leftDueDate) return 1;
+    if (!rightDueDate) return -1;
+    return leftDueDate.localeCompare(rightDueDate);
+  }
+
+  const leftPriority = left.priority === 0 ? Number.MAX_SAFE_INTEGER : left.priority;
+  const rightPriority = right.priority === 0 ? Number.MAX_SAFE_INTEGER : right.priority;
+  return leftPriority - rightPriority;
+}
+
 export function issueGroupOptions(
   issues: Issue[],
   groupBy: IssueGroupBy,
   issueStatuses?: IssueWorkflowStatus[],
   showEmptyGroups = false,
+  activeCycleId?: number,
 ): IssueGroupOption[] {
   if (groupBy === 'none') return [];
-  return issueGroups(issues, groupBy, showEmptyGroups, issueStatuses).filter(
-    (group) => showEmptyGroups || issues.some((issue) => matchesGroup(issue, groupBy, group)),
+  return issueGroups(issues, groupBy, showEmptyGroups, issueStatuses, activeCycleId).filter(
+    (group) =>
+      showEmptyGroups || issues.some((issue) => matchesGroup(issue, groupBy, group, activeCycleId)),
   );
 }
 

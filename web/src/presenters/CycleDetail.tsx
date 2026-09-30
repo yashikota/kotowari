@@ -160,11 +160,17 @@ export function useCycleDetailPagePresenter() {
   ).filter(cycleProgress.includesIssue);
   const groupOptions = useMemo(
     () =>
-      issueGroupOptions(issues, groupBy, issueWorkflowStatuses, showEmptyGroups).map((group) => ({
+      issueGroupOptions(
+        issues,
+        groupBy,
+        issueWorkflowStatuses,
+        showEmptyGroups,
+        data.cycles.find((candidate) => candidate.status === 'active')?.id,
+      ).map((group) => ({
         ...group,
         label: cycleIssueGroupLabel(groupBy, group, issueWorkflowStatuses),
       })),
-    [groupBy, issueWorkflowStatuses, issues, showEmptyGroups],
+    [data.cycles, groupBy, issueWorkflowStatuses, issues, showEmptyGroups],
   );
   const selectedId =
     selected && issues.some((issue) => issue.identifier === selected) ? selected : null;

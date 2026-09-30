@@ -46,6 +46,14 @@ export function cycleIssueGroupLabel(
     return i18n.t(
       group.key === 'agent:agent' ? 'issueAssignment.agent' : 'issueAssignment.noAgent',
     );
+  if (groupBy === 'focus')
+    return i18n.t(
+      group.key === 'focus:current'
+        ? 'displayOptions.focusGroup.currentCycle'
+        : group.key === 'focus:backlog'
+          ? 'displayOptions.focusGroup.backlog'
+          : 'displayOptions.focusGroup.otherCycles',
+    );
   if (groupBy === 'type')
     return group.label
       ? issueTypeLabel(group.label as IssueType)

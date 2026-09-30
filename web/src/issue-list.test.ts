@@ -104,6 +104,56 @@ describe('issue list facets', () => {
   });
 });
 
+describe('focus issue grouping', () => {
+  it('puts the active cycle first, then backlog and other cycles, sorting each by urgency', () => {
+    const activeInProgress = {
+      ...issue(1, 4),
+      status: 'in_progress' as const,
+      cycleId: 12,
+    };
+    const activeDueSoon = {
+      ...issue(2, 2),
+      cycleId: 12,
+      dueDate: '2026-10-02',
+    };
+    const activeHighPriority = { ...issue(3, 1), cycleId: 12 };
+    const activeLowPriority = { ...issue(7, 4), cycleId: 12 };
+    const backlogDueSoon = { ...issue(4, 3), dueDate: '2026-10-01' };
+    const backlogNoDueDate = { ...issue(5, 1), status: 'backlog' as const };
+    const otherCycle = { ...issue(6, 1), cycleId: 13 };
+    const issues = [
+      otherCycle,
+      activeHighPriority,
+      backlogNoDueDate,
+      activeDueSoon,
+      backlogDueSoon,
+      activeInProgress,
+      activeLowPriority,
+    ];
+    const rows = buildIssueListRows(issues, new Set(), 'focus', { activeCycleId: 12 });
+
+    expect(rows.filter((row) => row.kind === 'group').map((row) => row.key)).toEqual([
+      'focus:current',
+      'focus:backlog',
+      'focus:other',
+    ]);
+    expect(
+      rows
+        .filter(
+          (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',
+        )
+        .map((row) => row.issue.identifier),
+    ).toEqual(['KOT-1', 'KOT-2', 'KOT-3', 'KOT-7', 'KOT-4', 'KOT-5', 'KOT-6']);
+  });
+
+  it('offers focus groups in the group ordering options', () => {
+    const issues = [{ ...issue(1, 2), cycleId: 12 }, { ...issue(2, 1) }];
+    expect(
+      issueGroupOptions(issues, 'focus', undefined, false, 12).map((group) => group.key),
+    ).toEqual(['focus:current', 'focus:backlog']);
+  });
+});
+
 describe('buildIssueListRows', () => {
   it('groups issues in Linear priority order and preserves order within each group', () => {
     const rows = buildIssueListRows([

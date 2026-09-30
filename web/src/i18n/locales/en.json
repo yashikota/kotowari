@@ -1648,6 +1648,7 @@
     "properties": "Display properties",
     "shortcut": "Shortcut: Ctrl/⌘ B switches layout",
     "group": {
+      "focus": "Focus",
       "status": "Status",
       "assignee": "Assignee",
       "agent": "Agent",
@@ -1658,6 +1659,11 @@
       "parent": "Parent issue",
       "type": "Type",
       "estimate": "Estimate"
+    },
+    "focusGroup": {
+      "currentCycle": "Current cycle",
+      "backlog": "Backlog",
+      "otherCycles": "Other cycles"
     },
     "order": {
       "manual": "Manual",

@@ -91,6 +91,7 @@ export function useIssueListPresenter({
     subGroupBy,
     showEmptyGroups,
     issueStatuses: workflowStatuses,
+    activeCycleId: cycles.find((cycle) => cycle.status === 'active')?.id,
     groupOrder,
     hiddenGroups: new Set(hiddenGroups),
   });

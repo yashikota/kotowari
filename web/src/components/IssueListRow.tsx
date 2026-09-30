@@ -37,6 +37,7 @@ export function IssueGroupRow({
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const cycleNumber = row.groupBy === 'cycle' ? Number(row.key.slice('cycle:'.length)) : 0;
   const cycle = cycles.find((candidate) => candidate.number === cycleNumber);
+  const activeCycle = cycles.find((candidate) => candidate.status === 'active');
   const cycleName = cycle?.name?.trim();
   const cycleDateRange = cycle
     ? `${formatCalendarDate(cycle.startsAt, i18n.language)} → ${formatCalendarDate(cycle.endsAt, i18n.language)}`
@@ -60,22 +61,34 @@ export function IssueGroupRow({
               : i18n.t('issueAssignment.noAgent')
             : row.groupBy === 'priority'
               ? priorityLabel(row.priority ?? 0)
-              : row.groupBy === 'status' && row.status
-                ? workflowStatusLabel(row.status, workflowStatuses)
-                : row.groupBy === 'project'
-                  ? row.key === 'project:none'
-                    ? i18n.t('issueProperties.noProject')
-                    : (projects.find((project) => project.slug === row.key.slice('project:'.length))
-                        ?.name ?? row.label)
-                  : row.groupBy === 'cycle' && row.label === 'No cycle'
-                    ? i18n.t('field.noCycle')
-                    : row.groupBy === 'cycle'
-                      ? cycleName || i18n.t('field.cycleN', { number: cycleNumber })
-                      : row.groupBy === 'label' && row.label === 'No label'
-                        ? i18n.t('issueProperties.noLabels')
-                        : row.groupBy === 'parent' && row.label === 'No parent'
-                          ? i18n.t('issueProperties.noParent')
-                          : row.label;
+              : row.groupBy === 'focus'
+                ? row.key === 'focus:current'
+                  ? activeCycle?.name?.trim() ||
+                    (activeCycle
+                      ? i18n.t('field.cycleN', { number: activeCycle.number })
+                      : i18n.t('displayOptions.focusGroup.currentCycle'))
+                  : i18n.t(
+                      row.key === 'focus:backlog'
+                        ? 'displayOptions.focusGroup.backlog'
+                        : 'displayOptions.focusGroup.otherCycles',
+                    )
+                : row.groupBy === 'status' && row.status
+                  ? workflowStatusLabel(row.status, workflowStatuses)
+                  : row.groupBy === 'project'
+                    ? row.key === 'project:none'
+                      ? i18n.t('issueProperties.noProject')
+                      : (projects.find(
+                          (project) => project.slug === row.key.slice('project:'.length),
+                        )?.name ?? row.label)
+                    : row.groupBy === 'cycle' && row.label === 'No cycle'
+                      ? i18n.t('field.noCycle')
+                      : row.groupBy === 'cycle'
+                        ? cycleName || i18n.t('field.cycleN', { number: cycleNumber })
+                        : row.groupBy === 'label' && row.label === 'No label'
+                          ? i18n.t('issueProperties.noLabels')
+                          : row.groupBy === 'parent' && row.label === 'No parent'
+                            ? i18n.t('issueProperties.noParent')
+                            : row.label;
   const icon =
     row.groupBy === 'type' ? (
       <IconFolder size={14} stroke={1.8} aria-hidden />
