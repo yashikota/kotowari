@@ -2,16 +2,23 @@ import { Box, Text } from '@mantine/core';
 import { IconFolder } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { Issue, Project } from '../types.ts';
+import type { IssuePropertyMenu } from '../issue-property-model.ts';
 import styles from './IssuePropertiesPanel.module.css';
 import { IssuePropertyRow, IssuePropertySelect } from './IssuePropertyControls.tsx';
 
 export function IssueProjectProperty({
   issue,
   projects,
+  issuePropertyMenu,
+  onOpenProperty,
+  onCloseProperty,
   onChange,
 }: {
   issue: Issue;
   projects: Project[];
+  issuePropertyMenu: IssuePropertyMenu;
+  onOpenProperty: (property: IssuePropertyMenu) => void;
+  onCloseProperty: () => void;
   onChange: (value: string | null) => void;
 }) {
   const { t } = useTranslation();
@@ -37,6 +44,9 @@ export function IssueProjectProperty({
           compactChars={18}
           compactLabel={projectValueLabel}
           aria-label={t('field.project')}
+          dropdownOpened={issuePropertyMenu === 'project'}
+          onDropdownOpen={() => onOpenProperty('project')}
+          onDropdownClose={onCloseProperty}
           value={issue.projectId != null ? String(issue.projectId) : 'none'}
           onChange={onChange}
           data={[

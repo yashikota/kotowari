@@ -6,6 +6,7 @@ import {
   inboxShortcutFromKeyboard,
   initiativeCreateSequenceFromKeyboard,
   issueLinkedCodeSequenceFromKeyboard,
+  issueRelationSequenceFromKeyboard,
   issueDetailShortcutFromKeyboard,
   isTypingTarget,
   issueCopyShortcutFromKeyboard,
@@ -714,7 +715,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['p', {}, 'open-priority'],
     ['l', {}, 'open-labels'],
     ['E', { shiftKey: true }, 'open-estimate'],
-    ['P', { shiftKey: true }, 'create-linked-adr'],
+    ['P', { shiftKey: true }, 'open-project'],
     ['I', { metaKey: true, shiftKey: true }, 'focus-description'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['S', { shiftKey: true }, 'toggle-subscription'],
@@ -723,6 +724,8 @@ describe('issue detail keyboard shortcuts', () => {
     ['H', { shiftKey: true }, 'open-reminder'],
     ['R', { shiftKey: true }, 'rename'],
     ['O', { ctrlKey: true, shiftKey: true }, 'open-sub-issue'],
+    ['P', { ctrlKey: true, shiftKey: true }, 'set-parent-issue'],
+    ['ArrowDown', { ctrlKey: true, shiftKey: true }, 'open-first-sub-issue'],
     ['ArrowUp', { ctrlKey: true, shiftKey: true }, 'open-parent'],
     ['L', { metaKey: true, shiftKey: true }, 'toggle-resources'],
     ['l', { ctrlKey: true, altKey: true }, 'add-link'],
@@ -736,6 +739,53 @@ describe('issue detail keyboard shortcuts', () => {
     expect(shortcut('i', { ctrlKey: true })).toBeNull();
     expect(shortcut('f', { altKey: true, shiftKey: true })).toBeNull();
     expect(shortcut('d', { shiftKey: true, metaKey: true })).toBeNull();
+  });
+});
+
+describe('issue relation keyboard sequences', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    pendingSince: number | null,
+    now: number,
+    overrides: Partial<Parameters<typeof issueRelationSequenceFromKeyboard>[0]> = {},
+  ) =>
+    issueRelationSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      pendingSince,
+      now,
+    );
+
+  it.each([
+    ['b', 'mark-blocked'],
+    ['x', 'mark-blocking'],
+    ['r', 'mark-related'],
+    ['m', 'mark-duplicate'],
+  ] as const)('maps M then %s to %s', (secondKey, action) => {
+    const pending = key('m', null, 100);
+    expect(pending).toEqual({ action: null, pendingSince: 100 });
+    expect(key(secondKey, pending.pendingSince, 500)).toEqual({
+      action,
+      pendingSince: null,
+    });
+  });
+
+  it('expires the sequence and cancels it for typing or modified keys', () => {
+    expect(key('b', 100, 1101)).toEqual({ action: null, pendingSince: null });
+    expect(key('b', 100, 200, { target: el('INPUT') })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+    expect(key('b', 100, 200, { shiftKey: true })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
   });
 });
 

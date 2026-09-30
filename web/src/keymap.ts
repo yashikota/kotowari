@@ -87,6 +87,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 const PROJECT_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
 const INITIATIVE_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
 const ISSUE_LINK_SEQUENCE_TIMEOUT_MS = 1000;
+const ISSUE_RELATION_SEQUENCE_TIMEOUT_MS = 1000;
 const GLOBAL_NAVIGATION_SEQUENCE_TIMEOUT_MS = 1000;
 const QUICK_OPEN_SEQUENCE_TIMEOUT_MS = 1000;
 
@@ -204,6 +205,57 @@ export function issueLinkedCodeSequenceFromKeyboard(
   ) {
     return { action: 'open-linked-code', pendingSince: null };
   }
+  return { action: null, pendingSince: null };
+}
+
+export type IssueRelationSequenceAction =
+  | 'mark-blocked'
+  | 'mark-blocking'
+  | 'mark-related'
+  | 'mark-duplicate';
+
+const ISSUE_RELATION_SEQUENCE_ACTIONS: Record<string, IssueRelationSequenceAction> = {
+  b: 'mark-blocked',
+  x: 'mark-blocking',
+  r: 'mark-related',
+  m: 'mark-duplicate',
+};
+
+export function issueRelationSequenceFromKeyboard(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    defaultPrevented?: boolean;
+    target: EventTarget | null;
+  },
+  pendingSince: number | null,
+  now: number,
+): { action: IssueRelationSequenceAction | null; pendingSince: number | null } {
+  const eligible =
+    !event.defaultPrevented &&
+    !event.isComposing &&
+    !event.repeat &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !isTypingTarget(event.target);
+  if (!eligible) return { action: null, pendingSince: null };
+
+  const key = event.key.toLowerCase();
+  if (
+    pendingSince !== null &&
+    now >= pendingSince &&
+    now - pendingSince <= ISSUE_RELATION_SEQUENCE_TIMEOUT_MS
+  ) {
+    return { action: ISSUE_RELATION_SEQUENCE_ACTIONS[key] ?? null, pendingSince: null };
+  }
+  if (key === 'm') return { action: null, pendingSince: now };
   return { action: null, pendingSince: null };
 }
 
@@ -376,7 +428,9 @@ export type IssueDetailShortcut =
   | 'open-priority'
   | 'open-labels'
   | 'open-estimate'
-  | 'create-linked-adr'
+  | 'open-project'
+  | 'set-parent-issue'
+  | 'open-first-sub-issue'
   | 'focus-description'
   | 'toggle-favorite'
   | 'toggle-subscription'
@@ -408,9 +462,11 @@ export function issueDetailShortcutFromKeyboard(event: {
   if (event.altKey && !event.shiftKey && !modifier && key === 'f') return 'toggle-favorite';
   if (modifier && event.shiftKey) {
     if (key === 'arrowup') return 'open-parent';
+    if (key === 'arrowdown') return 'open-first-sub-issue';
     if (key === 'o') return 'open-sub-issue';
     if (key === 'l') return 'toggle-resources';
     if (key === 'i') return 'focus-description';
+    if (key === 'p') return 'set-parent-issue';
   }
   if (modifier && event.altKey && !event.shiftKey && key === 'l') return 'add-link';
   if (modifier || event.altKey) return null;
@@ -421,7 +477,7 @@ export function issueDetailShortcutFromKeyboard(event: {
     if (key === 'h') return 'open-reminder';
     if (key === 'r') return 'rename';
     if (key === 'e') return 'open-estimate';
-    if (key === 'p') return 'create-linked-adr';
+    if (key === 'p') return 'open-project';
     return null;
   }
   if (key === 'i') return 'assign-self';

@@ -125,6 +125,76 @@ test('issue shortcuts create a sub-issue, toggle resources, and open the link fo
   await expect(page.getByRole('dialog').getByRole('textbox', { name: 'URL' })).toBeVisible();
 });
 
+test('Shift+P opens the project picker and adds the issue to a project', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projectName = `Project shortcut ${stamp}`;
+  const projectResponse = await request.post('/api/projects', {
+    data: { name: projectName, slug: `project-shortcut-${stamp}` },
+  });
+  expect(projectResponse.ok(), await projectResponse.text()).toBeTruthy();
+  const project = (await projectResponse.json()) as { id: number };
+  const issueResponse = await request.post('/api/issues', {
+    data: { title: `Add to project shortcut ${stamp}`, status: 'todo' },
+  });
+  expect(issueResponse.ok(), await issueResponse.text()).toBeTruthy();
+  const issue = (await issueResponse.json()) as { identifier: string };
+  await page.goto(`/issues/${issue.identifier}`);
+
+  await page.getByRole('button', { name: 'Issue options' }).focus();
+  await page.keyboard.press('Shift+p');
+
+  const projectPicker = page.getByRole('combobox', { name: 'Project' });
+  await expect(projectPicker).toHaveAttribute('aria-expanded', 'true');
+  await expect(projectPicker).toBeFocused();
+  await page.getByRole('option', { name: projectName, exact: true }).click();
+  await expect(projectPicker).toHaveValue(projectName);
+  const issueState = (await (await request.get(`/api/issues/${issue.identifier}`)).json()) as {
+    projectId: number | null;
+  };
+  expect(issueState.projectId).toBe(project.id);
+});
+
+test('M then B opens the blocked-by picker and links the selected issue', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const sourceResponse = await request.post('/api/issues', {
+    data: { title: `Blocked source ${stamp}`, status: 'todo' },
+  });
+  const targetResponse = await request.post('/api/issues', {
+    data: { title: `Blocked target ${stamp}`, status: 'todo' },
+  });
+  expect(sourceResponse.ok(), await sourceResponse.text()).toBeTruthy();
+  expect(targetResponse.ok(), await targetResponse.text()).toBeTruthy();
+  const source = (await sourceResponse.json()) as { identifier: string };
+  const target = (await targetResponse.json()) as { identifier: string };
+  await page.goto(`/issues/${source.identifier}`);
+  await page.getByRole('button', { name: 'Issue options' }).focus();
+
+  await page.keyboard.press('m');
+  await page.keyboard.press('b');
+  const dialog = page.getByRole('dialog', { name: 'Mark as Blocked by…' });
+  await expect(dialog).toBeVisible();
+  const targetPicker = page.getByRole('combobox', { name: 'Related issue' });
+  await targetPicker.fill(target.identifier);
+  await page
+    .getByRole('listbox', { name: 'Related issue' })
+    .getByRole('option', { name: new RegExp(`^${target.identifier}\\b`) })
+    .click();
+  await expect(dialog).toHaveCount(0);
+
+  const issueState = (await (await request.get(`/api/issues/${source.identifier}`)).json()) as {
+    relations: { kind: string; targetIdentifier: string }[];
+  };
+  expect(issueState.relations).toContainEqual(
+    expect.objectContaining({ kind: 'blockedBy', targetIdentifier: target.identifier }),
+  );
+});
+
 test('issue property shortcuts open focused status, priority, label, and estimate controls', async ({
   page,
   request,
@@ -223,5 +293,8 @@ test('shortcut help documents issue detail actions in the active locale', async 
   await expect(help).toContainText('Create a sub-issue');
   await expect(help).toContainText('Collapse or expand issue resources');
   await expect(help).toContainText('Add a link to the issue');
-  await expect(help).toContainText('Create an ADR linked to this issue');
+  await expect(help).toContainText('Add the issue to a project');
+  await expect(help).toContainText('Mark this issue as blocked');
+  await expect(help).toContainText('Set the parent issue');
+  await expect(help).toContainText('Open the first sub-issue');
 });

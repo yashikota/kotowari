@@ -74,6 +74,9 @@ export function IssuePropertiesPanel({
         <IssueProjectProperty
           issue={issue}
           projects={projects}
+          issuePropertyMenu={issuePropertyMenu}
+          onOpenProperty={handlers.onOpenIssuePropertyMenu}
+          onCloseProperty={handlers.onCloseIssuePropertyMenu}
           onChange={handlers.onProjectChange}
         />
         <IssueOptionalProperties

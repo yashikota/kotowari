@@ -29,6 +29,7 @@ import {
   issueCopyShortcutFromKeyboard,
   issueDetailShortcutFromKeyboard,
   issueLinkedCodeSequenceFromKeyboard,
+  issueRelationSequenceFromKeyboard,
 } from '../keymap.ts';
 import type { IssueCopyShortcut } from '../keymap.ts';
 import { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
@@ -241,12 +242,15 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
   const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);
   const noteRef = useFocusWhen<HTMLTextAreaElement>(focusNote > 0, [focusNote]);
   const linkedCodeSequenceSince = useRef<number | null>(null);
+  const issueRelationSequenceSince = useRef<number | null>(null);
   useIntentHandler('keyboard.sequence.cancel', () => {
     linkedCodeSequenceSince.current = null;
+    issueRelationSequenceSince.current = null;
   });
   useKeyboard((event) => {
     if (model._view !== 2) {
       linkedCodeSequenceSince.current = null;
+      issueRelationSequenceSince.current = null;
       return false;
     }
     if (
@@ -254,6 +258,7 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
       event.target.closest('[role="menu"], [role="listbox"], [role="dialog"]')
     ) {
       linkedCodeSequenceSince.current = null;
+      issueRelationSequenceSince.current = null;
       return false;
     }
     const issueShortcut = issueDetailShortcutFromKeyboard(event);
@@ -275,8 +280,14 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'open-estimate':
           void sendIntent('onOpenIssuePropertyMenu', ['estimate']);
           break;
-        case 'create-linked-adr':
-          void sendIntent('adr.create', { issueNumber: model.issue.number });
+        case 'open-project':
+          void sendIntent('onOpenIssuePropertyMenu', ['project']);
+          break;
+        case 'set-parent-issue':
+          void sendIntent('onOpenMarkAs', ['subIssueOf']);
+          break;
+        case 'open-first-sub-issue':
+          if (model.children[0]) void sendIntent('onClick18', [model.children[0]]);
           break;
         case 'focus-description':
           void sendIntent('onFocusDescription', []);
@@ -313,6 +324,30 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
           void sendIntent('onOpenExternalLink', ['link']);
           break;
       }
+      linkedCodeSequenceSince.current = null;
+      issueRelationSequenceSince.current = null;
+      return true;
+    }
+    const relationSequence = issueRelationSequenceFromKeyboard(
+      event,
+      issueRelationSequenceSince.current,
+      Date.now(),
+    );
+    issueRelationSequenceSince.current = relationSequence.pendingSince;
+    if (relationSequence.action) {
+      event.preventDefault();
+      const kind = {
+        'mark-blocked': 'blockedBy',
+        'mark-blocking': 'blocking',
+        'mark-related': 'relatedTo',
+        'mark-duplicate': 'duplicateOf',
+      }[relationSequence.action];
+      void sendIntent('onOpenMarkAs', [kind]);
+      linkedCodeSequenceSince.current = null;
+      return true;
+    }
+    if (relationSequence.pendingSince !== null) {
+      event.preventDefault();
       linkedCodeSequenceSince.current = null;
       return true;
     }
