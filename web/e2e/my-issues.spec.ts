@@ -29,6 +29,10 @@ test('My issues uses a focused header and Linear-style personal tabs', async ({
   const issues = page.getByRole('listbox', { name: 'Issues' });
   await expect(issues.getByRole('option', { name: new RegExp(assignedTitle) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(unassignedTitle) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Display options' }).click();
+  await expect(page.getByLabel('Grouping', { exact: true })).toHaveValue('focus');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: /^Backlog · \d+ issues?$/ })).toBeVisible();
 
   await tabs.getByRole('tab', { name: 'Created' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe('created');

@@ -44,7 +44,7 @@ test('self assignment works across issue details, My issues, and list grouping',
   await expect(assignedRow).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Issue views' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Display options' }).click();
-  await expect(page.getByLabel('Grouping', { exact: true })).toHaveValue('cycle');
+  await expect(page.getByLabel('Grouping', { exact: true })).toHaveValue('focus');
   await page.getByRole('button', { name: 'Display options' }).click();
 
   await page.getByRole('tab', { name: 'Created', exact: true }).click();

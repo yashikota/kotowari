@@ -140,7 +140,7 @@ export function useIssuesPagePresenter() {
   const personalRecentIssues = myIssuesTab === 'created' || myIssuesTab === 'subscribed';
   const groupBy =
     search.groupBy ??
-    (myIssuesTab === 'assigned' ? 'cycle' : personalRecentIssues ? 'none' : 'priority');
+    (myIssuesTab === 'assigned' ? 'focus' : personalRecentIssues ? 'none' : 'priority');
   const layout = search.layout ?? locationState.issueListLayout ?? 'list';
   const orderBy = search.orderBy ?? (personalRecentIssues ? 'created' : 'manual');
   const subGroupBy = search.subGroupBy ?? 'none';
