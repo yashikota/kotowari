@@ -115,6 +115,12 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Add reaction' }).first().click();
   const issueReactionPicker = page.locator('emoji-picker');
   await expect(issueReactionPicker).toBeVisible();
+  await issueReactionPicker.evaluate(async (picker) => {
+    const emojiPicker = picker as HTMLElement & {
+      database: { ready: () => Promise<void> };
+    };
+    await emojiPicker.database.ready();
+  });
   await page.getByLabel('Search emoji').fill('melting face');
   await issueReactionPicker.getByRole('option', { name: /melting face/ }).click();
   await expect(page.getByRole('button', { name: 'Remove 🫠 reaction' })).toBeVisible();
