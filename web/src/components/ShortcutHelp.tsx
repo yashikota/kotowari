@@ -53,6 +53,8 @@ export function ShortcutHelpView({
     { keys: 'Shift+F', action: t('ui.shortcutClearLastIssueFilter') },
     { keys: 'Alt+Shift+F', action: t('filters.clear') },
     { keys: 'j / k', action: t('ui.shortcutMoveSelection') },
+    { keys: 'Ctrl/⌘+B', action: t('ui.shortcutToggleIssueLayout') },
+    { keys: 'Ctrl/⌘+Shift+C', action: t('ui.shortcutCopyPageURL') },
     { keys: 'x', action: t('ui.shortcutSelectIssue') },
     { keys: 'Mod+A', action: t('ui.shortcutSelectAllIssues') },
     { keys: 'Shift+R', action: t('ui.shortcutRenameIssue') },

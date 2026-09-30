@@ -29,6 +29,7 @@ import type { Cycle, Issue, Label, Project, View } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { actionFromKeyboard } from '../keymap.ts';
+import { copyPageURL } from '../copy-page-url.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { matchesIssueFilterGroup, parseIssueFilterGroup } from '../issue-advanced-filter.ts';
@@ -96,11 +97,23 @@ export function useViewPagePresenter() {
   const restoreScrollTop = locationState.issueListScrollTop ?? 0;
 
   useKeyboard((event) => {
-    if (view.display !== 'list' || actionFromKeyboard(event) !== 'toggle-right-sidebar')
-      return false;
-    event.preventDefault();
-    setDetailsOpen((open) => !open);
-    return true;
+    const action = actionFromKeyboard(event);
+    if (action === 'copy-page-url') {
+      event.preventDefault();
+      void copyPageURL();
+      return true;
+    }
+    if (action === 'toggle-layout') {
+      event.preventDefault();
+      void save({ display: view.display === 'list' ? 'board' : 'list' });
+      return true;
+    }
+    if (view.display === 'list' && action === 'toggle-right-sidebar') {
+      event.preventDefault();
+      setDetailsOpen((open) => !open);
+      return true;
+    }
+    return false;
   }, true);
 
   if (view.slug !== data.view.slug || view.updatedAt !== data.view.updatedAt) {

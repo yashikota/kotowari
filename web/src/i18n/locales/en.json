@@ -2179,6 +2179,8 @@
     "shortcutToggleIssueResources": "Collapse or expand issue resources",
     "shortcutAddIssueLink": "Add a link to the issue",
     "shortcutOpenIssue": "Open selected issue",
+    "shortcutToggleIssueLayout": "Switch between list and board layouts",
+    "shortcutCopyPageURL": "Copy the current page URL",
     "shortcutSetStatus": "Open the issue status menu",
     "shortcutPriorityOrAdr": "Open issue priority / create an ADR outside issue details",
     "shortcutAddIssueToProject": "Add the issue to a project",

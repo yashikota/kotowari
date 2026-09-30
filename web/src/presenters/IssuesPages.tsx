@@ -27,6 +27,7 @@ import {
 import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
+import { copyPageURL } from '../copy-page-url.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIntentHandler, useKeyboard } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
@@ -209,7 +210,18 @@ export function useIssuesPagePresenter() {
   }
 
   useKeyboard((event) => {
-    if (actionFromKeyboard(event) === 'toggle-right-sidebar') {
+    const action = actionFromKeyboard(event);
+    if (action === 'copy-page-url') {
+      event.preventDefault();
+      void copyPageURL();
+      return true;
+    }
+    if (action === 'toggle-layout') {
+      event.preventDefault();
+      void updateIssueDisplay({ layout: layout === 'list' ? 'board' : 'list' });
+      return true;
+    }
+    if (action === 'toggle-right-sidebar') {
       event.preventDefault();
       setDetailsOpen((open) => !open);
       return true;
@@ -227,18 +239,7 @@ export function useIssuesPagePresenter() {
       void openNewView();
       return true;
     }
-    if (
-      !(event.ctrlKey || event.metaKey) ||
-      event.altKey ||
-      event.shiftKey ||
-      event.repeat ||
-      event.key.toLowerCase() !== 'b' ||
-      isTypingTarget(event.target)
-    )
-      return false;
-    event.preventDefault();
-    void updateIssueDisplay({ layout: layout === 'list' ? 'board' : 'list' });
-    return true;
+    return false;
   }, true);
   const subscribedIds = new Set(subscriptionSnapshot.split('\0').filter(Boolean));
   const matchingIssues = (data.issues ?? [])

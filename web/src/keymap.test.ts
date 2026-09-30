@@ -67,6 +67,34 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
   });
 
+  it('maps list layout and page URL shortcuts outside typing targets', () => {
+    const body = el('BODY');
+    expect(actionFromKeyboard({ key: 'b', ctrlKey: true, metaKey: false, target: body })).toBe(
+      'toggle-layout',
+    );
+    expect(
+      actionFromKeyboard({
+        key: 'C',
+        ctrlKey: true,
+        metaKey: false,
+        shiftKey: true,
+        target: body,
+      }),
+    ).toBe('copy-page-url');
+    expect(
+      actionFromKeyboard({ key: 'b', ctrlKey: true, metaKey: false, target: el('INPUT') }),
+    ).toBeNull();
+    expect(
+      actionFromKeyboard({
+        key: 'C',
+        ctrlKey: true,
+        metaKey: false,
+        shiftKey: true,
+        target: el('TEXTAREA'),
+      }),
+    ).toBeNull();
+  });
+
   it('maps list motion and create keys', () => {
     const body = el('BODY');
     expect(

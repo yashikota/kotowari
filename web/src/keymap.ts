@@ -22,7 +22,9 @@ export type KeyAction =
   | 'clear-last-filter'
   | 'clear-filters'
   | 'toggle-sidebar'
-  | 'toggle-right-sidebar';
+  | 'toggle-right-sidebar'
+  | 'toggle-layout'
+  | 'copy-page-url';
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
@@ -743,6 +745,26 @@ export function actionFromKeyboard(event: {
   }
   if (mod && event.key === '/') {
     return 'help';
+  }
+  if (
+    mod &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !event.repeat &&
+    event.key.toLowerCase() === 'b' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'toggle-layout';
+  }
+  if (
+    mod &&
+    !event.altKey &&
+    event.shiftKey &&
+    !event.repeat &&
+    event.key.toLowerCase() === 'c' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'copy-page-url';
   }
   if (
     event.altKey &&

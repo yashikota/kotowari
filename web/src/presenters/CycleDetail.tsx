@@ -118,7 +118,18 @@ export function useCycleDetailPagePresenter() {
   }
 
   useKeyboard((event) => {
-    if (actionFromKeyboard(event) === 'toggle-right-sidebar') {
+    const action = actionFromKeyboard(event);
+    if (action === 'copy-page-url') {
+      event.preventDefault();
+      void copyCycleLink();
+      return true;
+    }
+    if (action === 'toggle-layout') {
+      event.preventDefault();
+      setLayout((current) => (current === 'list' ? 'board' : 'list'));
+      return true;
+    }
+    if (action === 'toggle-right-sidebar') {
       event.preventDefault();
       setCycleDetailsOpen((open) => !open);
       return true;
