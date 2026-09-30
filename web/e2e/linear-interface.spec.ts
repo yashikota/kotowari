@@ -115,7 +115,7 @@ test('issue display property chips persist as personal view state', async ({ pag
     expect(response.ok()).toBeTruthy();
   }
 
-  await page.goto('/issues');
+  await page.goto('/issues?groupBy=none&orderBy=created&direction=desc');
   await page.getByRole('button', { name: 'Display options' }).click();
 
   const properties = page.getByRole('group', { name: 'Display properties' });

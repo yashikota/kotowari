@@ -1,6 +1,6 @@
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api } from '../api.ts';
 import { useIntent } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
@@ -93,6 +93,7 @@ export function useProjectDetailPagePresenter() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState(data.project);
+  const projectSaveQueue = useRef<Promise<void>>(Promise.resolve());
   const [milestoneName, setMilestoneName] = useState('');
   const [milestoneDescription, setMilestoneDescription] = useState('');
   const [milestoneTargetDate, setMilestoneTargetDate] = useState('');
@@ -121,33 +122,42 @@ export function useProjectDetailPagePresenter() {
 
   async function save(body: Record<string, unknown>) {
     const before = project;
-    const next = await api.patchProject(slug, body);
-    setProject((current) => {
-      const locallyEditable = [
-        'name',
-        'summary',
-        'icon',
-        'iconColor',
-        'description',
-        'status',
-        'workflowStatus',
-        'isFavorite',
-        'lead',
-        'health',
-        'priority',
-        'startDate',
-        'targetDate',
-        'labels',
-        'initiativeSlugs',
-      ] as const;
-      const newerEdits = Object.fromEntries(
-        locallyEditable
-          .filter((field) => current[field] !== before[field])
-          .map((field) => [field, current[field]]),
-      );
-      return current.slug === before.slug ? { ...next, ...newerEdits } : current;
-    });
-    await router.invalidate();
+    const pending = projectSaveQueue.current
+      .catch(() => undefined)
+      .then(async () => {
+        const next = await api.patchProject(slug, body);
+        setProject((current) => {
+          const locallyEditable = [
+            'name',
+            'summary',
+            'icon',
+            'iconColor',
+            'description',
+            'status',
+            'workflowStatus',
+            'isFavorite',
+            'lead',
+            'health',
+            'priority',
+            'startDate',
+            'targetDate',
+            'labels',
+            'initiativeSlugs',
+          ] as const;
+          const newerEdits = Object.fromEntries(
+            locallyEditable
+              .filter((field) => current[field] !== before[field])
+              .map((field) => [field, current[field]]),
+          );
+          return current.slug === before.slug ? { ...next, ...newerEdits } : current;
+        });
+        await router.invalidate();
+      });
+    projectSaveQueue.current = pending.then(
+      () => undefined,
+      () => undefined,
+    );
+    await pending;
   }
 
   async function refreshProject() {
