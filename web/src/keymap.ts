@@ -377,6 +377,7 @@ export type IssueDetailShortcut =
   | 'focus-description'
   | 'toggle-favorite'
   | 'toggle-subscription'
+  | 'open-cycle'
   | 'rename'
   | 'open-due-date'
   | 'open-reminder'
@@ -412,6 +413,7 @@ export function issueDetailShortcutFromKeyboard(event: {
   if (modifier || event.altKey) return null;
   if (event.shiftKey) {
     if (key === 's') return 'toggle-subscription';
+    if (key === 'c') return 'open-cycle';
     if (key === 'd') return 'open-due-date';
     if (key === 'h') return 'open-reminder';
     if (key === 'r') return 'rename';

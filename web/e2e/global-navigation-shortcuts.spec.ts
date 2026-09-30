@@ -48,6 +48,8 @@ test('Linear-style G sequences navigate to supported personal and workspace view
   await expect(shortcuts).toContainText('Snooze the selected inbox notification');
   await expect(shortcuts).toContainText('Shift+S');
   await expect(shortcuts).toContainText('Subscribe or unsubscribe to the issue');
+  await expect(shortcuts).toContainText('Shift+C');
+  await expect(shortcuts).toContainText('Add the issue to a cycle');
 });
 
 test('global navigation sequences remain ordinary text while an input is focused', async ({

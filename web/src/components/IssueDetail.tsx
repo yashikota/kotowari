@@ -287,6 +287,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'toggle-subscription':
           void sendIntent('Subscription_onClick', []);
           break;
+        case 'open-cycle':
+          void sendIntent('onOpenIssuePropertyMenu', ['cycle']);
+          break;
         case 'rename':
           titleRef.current?.focus();
           titleRef.current?.select();

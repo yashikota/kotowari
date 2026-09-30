@@ -169,6 +169,9 @@ export function IssueCoreProperties({
             compactChars={12}
             compactLabel={cycleValueLabel}
             aria-label={t('field.cycle')}
+            dropdownOpened={issuePropertyMenu === 'cycle'}
+            onDropdownOpen={() => onOpenProperty('cycle')}
+            onDropdownClose={onCloseProperty}
             value={issue.cycleId != null ? String(issue.cycleId) : 'none'}
             onChange={onCycleChange}
             data={[

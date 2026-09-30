@@ -669,6 +669,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['I', { metaKey: true, shiftKey: true }, 'focus-description'],
     ['f', { altKey: true }, 'toggle-favorite'],
     ['S', { shiftKey: true }, 'toggle-subscription'],
+    ['C', { shiftKey: true }, 'open-cycle'],
     ['D', { shiftKey: true }, 'open-due-date'],
     ['H', { shiftKey: true }, 'open-reminder'],
     ['R', { shiftKey: true }, 'rename'],

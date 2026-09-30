@@ -61,6 +61,13 @@ test('self assignment works across issue details, My issues, and list grouping',
     'aria-pressed',
     'true',
   );
+  await page.getByTestId('issue-header-title').click();
+  await page.keyboard.press('Shift+C');
+  await expect(page.getByRole('combobox', { name: 'Cycle' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await page.keyboard.press('Escape');
   await page.getByRole('link', { name: 'My issues', exact: true }).click();
   await page.getByRole('tab', { name: 'Subscribed', exact: true }).click();
   await expect(page).toHaveURL(/\/issues\?myIssuesTab=subscribed$/);
