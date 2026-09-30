@@ -2,7 +2,7 @@ import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { api } from '../api.ts';
 import { setPendingAgentPrompt } from '../agent-prompt.ts';
-import { useIntent, useKeyboard } from '../application/Root.tsx';
+import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import { patchIssueOptimistically, useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import {
@@ -75,6 +75,7 @@ export function useIssueListPresenter({
   labels = [],
 }: Props) {
   const sendIntent = useIntent();
+  const [, setIssueFilterMenuOpen] = useRootMachineFlag('issues.filterMenu');
   const { preferences: codingToolPreferences } = useCodingToolPreferences();
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const { preferences } = usePersonalPreferences();
@@ -251,6 +252,21 @@ export function useIssueListPresenter({
       return true;
     }
     const action = actionFromKeyboard(e);
+    if (action === 'add-filter') {
+      e.preventDefault();
+      setIssueFilterMenuOpen(true);
+      return true;
+    }
+    if (action === 'clear-last-filter') {
+      e.preventDefault();
+      sendIntent('issues.filters.clearLast');
+      return true;
+    }
+    if (action === 'clear-filters') {
+      e.preventDefault();
+      sendIntent('issues.filters.clear');
+      return true;
+    }
     if (action === 'escape' && bulkSelectedIds.length > 0) {
       e.preventDefault();
       setBulkSelectedIds([]);

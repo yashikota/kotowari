@@ -2157,6 +2157,7 @@
     "shortcutSetPriority": "優先度を設定",
     "shortcutCloseDialogs": "ダイアログを閉じる、または選択を解除",
     "shortcutShowHelp": "このヘルプを表示",
+    "shortcutClearLastIssueFilter": "最後のイシューフィルターをクリア",
     "issueColumnLabel": "{{status}}のイシュー",
     "issueCards": "{{status}}のイシューカード",
     "issueGroupCount": "{{label}} · {{count}} 件のイシュー",

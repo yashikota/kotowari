@@ -184,8 +184,10 @@ export function useIssueFiltersPresenter({
       pendingSearchRef.current = null;
     }
   }
-  const [filterOpened, setFilterOpened] = useMachineFlag('filter');
+  const [filterOpened, setFilterOpened] = useRootMachineFlag('issues.filterMenu');
   const [displayOpened, setDisplayOpened] = useMachineFlag('display');
+
+  useEffect(() => () => setFilterOpened(false), [setFilterOpened]);
 
   function set(patch: IssueSearch) {
     const next = { ...searchRef.current, ...patch };

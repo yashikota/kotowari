@@ -18,6 +18,9 @@ export type KeyAction =
   | NavShortcutAction
   | 'help'
   | 'find'
+  | 'add-filter'
+  | 'clear-last-filter'
+  | 'clear-filters'
   | 'toggle-sidebar'
   | 'toggle-right-sidebar';
 
@@ -501,6 +504,24 @@ export function actionFromKeyboard(event: {
   if (mod && event.key === '/') {
     return 'help';
   }
+  if (
+    event.altKey &&
+    event.shiftKey &&
+    !mod &&
+    event.key.toLowerCase() === 'f' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'clear-filters';
+  }
+  if (
+    event.shiftKey &&
+    !event.altKey &&
+    !mod &&
+    event.key.toLowerCase() === 'f' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'clear-last-filter';
+  }
   if (mod || event.altKey) {
     return null;
   }
@@ -509,6 +530,9 @@ export function actionFromKeyboard(event: {
   }
   if (isTypingTarget(event.target)) {
     return null;
+  }
+  if (!event.shiftKey && event.key.toLowerCase() === 'f') {
+    return 'add-filter';
   }
   if (event.key === '[') {
     return 'toggle-sidebar';

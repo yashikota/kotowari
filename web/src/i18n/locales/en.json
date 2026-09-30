@@ -2169,6 +2169,7 @@
     "shortcutSetPriority": "Set priority",
     "shortcutCloseDialogs": "Close dialogs or clear selection",
     "shortcutShowHelp": "This help",
+    "shortcutClearLastIssueFilter": "Clear the last issue filter",
     "issueColumnLabel": "{{status}} issues",
     "issueCards": "{{status}} issue cards",
     "issueGroupCount_one": "{{label}} · {{count}} issue",

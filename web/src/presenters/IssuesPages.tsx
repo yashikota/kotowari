@@ -28,13 +28,18 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import type { IssueNavigationState } from '../focus.ts';
-import { useKeyboard } from '../application/Root.tsx';
+import { useIntentHandler, useKeyboard } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { matchesIssueFilterGroup } from '../issue-advanced-filter.ts';
+import {
+  clearIssueSearchFilters,
+  lastIssueSearchFilterKey,
+  removeIssueFilter,
+} from '../issue-filter-transitions.ts';
 import type { Activity } from '../types.ts';
 
 type IssueListData = {
@@ -168,6 +173,18 @@ export function useIssuesPagePresenter() {
     pendingSearch.current = next;
     return navigate({ to: '/issues', search: next, replace: true });
   };
+
+  useIntentHandler('issues.filters.clear', () => {
+    setFind('');
+    return updateIssueDisplay(clearIssueSearchFilters());
+  });
+
+  useIntentHandler('issues.filters.clearLast', () => {
+    const key = lastIssueSearchFilterKey(latestSearch.current);
+    if (!key) return;
+    const change = removeIssueFilter(latestSearch.current, key);
+    if (change) return updateIssueDisplay(change);
+  });
 
   function openNewView() {
     return navigate({

@@ -50,6 +50,29 @@ test('Linear-style G sequences navigate to supported personal and workspace view
   await expect(shortcuts).toContainText('Subscribe or unsubscribe to the issue');
   await expect(shortcuts).toContainText('Shift+C');
   await expect(shortcuts).toContainText('Add the issue to a cycle');
+  await expect(shortcuts).toContainText('Alt+Shift+F');
+  await expect(shortcuts).toContainText('Add filter');
+  await expect(shortcuts).toContainText('Shift+F');
+  await expect(shortcuts).toContainText('Clear the last issue filter');
+  await expect(shortcuts).toContainText('Clear filters');
+});
+
+test('issue filter shortcuts open the menu and clear active filters', async ({ page }) => {
+  await page.goto('/issues?status=backlog&priority=1');
+
+  const addFilter = page.getByRole('button', { name: 'Add filter' });
+  await expect(addFilter).toBeVisible();
+  await expect(page.locator('[data-presenter^="IssueList:"]')).toHaveCount(1);
+
+  await page.keyboard.press('Shift+F');
+  await expect.poll(() => new URL(page.url()).searchParams.has('status')).toBe(true);
+  await expect.poll(() => new URL(page.url()).searchParams.has('priority')).toBe(false);
+
+  await page.keyboard.press('Alt+Shift+F');
+  await expect.poll(() => new URL(page.url()).searchParams.has('status')).toBe(false);
+
+  await page.keyboard.press('f');
+  await expect(addFilter).toHaveAttribute('aria-expanded', 'true');
 });
 
 test('global navigation sequences remain ordinary text while an input is focused', async ({

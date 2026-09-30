@@ -99,6 +99,44 @@ export function clearIssueSearchFilters(): IssueSearch {
   };
 }
 
+export function lastIssueSearchFilterKey(search: IssueSearch): string | null {
+  const selectedStatuses = search.statuses ?? (search.status ? [search.status] : []);
+  const selectedPriorities =
+    search.priorities ?? (search.priority === undefined ? [] : [search.priority]);
+  const selectedEstimates =
+    search.estimates ?? (search.estimate === undefined ? [] : [search.estimate]);
+  const candidates = [
+    ...(selectedStatuses.length ? ['statuses'] : []),
+    ...(search.assignee ? ['assignee'] : []),
+    ...(search.subscribers ? ['subscribers'] : []),
+    ...(search.project ? ['project'] : []),
+    ...(search.cycle ? ['cycle'] : []),
+    ...(selectedPriorities.length ? ['priorities'] : []),
+    ...(search.type ? ['type'] : []),
+    ...(selectedEstimates.length || search.noEstimate ? ['estimates'] : []),
+    ...(search.dueDate ? ['dueDate'] : []),
+    ...(search.relation ? ['relation'] : []),
+    ...(search.linkSources ?? []).map((source) => `linkSource:${source}`),
+    ...(search.templateSlugs ?? []).map((slug) => `template:${slug}`),
+    ...(search.content ? ['content'] : []),
+    ...(search.milestoneName ? ['milestoneName'] : []),
+    ...(search.projectStatus ? ['projectStatus'] : []),
+    ...(search.projectPriority !== undefined ? ['projectPriority'] : []),
+    ...(search.dateField && search.dateRange && search.dateRange !== 'custom' ? ['date'] : []),
+    ...(search.advancedFilter && search.advancedFilterGroup?.children.length
+      ? ['advancedFilter']
+      : []),
+    ...(search.labels ?? '')
+      .split(',')
+      .map((label) => label.trim())
+      .filter(Boolean)
+      .map((label) => `label:${label}`),
+    ...(search.projectLabels ?? []).map((label) => `projectLabel:${label}`),
+    ...(search.addedToCycle ?? []).map((phase) => `addedToCycle:${phase}`),
+  ];
+  return candidates.at(-1) ?? null;
+}
+
 export function removeIssueFilter(search: IssueSearch, key: string): IssueSearch | null {
   if (key.startsWith('linkSource:')) {
     const current = search.linkSources ?? [];
@@ -163,6 +201,7 @@ export function removeIssueFilter(search: IssueSearch, key: string): IssueSearch
   if (!supportedKeys.includes(key)) return null;
   if (key === 'advancedFilter')
     return { advancedFilter: undefined, advancedFilterGroup: undefined };
+  if (key === 'date') return { dateField: undefined, dateRange: undefined };
   if (key === 'status' || key === 'statuses') return { status: undefined, statuses: undefined };
   if (key === 'priority' || key === 'priorities')
     return { priority: undefined, priorities: undefined };

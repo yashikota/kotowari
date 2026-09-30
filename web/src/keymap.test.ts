@@ -265,6 +265,55 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
   });
 
+  it('opens and clears issue filters with the Linear shortcuts', () => {
+    const body = el('BODY');
+    expect(
+      actionFromKeyboard({
+        key: 'f',
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('add-filter');
+    expect(
+      actionFromKeyboard({
+        key: 'F',
+        shiftKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('clear-last-filter');
+    expect(
+      actionFromKeyboard({
+        key: 'F',
+        altKey: true,
+        shiftKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('clear-filters');
+    expect(
+      actionFromKeyboard({
+        key: 'f',
+        metaKey: false,
+        ctrlKey: false,
+        target: el('INPUT'),
+      }),
+    ).toBeNull();
+    expect(
+      actionFromKeyboard({
+        key: 'F',
+        altKey: true,
+        shiftKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        target: el('INPUT'),
+      }),
+    ).toBeNull();
+  });
+
   it('lets Escape through while typing and ignores other keys', () => {
     const input = el('INPUT');
     expect(
