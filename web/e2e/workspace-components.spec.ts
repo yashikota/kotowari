@@ -1409,7 +1409,9 @@ test('project labels are editable, filter linked issues, and persist on a saved 
   const unlabeled = (await unlabeledResponse.json()) as { id: number };
 
   await page.goto(`/projects/${projectSlug}`);
-  await page.getByText(labelName, { exact: true }).click();
+  const projectLabelPicker = page.getByRole('combobox', { name: 'Project labels' });
+  await projectLabelPicker.click();
+  await page.getByRole('option', { name: labelName, exact: true }).click();
   await expect
     .poll(async () => {
       const response = await request.get(`/api/projects/${projectSlug}`);

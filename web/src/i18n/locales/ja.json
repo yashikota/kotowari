@@ -2143,6 +2143,7 @@
     "shortcutChangeProjectStatus": "プロジェクトのステータスを変更",
     "shortcutChangeProjectInitiatives": "プロジェクトのイニシアチブを変更",
     "shortcutChangeProjectLead": "プロジェクトのリードを変更",
+    "shortcutChangeProjectLabels": "プロジェクトのラベルを変更",
     "shortcutOpenInitiativeUpdates": "イニシアチブの更新とアクティビティを開く",
     "shortcutSetProjectStartDate": "プロジェクトの開始日を設定",
     "shortcutSetInitiativeTargetDate": "プロジェクトまたはイニシアチブの目標日を設定",

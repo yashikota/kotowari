@@ -840,6 +840,14 @@ describe('project status keyboard sequence', () => {
     });
   });
 
+  it('maps P then L to project labels focus', () => {
+    const pending = key('p');
+    expect(key('l', pending.pendingSince, 500)).toEqual({
+      action: 'focus-project-labels',
+      pendingSince: null,
+    });
+  });
+
   it('expires the sequence and ignores typing or modified keys', () => {
     expect(key('s', 100, 1101)).toEqual({ action: null, pendingSince: null });
     expect(key('p', null, 100, { target: el('INPUT') })).toEqual({

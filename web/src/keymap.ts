@@ -107,7 +107,12 @@ export function projectDetailSequenceFromKeyboard(
   pendingSince: number | null,
   now: number,
 ): {
-  action: 'focus-project-status' | 'focus-project-lead' | 'focus-project-initiatives' | null;
+  action:
+    | 'focus-project-status'
+    | 'focus-project-lead'
+    | 'focus-project-initiatives'
+    | 'focus-project-labels'
+    | null;
   pendingSince: number | null;
 } {
   const eligible =
@@ -131,6 +136,7 @@ export function projectDetailSequenceFromKeyboard(
     if (key === 's') return { action: 'focus-project-status', pendingSince: null };
     if (key === 'a') return { action: 'focus-project-lead', pendingSince: null };
     if (key === 'n') return { action: 'focus-project-initiatives', pendingSince: null };
+    if (key === 'l') return { action: 'focus-project-labels', pendingSince: null };
   }
   return { action: null, pendingSince: null };
 }

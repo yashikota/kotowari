@@ -28,7 +28,7 @@ import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 import { priorityLabel } from '../i18n/labels.ts';
 
-import { LabelChip, PageHeader, Pane, Section, SplitLayout } from '../mantine-ui.tsx';
+import { PageHeader, Pane, Section, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -40,6 +40,7 @@ export function ProjectDetailPageView({
   statusRef,
   leadRef,
   initiativesRef,
+  labelsRef,
   startDateRef,
   targetDateRef,
 }: {
@@ -48,6 +49,7 @@ export function ProjectDetailPageView({
   statusRef: ReturnType<typeof useFocusWhen<HTMLSelectElement>>;
   leadRef: ReturnType<typeof useFocusWhen<HTMLSelectElement>>;
   initiativesRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+  labelsRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
   startDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
   targetDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
@@ -251,24 +253,35 @@ export function ProjectDetailPageView({
                     comboboxProps={{ withinPortal: false }}
                   />
                 </Section>
-                <Section title={t('filters.projectLabels')}>
-                  {data.labels.length > 0 ? (
-                    <Group gap={4}>
-                      {data.labels.map((label) => (
-                        <LabelChip
-                          key={label.id}
-                          name={label.name}
-                          color={label.color}
-                          selected={(project.labels ?? []).includes(label.name)}
-                          onClick={() => handlers.onProjectLabelToggle(label.name)}
-                        />
-                      ))}
-                    </Group>
-                  ) : (
-                    <Text size="sm" c="dimmed">
-                      {t('filters.noProjectLabels')}
-                    </Text>
-                  )}
+                <Section title={t('filters.projectLabels')} ariaLabel={t('filters.projectLabels')}>
+                  <MultiSelect
+                    ref={labelsRef}
+                    aria-label={t('filters.projectLabels')}
+                    value={project.labels ?? []}
+                    onChange={handlers.onProjectLabelsChange}
+                    data={data.labels.map((label) => ({ value: label.name, label: label.name }))}
+                    renderOption={({ option }) => {
+                      const color = data.labels.find((label) => label.name === option.value)?.color;
+                      return (
+                        <Group gap="xs" wrap="nowrap">
+                          <Box
+                            w={8}
+                            h={8}
+                            aria-hidden
+                            style={{ borderRadius: '50%', backgroundColor: color, flexShrink: 0 }}
+                          />
+                          <Text>{option.label}</Text>
+                        </Group>
+                      );
+                    }}
+                    nothingFoundMessage={
+                      data.labels.length === 0 ? t('filters.noProjectLabels') : undefined
+                    }
+                    searchable
+                    clearable
+                    hidePickedOptions
+                    comboboxProps={{ withinPortal: false }}
+                  />
                 </Section>
                 <ProjectDependenciesSection
                   dependencies={project.dependencies ?? []}
@@ -402,6 +415,9 @@ function ProjectDetailPageBinding() {
   const initiativesRef = useFocusWhen<HTMLInputElement>(model.focusProjectInitiatives > 0, [
     model.focusProjectInitiatives,
   ]);
+  const labelsRef = useFocusWhen<HTMLInputElement>(model.focusProjectLabels > 0, [
+    model.focusProjectLabels,
+  ]);
   const startDateRef = useFocusWhen<HTMLInputElement>(model.focusProjectStartDate > 0, [
     model.focusProjectStartDate,
   ]);
@@ -415,6 +431,7 @@ function ProjectDetailPageBinding() {
       statusRef={statusRef}
       leadRef={leadRef}
       initiativesRef={initiativesRef}
+      labelsRef={labelsRef}
       startDateRef={startDateRef}
       targetDateRef={targetDateRef}
     />

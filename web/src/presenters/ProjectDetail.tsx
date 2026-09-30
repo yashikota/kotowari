@@ -115,6 +115,7 @@ export function useProjectDetailPagePresenter() {
   const [focusProjectStatus, setFocusProjectStatus] = useState(0);
   const [focusProjectLead, setFocusProjectLead] = useState(0);
   const [focusProjectInitiatives, setFocusProjectInitiatives] = useState(0);
+  const [focusProjectLabels, setFocusProjectLabels] = useState(0);
   const [focusProjectStartDate, setFocusProjectStartDate] = useState(0);
   const [focusProjectTargetDate, setFocusProjectTargetDate] = useState(0);
   const projectStatusSequenceSince = useRef<number | null>(null);
@@ -151,15 +152,18 @@ export function useProjectDetailPagePresenter() {
     if (
       sequence.action === 'focus-project-status' ||
       sequence.action === 'focus-project-lead' ||
-      sequence.action === 'focus-project-initiatives'
+      sequence.action === 'focus-project-initiatives' ||
+      sequence.action === 'focus-project-labels'
     ) {
       event.preventDefault();
       if (sequence.action === 'focus-project-status') {
         setFocusProjectStatus((current) => current + 1);
       } else if (sequence.action === 'focus-project-lead') {
         setFocusProjectLead((current) => current + 1);
-      } else {
+      } else if (sequence.action === 'focus-project-initiatives') {
         setFocusProjectInitiatives((current) => current + 1);
+      } else {
+        setFocusProjectLabels((current) => current + 1);
       }
       return true;
     }
@@ -261,6 +265,7 @@ export function useProjectDetailPagePresenter() {
     focusProjectStatus,
     focusProjectLead,
     focusProjectInitiatives,
+    focusProjectLabels,
     focusProjectStartDate,
     focusProjectTargetDate,
     projectWorkflowStatuses,
@@ -366,13 +371,7 @@ export function useProjectDetailPagePresenter() {
           );
         }
       },
-      onProjectLabelToggle: (name: string) => {
-        const current = project.labels ?? [];
-        const next = current.includes(name)
-          ? current.filter((label) => label !== name)
-          : [...current, name];
-        return save({ labels: next });
-      },
+      onProjectLabelsChange: (labels: string[]) => save({ labels }),
       onProjectInitiativesChange: (initiativeSlugs: string[]) => save({ initiativeSlugs }),
       onDependencyProjectChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
         setDependencyProjectSlug(e.target.value),

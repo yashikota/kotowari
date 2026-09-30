@@ -2155,6 +2155,7 @@
     "shortcutChangeProjectStatus": "Change project status",
     "shortcutChangeProjectInitiatives": "Change project initiatives",
     "shortcutChangeProjectLead": "Change project lead",
+    "shortcutChangeProjectLabels": "Change project labels",
     "shortcutOpenInitiativeUpdates": "Open initiative updates and activity",
     "shortcutSetProjectStartDate": "Set the project start date",
     "shortcutSetInitiativeTargetDate": "Set a project or initiative target date",
