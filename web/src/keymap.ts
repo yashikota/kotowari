@@ -483,6 +483,9 @@ export function actionFromKeyboard(event: {
   if (mod && event.key.toLowerCase() === 'k') {
     return 'palette';
   }
+  if (mod && event.key === '/') {
+    return 'help';
+  }
   if (mod || event.altKey) {
     return null;
   }

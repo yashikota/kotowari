@@ -27,8 +27,12 @@ test('Linear-style G sequences navigate to supported personal and workspace view
     await expect(page).toHaveURL(destination);
   }
 
-  await page.keyboard.press('?');
+  await page.keyboard.press('Control+/');
   const shortcuts = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+  await expect(shortcuts).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('?');
+  await expect(shortcuts).toBeVisible();
   await expect(shortcuts).toContainText('G, then I');
   await expect(shortcuts).toContainText('G, then W');
   await expect(shortcuts).toContainText('Snooze the selected inbox notification');

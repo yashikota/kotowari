@@ -108,6 +108,22 @@ describe('actionFromKeyboard', () => {
       actionFromKeyboard({
         key: '/',
         metaKey: false,
+        ctrlKey: true,
+        target: body,
+      }),
+    ).toBe('help');
+    expect(
+      actionFromKeyboard({
+        key: '/',
+        metaKey: true,
+        ctrlKey: false,
+        target: body,
+      }),
+    ).toBe('help');
+    expect(
+      actionFromKeyboard({
+        key: '/',
+        metaKey: false,
         ctrlKey: false,
         target: body,
       }),
