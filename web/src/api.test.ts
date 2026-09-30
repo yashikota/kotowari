@@ -209,7 +209,7 @@ describe('parseIssueSearch', () => {
         completedByRecency: 'sometimes',
         displayProperties: '["creator"]',
       }),
-    ).toEqual({});
+    ).toEqual({ displayProperties: ['creator'] });
     expect(parseIssueSearch({ displayProperties: '[]' })).toEqual({ displayProperties: [] });
     expect(
       searchToFilter({

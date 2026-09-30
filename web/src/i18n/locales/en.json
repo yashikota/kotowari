@@ -1683,6 +1683,7 @@
       "id": "ID",
       "status": "Status",
       "assignee": "Assignee",
+      "creator": "Creator",
       "priority": "Priority",
       "project": "Project",
       "dueDate": "Due date",

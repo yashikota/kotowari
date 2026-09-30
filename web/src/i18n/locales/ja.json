@@ -1673,6 +1673,7 @@
       "id": "ID",
       "status": "ステータス",
       "assignee": "担当者",
+      "creator": "作成者",
       "priority": "優先度",
       "project": "プロジェクト",
       "dueDate": "期限",

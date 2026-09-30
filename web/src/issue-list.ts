@@ -48,6 +48,7 @@ export type IssueFacetOption = { value: string; label: string; count: number; co
 export type IssueDisplayProperty =
   | 'id'
   | 'status'
+  | 'creator'
   | 'priority'
   | 'project'
   | 'assignee'
@@ -94,6 +95,7 @@ export const ISSUE_DISPLAY_PROPERTIES = [
   'id',
   'status',
   'assignee',
+  'creator',
   'priority',
   'project',
   'dueDate',

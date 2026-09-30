@@ -274,6 +274,13 @@ export function IssueListRow({
                 )}
               </IssueMetaText>
             ) : null}
+            {shows('creator') ? (
+              <IssueMetaText>
+                {i18n.t(
+                  issue.creator === 'agent' ? 'issueAssignment.agent' : 'issueAssignment.you',
+                )}
+              </IssueMetaText>
+            ) : null}
             {issue.type ? <IssueMetaText>{issueTypeLabel(issue.type)}</IssueMetaText> : null}
             {shows('estimate') && issue.estimate != null ? (
               <IssueMetaText>{issue.estimate}</IssueMetaText>
