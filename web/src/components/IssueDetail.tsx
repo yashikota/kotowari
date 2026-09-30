@@ -311,6 +311,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'open-due-date':
           void sendIntent('onOpenDueDate', []);
           break;
+        case 'clear-due-date':
+          if (model.issue.dueDate) void sendIntent('onClearDueDate', []);
+          break;
         case 'open-reminder':
           void sendIntent('onOpenIssueReminderMenu', []);
           break;

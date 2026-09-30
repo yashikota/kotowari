@@ -2148,6 +2148,7 @@
     "shortcutAssignIssue": "Open the issue assignee menu",
     "shortcutToggleIssueFavorite": "Toggle the issue favorite",
     "shortcutSetIssueDueDate": "Set the issue due date",
+    "shortcutClearIssueDueDate": "Remove the issue due date",
     "shortcutSetIssueReminder": "Set a reminder for the issue",
     "shortcutFocusIssueDescription": "Focus the issue description",
     "shortcutCreateSubIssue": "Create a sub-issue",

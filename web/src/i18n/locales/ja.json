@@ -2136,6 +2136,7 @@
     "shortcutAssignIssue": "イシューの担当者メニューを開く",
     "shortcutToggleIssueFavorite": "イシューのお気に入りを切り替え",
     "shortcutSetIssueDueDate": "イシューの期限を設定",
+    "shortcutClearIssueDueDate": "イシューの期限を削除",
     "shortcutSetIssueReminder": "イシューのリマインダーを設定",
     "shortcutFocusIssueDescription": "イシューの説明にフォーカス",
     "shortcutCreateSubIssue": "サブイシューを作成",

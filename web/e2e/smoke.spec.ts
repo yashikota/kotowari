@@ -244,7 +244,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
   expect(deletedAttachment.status()).toBe(404);
 
   await page.getByRole('button', { name: 'Copy identifier' }).click();
-  await page.keyboard.press('Shift+p');
+  await page.getByRole('button', { name: 'New ADR', exact: true }).click();
   const adrTitle = page.getByPlaceholder('ADR title');
   await expect(adrTitle).toBeFocused();
   await adrTitle.fill('local cache');

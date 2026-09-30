@@ -722,6 +722,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['S', { shiftKey: true }, 'toggle-subscription'],
     ['C', { shiftKey: true }, 'open-cycle'],
     ['D', { shiftKey: true }, 'open-due-date'],
+    ['D', { ctrlKey: true, shiftKey: true }, 'clear-due-date'],
     ['H', { shiftKey: true }, 'open-reminder'],
     ['R', { shiftKey: true }, 'rename'],
     ['O', { ctrlKey: true, shiftKey: true }, 'open-sub-issue'],
@@ -739,7 +740,7 @@ describe('issue detail keyboard shortcuts', () => {
     expect(shortcut('i', { repeat: true })).toBeNull();
     expect(shortcut('i', { ctrlKey: true })).toBeNull();
     expect(shortcut('f', { altKey: true, shiftKey: true })).toBeNull();
-    expect(shortcut('d', { shiftKey: true, metaKey: true })).toBeNull();
+    expect(shortcut('d', { shiftKey: true, metaKey: true, altKey: true })).toBeNull();
   });
 });
 

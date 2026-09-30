@@ -438,6 +438,7 @@ export type IssueDetailShortcut =
   | 'open-cycle'
   | 'rename'
   | 'open-due-date'
+  | 'clear-due-date'
   | 'open-reminder'
   | 'open-sub-issue'
   | 'open-parent'
@@ -461,7 +462,8 @@ export function issueDetailShortcutFromKeyboard(event: {
   const key = event.key.toLowerCase();
   const modifier = event.metaKey || event.ctrlKey;
   if (event.altKey && !event.shiftKey && !modifier && key === 'f') return 'toggle-favorite';
-  if (modifier && event.shiftKey) {
+  if (modifier && event.shiftKey && !event.altKey) {
+    if (key === 'd') return 'clear-due-date';
     if (key === 'arrowup') return 'open-parent';
     if (key === 'arrowdown') return 'open-first-sub-issue';
     if (key === 'o') return 'open-sub-issue';

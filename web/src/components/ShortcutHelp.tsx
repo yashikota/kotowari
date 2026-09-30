@@ -67,6 +67,7 @@ export function ShortcutHelpView({
     { keys: 'Shift+S', action: t('ui.shortcutToggleIssueSubscription') },
     { keys: 'Shift+C', action: t('ui.shortcutAddIssueToCycle') },
     { keys: 'Shift+D', action: t('ui.shortcutSetIssueDueDate') },
+    { keys: 'Ctrl/⌘+Shift+D', action: t('ui.shortcutClearIssueDueDate') },
     { keys: 'Shift+H', action: t('ui.shortcutSetIssueReminder') },
     { keys: 'Ctrl/⌘+Shift+I', action: t('ui.shortcutFocusIssueDescription') },
     { keys: 'Ctrl/⌘+Shift+O', action: t('ui.shortcutCreateSubIssue') },

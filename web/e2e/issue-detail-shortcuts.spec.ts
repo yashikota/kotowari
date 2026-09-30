@@ -37,6 +37,32 @@ test('issue shortcuts assign to me, toggle favorite, and open the due-date picke
   expect(resetFavorite.ok()).toBeTruthy();
 });
 
+test('Ctrl+Shift+D removes the issue due date', async ({ page, request }) => {
+  const created = await request.post('/api/issues', {
+    data: {
+      title: `Remove due date shortcut ${Date.now()}`,
+      status: 'todo',
+      dueDate: '2030-02-03',
+    },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+  await page.goto(`/issues/${issue.identifier}`);
+  await page.getByRole('button', { name: 'Issue options' }).focus();
+
+  const update = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      new URL(response.url()).pathname === `/api/issues/${issue.identifier}`,
+  );
+  await page.keyboard.press('Control+Shift+d');
+  expect((await update).ok()).toBeTruthy();
+  const issueState = (await (await request.get(`/api/issues/${issue.identifier}`)).json()) as {
+    dueDate: string | null;
+  };
+  expect(issueState.dueDate).toBeNull();
+});
+
 test('issue options menu exposes the Linear favorite action and shortcut', async ({
   page,
   request,
@@ -298,6 +324,7 @@ test('shortcut help documents issue detail actions in the active locale', async 
   await expect(help).toContainText('Open the issue assignee menu');
   await expect(help).toContainText('Toggle the issue favorite');
   await expect(help).toContainText('Set the issue due date');
+  await expect(help).toContainText('Remove the issue due date');
   await expect(help).toContainText('Set a reminder for the issue');
   await expect(help).toContainText('Focus the issue description');
   await expect(help).toContainText('Create a sub-issue');
