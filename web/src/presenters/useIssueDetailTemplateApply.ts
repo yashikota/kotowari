@@ -30,7 +30,7 @@ export function useIssueDetailTemplateApply({
     try {
       const nextTemplates = await api.issueTemplates();
       setTemplates(nextTemplates);
-      setSelectedSlug(nextTemplates[0]?.slug ?? '');
+      setSelectedSlug('');
       setOpen(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'failed to load issue templates');

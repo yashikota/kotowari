@@ -87,6 +87,11 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
         fullScreen={model.issueComposerExpanded}
         centered
         autoFocus={false}
+        onEnterTransitionEnd={() => {
+          if (model.issueTemplatePickerRequested) {
+            issueTemplateRef.current?.focus();
+          }
+        }}
       >
         <Stack gap="sm">
           {(issueDraftSaved || issueTitle.trim()) && (
