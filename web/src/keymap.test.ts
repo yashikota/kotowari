@@ -611,8 +611,26 @@ describe('inbox keyboard shortcuts', () => {
 
   it('deletes read notifications with Shift+Backspace', () => {
     expect(key('Backspace', { shiftKey: true })).toBe('delete-read-notifications');
-    expect(key('Backspace')).toBeNull();
+    expect(key('Backspace')).toBe('delete-notification');
     expect(key('Backspace', { shiftKey: true, metaKey: true })).toBeNull();
+  });
+
+  it('marks all notifications read with Alt+U', () => {
+    expect(key('u', { altKey: true })).toBe('mark-all-read');
+    expect(key('U', { altKey: true })).toBe('mark-all-read');
+    expect(key('u')).toBe('mark-selected-read');
+    expect(key('u', { altKey: true, ctrlKey: true })).toBeNull();
+    expect(key('u', { altKey: true, shiftKey: true })).toBeNull();
+  });
+
+  it('toggles the selected notification with U and deletes it with E or Backspace', () => {
+    expect(key('u')).toBe('mark-selected-read');
+    expect(key('U')).toBe('mark-selected-read');
+    expect(key('e')).toBe('delete-notification');
+    expect(key('E')).toBe('delete-notification');
+    expect(key('Backspace')).toBe('delete-notification');
+    expect(key('u', { shiftKey: true })).toBeNull();
+    expect(key('e', { altKey: true })).toBeNull();
   });
 
   it('does not intercept typing, composition, repeats, or modified shortcuts', () => {

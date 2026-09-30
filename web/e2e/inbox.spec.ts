@@ -218,9 +218,8 @@ test('inbox bulk actions mark all as read, delete read notifications, and archiv
   await page.keyboard.press('Shift+Backspace');
   await page.getByRole('dialog').getByRole('button', { name: 'Delete notifications' }).click();
   await expect(issueNotifications).toHaveCount(1);
-
-  await page.getByRole('button', { name: 'Notification actions' }).click();
-  await page.getByRole('menuitem', { name: 'Mark all as read' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('Alt+U');
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -240,6 +239,65 @@ test('inbox bulk actions mark all as read, delete read notifications, and archiv
 
   await page.getByRole('link', { name: 'Config' }).click();
   await expect(page).toHaveURL(/\/config$/);
+});
+
+test('inbox shortcuts toggle and delete the focused notification without deleting its issue', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/issues', {
+    data: { title: `Inbox shortcut ${Date.now()}`, status: 'todo' },
+  });
+  expect(created.ok()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('kotowari.inbox.v1'));
+  await page.goto('/inbox');
+  const notification = page
+    .getByRole('region', { name: 'Notifications' })
+    .getByRole('button', { name: new RegExp(`${issue.identifier}: Inbox shortcut`) });
+  await expect(notification).toHaveCount(1);
+  const notificationId = Number(await notification.getAttribute('data-inbox-activity-id'));
+
+  await notification.focus();
+  await page.keyboard.press('u');
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = JSON.parse(localStorage.getItem('kotowari.inbox.v1') ?? '{}') as {
+          readIds?: number[];
+        };
+        return state.readIds ?? [];
+      }),
+    )
+    .toContain(notificationId);
+
+  await page.keyboard.press('u');
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = JSON.parse(localStorage.getItem('kotowari.inbox.v1') ?? '{}') as {
+          readIds?: number[];
+        };
+        return state.readIds ?? [];
+      }),
+    )
+    .not.toContain(notificationId);
+
+  await page.keyboard.press('e');
+  await expect(notification).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = JSON.parse(localStorage.getItem('kotowari.inbox.v1') ?? '{}') as {
+          deletedIds?: number[];
+        };
+        return state.deletedIds ?? [];
+      }),
+    )
+    .toContain(notificationId);
+  expect((await request.get(`/api/issues/${issue.identifier}`)).ok()).toBeTruthy();
 });
 
 test('inbox delete actions require confirmation and never delete issue data', async ({

@@ -2145,6 +2145,8 @@
     "shortcutOpenLabelsMenu": "イシューのラベルメニューを開く",
     "shortcutOpenEstimateMenu": "イシューの見積もりメニューを開く",
     "shortcutSnoozeNotification": "選択中の受信通知をスヌーズ",
+    "shortcutToggleInboxRead": "選択中の受信通知を既読または未読にする",
+    "shortcutDeleteInboxNotification": "選択中の受信通知を削除",
     "shortcutDeleteReadInbox": "受信トレイの既読通知を削除",
     "shortcutSwitchNavigation": "サイドバーのセクションを切り替え",
     "shortcutSetPriority": "優先度を設定",

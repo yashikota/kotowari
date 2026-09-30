@@ -334,6 +334,34 @@ export function useInboxPresenter() {
 
   useKeyboard((event) => {
     const shortcut = inboxShortcutFromKeyboard(event);
+    if (shortcut === 'mark-all-read') {
+      event.preventDefault();
+      markAllNotificationsRead();
+      return true;
+    }
+    const focusedRow =
+      event.target instanceof Element
+        ? event.target.closest<HTMLElement>('[data-inbox-activity-id]')
+        : null;
+    const focusedId = Number(focusedRow?.dataset.inboxActivityId);
+    const activityId = Number.isSafeInteger(focusedId) && focusedId > 0 ? focusedId : selectedId;
+    const selectedActivity = visibleActivities.find((activity) => activity.id === activityId);
+    if (shortcut === 'mark-selected-read') {
+      if (!selectedActivity) return false;
+      event.preventDefault();
+      markRead([selectedActivity.id], !inboxState.readIds.includes(selectedActivity.id));
+      return true;
+    }
+    if (shortcut === 'delete-notification') {
+      if (!selectedActivity) return false;
+      event.preventDefault();
+      updateInboxState((current) => ({
+        ...current,
+        deletedIds: [...new Set([...current.deletedIds, selectedActivity.id])],
+      }));
+      setSelectedId(null);
+      return true;
+    }
     if (shortcut === 'delete-read-notifications') {
       const hasReadNotifications = activities.some(
         (activity) =>
@@ -347,13 +375,6 @@ export function useInboxPresenter() {
       return true;
     }
     if (shortcut !== 'snooze-notification') return false;
-    const focusedRow =
-      event.target instanceof Element
-        ? event.target.closest<HTMLElement>('[data-inbox-activity-id]')
-        : null;
-    const focusedId = Number(focusedRow?.dataset.inboxActivityId);
-    const activityId =
-      selectedId ?? (Number.isSafeInteger(focusedId) && focusedId > 0 ? focusedId : null);
     if (
       activityId === null ||
       !activities.some((activity) => activity.id === activityId) ||
@@ -367,7 +388,7 @@ export function useInboxPresenter() {
     }
     setSnoozeMenuOpen(true);
     return true;
-  });
+  }, true);
 
   return {
     activities: visibleActivities.map((activity) => ({

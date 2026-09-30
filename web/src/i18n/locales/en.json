@@ -2157,6 +2157,8 @@
     "shortcutOpenLabelsMenu": "Open the issue labels menu",
     "shortcutOpenEstimateMenu": "Open the issue estimate menu",
     "shortcutSnoozeNotification": "Snooze the selected inbox notification",
+    "shortcutToggleInboxRead": "Mark the selected inbox notification as read or unread",
+    "shortcutDeleteInboxNotification": "Delete the selected inbox notification",
     "shortcutDeleteReadInbox": "Delete read inbox notifications",
     "shortcutSwitchNavigation": "Switch sidebar section",
     "shortcutSetPriority": "Set priority",

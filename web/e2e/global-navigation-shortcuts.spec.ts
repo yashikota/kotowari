@@ -35,6 +35,11 @@ test('Linear-style G sequences navigate to supported personal and workspace view
   await expect(shortcuts).toBeVisible();
   await expect(shortcuts).toContainText('G, then I');
   await expect(shortcuts).toContainText('G, then W');
+  await expect(shortcuts).toContainText('Alt+U');
+  await expect(shortcuts).toContainText('Mark all as read');
+  await expect(shortcuts).toContainText('u');
+  await expect(shortcuts).toContainText('Mark the selected inbox notification as read or unread');
+  await expect(shortcuts).toContainText('e / Backspace');
   await expect(shortcuts).toContainText('Snooze the selected inbox notification');
 });
 

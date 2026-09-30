@@ -340,20 +340,29 @@ export function inboxShortcutFromKeyboard(event: {
   isComposing?: boolean;
   defaultPrevented?: boolean;
   target: EventTarget | null;
-}): 'snooze-notification' | 'delete-read-notifications' | null {
+}):
+  | 'snooze-notification'
+  | 'delete-notification'
+  | 'delete-read-notifications'
+  | 'mark-selected-read'
+  | 'mark-all-read'
+  | null {
   if (
     event.defaultPrevented ||
     event.isComposing ||
     event.repeat ||
     event.metaKey ||
     event.ctrlKey ||
-    event.altKey ||
     isTypingTarget(event.target)
   )
     return null;
   if (event.shiftKey)
     return event.key.toLowerCase() === 'backspace' ? 'delete-read-notifications' : null;
-  return event.key.toLowerCase() === 'h' ? 'snooze-notification' : null;
+  if (event.altKey) return event.key.toLowerCase() === 'u' ? 'mark-all-read' : null;
+  const key = event.key.toLowerCase();
+  if (key === 'u') return 'mark-selected-read';
+  if (key === 'e' || key === 'backspace') return 'delete-notification';
+  return key === 'h' ? 'snooze-notification' : null;
 }
 
 export type IssueDetailShortcut =
