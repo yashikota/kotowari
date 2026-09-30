@@ -58,12 +58,20 @@ func newIssueQueryDates(filter IssueFilter) (issueQueryDates, error) {
 		}
 		dateRangeStart = day.AddDate(0, 0, -days).Format("2006-01-02")
 	}
+	statusAgeAnchor, err := time.Parse("2006-01-02", dateAsOf)
+	if err != nil {
+		return issueQueryDates{}, validationf("invalid date filter anchor")
+	}
+	// DateAsOf represents a calendar day, so evaluate status age at its end.
+	// Using wall-clock time here makes anchored filters change as the test or
+	// application runs, even when the filter's date is fixed.
+	statusAgeAnchor = statusAgeAnchor.AddDate(0, 0, 1)
 	return issueQueryDates{
 		asOf:            asOf,
 		rangeEnd:        rangeEnd,
 		dateAsOf:        dateAsOf,
 		dateRangeStart:  dateRangeStart,
-		statusAgeAnchor: time.Now().UTC(),
+		statusAgeAnchor: statusAgeAnchor,
 		statusAgeDays:   statusAgeDays,
 		customDueDate:   strings.TrimPrefix(filter.DueDate, "on:"),
 	}, nil
