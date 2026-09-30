@@ -2152,6 +2152,7 @@
     "shortcutOpenLinkedCode": "Open a linked GitHub issue or pull request",
     "shortcutMoveSelection": "Move selection",
     "shortcutSelectIssue": "Select or deselect the focused issue",
+    "shortcutExtendIssueSelection": "Extend selection with Shift+click or Shift+arrow keys",
     "shortcutSelectAllIssues": "Select all issues in the current list",
     "shortcutRenameIssue": "Focus and select the issue title",
     "shortcutAssignIssueToSelf": "Assign the issue to yourself",

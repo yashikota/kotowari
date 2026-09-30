@@ -190,7 +190,7 @@ export function IssueListRow({
   displayProperties: IssueDisplayProperty[];
   hideProjectSlug?: boolean;
   onSelect: (issue: Issue) => void;
-  onToggleBulkSelection: (id: string, checked: boolean) => void;
+  onToggleBulkSelection: (id: string, checked: boolean, shiftKey?: boolean) => void;
 }) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
   const overdue = isOverdue(issue.dueDate, today);
@@ -206,7 +206,13 @@ export function IssueListRow({
         size="xs"
         aria-label={i18n.t('ui.selectIssueRow', { identifier: issue.identifier })}
         checked={bulkSelected}
-        onChange={(event) => onToggleBulkSelection(issue.identifier, event.currentTarget.checked)}
+        onChange={(event) =>
+          onToggleBulkSelection(
+            issue.identifier,
+            event.currentTarget.checked,
+            Boolean((event.nativeEvent as Event & { shiftKey?: boolean }).shiftKey),
+          )
+        }
       />
       <Button
         type="button"

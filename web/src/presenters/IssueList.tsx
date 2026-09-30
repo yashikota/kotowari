@@ -1,5 +1,5 @@
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api.ts';
 import { setPendingAgentPrompt } from '../agent-prompt.ts';
 import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
@@ -121,6 +121,8 @@ export function useIssueListPresenter({
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
   const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
+  const selectionAnchorId = useRef<string | null>(null);
+  const selectionRange = useRef<{ anchorId: string; baseIds: string[] } | null>(null);
   const expandedRows = useMemo(
     () =>
       buildIssueListRows(issues, new Set(), groupBy, {
@@ -175,6 +177,50 @@ export function useIssueListPresenter({
   );
   const windowed = useWindowedRows(rows.length, 36, selectedRow);
 
+  function clearBulkSelection() {
+    selectionAnchorId.current = null;
+    selectionRange.current = null;
+    setBulkSelectedIds([]);
+  }
+
+  function selectIssueRange(targetId: string) {
+    const targetIndex = ids.indexOf(targetId);
+    if (targetIndex < 0) return;
+
+    const currentAnchor = selectionAnchorId.current;
+    const anchorId = currentAnchor && ids.includes(currentAnchor) ? currentAnchor : targetId;
+    const anchorIndex = ids.indexOf(anchorId);
+    const previousRange = selectionRange.current;
+    const baseIds =
+      previousRange?.anchorId === anchorId
+        ? previousRange.baseIds
+        : bulkSelectedIds.filter((id) => ids.includes(id));
+    const start = Math.min(anchorIndex, targetIndex);
+    const end = Math.max(anchorIndex, targetIndex);
+
+    selectionAnchorId.current = anchorId;
+    selectionRange.current = { anchorId, baseIds };
+    setBulkSelectedIds([...new Set([...baseIds, ...ids.slice(start, end + 1)])]);
+  }
+
+  function toggleBulkSelection(id: string, checked: boolean, shiftKey = false) {
+    if (shiftKey) {
+      selectIssueRange(id);
+      return;
+    }
+
+    selectionRange.current = null;
+    if (checked) {
+      selectionAnchorId.current = id;
+      setBulkSelectedIds((current) => (current.includes(id) ? current : [...current, id]));
+      return;
+    }
+
+    if (selectionAnchorId.current === id)
+      selectionAnchorId.current = bulkSelectedIds.find((selected) => selected !== id) ?? null;
+    setBulkSelectedIds((current) => current.filter((selected) => selected !== id));
+  }
+
   useLayoutEffect(() => {
     const viewport = windowed.ref.current;
     if (viewport && restoreScrollTop > 0) viewport.scrollTop = restoreScrollTop;
@@ -203,7 +249,7 @@ export function useIssueListPresenter({
       }),
     );
     await router.invalidate();
-    setBulkSelectedIds([]);
+    clearBulkSelection();
   }
 
   async function updateSelectedLabels(labelId: number, add: boolean) {
@@ -221,7 +267,7 @@ export function useIssueListPresenter({
       }),
     );
     await router.invalidate();
-    setBulkSelectedIds([]);
+    clearBulkSelection();
   }
 
   async function copySelectedIssues(kind: IssueCopyKind) {
@@ -336,6 +382,8 @@ export function useIssueListPresenter({
     ) {
       if (ids.length === 0) return false;
       e.preventDefault();
+      selectionAnchorId.current = ids[0] ?? null;
+      selectionRange.current = null;
       setBulkSelectedIds(ids);
       return true;
     }
@@ -383,11 +431,45 @@ export function useIssueListPresenter({
       if (selectedGroupIssues.length === 0) return false;
       e.preventDefault();
       setBulkSelectedIds(selectedGroupIssues.map((issue) => issue.identifier));
+      selectionAnchorId.current = selectedGroupIssues[0]?.identifier ?? null;
+      selectionRange.current = null;
+      return true;
+    }
+    if (
+      e.shiftKey &&
+      !e.defaultPrevented &&
+      !e.isComposing &&
+      !e.altKey &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !isTypingTarget(e.target) &&
+      (e.key === 'ArrowDown' || e.key === 'ArrowUp')
+    ) {
+      if (ids.length === 0) return false;
+      e.preventDefault();
+      const currentIndex = selectedId ? ids.indexOf(selectedId) : -1;
+      const anchorId =
+        selectionAnchorId.current && ids.includes(selectionAnchorId.current)
+          ? selectionAnchorId.current
+          : currentIndex >= 0
+            ? ids[currentIndex]!
+            : ids[0]!;
+      const anchorIndex = ids.indexOf(anchorId);
+      const direction = e.key === 'ArrowDown' ? 1 : -1;
+      const nextIndex =
+        currentIndex < 0
+          ? Math.max(0, Math.min(ids.length - 1, anchorIndex + direction))
+          : Math.max(0, Math.min(ids.length - 1, currentIndex + direction));
+      const nextId = ids[nextIndex];
+      if (!nextId) return true;
+      selectionAnchorId.current = anchorId;
+      onSelect(nextId);
+      selectIssueRange(nextId);
       return true;
     }
     if (action === 'escape' && bulkSelectedIds.length > 0) {
       e.preventDefault();
-      setBulkSelectedIds([]);
+      clearBulkSelection();
       return true;
     }
     if (action !== 'move-down' && action !== 'move-up' && action !== 'select' && action !== 'open')
@@ -398,10 +480,10 @@ export function useIssueListPresenter({
     e.preventDefault();
     if (action === 'select') {
       const id = selectedId ?? ids[0];
-      if (id)
-        setBulkSelectedIds((current) =>
-          current.includes(id) ? current.filter((selected) => selected !== id) : [...current, id],
-        );
+      if (id) {
+        if (e.shiftKey) selectIssueRange(id);
+        else toggleBulkSelection(id, !bulkSelectedIdSet.has(id));
+      }
       return true;
     }
     const idx = ids.indexOf(selectedId ?? '');
@@ -479,14 +561,7 @@ export function useIssueListPresenter({
           });
         }
       },
-      onToggleBulkSelection: (id: string, checked: boolean) =>
-        setBulkSelectedIds((current) =>
-          checked
-            ? current.includes(id)
-              ? current
-              : [...current, id]
-            : current.filter((selected) => selected !== id),
-        ),
+      onToggleBulkSelection: toggleBulkSelection,
       onSetBulkStatus: (status: string) => updateSelectedIssues({ workflowStatus: status }),
       onArchiveBulkIssues: () => updateSelectedIssues({ archived: !bulkSelectedArchived }),
       onSetBulkPriority: (priority: number) => updateSelectedIssues({ priority }),
@@ -496,7 +571,7 @@ export function useIssueListPresenter({
       onSetBulkDueDate: (dueDate: string | null) => updateSelectedIssues({ dueDate }),
       onSetBulkSubscribed: (subscribed: boolean) => {
         issueSubscriptions.setMany(bulkSelectedIds, subscribed);
-        setBulkSelectedIds([]);
+        clearBulkSelection();
       },
       onSetBulkProject: (projectId: number | null) => updateSelectedIssues({ projectId }),
       onSetBulkCycle: (cycleId: number | null) => updateSelectedIssues({ cycleId }),
@@ -504,7 +579,7 @@ export function useIssueListPresenter({
       onRemoveBulkLabel: (labelId: number) => updateSelectedLabels(labelId, false),
       onCopyBulkIssues: (kind: IssueCopyKind) => copySelectedIssues(kind),
       onAskAgentAboutSelectedIssues: askAgentAboutSelectedIssues,
-      onClearBulkSelection: () => setBulkSelectedIds([]),
+      onClearBulkSelection: clearBulkSelection,
       onToggleGroup1: (key: string) => {
         setCollapsedGroups((current) =>
           current.includes(key) ? current.filter((value) => value !== key) : [...current, key],

@@ -2140,6 +2140,7 @@
     "shortcutOpenLinkedCode": "リンクされた GitHub の課題またはプルリクエストを開く",
     "shortcutMoveSelection": "選択項目を移動",
     "shortcutSelectIssue": "フォーカス中のイシューを選択／解除",
+    "shortcutExtendIssueSelection": "Shift＋クリックまたはShift＋矢印キーで範囲選択を広げる",
     "shortcutSelectAllIssues": "現在の一覧のイシューをすべて選択",
     "shortcutRenameIssue": "イシューのタイトルにフォーカスして選択",
     "shortcutAssignIssueToSelf": "自分をイシューに割り当て",

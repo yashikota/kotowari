@@ -66,6 +66,7 @@ export function ShortcutHelpView({
     { keys: 'Alt+t', action: t('ui.shortcutToggleIssueGroups') },
     { keys: 'Ctrl/⌘+Alt+A', action: t('ui.shortcutSelectIssueGroup') },
     { keys: 'x', action: t('ui.shortcutSelectIssue') },
+    { keys: 'Shift+Click / ↑ / ↓', action: t('ui.shortcutExtendIssueSelection') },
     { keys: 'Mod+A', action: t('ui.shortcutSelectAllIssues') },
     { keys: 'Shift+R', action: t('ui.shortcutRenameIssue') },
     { keys: 'Shift+P', action: t('ui.shortcutAddIssueToProject') },
