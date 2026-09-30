@@ -2143,6 +2143,7 @@
     "shortcutChangeProjectStatus": "プロジェクトのステータスを変更",
     "shortcutChangeProjectInitiatives": "プロジェクトのイニシアチブを変更",
     "shortcutChangeProjectLead": "プロジェクトのリードを変更",
+    "shortcutWriteInitiativeUpdate": "イニシアチブの更新を作成",
     "shortcutCreateSubIssue": "サブイシューを作成",
     "shortcutOpenParentIssue": "親イシューを開く",
     "shortcutToggleIssueResources": "イシューのリソース欄を折りたたむ／展開",

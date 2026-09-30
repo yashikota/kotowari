@@ -397,6 +397,19 @@ test('initiative advanced filters persist nested AND and OR conditions', async (
   await expect(page.getByRole('link', { name: neitherName })).toBeVisible();
 });
 
+test('Ctrl+Shift+U opens the initiative update composer', async ({ page, request }) => {
+  const slug = `initiative-update-shortcut-${Date.now()}`;
+  const created = await request.post('/api/initiatives', {
+    data: { name: 'Shortcut update', slug, status: 'active' },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+
+  await page.goto(`/initiatives/${slug}`);
+  await page.getByRole('button', { name: 'Post update' }).first().focus();
+  await page.keyboard.press('Control+Shift+u');
+  await expect(page.getByRole('dialog', { name: 'Post an initiative update' })).toBeVisible();
+});
+
 test('initiative health updates post to a durable, newest-first history', async ({
   page,
   request,

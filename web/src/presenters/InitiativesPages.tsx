@@ -25,7 +25,8 @@ import {
 import { useProjectWorkflow } from '../project-workflow.tsx';
 import type { Initiative, InitiativeStatus, ProjectHealth } from '../types.ts';
 import type { HealthUpdateItem } from '../components/HealthUpdateFeed.tsx';
-import { useRootMachineFlag } from '../application/Root.tsx';
+import { useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
+import { initiativeDetailShortcutFromKeyboard } from '../keymap.ts';
 
 function initiativeSlug(name: string, existing: Initiative[]): string {
   const base = name
@@ -370,6 +371,20 @@ export function useInitiativeDetailPresenter() {
     }
   }
 
+  function openUpdate() {
+    setUpdateHealth(health || 'on_track');
+    setUpdateBody('');
+    setUpdateError('');
+    setUpdateOpen(true);
+  }
+
+  useKeyboard((event) => {
+    if (initiativeDetailShortcutFromKeyboard(event) !== 'write-update') return false;
+    event.preventDefault();
+    openUpdate();
+    return true;
+  });
+
   return {
     _view: 0 as const,
     initiative,
@@ -410,12 +425,7 @@ export function useInitiativeDetailPresenter() {
       onSubmit: saveInitiative,
       onDelete: deleteInitiative,
       onBack: () => void navigate({ to: '/initiatives' }),
-      onOpenUpdate: () => {
-        setUpdateHealth(health || 'on_track');
-        setUpdateBody('');
-        setUpdateError('');
-        setUpdateOpen(true);
-      },
+      onOpenUpdate: openUpdate,
       onCloseUpdate: () => setUpdateOpen(false),
       onUpdateHealthChange: (value: string | null) =>
         setUpdateHealth((value ?? 'on_track') as ProjectHealth),

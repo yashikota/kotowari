@@ -135,6 +135,31 @@ export function projectDetailSequenceFromKeyboard(
   return { action: null, pendingSince: null };
 }
 
+export function initiativeDetailShortcutFromKeyboard(event: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  repeat?: boolean;
+  isComposing?: boolean;
+  defaultPrevented?: boolean;
+  target: EventTarget | null;
+}): 'write-update' | null {
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.repeat ||
+    !(event.ctrlKey || event.metaKey) ||
+    !event.shiftKey ||
+    event.altKey ||
+    isTypingTarget(event.target)
+  ) {
+    return null;
+  }
+  return event.key.toLowerCase() === 'u' ? 'write-update' : null;
+}
+
 export function projectCreateSequenceFromKeyboard(
   event: {
     key: string;

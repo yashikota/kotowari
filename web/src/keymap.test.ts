@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import {
   actionFromKeyboard,
   globalNavigationSequenceFromKeyboard,
+  initiativeDetailShortcutFromKeyboard,
   inboxShortcutFromKeyboard,
   initiativeCreateSequenceFromKeyboard,
   issueLinkedCodeSequenceFromKeyboard,
@@ -848,6 +849,33 @@ describe('project status keyboard sequence', () => {
       action: null,
       pendingSince: null,
     });
+  });
+});
+
+describe('initiative detail keyboard shortcuts', () => {
+  const shortcut = (
+    overrides: Partial<Parameters<typeof initiativeDetailShortcutFromKeyboard>[0]> = {},
+  ) =>
+    initiativeDetailShortcutFromKeyboard({
+      key: 'u',
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: true,
+      target: el('BODY'),
+      ...overrides,
+    });
+
+  it('opens the update composer with Ctrl+Shift+U or Meta+Shift+U', () => {
+    expect(shortcut({ ctrlKey: true })).toBe('write-update');
+    expect(shortcut({ metaKey: true })).toBe('write-update');
+  });
+
+  it('ignores typing, repeats, composition, and unrelated modifiers', () => {
+    expect(shortcut({ target: el('TEXTAREA') })).toBeNull();
+    expect(shortcut({ repeat: true })).toBeNull();
+    expect(shortcut({ isComposing: true })).toBeNull();
+    expect(shortcut({ ctrlKey: true, shiftKey: false })).toBeNull();
+    expect(shortcut({ ctrlKey: true, altKey: true })).toBeNull();
   });
 });
 
