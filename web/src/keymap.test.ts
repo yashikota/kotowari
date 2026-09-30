@@ -415,6 +415,25 @@ describe('actionFromKeyboard', () => {
     ).toBeNull();
   });
 
+  it('opens the issue composer in full screen with V', () => {
+    expect(
+      actionFromKeyboard({
+        key: 'v',
+        metaKey: false,
+        ctrlKey: false,
+        target: el('BODY'),
+      }),
+    ).toBe('new-issue-fullscreen');
+    expect(
+      actionFromKeyboard({
+        key: 'v',
+        metaKey: false,
+        ctrlKey: false,
+        target: el('TEXTAREA'),
+      }),
+    ).toBeNull();
+  });
+
   it('lets Escape through while typing and ignores other keys', () => {
     const input = el('INPUT');
     expect(

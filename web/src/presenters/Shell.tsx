@@ -159,6 +159,7 @@ export function useShellPresenter() {
     handlers: issueComposerHandlers,
     openCreateIssue,
     openCreateIssueFromTemplate,
+    openCreateIssueFullscreen,
     closeCreateIssue,
   } = issueComposerState;
   const { issueWorkflowStatuses } = issueComposerData;
@@ -456,6 +457,10 @@ export function useShellPresenter() {
     if (action === 'new-issue-from-template') {
       e.preventDefault();
       openCreateIssueFromTemplate();
+    }
+    if (action === 'new-issue-fullscreen') {
+      e.preventDefault();
+      openCreateIssueFullscreen();
     }
     if (action === 'new-adr') {
       e.preventDefault();

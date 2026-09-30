@@ -249,6 +249,11 @@ export function useShellIssueComposer({
     setIssueTemplatePickerRequested(true);
   }
 
+  function openCreateIssueFullscreen() {
+    openCreateIssue();
+    setIssueComposerExpanded(true);
+  }
+
   useIntentHandler('issue.create', (value) => {
     openCreateIssue((value ?? {}) as IssueCreateContext);
   });
@@ -408,6 +413,7 @@ export function useShellIssueComposer({
   return {
     openCreateIssue,
     openCreateIssueFromTemplate,
+    openCreateIssueFullscreen,
     closeCreateIssue,
     data: {
       issueTitle,

@@ -1997,6 +1997,16 @@ test('issue detail exposes Linear quick-copy actions and makes a property-preser
   });
 });
 
+test('V opens the new issue composer in full screen', async ({ page }) => {
+  await page.goto('/issues');
+  await page.keyboard.press('v');
+
+  const dialog = page.getByRole('dialog', { name: 'Create issue' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Collapse issue composer' })).toBeVisible();
+  await expect(dialog.getByRole('textbox', { name: 'Issue title' })).toBeFocused();
+});
+
 test('issues can be converted into reusable workspace templates', async ({ page, request }) => {
   const stamp = Date.now();
   const templateName = `Incident template ${stamp}`;

@@ -5,6 +5,7 @@ export type KeyAction =
   | 'palette'
   | 'new-issue'
   | 'new-issue-from-template'
+  | 'new-issue-fullscreen'
   | 'new-adr'
   | 'move-down'
   | 'move-up'
@@ -750,6 +751,16 @@ export function actionFromKeyboard(event: {
   }
   if (mod && event.key === '/') {
     return 'help';
+  }
+  if (
+    !mod &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !event.repeat &&
+    event.key.toLowerCase() === 'v' &&
+    !isTypingTarget(event.target)
+  ) {
+    return 'new-issue-fullscreen';
   }
   if (
     event.altKey &&
