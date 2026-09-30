@@ -38,6 +38,12 @@ export function formatActivity(
           : noProject;
     return i18n.t('activity.projectChanged', { from, to });
   }
+  if (action === 'parent_changed') {
+    const noParent = i18n.t('issueProperties.noParent');
+    const from = typeof payload.from === 'string' && payload.from ? payload.from : noParent;
+    const to = typeof payload.to === 'string' && payload.to ? payload.to : noParent;
+    return i18n.t('activity.parentChanged', { from, to });
+  }
   if (action === 'cycle_issue_added' || action === 'cycle_issue_completed') {
     const cycle = typeof payload.cycle === 'string' ? payload.cycle : '';
     return i18n.t(`activity.${action}`, { cycle });

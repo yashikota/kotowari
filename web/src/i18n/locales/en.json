@@ -1703,6 +1703,7 @@
     "statusChanged": "Status {{from}} → {{to}}",
     "cycleChanged": "Cycle changed from {{from}} to {{to}}",
     "projectChanged": "Project changed from {{from}} to {{to}}",
+    "parentChanged": "Parent changed from {{from}} to {{to}}",
     "priorityChanged": "Priority changed from {{from}} to {{to}}",
     "dueDateChanged": "Due date changed from {{from}} to {{to}}",
     "labelAdded": "Added label {{label}}",

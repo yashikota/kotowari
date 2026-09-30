@@ -12,7 +12,7 @@ type issueUpdateSnapshot struct {
 	labels                                     []Label
 	favorite, archived                         bool
 	reminderAt, dueDate                        *string
-	projectID, milestoneID, cycleID            *int64
+	projectID, milestoneID, cycleID, parentID  *int64
 	milestoneName                              *string
 }
 
@@ -22,7 +22,7 @@ func snapshotIssueUpdate(issue Issue) issueUpdateSnapshot {
 		priority: issue.Priority, estimate: issue.Estimate, labels: append([]Label(nil), issue.Labels...),
 		favorite: issue.IsFavorite, archived: issue.ArchivedAt != nil,
 		reminderAt: issue.ReminderAt, dueDate: issue.DueDate, projectID: issue.ProjectID, milestoneID: issue.MilestoneID,
-		milestoneName: issue.MilestoneName, cycleID: issue.CycleID,
+		milestoneName: issue.MilestoneName, cycleID: issue.CycleID, parentID: issue.ParentID,
 	}
 }
 
@@ -92,6 +92,12 @@ func recordIssueUpdateActivities(m *mem, iss Issue, in PatchIssueInput, before i
 		addActivity(m, "issue", iss.ID, "project_changed", map[string]any{
 			"from": projectActivityLabel(m, before.projectID),
 			"to":   projectActivityLabel(m, iss.ProjectID),
+		}, now)
+	}
+	if !sameInt64(before.parentID, iss.ParentID) {
+		addActivity(m, "issue", iss.ID, "parent_changed", map[string]any{
+			"from": parentIssueActivityLabel(m, before.parentID),
+			"to":   parentIssueActivityLabel(m, iss.ParentID),
 		}, now)
 	}
 	if !sameString(before.dueDate, iss.DueDate) {
@@ -191,4 +197,15 @@ func projectActivityLabel(m *mem, id *int64) string {
 		return project.Name
 	}
 	return project.Slug
+}
+
+func parentIssueActivityLabel(m *mem, id *int64) string {
+	if id == nil {
+		return ""
+	}
+	parent, ok := issueByID(m, *id)
+	if !ok {
+		return ""
+	}
+	return parent.Identifier
 }

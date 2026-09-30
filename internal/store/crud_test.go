@@ -1172,6 +1172,80 @@ func TestIssueProjectChangesAreRecordedInTimelineAndInbox(t *testing.T) {
 	}
 }
 
+func TestIssueParentChangesAreRecordedInTimelineAndInbox(t *testing.T) {
+	s := openTest(t)
+	firstParent, err := s.CreateIssue(CreateIssueInput{Title: "First parent"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondParent, err := s.CreateIssue(CreateIssueInput{Title: "Second parent"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Track parent changes"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	firstParentID := &firstParent.ID
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{ParentID: &firstParentID}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{ParentID: &firstParentID}); err != nil {
+		t.Fatal(err)
+	}
+	secondParentID := &secondParent.ID
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{ParentID: &secondParentID}); err != nil {
+		t.Fatal(err)
+	}
+	var clearParentID *int64
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{ParentID: &clearParentID}); err != nil {
+		t.Fatal(err)
+	}
+
+	activities, err := s.ListActivities(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var changes []Activity
+	for _, activity := range activities {
+		if activity.Action == "parent_changed" {
+			changes = append(changes, activity)
+		}
+	}
+	if len(changes) != 3 {
+		t.Fatalf("parent change events = %#v, want 3", changes)
+	}
+	wantTransitions := [][2]string{
+		{secondParent.Identifier, ""},
+		{firstParent.Identifier, secondParent.Identifier},
+		{"", firstParent.Identifier},
+	}
+	for i, activity := range changes {
+		var payload map[string]string
+		if err := json.Unmarshal(activity.Payload, &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload["from"] != wantTransitions[i][0] || payload["to"] != wantTransitions[i][1] {
+			t.Fatalf("parent change payload %d = %#v, want from=%q to=%q", i, payload, wantTransitions[i][0], wantTransitions[i][1])
+		}
+	}
+
+	inbox, err := s.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inboxChanges := 0
+	for _, activity := range inbox {
+		if activity.EntityType == "issue" && activity.Identifier == issue.Identifier && activity.Action == "parent_changed" {
+			inboxChanges++
+		}
+	}
+	if inboxChanges != 3 {
+		t.Fatalf("parent change inbox events = %d, want 3", inboxChanges)
+	}
+}
+
 func TestListIssuesByTypeAndEstimate(t *testing.T) {
 	s := openTest(t)
 	one, three, eight := 1, 3, 8

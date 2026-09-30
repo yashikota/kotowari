@@ -44,6 +44,15 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes parent issue changes and removal', () => {
+    expect(formatActivity('parent_changed', { from: '', to: 'ISS-2' })).toBe(
+      'Parent changed from No parent to ISS-2',
+    );
+    expect(formatActivity('parent_changed', { from: 'ISS-2', to: '' })).toBe(
+      'Parent changed from ISS-2 to No parent',
+    );
+  });
+
   it('describes priority changes, including no priority', () => {
     expect(formatActivity('priority_changed', { from: 0, to: 2 })).toBe(
       'Priority changed from No priority to High',
