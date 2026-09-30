@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
-import { useRouterState } from '@tanstack/react-router';
-import { useIssueProjection } from '../application/issues.ts';
+import { useMemo, useRef, useState } from 'react';
+import { useRouter, useRouterState } from '@tanstack/react-router';
+import { api } from '../api.ts';
+import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
+import { patchIssueOptimistically, useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
 import { sortOrderForDrop } from '../board.ts';
 import { sortIssues } from '../issue-list.ts';
@@ -9,6 +11,7 @@ import type { IssueBoardColumnProps } from '../issue-board.ts';
 import type { Issue } from '../types.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
+import { usePersonalPreferences } from '../preferences.ts';
 
 type BoardProps = {
   issues: Issue[];
@@ -45,11 +48,16 @@ export function useIssueBoardPresenter({
   completedByRecency = false,
 }: BoardProps) {
   const { statuses: workflowStatuses } = useIssueWorkflow();
+  const { preferences } = usePersonalPreferences();
+  const router = useRouter();
   const projectedIssues = useIssueProjection(initialIssues);
   const issues = showSubIssues
     ? projectedIssues
     : projectedIssues.filter((issue) => issue.parentId == null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
+  const selectionAnchorId = useRef<string | null>(null);
+  const selectionRange = useRef<{ anchorId: string; baseIds: string[] } | null>(null);
   const columns = useMemo(
     () =>
       workflowStatuses.map((status) => ({
@@ -65,6 +73,65 @@ export function useIssueBoardPresenter({
     [columns],
   );
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
+  const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
+  const issueById = new Map(
+    columns.flatMap((column) => column.issues).map((issue) => [issue.identifier, issue]),
+  );
+  const bulkSelectedArchived =
+    bulkSelectedIds.length > 0 && bulkSelectedIds.every((id) => issueById.get(id)?.archivedAt);
+  function clearBulkSelection() {
+    selectionAnchorId.current = null;
+    selectionRange.current = null;
+    setBulkSelectedIds([]);
+  }
+  function selectIssueRange(targetId: string, requestedAnchorId?: string) {
+    const targetIndex = issueIds.indexOf(targetId);
+    if (targetIndex < 0) return;
+    const currentAnchor = requestedAnchorId ?? selectionAnchorId.current;
+    const anchorId = currentAnchor && issueIds.includes(currentAnchor) ? currentAnchor : targetId;
+    const anchorIndex = issueIds.indexOf(anchorId);
+    const previousRange = selectionRange.current;
+    const baseIds =
+      previousRange?.anchorId === anchorId
+        ? previousRange.baseIds
+        : bulkSelectedIds.filter((id) => issueIds.includes(id));
+    const start = Math.min(anchorIndex, targetIndex);
+    const end = Math.max(anchorIndex, targetIndex);
+    selectionAnchorId.current = anchorId;
+    selectionRange.current = { anchorId, baseIds };
+    setBulkSelectedIds([...new Set([...baseIds, ...issueIds.slice(start, end + 1)])]);
+  }
+  function toggleSelection(id: string, checked: boolean, shiftKey = false) {
+    if (shiftKey) {
+      selectIssueRange(id);
+      return;
+    }
+    selectionRange.current = null;
+    if (checked) {
+      selectionAnchorId.current = id;
+      setBulkSelectedIds((current) => (current.includes(id) ? current : [...current, id]));
+    } else {
+      if (selectionAnchorId.current === id)
+        selectionAnchorId.current = bulkSelectedIds.find((selected) => selected !== id) ?? null;
+      setBulkSelectedIds((current) => current.filter((selected) => selected !== id));
+    }
+  }
+  async function updateSelectedIssues(patch: Record<string, unknown>) {
+    await Promise.all(
+      bulkSelectedIds.map(async (id) => {
+        const issue = await api.issue(id);
+        const adjustedPatch = autoAssignOnStartedTransition(
+          issue,
+          patch,
+          workflowStatuses,
+          preferences.autoAssignOnStart,
+        );
+        await patchIssueOptimistically(id, adjustedPatch);
+      }),
+    );
+    await router.invalidate();
+    clearBulkSelection();
+  }
   function moveToAdjacentColumn(id: string, status: string, direction: -1 | 1) {
     const columnIndex = columns.findIndex((column) => column.status === status);
     if (columnIndex < 0) return;
@@ -78,13 +145,29 @@ export function useIssueBoardPresenter({
     onMove,
     dragId,
     columns,
+    bulkSelectedIds,
+    bulkSelectedIdSet,
+    bulkSelectedArchived,
     canReorder: orderBy === 'manual',
     handlers: {
       onDrag0: (...args: Parameters<IssueBoardColumnProps['onDrag']>) => {
         const handle: IssueBoardColumnProps['onDrag'] = setDragId;
         return handle(...args);
       },
-      onOpen1: (id: string) =>
+      onToggleSelection1: (...args: Parameters<IssueBoardColumnProps['onToggleSelection']>) =>
+        toggleSelection(...args),
+      onExtendSelection2: (anchorId: string, targetId: string) => {
+        const currentAnchor = selectionAnchorId.current ?? anchorId;
+        selectIssueRange(targetId, currentAnchor);
+      },
+      onSelectAll10: () => {
+        if (issueIds.length === 0) return;
+        selectionAnchorId.current = issueIds[0] ?? null;
+        selectionRange.current = null;
+        setBulkSelectedIds(issueIds);
+      },
+      onClearBulkSelection9: clearBulkSelection,
+      onOpen3: (id: string) =>
         onOpen(id, {
           issueIds,
           issueReturnTo,
@@ -93,13 +176,16 @@ export function useIssueBoardPresenter({
           issueListScrollTop: 0,
           issueListLayout: 'board',
         }),
-      onMove2: (...args: Parameters<IssueBoardColumnProps['onMove']>) => {
+      onMove4: (...args: Parameters<IssueBoardColumnProps['onMove']>) => {
         const handle: IssueBoardColumnProps['onMove'] = onMove;
         return handle(...args);
       },
-      onMoveToAdjacentColumn3: (
+      onMoveToAdjacentColumn5: (
         ...args: Parameters<IssueBoardColumnProps['onMoveToAdjacentColumn']>
       ) => moveToAdjacentColumn(...args),
+      onSetBulkStatus6: (status: string) => updateSelectedIssues({ workflowStatus: status }),
+      onSetBulkPriority7: (priority: number) => updateSelectedIssues({ priority }),
+      onArchiveBulkIssues8: () => updateSelectedIssues({ archived: !bulkSelectedArchived }),
     },
   };
 }
@@ -112,6 +198,11 @@ export function useBoardColumnPresenter({
   canReorder,
   dragId,
   onDrag,
+  bulkSelectedIdSet,
+  onToggleSelection,
+  onExtendSelection,
+  onSelectAll,
+  onClearSelection,
   onOpen,
   onMove,
   onMoveToAdjacentColumn,
@@ -128,6 +219,7 @@ export function useBoardColumnPresenter({
     category,
     name,
     dragId,
+    bulkSelectedIdSet,
     windowed,
     handlers: {
       onDragOver0: (e: Parameters<NonNullable<React.ComponentProps<'div'>['onDragOver']>>[0]) =>
@@ -152,8 +244,79 @@ export function useBoardColumnPresenter({
         e.stopPropagation();
         drop(issue.identifier);
       },
-      onClick6: (issue: Issue) => onOpen(issue.identifier),
-      onKeyDown7: (issue: Issue, event: React.KeyboardEvent<HTMLButtonElement>) => {
+      onClick6: (issue: Issue, event: React.MouseEvent<HTMLButtonElement>) => {
+        if (event.shiftKey) onToggleSelection(issue.identifier, true, true);
+        else onOpen(issue.identifier);
+      },
+      onSelectionChange7: (issue: Issue, checked: boolean, shiftKey: boolean) =>
+        onToggleSelection(issue.identifier, checked, shiftKey),
+      onKeyDown8: (issue: Issue, event: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (
+          !event.altKey &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.nativeEvent.isComposing &&
+          (event.key === 'ArrowUp' || event.key === 'ArrowDown') &&
+          event.shiftKey
+        ) {
+          const currentIndex = issues.findIndex((item) => item.identifier === issue.identifier);
+          const direction = event.key === 'ArrowUp' ? -1 : 1;
+          const targetIndex = Math.max(0, Math.min(issues.length - 1, currentIndex + direction));
+          const targetIssue = issues[targetIndex];
+          if (!targetIssue || targetIndex === currentIndex) {
+            event.preventDefault();
+            return true;
+          }
+          onExtendSelection(issue.identifier, targetIssue.identifier);
+          const currentColumn = event.currentTarget.closest<HTMLElement>(
+            '[data-issue-board-column]',
+          );
+          const targetCard = (index: number) =>
+            currentColumn?.querySelector<HTMLButtonElement>(
+              `[data-issue-board-card][data-board-index="${index}"]`,
+            );
+          const targetViewport = currentColumn?.querySelector<HTMLElement>('[role="region"]');
+          event.preventDefault();
+          const card = targetCard(targetIndex);
+          if (card) card.focus();
+          else if (targetViewport) {
+            targetViewport.scrollTop = targetIndex * 100;
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => targetCard(targetIndex)?.focus()),
+            );
+          }
+          return true;
+        }
+        if (
+          !event.altKey &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.shiftKey &&
+          !event.nativeEvent.isComposing
+        ) {
+          if (event.key.toLowerCase() === 'x') {
+            event.preventDefault();
+            onToggleSelection(issue.identifier, !bulkSelectedIdSet.has(issue.identifier));
+            return true;
+          }
+          if (event.key === 'Escape' && bulkSelectedIdSet.size > 0) {
+            event.preventDefault();
+            onClearSelection();
+            return true;
+          }
+        }
+        if (
+          (event.ctrlKey || event.metaKey) &&
+          !event.altKey &&
+          !event.shiftKey &&
+          !event.repeat &&
+          !event.nativeEvent.isComposing &&
+          event.key.toLowerCase() === 'a'
+        ) {
+          event.preventDefault();
+          onSelectAll();
+          return true;
+        }
         if (
           canReorder &&
           event.altKey &&

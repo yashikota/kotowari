@@ -17,7 +17,7 @@
 .issueCard {
   display: block;
   width: 100%;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   padding: var(--mantine-spacing-xs);
   border: 1px solid var(--mantine-color-default-border);
   border-radius: var(--mantine-radius-sm);
@@ -25,6 +25,25 @@
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
   cursor: grab;
   text-align: left;
+}
+
+.cardRow {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.cardCheckbox {
+  margin-top: 10px;
+  opacity: 0;
+}
+
+.cardRow:hover .cardCheckbox,
+.cardRow:focus-within .cardCheckbox,
+.cardRow[data-bulk-selected='true'] .cardCheckbox {
+  opacity: 1;
 }
 
 .issueCard:hover,
@@ -39,4 +58,17 @@
 
 .overdue {
   border-color: var(--mantine-color-red-8);
+}
+
+.selected {
+  border-color: var(--mantine-primary-color-6);
+  background: var(--mantine-primary-color-light);
+}
+
+.selectionToolbar {
+  position: absolute;
+  z-index: 2;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
 }

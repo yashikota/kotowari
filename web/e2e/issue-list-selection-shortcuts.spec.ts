@@ -105,6 +105,103 @@ test('issue list selects a Shift-clicked range', async ({ page, request }) => {
   }
 });
 
+test('issue board extends and shrinks keyboard range selection', async ({ page, request }) => {
+  const stamp = Date.now();
+  for (let index = 0; index < 3; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Board keyboard range ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues?layout=board');
+  await fillIssueSearch(page, String(stamp));
+  const column = page.getByRole('region', { name: 'Todo issues' });
+  const cards = column.locator('[data-issue-board-card]');
+  await expect(cards).toHaveCount(3);
+  const identifiers = await cards.evaluateAll((items) =>
+    items.map((item) => item.getAttribute('data-board-issue-id')),
+  );
+  expect(identifiers.every(Boolean)).toBeTruthy();
+
+  await cards.nth(0).focus();
+  await page.keyboard.press('x');
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect(page.getByRole('group', { name: '3 selected' })).toBeVisible();
+  await page.keyboard.press('Shift+ArrowUp');
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+
+  for (const identifier of identifiers.slice(0, 2)) {
+    await expect(page.getByRole('checkbox', { name: `Select ${identifier}` })).toBeChecked();
+  }
+  await expect(page.getByRole('checkbox', { name: `Select ${identifiers[2]}` })).not.toBeChecked();
+  await page.keyboard.press('ControlOrMeta+a');
+  await expect(page.getByRole('group', { name: '3 selected' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('group', { name: /selected/ })).toHaveCount(0);
+});
+
+test('issue board selects a Shift-clicked card range', async ({ page, request }) => {
+  const stamp = Date.now();
+  for (let index = 0; index < 3; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Board mouse range ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues?layout=board');
+  await fillIssueSearch(page, String(stamp));
+  const column = page.getByRole('region', { name: 'Todo issues' });
+  const cards = column.locator('[data-issue-board-card]');
+  await expect(cards).toHaveCount(3);
+  const identifiers = await cards.evaluateAll((items) =>
+    items.map((item) => item.getAttribute('data-board-issue-id')),
+  );
+  expect(identifiers.every(Boolean)).toBeTruthy();
+
+  await page.getByRole('checkbox', { name: `Select ${identifiers[0]}` }).check();
+  await cards.nth(2).click({ modifiers: ['Shift'] });
+  await expect(page.getByRole('group', { name: '3 selected' })).toBeVisible();
+  for (const identifier of identifiers) {
+    await expect(page.getByRole('checkbox', { name: `Select ${identifier}` })).toBeChecked();
+  }
+});
+
+test('issue board bulk actions update the selected issues', async ({ page, request }) => {
+  const stamp = Date.now();
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Board bulk status ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    const issue = (await response.json()) as { identifier: string };
+    identifiers.push(issue.identifier);
+  }
+
+  await page.goto('/issues?layout=board');
+  await fillIssueSearch(page, String(stamp));
+  for (const identifier of identifiers) {
+    await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+  }
+  await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
+  await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Set status to In Progress' }).click();
+
+  await expect(page.getByRole('group', { name: /selected/ })).toHaveCount(0);
+  for (const identifier of identifiers) {
+    await expect
+      .poll(async () => {
+        const response = await request.get(`/api/issues/${identifier}`);
+        return ((await response.json()) as { workflowStatus: string }).workflowStatus;
+      })
+      .toBe('in_progress');
+  }
+});
+
 test('issue list can assign selected issues to Agent', async ({ page, request }) => {
   const stamp = Date.now();
   const identifiers: string[] = [];

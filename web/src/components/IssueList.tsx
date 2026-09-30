@@ -6,6 +6,7 @@ import { EmptyState, Shortcut } from '../mantine-ui.tsx';
 import { IssueBoardColumn } from './IssueBoardColumn.tsx';
 import styles from './IssueBoardColumn.module.css';
 import { IssueSelectionToolbar } from './IssueSelectionToolbar.tsx';
+import { IssueBoardSelectionToolbar } from './IssueBoardSelectionToolbar.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueBoardPresenter } from '../presenters/IssueBoard.ts';
@@ -155,22 +156,49 @@ function IssueListBinding({ hideProjectSlug, ...props }: Parameters<typeof Issue
 export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoardPresenter> }) {
   switch (model._view) {
     case 0: {
-      const { dragId, columns, canReorder, handlers } = model;
+      const {
+        dragId,
+        columns,
+        canReorder,
+        bulkSelectedIds,
+        bulkSelectedIdSet,
+        bulkSelectedArchived,
+        handlers,
+      } = model;
       return (
-        <Group align="stretch" gap="md" wrap="nowrap" className={styles.board} data-issue-board>
-          {columns.map((column) => (
-            <IssueBoardColumn
-              key={column.status}
-              {...column}
-              dragId={dragId}
-              onDrag={handlers.onDrag0}
-              onOpen={handlers.onOpen1}
-              onMove={handlers.onMove2}
-              onMoveToAdjacentColumn={handlers.onMoveToAdjacentColumn3}
-              canReorder={canReorder}
-            />
-          ))}
-        </Group>
+        <Box style={{ position: 'relative', height: '100%', minHeight: 0 }}>
+          <Group align="stretch" gap="md" wrap="nowrap" className={styles.board} data-issue-board>
+            {columns.map((column) => (
+              <IssueBoardColumn
+                key={column.status}
+                {...column}
+                dragId={dragId}
+                bulkSelectedIdSet={bulkSelectedIdSet}
+                onDrag={handlers.onDrag0}
+                onToggleSelection={handlers.onToggleSelection1}
+                onExtendSelection={handlers.onExtendSelection2}
+                onSelectAll={handlers.onSelectAll10}
+                onClearSelection={handlers.onClearBulkSelection9}
+                onOpen={handlers.onOpen3}
+                onMove={handlers.onMove4}
+                onMoveToAdjacentColumn={handlers.onMoveToAdjacentColumn5}
+                canReorder={canReorder}
+              />
+            ))}
+          </Group>
+          {bulkSelectedIds.length > 0 ? (
+            <div className={styles.selectionToolbar}>
+              <IssueBoardSelectionToolbar
+                selectedCount={bulkSelectedIds.length}
+                archived={bulkSelectedArchived}
+                onSetStatus={handlers.onSetBulkStatus6}
+                onArchive={handlers.onArchiveBulkIssues8}
+                onSetPriority={handlers.onSetBulkPriority7}
+                onClear={handlers.onClearBulkSelection9}
+              />
+            </div>
+          ) : null}
+        </Box>
       );
     }
   }
