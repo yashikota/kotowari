@@ -2,9 +2,10 @@ import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/reac
 import type * as React from 'react';
 import { useRef, useState } from 'react';
 import { api } from '../api.ts';
-import { useIntent } from '../application/Root.tsx';
+import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
+import { projectDetailSequenceFromKeyboard } from '../keymap.ts';
 
 import { IssueList } from '../components/IssueList.tsx';
 
@@ -111,6 +112,51 @@ export function useProjectDetailPagePresenter() {
   const [projectTemplateOpen, setProjectTemplateOpen] = useState(false);
   const [projectTemplateName, setProjectTemplateName] = useState('');
   const [projectTemplateError, setProjectTemplateError] = useState('');
+  const [focusProjectStatus, setFocusProjectStatus] = useState(0);
+  const [focusProjectLead, setFocusProjectLead] = useState(0);
+  const [focusProjectInitiatives, setFocusProjectInitiatives] = useState(0);
+  const projectStatusSequenceSince = useRef<number | null>(null);
+  const projectStatusSequenceSlug = useRef(slug);
+
+  useKeyboard((event) => {
+    if (projectStatusSequenceSlug.current !== slug) {
+      projectStatusSequenceSlug.current = slug;
+      projectStatusSequenceSince.current = null;
+    }
+    if (
+      event.target instanceof Element &&
+      event.target.closest('[role="menu"], [role="listbox"], [role="dialog"]')
+    ) {
+      projectStatusSequenceSince.current = null;
+      return false;
+    }
+    const sequence = projectDetailSequenceFromKeyboard(
+      event,
+      projectStatusSequenceSince.current,
+      Date.now(),
+    );
+    projectStatusSequenceSince.current = sequence.pendingSince;
+    if (
+      sequence.action === 'focus-project-status' ||
+      sequence.action === 'focus-project-lead' ||
+      sequence.action === 'focus-project-initiatives'
+    ) {
+      event.preventDefault();
+      if (sequence.action === 'focus-project-status') {
+        setFocusProjectStatus((current) => current + 1);
+      } else if (sequence.action === 'focus-project-lead') {
+        setFocusProjectLead((current) => current + 1);
+      } else {
+        setFocusProjectInitiatives((current) => current + 1);
+      }
+      return true;
+    }
+    if (sequence.pendingSince !== null) {
+      event.preventDefault();
+      return true;
+    }
+    return false;
+  });
 
   if (project.slug !== data.project.slug) {
     setProject(data.project);
@@ -200,6 +246,9 @@ export function useProjectDetailPagePresenter() {
     _view: 0 as const,
     slug,
     data,
+    focusProjectStatus,
+    focusProjectLead,
+    focusProjectInitiatives,
     projectWorkflowStatuses,
     selected,
     project,

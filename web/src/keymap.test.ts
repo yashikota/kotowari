@@ -11,6 +11,7 @@ import {
   isTypingTarget,
   issueCopyShortcutFromKeyboard,
   projectCreateSequenceFromKeyboard,
+  projectDetailSequenceFromKeyboard,
   quickOpenSequenceFromKeyboard,
 } from './keymap.ts';
 
@@ -786,6 +787,64 @@ describe('issue relation keyboard sequences', () => {
       pendingSince: null,
     });
     expect(key('b', 100, 200, { shiftKey: true })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+  });
+});
+
+describe('project status keyboard sequence', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    pendingSince: number | null = null,
+    now = 100,
+    overrides: Partial<Parameters<typeof projectDetailSequenceFromKeyboard>[0]> = {},
+  ) =>
+    projectDetailSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      pendingSince,
+      now,
+    );
+
+  it('maps P then S to project status focus', () => {
+    const pending = key('p');
+    expect(pending).toEqual({ action: null, pendingSince: 100 });
+    expect(key('s', pending.pendingSince, 500)).toEqual({
+      action: 'focus-project-status',
+      pendingSince: null,
+    });
+  });
+
+  it('maps P then A to project lead focus', () => {
+    const pending = key('p');
+    expect(key('a', pending.pendingSince, 500)).toEqual({
+      action: 'focus-project-lead',
+      pendingSince: null,
+    });
+  });
+
+  it('maps P then N to project initiatives focus', () => {
+    const pending = key('p');
+    expect(key('n', pending.pendingSince, 500)).toEqual({
+      action: 'focus-project-initiatives',
+      pendingSince: null,
+    });
+  });
+
+  it('expires the sequence and ignores typing or modified keys', () => {
+    expect(key('s', 100, 1101)).toEqual({ action: null, pendingSince: null });
+    expect(key('p', null, 100, { target: el('INPUT') })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+    expect(key('p', null, 100, { shiftKey: true })).toEqual({
       action: null,
       pendingSince: null,
     });

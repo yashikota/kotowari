@@ -37,9 +37,15 @@ import { useProjectDetailPagePresenter } from '../presenters/ProjectDetail.tsx';
 export function ProjectDetailPageView({
   model,
   descriptionRef,
+  statusRef,
+  leadRef,
+  initiativesRef,
 }: {
   model: ReturnType<typeof useProjectDetailPagePresenter>;
   descriptionRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
+  statusRef: ReturnType<typeof useFocusWhen<HTMLSelectElement>>;
+  leadRef: ReturnType<typeof useFocusWhen<HTMLSelectElement>>;
+  initiativesRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
 }) {
   const { t } = useTranslation();
   switch (model._view) {
@@ -106,6 +112,7 @@ export function ProjectDetailPageView({
                       />
                     </ActionIcon>
                     <NativeSelect
+                      ref={statusRef}
                       aria-label={t('ui.projectStatus')}
                       value={project.workflowStatus ?? project.status}
                       onChange={handlers.onStatusChange}
@@ -197,6 +204,7 @@ export function ProjectDetailPageView({
                 </Section>
                 <Group gap="md" wrap="wrap" align="flex-end">
                   <NativeSelect
+                    ref={leadRef}
                     aria-label={t('projectList.property.lead')}
                     label={t('projectList.property.lead')}
                     value={project.lead ?? ''}
@@ -223,6 +231,7 @@ export function ProjectDetailPageView({
                 </Group>
                 <Section title={t('initiatives.projectProperty')}>
                   <MultiSelect
+                    ref={initiativesRef}
                     aria-label={t('initiatives.projectProperty')}
                     value={project.initiativeSlugs ?? []}
                     onChange={handlers.onProjectInitiativesChange}
@@ -378,10 +387,22 @@ function ProjectDetailPageBinding() {
   const handlers = useActions(model.handlers);
   const autofocusDescription = useAutofocusTarget('description');
   const descriptionRef = useFocusWhen<HTMLTextAreaElement>(autofocusDescription, [model.slug]);
+  const statusRef = useFocusWhen<HTMLSelectElement>(model.focusProjectStatus > 0, [
+    model.focusProjectStatus,
+  ]);
+  const leadRef = useFocusWhen<HTMLSelectElement>(model.focusProjectLead > 0, [
+    model.focusProjectLead,
+  ]);
+  const initiativesRef = useFocusWhen<HTMLInputElement>(model.focusProjectInitiatives > 0, [
+    model.focusProjectInitiatives,
+  ]);
   return (
     <ProjectDetailPageView
       model={{ ...model, handlers } as typeof model}
       descriptionRef={descriptionRef}
+      statusRef={statusRef}
+      leadRef={leadRef}
+      initiativesRef={initiativesRef}
     />
   );
 }

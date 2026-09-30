@@ -85,11 +85,55 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 const PROJECT_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
+const PROJECT_DETAIL_SEQUENCE_TIMEOUT_MS = 1000;
 const INITIATIVE_CREATE_SEQUENCE_TIMEOUT_MS = 1000;
 const ISSUE_LINK_SEQUENCE_TIMEOUT_MS = 1000;
 const ISSUE_RELATION_SEQUENCE_TIMEOUT_MS = 1000;
 const GLOBAL_NAVIGATION_SEQUENCE_TIMEOUT_MS = 1000;
 const QUICK_OPEN_SEQUENCE_TIMEOUT_MS = 1000;
+
+export function projectDetailSequenceFromKeyboard(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    defaultPrevented?: boolean;
+    target: EventTarget | null;
+  },
+  pendingSince: number | null,
+  now: number,
+): {
+  action: 'focus-project-status' | 'focus-project-lead' | 'focus-project-initiatives' | null;
+  pendingSince: number | null;
+} {
+  const eligible =
+    !event.defaultPrevented &&
+    !event.isComposing &&
+    !event.repeat &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !isTypingTarget(event.target);
+  if (!eligible) return { action: null, pendingSince: null };
+
+  const key = event.key.toLowerCase();
+  if (key === 'p') return { action: null, pendingSince: now };
+  if (
+    pendingSince !== null &&
+    now >= pendingSince &&
+    now - pendingSince <= PROJECT_DETAIL_SEQUENCE_TIMEOUT_MS
+  ) {
+    if (key === 's') return { action: 'focus-project-status', pendingSince: null };
+    if (key === 'a') return { action: 'focus-project-lead', pendingSince: null };
+    if (key === 'n') return { action: 'focus-project-initiatives', pendingSince: null };
+  }
+  return { action: null, pendingSince: null };
+}
 
 export function projectCreateSequenceFromKeyboard(
   event: {

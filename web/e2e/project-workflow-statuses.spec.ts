@@ -1,5 +1,30 @@
 import { expect, test } from '@playwright/test';
 
+test('P then S focuses the project status selector', async ({ page, request }) => {
+  const stamp = Date.now();
+  const projectSlug = `shortcut-status-${stamp}`;
+  const response = await request.post('/api/projects', {
+    data: { name: `Shortcut status ${stamp}`, slug: projectSlug },
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+
+  await page.goto(`/projects/${projectSlug}`);
+  await page.getByRole('button', { name: 'New issue' }).focus();
+  await page.keyboard.press('p');
+  await page.keyboard.press('s');
+  await expect(page.getByLabel('Project status')).toBeFocused();
+
+  await page.getByRole('button', { name: 'New issue' }).focus();
+  await page.keyboard.press('p');
+  await page.keyboard.press('a');
+  await expect(page.getByLabel('Lead', { exact: true })).toBeFocused();
+
+  await page.getByRole('button', { name: 'New issue' }).focus();
+  await page.keyboard.press('p');
+  await page.keyboard.press('n');
+  await expect(page.getByRole('combobox', { name: 'Initiative' })).toBeFocused();
+});
+
 test('custom project workflow states can be configured, assigned, filtered, and removed', async ({
   page,
   request,
