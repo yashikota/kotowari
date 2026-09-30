@@ -58,7 +58,7 @@ test('new ADR only inherits an issue on its detail route', async ({ page, reques
     .filter({ hasText: issue.identifier })
     .click();
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}`));
-  await page.keyboard.press('p');
+  await page.keyboard.press('Shift+P');
   await expect(page.getByText(`Will link issue ${issue.number}`, { exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await expandMoreNavigation(page);
