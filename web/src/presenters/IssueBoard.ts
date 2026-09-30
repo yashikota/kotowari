@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
@@ -10,6 +10,7 @@ import type { Cycle, Issue, Label, Project } from '../types.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { useIssueBulkActions } from './IssueBulkActions.ts';
+import { useIssueSelection } from './useIssueSelection.ts';
 import { useKeyboard } from '../application/Root.tsx';
 import { isTypingTarget } from '../keymap.ts';
 
@@ -59,9 +60,6 @@ export function useIssueBoardPresenter({
     ? projectedIssues
     : projectedIssues.filter((issue) => issue.parentId == null);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
-  const selectionAnchorId = useRef<string | null>(null);
-  const selectionRange = useRef<{ anchorId: string; baseIds: string[] } | null>(null);
   const columns = useMemo(
     () =>
       workflowStatuses.map((status) => ({
@@ -77,43 +75,20 @@ export function useIssueBoardPresenter({
     [columns],
   );
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
-  const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
+  const selection = useIssueSelection(issueIds);
+  const { selectedIds: bulkSelectedIds, selectedIdSet: bulkSelectedIdSet } = selection;
   function clearBulkSelection() {
-    selectionAnchorId.current = null;
-    selectionRange.current = null;
-    setBulkSelectedIds([]);
+    selection.clear();
   }
   function selectIssueRange(targetId: string, requestedAnchorId?: string) {
-    const targetIndex = issueIds.indexOf(targetId);
-    if (targetIndex < 0) return;
-    const currentAnchor = requestedAnchorId ?? selectionAnchorId.current;
-    const anchorId = currentAnchor && issueIds.includes(currentAnchor) ? currentAnchor : targetId;
-    const anchorIndex = issueIds.indexOf(anchorId);
-    const previousRange = selectionRange.current;
-    const baseIds =
-      previousRange?.anchorId === anchorId
-        ? previousRange.baseIds
-        : bulkSelectedIds.filter((id) => issueIds.includes(id));
-    const start = Math.min(anchorIndex, targetIndex);
-    const end = Math.max(anchorIndex, targetIndex);
-    selectionAnchorId.current = anchorId;
-    selectionRange.current = { anchorId, baseIds };
-    setBulkSelectedIds([...new Set([...baseIds, ...issueIds.slice(start, end + 1)])]);
+    selection.extend(targetId, requestedAnchorId);
   }
   function toggleSelection(id: string, checked: boolean, shiftKey = false) {
     if (shiftKey) {
       selectIssueRange(id);
       return;
     }
-    selectionRange.current = null;
-    if (checked) {
-      selectionAnchorId.current = id;
-      setBulkSelectedIds((current) => (current.includes(id) ? current : [...current, id]));
-    } else {
-      if (selectionAnchorId.current === id)
-        selectionAnchorId.current = bulkSelectedIds.find((selected) => selected !== id) ?? null;
-      setBulkSelectedIds((current) => current.filter((selected) => selected !== id));
-    }
+    selection.toggle(id, checked);
   }
   const bulkActions = useIssueBulkActions({
     selectedIds: bulkSelectedIds,
@@ -149,23 +124,19 @@ export function useIssueBoardPresenter({
       onToggleSelection1: (...args: Parameters<IssueBoardColumnProps['onToggleSelection']>) =>
         toggleSelection(...args),
       onExtendSelection2: (anchorId: string, targetId: string) => {
-        const currentAnchor = selectionAnchorId.current ?? anchorId;
+        const currentAnchor = selection.anchorId ?? anchorId;
         selectIssueRange(targetId, currentAnchor);
       },
       onSelectAll10: () => {
         if (issueIds.length === 0) return;
-        selectionAnchorId.current = issueIds[0] ?? null;
-        selectionRange.current = null;
-        setBulkSelectedIds(issueIds);
+        selection.select(issueIds);
       },
       onSelectColumn11: (status: string) => {
         const columnIssueIds = columns
           .find((column) => column.status === status)
           ?.issues.map((issue) => issue.identifier);
         if (!columnIssueIds?.length) return;
-        selectionAnchorId.current = columnIssueIds[0] ?? null;
-        selectionRange.current = null;
-        setBulkSelectedIds(columnIssueIds);
+        selection.select(columnIssueIds);
       },
       onClearBulkSelection9: bulkActions.handlers.onClearBulkSelection,
       onOpen3: (id: string) =>

@@ -1,5 +1,5 @@
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useIntent, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import { patchIssueOptimistically, useIssueProjection } from '../application/issues.ts';
 import { useWindowedRows } from '../application/windowing.ts';
@@ -19,6 +19,7 @@ import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { useIssueBulkActions } from './IssueBulkActions.ts';
+import { useIssueSelection } from './useIssueSelection.ts';
 
 type Props = {
   issues: Issue[];
@@ -106,9 +107,6 @@ export function useIssueListPresenter({
   const router = useRouter();
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
-  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
-  const selectionAnchorId = useRef<string | null>(null);
-  const selectionRange = useRef<{ anchorId: string; baseIds: string[] } | null>(null);
   const expandedRows = useMemo(
     () =>
       buildIssueListRows(issues, new Set(), groupBy, {
@@ -142,7 +140,8 @@ export function useIssueListPresenter({
     (row): row is Extract<(typeof rows)[number], { kind: 'issue' }> => row.kind === 'issue',
   );
   const ids = useMemo(() => issueRows.map((row) => row.issue.identifier), [issueRows]);
-  const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
+  const selection = useIssueSelection(ids);
+  const { selectedIds: bulkSelectedIds, selectedIdSet: bulkSelectedIdSet } = selection;
   const issuePositions = new Map(issueRows.map((row, index) => [row.issue.identifier, index + 1]));
   const childCounts = useMemo(() => {
     const counts = new Map<number, number>();
@@ -156,9 +155,7 @@ export function useIssueListPresenter({
   const windowed = useWindowedRows(rows.length, 36, selectedRow);
 
   function clearBulkSelection() {
-    selectionAnchorId.current = null;
-    selectionRange.current = null;
-    setBulkSelectedIds([]);
+    selection.clear();
   }
 
   const bulkActions = useIssueBulkActions({
@@ -168,24 +165,8 @@ export function useIssueListPresenter({
   });
   const { bulkSelectedArchived, removableLabels } = bulkActions;
 
-  function selectIssueRange(targetId: string) {
-    const targetIndex = ids.indexOf(targetId);
-    if (targetIndex < 0) return;
-
-    const currentAnchor = selectionAnchorId.current;
-    const anchorId = currentAnchor && ids.includes(currentAnchor) ? currentAnchor : targetId;
-    const anchorIndex = ids.indexOf(anchorId);
-    const previousRange = selectionRange.current;
-    const baseIds =
-      previousRange?.anchorId === anchorId
-        ? previousRange.baseIds
-        : bulkSelectedIds.filter((id) => ids.includes(id));
-    const start = Math.min(anchorIndex, targetIndex);
-    const end = Math.max(anchorIndex, targetIndex);
-
-    selectionAnchorId.current = anchorId;
-    selectionRange.current = { anchorId, baseIds };
-    setBulkSelectedIds([...new Set([...baseIds, ...ids.slice(start, end + 1)])]);
+  function selectIssueRange(targetId: string, requestedAnchorId?: string) {
+    selection.extend(targetId, requestedAnchorId);
   }
 
   function toggleBulkSelection(id: string, checked: boolean, shiftKey = false) {
@@ -193,17 +174,7 @@ export function useIssueListPresenter({
       selectIssueRange(id);
       return;
     }
-
-    selectionRange.current = null;
-    if (checked) {
-      selectionAnchorId.current = id;
-      setBulkSelectedIds((current) => (current.includes(id) ? current : [...current, id]));
-      return;
-    }
-
-    if (selectionAnchorId.current === id)
-      selectionAnchorId.current = bulkSelectedIds.find((selected) => selected !== id) ?? null;
-    setBulkSelectedIds((current) => current.filter((selected) => selected !== id));
+    selection.toggle(id, checked);
   }
 
   useLayoutEffect(() => {
@@ -264,9 +235,7 @@ export function useIssueListPresenter({
     ) {
       if (ids.length === 0) return false;
       e.preventDefault();
-      selectionAnchorId.current = ids[0] ?? null;
-      selectionRange.current = null;
-      setBulkSelectedIds(ids);
+      selection.select(ids);
       return true;
     }
     const action = actionFromKeyboard(e);
@@ -312,9 +281,7 @@ export function useIssueListPresenter({
       const selectedGroupIssues = issueSiblingsInGroup(rows, selectedId ?? '');
       if (selectedGroupIssues.length === 0) return false;
       e.preventDefault();
-      setBulkSelectedIds(selectedGroupIssues.map((issue) => issue.identifier));
-      selectionAnchorId.current = selectedGroupIssues[0]?.identifier ?? null;
-      selectionRange.current = null;
+      selection.select(selectedGroupIssues.map((issue) => issue.identifier));
       return true;
     }
     if (
@@ -331,8 +298,8 @@ export function useIssueListPresenter({
       e.preventDefault();
       const currentIndex = selectedId ? ids.indexOf(selectedId) : -1;
       const anchorId =
-        selectionAnchorId.current && ids.includes(selectionAnchorId.current)
-          ? selectionAnchorId.current
+        selection.anchorId && ids.includes(selection.anchorId)
+          ? selection.anchorId
           : currentIndex >= 0
             ? ids[currentIndex]!
             : ids[0]!;
@@ -344,9 +311,8 @@ export function useIssueListPresenter({
           : Math.max(0, Math.min(ids.length - 1, currentIndex + direction));
       const nextId = ids[nextIndex];
       if (!nextId) return true;
-      selectionAnchorId.current = anchorId;
       onSelect(nextId);
-      selectIssueRange(nextId);
+      selectIssueRange(nextId, anchorId);
       return true;
     }
     if (action === 'escape' && bulkSelectedIds.length > 0) {
