@@ -309,7 +309,7 @@ export function useIssueDetailPresenter({
           to: '/issues/$identifier',
           params: { identifier: issue.parentIdentifier ?? '' },
         }),
-      onClick2: () => remove(),
+      onDeleteIssue: () => remove(),
       onArchiveIssue: () => toggleArchive(),
       onFocusDescription: () =>
         setDescriptionFocus((current) => ({

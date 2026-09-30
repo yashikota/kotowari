@@ -83,6 +83,8 @@ export function ShortcutHelpView({
     { keys: 'Shift+H', action: t('ui.shortcutSetIssueReminder') },
     { keys: 'Ctrl/⌘+Shift+I', action: t('ui.shortcutFocusIssueDescription') },
     { keys: 'Ctrl/⌘+Alt+Shift+T', action: t('ui.shortcutApplyIssueTemplate') },
+    { keys: 'Ctrl/⌘+Delete', action: t('ui.shortcutDeleteIssue') },
+    { keys: '#', action: t('ui.shortcutRestoreIssue') },
     { keys: 'Ctrl/⌘+M', action: t('ui.shortcutCommentOnIssue') },
     { keys: 'P, then S', action: t('ui.shortcutChangeProjectStatus') },
     { keys: 'P, then N', action: t('ui.shortcutChangeProjectInitiatives') },

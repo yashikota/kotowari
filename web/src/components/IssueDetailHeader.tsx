@@ -34,7 +34,7 @@ type IssueHeaderHandlers = Pick<
   | 'onClearDueDate'
   | 'onClearReminder'
   | 'onClick1'
-  | 'onClick2'
+  | 'onDeleteIssue'
   | 'onIssueOptionsChange'
   | 'onNavigateNext'
   | 'onNavigatePrevious'
@@ -526,7 +526,12 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item onClick={handlers.onArchiveIssue}>{t('issueActions.archive')}</Menu.Item>
-                <Menu.Item color="red" onClick={handlers.onClick2}>
+                <Menu.Item
+                  color="red"
+                  aria-keyshortcuts={`${modifierShortcut}+Delete`}
+                  onClick={handlers.onDeleteIssue}
+                  rightSection={<CopyShortcut label={`${modifierKey} ${t('ui.keyDelete')}`} />}
+                >
                   {t('issueActions.delete')}
                 </Menu.Item>
               </>
@@ -585,8 +590,19 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                   </Menu.Sub.Dropdown>
                 </Menu.Sub>
                 <Menu.Divider />
-                <Menu.Item onClick={handlers.onArchiveIssue}>{t('issueActions.restore')}</Menu.Item>
-                <Menu.Item color="red" onClick={handlers.onClick2}>
+                <Menu.Item
+                  aria-keyshortcuts="#"
+                  onClick={handlers.onArchiveIssue}
+                  rightSection={<CopyShortcut label="#" />}
+                >
+                  {t('issueActions.restore')}
+                </Menu.Item>
+                <Menu.Item
+                  color="red"
+                  aria-keyshortcuts={`${modifierShortcut}+Delete`}
+                  onClick={handlers.onDeleteIssue}
+                  rightSection={<CopyShortcut label={`${modifierKey} ${t('ui.keyDelete')}`} />}
+                >
                   {t('issueActions.delete')}
                 </Menu.Item>
               </>

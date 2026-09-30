@@ -303,6 +303,12 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'apply-template':
           void sendIntent('onOpenApplyTemplate', []);
           break;
+        case 'delete-issue':
+          if (!model.issue.archivedAt) void sendIntent('onDeleteIssue', []);
+          break;
+        case 'restore-issue':
+          if (model.issue.archivedAt) void sendIntent('onArchiveIssue', []);
+          break;
         case 'toggle-favorite':
           void sendIntent('onToggleFavorite', []);
           break;
