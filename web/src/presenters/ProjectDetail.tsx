@@ -93,6 +93,8 @@ export function useProjectDetailPagePresenter() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState(data.project);
+  const summaryDraft = useRef({ slug: data.project.slug, value: data.project.summary ?? '' });
+  const persistedSummary = useRef({ slug: data.project.slug, value: data.project.summary ?? '' });
   const projectSaveQueue = useRef<Promise<void>>(Promise.resolve());
   const [milestoneName, setMilestoneName] = useState('');
   const [milestoneDescription, setMilestoneDescription] = useState('');
@@ -112,6 +114,8 @@ export function useProjectDetailPagePresenter() {
 
   if (project.slug !== data.project.slug) {
     setProject(data.project);
+    summaryDraft.current = { slug: data.project.slug, value: data.project.summary ?? '' };
+    persistedSummary.current = { slug: data.project.slug, value: data.project.summary ?? '' };
     setSelected(null);
     setDependencyProjectSlug('');
     setDependencyKind('blocks');
@@ -125,7 +129,19 @@ export function useProjectDetailPagePresenter() {
     const pending = projectSaveQueue.current
       .catch(() => undefined)
       .then(async () => {
-        const next = await api.patchProject(slug, body);
+        const patch = { ...body };
+        if (
+          !('summary' in patch) &&
+          summaryDraft.current.slug === slug &&
+          persistedSummary.current.slug === slug &&
+          summaryDraft.current.value !== persistedSummary.current.value
+        ) {
+          patch.summary = summaryDraft.current.value;
+        }
+        const next = await api.patchProject(slug, patch);
+        if ('summary' in patch && persistedSummary.current.slug === slug) {
+          persistedSummary.current = { slug, value: next.summary ?? '' };
+        }
         setProject((current) => {
           const locallyEditable = [
             'name',
@@ -336,8 +352,9 @@ export function useProjectDetailPagePresenter() {
       onSummaryChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
-        const summaryDraft = e.currentTarget.value;
-        setProject((current) => ({ ...current, summary: summaryDraft }));
+        const summaryValue = e.currentTarget.value;
+        summaryDraft.current = { slug, value: summaryValue };
+        setProject((current) => ({ ...current, summary: summaryValue }));
       },
       onSummaryBlur: (e: React.FocusEvent<HTMLInputElement>) =>
         save({ summary: e.currentTarget.value }),
