@@ -453,6 +453,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       labels: initiativeLabels,
       startDate: text(value.startDate) || null,
       targetDate: text(value.targetDate) || null,
+      reminderAt: null,
       completedAt: value.status === 'completed' ? now : null,
       projectSlugs,
       createdAt: now,
@@ -516,12 +517,13 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         }
         initiative.projectSlugs = projectSlugs;
       }
-      const { clearStartDate, clearTargetDate, ...patchValues } = changes;
+      const { clearStartDate, clearTargetDate, clearReminder, ...patchValues } = changes;
       const previousStatus = initiative.status;
       patch(initiative, {
         ...patchValues,
         ...(clearStartDate ? { startDate: null } : {}),
         ...(clearTargetDate ? { targetDate: null } : {}),
+        ...(clearReminder ? { reminderAt: null } : {}),
       });
       if (initiative.status === 'completed' && previousStatus !== 'completed') {
         initiative.completedAt = initiative.updatedAt;

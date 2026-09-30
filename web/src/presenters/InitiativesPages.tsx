@@ -286,6 +286,7 @@ export function useInitiativeDetailPresenter() {
   const [focusOwner, setFocusOwner] = useState(0);
   const [focusTargetDate, setFocusTargetDate] = useState(0);
   const [focusUpdates, setFocusUpdates] = useState(0);
+  const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
   const [priority, setPriority] = useState(initiative.priority ?? 0);
   const health = initiative.health ?? '';
   const [labels, setLabels] = useState(initiative.labels ?? []);
@@ -400,6 +401,22 @@ export function useInitiativeDetailPresenter() {
     }
   }
 
+  async function setReminder(value: Date | null) {
+    setError('');
+    try {
+      await api.patchInitiative(
+        initiative.slug,
+        value ? { reminderAt: value.toISOString() } : { clearReminder: true },
+      );
+      queryCache.invalidate();
+      signals.dispatchEvent(new Event('kotowari:refresh'));
+      await router.invalidate();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('common.error'));
+    }
+    setReminderMenuOpen(false);
+  }
+
   useKeyboard((event) => {
     const ownerSequence = initiativeDetailSequenceFromKeyboard(
       event,
@@ -422,6 +439,7 @@ export function useInitiativeDetailPresenter() {
     if (shortcut === 'write-update') openUpdate();
     else if (shortcut === 'focus-target-date') setFocusTargetDate((value) => value + 1);
     else if (shortcut === 'focus-updates') setFocusUpdates((value) => value + 1);
+    else if (shortcut === 'open-reminder-menu') setReminderMenuOpen(true);
     else void toggleFavorite();
     return true;
   });
@@ -440,6 +458,7 @@ export function useInitiativeDetailPresenter() {
     targetDate,
     focusTargetDate,
     focusUpdates,
+    reminderMenuOpen,
     priority,
     health,
     updates,
@@ -473,6 +492,8 @@ export function useInitiativeDetailPresenter() {
       onBack: () => void navigate({ to: '/initiatives' }),
       onOpenUpdate: openUpdate,
       onToggleFavorite: toggleFavorite,
+      onSetReminder: setReminder,
+      onReminderMenuChange: setReminderMenuOpen,
       onCloseUpdate: () => setUpdateOpen(false),
       onUpdateHealthChange: (value: string | null) =>
         setUpdateHealth((value ?? 'on_track') as ProjectHealth),

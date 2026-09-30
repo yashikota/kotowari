@@ -180,6 +180,7 @@ export type Initiative = {
   labels?: string[];
   startDate?: string | null;
   targetDate?: string | null;
+  reminderAt?: string | null;
   completedAt?: string | null;
   projectSlugs: string[];
   createdAt: string;

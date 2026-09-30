@@ -3,6 +3,7 @@ package store
 import (
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/yashikota/kotowari/internal/domain"
@@ -156,6 +157,17 @@ func (s *Store) UpdateInitiative(slug string, in UpdateInitiativeInput) (Initiat
 		}
 		if in.TargetDate != nil {
 			initiative.TargetDate = cloneString(*in.TargetDate)
+		}
+		if in.ReminderAt != nil {
+			initiative.ReminderAt = cloneString(*in.ReminderAt)
+			if initiative.ReminderAt != nil {
+				parsed, err := time.Parse(time.RFC3339, *initiative.ReminderAt)
+				if err != nil {
+					return validationf("invalid reminder date")
+				}
+				value := parsed.UTC().Format(time.RFC3339)
+				initiative.ReminderAt = &value
+			}
 		}
 		if !validInitiativeDates(initiative.StartDate, initiative.TargetDate) {
 			return validationf("initiative dates must use YYYY-MM-DD and start before target")

@@ -3,7 +3,7 @@ import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
-import { useRemindersPresenter } from '../presenters/Reminders.tsx';
+import { useRemindersPresenter, type ReminderItem } from '../presenters/Reminders.tsx';
 
 function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPresenter> }) {
   const { t, i18n } = useTranslation();
@@ -13,16 +13,16 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
     <SplitLayout single>
       <Pane single>
         <PageHeader title={t('reminders.heading')} />
-        {model.issues.length === 0 ? (
+        {model.reminders.length === 0 ? (
           <EmptyState>{t('reminders.empty')}</EmptyState>
         ) : (
           <Stack gap={0}>
-            {model.issues.map((issue) => {
-              const reminder = new Date(issue.reminderAt!).getTime();
+            {model.reminders.map((item: ReminderItem) => {
+              const reminder = new Date(item.reminderAt).getTime();
               const overdue = reminder <= now;
               return (
                 <Group
-                  key={issue.identifier}
+                  key={item.key}
                   justify="space-between"
                   wrap="nowrap"
                   py="sm"
@@ -39,27 +39,39 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
                           dateStyle: 'medium',
                           timeStyle: 'short',
                           timeZone: model.timeZone,
-                        }).format(new Date(issue.reminderAt!))}
+                        }).format(new Date(item.reminderAt))}
                       </Text>
                     </Group>
-                    <Link
-                      to="/issues/$identifier"
-                      params={{ identifier: issue.identifier }}
-                      style={{ color: 'inherit', textDecoration: 'none' }}
-                    >
-                      <Text fw={500} truncate>
-                        <Text span ff="monospace" c="dimmed" mr="xs">
-                          {issue.identifier}
+                    {item.kind === 'issue' ? (
+                      <Link
+                        to="/issues/$identifier"
+                        params={{ identifier: item.identifier }}
+                        style={{ color: 'inherit', textDecoration: 'none' }}
+                      >
+                        <Text fw={500} truncate>
+                          <Text span ff="monospace" c="dimmed" mr="xs">
+                            {item.identifier}
+                          </Text>
+                          {item.title}
                         </Text>
-                        {issue.title}
-                      </Text>
-                    </Link>
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/initiatives/$slug"
+                        params={{ slug: item.slug }}
+                        style={{ color: 'inherit', textDecoration: 'none' }}
+                      >
+                        <Text fw={500} truncate>
+                          {item.title}
+                        </Text>
+                      </Link>
+                    )}
                   </Stack>
                   <Button
                     variant="subtle"
                     color="gray"
                     size="compact-sm"
-                    onClick={() => model.handlers.onClearReminder(issue.identifier)}
+                    onClick={() => model.handlers.onClearReminder(item)}
                   >
                     {t('reminders.dismiss')}
                   </Button>

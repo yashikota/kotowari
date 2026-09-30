@@ -61,6 +61,7 @@ type Initiative struct {
 	Labels          []string `json:"labels,omitempty" toml:"labels,omitempty"`
 	StartDate       *string  `json:"startDate" toml:"start_date,omitempty"`
 	TargetDate      *string  `json:"targetDate" toml:"target_date,omitempty"`
+	ReminderAt      *string  `json:"reminderAt,omitempty" toml:"reminder_at,omitempty"`
 	CompletedAt     *string  `json:"completedAt,omitempty" toml:"completed_at,omitempty"`
 	ProjectSlugs    []string `json:"projectSlugs" toml:"-"`
 	CreatedAt       string   `json:"createdAt" toml:"created_at"`
@@ -95,6 +96,7 @@ type UpdateInitiativeInput struct {
 	Labels       *[]string
 	StartDate    **string
 	TargetDate   **string
+	ReminderAt   **string
 	ProjectSlugs *[]string
 }
 

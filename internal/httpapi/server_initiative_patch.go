@@ -16,6 +16,8 @@ type initiativePatchRequest struct {
 	TargetDate      *string   `json:"targetDate"`
 	ClearStartDate  bool      `json:"clearStartDate"`
 	ClearTargetDate bool      `json:"clearTargetDate"`
+	ReminderAt      *string   `json:"reminderAt"`
+	ClearReminder   bool      `json:"clearReminder"`
 	ProjectSlugs    *[]string `json:"projectSlugs"`
 }
 
@@ -26,6 +28,7 @@ func (p initiativePatchRequest) updateInput() model.UpdateInitiativeInput {
 		Health: p.Health, Priority: p.Priority, Labels: p.Labels,
 		StartDate:    patchOptionalString(p.ClearStartDate, p.StartDate),
 		TargetDate:   patchOptionalString(p.ClearTargetDate, p.TargetDate),
+		ReminderAt:   patchOptionalString(p.ClearReminder, p.ReminderAt),
 		ProjectSlugs: p.ProjectSlugs,
 	}
 }

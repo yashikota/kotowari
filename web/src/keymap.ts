@@ -179,11 +179,20 @@ export function initiativeDetailShortcutFromKeyboard(event: {
   isComposing?: boolean;
   defaultPrevented?: boolean;
   target: EventTarget | null;
-}): 'write-update' | 'focus-target-date' | 'focus-updates' | 'toggle-favorite' | null {
+}):
+  | 'write-update'
+  | 'focus-target-date'
+  | 'focus-updates'
+  | 'toggle-favorite'
+  | 'open-reminder-menu'
+  | null {
   if (event.defaultPrevented || event.isComposing || event.repeat || isTypingTarget(event.target)) {
     return null;
   }
   const key = event.key.toLowerCase();
+  if (key === 'h' && event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    return 'open-reminder-menu';
+  }
   if (key === 'f' && event.altKey && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
     return 'toggle-favorite';
   }

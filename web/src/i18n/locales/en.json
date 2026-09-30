@@ -2164,6 +2164,7 @@
     "shortcutSetInitiativeTargetDate": "Set a project or initiative target date",
     "shortcutChangeInitiativeOwner": "Change initiative owner",
     "shortcutToggleInitiativeFavorite": "Toggle initiative favorite",
+    "shortcutSetInitiativeReminder": "Set an initiative reminder",
     "shortcutWriteInitiativeUpdate": "Write a new initiative update",
     "shortcutCreateSubIssue": "Create a sub-issue",
     "shortcutOpenParentIssue": "Open the parent issue",
