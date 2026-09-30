@@ -79,6 +79,7 @@ function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColu
                     onDragOver={handlers.onDragOver4}
                     onDrop={(...args) => handlers.onDrop5(issue, ...args)}
                     onClick={() => handlers.onClick6(issue)}
+                    onKeyDown={(event) => handlers.onKeyDown7(issue, event)}
                   >
                     <Group justify="space-between" mb={4} wrap="nowrap" gap={6}>
                       <Text ff="monospace" size="xs" c="dimmed">

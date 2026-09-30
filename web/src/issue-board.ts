@@ -9,4 +9,5 @@ export type IssueBoardColumnProps = {
   onDrag: (id: string | null) => void;
   onOpen: (id: string) => void;
   onMove: (id: string, status: string, sortOrder: number) => void;
+  onMoveToAdjacentColumn: (id: string, status: string, direction: -1 | 1) => void;
 };

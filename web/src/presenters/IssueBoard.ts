@@ -65,6 +65,13 @@ export function useIssueBoardPresenter({
     [columns],
   );
   const issueReturnTo = useRouterState({ select: (state) => state.location.href });
+  function moveToAdjacentColumn(id: string, status: string, direction: -1 | 1) {
+    const columnIndex = columns.findIndex((column) => column.status === status);
+    if (columnIndex < 0) return;
+    const targetColumn = columns[columnIndex + direction];
+    if (!targetColumn) return;
+    onMove(id, targetColumn.status, sortOrderForDrop(targetColumn.issues, id, null));
+  }
   return {
     _view: 0 as const,
     onOpen,
@@ -89,6 +96,9 @@ export function useIssueBoardPresenter({
         const handle: IssueBoardColumnProps['onMove'] = onMove;
         return handle(...args);
       },
+      onMoveToAdjacentColumn3: (
+        ...args: Parameters<IssueBoardColumnProps['onMoveToAdjacentColumn']>
+      ) => moveToAdjacentColumn(...args),
     },
   };
 }
@@ -102,6 +112,7 @@ export function useBoardColumnPresenter({
   onDrag,
   onOpen,
   onMove,
+  onMoveToAdjacentColumn,
 }: IssueBoardColumnProps) {
   const windowed = useWindowedRows(issues.length, 100);
   function drop(beforeId: string | null) {
@@ -140,6 +151,20 @@ export function useBoardColumnPresenter({
         drop(issue.identifier);
       },
       onClick6: (issue: Issue) => onOpen(issue.identifier),
+      onKeyDown7: (issue: Issue, event: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (
+          event.defaultPrevented ||
+          !(event.ctrlKey || event.metaKey) ||
+          event.altKey ||
+          event.shiftKey ||
+          (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')
+        )
+          return false;
+        const direction = event.key === 'ArrowRight' ? 1 : -1;
+        event.preventDefault();
+        onMoveToAdjacentColumn(issue.identifier, status, direction);
+        return true;
+      },
     },
   };
 }

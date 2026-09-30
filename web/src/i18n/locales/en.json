@@ -2181,6 +2181,7 @@
     "shortcutOpenIssue": "Open selected issue",
     "shortcutToggleIssueLayout": "Switch between list and board layouts",
     "shortcutCopyPageURL": "Copy the current page URL",
+    "shortcutMoveIssueBetweenColumns": "Move the focused issue to the adjacent board column",
     "shortcutSetStatus": "Open the issue status menu",
     "shortcutPriorityOrAdr": "Open issue priority / create an ADR outside issue details",
     "shortcutAddIssueToProject": "Add the issue to a project",

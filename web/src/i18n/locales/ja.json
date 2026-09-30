@@ -2169,6 +2169,7 @@
     "shortcutOpenIssue": "選択したイシューを開く",
     "shortcutToggleIssueLayout": "リスト表示とボード表示を切り替え",
     "shortcutCopyPageURL": "現在のページURLをコピー",
+    "shortcutMoveIssueBetweenColumns": "選択中のイシューを隣のボード列に移動",
     "shortcutSetStatus": "イシューのステータスメニューを開く",
     "shortcutPriorityOrAdr": "イシュー詳細では優先度を設定／それ以外ではADRを作成",
     "shortcutAddIssueToProject": "イシューをプロジェクトに追加",

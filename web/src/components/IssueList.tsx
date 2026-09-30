@@ -163,6 +163,7 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
               onDrag={handlers.onDrag0}
               onOpen={handlers.onOpen1}
               onMove={handlers.onMove2}
+              onMoveToAdjacentColumn={handlers.onMoveToAdjacentColumn3}
             />
           ))}
         </Group>

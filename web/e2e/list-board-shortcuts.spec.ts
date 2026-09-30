@@ -46,6 +46,35 @@ test('saved issue views switch layouts with the keyboard and save the new layout
   await expectClipboardToMatchPageURL(page);
 });
 
+test('board shortcut moves the focused issue into the adjacent status column', async ({
+  page,
+  request,
+}) => {
+  const title = `Board shortcut ${Date.now()}`;
+  const created = await request.post('/api/issues', {
+    data: { title, status: 'todo' },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  const issue = (await created.json()) as { identifier: string };
+
+  await page.goto('/issues?layout=board');
+  const todoColumn = page.getByRole('region', { name: 'Todo issues' });
+  const card = todoColumn.getByRole('button').filter({ hasText: issue.identifier });
+  await expect(card).toBeVisible();
+  await card.focus();
+  await page.keyboard.press('Control+ArrowRight');
+
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/issues/${issue.identifier}`);
+      return ((await response.json()) as { workflowStatus: string }).workflowStatus;
+    })
+    .toBe('in_progress');
+  await expect(page.getByRole('region', { name: 'In Progress issues' })).toContainText(
+    issue.identifier,
+  );
+});
+
 test('cycle issue lists switch layouts and copy their current page URL', async ({
   page,
   request,
