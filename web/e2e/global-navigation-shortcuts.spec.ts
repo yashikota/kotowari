@@ -9,6 +9,7 @@ test('Linear-style G sequences navigate to supported personal and workspace view
     ['i', /\/inbox(?:$|[?#])/],
     ['r', /\/reviews(?:$|[?#])/],
     ['j', /\/agent(?:$|[?#])/],
+    ['d', /\/drafts(?:$|[?#])/],
     ['m', /\/issues\?assignee=self(?:$|&)/],
     ['b', /\/issues\?status=backlog(?:$|&)/],
     ['e', /\/issues(?:$|[?#])/],
@@ -34,6 +35,7 @@ test('Linear-style G sequences navigate to supported personal and workspace view
   await page.keyboard.press('?');
   await expect(shortcuts).toBeVisible();
   await expect(shortcuts).toContainText('G, then I');
+  await expect(shortcuts).toContainText('G, then D');
   await expect(shortcuts).toContainText('G, then W');
   await expect(shortcuts).toContainText('Alt+U');
   await expect(shortcuts).toContainText('Mark all as read');
@@ -41,6 +43,8 @@ test('Linear-style G sequences navigate to supported personal and workspace view
   await expect(shortcuts).toContainText('Mark the selected inbox notification as read or unread');
   await expect(shortcuts).toContainText('e / Backspace');
   await expect(shortcuts).toContainText('Snooze the selected inbox notification');
+  await expect(shortcuts).toContainText('Shift+S');
+  await expect(shortcuts).toContainText('Subscribe or unsubscribe to the issue');
 });
 
 test('global navigation sequences remain ordinary text while an input is focused', async ({

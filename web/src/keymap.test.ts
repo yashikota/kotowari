@@ -667,6 +667,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['P', { shiftKey: true }, 'create-linked-adr'],
     ['I', { metaKey: true, shiftKey: true }, 'focus-description'],
     ['f', { altKey: true }, 'toggle-favorite'],
+    ['S', { shiftKey: true }, 'toggle-subscription'],
     ['D', { shiftKey: true }, 'open-due-date'],
     ['H', { shiftKey: true }, 'open-reminder'],
     ['R', { shiftKey: true }, 'rename'],

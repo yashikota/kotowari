@@ -365,13 +365,17 @@ export function Root({
               event.target.closest('[data-presenter]')?.getAttribute('data-presenter') ?? '',
             )
           : undefined;
+      const activeScopes = [...mediator.scopes.values()];
       if (dialog) {
         // A modal consumes all unhandled keys; never send them to a background list.
         if (!(event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey))) return;
-      } else if (!scope || !scope.handlers.has('keyboard')) {
-        scope = [...mediator.scopes.values()].find((s) => s.handlers.has('list')) ?? scope;
+      } else if (!scope || scope.id.startsWith('Shell:') || !scope.handlers.has('keyboard')) {
+        scope =
+          activeScopes.find((s) => s.handlers.has('list')) ??
+          activeScopes.find((s) => s.handlers.has('keyboard') && !s.id.startsWith('Shell:')) ??
+          scope;
       }
-      scope ??= [...mediator.scopes.values()].find((s) => s.id.startsWith('Shell:'));
+      scope ??= activeScopes.find((s) => s.id.startsWith('Shell:'));
       if (scope && mediator.keyboard(scope, event)) globalNavigationPendingSince = null;
     };
     document.addEventListener('keydown', key);

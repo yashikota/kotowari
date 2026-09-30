@@ -284,6 +284,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'toggle-favorite':
           void sendIntent('onToggleFavorite', []);
           break;
+        case 'toggle-subscription':
+          void sendIntent('Subscription_onClick', []);
+          break;
         case 'rename':
           titleRef.current?.focus();
           titleRef.current?.select();

@@ -55,7 +55,8 @@ test('self assignment works across issue details, My issues, and list grouping',
   const activity = page.getByRole('region', { name: 'Activity', exact: true });
   const subscribeButton = activity.getByRole('button', { name: 'Subscribe to issue' });
   await expect(subscribeButton).toBeVisible();
-  await subscribeButton.click();
+  await page.getByTestId('issue-header-title').click();
+  await page.keyboard.press('Shift+S');
   await expect(activity.getByRole('button', { name: 'Unsubscribe from issue' })).toHaveAttribute(
     'aria-pressed',
     'true',

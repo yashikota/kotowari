@@ -374,6 +374,7 @@ export type IssueDetailShortcut =
   | 'create-linked-adr'
   | 'focus-description'
   | 'toggle-favorite'
+  | 'toggle-subscription'
   | 'rename'
   | 'open-due-date'
   | 'open-reminder'
@@ -408,6 +409,7 @@ export function issueDetailShortcutFromKeyboard(event: {
   if (modifier && event.altKey && !event.shiftKey && key === 'l') return 'add-link';
   if (modifier || event.altKey) return null;
   if (event.shiftKey) {
+    if (key === 's') return 'toggle-subscription';
     if (key === 'd') return 'open-due-date';
     if (key === 'h') return 'open-reminder';
     if (key === 'r') return 'rename';
