@@ -35,6 +35,15 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes project changes and older conversion activity payloads', () => {
+    expect(formatActivity('project_changed', { from: '', to: 'Core' })).toBe(
+      'Project changed from No project to Core',
+    );
+    expect(formatActivity('project_changed', { project: 'core' })).toBe(
+      'Project changed from No project to core',
+    );
+  });
+
   it('describes priority changes, including no priority', () => {
     expect(formatActivity('priority_changed', { from: 0, to: 2 })).toBe(
       'Priority changed from No priority to High',

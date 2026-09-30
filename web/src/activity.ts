@@ -27,6 +27,17 @@ export function formatActivity(
     const to = typeof payload.to === 'string' && payload.to ? payload.to : i18n.t('field.noCycle');
     return i18n.t('activity.cycleChanged', { from, to });
   }
+  if (action === 'project_changed') {
+    const noProject = i18n.t('issueProperties.noProject');
+    const from = typeof payload.from === 'string' && payload.from ? payload.from : noProject;
+    const to =
+      typeof payload.to === 'string' && payload.to
+        ? payload.to
+        : typeof payload.project === 'string' && payload.project
+          ? payload.project
+          : noProject;
+    return i18n.t('activity.projectChanged', { from, to });
+  }
   if (action === 'cycle_issue_added' || action === 'cycle_issue_completed') {
     const cycle = typeof payload.cycle === 'string' ? payload.cycle : '';
     return i18n.t(`activity.${action}`, { cycle });
