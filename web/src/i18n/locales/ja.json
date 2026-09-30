@@ -1693,6 +1693,8 @@
     "statusChanged": "ステータス {{from}} → {{to}}",
     "cycleChanged": "サイクルを{{from}}から{{to}}に変更しました",
     "priorityChanged": "優先度を{{from}}から{{to}}に変更しました",
+    "labelAdded": "ラベル「{{label}}」を追加",
+    "labelRemoved": "ラベル「{{label}}」を削除",
     "cycle_issue_added": "{{cycle}}にイシューが追加されました",
     "cycle_issue_completed": "{{cycle}}のイシューが完了またはキャンセルされました",
     "typeChanged": "種別 {{from}} → {{to}}",

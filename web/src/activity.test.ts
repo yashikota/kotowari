@@ -44,6 +44,11 @@ describe('formatActivity', () => {
     );
   });
 
+  it('describes label additions and removals', () => {
+    expect(formatActivity('label_added', { label: 'Feature' })).toBe('Added label Feature');
+    expect(formatActivity('label_removed', { label: 'Feature' })).toBe('Removed label Feature');
+  });
+
   it('describes issue type and estimate changes', () => {
     expect(formatActivity('type_changed', { from: '', to: 'feature' })).toBe(
       'Type No type → Feature',

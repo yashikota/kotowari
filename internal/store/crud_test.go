@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -965,6 +966,74 @@ func TestIssuePriorityChangesAreRecordedInTimelineAndInbox(t *testing.T) {
 		}
 	}
 	t.Fatal("priority change was not recorded in the inbox")
+}
+
+func TestIssueLabelChangesAreRecordedInTimelineAndInbox(t *testing.T) {
+	s := openTest(t)
+	firstLabel, err := s.CreateLabel(CreateLabelInput{Name: "Timeline Feature Audit", Color: "#336699"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondLabel, err := s.CreateLabel(CreateLabelInput{Name: "Timeline Frontend Audit", Color: "#663399"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	issue, err := s.CreateIssue(CreateIssueInput{Title: "Track label changes"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	labels := []int64{firstLabel.ID, secondLabel.ID}
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{LabelIDs: &labels}); err != nil {
+		t.Fatal(err)
+	}
+	reorderedLabels := []int64{secondLabel.ID, firstLabel.ID}
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{LabelIDs: &reorderedLabels}); err != nil {
+		t.Fatal(err)
+	}
+	remainingLabels := []int64{secondLabel.ID}
+	if _, err := s.UpdateIssue(issue.Identifier, PatchIssueInput{LabelIDs: &remainingLabels}); err != nil {
+		t.Fatal(err)
+	}
+
+	activities, err := s.ListActivities(issue.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]int{}
+	for _, activity := range activities {
+		if activity.Action != "label_added" && activity.Action != "label_removed" {
+			continue
+		}
+		var payload map[string]string
+		if err := json.Unmarshal(activity.Payload, &payload); err != nil {
+			t.Fatal(err)
+		}
+		got[activity.Action+":"+payload["label"]]++
+	}
+	want := map[string]int{
+		"label_added:Timeline Feature Audit":   1,
+		"label_added:Timeline Frontend Audit":  1,
+		"label_removed:Timeline Feature Audit": 1,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("label change events = %#v, want %#v", got, want)
+	}
+
+	inbox, err := s.ListRecentIssueActivities(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inboxChanges := 0
+	for _, activity := range inbox {
+		if activity.EntityType == "issue" && activity.Identifier == issue.Identifier &&
+			(activity.Action == "label_added" || activity.Action == "label_removed") {
+			inboxChanges++
+		}
+	}
+	if inboxChanges != 3 {
+		t.Fatalf("label change inbox events = %d, want 3", inboxChanges)
+	}
 }
 
 func TestListIssuesByTypeAndEstimate(t *testing.T) {

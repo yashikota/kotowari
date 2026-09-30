@@ -1703,6 +1703,8 @@
     "statusChanged": "Status {{from}} → {{to}}",
     "cycleChanged": "Cycle changed from {{from}} to {{to}}",
     "priorityChanged": "Priority changed from {{from}} to {{to}}",
+    "labelAdded": "Added label {{label}}",
+    "labelRemoved": "Removed label {{label}}",
     "cycle_issue_added": "Issue added to {{cycle}}",
     "cycle_issue_completed": "Issue marked completed or canceled in {{cycle}}",
     "typeChanged": "Type {{from}} → {{to}}",

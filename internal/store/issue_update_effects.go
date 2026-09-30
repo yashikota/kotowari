@@ -9,6 +9,7 @@ type issueUpdateSnapshot struct {
 	status, workflowStatus, assignee, typeName string
 	priority                                   int
 	estimate                                   *int
+	labels                                     []Label
 	favorite, archived                         bool
 	reminderAt, dueDate                        *string
 	milestoneID, cycleID                       *int64
@@ -18,7 +19,8 @@ type issueUpdateSnapshot struct {
 func snapshotIssueUpdate(issue Issue) issueUpdateSnapshot {
 	return issueUpdateSnapshot{
 		status: issue.Status, workflowStatus: issue.WorkflowStatus, assignee: issue.Assignee, typeName: issue.Type,
-		priority: issue.Priority, estimate: issue.Estimate, favorite: issue.IsFavorite, archived: issue.ArchivedAt != nil,
+		priority: issue.Priority, estimate: issue.Estimate, labels: append([]Label(nil), issue.Labels...),
+		favorite: issue.IsFavorite, archived: issue.ArchivedAt != nil,
 		reminderAt: issue.ReminderAt, dueDate: issue.DueDate, milestoneID: issue.MilestoneID,
 		milestoneName: issue.MilestoneName, cycleID: issue.CycleID,
 	}
@@ -85,6 +87,26 @@ func recordIssueUpdateActivities(m *mem, iss Issue, in PatchIssueInput, before i
 	}
 	if before.priority != iss.Priority {
 		addActivity(m, "issue", iss.ID, "priority_changed", map[string]any{"from": before.priority, "to": iss.Priority}, now)
+	}
+	if in.LabelIDs != nil {
+		beforeLabels := make(map[int64]string, len(before.labels))
+		for _, label := range before.labels {
+			beforeLabels[label.ID] = label.Name
+		}
+		afterLabels := make(map[int64]string, len(iss.Labels))
+		for _, label := range iss.Labels {
+			afterLabels[label.ID] = label.Name
+		}
+		for _, label := range before.labels {
+			if _, ok := afterLabels[label.ID]; !ok {
+				addActivity(m, "issue", iss.ID, "label_removed", map[string]any{"label": label.Name}, now)
+			}
+		}
+		for _, label := range iss.Labels {
+			if _, ok := beforeLabels[label.ID]; !ok {
+				addActivity(m, "issue", iss.ID, "label_added", map[string]any{"label": label.Name}, now)
+			}
+		}
 	}
 	if in.Estimate != nil && !sameEstimate(before.estimate, iss.Estimate) {
 		addActivity(m, "issue", iss.ID, "estimate_changed", map[string]any{"from": before.estimate, "to": iss.Estimate}, now)

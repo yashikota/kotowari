@@ -36,6 +36,12 @@ export function formatActivity(
     const to = typeof payload.to === 'number' ? priorityLabel(payload.to) : '';
     return i18n.t('activity.priorityChanged', { from, to });
   }
+  if (action === 'label_added' || action === 'label_removed') {
+    const label = typeof payload.label === 'string' ? payload.label : '';
+    return i18n.t(action === 'label_added' ? 'activity.labelAdded' : 'activity.labelRemoved', {
+      label,
+    });
+  }
   if (action === 'type_changed') {
     const from = typeof payload.from === 'string' ? payload.from : '';
     const to = typeof payload.to === 'string' ? payload.to : '';
