@@ -35,6 +35,7 @@ export function IssueListView({
         issueCount,
         bulkSelectedIds,
         bulkSelectedIdSet,
+        bulkSelectedArchived,
         childCounts,
         windowed,
         today,
@@ -95,6 +96,7 @@ export function IssueListView({
             {bulkSelectedIds.length > 0 ? (
               <IssueSelectionToolbar
                 selectedCount={bulkSelectedIds.length}
+                archived={bulkSelectedArchived}
                 onSetStatus={handlers.onSetBulkStatus}
                 onArchive={handlers.onArchiveBulkIssues}
                 onSetPriority={handlers.onSetBulkPriority}

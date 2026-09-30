@@ -2018,6 +2018,7 @@
     "clearIssueSelection": "Clear selected",
     "setSelectedIssueStatus": "Set status to {{status}}",
     "archiveSelectedIssues": "Archive selected issues",
+    "restoreSelectedIssues": "Restore selected issues",
     "setSelectedIssuePriority": "Set priority to {{priority}}",
     "assignSelectedIssuesToMe": "Assign to me",
     "unassignSelectedIssues": "Unassign",

@@ -477,6 +477,47 @@ test('issue list archives all selected issues', async ({ page, request }) => {
   await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
 });
 
+test('issue list restores all selected archived issues', async ({ page, request }) => {
+  const stamp = Date.now();
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Bulk restore ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    const issue = (await response.json()) as { identifier: string };
+    identifiers.push(issue.identifier);
+    const archived = await request.patch(`/api/issues/${issue.identifier}`, {
+      data: { archived: true },
+    });
+    expect(archived.ok()).toBeTruthy();
+  }
+
+  await page.goto('/issues?archived=true');
+  await fillIssueSearch(page, String(stamp));
+  const rows = page.getByRole('listbox', { name: 'Issues' }).getByRole('option');
+  await expect(rows).toHaveCount(2);
+  for (const identifier of identifiers) {
+    await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+  }
+
+  await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Restore selected issues', exact: true }).click();
+
+  await expect
+    .poll(async () =>
+      Promise.all(
+        identifiers.map(async (identifier) => {
+          const issue = await request.get(`/api/issues/${identifier}`);
+          return ((await issue.json()) as { archivedAt: string | null }).archivedAt;
+        }),
+      ),
+    )
+    .toEqual([null, null]);
+  await expect(rows).toHaveCount(0);
+  await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
+});
+
 test('issue list subscribes to and unsubscribes from selected issues', async ({
   page,
   request,

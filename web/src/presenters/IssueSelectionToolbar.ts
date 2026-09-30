@@ -8,6 +8,7 @@ import type { IssueCopyKind } from '../issue-actions.ts';
 
 type Props = {
   selectedCount: number;
+  archived: boolean;
   onSetStatus: (status: string) => void;
   onArchive: () => void;
   onSetPriority: (priority: number) => void;
@@ -31,6 +32,7 @@ type Props = {
 
 export function useIssueSelectionToolbarPresenter({
   selectedCount,
+  archived,
   onSetStatus,
   onArchive,
   onSetPriority,
@@ -63,6 +65,7 @@ export function useIssueSelectionToolbarPresenter({
   };
   return {
     selectedCount,
+    archived,
     statuses: statuses.map((status) => ({
       id: status.id,
       label: workflowStatusLabel(status.id, statuses),

@@ -19,6 +19,7 @@ function IssueSelectionToolbarView({
   };
   const {
     selectedCount,
+    archived,
     statuses,
     priorities,
     types,
@@ -61,7 +62,9 @@ function IssueSelectionToolbarView({
                 {t('ui.setSelectedIssueStatus', { status: status.label })}
               </Menu.Item>
             ))}
-            <Menu.Item onClick={handlers.onArchive}>{t('ui.archiveSelectedIssues')}</Menu.Item>
+            <Menu.Item onClick={handlers.onArchive}>
+              {t(archived ? 'ui.restoreSelectedIssues' : 'ui.archiveSelectedIssues')}
+            </Menu.Item>
             <Menu.Divider />
             <Menu.Label>{t('field.priority')}</Menu.Label>
             {priorities.map((priority) => (

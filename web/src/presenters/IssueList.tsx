@@ -155,6 +155,9 @@ export function useIssueListPresenter({
   );
   const ids = useMemo(() => issueRows.map((row) => row.issue.identifier), [issueRows]);
   const bulkSelectedIdSet = useMemo(() => new Set(bulkSelectedIds), [bulkSelectedIds]);
+  const issueById = new Map(issueRows.map(({ issue }) => [issue.identifier, issue]));
+  const bulkSelectedArchived =
+    bulkSelectedIds.length > 0 && bulkSelectedIds.every((id) => issueById.get(id)?.archivedAt);
   const selectedLabelIds = new Set(
     issueRows
       .filter((row) => bulkSelectedIdSet.has(row.issue.identifier))
@@ -452,6 +455,7 @@ export function useIssueListPresenter({
     selectedId,
     bulkSelectedIds,
     bulkSelectedIdSet,
+    bulkSelectedArchived,
     issues,
     displayProperties: displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES],
     rows,
@@ -484,7 +488,7 @@ export function useIssueListPresenter({
             : current.filter((selected) => selected !== id),
         ),
       onSetBulkStatus: (status: string) => updateSelectedIssues({ workflowStatus: status }),
-      onArchiveBulkIssues: () => updateSelectedIssues({ archived: true }),
+      onArchiveBulkIssues: () => updateSelectedIssues({ archived: !bulkSelectedArchived }),
       onSetBulkPriority: (priority: number) => updateSelectedIssues({ priority }),
       onSetBulkAssignee: (assignee: 'self' | 'agent' | '') => updateSelectedIssues({ assignee }),
       onSetBulkType: (type: Issue['type']) => updateSelectedIssues({ type }),
