@@ -57,6 +57,21 @@ test('repeated priority changes collapse into expandable activity history', asyn
   await chooseIssueProperty(page, 'Priority', 'High');
   await chooseIssueProperty(page, 'Priority', 'Low');
 
+  const historyResponse = await request.get(`/api/issues/${issue.identifier}/activities`);
+  expect(historyResponse.ok()).toBeTruthy();
+  const recordedActivities = (await historyResponse.json()) as {
+    id: number;
+    action: string;
+    payload: { from?: number; to?: number };
+  }[];
+  const firstPriorityChange = recordedActivities.find(
+    (activity) =>
+      activity.action === 'priority_changed' &&
+      activity.payload.from === 0 &&
+      activity.payload.to === 2,
+  );
+  expect(firstPriorityChange).toBeDefined();
+
   const activity = page.getByRole('region', { name: 'Activity' });
   const group = activity.getByTestId('issue-activity-group');
   await expect(group).toHaveCount(1);
@@ -74,4 +89,18 @@ test('repeated priority changes collapse into expandable activity history', asyn
     history.filter({ hasText: 'priority changed from No priority to High' }),
   ).toBeVisible();
   await expect(history.filter({ hasText: 'priority changed from High to Low' })).toBeVisible();
+  await summary.getByTestId('issue-activity-time-link').click();
+  await expect(page).toHaveURL(/#update-activity-\d+$/);
+  await expect(
+    history.filter({ hasText: 'priority changed from No priority to High' }),
+  ).toBeVisible();
+
+  await page.goto('/issues');
+  await page.goto(`/issues/${issue.identifier}#update-activity-${firstPriorityChange!.id}`);
+  await expect(
+    page
+      .getByTestId('issue-activity-group')
+      .getByTestId('issue-activity-history-entry')
+      .filter({ hasText: 'priority changed from No priority to High' }),
+  ).toBeVisible();
 });

@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Anchor,
   Alert,
   Avatar,
   Button,
@@ -19,6 +20,7 @@ import {
   IconTrash,
   IconUser,
 } from '@tabler/icons-react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatActivity, formatPriorityActivityGroup } from '../activity.ts';
 import { useFocusWhen } from '../focus.ts';
@@ -103,6 +105,30 @@ function PriorityActivityIcon({ priority }: { priority: number }) {
   );
 }
 
+function ActivityTimeLink({
+  kind,
+  id,
+  createdAt,
+  locale,
+}: {
+  kind: 'activity' | 'comment';
+  id: number;
+  createdAt: string;
+  locale: string;
+}) {
+  return (
+    <Anchor
+      href={`#update-${kind}-${id}`}
+      title={new Date(createdAt).toLocaleString(locale)}
+      size="sm"
+      c="dimmed"
+      data-testid="issue-activity-time-link"
+    >
+      {formatRelativeTime(createdAt, locale, { numeric: 'always', style: 'narrow' })}
+    </Anchor>
+  );
+}
+
 export function IssueActivitySection({ model, noteRef }: Props) {
   const { t, i18n } = useTranslation();
   const { statuses: workflowStatuses } = useIssueWorkflow();
@@ -120,6 +146,23 @@ export function IssueActivitySection({ model, noteRef }: Props) {
     timeline,
     handlers,
   } = model;
+
+  useEffect(() => {
+    const visitHashTarget = () => {
+      const targetId = window.location.hash.slice(1);
+      if (!targetId.startsWith('update-')) return;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      const details = target.closest('details');
+      if (details) details.open = true;
+      if (target.getAttribute('data-scroll-target') === targetId) return;
+      target.setAttribute('data-scroll-target', targetId);
+      window.requestAnimationFrame(() => target.scrollIntoView({ block: 'center' }));
+    };
+    visitHashTarget();
+    window.addEventListener('hashchange', visitHashTarget);
+    return () => window.removeEventListener('hashchange', visitHashTarget);
+  }, [timeline]);
 
   return (
     <Section
@@ -160,6 +203,7 @@ export function IssueActivitySection({ model, noteRef }: Props) {
             return (
               <Group
                 key={`activity-${entry.id}`}
+                id={`update-activity-${entry.id}`}
                 gap="xs"
                 wrap="nowrap"
                 align="flex-start"
@@ -173,10 +217,12 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                   {action}{' '}
                   <Text span c="dimmed" size="sm">
                     ·{' '}
-                    {formatRelativeTime(activity.createdAt, locale, {
-                      numeric: 'always',
-                      style: 'narrow',
-                    })}
+                    <ActivityTimeLink
+                      kind="activity"
+                      id={activity.id}
+                      createdAt={activity.createdAt}
+                      locale={locale}
+                    />
                   </Text>
                 </Text>
               </Group>
@@ -193,6 +239,7 @@ export function IssueActivitySection({ model, noteRef }: Props) {
             return (
               <Group
                 key={`priority-group-${entry.id}`}
+                id={`update-activity-${entry.id}`}
                 gap="xs"
                 wrap="nowrap"
                 align="flex-start"
@@ -213,10 +260,12 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                       {summary}{' '}
                       <Text span c="dimmed" size="sm">
                         ·{' '}
-                        {formatRelativeTime(entry.createdAt, locale, {
-                          numeric: 'always',
-                          style: 'narrow',
-                        })}
+                        <ActivityTimeLink
+                          kind="activity"
+                          id={entry.id}
+                          createdAt={entry.createdAt}
+                          locale={locale}
+                        />
                       </Text>
                     </Text>
                   </summary>
@@ -230,6 +279,7 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                       return (
                         <Group
                           key={`priority-history-${activity.id}`}
+                          id={`update-activity-${activity.id}`}
                           gap="xs"
                           wrap="nowrap"
                           align="flex-start"
@@ -247,10 +297,12 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                             {action}{' '}
                             <Text span c="dimmed" size="sm">
                               ·{' '}
-                              {formatRelativeTime(activity.createdAt, locale, {
-                                numeric: 'always',
-                                style: 'narrow',
-                              })}
+                              <ActivityTimeLink
+                                kind="activity"
+                                id={activity.id}
+                                createdAt={activity.createdAt}
+                                locale={locale}
+                              />
                             </Text>
                           </Text>
                         </Group>
@@ -266,6 +318,7 @@ export function IssueActivitySection({ model, noteRef }: Props) {
           return (
             <Group
               key={`comment-${entry.id}`}
+              id={`update-comment-${entry.id}`}
               gap="xs"
               wrap="nowrap"
               align="flex-start"
@@ -279,10 +332,12 @@ export function IssueActivitySection({ model, noteRef }: Props) {
                       {t('issueComments.you')}
                     </Text>
                     {' · '}
-                    {formatRelativeTime(c.createdAt, i18n.resolvedLanguage ?? i18n.language, {
-                      numeric: 'always',
-                      style: 'narrow',
-                    })}
+                    <ActivityTimeLink
+                      kind="comment"
+                      id={c.id}
+                      createdAt={c.createdAt}
+                      locale={i18n.resolvedLanguage ?? i18n.language}
+                    />
                     {c.updatedAt ? (
                       <Text span ml={6}>
                         · {t('issueComments.edited')}
