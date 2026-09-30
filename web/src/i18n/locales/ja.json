@@ -2133,6 +2133,7 @@
     "shortcutSelectAllIssues": "現在の一覧のイシューをすべて選択",
     "shortcutRenameIssue": "イシューのタイトルにフォーカスして選択",
     "shortcutAssignIssueToSelf": "自分をイシューに割り当て",
+    "shortcutAssignIssue": "イシューの担当者メニューを開く",
     "shortcutToggleIssueFavorite": "イシューのお気に入りを切り替え",
     "shortcutSetIssueDueDate": "イシューの期限を設定",
     "shortcutSetIssueReminder": "イシューのリマインダーを設定",

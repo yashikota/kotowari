@@ -127,6 +127,9 @@ export function IssueCoreProperties({
             compactChars={14}
             compactLabel={assigneeValueLabel}
             aria-label={t('field.assignee')}
+            dropdownOpened={issuePropertyMenu === 'assignee'}
+            onDropdownOpen={() => onOpenProperty('assignee')}
+            onDropdownClose={onCloseProperty}
             value={issue.assignee ?? 'none'}
             onChange={onAssigneeChange}
             data={[

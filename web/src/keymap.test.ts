@@ -713,6 +713,7 @@ describe('issue detail keyboard shortcuts', () => {
     ['i', {}, 'assign-self'],
     ['s', {}, 'open-status'],
     ['p', {}, 'open-priority'],
+    ['a', {}, 'open-assignee'],
     ['l', {}, 'open-labels'],
     ['E', { shiftKey: true }, 'open-estimate'],
     ['P', { shiftKey: true }, 'open-project'],

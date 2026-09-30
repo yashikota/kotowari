@@ -2145,6 +2145,7 @@
     "shortcutSelectAllIssues": "Select all issues in the current list",
     "shortcutRenameIssue": "Focus and select the issue title",
     "shortcutAssignIssueToSelf": "Assign the issue to yourself",
+    "shortcutAssignIssue": "Open the issue assignee menu",
     "shortcutToggleIssueFavorite": "Toggle the issue favorite",
     "shortcutSetIssueDueDate": "Set the issue due date",
     "shortcutSetIssueReminder": "Set a reminder for the issue",

@@ -426,6 +426,7 @@ export type IssueDetailShortcut =
   | 'assign-self'
   | 'open-status'
   | 'open-priority'
+  | 'open-assignee'
   | 'open-labels'
   | 'open-estimate'
   | 'open-project'
@@ -481,6 +482,7 @@ export function issueDetailShortcutFromKeyboard(event: {
     return null;
   }
   if (key === 'i') return 'assign-self';
+  if (key === 'a') return 'open-assignee';
   if (key === 's') return 'open-status';
   if (key === 'p') return 'open-priority';
   if (key === 'l') return 'open-labels';

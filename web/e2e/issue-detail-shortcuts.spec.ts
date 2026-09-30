@@ -207,6 +207,15 @@ test('issue property shortcuts open focused status, priority, label, and estimat
   await page.goto(`/issues/${issue.identifier}`);
 
   const issueOptions = page.getByRole('button', { name: 'Issue options' });
+  const assignee = page.getByRole('combobox', { name: 'Assignee' });
+  await issueOptions.focus();
+  await page.keyboard.press('a');
+  await expect(assignee).toHaveAttribute('aria-expanded', 'true');
+  await expect(assignee).toBeFocused();
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.getByRole('option', { name: 'Agent', exact: true }).click();
+  await expect(assignee).toHaveValue('Agent');
+
   const status = page.getByRole('combobox', { name: 'Status' });
   await issueOptions.focus();
   await page.keyboard.press('s');
@@ -286,6 +295,7 @@ test('shortcut help documents issue detail actions in the active locale', async 
   const help = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
   await expect(help).toBeVisible();
   await expect(help).toContainText('Assign the issue to yourself');
+  await expect(help).toContainText('Open the issue assignee menu');
   await expect(help).toContainText('Toggle the issue favorite');
   await expect(help).toContainText('Set the issue due date');
   await expect(help).toContainText('Set a reminder for the issue');

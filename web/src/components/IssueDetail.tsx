@@ -274,6 +274,9 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
         case 'open-priority':
           void sendIntent('onOpenIssuePropertyMenu', ['priority']);
           break;
+        case 'open-assignee':
+          void sendIntent('onOpenIssuePropertyMenu', ['assignee']);
+          break;
         case 'open-labels':
           void sendIntent('onOpenIssuePropertyMenu', ['labels']);
           break;

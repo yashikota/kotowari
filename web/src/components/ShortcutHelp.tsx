@@ -61,6 +61,7 @@ export function ShortcutHelpView({
     { keys: 'M, then X', action: t('ui.shortcutMarkIssueBlocking') },
     { keys: 'M, then R', action: t('ui.shortcutMarkIssueRelated') },
     { keys: 'M, then M', action: t('ui.shortcutMarkIssueDuplicate') },
+    { keys: 'a', action: t('ui.shortcutAssignIssue') },
     { keys: 'i', action: t('ui.shortcutAssignIssueToSelf') },
     { keys: 'Alt+F', action: t('ui.shortcutToggleIssueFavorite') },
     { keys: 'Shift+S', action: t('ui.shortcutToggleIssueSubscription') },
