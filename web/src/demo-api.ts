@@ -273,6 +273,7 @@ function issue(
     body: number === 1 ? 'Actionsからデモを公開し、誰でもすぐ試せるようにする。' : '',
     status,
     workflowStatus: status,
+    creator: 'self',
     priority,
     projectId,
     projectSlug: projects.find((p) => p.id === projectId)?.slug,
@@ -361,6 +362,7 @@ function createRecurringDemoInstance(schedule: RecurringIssue, dueDate: string):
     labels.filter((label) => schedule.labels.includes(label.name)),
   );
   item.body = schedule.body;
+  item.creator = schedule.creator ?? 'self';
   item.assignee = schedule.assignee;
   item.type = schedule.type;
   item.estimate = schedule.estimate ?? null;
@@ -672,6 +674,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       title: source.title,
       body: source.body,
       status: 'backlog',
+      creator: source.creator ?? 'self',
       type: source.type,
       priority: source.priority,
       estimate: source.estimate,
@@ -1150,6 +1153,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   }
   if (path === '/api/issues' && method === 'POST') {
     const value = body(init);
+    if (value.creator != null && value.creator !== 'self' && value.creator !== 'agent')
+      return json({ error: 'invalid creator' }, 400);
     if (value.assignee != null && value.assignee !== 'self' && value.assignee !== 'agent')
       return json({ error: 'invalid assignee' }, 400);
     const milestoneId = value.milestoneId == null ? null : Number(value.milestoneId);
@@ -1168,6 +1173,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       value.cycleId == null ? null : Number(value.cycleId),
       [],
     );
+    item.creator = (value.creator as Issue['creator']) ?? 'self';
     const requestedTemplateSlug = text(value.templateSlug).trim();
     if (
       requestedTemplateSlug &&
@@ -1283,6 +1289,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         title: item.title,
         body: item.body,
         status: item.status,
+        creator: item.creator ?? 'self',
         assignee: item.assignee,
         type: item.type,
         priority: item.priority,
@@ -2036,6 +2043,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         id: i.identifier,
         title: i.title,
         status: i.status,
+        creator: i.creator ?? 'self',
+        assignee: i.assignee ?? 'none',
         archived: Boolean(i.archivedAt),
         createdAt: i.createdAt,
         updatedAt: i.updatedAt,

@@ -12,6 +12,7 @@ type Issue struct {
 	Body             string              `json:"body"`
 	Status           string              `json:"status"`
 	WorkflowStatus   string              `json:"workflowStatus"`
+	Creator          string              `json:"creator" toml:"creator,omitempty"`
 	Assignee         string              `json:"assignee,omitempty" toml:"assignee,omitempty"`
 	Type             string              `json:"type,omitempty"`
 	Priority         int                 `json:"priority"`

@@ -32,7 +32,12 @@ test('workspace search finds issues, projects and documents with shareable categ
   );
   const agentIssue = await json<{ identifier: string }>(
     await request.post('/api/issues', {
-      data: { title: `${query} agent assigned`, status: 'todo', assignee: 'agent' },
+      data: {
+        title: `${query} agent assigned`,
+        status: 'todo',
+        assignee: 'agent',
+        creator: 'agent',
+      },
     }),
   );
   const archivedIssue = await json<{ identifier: string }>(
@@ -110,7 +115,7 @@ test('workspace search finds issues, projects and documents with shareable categ
   await page.getByRole('button', { name: 'Remove status filter: Done' }).click();
 
   await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('menuitemcheckbox', { name: 'Agent' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Agent', exact: true }).first().click();
   await expect(page).toHaveURL(/assignee=agent/);
   await expect(
     results.getByRole('link', { name: new RegExp(agentIssue.identifier) }),
@@ -119,7 +124,7 @@ test('workspace search finds issues, projects and documents with shareable categ
     0,
   );
   await page.getByRole('button', { name: 'Add filter' }).click();
-  await page.getByRole('menuitemcheckbox', { name: 'You' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'You', exact: true }).first().click();
   await expect(page).toHaveURL(/assignee=agent%2Cself/);
   await expect(results.getByRole('link', { name: new RegExp(selfIssue.identifier) })).toBeVisible();
   await page.getByRole('button', { name: 'Remove assignee filter: Agent' }).click();
@@ -137,6 +142,18 @@ test('workspace search finds issues, projects and documents with shareable categ
     0,
   );
   await page.getByRole('button', { name: 'Remove assignee filter: Unassigned' }).click();
+
+  await page.getByRole('button', { name: 'Add filter' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Agent', exact: true }).last().click();
+  await expect(page).toHaveURL(/creator=agent/);
+  await expect(
+    results.getByRole('link', { name: new RegExp(agentIssue.identifier) }),
+  ).toBeVisible();
+  await expect(results.getByRole('link', { name: new RegExp(selfIssue.identifier) })).toHaveCount(
+    0,
+  );
+  await page.getByRole('button', { name: 'Remove creator filter: Agent' }).click();
+  await expect(page).not.toHaveURL(/creator=/);
 
   await page.getByRole('button', { name: 'Add filter' }).click();
   await page.getByRole('menuitem', { name: 'Updated date' }).click();

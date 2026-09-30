@@ -13,6 +13,7 @@ type recurringIssueFM struct {
 	Name                string                 `toml:"name"`
 	Title               string                 `toml:"title"`
 	Status              string                 `toml:"status"`
+	Creator             string                 `toml:"creator,omitempty"`
 	Assignee            string                 `toml:"assignee,omitempty"`
 	Type                string                 `toml:"type,omitempty"`
 	Priority            int                    `toml:"priority"`
@@ -51,8 +52,11 @@ func readRecurringIssue(path string) (RecurringIssue, error) {
 	if _, err := time.Parse("2006-01-02", fm.NextDueDate); err != nil {
 		return RecurringIssue{}, validationf("invalid recurring issue next due date")
 	}
+	if fm.Creator == "" {
+		fm.Creator = "self"
+	}
 	if !validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) ||
-		!domain.ValidIssueAssignee(fm.Assignee) {
+		!domain.ValidIssueAssignee(fm.Assignee) || !domain.ValidIssueCreator(fm.Creator) {
 		return RecurringIssue{}, validationf("recurring issue contains invalid issue properties")
 	}
 	links, err := normalizeIssueLinks(fm.Links)
@@ -60,7 +64,7 @@ func readRecurringIssue(path string) (RecurringIssue, error) {
 		return RecurringIssue{}, err
 	}
 	return RecurringIssue{
-		Name: fm.Name, Title: fm.Title, Body: body, Status: fm.Status, Assignee: fm.Assignee,
+		Name: fm.Name, Title: fm.Title, Body: body, Status: fm.Status, Creator: fm.Creator, Assignee: fm.Assignee,
 		Type: fm.Type, Priority: fm.Priority, Estimate: fm.Estimate,
 		ProjectSlug: fm.Project, Labels: append([]string{}, fm.Labels...),
 		Links:        links,
@@ -76,7 +80,7 @@ func writeRecurringIssue(path string, recurring RecurringIssue) error {
 		return err
 	}
 	fm := recurringIssueFM{
-		Name: recurring.Name, Title: recurring.Title, Status: recurring.Status, Assignee: recurring.Assignee,
+		Name: recurring.Name, Title: recurring.Title, Status: recurring.Status, Creator: recurring.Creator, Assignee: recurring.Assignee,
 		Type: recurring.Type, Priority: recurring.Priority, Estimate: recurring.Estimate,
 		Project: recurring.ProjectSlug, Labels: recurring.Labels, Links: links,
 		FirstDueDate: recurring.FirstDueDate, Interval: recurring.Interval,
@@ -85,7 +89,7 @@ func writeRecurringIssue(path string, recurring RecurringIssue) error {
 	}
 	if !validRecurringUnit(fm.Unit) || fm.Interval < 1 || fm.Interval > 365 ||
 		!validTemplateProperties(fm.Status, fm.Type, fm.Priority, fm.Estimate) ||
-		!domain.ValidIssueAssignee(fm.Assignee) {
+		!domain.ValidIssueAssignee(fm.Assignee) || !domain.ValidIssueCreator(fm.Creator) {
 		return validationf("invalid recurring issue")
 	}
 	metadata, err := toml.Marshal(fm)

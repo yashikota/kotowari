@@ -22,6 +22,10 @@ export function buildIssueFilterChoices({
       value: status.id,
       label: workflowStatusLabel(status.id, workflowStatuses),
     })),
+    creator: [
+      { value: 'self', label: t('issueAssignment.you') },
+      { value: 'agent', label: t('issueAssignment.agent') },
+    ],
     assignee: [
       { value: 'self', label: t('issueAssignment.you') },
       { value: 'agent', label: t('issueAssignment.agent') },

@@ -12,6 +12,7 @@ import {
   parseSearchDateFilter,
   serializeSearchDateFilter,
   type SearchAssignee,
+  type SearchCreator,
   type SearchDateField,
   type SearchDateFilter,
   type SearchDateFilters,
@@ -34,6 +35,7 @@ export function useSearchPagePresenter() {
   const includeArchived = search.includeArchived ?? false;
   const statuses = (search.status?.split(',') ?? []) as IssueStatus[];
   const assignees = (search.assignee?.split(',') ?? []) as SearchAssignee[];
+  const creators = (search.creator?.split(',') ?? []) as SearchCreator[];
   const dates: SearchDateFilters = {
     ...(parseSearchDateFilter(search.created)
       ? { created: parseSearchDateFilter(search.created) }
@@ -59,6 +61,7 @@ export function useSearchPagePresenter() {
     includeArchived,
     statuses,
     assignees,
+    creators,
     dates,
     customDateField,
     customDateInput,
@@ -66,10 +69,20 @@ export function useSearchPagePresenter() {
     hasFilters:
       statuses.length > 0 ||
       assignees.length > 0 ||
+      creators.length > 0 ||
       dates.created !== undefined ||
       dates.updated !== undefined,
     hits: orderSearchHits(
-      filterSearchHits(hits, tab, statuses, dates, Date.now(), includeArchived, assignees),
+      filterSearchHits(
+        hits,
+        tab,
+        statuses,
+        dates,
+        Date.now(),
+        includeArchived,
+        assignees,
+        creators,
+      ),
       order,
       search.q ?? '',
     ),
@@ -136,6 +149,16 @@ export function useSearchPagePresenter() {
             return { ...previous, assignee: assignees.length ? assignees.join(',') : undefined };
           },
         }),
+      onToggleCreator: (creator: SearchCreator) =>
+        navigate({
+          search: (previous) => {
+            const next = new Set((previous.creator?.split(',') ?? []) as SearchCreator[]);
+            if (next.has(creator)) next.delete(creator);
+            else next.add(creator);
+            const creators = [...next];
+            return { ...previous, creator: creators.length ? creators.join(',') : undefined };
+          },
+        }),
       onDateFilterChange: (field: SearchDateField, filter: SearchDateFilter | undefined) => {
         return navigate({
           search: (previous) => ({
@@ -190,6 +213,7 @@ export function useSearchPagePresenter() {
             ...previous,
             status: undefined,
             assignee: undefined,
+            creator: undefined,
             created: undefined,
             updated: undefined,
           }),

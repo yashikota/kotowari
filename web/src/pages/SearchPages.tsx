@@ -30,7 +30,13 @@ import type { ReactNode } from 'react';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { SearchDateTimeframeDialog } from '../components/SearchDateTimeframeDialog.tsx';
 import { useFocusWhen } from '../focus.ts';
-import { SEARCH_ASSIGNEES, SEARCH_DATE_WINDOWS, type SearchAssignee } from '../search.ts';
+import {
+  SEARCH_ASSIGNEES,
+  SEARCH_CREATORS,
+  SEARCH_DATE_WINDOWS,
+  type SearchAssignee,
+  type SearchCreator,
+} from '../search.ts';
 import { ISSUE_STATUSES, type SearchHit } from '../types.ts';
 import { useSearchPagePresenter } from '../presenters/SearchPages.tsx';
 import styles from './SearchPages.module.css';
@@ -39,6 +45,10 @@ const searchAssigneeLabels: Record<SearchAssignee, string> = {
   self: 'issueAssignment.you',
   agent: 'issueAssignment.agent',
   none: 'issueAssignment.unassigned',
+};
+const searchCreatorLabels: Record<SearchCreator, string> = {
+  self: 'issueAssignment.you',
+  agent: 'issueAssignment.agent',
 };
 
 function SearchResultLink({ hit, children }: { hit: SearchHit; children: ReactNode }) {
@@ -110,6 +120,7 @@ function SearchPageView({
         includeArchived,
         statuses,
         assignees,
+        creators,
         dates,
         customDateField,
         customDateInput,
@@ -200,6 +211,17 @@ function SearchPageView({
                           onChange={() => handlers.onToggleAssignee(assignee)}
                         >
                           {t(searchAssigneeLabels[assignee])}
+                        </Menu.CheckboxItem>
+                      ))}
+                      <Menu.Divider />
+                      <Menu.Label>{t('searchPage.filters.creator')}</Menu.Label>
+                      {SEARCH_CREATORS.map((creator) => (
+                        <Menu.CheckboxItem
+                          key={creator}
+                          checked={creators.includes(creator)}
+                          onChange={() => handlers.onToggleCreator(creator)}
+                        >
+                          {t(searchCreatorLabels[creator])}
                         </Menu.CheckboxItem>
                       ))}
                       <Menu.Divider />
@@ -331,6 +353,22 @@ function SearchPageView({
                     >
                       {t('searchPage.filters.assigneeValue', {
                         assignee: t(searchAssigneeLabels[assignee]),
+                      })}
+                      <IconX size={12} aria-hidden />
+                    </UnstyledButton>
+                  ))}
+                  {creators.map((creator) => (
+                    <UnstyledButton
+                      key={creator}
+                      type="button"
+                      className={styles.filterChip}
+                      aria-label={t('searchPage.filters.removeCreator', {
+                        creator: t(searchCreatorLabels[creator]),
+                      })}
+                      onClick={() => handlers.onToggleCreator(creator)}
+                    >
+                      {t('searchPage.filters.creatorValue', {
+                        creator: t(searchCreatorLabels[creator]),
                       })}
                       <IconX size={12} aria-hidden />
                     </UnstyledButton>

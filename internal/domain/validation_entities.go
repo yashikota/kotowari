@@ -63,6 +63,15 @@ func ValidIssueAssignee(s string) bool {
 	}
 }
 
+func ValidIssueCreator(s string) bool {
+	switch s {
+	case "", "self", "agent":
+		return true
+	default:
+		return false
+	}
+}
+
 func ValidEstimate(p *int) bool {
 	return p == nil || (*p >= 0 && *p <= 999)
 }

@@ -5,12 +5,14 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/yashikota/kotowari/internal/domain"
 )
 
 type issueFM struct {
 	Title          string              `toml:"title"`
 	Status         string              `toml:"status"`
 	WorkflowStatus string              `toml:"workflow_status,omitempty"`
+	Creator        string              `toml:"creator,omitempty"`
 	Assignee       string              `toml:"assignee,omitempty"`
 	Type           string              `toml:"type,omitempty"`
 	Priority       int                 `toml:"priority"`
@@ -70,6 +72,12 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 	if fm.WorkflowStatus == "" {
 		fm.WorkflowStatus = fm.Status
 	}
+	if fm.Creator == "" {
+		fm.Creator = "self"
+	}
+	if !domain.ValidIssueCreator(fm.Creator) {
+		return Issue{}, nil, fmt.Errorf("invalid issue creator %q", fm.Creator)
+	}
 	if fm.StatusChanged == "" {
 		fm.StatusChanged = fm.Updated
 		if fm.StatusChanged == "" {
@@ -84,6 +92,7 @@ func parseIssueMarkdown(n int, ident, raw string, m *mem) (Issue, []Comment, err
 		Body:             body,
 		Status:           fm.Status,
 		WorkflowStatus:   fm.WorkflowStatus,
+		Creator:          fm.Creator,
 		Assignee:         fm.Assignee,
 		Type:             fm.Type,
 		Priority:         fm.Priority,
@@ -148,6 +157,7 @@ func renderIssueMarkdown(iss Issue, comments []Comment, m *mem) string {
 		Title:          iss.Title,
 		Status:         iss.Status,
 		WorkflowStatus: iss.WorkflowStatus,
+		Creator:        iss.Creator,
 		Assignee:       iss.Assignee,
 		Type:           iss.Type,
 		Priority:       iss.Priority,

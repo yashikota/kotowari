@@ -7,6 +7,7 @@ test('My issues uses a focused header and Linear-style personal tabs', async ({
   const stamp = Date.now();
   const assignedTitle = `My assigned ${stamp}`;
   const unassignedTitle = `Not assigned to me ${stamp}`;
+  const agentCreatedTitle = `Agent created ${stamp}`;
   for (const data of [
     { title: assignedTitle, status: 'todo', assignee: 'self' },
     { title: unassignedTitle, status: 'todo' },
@@ -14,6 +15,10 @@ test('My issues uses a focused header and Linear-style personal tabs', async ({
     const response = await request.post('/api/issues', { data });
     expect(response.ok()).toBeTruthy();
   }
+  const agentCreated = await request.post('/api/issues', {
+    data: { title: agentCreatedTitle, status: 'todo', creator: 'agent' },
+  });
+  expect(agentCreated.ok()).toBeTruthy();
 
   await page.goto('/issues?assignee=self&myIssuesTab=assigned');
   await expect(page.getByRole('heading', { name: 'My issues' })).toBeVisible();
@@ -27,9 +32,9 @@ test('My issues uses a focused header and Linear-style personal tabs', async ({
 
   await tabs.getByRole('tab', { name: 'Created' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe('created');
-  // Kotowari is a single-user workspace, so every stored issue belongs to the current user.
   await expect(issues.getByRole('option', { name: new RegExp(assignedTitle) })).toBeVisible();
   await expect(issues.getByRole('option', { name: new RegExp(unassignedTitle) })).toBeVisible();
+  await expect(issues.getByRole('option', { name: new RegExp(agentCreatedTitle) })).toHaveCount(0);
   await expect(issues.getByRole('button', { name: /No cycle/ })).toHaveCount(0);
   await expect(issues.getByRole('option').first()).toContainText(unassignedTitle);
   await page.getByRole('button', { name: 'Display options' }).click();

@@ -80,6 +80,7 @@ describe('cycleIssuesCSV', () => {
       parentId: 8,
       parentIdentifier: 'ENBU-8',
       assignee: 'self',
+      creator: 'agent',
       labels: [
         { id: 1, name: 'Bug' },
         { id: 2, name: 'Feature' },
@@ -125,7 +126,7 @@ describe('cycleIssuesCSV', () => {
       '"ID","Team","Title","Description","Status","Estimate","Priority","Project ID","Project","Creator","Assignee","Labels","Cycle Number","Cycle Name","Cycle Start","Cycle End","Created","Updated","Started","Triaged","Completed","Canceled","Archived","Due Date","Parent issue","Initiatives","Project Milestone ID","Project Milestone","SLA Status","UUID","Time in status (minutes)","Related to","Blocked by","Duplicate of"',
     );
     expect(csv).toContain(
-      '"ENBU-42","enbu","\'=HYPERLINK(""https://example.com"",""open"")","Plan, carefully.","進行中","2","中","7","Release","","Me","Bug, Feature","11","Sprint 11","2026-09-20T15:00:00.000Z","2026-09-27T15:00:00.000Z"',
+      '"ENBU-42","enbu","\'=HYPERLINK(""https://example.com"",""open"")","Plan, carefully.","進行中","2","中","7","Release","Agent","Me","Bug, Feature","11","Sprint 11","2026-09-20T15:00:00.000Z","2026-09-27T15:00:00.000Z"',
     );
     expect(csv).toContain(
       '"2026-09-24T00:00:00Z","2026-09-24T00:00:00Z","2026-09-20T12:00:00Z","","","","","2026-09-25","ENBU-8","Quality","9","Beta","","","60","ENBU-12","ENBU-9","ENBU-5"',

@@ -2,6 +2,7 @@ import type { Issue } from './types.ts';
 
 export type IssueFilterField =
   | 'status'
+  | 'creator'
   | 'assignee'
   | 'priority'
   | 'type'
@@ -54,6 +55,7 @@ export type IssueFilterChoices = Partial<Record<IssueFilterField, IssueFilterCho
 
 const ISSUE_FILTER_FIELDS = new Set<IssueFilterField>([
   'status',
+  'creator',
   'assignee',
   'priority',
   'type',
@@ -172,6 +174,8 @@ function fieldValue(
   switch (field) {
     case 'status':
       return issue.workflowStatus ?? issue.status;
+    case 'creator':
+      return issue.creator ?? 'self';
     case 'assignee':
       return issue.assignee ?? 'none';
     case 'priority':

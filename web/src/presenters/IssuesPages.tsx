@@ -228,9 +228,11 @@ export function useIssuesPagePresenter() {
     .filter((issue) =>
       myIssuesTab === 'assigned'
         ? issue.assignee === 'self'
-        : myIssuesTab === 'subscribed'
-          ? subscribedIds.has(issue.identifier)
-          : true,
+        : myIssuesTab === 'created'
+          ? (issue.creator ?? 'self') === 'self'
+          : myIssuesTab === 'subscribed'
+            ? subscribedIds.has(issue.identifier)
+            : true,
     )
     .filter((issue) =>
       search.subscribers === 'self'

@@ -37,6 +37,7 @@ type CreateIssueInput struct {
 	Body           string
 	Status         string
 	WorkflowStatus string
+	Creator        string
 	Assignee       string
 	Type           string
 	Priority       int
@@ -60,6 +61,7 @@ type CreateIssueRequest struct {
 	Body           string                     `json:"body"`
 	Status         string                     `json:"status"`
 	WorkflowStatus string                     `json:"workflowStatus"`
+	Creator        string                     `json:"creator,omitempty"`
 	Assignee       string                     `json:"assignee"`
 	Type           string                     `json:"type"`
 	Priority       int                        `json:"priority"`
@@ -77,7 +79,7 @@ type CreateIssueRequest struct {
 
 func (in CreateIssueRequest) IssueInput() CreateIssueInput {
 	return CreateIssueInput{
-		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus,
+		Title: in.Title, Body: in.Body, Status: in.Status, WorkflowStatus: in.WorkflowStatus, Creator: in.Creator,
 		Assignee: in.Assignee, Type: in.Type, Priority: in.Priority, Estimate: in.Estimate,
 		ProjectID: in.ProjectID, MilestoneID: in.MilestoneID, CycleID: in.CycleID,
 		ParentID: in.ParentID, DueDate: in.DueDate, LabelIDs: in.LabelIDs,

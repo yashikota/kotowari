@@ -11,6 +11,10 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 			return nil
 		}
 		for _, iss := range m.Issues {
+			creator := iss.Creator
+			if creator == "" {
+				creator = "self"
+			}
 			assignee := iss.Assignee
 			if assignee == "" {
 				assignee = "none"
@@ -28,7 +32,7 @@ func (s *Store) Search(q string) ([]SearchHit, error) {
 					snippet = commentSnippet
 				}
 				hits = append(hits, SearchHit{
-					Kind: "issue", ID: iss.Identifier, Title: iss.Title, Status: iss.Status, Assignee: assignee,
+					Kind: "issue", ID: iss.Identifier, Title: iss.Title, Status: iss.Status, Creator: creator, Assignee: assignee,
 					Archived:  iss.ArchivedAt != nil,
 					CreatedAt: iss.CreatedAt, UpdatedAt: iss.UpdatedAt,
 					Snippet: snippet,

@@ -182,7 +182,7 @@ func TestIssueWritesMarkdownFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	iss, err := s.CreateIssue(CreateIssueInput{Title: "file native"})
+	iss, err := s.CreateIssue(CreateIssueInput{Title: "file native", Creator: "agent"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,8 +194,15 @@ func TestIssueWritesMarkdownFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	md := string(b)
-	if !strings.Contains(md, "file native") || !strings.HasPrefix(md, "+++\n") {
+	if !strings.Contains(md, "file native") || !strings.Contains(md, "creator = 'agent'") || !strings.HasPrefix(md, "+++\n") {
 		t.Fatalf("issue markdown: %s", md)
+	}
+	reloaded, err := s.GetIssue(iss.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Creator != "agent" {
+		t.Fatalf("reloaded creator %q, want agent", reloaded.Creator)
 	}
 }
 

@@ -37,6 +37,12 @@ func (s *Store) prepareCreateIssueInput(in CreateIssueInput) (preparedCreateIssu
 	if !domain.ValidIssueAssignee(in.Assignee) {
 		return preparedCreateIssueInput{}, validationf("invalid issue assignee")
 	}
+	if in.Creator == "" {
+		in.Creator = "self"
+	}
+	if !domain.ValidIssueCreator(in.Creator) {
+		return preparedCreateIssueInput{}, validationf("invalid issue creator")
+	}
 	if in.TemplateSlug != "" {
 		if issueTemplateSlug(in.TemplateSlug) != in.TemplateSlug {
 			return preparedCreateIssueInput{}, validationf("invalid issue template")

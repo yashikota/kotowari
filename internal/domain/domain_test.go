@@ -165,6 +165,14 @@ func TestValidSlug(t *testing.T) {
 
 func TestValidators(t *testing.T) {
 	t.Parallel()
+	for _, creator := range []string{"", "self", "agent"} {
+		if !ValidIssueCreator(creator) {
+			t.Fatalf("issue creator %q", creator)
+		}
+	}
+	if ValidIssueCreator("unknown") {
+		t.Fatal("unknown issue creator must not be accepted")
+	}
 	for _, s := range []string{"backlog", "todo", "in_progress", "done", "canceled"} {
 		if !ValidIssueStatus(s) {
 			t.Fatalf("issue status %q", s)

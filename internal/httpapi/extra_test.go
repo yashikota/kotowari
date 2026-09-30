@@ -49,8 +49,18 @@ func TestCommandsAndSearch(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &hits); err != nil {
 		t.Fatal(err)
 	}
-	if len(hits) != 1 || hits[0]["kind"] != "issue" {
+	if len(hits) != 1 || hits[0]["kind"] != "issue" || hits[0]["creator"] != "self" {
 		t.Fatalf("search %#v", hits)
+	}
+	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"AgentFindable","creator":"agent"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("create agent issue %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, s, "GET", "/api/search?q=AgentFindable", "")
+	if err := json.Unmarshal(rec.Body.Bytes(), &hits); err != nil {
+		t.Fatal(err)
+	}
+	if len(hits) != 1 || hits[0]["creator"] != "agent" {
+		t.Fatalf("search creator %#v", hits)
 	}
 	if rec := doJSON(t, s, "POST", "/api/issues", `{"title":"AssignedFindable","assignee":"agent"}`); rec.Code != http.StatusCreated {
 		t.Fatalf("create assigned issue %d %s", rec.Code, rec.Body.String())

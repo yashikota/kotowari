@@ -98,6 +98,19 @@ describe('issue advanced filters', () => {
     );
   });
 
+  it('filters by issue creator and treats old records as self-created', () => {
+    const creatorFilter = (value: string) => ({
+      kind: 'group' as const,
+      operator: 'and' as const,
+      children: [
+        { kind: 'condition' as const, field: 'creator' as const, operator: 'is' as const, value },
+      ],
+    });
+    expect(matchesIssueFilterGroup(issue({ creator: 'agent' }), creatorFilter('agent'))).toBe(true);
+    expect(matchesIssueFilterGroup(issue({ creator: 'agent' }), creatorFilter('self'))).toBe(false);
+    expect(matchesIssueFilterGroup(issue(), creatorFilter('self'))).toBe(true);
+  });
+
   it('handles not-equal, missing values, multi-labels, and incomplete builder rows', () => {
     const noAssignee = issue({ assignee: undefined, labels: [], estimate: null });
     expect(

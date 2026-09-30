@@ -36,6 +36,12 @@ func (s *Store) CreateRecurringIssueFromInput(issueInput CreateIssueInput, in Cr
 	if !domain.ValidIssueAssignee(issueInput.Assignee) {
 		return RecurringIssue{}, validationf("invalid issue assignee")
 	}
+	if issueInput.Creator == "" {
+		issueInput.Creator = "self"
+	}
+	if !domain.ValidIssueCreator(issueInput.Creator) {
+		return RecurringIssue{}, validationf("invalid issue creator")
+	}
 
 	normalizedLinks, err := normalizeIssueLinks(issueInput.ExternalLinks)
 	if err != nil {
@@ -62,7 +68,7 @@ func (s *Store) CreateRecurringIssueFromInput(issueInput CreateIssueInput, in Cr
 		}
 		recurring = RecurringIssue{
 			Slug: slug, Name: in.Name, Title: issueInput.Title, Body: issueInput.Body,
-			Status: workflowStatus.Category, Assignee: issueInput.Assignee, Type: issueInput.Type, Priority: issueInput.Priority,
+			Status: workflowStatus.Category, Creator: issueInput.Creator, Assignee: issueInput.Assignee, Type: issueInput.Type, Priority: issueInput.Priority,
 			Estimate: issueInput.Estimate, Labels: []string{}, Links: issueLinksForRecurringInput(issueInput.ExternalLinks),
 			FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,
 			NextDueDate: in.FirstDueDate, Enabled: true,

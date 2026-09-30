@@ -34,7 +34,13 @@ function defaultOperator(field: IssueFilterField | null): IssueFilterOperator {
 }
 
 function fieldLabel(field: IssueFilterField, t: ReturnType<typeof useTranslation>['t']) {
-  if (field === 'title' || field === 'identifier' || field === 'content' || field === 'links') {
+  if (
+    field === 'title' ||
+    field === 'identifier' ||
+    field === 'content' ||
+    field === 'links' ||
+    field === 'creator'
+  ) {
     return t(`issueFilters.${field}`);
   }
   if (field === 'dueDate') return t('filters.dueDate');
@@ -92,6 +98,7 @@ export function AdvancedIssueFilterBuilder({
   const { t } = useTranslation();
   const fields: IssueFilterField[] = [
     'status',
+    'creator',
     'assignee',
     'priority',
     'type',

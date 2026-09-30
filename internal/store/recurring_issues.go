@@ -79,7 +79,7 @@ func (s *Store) createRecurringIssueFromIssue(identifier string, in CreateRecurr
 	}
 	recurring := RecurringIssue{
 		Slug: slug, Name: in.Name, Title: issue.Title, Body: issue.Body,
-		Status: "backlog", Assignee: issue.Assignee, Type: issue.Type, Priority: issue.Priority,
+		Status: "backlog", Creator: issue.Creator, Assignee: issue.Assignee, Type: issue.Type, Priority: issue.Priority,
 		Estimate: issue.Estimate, ProjectSlug: issue.ProjectSlug, Labels: labels,
 		Links:        issueLinksForRecurring(issue.ExternalLinks),
 		FirstDueDate: in.FirstDueDate, Interval: in.Interval, Unit: in.Unit,

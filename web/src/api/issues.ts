@@ -61,6 +61,7 @@ export const issueApi = {
     body?: string;
     status?: string;
     workflowStatus?: string;
+    creator?: 'self' | 'agent';
     assignee?: 'self' | 'agent';
     type?: string;
     priority?: number;

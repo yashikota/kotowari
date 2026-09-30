@@ -55,6 +55,7 @@ type SearchHit struct {
 	ID        string `json:"id"`
 	Title     string `json:"title"`
 	Status    string `json:"status,omitempty"`
+	Creator   string `json:"creator,omitempty"`
 	Assignee  string `json:"assignee,omitempty"`
 	Archived  bool   `json:"archived,omitempty"`
 	CreatedAt string `json:"createdAt,omitempty"`

@@ -6,6 +6,7 @@ type RecurringIssue struct {
 	Title               string                 `json:"title"`
 	Body                string                 `json:"body"`
 	Status              string                 `json:"status"`
+	Creator             string                 `json:"creator,omitempty"`
 	Assignee            string                 `json:"assignee,omitempty"`
 	Type                string                 `json:"type,omitempty"`
 	Priority            int                    `json:"priority"`

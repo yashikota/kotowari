@@ -99,7 +99,7 @@ func (s *Store) createRecurringInstance(schedule RecurringIssue, dueDate string)
 	}
 	slug := schedule.Slug
 	return s.CreateIssue(CreateIssueInput{
-		Title: schedule.Title, Body: schedule.Body, Status: schedule.Status, Assignee: schedule.Assignee,
+		Title: schedule.Title, Body: schedule.Body, Status: schedule.Status, Creator: schedule.Creator, Assignee: schedule.Assignee,
 		Type: schedule.Type, Priority: schedule.Priority, Estimate: schedule.Estimate,
 		ProjectID: projectID, DueDate: &dueDate, LabelIDs: labelIDs, RecurringSlug: &slug, ExternalLinks: schedule.Links,
 	})

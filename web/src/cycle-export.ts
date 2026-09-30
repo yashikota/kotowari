@@ -100,7 +100,7 @@ export function cycleIssuesCSV(issues: Issue[], context: CycleIssuesCSVContext =
       priorityLabel(issue.priority),
       issue.projectId,
       project?.name ?? '',
-      '', // The local, single-user issue model does not record a separate creator identity.
+      (issue.creator ?? 'self') === 'agent' ? 'Agent' : 'Me',
       issue.assignee === 'self' ? 'Me' : issue.assignee === 'agent' ? 'Agent' : '',
       issue.labels.map((label) => label.name).join(', '),
       issue.cycleNumber ?? cycle?.number ?? '',

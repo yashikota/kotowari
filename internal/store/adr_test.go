@@ -49,6 +49,9 @@ func TestLoadsLegacyFlatIssueFile(t *testing.T) {
 	if got.Title != "legacy" {
 		t.Fatalf("title %q", got.Title)
 	}
+	if got.Creator != "self" {
+		t.Fatalf("legacy issue creator %q, want self", got.Creator)
+	}
 	if _, err := s.CreateIssue(CreateIssueInput{Title: "touch"}); err != nil {
 		t.Fatal(err)
 	}

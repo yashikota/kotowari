@@ -4,6 +4,8 @@ export type SearchTab = 'all' | 'issues' | 'projects' | 'documents';
 export type SearchOrder = 'relevance' | 'updatedAt' | 'createdAt';
 export type SearchAssignee = 'self' | 'agent' | 'none';
 export const SEARCH_ASSIGNEES: SearchAssignee[] = ['self', 'agent', 'none'];
+export type SearchCreator = 'self' | 'agent';
+export const SEARCH_CREATORS: SearchCreator[] = ['self', 'agent'];
 export type SearchDateWindow = 'P1D' | 'P3D' | 'P1W' | 'P1M' | 'P3M' | 'P6M' | 'P1Y';
 export type SearchDateField = 'created' | 'updated';
 export type SearchDateOperator = 'after' | 'before' | 'in';
@@ -29,6 +31,7 @@ export type SearchPageSearch = {
   ordering?: SearchOrder;
   status?: string;
   assignee?: string;
+  creator?: string;
   created?: string;
   updated?: string;
   includeArchived?: boolean;
@@ -62,6 +65,18 @@ export function parseSearchPageSearch(raw: Record<string, unknown>): SearchPageS
           ),
         ]
       : [];
+  const creators =
+    typeof raw.creator === 'string'
+      ? [
+          ...new Set(
+            raw.creator
+              .split(',')
+              .filter((creator): creator is SearchCreator =>
+                SEARCH_CREATORS.includes(creator as SearchCreator),
+              ),
+          ),
+        ]
+      : [];
   const ordering =
     raw.ordering === 'updatedAt' || raw.ordering === 'createdAt' ? raw.ordering : undefined;
   const includeArchived = raw.includeArchived === true || raw.includeArchived === 'true';
@@ -73,6 +88,7 @@ export function parseSearchPageSearch(raw: Record<string, unknown>): SearchPageS
     ...(ordering ? { ordering } : {}),
     ...(statuses.length ? { status: statuses.join(',') } : {}),
     ...(assignees.length ? { assignee: assignees.join(',') } : {}),
+    ...(creators.length ? { creator: creators.join(',') } : {}),
     ...(created ? { created: serializeSearchDateFilter(created) } : {}),
     ...(updated ? { updated: serializeSearchDateFilter(updated) } : {}),
     ...(includeArchived ? { includeArchived: true } : {}),
@@ -248,6 +264,7 @@ export function filterSearchHits(
   now = Date.now(),
   includeArchived = false,
   assignees: SearchAssignee[] = [],
+  creators: SearchCreator[] = [],
 ): SearchHit[] {
   let filtered: SearchHit[];
   const visibleHits = includeArchived ? hits : hits.filter((hit) => !hit.archived);
@@ -265,12 +282,14 @@ export function filterSearchHits(
       filtered = visibleHits;
       break;
   }
-  if (!statuses.length && !dates.created && !dates.updated && !assignees.length) return filtered;
+  if (!statuses.length && !dates.created && !dates.updated && !assignees.length && !creators.length)
+    return filtered;
   return filtered.filter(
     (hit) =>
       hit.kind === 'issue' &&
       (!statuses.length || (hit.status !== undefined && statuses.includes(hit.status))) &&
       (!assignees.length || assignees.includes((hit.assignee ?? 'none') as SearchAssignee)) &&
+      (!creators.length || creators.includes((hit.creator ?? 'self') as SearchCreator)) &&
       (!dates.created || matchesSearchDateFilter(hit.createdAt, dates.created, now)) &&
       (!dates.updated || matchesSearchDateFilter(hit.updatedAt, dates.updated, now)),
   );

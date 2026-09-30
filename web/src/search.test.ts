@@ -44,10 +44,16 @@ describe('search page state', () => {
       parseSearchPageSearch({
         status: 'todo,in_progress,todo,unknown',
         assignee: 'agent,self,agent,unknown',
+        creator: 'agent,self,agent,unknown',
         created: 'P4D',
         updated: 'P1W',
       }),
-    ).toEqual({ status: 'todo,in_progress', assignee: 'agent,self', updated: 'P1W' });
+    ).toEqual({
+      status: 'todo,in_progress',
+      assignee: 'agent,self',
+      creator: 'agent,self',
+      updated: 'P1W',
+    });
   });
 
   it('filters search categories like Linear tabs while retaining Kotowari-only views in All', () => {
@@ -99,6 +105,25 @@ describe('search page state', () => {
         (hit) => hit.id,
       ),
     ).toEqual(['APP-3']);
+  });
+
+  it('filters issue results by creator and treats older hits as self-created', () => {
+    const creatorHits: SearchHit[] = [
+      { kind: 'issue', id: 'APP-1', title: 'Mine', creator: 'self' },
+      { kind: 'issue', id: 'APP-2', title: 'Agent', creator: 'agent' },
+      { kind: 'issue', id: 'APP-3', title: 'Legacy issue' },
+      { kind: 'project', id: 'launch', title: 'Project' },
+    ];
+    expect(
+      filterSearchHits(creatorHits, 'all', [], {}, Date.now(), false, [], ['agent']).map(
+        (hit) => hit.id,
+      ),
+    ).toEqual(['APP-2']);
+    expect(
+      filterSearchHits(creatorHits, 'all', [], {}, Date.now(), false, [], ['self']).map(
+        (hit) => hit.id,
+      ),
+    ).toEqual(['APP-1', 'APP-3']);
   });
 
   it('combines created and updated date filters for issue results', () => {

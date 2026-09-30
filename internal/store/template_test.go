@@ -291,14 +291,14 @@ func TestRecurringIssueFromNewInputCreatesOnlyTheFirstScheduledIssue(t *testing.
 	links := []CreateIssueLinkInput{{URL: "https://example.test/spec", Title: "Spec"}}
 	schedule, err := s.CreateRecurringIssueFromInput(CreateIssueInput{
 		Title: "Monthly review", Body: "Review the latest changes.", Status: "todo",
-		Assignee: "self", Type: "task", Priority: 2, ExternalLinks: links,
+		Creator: "agent", Assignee: "self", Type: "task", Priority: 2, ExternalLinks: links,
 	}, CreateRecurringIssueInput{
 		FirstDueDate: firstDueDate, Interval: 2, Unit: "month",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if schedule.Name != "Monthly review" || schedule.NextDueDate != firstDueDate || schedule.LastIssueIdentifier == "" || schedule.Assignee != "self" {
+	if schedule.Name != "Monthly review" || schedule.NextDueDate != firstDueDate || schedule.LastIssueIdentifier == "" || schedule.Creator != "agent" || schedule.Assignee != "self" {
 		t.Fatalf("schedule %#v", schedule)
 	}
 	if len(schedule.Links) != 1 || schedule.Links[0].URL != links[0].URL {
@@ -312,7 +312,7 @@ func TestRecurringIssueFromNewInputCreatesOnlyTheFirstScheduledIssue(t *testing.
 		t.Fatalf("expected only the first scheduled issue, got %#v", issues)
 	}
 	instance := issues[0]
-	if instance.DueDate == nil || *instance.DueDate != firstDueDate || instance.Status != "todo" || instance.Assignee != "self" || len(instance.ExternalLinks) != 1 {
+	if instance.DueDate == nil || *instance.DueDate != firstDueDate || instance.Status != "todo" || instance.Creator != "agent" || instance.Assignee != "self" || len(instance.ExternalLinks) != 1 {
 		t.Fatalf("first scheduled issue %#v", instance)
 	}
 
@@ -326,7 +326,7 @@ func TestRecurringIssueFromNewInputCreatesOnlyTheFirstScheduledIssue(t *testing.
 		}
 	})
 	restoredSchedules, err := reopened.ListRecurringIssues()
-	if err != nil || len(restoredSchedules) != 1 || len(restoredSchedules[0].Links) != 1 || restoredSchedules[0].Assignee != "self" {
+	if err != nil || len(restoredSchedules) != 1 || len(restoredSchedules[0].Links) != 1 || restoredSchedules[0].Creator != "agent" || restoredSchedules[0].Assignee != "self" {
 		t.Fatalf("restored recurring templates %#v, %v", restoredSchedules, err)
 	}
 

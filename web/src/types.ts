@@ -15,6 +15,7 @@ export type ProjectWorkflowStatus = {
   description?: string;
 };
 export type IssueType = 'bug' | 'feature' | 'improvement' | 'task';
+export type IssueCreator = 'self' | 'agent';
 
 export type LabelOperator = 'includeAny' | 'includeAll' | 'excludeAny' | 'excludeAll';
 
@@ -58,6 +59,7 @@ export type Issue = {
   body: string;
   status: IssueStatus;
   workflowStatus?: string;
+  creator?: IssueCreator;
   assignee?: 'self' | 'agent';
   type?: IssueType;
   priority: number;
@@ -115,6 +117,7 @@ export type RecurringIssue = {
   title: string;
   body: string;
   status: IssueStatus;
+  creator?: IssueCreator;
   assignee?: 'self' | 'agent';
   type?: IssueType;
   priority: number;
@@ -410,6 +413,7 @@ export type SearchHit = {
   id: string;
   title: string;
   status?: IssueStatus;
+  creator?: IssueCreator;
   assignee?: string;
   archived?: boolean;
   createdAt?: string;
