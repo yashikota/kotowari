@@ -1,48 +1,31 @@
 package httpapi
 
-import (
-	"encoding/json"
-
-	"github.com/yashikota/kotowari/internal/model"
-)
+import "github.com/yashikota/kotowari/internal/model"
 
 type adrPatchRequest struct {
-	ProjectSlug  json.RawMessage `json:"projectSlug"`
-	Title        json.RawMessage `json:"title"`
-	Body         json.RawMessage `json:"body"`
-	PublishBody  json.RawMessage `json:"publishBody"`
-	Status       json.RawMessage `json:"status"`
-	Evaluation   json.RawMessage `json:"evaluation"`
-	Replay       json.RawMessage `json:"replay"`
-	Workload     json.RawMessage `json:"workload"`
-	Supersedes   json.RawMessage `json:"supersedes"`
-	IssueNumbers json.RawMessage `json:"issueNumbers"`
+	ProjectSlug  patchField[string] `json:"projectSlug"`
+	Title        patchField[string] `json:"title"`
+	Body         patchField[string] `json:"body"`
+	PublishBody  patchField[string] `json:"publishBody"`
+	Status       patchField[string] `json:"status"`
+	Evaluation   patchField[string] `json:"evaluation"`
+	Replay       patchField[string] `json:"replay"`
+	Workload     patchField[string] `json:"workload"`
+	Supersedes   patchField[int]    `json:"supersedes"`
+	IssueNumbers patchField[[]int]  `json:"issueNumbers"`
 }
 
-func (p adrPatchRequest) input() (model.PatchADRInput, error) {
+func (p adrPatchRequest) input() model.PatchADRInput {
 	var input model.PatchADRInput
-	fields := []struct {
-		raw   json.RawMessage
-		apply func() error
-	}{
-		{p.ProjectSlug, func() error { return assignNullablePatchField(p.ProjectSlug, "projectSlug", &input.ProjectSlug) }},
-		{p.Title, func() error { return assignPatchField(p.Title, "title", &input.Title) }},
-		{p.Body, func() error { return assignPatchField(p.Body, "body", &input.Body) }},
-		{p.PublishBody, func() error { return assignPatchField(p.PublishBody, "publishBody", &input.PublishBody) }},
-		{p.Status, func() error { return assignPatchField(p.Status, "status", &input.Status) }},
-		{p.Evaluation, func() error { return assignPatchField(p.Evaluation, "evaluation", &input.Evaluation) }},
-		{p.Replay, func() error { return assignPatchField(p.Replay, "replay", &input.Replay) }},
-		{p.Workload, func() error { return assignPatchField(p.Workload, "workload", &input.Workload) }},
-		{p.Supersedes, func() error { return assignNullablePatchField(p.Supersedes, "supersedes", &input.Supersedes) }},
-		{p.IssueNumbers, func() error { return assignPatchField(p.IssueNumbers, "issueNumbers", &input.IssueNumbers) }},
-	}
-	for _, field := range fields {
-		if field.raw == nil {
-			continue
-		}
-		if err := field.apply(); err != nil {
-			return model.PatchADRInput{}, err
-		}
-	}
-	return input, nil
+	assignNullablePatchField(p.ProjectSlug, &input.ProjectSlug)
+	assignPatchField(p.Title, &input.Title)
+	assignPatchField(p.Body, &input.Body)
+	assignPatchField(p.PublishBody, &input.PublishBody)
+	assignPatchField(p.Status, &input.Status)
+	assignPatchField(p.Evaluation, &input.Evaluation)
+	assignPatchField(p.Replay, &input.Replay)
+	assignPatchField(p.Workload, &input.Workload)
+	assignNullablePatchField(p.Supersedes, &input.Supersedes)
+	assignPatchField(p.IssueNumbers, &input.IssueNumbers)
+	return input
 }

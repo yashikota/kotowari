@@ -44,12 +44,7 @@ func (s *Server) patchADR(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	in, err := request.input()
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
-	out, err := s.store.UpdateADR(r.PathValue("id"), in)
+	out, err := s.store.UpdateADR(r.PathValue("id"), request.input())
 	if err != nil {
 		writeError(w, err)
 		return

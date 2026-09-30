@@ -44,11 +44,7 @@ func (s *Server) patchPage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	title, body, status, parentID, projectID, date, tags, err := request.values()
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
+	title, body, status, parentID, projectID, date, tags := request.values()
 	out, err := s.store.UpdatePage(model.UpdatePageInput{
 		Slug: r.PathValue("slug"), Title: title, Body: body, Status: status,
 		ParentID: parentID, ProjectID: projectID, Date: date, Tags: tags,

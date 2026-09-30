@@ -1,19 +1,13 @@
 package httpapi
 
 import (
-	"errors"
 	"net/http"
 )
 
 func (s *Server) patchIssue(w http.ResponseWriter, r *http.Request) {
 	in, err := decodeIssuePatch(r)
 	if err != nil {
-		var fieldErr *patchFieldError
-		message := "invalid json"
-		if errors.As(err, &fieldErr) {
-			message = fieldErr.Error()
-		}
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": message})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
 	out, err := s.store.UpdateIssue(r.PathValue("id"), in)

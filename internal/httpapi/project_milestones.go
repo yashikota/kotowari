@@ -33,11 +33,7 @@ func (s *Server) patchMilestone(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
 	}
-	name, description, targetDate, err := request.values()
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
+	name, description, targetDate := request.values()
 	out, err := s.store.UpdateMilestone(model.UpdateMilestoneInput{
 		ProjectSlug: r.PathValue("slug"), ID: id,
 		Name: name, Description: description, TargetDate: targetDate,
