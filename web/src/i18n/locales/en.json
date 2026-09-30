@@ -1637,12 +1637,56 @@
     "remove": "Remove {{label}} filter",
     "clear": "Clear filters"
   },
+  "issueImport": {
+    "title": "Import issues from CSV",
+    "description": "Preview a Linear issue export, then create matching local issues. Choose a CSV file to begin.",
+    "chooseFile": "Choose CSV file…",
+    "fileTooLarge": "The CSV file is larger than the 25 MB limit.",
+    "tooManyRows": "This import is limited to {{count}} issues at a time. Split the CSV and try again.",
+    "readFailed": "Could not read this CSV file.",
+    "fileError": {
+      "empty": "The CSV file is empty.",
+      "invalid": "The CSV format is invalid. Check its quoting and try again.",
+      "missingTitleColumn": "The CSV must include a Title column."
+    },
+    "readyCount_one": "{{count}} issue ready",
+    "readyCount_other": "{{count}} issues ready",
+    "skippedCount_one": "{{count}} row will be skipped",
+    "skippedCount_other": "{{count}} rows will be skipped",
+    "warningCount_one": "{{count}} value needs attention",
+    "warningCount_other": "{{count}} values need attention",
+    "existingItemsHint": "Imported rows create new issues; source IDs and timestamps are not preserved. Unmatched names are left unassigned.",
+    "missingTitle": "Missing title",
+    "moreRows": "And {{count}} more rows",
+    "importCount_one": "Import {{count}} issue",
+    "importCount_other": "Import {{count}} issues",
+    "progress": "Importing {{current}} of {{total}}…",
+    "complete": "Imported {{imported}} issues; {{failed}} failed.",
+    "rowFailed": "Row {{row}} ({{title}}): {{reason}}",
+    "error": {
+      "missingTitle": "Add a title before importing this row."
+    },
+    "warning": {
+      "status": "Unknown status “{{value}}”; imported to Backlog.",
+      "priority": "Unknown priority “{{value}}”; imported with no priority.",
+      "estimate": "Estimate “{{value}}” was ignored.",
+      "type": "Issue type “{{value}}” was not recognized and will use the default.",
+      "assignee": "Assignee “{{value}}” was not matched and will be left unassigned.",
+      "project": "Project “{{value}}” was not matched and will be omitted.",
+      "cycle": "Cycle “{{value}}” was not matched and will be omitted.",
+      "labels": "These labels were not found and will be skipped: {{value}}",
+      "milestone": "Milestone “{{value}}” was not found in the matched project.",
+      "dueDate": "Due date “{{value}}” could not be read and will be omitted.",
+      "parent": "Parent issue “{{value}}” was not found locally and will be omitted."
+    }
+  },
   "displayOptions": {
     "button": "Display options",
     "layout": "Layout",
     "list": "List",
     "board": "Board",
     "exportIssues": "Export issues as CSV…",
+    "importIssues": "Import issues from CSV…",
     "grouping": "Grouping",
     "noGrouping": "No grouping",
     "groupOrdering": "Group ordering",

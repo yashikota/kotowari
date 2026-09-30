@@ -160,6 +160,7 @@ export function useIssuesPagePresenter() {
   const showEmptyGroups = search.showEmptyGroups ?? false;
   const displayProperties = search.displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES];
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [, setDisplayOptionsOpen] = useRootMachineFlag('issues.displayOptions');
   const [facet, setFacet] = useState<IssueFacetType>('assignees');
   const [selected, setSelected] = useState<string | null>(
@@ -325,6 +326,7 @@ export function useIssuesPagePresenter() {
     showEmptyGroups,
     displayProperties,
     detailsOpen,
+    importOpen,
     facet,
     facetOptions: buildIssueFacetOptions(facet, issues, data.projects),
     selectedFacetValues,
@@ -370,6 +372,11 @@ export function useIssuesPagePresenter() {
           `${myIssuesTab ? `my-issues-${myIssuesTab}` : `issues-${activeView}`}.csv`,
           { cycles: data.cycles, projects: data.projects },
         ),
+      onImportIssues: () => {
+        setDisplayOptionsOpen(false);
+        setImportOpen(true);
+      },
+      onCloseImportIssues: () => setImportOpen(false),
       onFind2: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onFind']>>
       ) => {

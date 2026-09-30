@@ -119,6 +119,7 @@ type Props = {
   displayProperties?: string[];
   onDisplayPropertyToggle?: (property: IssueDisplayProperty) => void;
   onExportIssues?: () => void;
+  onImportIssues?: () => void;
   detailsOpen?: boolean;
   onDetailsToggle?: () => void;
 };
@@ -165,6 +166,7 @@ export function useIssueFiltersPresenter({
   displayProperties,
   onDisplayPropertyToggle,
   onExportIssues,
+  onImportIssues,
   detailsOpen,
   onDetailsToggle,
 }: Props) {
@@ -279,6 +281,7 @@ export function useIssueFiltersPresenter({
     showEmptyGroups,
     displayProperties,
     onExportIssues,
+    onImportIssues,
     detailsOpen,
     onDetailsToggle,
     findRef,

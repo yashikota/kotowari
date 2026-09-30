@@ -6,6 +6,7 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueViewTabs } from '../components/IssueViewTabs.tsx';
 import { IssueListFacetPanel } from '../components/IssueListFacetPanel.tsx';
+import { IssueCSVImportModal } from '../components/IssueCSVImportModal.tsx';
 import { MyIssuesTabs } from '../components/MyIssuesTabs.tsx';
 import { MyIssuesActivity } from '../components/MyIssuesActivity.tsx';
 import { EmptyState, PageHeader, Pane, Shortcut, SplitLayout } from '../mantine-ui.tsx';
@@ -56,6 +57,7 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
           templateOptions={data.templateOptions}
           onChange={handlers.onChange0}
           onExportIssues={handlers.onExportIssues}
+          onImportIssues={handlers.onImportIssues}
           compactToolbar={!myIssuesTab}
           advancedFilter={search.advancedFilter}
           advancedFilterGroup={search.advancedFilterGroup}
@@ -97,6 +99,13 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
       }
       return (
         <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <IssueCSVImportModal
+            opened={model.importOpen}
+            onClose={handlers.onCloseImportIssues}
+            projects={data.projects}
+            cycles={data.cycles}
+            labels={data.labels}
+          />
           {myIssuesTab ? (
             <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
           ) : null}

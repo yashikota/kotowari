@@ -59,6 +59,7 @@ export function IssueFiltersView({
         showEmptyGroups,
         displayProperties,
         onExportIssues,
+        onImportIssues,
         detailsOpen,
         onDetailsToggle,
         advancedFilter,
@@ -191,6 +192,7 @@ export function IssueFiltersView({
                   showEmptyGroups={showEmptyGroups ?? false}
                   displayProperties={displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES]}
                   onExportIssues={onExportIssues}
+                  onImportIssues={onImportIssues}
                   onSubGroupByChange={handlers.onSubGroupByChange}
                   onDirectionChange={handlers.onDirectionChange}
                   onCompletedIssuesChange={handlers.onCompletedIssuesChange}

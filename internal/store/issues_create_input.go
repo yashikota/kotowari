@@ -74,7 +74,7 @@ func (s *Store) prepareCreateIssueInput(in CreateIssueInput) (preparedCreateIssu
 			ID: int64(index + 1), URL: link.URL, Title: link.Title, Kind: link.Kind, CreatedAt: now,
 		})
 	}
-	if strings.TrimSpace(in.Body) == "" {
+	if strings.TrimSpace(in.Body) == "" && !in.SkipDefaultTemplate {
 		in.Body = templateBody(s.root, "ISSUE.md", "")
 	}
 	return preparedCreateIssueInput{

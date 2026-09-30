@@ -59,6 +59,7 @@ export const issueApi = {
   createIssue: (body: {
     title: string;
     body?: string;
+    skipDefaultTemplate?: boolean;
     status?: string;
     workflowStatus?: string;
     creator?: 'self' | 'agent';

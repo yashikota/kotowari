@@ -1627,12 +1627,56 @@
     "remove": "{{label}} フィルターを削除",
     "clear": "フィルターをクリア"
   },
+  "issueImport": {
+    "title": "CSVからイシューを取り込む",
+    "description": "LinearのイシューCSVをプレビューし、対応するローカルイシューを作成します。CSVファイルを選択してください。",
+    "chooseFile": "CSVファイルを選択…",
+    "fileTooLarge": "CSVファイルの上限は25 MBです。",
+    "tooManyRows": "一度に取り込めるのは{{count}}件までです。CSVを分割して再度お試しください。",
+    "readFailed": "CSVファイルを読み込めませんでした。",
+    "fileError": {
+      "empty": "CSVファイルが空です。",
+      "invalid": "CSV形式が正しくありません。引用符を確認してください。",
+      "missingTitleColumn": "CSVにTitle列がありません。"
+    },
+    "readyCount_one": "{{count}}件を取り込み可能",
+    "readyCount_other": "{{count}}件を取り込み可能",
+    "skippedCount_one": "{{count}}行をスキップ",
+    "skippedCount_other": "{{count}}行をスキップ",
+    "warningCount_one": "{{count}}個の値を確認してください",
+    "warningCount_other": "{{count}}個の値を確認してください",
+    "existingItemsHint": "取り込んだ行は新しいイシューとして作成されます。元のIDと日時は引き継がれません。一致しない名前は未割り当てになります。",
+    "missingTitle": "タイトルがありません",
+    "moreRows": "ほか{{count}}行",
+    "importCount_one": "{{count}}件を取り込む",
+    "importCount_other": "{{count}}件を取り込む",
+    "progress": "{{total}}件中{{current}}件を取り込み中…",
+    "complete": "{{imported}}件を取り込み、{{failed}}件で失敗しました。",
+    "rowFailed": "{{row}}行目（{{title}}）: {{reason}}",
+    "error": {
+      "missingTitle": "この行を取り込むにはタイトルが必要です。"
+    },
+    "warning": {
+      "status": "ステータス「{{value}}」が見つからないため、バックログにします。",
+      "priority": "優先度「{{value}}」が不明なため、優先度なしにします。",
+      "estimate": "見積もり「{{value}}」を無視します。",
+      "type": "種別「{{value}}」が不明なため、既定値を使います。",
+      "assignee": "担当者「{{value}}」が見つからないため、未割り当てにします。",
+      "project": "プロジェクト「{{value}}」が見つからないため、設定しません。",
+      "cycle": "サイクル「{{value}}」が見つからないため、設定しません。",
+      "labels": "次のラベルが見つからないためスキップします: {{value}}",
+      "milestone": "一致したプロジェクトにマイルストーン「{{value}}」がありません。",
+      "dueDate": "期限「{{value}}」を読み取れないため、設定しません。",
+      "parent": "親イシュー「{{value}}」がローカルにないため、設定しません。"
+    }
+  },
   "displayOptions": {
     "button": "表示オプション",
     "layout": "レイアウト",
     "list": "リスト",
     "board": "ボード",
     "exportIssues": "イシューをCSVに書き出す…",
+    "importIssues": "CSVからイシューを取り込む…",
     "grouping": "グループ化",
     "noGrouping": "グループ化しない",
     "groupOrdering": "グループの順序",

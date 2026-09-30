@@ -15,6 +15,7 @@ import {
   IconChevronLeft,
   IconChevronUp,
   IconDownload,
+  IconFileImport,
   IconGripVertical,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +59,7 @@ export function IssueDisplayOptions({
   showEmptyGroups,
   displayProperties,
   onExportIssues,
+  onImportIssues,
   onSubGroupByChange,
   onDirectionChange,
   onCompletedIssuesChange,
@@ -90,6 +92,7 @@ export function IssueDisplayOptions({
   showEmptyGroups: boolean;
   displayProperties: string[];
   onExportIssues?: () => void;
+  onImportIssues?: () => void;
   onSubGroupByChange: (groupBy: string) => void;
   onDirectionChange: (direction: 'asc' | 'desc') => void;
   onCompletedIssuesChange: (filter: CompletedIssuesFilter) => void;
@@ -289,6 +292,19 @@ export function IssueDisplayOptions({
                 ))}
               </Group>
             </Stack>
+            {onImportIssues ? (
+              <Button
+                type="button"
+                variant="subtle"
+                color="gray"
+                size="xs"
+                fullWidth
+                leftSection={<IconFileImport size={14} aria-hidden="true" />}
+                onClick={onImportIssues}
+              >
+                {t('displayOptions.importIssues')}
+              </Button>
+            ) : null}
             {onExportIssues ? (
               <Button
                 type="button"
