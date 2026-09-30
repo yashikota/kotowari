@@ -53,6 +53,7 @@ type Initiative struct {
 	Description     string   `json:"description" toml:"description,omitempty"`
 	Status          string   `json:"status" toml:"status"`
 	Owner           string   `json:"owner,omitempty" toml:"owner,omitempty"`
+	IsFavorite      bool     `json:"isFavorite,omitempty" toml:"is_favorite,omitempty"`
 	Color           string   `json:"color,omitempty" toml:"color,omitempty"`
 	Health          string   `json:"health,omitempty" toml:"health,omitempty"`
 	HealthUpdatedAt *string  `json:"healthUpdatedAt,omitempty" toml:"health_updated_at,omitempty"`
@@ -72,6 +73,7 @@ type CreateInitiativeInput struct {
 	Description  string   `json:"description"`
 	Status       string   `json:"status"`
 	Owner        string   `json:"owner"`
+	IsFavorite   bool     `json:"isFavorite"`
 	Color        string   `json:"color"`
 	StartDate    *string  `json:"startDate"`
 	TargetDate   *string  `json:"targetDate"`
@@ -86,6 +88,7 @@ type UpdateInitiativeInput struct {
 	Description  *string
 	Status       *string
 	Owner        *string
+	IsFavorite   *bool
 	Color        *string
 	Health       *string
 	Priority     *int

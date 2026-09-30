@@ -916,6 +916,12 @@ describe('initiative detail keyboard shortcuts', () => {
     expect(shortcut({ metaKey: true, shiftKey: false })).toBe('focus-updates');
   });
 
+  it('toggles the initiative favorite with Alt+F', () => {
+    expect(shortcut({ key: 'f', altKey: true, shiftKey: false })).toBe('toggle-favorite');
+    expect(shortcut({ key: 'f', altKey: true, shiftKey: false, target: el('INPUT') })).toBeNull();
+    expect(shortcut({ key: 'f', altKey: true, shiftKey: true })).toBeNull();
+  });
+
   it('focuses the target date with Ctrl+Alt+D or Meta+Alt+D', () => {
     expect(shortcut({ key: 'd', ctrlKey: true, shiftKey: false, altKey: true })).toBe(
       'focus-target-date',

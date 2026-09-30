@@ -79,6 +79,7 @@ export function ShortcutHelpView({
     { keys: 'Ctrl/⌘+U', action: t('ui.shortcutOpenInitiativeUpdates') },
     { keys: 'Ctrl/⌘+Alt+D', action: t('ui.shortcutSetInitiativeTargetDate') },
     { keys: 'N, then O', action: t('ui.shortcutChangeInitiativeOwner') },
+    { keys: 'Alt+F', action: t('ui.shortcutToggleInitiativeFavorite') },
     { keys: 'Ctrl/⌘+Shift+U', action: t('ui.shortcutWriteInitiativeUpdate') },
     { keys: 'Ctrl/⌘+Shift+O', action: t('ui.shortcutCreateSubIssue') },
     { keys: 'Ctrl/⌘+Shift+P', action: t('ui.shortcutSetParentIssue') },

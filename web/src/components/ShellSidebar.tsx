@@ -171,6 +171,7 @@ export function ShellSidebar({ model, t }: Props) {
   const { handlers } = model;
   const favoriteCycles = cycles.filter((cycle) => cycle.isFavorite);
   const favoriteProjects = model.projects.filter((project) => project.isFavorite);
+  const favoriteInitiatives = model.initiatives.filter((initiative) => initiative.isFavorite);
   const favoriteViews = views.filter((view) => view.isFavorite);
   const sidebarBadge = (id: SidebarItemId) => {
     const count = sidebarBadgeCounts[id] ?? 0;
@@ -391,6 +392,15 @@ export function ShellSidebar({ model, t }: Props) {
                   to="/projects/$slug"
                   params={{ slug: project.slug }}
                   label={project.name}
+                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                />
+              ))}
+              {favoriteInitiatives.map((initiative) => (
+                <RouterNavLink
+                  key={`initiative-${initiative.slug}`}
+                  to="/initiatives/$slug"
+                  params={{ slug: initiative.slug }}
+                  label={initiative.name}
                   leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
                 />
               ))}

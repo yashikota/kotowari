@@ -461,6 +461,46 @@ test('N then O opens the initiative owner picker and supports unassigning', asyn
     .toBe('');
 });
 
+test('Alt+F toggles an initiative favorite and adds it to sidebar favorites', async ({
+  page,
+  request,
+}) => {
+  const slug = `initiative-favorite-shortcut-${Date.now()}`;
+  const name = `Favorite initiative ${Date.now()}`;
+  const created = await request.post('/api/initiatives', {
+    data: { name, slug, status: 'active' },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+
+  await page.goto(`/initiatives/${slug}`);
+  await page.getByRole('button', { name: 'Post update' }).first().focus();
+  await page.keyboard.press('Alt+f');
+  await expect(
+    page.getByRole('button', { name: 'Remove initiative from favorites' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/initiatives/${slug}`);
+      return (await response.json()) as { isFavorite: boolean };
+    })
+    .toMatchObject({ isFavorite: true });
+
+  await page.getByRole('button', { name: 'Remove initiative from favorites' }).focus();
+  await page.keyboard.press('Alt+f');
+  await expect(page.getByRole('button', { name: 'Add initiative to favorites' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/initiatives/${slug}`);
+      return ((await response.json()) as { isFavorite?: boolean }).isFavorite ?? false;
+    })
+    .toBe(false);
+});
+
 test('initiative health updates post to a durable, newest-first history', async ({
   page,
   request,

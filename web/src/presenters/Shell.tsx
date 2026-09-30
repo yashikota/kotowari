@@ -555,6 +555,7 @@ export function useShellPresenter() {
     })),
     sidebarCustomizationOpen,
     cycles,
+    initiatives,
     views,
     favoriteIssues,
     favoriteIssueViews: preferences.favoriteIssueViews,

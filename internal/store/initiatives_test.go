@@ -108,6 +108,36 @@ func TestInitiativeOwnerPersistsAndCanBeCleared(t *testing.T) {
 	}
 }
 
+func TestInitiativeFavoritePersistsAndCanBeToggled(t *testing.T) {
+	s := openTest(t)
+	initiative, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Favorite initiative", Slug: "favorite-initiative", Status: "active", IsFavorite: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !initiative.IsFavorite {
+		t.Fatal("new initiative is not marked favorite")
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = reopened.Close() })
+	persisted, err := reopened.GetInitiative(initiative.Slug)
+	if err != nil || !persisted.IsFavorite {
+		t.Fatalf("favorite did not persist: %#v (%v)", persisted, err)
+	}
+
+	unfavorited, err := reopened.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{
+		IsFavorite: boolPointer(false),
+	})
+	if err != nil || unfavorited.IsFavorite {
+		t.Fatalf("favorite did not clear: %#v (%v)", unfavorited, err)
+	}
+}
+
 func TestCreateInitiativeRejectsInvalidDatesAndProjectLinks(t *testing.T) {
 	s := openTest(t)
 	start, target := "2026-12-31", "2026-09-01"

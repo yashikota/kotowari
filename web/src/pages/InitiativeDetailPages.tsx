@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Badge,
   Button,
   Group,
@@ -9,7 +10,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconArrowLeft, IconTrash } from '@tabler/icons-react';
+import { IconArrowLeft, IconStar, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
@@ -69,6 +70,26 @@ export function InitiativeDetailPageView({
           title={initiative.name}
           actions={
             <Group gap="xs">
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                color={initiative.isFavorite ? 'yellow' : 'gray'}
+                aria-label={t(
+                  initiative.isFavorite ? 'initiatives.favoriteRemove' : 'initiatives.favoriteAdd',
+                )}
+                aria-pressed={!!initiative.isFavorite}
+                title={t(
+                  initiative.isFavorite ? 'initiatives.favoriteRemove' : 'initiatives.favoriteAdd',
+                )}
+                onClick={handlers.onToggleFavorite}
+              >
+                <IconStar
+                  size={15}
+                  stroke={1.7}
+                  fill={initiative.isFavorite ? 'currentColor' : 'none'}
+                  aria-hidden="true"
+                />
+              </ActionIcon>
               <Button
                 type="button"
                 variant="default"

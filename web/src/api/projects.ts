@@ -25,6 +25,7 @@ export const projectApi = {
     description?: string;
     status?: Initiative['status'];
     owner?: Initiative['owner'];
+    isFavorite?: Initiative['isFavorite'];
     color?: string;
     health?: Project['health'];
     priority?: number;

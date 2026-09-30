@@ -172,6 +172,7 @@ export type Initiative = {
   description: string;
   status: InitiativeStatus;
   owner?: 'self' | '';
+  isFavorite?: boolean;
   color?: string;
   health?: ProjectHealth;
   healthUpdatedAt?: string | null;

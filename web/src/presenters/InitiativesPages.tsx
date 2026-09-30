@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
+import { signals } from '../application/mediator.ts';
 import { queryCache } from '../query-cache.ts';
 import {
   buildInitiativeList,
@@ -387,6 +388,18 @@ export function useInitiativeDetailPresenter() {
     setUpdateOpen(true);
   }
 
+  async function toggleFavorite() {
+    setError('');
+    try {
+      await api.patchInitiative(initiative.slug, { isFavorite: !initiative.isFavorite });
+      queryCache.invalidate();
+      signals.dispatchEvent(new Event('kotowari:refresh'));
+      await router.invalidate();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('common.error'));
+    }
+  }
+
   useKeyboard((event) => {
     const ownerSequence = initiativeDetailSequenceFromKeyboard(
       event,
@@ -408,7 +421,8 @@ export function useInitiativeDetailPresenter() {
     event.preventDefault();
     if (shortcut === 'write-update') openUpdate();
     else if (shortcut === 'focus-target-date') setFocusTargetDate((value) => value + 1);
-    else setFocusUpdates((value) => value + 1);
+    else if (shortcut === 'focus-updates') setFocusUpdates((value) => value + 1);
+    else void toggleFavorite();
     return true;
   });
 
@@ -458,6 +472,7 @@ export function useInitiativeDetailPresenter() {
       onDelete: deleteInitiative,
       onBack: () => void navigate({ to: '/initiatives' }),
       onOpenUpdate: openUpdate,
+      onToggleFavorite: toggleFavorite,
       onCloseUpdate: () => setUpdateOpen(false),
       onUpdateHealthChange: (value: string | null) =>
         setUpdateHealth((value ?? 'on_track') as ProjectHealth),
