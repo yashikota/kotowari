@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import {
   ActionIcon,
   Box,
+  Button,
   Group,
   Menu,
   ScrollArea,
@@ -96,6 +97,7 @@ function SearchPageView({
     case 0: {
       const {
         query,
+        recentSearches,
         submittedQuery,
         tab,
         order,
@@ -439,6 +441,39 @@ function SearchPageView({
                     </Text>
                   </Stack>
                 )
+              ) : recentSearches.length > 0 ? (
+                <Stack gap="xs" data-testid="recent-searches">
+                  <Group justify="space-between" px="xs">
+                    <Text size="xs" c="dimmed" fw={550}>
+                      {t('searchPage.recentTitle')}
+                    </Text>
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      size="compact-xs"
+                      color="gray"
+                      onClick={handlers.onClearRecentSearches}
+                    >
+                      {t('searchPage.clearHistory')}
+                    </Button>
+                  </Group>
+                  <Stack gap={2} role="list" aria-label={t('searchPage.recentTitle')}>
+                    {recentSearches.map((recentQuery) => (
+                      <Box key={recentQuery} role="listitem">
+                        <UnstyledButton
+                          type="button"
+                          className={styles.recentSearch}
+                          onClick={() => handlers.onRecentSearchSelect(recentQuery)}
+                        >
+                          <IconSearch size={15} stroke={1.7} aria-hidden />
+                          <Text size="sm" truncate>
+                            {recentQuery}
+                          </Text>
+                        </UnstyledButton>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Stack>
               ) : (
                 <Stack align="center" gap={4} py="xl">
                   <Text fw={550}>{t('searchPage.startTitle')}</Text>

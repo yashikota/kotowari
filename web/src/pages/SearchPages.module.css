@@ -115,6 +115,28 @@
   flex: 0 0 auto;
 }
 
+.recentSearch {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-dimmed);
+  text-align: left;
+}
+
+.recentSearch:hover,
+.recentSearch:focus-visible {
+  background: var(--mantine-color-default-hover);
+  color: var(--mantine-color-text);
+}
+
+.recentSearch:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 1px;
+}
+
 @media (max-width: 540px) {
   .content {
     padding-inline: var(--mantine-spacing-sm);

@@ -188,6 +188,14 @@ test('workspace search finds issues, projects and documents with shareable categ
 
   await page.getByRole('button', { name: 'Clear search' }).click();
   await expect(search).toHaveValue('');
+  await expect(page.getByTestId('recent-searches')).toContainText('no-result-query');
+  await page.reload();
+  await expect(page.getByTestId('recent-searches')).toContainText('no-result-query');
+  await page.getByRole('button', { name: query, exact: true }).click();
+  await expect(search).toHaveValue(query);
+  await expect(results.getByRole('link', { name: new RegExp(issue.identifier) })).toBeVisible();
+  await page.getByRole('button', { name: 'Clear search' }).click();
+  await page.getByRole('button', { name: 'Clear history' }).click();
   await expect(page.getByText('Search your workspace')).toBeVisible();
   await search.fill(commentOnlyQuery);
   await search.press('Enter');

@@ -189,6 +189,8 @@
     "tryDifferentQuery": "Try a different search term.",
     "startTitle": "Search your workspace",
     "startDescription": "Find issues, projects, documents, and saved views.",
+    "recentTitle": "Recent searches",
+    "clearHistory": "Clear history",
     "kinds": {
       "issue": "Issue",
       "project": "Project",

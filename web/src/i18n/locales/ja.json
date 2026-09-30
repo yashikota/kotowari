@@ -188,6 +188,8 @@
     "tryDifferentQuery": "別の検索語をお試しください。",
     "startTitle": "ワークスペースを検索",
     "startDescription": "イシュー、プロジェクト、ドキュメント、保存済みビューを検索できます。",
+    "recentTitle": "最近の検索",
+    "clearHistory": "履歴をクリア",
     "kinds": {
       "issue": "イシュー",
       "project": "プロジェクト",

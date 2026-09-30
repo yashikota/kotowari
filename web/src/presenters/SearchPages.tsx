@@ -2,6 +2,11 @@ import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import {
+  clearRecentSearches,
+  loadRecentSearches,
+  rememberRecentSearch,
+} from '../search-history.ts';
+import {
   filterSearchHits,
   orderSearchHits,
   parseSearchDateFilter,
@@ -22,6 +27,7 @@ export function useSearchPagePresenter() {
   const { hits } = useLoaderData({ from: '/search' });
   const navigate = useNavigate({ from: '/search' });
   const [query, setQuery] = useState(search.q ?? '');
+  const [recentSearches, setRecentSearches] = useState(loadRecentSearches);
   const tab = search.tab ?? 'all';
   const order = search.ordering ?? 'relevance';
   const includeArchived = search.includeArchived ?? false;
@@ -44,6 +50,7 @@ export function useSearchPagePresenter() {
   return {
     _view: 0 as const,
     query,
+    recentSearches,
     submittedQuery: search.q ?? '',
     tab,
     order,
@@ -63,13 +70,24 @@ export function useSearchPagePresenter() {
       onQueryChange: (value: string) => setQuery(value),
       onSubmit: (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        const submittedQuery = query.trim().slice(0, 200);
+        if (submittedQuery) setRecentSearches(rememberRecentSearch(submittedQuery));
         return navigate({
-          search: (previous) => ({ ...previous, q: query.trim().slice(0, 200) || undefined }),
+          search: (previous) => ({ ...previous, q: submittedQuery || undefined }),
         });
       },
       onClear: () => {
         setQuery('');
         return navigate({ search: (previous) => ({ ...previous, q: undefined }) });
+      },
+      onRecentSearchSelect: (recentQuery: string) => {
+        setQuery(recentQuery);
+        setRecentSearches(rememberRecentSearch(recentQuery));
+        return navigate({ search: (previous) => ({ ...previous, q: recentQuery }) });
+      },
+      onClearRecentSearches: () => {
+        clearRecentSearches();
+        setRecentSearches([]);
       },
       onTabChange: (value: string | null) => {
         if (value !== 'all' && value !== 'issues' && value !== 'projects' && value !== 'documents')
