@@ -58,6 +58,7 @@ export function IssueFiltersView({
         nestedSubIssues,
         showEmptyGroups,
         displayProperties,
+        onExportIssues,
         detailsOpen,
         onDetailsToggle,
         advancedFilter,
@@ -189,6 +190,7 @@ export function IssueFiltersView({
                   nestedSubIssues={nestedSubIssues ?? 'showMatching'}
                   showEmptyGroups={showEmptyGroups ?? false}
                   displayProperties={displayProperties ?? [...DEFAULT_DISPLAY_PROPERTIES]}
+                  onExportIssues={onExportIssues}
                   onSubGroupByChange={handlers.onSubGroupByChange}
                   onDirectionChange={handlers.onDirectionChange}
                   onCompletedIssuesChange={handlers.onCompletedIssuesChange}

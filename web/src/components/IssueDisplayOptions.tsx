@@ -14,6 +14,7 @@ import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronUp,
+  IconDownload,
   IconGripVertical,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +57,7 @@ export function IssueDisplayOptions({
   nestedSubIssues,
   showEmptyGroups,
   displayProperties,
+  onExportIssues,
   onSubGroupByChange,
   onDirectionChange,
   onCompletedIssuesChange,
@@ -87,6 +89,7 @@ export function IssueDisplayOptions({
   nestedSubIssues: 'showMatching' | 'showAll';
   showEmptyGroups: boolean;
   displayProperties: string[];
+  onExportIssues?: () => void;
   onSubGroupByChange: (groupBy: string) => void;
   onDirectionChange: (direction: 'asc' | 'desc') => void;
   onCompletedIssuesChange: (filter: CompletedIssuesFilter) => void;
@@ -286,6 +289,19 @@ export function IssueDisplayOptions({
                 ))}
               </Group>
             </Stack>
+            {onExportIssues ? (
+              <Button
+                type="button"
+                variant="subtle"
+                color="gray"
+                size="xs"
+                fullWidth
+                leftSection={<IconDownload size={14} aria-hidden="true" />}
+                onClick={onExportIssues}
+              >
+                {t('displayOptions.exportIssues')}
+              </Button>
+            ) : null}
             <Text size="xs" c="dimmed">
               {t('displayOptions.shortcut')}
             </Text>

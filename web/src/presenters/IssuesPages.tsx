@@ -28,6 +28,7 @@ import { IssueFilters } from '../components/IssueFilters.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import { copyPageURL } from '../copy-page-url.ts';
+import { downloadIssuesCSV } from '../issue-export.ts';
 import type { IssueNavigationState } from '../focus.ts';
 import { useIntentHandler, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
@@ -363,6 +364,12 @@ export function useIssuesPagePresenter() {
         return navigate({ to: '/issues', search: next, replace: true });
       },
       onNewViewOpen: openNewView,
+      onExportIssues: () =>
+        downloadIssuesCSV(
+          issues,
+          `${myIssuesTab ? `my-issues-${myIssuesTab}` : `issues-${activeView}`}.csv`,
+          { cycles: data.cycles, projects: data.projects },
+        ),
       onFind2: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueFilters>['onFind']>>
       ) => {

@@ -55,6 +55,7 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
           linkSources={data.linkSources}
           templateOptions={data.templateOptions}
           onChange={handlers.onChange0}
+          onExportIssues={handlers.onExportIssues}
           compactToolbar={!myIssuesTab}
           advancedFilter={search.advancedFilter}
           advancedFilterGroup={search.advancedFilterGroup}

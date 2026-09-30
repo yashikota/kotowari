@@ -1633,6 +1633,7 @@
     "layout": "Layout",
     "list": "List",
     "board": "Board",
+    "exportIssues": "Export issues as CSV…",
     "grouping": "Grouping",
     "noGrouping": "No grouping",
     "groupOrdering": "Group ordering",

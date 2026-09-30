@@ -1623,6 +1623,7 @@
     "layout": "レイアウト",
     "list": "リスト",
     "board": "ボード",
+    "exportIssues": "イシューをCSVに書き出す…",
     "grouping": "グループ化",
     "noGrouping": "グループ化しない",
     "groupOrdering": "グループの順序",

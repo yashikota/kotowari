@@ -13,7 +13,8 @@ import { patchIssueOptimistically } from '../application/issues.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 
-import { cycleCalendarICS, cycleGoogleCalendarURL, cycleIssuesCSV } from '../cycle-export.ts';
+import { cycleCalendarICS, cycleGoogleCalendarURL } from '../cycle-export.ts';
+import { downloadIssuesCSV } from '../issue-export.ts';
 import { IssueList } from '../components/IssueList.tsx';
 import type { IssueNavigationState } from '../focus.ts';
 import {
@@ -217,19 +218,12 @@ export function useCycleDetailPagePresenter() {
   }
 
   function exportIssues() {
-    const content = `\uFEFF${cycleIssuesCSV(data.cycleIssues, {
+    downloadIssuesCSV(data.cycleIssues, `cycle-${cycle.number}-issues.csv`, {
       cycle,
       cycles: data.cycles,
       projects: data.projects,
       initiatives: data.initiatives,
-    })}`;
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `cycle-${cycle.number}-issues.csv`;
-    anchor.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    });
   }
 
   function exportCalendar() {

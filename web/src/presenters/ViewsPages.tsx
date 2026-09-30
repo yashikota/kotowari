@@ -30,6 +30,7 @@ import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { actionFromKeyboard } from '../keymap.ts';
 import { copyPageURL } from '../copy-page-url.ts';
+import { downloadIssuesCSV } from '../issue-export.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
 import { matchesIssueFilterGroup, parseIssueFilterGroup } from '../issue-advanced-filter.ts';
@@ -247,6 +248,11 @@ export function useViewPagePresenter() {
         await save({ isFavorite: !view.isFavorite });
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },
+      onExportIssues: () =>
+        downloadIssuesCSV(issues, `view-${slug}-issues.csv`, {
+          cycles: data.cycles,
+          projects: data.projects,
+        }),
       onSelect11: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {

@@ -106,6 +106,7 @@ export function ViewPageView({
                   linkSources={data.linkSources}
                   templateOptions={data.templateOptions}
                   onChange={handlers.onFilterChange12}
+                  onExportIssues={handlers.onExportIssues}
                   advancedFilter={search.advancedFilter}
                   advancedFilterGroup={search.advancedFilterGroup}
                   onAdvancedFilterToggle={handlers.onAdvancedFilterToggle13}
