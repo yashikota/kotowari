@@ -6,6 +6,7 @@ type initiativePatchRequest struct {
 	Name            *string   `json:"name"`
 	Description     *string   `json:"description"`
 	Status          *string   `json:"status"`
+	Owner           *string   `json:"owner"`
 	Color           *string   `json:"color"`
 	Health          *string   `json:"health"`
 	Priority        *int      `json:"priority"`
@@ -19,7 +20,7 @@ type initiativePatchRequest struct {
 
 func (p initiativePatchRequest) updateInput() model.UpdateInitiativeInput {
 	return model.UpdateInitiativeInput{
-		Name: p.Name, Description: p.Description, Status: p.Status, Color: p.Color,
+		Name: p.Name, Description: p.Description, Status: p.Status, Owner: p.Owner, Color: p.Color,
 		Health: p.Health, Priority: p.Priority, Labels: p.Labels,
 		StartDate:    patchOptionalString(p.ClearStartDate, p.StartDate),
 		TargetDate:   patchOptionalString(p.ClearTargetDate, p.TargetDate),

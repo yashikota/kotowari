@@ -6,6 +6,10 @@ func validProjectLead(lead string) bool {
 	return lead == "" || lead == "self"
 }
 
+func validInitiativeOwner(owner string) bool {
+	return owner == "" || owner == "self"
+}
+
 func validProjectIcon(icon string) bool {
 	if icon == "" {
 		return true

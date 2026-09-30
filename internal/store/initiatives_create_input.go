@@ -23,6 +23,9 @@ func normalizeInitiativeCreateInput(in CreateInitiativeInput) (CreateInitiativeI
 	if !validInitiativeStatus(in.Status) {
 		return CreateInitiativeInput{}, validationf("invalid initiative status")
 	}
+	if !validInitiativeOwner(in.Owner) {
+		return CreateInitiativeInput{}, validationf("invalid initiative owner")
+	}
 	if !validProjectIconColor(in.Color) {
 		return CreateInitiativeInput{}, validationf("invalid initiative color")
 	}

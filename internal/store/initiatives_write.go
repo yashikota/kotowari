@@ -47,7 +47,7 @@ func (s *Store) CreateInitiative(in CreateInitiativeInput) (Initiative, error) {
 		return Initiative{}, err
 	}
 	name, slug, description := in.Name, in.Slug, in.Description
-	status, color := in.Status, in.Color
+	status, owner, color := in.Status, in.Owner, in.Color
 	start, target := in.StartDate, in.TargetDate
 	projectSlugs, health, priority, labels := in.ProjectSlugs, in.Health, in.Priority, in.Labels
 	now := domain.Now()
@@ -62,7 +62,7 @@ func (s *Store) CreateInitiative(in CreateInitiativeInput) (Initiative, error) {
 		}
 		out = Initiative{
 			ID: m.nextID(), Name: name, Slug: slug, Description: description,
-			Status: status, Color: color, Health: health, Priority: priority, Labels: canonicalLabels,
+			Status: status, Owner: owner, Color: color, Health: health, Priority: priority, Labels: canonicalLabels,
 			StartDate: cloneString(start), TargetDate: cloneString(target),
 			CreatedAt: now, UpdatedAt: now, ProjectSlugs: []string{},
 		}
@@ -113,6 +113,12 @@ func (s *Store) UpdateInitiative(slug string, in UpdateInitiativeInput) (Initiat
 				return validationf("invalid initiative status")
 			}
 			initiative.Status = *in.Status
+		}
+		if in.Owner != nil {
+			if !validInitiativeOwner(*in.Owner) {
+				return validationf("invalid initiative owner")
+			}
+			initiative.Owner = *in.Owner
 		}
 		healthChanged := false
 		if in.Health != nil {

@@ -171,6 +171,7 @@ export type Initiative = {
   slug: string;
   description: string;
   status: InitiativeStatus;
+  owner?: 'self' | '';
   color?: string;
   health?: ProjectHealth;
   healthUpdatedAt?: string | null;

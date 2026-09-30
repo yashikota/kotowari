@@ -436,6 +436,31 @@ test('Ctrl+U focuses initiative updates and activity', async ({ page, request })
   await expect(page.getByLabel('Updates')).toBeFocused();
 });
 
+test('N then O opens the initiative owner picker and supports unassigning', async ({
+  page,
+  request,
+}) => {
+  const slug = `initiative-owner-shortcut-${Date.now()}`;
+  const created = await request.post('/api/initiatives', {
+    data: { name: 'Initiative owner shortcut', slug, status: 'active', owner: 'self' },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+
+  await page.goto(`/initiatives/${slug}`);
+  await page.getByRole('button', { name: 'Post update' }).first().focus();
+  await page.keyboard.press('n');
+  await page.keyboard.press('o');
+  await expect(page.getByRole('option', { name: 'Unassigned', exact: true })).toBeVisible();
+  await page.getByRole('option', { name: 'Unassigned', exact: true }).click();
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect
+    .poll(async () => {
+      const response = await request.get(`/api/initiatives/${slug}`);
+      return ((await response.json()) as { owner?: string }).owner ?? '';
+    })
+    .toBe('');
+});
+
 test('initiative health updates post to a durable, newest-first history', async ({
   page,
   request,

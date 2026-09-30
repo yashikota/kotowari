@@ -1,6 +1,6 @@
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
 import { queryCache } from '../query-cache.ts';
@@ -26,7 +26,10 @@ import { useProjectWorkflow } from '../project-workflow.tsx';
 import type { Initiative, InitiativeStatus, ProjectHealth } from '../types.ts';
 import type { HealthUpdateItem } from '../components/HealthUpdateFeed.tsx';
 import { useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
-import { initiativeDetailShortcutFromKeyboard } from '../keymap.ts';
+import {
+  initiativeDetailSequenceFromKeyboard,
+  initiativeDetailShortcutFromKeyboard,
+} from '../keymap.ts';
 
 function initiativeSlug(name: string, existing: Initiative[]): string {
   const base = name
@@ -278,6 +281,8 @@ export function useInitiativeDetailPresenter() {
   const [color, setColor] = useState(initiative.color ?? 'purple');
   const [startDate, setStartDate] = useState(initiative.startDate ?? '');
   const [targetDate, setTargetDate] = useState(initiative.targetDate ?? '');
+  const [owner, setOwner] = useState(initiative.owner ?? '');
+  const [focusOwner, setFocusOwner] = useState(0);
   const [focusTargetDate, setFocusTargetDate] = useState(0);
   const [focusUpdates, setFocusUpdates] = useState(0);
   const [priority, setPriority] = useState(initiative.priority ?? 0);
@@ -291,6 +296,7 @@ export function useInitiativeDetailPresenter() {
   const [updateBody, setUpdateBody] = useState('');
   const [updateError, setUpdateError] = useState('');
   const [updating, setUpdating] = useState(false);
+  const ownerSequenceSince = useRef<number | null>(null);
 
   const updates: HealthUpdateItem[] = activities.flatMap((activity) => {
     if (activity.action !== 'status_update_posted') return [];
@@ -324,6 +330,7 @@ export function useInitiativeDetailPresenter() {
         name,
         description,
         status,
+        owner,
         color,
         priority,
         labels,
@@ -381,6 +388,21 @@ export function useInitiativeDetailPresenter() {
   }
 
   useKeyboard((event) => {
+    const ownerSequence = initiativeDetailSequenceFromKeyboard(
+      event,
+      ownerSequenceSince.current,
+      Date.now(),
+    );
+    ownerSequenceSince.current = ownerSequence.pendingSince;
+    if (ownerSequence.action === 'focus-owner') {
+      event.preventDefault();
+      setFocusOwner((value) => value + 1);
+      return true;
+    }
+    if (ownerSequence.pendingSince !== null) {
+      event.preventDefault();
+      return true;
+    }
     const shortcut = initiativeDetailShortcutFromKeyboard(event);
     if (!shortcut) return false;
     event.preventDefault();
@@ -397,6 +419,8 @@ export function useInitiativeDetailPresenter() {
     name,
     description,
     status,
+    owner,
+    focusOwner,
     color,
     startDate,
     targetDate,
@@ -422,6 +446,7 @@ export function useInitiativeDetailPresenter() {
       onDescriptionChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
         setDescription(event.target.value),
       onStatusChange: (value: string | null) => setStatus((value ?? 'planned') as InitiativeStatus),
+      onOwnerChange: (value: string | null) => setOwner((value ?? '') as '' | 'self'),
       onColorChange: (value: string | null) => setColor(value ?? 'purple'),
       onStartDateChange: (event: ChangeEvent<HTMLInputElement>) => setStartDate(event.target.value),
       onTargetDateChange: (event: ChangeEvent<HTMLInputElement>) =>

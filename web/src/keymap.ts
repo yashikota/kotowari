@@ -196,6 +196,40 @@ export function initiativeDetailShortcutFromKeyboard(event: {
   return null;
 }
 
+export function initiativeDetailSequenceFromKeyboard(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey?: boolean;
+    shiftKey?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    defaultPrevented?: boolean;
+    target: EventTarget | null;
+  },
+  pendingSince: number | null,
+  now: number,
+): { action: 'focus-owner' | null; pendingSince: number | null } {
+  const eligible =
+    !event.defaultPrevented &&
+    !event.isComposing &&
+    !event.repeat &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey &&
+    !isTypingTarget(event.target);
+  if (!eligible) return { action: null, pendingSince: null };
+
+  const key = event.key.toLowerCase();
+  if (key === 'n') return { action: null, pendingSince: now };
+  if (pendingSince !== null && now >= pendingSince && now - pendingSince <= 1000 && key === 'o') {
+    return { action: 'focus-owner', pendingSince: null };
+  }
+  return { action: null, pendingSince: null };
+}
+
 export function projectCreateSequenceFromKeyboard(
   event: {
     key: string;

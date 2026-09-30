@@ -27,6 +27,7 @@ export function InitiativeDetailPageView({
   model,
 }: {
   model: ReturnType<typeof useInitiativeDetailPresenter> & {
+    ownerRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
     targetDateRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
     updatesRef: ReturnType<typeof useFocusWhen<HTMLDivElement>>;
   };
@@ -35,6 +36,8 @@ export function InitiativeDetailPageView({
   const {
     initiative,
     availableProjects,
+    owner,
+    ownerRef,
     linkedProjects,
     name,
     description,
@@ -135,6 +138,19 @@ export function InitiativeDetailPageView({
               />
             </Group>
             <Group grow align="flex-start">
+              <Select
+                ref={ownerRef}
+                label={t('initiatives.owner')}
+                value={owner}
+                onChange={handlers.onOwnerChange}
+                data={[
+                  { value: '', label: t('projectList.leadUnassigned') },
+                  { value: 'self', label: t('projectList.leadYou') },
+                ]}
+                searchable
+                openOnFocus
+                comboboxProps={{ withinPortal: false }}
+              />
               <Select
                 label={t('initiativeList.priority')}
                 value={String(priority)}
@@ -275,6 +291,7 @@ export function InitiativeDetailPage() {
 function InitiativeDetailPageBinding() {
   const model = useInitiativeDetailPresenter();
   const handlers = useActions(model.handlers);
+  const ownerRef = useFocusWhen<HTMLInputElement>(model.focusOwner > 0, [model.focusOwner]);
   const targetDateRef = useFocusWhen<HTMLInputElement>(model.focusTargetDate > 0, [
     model.focusTargetDate,
   ]);
@@ -282,7 +299,8 @@ function InitiativeDetailPageBinding() {
   return (
     <InitiativeDetailPageView
       model={
-        { ...model, handlers, targetDateRef, updatesRef } as typeof model & {
+        { ...model, handlers, ownerRef, targetDateRef, updatesRef } as typeof model & {
+          ownerRef: typeof ownerRef;
           targetDateRef: typeof targetDateRef;
           updatesRef: typeof updatesRef;
         }

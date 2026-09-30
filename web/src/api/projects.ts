@@ -24,6 +24,7 @@ export const projectApi = {
     slug: string;
     description?: string;
     status?: Initiative['status'];
+    owner?: Initiative['owner'];
     color?: string;
     health?: Project['health'];
     priority?: number;

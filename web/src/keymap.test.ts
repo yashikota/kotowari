@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import {
   actionFromKeyboard,
   globalNavigationSequenceFromKeyboard,
+  initiativeDetailSequenceFromKeyboard,
   initiativeDetailShortcutFromKeyboard,
   inboxShortcutFromKeyboard,
   initiativeCreateSequenceFromKeyboard,
@@ -934,6 +935,47 @@ describe('initiative detail keyboard shortcuts', () => {
       shortcut({ key: 'd', ctrlKey: true, shiftKey: false, altKey: true, target: el('INPUT') }),
     ).toBeNull();
     expect(shortcut({ key: 'd', ctrlKey: true, shiftKey: true, altKey: true })).toBeNull();
+  });
+});
+
+describe('initiative owner keyboard sequence', () => {
+  const body = el('BODY');
+  const key = (
+    value: string,
+    pendingSince: number | null = null,
+    now = 100,
+    overrides: Partial<Parameters<typeof initiativeDetailSequenceFromKeyboard>[0]> = {},
+  ) =>
+    initiativeDetailSequenceFromKeyboard(
+      {
+        key: value,
+        metaKey: false,
+        ctrlKey: false,
+        target: body,
+        ...overrides,
+      },
+      pendingSince,
+      now,
+    );
+
+  it('maps N then O to initiative owner focus', () => {
+    const pending = key('n');
+    expect(key('o', pending.pendingSince, 500)).toEqual({
+      action: 'focus-owner',
+      pendingSince: null,
+    });
+  });
+
+  it('expires the sequence and ignores typing or modified keys', () => {
+    expect(key('o', 100, 1101)).toEqual({ action: null, pendingSince: null });
+    expect(key('n', null, 100, { target: el('INPUT') })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
+    expect(key('n', null, 100, { shiftKey: true })).toEqual({
+      action: null,
+      pendingSince: null,
+    });
   });
 });
 

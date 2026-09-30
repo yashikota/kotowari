@@ -73,6 +73,41 @@ func TestInitiativeProjectsPersistAndAreUnlinkedOnDelete(t *testing.T) {
 	}
 }
 
+func TestInitiativeOwnerPersistsAndCanBeCleared(t *testing.T) {
+	s := openTest(t)
+	initiative, err := s.CreateInitiative(CreateInitiativeInput{
+		Name: "Owned initiative", Slug: "owned-initiative", Status: "active", Owner: "self",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if initiative.Owner != "self" {
+		t.Fatalf("created owner = %q, want self", initiative.Owner)
+	}
+
+	reopened, err := Open(s.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = reopened.Close() })
+	persisted, err := reopened.GetInitiative(initiative.Slug)
+	if err != nil || persisted.Owner != "self" {
+		t.Fatalf("persisted owner = %q, error %v", persisted.Owner, err)
+	}
+
+	cleared, err := reopened.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{
+		Owner: stringPointer(""),
+	})
+	if err != nil || cleared.Owner != "" {
+		t.Fatalf("cleared owner = %q, error %v", cleared.Owner, err)
+	}
+	if _, err := reopened.UpdateInitiative(initiative.Slug, UpdateInitiativeInput{
+		Owner: stringPointer("another-user"),
+	}); !errors.Is(err, ErrValidation) {
+		t.Fatalf("invalid owner error = %v, want validation error", err)
+	}
+}
+
 func TestCreateInitiativeRejectsInvalidDatesAndProjectLinks(t *testing.T) {
 	s := openTest(t)
 	start, target := "2026-12-31", "2026-09-01"
