@@ -369,9 +369,10 @@ function ShellBinding() {
   const model = useShellPresenter();
   const handlers = useActions(model.handlers);
   const { t } = useTranslation();
-  const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createIssue, [
-    model.issueCreateMoreFocusRequest,
-  ]);
+  const issueTitleRef = useFocusWhen<HTMLTextAreaElement>(
+    model.createIssue && !model.issueTemplatePickerRequested,
+    [model.issueCreateMoreFocusRequest],
+  );
   const adrTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createADR);
   const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createPage);
   return (
