@@ -110,7 +110,7 @@ tasks:
       CI: "true"
       E2E_KOTOWARI_BIN: "{{.TASKFILE_DIR}}/kotowari"
     cmds:
-      - pnpm exec playwright test
+      - pnpm exec playwright test --fail-on-flaky-tests
 
   # --- build ---
 
