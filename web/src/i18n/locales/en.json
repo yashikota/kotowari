@@ -2021,6 +2021,7 @@
     "restoreSelectedIssues": "Restore selected issues",
     "setSelectedIssuePriority": "Set priority to {{priority}}",
     "assignSelectedIssuesToMe": "Assign to me",
+    "assignSelectedIssuesToAgent": "Assign to Agent",
     "unassignSelectedIssues": "Unassign",
     "subscribeSelectedIssues": "Subscribe",
     "unsubscribeSelectedIssues": "Unsubscribe",

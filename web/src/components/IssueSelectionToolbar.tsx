@@ -268,6 +268,9 @@ function IssueSelectionToolbarView({
             <Menu.Item onClick={() => handlers.onSetAssignee('self')}>
               {t('ui.assignSelectedIssuesToMe')}
             </Menu.Item>
+            <Menu.Item onClick={() => handlers.onSetAssignee('agent')}>
+              {t('ui.assignSelectedIssuesToAgent')}
+            </Menu.Item>
             <Menu.Item onClick={() => handlers.onSetAssignee('')}>
               {t('ui.unassignSelectedIssues')}
             </Menu.Item>

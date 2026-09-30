@@ -43,3 +43,33 @@ test('issue list supports Linear-style X, Mod+A, and Escape selection', async ({
   await expect(shortcuts).toContainText('Select or deselect the focused issue');
   await expect(shortcuts).toContainText('Select all issues in the current list');
 });
+
+test('issue list can assign selected issues to Agent', async ({ page, request }) => {
+  const stamp = Date.now();
+  const identifiers: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', {
+      data: { title: `Bulk Agent assignment ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(response.ok()).toBeTruthy();
+    const issue = (await response.json()) as { identifier: string };
+    identifiers.push(issue.identifier);
+  }
+
+  await page.goto('/issues');
+  await fillIssueSearch(page, String(stamp));
+  const list = page.getByRole('listbox', { name: 'Issues' });
+  await expect(list.getByRole('option')).toHaveCount(2);
+  for (const identifier of identifiers) {
+    await page.getByRole('checkbox', { name: `Select ${identifier}` }).check();
+  }
+
+  await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Assign to Agent', exact: true }).click();
+  await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
+  for (const identifier of identifiers) {
+    const response = await request.get(`/api/issues/${identifier}`);
+    await expect(response).toBeOK();
+    await expect(await response.json()).toMatchObject({ assignee: 'agent' });
+  }
+});
