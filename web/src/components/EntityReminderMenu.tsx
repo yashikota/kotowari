@@ -34,7 +34,7 @@ function localDateTime(value: string | null | undefined) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-export function InitiativeReminderMenu({ reminderAt, opened, onMenuChange, onSetReminder }: Props) {
+export function EntityReminderMenu({ reminderAt, opened, onMenuChange, onSetReminder }: Props) {
   const { t } = useTranslation();
   const [customOpen, setCustomOpen] = useState(false);
   const [customValue, setCustomValue] = useState('');

@@ -5,7 +5,11 @@ import { api } from '../api.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import i18n from '../i18n/index.ts';
-import { projectDateShortcutFromKeyboard, projectDetailSequenceFromKeyboard } from '../keymap.ts';
+import {
+  projectDateShortcutFromKeyboard,
+  projectDetailSequenceFromKeyboard,
+  projectEntityShortcutFromKeyboard,
+} from '../keymap.ts';
 
 import { IssueList } from '../components/IssueList.tsx';
 
@@ -118,8 +122,46 @@ export function useProjectDetailPagePresenter() {
   const [focusProjectLabels, setFocusProjectLabels] = useState(0);
   const [focusProjectStartDate, setFocusProjectStartDate] = useState(0);
   const [focusProjectTargetDate, setFocusProjectTargetDate] = useState(0);
+  const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
+  const [reminderError, setReminderError] = useState('');
+  const [copied, setCopied] = useState(false);
   const projectStatusSequenceSince = useRef<number | null>(null);
   const projectStatusSequenceSlug = useRef(slug);
+
+  async function copyText(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // Clipboard permission can be unavailable in an embedded or non-secure context.
+    }
+  }
+
+  function copyProjectId() {
+    return copyText(String(project.id));
+  }
+
+  function copyProjectURL() {
+    const url = new URL(`/projects/${encodeURIComponent(project.slug)}`, window.location.origin);
+    return copyText(url.href);
+  }
+
+  function copyProjectTitle() {
+    return copyText(project.name);
+  }
+
+  async function setReminder(value: Date | null) {
+    setReminderError('');
+    try {
+      await save(value ? { reminderAt: value.toISOString() } : { clearReminder: true });
+      signals.dispatchEvent(new Event('kotowari:refresh'));
+    } catch (cause) {
+      setReminderError(cause instanceof Error ? cause.message : i18n.t('common.error'));
+    } finally {
+      setReminderMenuOpen(false);
+    }
+  }
 
   useKeyboard((event) => {
     if (projectStatusSequenceSlug.current !== slug) {
@@ -132,6 +174,15 @@ export function useProjectDetailPagePresenter() {
     ) {
       projectStatusSequenceSince.current = null;
       return false;
+    }
+    const entityShortcut = projectEntityShortcutFromKeyboard(event);
+    if (entityShortcut) {
+      event.preventDefault();
+      if (entityShortcut === 'open-reminder-menu') setReminderMenuOpen(true);
+      else if (entityShortcut === 'copy-id') void copyProjectId();
+      else if (entityShortcut === 'copy-url') void copyProjectURL();
+      else void copyProjectTitle();
+      return true;
     }
     const dateShortcut = projectDateShortcutFromKeyboard(event);
     if (dateShortcut) {
@@ -184,6 +235,9 @@ export function useProjectDetailPagePresenter() {
     setProjectUpdateHealth(data.project.health ?? 'on_track');
     setProjectUpdateBody('');
     setProjectUpdateOpen(false);
+    setReminderMenuOpen(false);
+    setReminderError('');
+    setCopied(false);
   }
 
   async function save(body: Record<string, unknown>) {
@@ -219,6 +273,7 @@ export function useProjectDetailPagePresenter() {
             'priority',
             'startDate',
             'targetDate',
+            'reminderAt',
             'labels',
             'initiativeSlugs',
           ] as const;
@@ -268,6 +323,9 @@ export function useProjectDetailPagePresenter() {
     focusProjectLabels,
     focusProjectStartDate,
     focusProjectTargetDate,
+    reminderMenuOpen,
+    reminderError,
+    copied,
     projectWorkflowStatuses,
     selected,
     project,
@@ -320,6 +378,11 @@ export function useProjectDetailPagePresenter() {
         await save({ isFavorite: !project.isFavorite });
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },
+      onSetReminder: setReminder,
+      onReminderMenuChange: setReminderMenuOpen,
+      onCopyProjectId: copyProjectId,
+      onCopyProjectURL: copyProjectURL,
+      onCopyProjectTitle: copyProjectTitle,
       onProjectLeadChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
         save({ lead: e.target.value }),
       onProjectHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>

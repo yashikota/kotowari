@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Group,
+  Menu,
   Modal,
   MultiSelect,
   NativeSelect,
@@ -11,7 +12,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconStar } from '@tabler/icons-react';
+import { IconDotsVertical, IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { IssueList } from '../components/IssueList.tsx';
@@ -23,6 +24,7 @@ import { ProjectIconPicker } from '../components/ProjectIcon.tsx';
 import { ProjectMilestonesSection } from '../components/ProjectMilestonesSection.tsx';
 import { ProjectDependenciesSection } from '../components/ProjectDependenciesSection.tsx';
 import { ProjectDocumentsSection } from '../components/ProjectDocumentsSection.tsx';
+import { EntityReminderMenu } from '../components/EntityReminderMenu.tsx';
 
 import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
@@ -75,6 +77,9 @@ export function ProjectDetailPageView({
         availableDependencyProjects,
         dependencyProjectSlug,
         dependencyKind,
+        reminderMenuOpen,
+        reminderError,
+        copied,
         handlers,
       } = model;
       return (
@@ -97,6 +102,46 @@ export function ProjectDetailPageView({
                 }
                 actions={
                   <Group gap="xs" wrap="wrap">
+                    <EntityReminderMenu
+                      reminderAt={project.reminderAt}
+                      opened={reminderMenuOpen}
+                      onMenuChange={handlers.onReminderMenuChange}
+                      onSetReminder={handlers.onSetReminder}
+                    />
+                    {copied ? (
+                      <Text size="xs" c="dimmed" role="status">
+                        {t('ui.copied')}
+                      </Text>
+                    ) : null}
+                    {reminderError ? (
+                      <Text size="xs" c="red" role="alert">
+                        {reminderError}
+                      </Text>
+                    ) : null}
+                    <Menu withinPortal position="bottom-end">
+                      <Menu.Target>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          color="gray"
+                          aria-label={t('issueActions.moreActions')}
+                          title={t('issueActions.moreActions')}
+                        >
+                          <IconDotsVertical size={16} stroke={1.8} aria-hidden="true" />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item onClick={handlers.onCopyProjectId}>
+                          {t('issueActions.copyId')}
+                        </Menu.Item>
+                        <Menu.Item onClick={handlers.onCopyProjectURL}>
+                          {t('issueActions.copyUrl')}
+                        </Menu.Item>
+                        <Menu.Item onClick={handlers.onCopyProjectTitle}>
+                          {t('issueActions.copyTitle')}
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
                     <ActionIcon
                       type="button"
                       variant="subtle"

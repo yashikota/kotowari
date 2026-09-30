@@ -55,9 +55,19 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
                           {item.title}
                         </Text>
                       </Link>
-                    ) : (
+                    ) : item.kind === 'initiative' ? (
                       <Link
                         to="/initiatives/$slug"
+                        params={{ slug: item.slug }}
+                        style={{ color: 'inherit', textDecoration: 'none' }}
+                      >
+                        <Text fw={500} truncate>
+                          {item.title}
+                        </Text>
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/projects/$slug"
                         params={{ slug: item.slug }}
                         style={{ color: 'inherit', textDecoration: 'none' }}
                       >

@@ -1726,6 +1726,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
         status: value.status ?? 'planned',
         workflowStatus: value.workflowStatus ?? value.status ?? 'planned',
         priority: value.priority ?? 0,
+        reminderAt: null,
         labels: value.labels ?? [],
         dependencies,
         milestones: (Array.isArray(value.milestones) ? value.milestones : []).map(
@@ -1990,9 +1991,10 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
       }
       if (kind === 'projects') {
         const project = item as Project;
-        const { clearStartDate, clearTargetDate, ...changes } = value;
+        const { clearStartDate, clearTargetDate, clearReminder, ...changes } = value;
         if (clearStartDate) changes.startDate = null;
         if (clearTargetDate) changes.targetDate = null;
+        if (clearReminder) changes.reminderAt = null;
         if ('health' in changes) {
           if (
             changes.health !== null &&

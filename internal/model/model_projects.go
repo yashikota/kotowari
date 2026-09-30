@@ -32,6 +32,7 @@ type Project struct {
 	Priority        int                 `json:"priority" toml:"priority"`
 	StartDate       *string             `json:"startDate" toml:"startDate,omitempty"`
 	TargetDate      *string             `json:"targetDate" toml:"targetDate,omitempty"`
+	ReminderAt      *string             `json:"reminderAt,omitempty" toml:"reminder_at,omitempty"`
 	Labels          []string            `json:"labels" toml:"labels,omitempty"`
 	Dependencies    []ProjectDependency `json:"dependencies" toml:"dependencies,omitempty"`
 	Progress        float64             `json:"progress" toml:"-"`
@@ -201,6 +202,7 @@ type ProjectUpdateInput struct {
 	Priority        *int
 	StartDate       **string
 	TargetDate      **string
+	ReminderAt      **string
 	Labels          *[]string
 	InitiativeSlugs *[]string
 }

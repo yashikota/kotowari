@@ -11,7 +11,7 @@ func (s *Store) UpdateProject(in ProjectUpdateInput) (Project, error) {
 	slug, name, summary := in.Slug, in.Name, in.Summary
 	icon, iconColor, description := in.Icon, in.IconColor, in.Description
 	status, workflowStatus, health, lead := in.Status, in.WorkflowStatus, in.Health, in.Lead
-	priority, start, target := in.Priority, in.StartDate, in.TargetDate
+	priority, start, target, reminder := in.Priority, in.StartDate, in.TargetDate, in.ReminderAt
 	labels, initiativeSlugs := in.Labels, in.InitiativeSlugs
 	if lead != nil && !validProjectLead(*lead) {
 		return Project{}, validationf("invalid project lead")
@@ -87,6 +87,13 @@ func (s *Store) UpdateProject(in ProjectUpdateInput) (Project, error) {
 				return validationf("project dates must use YYYY-MM-DD")
 			}
 			p.TargetDate = *target
+		}
+		if reminder != nil {
+			value, err := normalizeReminderAt(*reminder)
+			if err != nil {
+				return err
+			}
+			p.ReminderAt = value
 		}
 		if labels != nil {
 			nextLabels, err := canonicalProjectLabels(m, *labels)

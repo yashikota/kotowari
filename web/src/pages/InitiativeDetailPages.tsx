@@ -14,7 +14,7 @@ import {
 import { IconArrowLeft, IconDotsVertical, IconStar, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
-import { InitiativeReminderMenu } from '../components/InitiativeReminderMenu.tsx';
+import { EntityReminderMenu } from '../components/EntityReminderMenu.tsx';
 import { PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 import {
   INITIATIVE_COLORS,
@@ -73,7 +73,7 @@ export function InitiativeDetailPageView({
           title={initiative.name}
           actions={
             <Group gap="xs">
-              <InitiativeReminderMenu
+              <EntityReminderMenu
                 reminderAt={initiative.reminderAt}
                 opened={model.reminderMenuOpen}
                 onMenuChange={handlers.onReminderMenuChange}

@@ -21,6 +21,8 @@ type projectPatchRequest struct {
 	Archived        *bool     `json:"archived"`
 	ClearStart      bool      `json:"clearStartDate"`
 	ClearTarget     bool      `json:"clearTargetDate"`
+	ReminderAt      *string   `json:"reminderAt"`
+	ClearReminder   bool      `json:"clearReminder"`
 }
 
 func (p projectPatchRequest) archiveOnly() bool {
@@ -28,14 +30,15 @@ func (p projectPatchRequest) archiveOnly() bool {
 		p.IconColor == nil && p.Description == nil && p.Status == nil && p.WorkflowStatus == nil &&
 		p.IsFavorite == nil && p.Lead == nil && p.Health == nil && p.Priority == nil &&
 		p.StartDate == nil && p.TargetDate == nil && p.Labels == nil && p.InitiativeSlugs == nil &&
-		!p.ClearStart && !p.ClearTarget
+		p.ReminderAt == nil && !p.ClearStart && !p.ClearTarget && !p.ClearReminder
 }
 
 func (p projectPatchRequest) hasContentPatch() bool {
 	return p.Name != nil || p.Summary != nil || p.Icon != nil || p.IconColor != nil ||
 		p.Description != nil || p.Status != nil || p.WorkflowStatus != nil || p.Lead != nil ||
 		p.Health != nil || p.Priority != nil || p.StartDate != nil || p.TargetDate != nil ||
-		p.Labels != nil || p.InitiativeSlugs != nil || p.Archived != nil || p.ClearStart || p.ClearTarget
+		p.Labels != nil || p.InitiativeSlugs != nil || p.Archived != nil || p.ClearStart || p.ClearTarget ||
+		p.ReminderAt != nil || p.ClearReminder
 }
 
 func (p projectPatchRequest) updateInput(slug string) model.ProjectUpdateInput {
@@ -45,6 +48,7 @@ func (p projectPatchRequest) updateInput(slug string) model.ProjectUpdateInput {
 		Health: p.Health, Lead: p.Lead, Priority: p.Priority,
 		StartDate:  patchOptionalString(p.ClearStart, p.StartDate),
 		TargetDate: patchOptionalString(p.ClearTarget, p.TargetDate),
+		ReminderAt: patchOptionalString(p.ClearReminder, p.ReminderAt),
 		Labels:     p.Labels, InitiativeSlugs: p.InitiativeSlugs,
 	}
 }

@@ -169,6 +169,31 @@ export function projectDateShortcutFromKeyboard(event: {
   return null;
 }
 
+export function projectEntityShortcutFromKeyboard(event: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  repeat?: boolean;
+  isComposing?: boolean;
+  defaultPrevented?: boolean;
+  target: EventTarget | null;
+}): 'open-reminder-menu' | 'copy-id' | 'copy-url' | 'copy-title' | null {
+  if (event.defaultPrevented || event.isComposing || event.repeat || isTypingTarget(event.target)) {
+    return null;
+  }
+  const key = event.key.toLowerCase();
+  if (key === 'h' && event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    return 'open-reminder-menu';
+  }
+  if (!(event.ctrlKey || event.metaKey) || event.altKey) return null;
+  if (key === '.' && !event.shiftKey) return 'copy-id';
+  if ((key === ',' || key === '<') && event.shiftKey) return 'copy-url';
+  if ((key === "'" || key === '"') && event.shiftKey) return 'copy-title';
+  return null;
+}
+
 export function initiativeDetailShortcutFromKeyboard(event: {
   key: string;
   metaKey: boolean;

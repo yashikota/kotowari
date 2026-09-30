@@ -155,6 +155,7 @@ export type Project = {
   priority: number;
   startDate: string | null;
   targetDate: string | null;
+  reminderAt?: string | null;
   labels?: string[];
   dependencies?: ProjectDependency[];
   progress: number;
