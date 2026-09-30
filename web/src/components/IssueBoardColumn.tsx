@@ -35,6 +35,8 @@ function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColu
         <Box
           component="section"
           aria-label={t('ui.issueColumnLabel', { status: statusLabel })}
+          data-issue-board-column
+          data-board-count={issues.length}
           className={styles.column}
           p="xs"
           onDragOver={handlers.onDragOver0}
@@ -60,7 +62,7 @@ function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColu
           >
             <Box>
               <Box style={{ height: windowed.before }} aria-hidden />
-              {issues.slice(windowed.start, windowed.end).map((issue) => {
+              {issues.slice(windowed.start, windowed.end).map((issue, index) => {
                 const overdue = isOverdue(issue.dueDate, today);
                 const className = [
                   styles.issueCard,
@@ -73,6 +75,8 @@ function IssueBoardColumnView({ model }: { model: ReturnType<typeof useBoardColu
                   <UnstyledButton
                     key={issue.identifier}
                     className={className}
+                    data-issue-board-card
+                    data-board-index={windowed.start + index}
                     draggable
                     onDragStart={() => handlers.onDragStart2(issue)}
                     onDragEnd={handlers.onDragEnd3}

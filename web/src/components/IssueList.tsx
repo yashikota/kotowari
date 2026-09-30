@@ -154,7 +154,7 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
     case 0: {
       const { dragId, columns, canReorder, handlers } = model;
       return (
-        <Group align="stretch" gap="md" wrap="nowrap" className={styles.board}>
+        <Group align="stretch" gap="md" wrap="nowrap" className={styles.board} data-issue-board>
           {columns.map((column) => (
             <IssueBoardColumn
               key={column.status}

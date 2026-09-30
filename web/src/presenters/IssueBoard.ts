@@ -179,16 +179,75 @@ export function useBoardColumnPresenter({
           return true;
         }
         if (
-          event.defaultPrevented ||
-          !(event.ctrlKey || event.metaKey) ||
-          event.altKey ||
-          event.shiftKey ||
-          (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')
-        )
-          return false;
-        const direction = event.key === 'ArrowRight' ? 1 : -1;
+          !event.defaultPrevented &&
+          (event.ctrlKey || event.metaKey) &&
+          !event.altKey &&
+          !event.shiftKey &&
+          (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+        ) {
+          const direction = event.key === 'ArrowRight' ? 1 : -1;
+          event.preventDefault();
+          onMoveToAdjacentColumn(issue.identifier, status, direction);
+          return true;
+        }
+        if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return false;
+        const verticalDirection =
+          event.key === 'ArrowUp' || event.key.toLowerCase() === 'k'
+            ? -1
+            : event.key === 'ArrowDown' || event.key.toLowerCase() === 'j'
+              ? 1
+              : 0;
+        const horizontalDirection =
+          event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+        if (!verticalDirection && !horizontalDirection) return false;
+        const card = event.currentTarget;
+        const currentColumn = card.closest<HTMLElement>('[data-issue-board-column]');
+        const board = card.closest<HTMLElement>('[data-issue-board]');
+        if (!currentColumn || !board) return false;
+        const currentIndex = Number(card.dataset.boardIndex);
+        const columns = Array.from(
+          board.querySelectorAll<HTMLElement>('[data-issue-board-column]'),
+        );
+        let targetColumnIndex = columns.indexOf(currentColumn);
+        let targetIndex = currentIndex;
+        if (verticalDirection) {
+          targetIndex += verticalDirection;
+        } else {
+          targetColumnIndex += horizontalDirection;
+          while (columns[targetColumnIndex]) {
+            const count = Number(columns[targetColumnIndex]?.dataset.boardCount ?? 0);
+            if (count > 0) {
+              targetIndex = Math.min(currentIndex, count - 1);
+              break;
+            }
+            targetColumnIndex += horizontalDirection;
+          }
+        }
+        const targetColumn = columns[targetColumnIndex];
+        const targetViewport = targetColumn?.querySelector<HTMLElement>('[role="region"]');
+        const targetCount = Number(targetColumn?.dataset.boardCount ?? 0);
+        if (
+          !targetColumn ||
+          !targetViewport ||
+          targetCount === 0 ||
+          targetIndex < 0 ||
+          targetIndex >= targetCount
+        ) {
+          event.preventDefault();
+          return true;
+        }
+        const focusTarget = () =>
+          targetColumn.querySelector<HTMLButtonElement>(
+            `[data-issue-board-card][data-board-index="${targetIndex}"]`,
+          );
         event.preventDefault();
-        onMoveToAdjacentColumn(issue.identifier, status, direction);
+        const target = focusTarget();
+        if (target) {
+          target.focus();
+        } else {
+          targetViewport.scrollTop = targetIndex * 100;
+          requestAnimationFrame(() => requestAnimationFrame(() => focusTarget()?.focus()));
+        }
         return true;
       },
     },

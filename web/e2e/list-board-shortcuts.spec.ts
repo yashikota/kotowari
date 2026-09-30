@@ -122,6 +122,41 @@ test('manual board shortcuts reorder issues within their status column', async (
     .toBe(true);
 });
 
+test('board arrows move focus between issues and status columns', async ({ page, request }) => {
+  const stamp = Date.now();
+  for (const index of [0, 1]) {
+    const created = await request.post('/api/issues', {
+      data: { title: `Board navigation ${stamp} ${index}`, status: 'todo' },
+    });
+    expect(created.ok(), await created.text()).toBeTruthy();
+  }
+  const inProgress = await request.post('/api/issues', {
+    data: { title: `Board navigation ${stamp} active`, status: 'in_progress' },
+  });
+  expect(inProgress.ok(), await inProgress.text()).toBeTruthy();
+
+  await page.goto('/issues?layout=board');
+  const todoCards = page
+    .getByRole('region', { name: 'Todo issues' })
+    .locator('[data-issue-board-card]');
+  const firstTodoCard = todoCards.first();
+  const firstIndex = Number(await firstTodoCard.getAttribute('data-board-index'));
+  await firstTodoCard.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-board-index')))
+    .toBe(String(firstIndex + 1));
+
+  await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document.activeElement?.closest('[data-issue-board-column]')?.getAttribute('aria-label'),
+      ),
+    )
+    .toBe('In Progress issues');
+});
+
 test('cycle issue lists switch layouts and copy their current page URL', async ({
   page,
   request,

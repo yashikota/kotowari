@@ -2182,6 +2182,7 @@
     "shortcutToggleIssueLayout": "Switch between list and board layouts",
     "shortcutCopyPageURL": "Copy the current page URL",
     "shortcutMoveIssueBetweenColumns": "Move the focused issue to the adjacent board column",
+    "shortcutNavigateBoardIssues": "Move focus between issues on the board",
     "shortcutReorderIssueInBoard": "Move the focused issue within its current board column",
     "shortcutMoveIssueToBoardEdge": "Move the focused issue to the top or bottom of its board column",
     "shortcutSetStatus": "Open the issue status menu",
