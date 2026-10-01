@@ -1,4 +1,9 @@
 {
+  "issueComposer": {
+    "loadingProperties": "課題のプロパティを読み込んでいます…",
+    "propertiesFailed": "課題のプロパティを読み込めませんでした。選択内容を保持するため、保存前に再読み込みしてください。",
+    "retryProperties": "課題のプロパティを再読み込み"
+  },
   "documentList": {
     "onlyMyProjects": "自分のプロジェクトのみ表示",
     "clearFilters": "文書の絞り込みを解除",

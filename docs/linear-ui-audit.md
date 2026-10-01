@@ -101,3 +101,15 @@ shows progress. Failed creation retains inputs and releases the lock for retry. 
 restores title focus after the inputs become enabled. Browser coverage delays the create
 request to check the lock, injects a failed request to check recovery, and exercises existing
 draft, template, recurring, copy, and consecutive-create workflows.
+### Composer metadata readiness (2026-10-02)
+
+Rechecked Make a copy in the logged-in Linear UI: the Feature label remains selected in the
+copy composer along with priority, assignee, and estimate. Discarded the composer without
+creating reference data.
+
+Kotowari now loads composer projects, templates, and labels through `useIssueComposerMetadata`.
+Opening or retrying refreshes those catalogs; saving by button or keyboard waits for readiness.
+Failures expose a reload action while preserving the current draft. Generation checks and effect
+cleanup prevent an earlier opening's response from replacing a newer opening's data. Focused
+browser coverage confirms copied labels survive delayed and stale responses, and that failures
+can be retried without losing the title.

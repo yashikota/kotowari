@@ -150,6 +150,21 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
             value={model.issueBody}
             onChange={handlers.onComposerBodyChange}
           />
+          {model.issueMetadataPhase === 'loading' ? (
+            <Text size="sm" c="dimmed" role="status">
+              {t('issueComposer.loadingProperties')}
+            </Text>
+          ) : null}
+          {model.issueMetadataPhase === 'error' ? (
+            <Alert color="red" role="alert">
+              <Stack gap="xs">
+                <Text size="sm">{t('issueComposer.propertiesFailed')}</Text>
+                <Button variant="default" onClick={handlers.onRetryIssueMetadata}>
+                  {t('issueComposer.retryProperties')}
+                </Button>
+              </Stack>
+            </Alert>
+          ) : null}{' '}
           <IssueCreateProperties
             status={issueStatus}
             priority={issuePriority}

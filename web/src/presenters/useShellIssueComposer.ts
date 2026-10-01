@@ -6,14 +6,7 @@ import { api } from '../api.ts';
 import { useIntent, useIntentHandler } from '../application/Root.tsx';
 import { isSubmitShortcut } from '../keymap.ts';
 import { workflowStatusCategory, useIssueWorkflow } from '../workflow.tsx';
-import type {
-  Issue,
-  IssueTemplate,
-  Label,
-  Project,
-  RecurringIssue,
-  RecurringIssueDraft,
-} from '../types.ts';
+import type { Issue, Project, RecurringIssue, RecurringIssueDraft } from '../types.ts';
 import type { IssueCreateContext } from '../issue-list.ts';
 import {
   deleteAllIssueDrafts,
@@ -25,6 +18,7 @@ import {
 import { useIssueComposerParent } from './useIssueComposerParent.ts';
 import { useIssueComposerAttachments } from './useIssueComposerAttachments.ts';
 import { useIssueComposerLinks } from './useIssueComposerLinks.ts';
+import { useIssueComposerMetadata } from './useIssueComposerMetadata.ts';
 
 type IssueDraftDiscardRequest = { kind: 'draft'; id: string } | { kind: 'all' };
 
@@ -77,10 +71,11 @@ export function useShellIssueComposer({
   const [issueRecurringUnit, setIssueRecurringUnit] = useState<RecurringIssue['unit']>('week');
   const [issueLabelNames, setIssueLabelNames] = useState<string[]>([]);
   const issueParent = useIssueComposerParent(open);
-  const [issueTemplates, setIssueTemplates] = useState<IssueTemplate[]>([]);
+  const metadata = useIssueComposerMetadata(open, setProjects);
+  const issueTemplates = metadata.templates;
   const [issueTemplateSlug, setIssueTemplateSlug] = useState('');
   const [issueTemplatePickerRequested, setIssueTemplatePickerRequested] = useState(false);
-  const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
+  const availableLabels = metadata.labels;
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
   const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>(defaultIssueAssignee);
@@ -197,23 +192,9 @@ export function useShellIssueComposer({
     if (open && issueTitle.trim()) saveCurrentIssueDraft();
   }, [open, issueTitle, saveCurrentIssueDraft]);
 
-  useEffect(() => {
-    if (!open) return;
-    void Promise.all([api.projects(), api.issueTemplates(), api.labels()])
-      .then(([nextProjects, templates, nextLabels]) => {
-        setProjects(nextProjects);
-        setIssueTemplates(templates);
-        setAvailableLabels(nextLabels);
-      })
-      .catch(() => {
-        setProjects([]);
-        setIssueTemplates([]);
-        setAvailableLabels([]);
-      });
-  }, [open, setProjects]);
-
   function openCreateIssue(prefill: IssueCreateContext = {}) {
     if (issueSubmissionInFlight.current) return;
+    metadata.prepare();
     setIssueTemplatePickerRequested(false);
     issueDraftIdRef.current = '';
     setIssueDraftId('');
@@ -267,6 +248,8 @@ export function useShellIssueComposer({
     openCreateIssue((value ?? {}) as IssueCreateContext);
   });
   useIntentHandler('issue.openDraft', (value) => {
+    if (issueSubmissionInFlight.current) return;
+    metadata.prepare();
     const draft = value as IssueDraft;
     issueDraftIdRef.current = draft.id;
     setIssueDraftId(draft.id);
@@ -305,6 +288,8 @@ export function useShellIssueComposer({
     if (request.kind === 'all' || request.kind === 'draft') setIssueDraftDiscardRequest(request);
   });
   useIntentHandler('issue.createRecurring', (value) => {
+    if (issueSubmissionInFlight.current) return;
+    metadata.prepare();
     const draft = value as RecurringIssueDraft;
     const firstDueDate = localDateValue(new Date());
     issueDraftIdRef.current = '';
@@ -338,7 +323,7 @@ export function useShellIssueComposer({
   });
 
   async function submitIssue() {
-    if (issueSubmissionInFlight.current) return;
+    if (issueSubmissionInFlight.current || !metadata.ready.current) return;
     const title = issueTitle.trim();
     if (!title || issueParent.loading || issueLinks.isOpen || attachments.error) return;
     const recurrenceInterval = Number(issueRecurringInterval);
@@ -461,8 +446,10 @@ export function useShellIssueComposer({
       issueRecurringInterval,
       issueRecurringUnit,
       issueSubmitting,
+      issueMetadataPhase: metadata.phase,
       issueSubmitDisabled:
         issueSubmitting ||
+        metadata.phase !== 'ready' ||
         issueParent.loading ||
         issueLinks.isOpen ||
         Boolean(attachments.error) ||
@@ -493,6 +480,7 @@ export function useShellIssueComposer({
       onComposerCreateMoreChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setIssueCreateMore(e.target.checked),
+      onRetryIssueMetadata: metadata.prepare,
       onCreateIssue: () => openCreateIssue(),
       onSaveIssueDraft: saveIssueDraftAndClose,
       onRequestDiscardCurrentDraft: () => {

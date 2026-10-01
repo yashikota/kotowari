@@ -1,4 +1,9 @@
 {
+  "issueComposer": {
+    "loadingProperties": "Loading issue properties…",
+    "propertiesFailed": "Issue properties could not be loaded. Retry before saving to preserve your selections.",
+    "retryProperties": "Reload issue properties"
+  },
   "documentList": {
     "onlyMyProjects": "Show only my projects",
     "clearFilters": "Clear document filters",
