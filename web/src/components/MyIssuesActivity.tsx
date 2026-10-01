@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Box, Group, ScrollArea, Stack, Text } from '@mantine/core';
+import { Box, Button, Group, ScrollArea, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { formatActivity } from '../activity.ts';
 import { EmptyState } from '../mantine-ui.tsx';
@@ -11,9 +11,20 @@ export type MyIssueActivityItem = {
   activity: Activity;
 };
 
-export function MyIssuesActivity({ items }: { items: MyIssueActivityItem[] }) {
+export function MyIssuesActivity({
+  items,
+  onCreateIssue,
+}: {
+  items: MyIssueActivityItem[];
+  onCreateIssue: () => void;
+}) {
   const { t } = useTranslation();
-  if (items.length === 0) return <EmptyState>{t('myIssues.emptyActivity')}</EmptyState>;
+  if (items.length === 0)
+    return (
+      <EmptyState action={<Button onClick={onCreateIssue}>{t('commands.createIssue')}</Button>}>
+        {t('myIssues.emptyActivity')}
+      </EmptyState>
+    );
   return (
     <ScrollArea style={{ flex: 1, minHeight: 0 }}>
       <Stack component="ol" gap={0} p={0} m={0} role="list" aria-label={t('myIssues.activity')}>

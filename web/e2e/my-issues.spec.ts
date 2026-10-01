@@ -54,3 +54,14 @@ test('My issues uses a focused header and Linear-style personal tabs', async ({
   await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe('activity');
   await expect(page.getByText(/No issues with activity from you|My assigned/)).toBeVisible();
 });
+
+test('empty My issues Activity opens the issue composer', async ({ page }) => {
+  await page.route('**/api/inbox/activities', (route) => route.fulfill({ json: [] }));
+  await page.goto('/issues?myIssuesTab=activity');
+  await expect(page.getByText('No issues with activity from you', { exact: true })).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Create issue', exact: true })
+    .filter({ hasText: 'Create issue' })
+    .click();
+  await expect(page.getByRole('dialog', { name: /^Create issue/ })).toBeVisible();
+});

@@ -93,7 +93,10 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         return (
           <Box h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <MyIssuesTabs value={myIssuesTab} onChange={handlers.onMyIssuesTabChange} />
-            <MyIssuesActivity items={data.activityItems ?? []} />
+            <MyIssuesActivity
+              items={data.activityItems ?? []}
+              onCreateIssue={handlers.onCreateIssue}
+            />
           </Box>
         );
       }

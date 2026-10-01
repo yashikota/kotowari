@@ -270,12 +270,13 @@ export function SplitLayout({ children, single }: { children: ReactNode; single?
   );
 }
 
-export function EmptyState({ children }: { children: ReactNode }) {
+export function EmptyState({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <Stack align="center" justify="center" py="xl" gap="xs">
       <Text c="dimmed" ta="center">
         {children}
       </Text>
+      {action}
     </Stack>
   );
 }

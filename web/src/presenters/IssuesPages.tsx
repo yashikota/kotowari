@@ -30,7 +30,12 @@ import { actionFromKeyboard, isTypingTarget } from '../keymap.ts';
 import { copyPageURL } from '../copy-page-url.ts';
 import { downloadIssuesCSV } from '../issue-export.ts';
 import type { IssueNavigationState } from '../focus.ts';
-import { useIntentHandler, useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
+import {
+  useIntent,
+  useIntentHandler,
+  useKeyboard,
+  useRootMachineFlag,
+} from '../application/Root.tsx';
 import type { Cycle, Issue, Label, Project } from '../types.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
@@ -119,6 +124,7 @@ function matchesFind(issue: Issue, q: string): boolean {
 }
 
 export function useIssuesPagePresenter() {
+  const sendIntent = useIntent();
   const data = useLoaderData({ from: '/issues' }) as IssueListData;
   const search = useSearch({ from: '/issues' }) as IssueSearch;
   const latestSearch = useRef(search);
@@ -438,6 +444,7 @@ export function useIssuesPagePresenter() {
             ? displayProperties.filter((item) => item !== property)
             : [...displayProperties, property],
         }),
+      onCreateIssue: () => sendIntent('issue.create', {}),
       onDetailsToggle: () => setDetailsOpen((current) => !current),
       onFacetChange: (next: IssueFacetType) => setFacet(next),
       onFacetFilterToggle: (value: string) => {
