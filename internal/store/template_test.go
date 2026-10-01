@@ -78,6 +78,41 @@ func TestCreateIssueUsesWorkspaceTemplate(t *testing.T) {
 	}
 }
 
+func TestImportedEmptyBodySurvivesReopenWithoutDefaultTemplate(t *testing.T) {
+	dir := t.TempDir()
+	s, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	imported, err := s.CreateIssue(CreateIssueInput{Title: "Imported blank description", SkipDefaultTemplate: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	regular, err := s.CreateIssue(CreateIssueInput{Title: "Regular creation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(regular.Body, "## 目的") {
+		t.Fatalf("regular creation lost its default template: %q", regular.Body)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = reopened.Close() })
+	stored, err := reopened.GetIssue(imported.Identifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(stored.Body) != "" {
+		t.Fatalf("imported empty description changed after reopen: %q", stored.Body)
+	}
+}
+
 func TestIssueTemplateRoundTripAndNameConflicts(t *testing.T) {
 	dir := t.TempDir()
 	s, err := Open(dir)
