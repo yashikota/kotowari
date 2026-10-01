@@ -203,30 +203,21 @@ export function useIssueDetailPresenter({
     }
   }
 
-  async function makeCopy() {
-    const copy = await api.createIssue({
+  function makeCopy() {
+    void sendIntent('issue.create', {
       title: `${issue.title} (${i18n.t('issueActions.copySuffix')})`,
       body: issue.body.trimEnd(),
-      status: issue.status,
+      skipDefaultTemplate: true,
+      status:
+        issueWorkflowStatuses.find((status) => status.category === 'backlog')?.id ?? 'backlog',
       type: issue.type,
       priority: issue.priority,
-      estimate: issue.estimate ?? null,
+      assignee: issue.assignee ?? '',
+      estimate: issue.estimate,
       projectId: issue.projectId ?? undefined,
-      milestoneId: issue.milestoneId ?? undefined,
-      cycleId: issue.cycleId ?? undefined,
-      parentId: issue.parentId ?? undefined,
-      dueDate: issue.dueDate ?? undefined,
-      labelIds: issue.labels.map((label) => label.id),
-    });
-    await router.invalidate();
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-    await navigate({
-      to: '/issues/$identifier',
-      params: { identifier: copy.identifier },
-      state: { autofocus: 'title' },
+      labelNames: issue.labels.map((label) => label.name),
     });
   }
-
   return {
     _view: 2 as const,
     identifier,

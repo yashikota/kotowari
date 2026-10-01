@@ -7,6 +7,7 @@ export type IssueDraft = {
   id: string;
   title: string;
   body: string;
+  skipDefaultTemplate?: boolean;
   status: string;
   priority: number;
   assignee: 'self' | 'agent' | '';
@@ -74,6 +75,7 @@ function parseIssueDraft(value: unknown): IssueDraft | null {
     id,
     title,
     body: asString(record.body),
+    skipDefaultTemplate: record.skipDefaultTemplate === true,
     status: asString(record.status, 'todo'),
     priority:
       typeof record.priority === 'number' && Number.isFinite(record.priority) ? record.priority : 0,

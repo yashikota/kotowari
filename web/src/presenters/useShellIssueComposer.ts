@@ -64,6 +64,7 @@ export function useShellIssueComposer({
   const [issueType, setIssueType] = useState<Issue['type'] | ''>('');
   const [issueEstimate, setIssueEstimate] = useState('');
   const [issueBody, setIssueBody] = useState('');
+  const [skipDefaultTemplate, setSkipDefaultTemplate] = useState(false);
   const attachments = useIssueComposerAttachments();
   const issueLinks = useIssueComposerLinks();
   const [issueDueDate, setIssueDueDate] = useState('');
@@ -94,6 +95,7 @@ export function useShellIssueComposer({
       id: currentDraftId || crypto.randomUUID(),
       title,
       body: issueBody,
+      skipDefaultTemplate,
       status: issueStatus,
       priority: issuePriority,
       assignee: issueAssignee,
@@ -123,6 +125,7 @@ export function useShellIssueComposer({
   }, [
     issueAssignee,
     issueBody,
+    skipDefaultTemplate,
     issueCycleId,
     issueDraftId,
     issueDueDate,
@@ -212,8 +215,9 @@ export function useShellIssueComposer({
     setIssueDraftSaved(false);
     setIssueComposerExpanded(false);
     setIssueCreateMore(false);
-    setIssueTitle('');
-    setIssueBody('');
+    setIssueTitle(prefill.title ?? '');
+    setIssueBody(prefill.body ?? '');
+    setSkipDefaultTemplate(prefill.skipDefaultTemplate === true);
     setIssueStatus(prefill.status ?? 'todo');
     setIssuePriority(prefill.priority ?? 0);
     setIssueType(prefill.type ?? '');
@@ -265,6 +269,7 @@ export function useShellIssueComposer({
     setIssueComposerExpanded(false);
     setIssueTitle(draft.title);
     setIssueBody(draft.body);
+    setSkipDefaultTemplate(draft.skipDefaultTemplate === true);
     setIssueStatus(draft.status);
     setIssuePriority(draft.priority);
     setIssueAssignee(draft.assignee);
@@ -303,6 +308,7 @@ export function useShellIssueComposer({
     setIssueCreateMore(false);
     setIssueTitle(draft.title);
     setIssueBody(draft.body);
+    setSkipDefaultTemplate(false);
     setIssueStatus(
       issueWorkflowStatuses.find((status) => status.category === 'backlog')?.id ?? 'backlog',
     );
@@ -343,6 +349,7 @@ export function useShellIssueComposer({
     const issue: Issue = await api.createIssue({
       title,
       body: issueBody,
+      skipDefaultTemplate,
       status: workflowStatusCategory(issueStatus, issueWorkflowStatuses),
       workflowStatus: issueStatus,
       assignee: issueAssignee || undefined,
@@ -431,6 +438,7 @@ export function useShellIssueComposer({
       issueType,
       issueEstimate,
       issueBody,
+      skipDefaultTemplate,
       issueAttachments: attachments.files,
       issueAttachmentError: attachments.error,
       issueDueDate,

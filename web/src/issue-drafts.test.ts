@@ -18,6 +18,7 @@ describe('issue drafts', () => {
           title: '  Newer  ',
           updatedAt: '2026-01-02T00:00:00.000Z',
           status: 'custom-in-progress',
+          skipDefaultTemplate: true,
           priority: 2,
           assignee: 'self',
           type: 'feature',
@@ -36,6 +37,7 @@ describe('issue drafts', () => {
     expect(drafts.map((draft) => draft.id)).toEqual(['newer', 'older']);
     expect(drafts[0]).toMatchObject({
       title: 'Newer',
+      skipDefaultTemplate: true,
       status: 'custom-in-progress',
       priority: 2,
       assignee: 'self',
@@ -48,6 +50,7 @@ describe('issue drafts', () => {
     });
     expect(drafts[1]).toMatchObject({
       body: '',
+      skipDefaultTemplate: false,
       status: 'todo',
       priority: 0,
       labelNames: [],

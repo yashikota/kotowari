@@ -76,3 +76,16 @@ Confirmed the logged-in issue detail and Issue options menu in Chrome:
   these menu items as missing features without checking the existing behavior.
 - Run loop is visible in Linear; assess its single-user value and semantics before considering
   migration. No reference issue data was modified during this audit.
+### Editable issue copies
+
+Opening Make a copy on a completed issue opens a Create issue composer in Linear. The title
+has a `(copy)` suffix; description, priority, assignee, estimate, and labels are prefilled.
+The observed copy starts in Backlog and has no cycle. It is only created after Save copy.
+The reference composer was closed without submitting.
+
+Kotowari now routes Make a copy through its existing issue composer instead of immediately
+creating a persisted issue. It carries the source title, description, type, priority,
+assignee, estimate, project, and labels. Status starts in Backlog; cycle, due date, milestone,
+and parent are not inherited. The user can edit before saving or close without creating an
+issue. Existing draft autosave applies; empty copied descriptions bypass default templates,
+and that choice persists when the draft is reopened.

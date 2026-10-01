@@ -1987,7 +1987,7 @@ test('issue options add resource links and set, edit, and clear due dates', asyn
   expect(updated.dueDate).toBeNull();
 });
 
-test('issue detail exposes Linear quick-copy actions and makes a property-preserving copy', async ({
+test('issue detail exposes quick-copy actions and previews an editable copy', async ({
   page,
   request,
 }) => {
@@ -2058,22 +2058,84 @@ test('issue detail exposes Linear quick-copy actions and makes a property-preser
     .toBe(issue.identifier);
 
   await issueOptions.click();
+  let copyRequests = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/issues') {
+      copyRequests += 1;
+    }
+  });
   await menu.getByRole('menuitem', { name: 'Make a copy' }).click();
+  const composer = page.getByRole('dialog', { name: /^Create issue/ });
+  await expect(composer).toBeVisible();
+  await expect(page).toHaveURL(`/issues/${issue.identifier}`);
+  const copyTitle = composer.getByRole('textbox', { name: 'Issue title', exact: true });
+  await expect(copyTitle).toHaveValue(`${title} (copy)`);
+  await page.keyboard.press('Escape');
+  await expect(composer).toHaveCount(0);
+  expect(copyRequests).toBe(0);
+  await expect(page).toHaveURL(`/issues/${issue.identifier}`);
+  await issueOptions.click();
+  await menu.getByRole('menuitem', { name: 'Make a copy' }).click();
+  await expect(composer).toBeVisible();
+  await expect(copyTitle).toHaveValue(`${title} (copy)`);
+  const description = composer.getByRole('textbox', { name: 'Description', exact: true });
+  await expect(description).toHaveValue('Keep the implementation details.');
+  await description.fill('Reviewed implementation details.');
+  await copyTitle.fill(`${title} reviewed`);
+  await composer.getByRole('button', { name: 'Create', exact: true }).click();
+  await expect(composer).toHaveCount(0);
 
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+$/);
   const copiedIdentifier = new URL(page.url()).pathname.split('/').at(-1)!;
   const copied = await request.get(`/api/issues/${copiedIdentifier}`);
   const copiedIssue = (await copied.json()) as { body: string };
-  expect(copiedIssue.body.trimEnd()).toBe('Keep the implementation details.');
+  expect(copiedIssue.body.trimEnd()).toBe('Reviewed implementation details.');
+  expect(copyRequests).toBe(1);
   expect(copiedIssue).toMatchObject({
-    title: expect.stringContaining(title),
-    status: 'in_progress',
+    title: `${title} reviewed`,
+    status: 'backlog',
     type: 'bug',
     priority: 2,
     estimate: 3,
   });
 });
 
+test('copying an empty description keeps it empty and carries the assignee', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/issues', {
+    data: {
+      title: `Empty copy ${Date.now()}`,
+      body: '',
+      skipDefaultTemplate: true,
+      assignee: 'self',
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const source = (await created.json()) as { identifier: string; title: string };
+  await page.goto(`/issues/${source.identifier}`);
+  await page.getByRole('button', { name: 'Issue options' }).click();
+  await page.getByRole('menuitem', { name: 'Make a copy' }).click();
+  const composer = page.getByRole('dialog', { name: /^Create issue/ });
+  await expect(composer.getByRole('textbox', { name: 'Description', exact: true })).toHaveValue('');
+  const submission = page.waitForRequest(
+    (request) => request.method() === 'POST' && new URL(request.url()).pathname === '/api/issues',
+  );
+  await composer.getByRole('button', { name: 'Create', exact: true }).click();
+  expect((await submission).postDataJSON()).toMatchObject({
+    body: '',
+    skipDefaultTemplate: true,
+    assignee: 'self',
+  });
+  await expect(composer).toHaveCount(0);
+  await expect(page).not.toHaveURL(`/issues/${source.identifier}`);
+  const identifier = new URL(page.url()).pathname.split('/').at(-1)!;
+  const copied = await request.get(`/api/issues/${identifier}`);
+  expect(await copied.json()).toMatchObject({ body: '', assignee: 'self' });
+  await request.delete(`/api/issues/${identifier}`);
+  await request.delete(`/api/issues/${source.identifier}`);
+});
 test('V opens the new issue composer in full screen', async ({ page }) => {
   await page.goto('/issues');
   await expect(page.getByRole('heading', { name: 'Issues', exact: true })).toBeVisible();

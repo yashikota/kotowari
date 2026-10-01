@@ -72,6 +72,9 @@ export type IssueGroupOption = {
 };
 
 export type IssueCreateContext = {
+  title?: string;
+  body?: string;
+  skipDefaultTemplate?: boolean;
   status?: string;
   priority?: number;
   assignee?: Issue['assignee'] | '';
