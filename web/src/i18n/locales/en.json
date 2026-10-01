@@ -1,5 +1,6 @@
 {
   "documentList": {
+    "showInactive": "Show inactive projects",
     "dateField": "Filter date field",
     "dateRange": "Filter date range",
     "anyDate": "Any date",
@@ -27,7 +28,7 @@
     "ascending": "Ascending",
     "descending": "Descending",
     "empty": "Create documents to keep notes, decisions, and plans.",
-    "noMatches": "No documents match your search."
+    "noMatches": "No documents match the current filters."
   },
   "nav": {
     "home": "Home",

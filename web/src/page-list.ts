@@ -62,19 +62,33 @@ export function projectPageList(
 
 export function groupPageList(
   pages: Page[],
-  projects: { id: number; name: string; slug: string }[],
+  projects: {
+    id: number;
+    name: string;
+    slug: string;
+    status?: string;
+    archivedAt?: string | null;
+  }[],
   query: string,
   order: PageListOrder,
   direction: 'asc' | 'desc',
   grouping: 'none' | 'project',
   projectFilter: string,
   dateFilter?: DocumentDateFilter,
+  showInactive = false,
 ) {
-  const filtered = pages.filter(
-    (page) =>
-      projectFilter === 'all' ||
-      (projectFilter === 'none' ? !page.projectId : String(page.projectId) === projectFilter),
-  );
+  const projectById = new Map(projects.map((project) => [project.id, project]));
+  const filtered = pages.filter((page) => {
+    const project = page.projectId ? projectById.get(page.projectId) : undefined;
+    const inactive =
+      project &&
+      (project.status === 'completed' || project.status === 'canceled' || !!project.archivedAt);
+    return (
+      (showInactive || !inactive) &&
+      (projectFilter === 'all' ||
+        (projectFilter === 'none' ? !page.projectId : String(page.projectId) === projectFilter))
+    );
+  });
   if (grouping === 'none')
     return projectPageList(filtered, query, order, direction, dateFilter).map((row) => ({
       ...row,
@@ -105,6 +119,7 @@ export type DocumentDisplay = {
   direction: 'asc' | 'desc';
   showCreated: boolean;
   showUpdated: boolean;
+  showInactive: boolean;
 };
 export const DEFAULT_DOCUMENT_DISPLAY: DocumentDisplay = {
   grouping: 'project',
@@ -112,6 +127,7 @@ export const DEFAULT_DOCUMENT_DISPLAY: DocumentDisplay = {
   direction: 'asc',
   showCreated: false,
   showUpdated: false,
+  showInactive: false,
 };
 export function parseDocumentDisplay(raw: string | undefined): DocumentDisplay {
   try {
@@ -122,6 +138,7 @@ export function parseDocumentDisplay(raw: string | undefined): DocumentDisplay {
       direction: value?.direction === 'desc' ? 'desc' : 'asc',
       showCreated: value?.showCreated === true,
       showUpdated: value?.showUpdated === true,
+      showInactive: value?.showInactive === true,
     };
   } catch {
     return { ...DEFAULT_DOCUMENT_DISPLAY };

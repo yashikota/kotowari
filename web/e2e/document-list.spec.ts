@@ -35,7 +35,9 @@ test('document list searches, sorts and opens creation directly', async ({ page 
   await expect(list.getByRole('listitem')).toHaveCount(1);
   await expect(list).toContainText('Alpha plan');
   await page.getByRole('textbox', { name: 'Search documents' }).fill('missing');
-  await expect(page.getByText('No documents match your search.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('No documents match the current filters.', { exact: true }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Create page', exact: true }).click();
   await expect(page.getByRole('dialog', { name: /^Create page/ })).toBeVisible();
 });
@@ -185,4 +187,42 @@ test('document date filters distinguish creation from editing and can be cleared
   await expect(list).toContainText('Old revised note');
   await page.getByRole('combobox', { name: 'Filter date range' }).selectOption('all');
   await expect(list.getByRole('listitem')).toHaveCount(2);
+});
+
+test('inactive project document visibility can be enabled and is remembered', async ({ page }) => {
+  await page.route('**/api/pages', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: 1,
+          slug: 'finished-note',
+          title: 'Finished note',
+          projectId: 10,
+          parentId: null,
+          status: 'draft',
+          tags: [],
+          createdAt: '2026-01-01',
+          updatedAt: '2026-01-01',
+        },
+      ],
+    }),
+  );
+  await page.route('**/api/projects', (route) =>
+    route.fulfill({
+      json: [{ id: 10, slug: 'finished', name: 'Finished', status: 'completed', labels: [] }],
+    }),
+  );
+  await page.goto('/pages');
+  await expect(
+    page.getByText('No documents match the current filters.', { exact: true }),
+  ).toBeVisible();
+  const toggle = page.getByRole('checkbox', { name: 'Show inactive projects', exact: true });
+  await toggle.check();
+  const list = page.getByRole('list', { name: 'Pages', exact: true });
+  await expect(list).toContainText('Finished note');
+  await page.reload();
+  await expect(toggle).toBeChecked();
+  await expect(list).toContainText('Finished note');
+  await toggle.uncheck();
+  await expect(list).toHaveCount(0);
 });

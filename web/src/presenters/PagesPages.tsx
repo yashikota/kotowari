@@ -33,7 +33,7 @@ export function usePagesPagePresenter() {
     defaultValue: DEFAULT_DOCUMENT_DISPLAY,
     deserialize: parseDocumentDisplay,
   });
-  const { grouping, order, direction, showCreated, showUpdated } = display;
+  const { grouping, order, direction, showCreated, showUpdated, showInactive } = display;
   const [projectFilter, setProjectFilter] = useState('all');
   return {
     _view: 0 as const,
@@ -47,6 +47,7 @@ export function usePagesPagePresenter() {
       grouping,
       projectFilter,
       dateFilter,
+      showInactive,
     ),
     projects,
     grouping,
@@ -57,7 +58,12 @@ export function usePagesPagePresenter() {
     direction,
     showCreated,
     showUpdated,
+    showInactive,
     handlers: {
+      onShowInactive: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const checked = event.currentTarget.checked;
+        setDisplay((current) => ({ ...current, showInactive: checked }));
+      },
       onDateField: (event: React.ChangeEvent<HTMLSelectElement>) => {
         const field = event.currentTarget.value as DocumentDateFilter['field'];
         setDateFilter((current) => ({ ...current, field }));

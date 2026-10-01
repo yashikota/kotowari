@@ -1,5 +1,6 @@
 {
   "documentList": {
+    "showInactive": "非アクティブなプロジェクトを表示",
     "dateField": "絞り込む日時",
     "dateRange": "日時の範囲",
     "anyDate": "すべての日時",
@@ -27,7 +28,7 @@
     "ascending": "昇順",
     "descending": "降順",
     "empty": "文書を作成してメモ、決定事項、計画をまとめましょう。",
-    "noMatches": "検索に一致する文書はありません。"
+    "noMatches": "現在の条件に一致する文書はありません。"
   },
   "nav": {
     "home": "ホーム",

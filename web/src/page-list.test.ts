@@ -108,5 +108,30 @@ it('validates saved document display settings and recovers invalid storage', () 
     direction: 'desc',
     showCreated: true,
     showUpdated: true,
+    showInactive: false,
   });
+});
+
+it('hides completed, canceled, and archived projects while retaining unassigned and unknown projects', () => {
+  const pages = [
+    page(1, 'Active', { projectId: 10 }),
+    page(2, 'Completed', { projectId: 20 }),
+    page(3, 'Canceled', { projectId: 30 }),
+    page(4, 'Archived', { projectId: 40 }),
+    page(5, 'Unassigned'),
+    page(6, 'Unknown', { projectId: 99 }),
+  ];
+  const projects = [
+    { id: 10, name: 'Active', slug: 'active', status: 'started' },
+    { id: 20, name: 'Completed', slug: 'completed', status: 'completed' },
+    { id: 30, name: 'Canceled', slug: 'canceled', status: 'canceled' },
+    { id: 40, name: 'Archived', slug: 'archived', status: 'started', archivedAt: '2026-01-01' },
+  ];
+  expect(
+    groupPageList(pages, projects, '', 'name', 'asc', 'none', 'all').map(({ page }) => page.id),
+  ).toEqual([1, 5, 6]);
+  expect(
+    groupPageList(pages, projects, '', 'name', 'asc', 'none', 'all', undefined, true),
+  ).toHaveLength(6);
+  expect(groupPageList(pages, projects, '', 'name', 'asc', 'none', '20')).toEqual([]);
 });

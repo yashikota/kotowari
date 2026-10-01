@@ -70,6 +70,11 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
             </Group>
             <Group px="sm" pb="sm">
               <Checkbox
+                label={t('documentList.showInactive')}
+                checked={model.showInactive}
+                onChange={handlers.onShowInactive}
+              />
+              <Checkbox
                 label={t('documentList.created')}
                 checked={model.showCreated}
                 onChange={handlers.onShowCreated}
@@ -138,7 +143,10 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 }
               >
                 {t(
-                  model.query || model.projectFilter !== 'all' || model.dateFilter.range !== 'all'
+                  model.pages.length > 0 ||
+                    model.query ||
+                    model.projectFilter !== 'all' ||
+                    model.dateFilter.range !== 'all'
                     ? 'documentList.noMatches'
                     : 'documentList.empty',
                 )}
