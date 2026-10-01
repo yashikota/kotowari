@@ -54,11 +54,25 @@ Observed in the logged-in team Documents screen:
 - Optional display properties are Owner, Last edited, and Created.
 - Project visibility controls include inactive projects and only the user's projects.
 
-Kotowari's `/pages` list currently renders a fixed hierarchy of titles, statuses, and slugs.
-Prioritize direct creation, project grouping, name/created/updated ordering and direction, and
-useful filtering before team ownership controls. Preserve parent-page navigation and existing
-page editing. Keep projection/sorting rules outside the rendering component and cover the
-resulting list with focused browser tests.
+Kotowari now provides direct creation, project grouping, name/created/updated ordering,
+direction, search, project/date filters, inactive project visibility, and only-my-projects.
+Display settings persist across reloads; clearing filters preserves ordering and properties.
+Parent-page navigation is preserved. Projection rules live in `page-list.ts`, with focused
+unit and browser coverage. Team ownership controls remain lower priority.
 
 My issues number shortcuts (1 Assigned, 2 Created, 3 Subscribed, 4 Activity) were also verified in
 Linear. Kotowari implements these only on personal tabs, with input and composition guards.
+
+## Issue detail audit (2026-10-01)
+
+Confirmed the logged-in issue detail and Issue options menu in Chrome:
+
+- Header actions include URL, identifier, branch name, prompt copying, and coding-tool selection.
+- Issue options include due date, links, pull requests, documents, related issue creation,
+  relationship assignment, copying, conversion, duplication, favorites, reminders, and history.
+- Create related contains issue, sub-issue, parent issue, blocked issue, and blocking issue.
+- Kotowari already exposes these related-creation choices in `IssueDetailHeader.tsx` and
+  implements the principal copy, reminder, conversion, and history actions. Avoid treating
+  these menu items as missing features without checking the existing behavior.
+- Run loop is visible in Linear; assess its single-user value and semantics before considering
+  migration. No reference issue data was modified during this audit.
