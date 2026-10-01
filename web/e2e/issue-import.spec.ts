@@ -1,5 +1,14 @@
 import { expect, test } from '@playwright/test';
 
+test.afterEach(async ({ request }) => {
+  const response = await request.get('/api/issues');
+  await expect(response).toBeOK();
+  const issues = (await response.json()) as Array<{ title: string; identifier: string }>;
+  for (const issue of issues.filter((item) => /^CSV \d+ \d+$/.test(item.title))) {
+    await expect(await request.delete('/api/issues/' + issue.identifier)).toBeOK();
+  }
+});
+
 test('CSV preview exposes later rows and imports confirmed issues with empty bodies', async ({
   page,
   request,
