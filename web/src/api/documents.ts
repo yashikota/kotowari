@@ -6,6 +6,7 @@ export const documentApi = {
   createPage: (body: {
     title: string;
     slug: string;
+    projectId?: number;
     body?: string;
     status?: string;
     tags?: string[];

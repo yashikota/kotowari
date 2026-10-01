@@ -10,12 +10,14 @@ export function ProjectDocumentsSection({
   pages,
   issues,
   onCreateADR,
+  onCreatePage,
 }: {
   projectSlug: string;
   adrs: ADR[];
   pages: Page[];
   issues: Issue[];
   onCreateADR: () => void;
+  onCreatePage: () => void;
 }) {
   const { t } = useTranslation();
   const issueNumbers = new Set(issues.map((issue) => issue.number));
@@ -47,7 +49,14 @@ export function ProjectDocumentsSection({
           ))}
         </Stack>
       </Section>
-      <Section title={t('nav.pages')}>
+      <Section
+        title={t('nav.pages')}
+        action={
+          <Button type="button" variant="subtle" size="xs" onClick={onCreatePage}>
+            {t('modal.createPage')}
+          </Button>
+        }
+      >
         <Stack component="ul" gap="xs" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {projectPages.map((page) => (
             <Text component="li" key={page.slug} size="sm">

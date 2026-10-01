@@ -363,6 +363,7 @@ export function ProjectDetailPageView({
                   pages={data.pages}
                   issues={data.issues}
                   onCreateADR={handlers.onCreateADR}
+                  onCreatePage={handlers.onCreatePage}
                 />
                 <IssueList
                   issues={data.issues}

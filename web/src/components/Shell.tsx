@@ -7,6 +7,7 @@ import {
   Button,
   Group,
   Modal,
+  NativeSelect,
   Stack,
   Text,
   Textarea,
@@ -326,6 +327,9 @@ export function ShellView({
           <Modal
             opened={createPage}
             onClose={handlers.onClick22}
+            closeOnEscape={!model.pageSubmitting}
+            closeOnClickOutside={!model.pageSubmitting}
+            withCloseButton={!model.pageSubmitting}
             title={t('modal.createPage')}
             centered
             autoFocus={false}
@@ -338,14 +342,33 @@ export function ShellView({
                 aria-label={t('modal.pageTitle')}
                 placeholder={t('modal.pageTitle')}
                 value={pageTitle}
+                disabled={model.pageSubmitting}
                 onChange={handlers.Page_title_onChange24}
                 onKeyDown={handlers.Page_title_onKeyDown25}
               />
+              <NativeSelect
+                label={t('field.project')}
+                value={model.pageProjectId}
+                disabled={model.pageSubmitting}
+                onChange={handlers.Page_project_onChange}
+                data={[
+                  { value: '', label: t('field.noProject') },
+                  ...model.projects.map((project) => ({
+                    value: String(project.id),
+                    label: project.name,
+                  })),
+                ]}
+              />{' '}
               <Group justify="space-between" align="center">
                 <Text size="sm" c="dimmed">
                   {t('modal.enterHint')}
                 </Text>
-                <Button type="button" onClick={handlers.submitPage}>
+                <Button
+                  type="button"
+                  onClick={handlers.submitPage}
+                  loading={model.pageSubmitting}
+                  disabled={!pageTitle.trim() || model.pageSubmitting}
+                >
                   {t('modal.create')}
                 </Button>
               </Group>

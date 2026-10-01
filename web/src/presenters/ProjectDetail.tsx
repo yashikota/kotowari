@@ -495,6 +495,7 @@ export function useProjectDetailPagePresenter() {
       onTargetDateChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => save(e.target.value ? { targetDate: e.target.value } : { clearTargetDate: true }),
+      onCreatePage: () => sendIntent('page.create', { projectId: project.id }),
       onCreateADR: () => {
         const title = window.prompt(i18n.t('modal.adrTitle'));
         if (title?.trim())

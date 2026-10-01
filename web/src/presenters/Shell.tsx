@@ -32,14 +32,7 @@ import { useShellWorkspace } from './useShellWorkspace.ts';
 import { useShellPalette } from './useShellPalette.ts';
 import { useShellCycleNavigation } from './useShellCycleNavigation.ts';
 import { useShellIssueComposer } from './useShellIssueComposer.ts';
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 48);
-}
+import { useShellPageComposer } from './useShellPageComposer.ts';
 
 function issueNumberFromIdent(id: string | null): number | undefined {
   if (!id) {
@@ -134,7 +127,7 @@ export function useShellPresenter() {
   const helpOpen = overlay === 'help';
   const setHelpOpen = setOverlay('help');
   const [projects, setProjects] = useState<Project[]>([]);
-  const [pageTitle, setPageTitle] = useState('');
+  const pageComposer = useShellPageComposer(setCreatePage);
   const [adrTitle, setAdrTitle] = useState('');
   const [adrLinkIssue, setAdrLinkIssue] = useState<number | undefined>(undefined);
   const [error, setError] = useState('');
@@ -163,7 +156,6 @@ export function useShellPresenter() {
     closeCreateIssue,
   } = issueComposerState;
   const { issueWorkflowStatuses } = issueComposerData;
-  useIntentHandler('page.create', () => setCreatePage(true));
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
   useIntentHandler('adr.create', (value) => {
     const detail = (value ?? {}) as { issueNumber?: number };
@@ -248,7 +240,7 @@ export function useShellPresenter() {
           setCreateADR(true);
           return;
         case 'new-page':
-          setCreatePage(true);
+          pageComposer.openCreatePage();
           return;
         case 'new-view':
           await navigate({
@@ -488,7 +480,6 @@ export function useShellPresenter() {
   });
 
   useIntentHandler('submit:ADR', submitADR);
-  useIntentHandler('submit:Page', submitPage);
 
   async function submitADR() {
     const title = adrTitle.trim();
@@ -506,23 +497,6 @@ export function useShellPresenter() {
     await navigate({
       to: '/adrs/$identifier',
       params: { identifier: adr.identifier },
-      state: { autofocus: 'title' },
-    });
-  }
-
-  async function submitPage() {
-    const title = pageTitle.trim();
-    if (!title) {
-      return;
-    }
-    const slug = slugify(title) || `page-${Date.now()}`;
-    const page = await api.createPage({ title, slug });
-    setPageTitle('');
-    setCreatePage(false);
-    await router.invalidate();
-    await navigate({
-      to: '/pages/$slug',
-      params: { slug: page.slug },
       state: { autofocus: 'title' },
     });
   }
@@ -579,7 +553,7 @@ export function useShellPresenter() {
     ...issueComposerData,
     helpOpen,
     projects,
-    pageTitle,
+    ...pageComposer.data,
     adrTitle,
     adrLinkIssue,
     error,
@@ -595,7 +569,7 @@ export function useShellPresenter() {
         });
       },
       submitADR: () => send('submit:ADR'),
-      submitPage: () => send('submit:Page'),
+      ...pageComposer.handlers,
       onClick0: () =>
         navigate({
           to: '/views/new',
@@ -675,23 +649,9 @@ export function useShellPresenter() {
           return send('submit:ADR');
         }
       },
-      onClick22: () => setCreatePage(false),
       Create_page_onClick23: (
         e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
       ) => e.stopPropagation(),
-      Page_title_onChange24: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setPageTitle(e.target.value),
-      Page_title_onKeyDown25: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
-      ) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-
-        if (isSubmitShortcut(e)) {
-          e.preventDefault();
-          return send('submit:Page');
-        }
-      },
     },
   };
 }

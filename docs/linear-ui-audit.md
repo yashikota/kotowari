@@ -113,3 +113,18 @@ Failures expose a reload action while preserving the current draft. Generation c
 cleanup prevent an earlier opening's response from replacing a newer opening's data. Focused
 browser coverage confirms copied labels survive delayed and stale responses, and that failures
 can be retried without losing the title.
+## Project document creation (2026-10-02)
+
+The reference workspace's Projects screen is empty. Its description explicitly includes optional
+documents as part of a project. No reference project was created, so this audit does not establish
+the exact project-detail document menu. Team Documents creation and project grouping were already
+observed in the preceding audit.
+
+Kotowari's existing project detail listed associated documents but had no creation action. It now
+opens the shared page composer with the project selected. The same composer allows changing or
+clearing that selection. Opening it from the global document list clears earlier project context.
+Creation sends `projectId` in the existing API operation, preserving the association without a
+second patch. Page-composer state and submission moved out of Shell into `useShellPageComposer`.
+The composer guards concurrent submission and retains the title/project selection after failure.
+Focused browser coverage verifies persisted associations, visibility back in project documents,
+context reset, and keyboard submission/retry.
