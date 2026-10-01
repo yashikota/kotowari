@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test';
 
+const ownedTitles = new Set<string>();
+
+test.beforeEach(() => ownedTitles.clear());
+
 test.afterEach(async ({ request }) => {
   const response = await request.get('/api/issues');
   await expect(response).toBeOK();
   const issues = (await response.json()) as Array<{ title: string; identifier: string }>;
-  for (const issue of issues.filter((item) => /^CSV \d+ \d+$/.test(item.title))) {
+  for (const issue of issues.filter((item) => ownedTitles.has(item.title))) {
     await expect(await request.delete('/api/issues/' + issue.identifier)).toBeOK();
   }
 });
@@ -15,6 +19,7 @@ test('CSV preview exposes later rows and imports confirmed issues with empty bod
 }) => {
   const stamp = Date.now();
   const titles = Array.from({ length: 21 }, (_, index) => `CSV ${stamp} ${index}`);
+  for (const title of titles) ownedTitles.add(title);
   await page.goto('/issues');
   await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await page.getByRole('button', { name: 'Import issues from CSV…', exact: true }).click();
@@ -49,4 +54,27 @@ test('CSV preview exposes later rows and imports confirmed issues with empty bod
     expect(issue.status).toBe('done');
     expect(issue.priority).toBe(2);
   }
+});
+
+test('ambiguous CSV headers disable import until a valid file is selected', async ({ page }) => {
+  await page.goto('/issues');
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('button', { name: 'Import issues from CSV…', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Import issues from CSV', exact: true });
+  const input = dialog.locator('input[type="file"]');
+  await input.setInputFiles({
+    name: 'ambiguous.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('Title,title\nFirst,Second'),
+  });
+  await expect(dialog.getByRole('alert')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Import 0 issues', exact: true })).toBeDisabled();
+  await input.setInputFiles({
+    name: 'valid.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('Title\nValid preview'),
+  });
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await expect(dialog.getByText('2. Valid preview', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Import 1 issue', exact: true })).toBeEnabled();
 });
