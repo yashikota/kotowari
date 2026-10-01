@@ -55,6 +55,9 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
       <Modal
         opened={createIssue}
         onClose={handlers.onCloseCreateIssue}
+        closeOnEscape={!model.issueSubmitting}
+        closeOnClickOutside={!model.issueSubmitting}
+        withCloseButton={!model.issueSubmitting}
         title={
           <Group justify="space-between" w="100%" pr="xl">
             <Text component="span" fw={600}>
@@ -93,7 +96,19 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
           }
         }}
       >
-        <Stack gap="sm">
+        <fieldset
+          disabled={model.issueSubmitting}
+          aria-busy={model.issueSubmitting}
+          style={{
+            border: 0,
+            margin: 0,
+            padding: 0,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--mantine-spacing-sm)',
+          }}
+        >
           {(issueDraftSaved || issueTitle.trim()) && (
             <Group justify="flex-end">
               {issueDraftSaved ? (
@@ -312,6 +327,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
                 type="button"
                 onClick={handlers.submitIssue}
                 disabled={model.issueSubmitDisabled}
+                loading={model.issueSubmitting}
               >
                 {model.issueRecurringOpen
                   ? t('issueActions.createRecurringIssue')
@@ -324,7 +340,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
               {model.issueAttachmentError}
             </Alert>
           ) : null}
-        </Stack>
+        </fieldset>
       </Modal>
 
       {savedIssueDraft ? (

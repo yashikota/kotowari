@@ -89,3 +89,15 @@ assignee, estimate, project, and labels. Status starts in Backlog; cycle, due da
 and parent are not inherited. The user can edit before saving or close without creating an
 issue. Existing draft autosave applies; empty copied descriptions bypass default templates,
 and that choice persists when the draft is reopened.
+### Issue composer additional actions and submission
+
+The logged-in Linear Create issue composer exposes Create more, plus Set due date,
+Make recurring, Add link, and Add sub-issue under More actions. Kotowari already has the
+corresponding controls. The blank reference composer was closed without submission.
+
+Kotowari's composer uses one synchronous submission lock for both button and keyboard entry
+points. While creation is pending, inputs and dismissal are disabled and the save button
+shows progress. Failed creation retains inputs and releases the lock for retry. Create more
+restores title focus after the inputs become enabled. Browser coverage delays the create
+request to check the lock, injects a failed request to check recovery, and exercises existing
+draft, template, recurring, copy, and consecutive-create workflows.

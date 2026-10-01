@@ -53,6 +53,8 @@ export function useShellIssueComposer({
   const router = useRouter();
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const [issueTitle, setIssueTitle] = useState('');
+  const [issueSubmitting, setIssueSubmitting] = useState(false);
+  const issueSubmissionInFlight = useRef(false);
   const [issueComposerExpanded, setIssueComposerExpanded] = useState(false);
   const [issueDraftId, setIssueDraftId] = useState('');
   const issueDraftIdRef = useRef('');
@@ -147,6 +149,7 @@ export function useShellIssueComposer({
   ]);
 
   function closeCreateIssue() {
+    if (issueSubmissionInFlight.current) return;
     saveCurrentIssueDraft();
     setIssueComposerExpanded(false);
     setIssueTemplatePickerRequested(false);
@@ -154,6 +157,7 @@ export function useShellIssueComposer({
   }
 
   function saveIssueDraftAndClose() {
+    if (issueSubmissionInFlight.current) return;
     const draft = saveCurrentIssueDraft();
     if (!draft) return;
     setIssueDraftSaved(true);
@@ -209,6 +213,7 @@ export function useShellIssueComposer({
   }, [open, setProjects]);
 
   function openCreateIssue(prefill: IssueCreateContext = {}) {
+    if (issueSubmissionInFlight.current) return;
     setIssueTemplatePickerRequested(false);
     issueDraftIdRef.current = '';
     setIssueDraftId('');
@@ -333,6 +338,7 @@ export function useShellIssueComposer({
   });
 
   async function submitIssue() {
+    if (issueSubmissionInFlight.current) return;
     const title = issueTitle.trim();
     if (!title || issueParent.loading || issueLinks.isOpen || attachments.error) return;
     const recurrenceInterval = Number(issueRecurringInterval);
@@ -345,75 +351,82 @@ export function useShellIssueComposer({
     ) {
       return;
     }
-    const createMore = issueCreateMore && !issueRecurringOpen;
-    const issue: Issue = await api.createIssue({
-      title,
-      body: issueBody,
-      skipDefaultTemplate,
-      status: workflowStatusCategory(issueStatus, issueWorkflowStatuses),
-      workflowStatus: issueStatus,
-      assignee: issueAssignee || undefined,
-      priority: issuePriority,
-      type: issueType || undefined,
-      estimate: issueEstimate ? Number(issueEstimate) : null,
-      projectId: issueProjectId ? Number(issueProjectId) : undefined,
-      cycleId: issueCycleId ? Number(issueCycleId) : undefined,
-      labelIds: availableLabels
-        .filter((label) => issueLabelNames.includes(label.name))
-        .map((label) => label.id),
-      dueDate: issueRecurringOpen ? undefined : issueDueDate || undefined,
-      parentId: issueParent.id,
-      links: issueLinks.links,
-      templateSlug: issueTemplateSlug || undefined,
-      recurring: issueRecurringOpen
-        ? {
-            name: title,
-            firstDueDate: issueRecurringFirstDueDate,
-            interval: recurrenceInterval,
-            unit: issueRecurringUnit,
-          }
-        : undefined,
-    });
-    const submittedDraftId = issueDraftIdRef.current || issueDraftId;
-    if (submittedDraftId) deleteIssueDraft(submittedDraftId);
-    issueDraftIdRef.current = '';
-    setIssueDraftId('');
-    setIssueDraftSaved(false);
-    const attachmentUploadFailed = await attachments.upload(issue.identifier);
-    setIssueTitle('');
-    setIssueBody('');
-    attachments.clear();
-    setIssueDueDate('');
-    setIssueDueDateOpen(false);
-    setIssueRecurringOpen(false);
-    setIssueRecurringFirstDueDate('');
-    setIssueRecurringInterval('1');
-    setIssueRecurringUnit('week');
-    issueLinks.reset();
-    issueParent.reset();
-    setIssueStatus('todo');
-    setIssuePriority(0);
-    setIssueType('');
-    setIssueEstimate('');
-    setIssueLabelNames([]);
-    setIssueTemplateSlug('');
-    setIssueProjectId('');
-    setIssueCycleId('');
-    setIssueAssignee(defaultIssueAssignee);
-    if (createMore) setIssueCreateMoreFocusRequest((request) => request + 1);
-    else {
-      setIssueCreateMore(false);
-      setIssueComposerExpanded(false);
-      setOpen(false);
+    issueSubmissionInFlight.current = true;
+    setIssueSubmitting(true);
+    try {
+      const createMore = issueCreateMore && !issueRecurringOpen;
+      const issue: Issue = await api.createIssue({
+        title,
+        body: issueBody,
+        skipDefaultTemplate,
+        status: workflowStatusCategory(issueStatus, issueWorkflowStatuses),
+        workflowStatus: issueStatus,
+        assignee: issueAssignee || undefined,
+        priority: issuePriority,
+        type: issueType || undefined,
+        estimate: issueEstimate ? Number(issueEstimate) : null,
+        projectId: issueProjectId ? Number(issueProjectId) : undefined,
+        cycleId: issueCycleId ? Number(issueCycleId) : undefined,
+        labelIds: availableLabels
+          .filter((label) => issueLabelNames.includes(label.name))
+          .map((label) => label.id),
+        dueDate: issueRecurringOpen ? undefined : issueDueDate || undefined,
+        parentId: issueParent.id,
+        links: issueLinks.links,
+        templateSlug: issueTemplateSlug || undefined,
+        recurring: issueRecurringOpen
+          ? {
+              name: title,
+              firstDueDate: issueRecurringFirstDueDate,
+              interval: recurrenceInterval,
+              unit: issueRecurringUnit,
+            }
+          : undefined,
+      });
+      const submittedDraftId = issueDraftIdRef.current || issueDraftId;
+      if (submittedDraftId) deleteIssueDraft(submittedDraftId);
+      issueDraftIdRef.current = '';
+      setIssueDraftId('');
+      setIssueDraftSaved(false);
+      const attachmentUploadFailed = await attachments.upload(issue.identifier);
+      setIssueTitle('');
+      setIssueBody('');
+      attachments.clear();
+      setIssueDueDate('');
+      setIssueDueDateOpen(false);
+      setIssueRecurringOpen(false);
+      setIssueRecurringFirstDueDate('');
+      setIssueRecurringInterval('1');
+      setIssueRecurringUnit('week');
+      issueLinks.reset();
+      issueParent.reset();
+      setIssueStatus('todo');
+      setIssuePriority(0);
+      setIssueType('');
+      setIssueEstimate('');
+      setIssueLabelNames([]);
+      setIssueTemplateSlug('');
+      setIssueProjectId('');
+      setIssueCycleId('');
+      setIssueAssignee(defaultIssueAssignee);
+      if (createMore) setIssueCreateMoreFocusRequest((request) => request + 1);
+      else {
+        setIssueCreateMore(false);
+        setIssueComposerExpanded(false);
+        setOpen(false);
+      }
+      if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
+      await router.invalidate();
+      if (createMore) return;
+      await navigate({
+        to: '/issues/$identifier',
+        params: { identifier: issue.identifier },
+        state: { autofocus: 'title' },
+      });
+    } finally {
+      issueSubmissionInFlight.current = false;
+      setIssueSubmitting(false);
     }
-    if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
-    await router.invalidate();
-    if (createMore) return;
-    await navigate({
-      to: '/issues/$identifier',
-      params: { identifier: issue.identifier },
-      state: { autofocus: 'title' },
-    });
   }
   useIntentHandler('submit:Issue', submitIssue);
 
@@ -447,7 +460,9 @@ export function useShellIssueComposer({
       issueRecurringFirstDueDate,
       issueRecurringInterval,
       issueRecurringUnit,
+      issueSubmitting,
       issueSubmitDisabled:
+        issueSubmitting ||
         issueParent.loading ||
         issueLinks.isOpen ||
         Boolean(attachments.error) ||
