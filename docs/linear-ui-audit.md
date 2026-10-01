@@ -42,3 +42,23 @@ human reauthentication. Do not commit, upload, print, or inspect authentication 
 
 These observations are a starting point for the next audit, not proof that the broader migration
 is complete. Track current UI evidence and test results as the implementation evolves.
+
+## Documents audit (2026-10-01)
+
+Observed in the logged-in team Documents screen:
+
+- The toolbar has New document, Add filter, and Display options.
+- The empty state has a Create document action.
+- Display options default to grouping by Project and ordering by Name.
+- Ordering choices are Owner, Last edited, Created, Name, and Project, with a direction toggle.
+- Optional display properties are Owner, Last edited, and Created.
+- Project visibility controls include inactive projects and only the user's projects.
+
+Kotowari's `/pages` list currently renders a fixed hierarchy of titles, statuses, and slugs.
+Prioritize direct creation, project grouping, name/created/updated ordering and direction, and
+useful filtering before team ownership controls. Preserve parent-page navigation and existing
+page editing. Keep projection/sorting rules outside the rendering component and cover the
+resulting list with focused browser tests.
+
+My issues number shortcuts (1 Assigned, 2 Created, 3 Subscribed, 4 Activity) were also verified in
+Linear. Kotowari implements these only on personal tabs, with input and composition guards.
