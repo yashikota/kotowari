@@ -63,6 +63,9 @@ test('new ADR only inherits an issue on its detail route', async ({ page, reques
   await page.keyboard.press('Escape');
   await expandMoreNavigation(page);
   await page.getByRole('link', { name: 'ADRs', exact: true }).click();
+  await expect(page).toHaveURL(/\/adrs$/);
+  await expect(page.getByRole('heading', { name: 'ADRs', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('p');
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByText(/Will link issue/)).toHaveCount(0);
