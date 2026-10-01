@@ -218,7 +218,44 @@ export function useIssuesPagePresenter() {
     });
   }
 
+  function changeMyIssuesTab(next: string | null) {
+    if (next !== 'assigned' && next !== 'created' && next !== 'subscribed' && next !== 'activity')
+      return;
+    const nextSearch = compactSearch({
+      ...latestSearch.current,
+      assignee: next === 'assigned' ? 'self' : undefined,
+      myIssuesTab: next,
+      view: undefined,
+      archived: false,
+    });
+    latestSearch.current = nextSearch;
+    return navigate({ to: '/issues', search: nextSearch });
+  }
+
   useKeyboard((event) => {
+    if (
+      myIssuesTab &&
+      !event.isComposing &&
+      !event.defaultPrevented &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !event.shiftKey &&
+      !event.repeat &&
+      !isTypingTarget(event.target)
+    ) {
+      const tab = (
+        { '1': 'assigned', '2': 'created', '3': 'subscribed', '4': 'activity' } as Record<
+          string,
+          string
+        >
+      )[event.key];
+      if (tab) {
+        event.preventDefault();
+        void changeMyIssuesTab(tab);
+        return true;
+      }
+    }
     const action = actionFromKeyboard(event);
     if (action === 'copy-page-url') {
       event.preventDefault();
@@ -406,24 +443,7 @@ export function useIssuesPagePresenter() {
           });
         }
       },
-      onMyIssuesTabChange: (next: string | null) => {
-        if (
-          next !== 'assigned' &&
-          next !== 'created' &&
-          next !== 'subscribed' &&
-          next !== 'activity'
-        )
-          return;
-        const nextSearch = compactSearch({
-          ...latestSearch.current,
-          assignee: next === 'assigned' ? 'self' : undefined,
-          myIssuesTab: next,
-          view: undefined,
-          archived: false,
-        });
-        latestSearch.current = nextSearch;
-        return navigate({ to: '/issues', search: nextSearch });
-      },
+      onMyIssuesTabChange: changeMyIssuesTab,
       onGroupBy5: (next: IssueGroupBy) => updateIssueDisplay({ groupBy: next }),
       onLayout6: (next: IssueLayout) => updateIssueDisplay({ layout: next }),
       onOrderBy7: (next: IssueOrderBy) => updateIssueDisplay({ orderBy: next }),

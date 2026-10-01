@@ -65,3 +65,25 @@ test('empty My issues Activity opens the issue composer', async ({ page }) => {
     .click();
   await expect(page.getByRole('dialog', { name: /^Create issue/ })).toBeVisible();
 });
+
+test('My issues number shortcuts switch personal tabs and ignore title input', async ({ page }) => {
+  await page.goto('/issues?assignee=self&myIssuesTab=assigned');
+  await expect(page.getByRole('tab', { name: 'Assigned', exact: true })).toBeVisible();
+  for (const [key, tab] of [
+    ['2', 'created'],
+    ['3', 'subscribed'],
+    ['4', 'activity'],
+    ['1', 'assigned'],
+  ]) {
+    await page.keyboard.press(key!);
+    await expect.poll(() => new URL(page.url()).searchParams.get('myIssuesTab')).toBe(tab);
+  }
+  await page.getByRole('button', { name: 'Create issue', exact: true }).click();
+  const title = page
+    .getByRole('dialog', { name: /^Create issue/ })
+    .getByRole('textbox', { name: 'Issue title' });
+  await title.fill('');
+  await title.press('4');
+  await expect(title).toHaveValue('4');
+  expect(new URL(page.url()).searchParams.get('myIssuesTab')).toBe('assigned');
+});

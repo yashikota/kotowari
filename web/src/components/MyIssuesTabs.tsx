@@ -37,8 +37,14 @@ export function MyIssuesTabs({
         styles={{ root: { minWidth: 0 }, list: { gap: 4, borderBottom: 0 } }}
       >
         <Tabs.List aria-label={t('nav.myIssues')}>
-          {tabs.map((tab) => (
-            <Tabs.Tab key={tab.value} value={tab.value} className={styles.tab}>
+          {tabs.map((tab, index) => (
+            <Tabs.Tab
+              key={tab.value}
+              value={tab.value}
+              className={styles.tab}
+              aria-keyshortcuts={String(index + 1)}
+              title={`${tab.label} · ${index + 1}`}
+            >
               {tab.label}
             </Tabs.Tab>
           ))}
