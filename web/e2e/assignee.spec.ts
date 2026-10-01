@@ -10,7 +10,10 @@ test('creates a personally assigned issue from the issue composer', async ({ pag
   await dialog.getByRole('textbox', { name: 'Issue title' }).fill(title);
   await dialog.getByRole('button', { name: 'Create', exact: true }).click();
 
-  await expect(page.getByLabel('Issue title')).toHaveValue(title);
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.getByTestId('workspace-panel').getByRole('textbox', { name: 'Issue title', exact: true }),
+  ).toHaveValue(title);
   const identifier = (await page.getByTestId('issue-header-title').textContent())?.match(
     /[A-Z]+-\d+/,
   )?.[0];

@@ -183,9 +183,16 @@ test('creation shortcut and button share one pending operation', async ({ page }
   await page.keyboard.press('c');
   const dialog = page.getByRole('dialog', { name: 'Create issue' });
   await page.getByPlaceholder('Issue title').fill('Create once');
+  const create = dialog.getByRole('button', { name: 'Create', exact: true });
+  await expect(create).toBeEnabled();
   await page.keyboard.press('ControlOrMeta+Enter');
   await expect.poll(() => submissions).toBe(1);
-  await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  await expect(create).toBeDisabled();
+  await create.dispatchEvent('click');
+  await dialog
+    .getByRole('textbox', { name: 'Issue title', exact: true })
+    .dispatchEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true });
+  expect(submissions).toBe(1);
   release();
   await expect(dialog).toHaveCount(0);
   expect(submissions).toBe(1);
