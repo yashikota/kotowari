@@ -163,6 +163,7 @@ export function useShellPresenter() {
     closeCreateIssue,
   } = issueComposerState;
   const { issueWorkflowStatuses } = issueComposerData;
+  useIntentHandler('page.create', () => setCreatePage(true));
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
   useIntentHandler('adr.create', (value) => {
     const detail = (value ?? {}) as { issueNumber?: number };

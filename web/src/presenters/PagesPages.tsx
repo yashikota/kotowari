@@ -3,11 +3,31 @@ import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
 import i18n from '../i18n/index.ts';
+import { useIntent } from '../application/Root.tsx';
+import { projectPageList, type PageListOrder } from '../page-list.ts';
 import type { Page, Project } from '../types.ts';
 
 export function usePagesPagePresenter() {
   const pages = useLoaderData({ from: '/pages' }) as Page[];
-  return { _view: 0 as const, pages, handlers: {} };
+  const sendIntent = useIntent();
+  const [query, setQuery] = useState('');
+  const [order, setOrder] = useState<PageListOrder>('name');
+  const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
+  return {
+    _view: 0 as const,
+    pages,
+    rows: projectPageList(pages, query, order, direction),
+    query,
+    order,
+    direction,
+    handlers: {
+      onCreatePage: () => sendIntent('page.create'),
+      onQuery: (event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.currentTarget.value),
+      onOrder: (event: React.ChangeEvent<HTMLSelectElement>) =>
+        setOrder(event.currentTarget.value as PageListOrder),
+      onDirection: () => setDirection((value) => (value === 'asc' ? 'desc' : 'asc')),
+    },
+  };
 }
 
 export function usePageDetailPagePresenter() {

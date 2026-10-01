@@ -1,4 +1,15 @@
 {
+  "documentList": {
+    "search": "文書を検索",
+    "ordering": "文書の並び順",
+    "name": "名前",
+    "created": "作成日",
+    "updated": "最終更新日",
+    "ascending": "昇順",
+    "descending": "降順",
+    "empty": "文書を作成してメモ、決定事項、計画をまとめましょう。",
+    "noMatches": "検索に一致する文書はありません。"
+  },
   "nav": {
     "home": "ホーム",
     "inbox": "受信トレイ",

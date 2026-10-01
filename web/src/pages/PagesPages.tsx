@@ -7,46 +7,61 @@ import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { AIPanel } from '../components/AIPanel.tsx';
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
 import { usePageDetailPagePresenter, usePagesPagePresenter } from '../presenters/PagesPages.tsx';
-import type { Page } from '../types.ts';
 import { PAGE_STATUSES } from '../types.ts';
 import { EmptyState, MetaBadge, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
-
-function pageDepth(pages: Page[], page: Page): number {
-  let depth = 0;
-  let parentId = page.parentId;
-  const byId = new Map(pages.map((p) => [p.id, p]));
-  const seen = new Set<number>();
-  while (parentId) {
-    if (seen.has(parentId)) {
-      break;
-    }
-    seen.add(parentId);
-    const parent = byId.get(parentId);
-    if (!parent) {
-      break;
-    }
-    depth += 1;
-    parentId = parent.parentId;
-  }
-  return depth;
-}
 
 export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPagePresenter> }) {
   const { t } = useTranslation();
   switch (model._view) {
     case 0: {
-      const { pages } = model;
+      const { rows, handlers } = model;
       return (
         <SplitLayout single>
           <Pane single>
-            <PageHeader title={t('nav.pages')} />
-            {pages.length === 0 ? (
-              <EmptyState>{t('ui.noPages')}</EmptyState>
+            <PageHeader
+              title={t('nav.pages')}
+              actions={<Button onClick={handlers.onCreatePage}>{t('commands.createPage')}</Button>}
+            />
+            <Group p="sm" wrap="wrap">
+              <TextInput
+                aria-label={t('documentList.search')}
+                placeholder={t('documentList.search')}
+                value={model.query}
+                onChange={handlers.onQuery}
+                style={{ flex: 1, minWidth: 160 }}
+              />
+              <NativeSelect
+                aria-label={t('documentList.ordering')}
+                value={model.order}
+                onChange={handlers.onOrder}
+                data={[
+                  { value: 'name', label: t('documentList.name') },
+                  { value: 'created', label: t('documentList.created') },
+                  { value: 'updated', label: t('documentList.updated') },
+                ]}
+              />
+              <Button variant="default" onClick={handlers.onDirection}>
+                {t(
+                  model.direction === 'asc' ? 'documentList.ascending' : 'documentList.descending',
+                )}
+              </Button>
+            </Group>
+            {rows.length === 0 ? (
+              <EmptyState
+                action={
+                  !model.query ? (
+                    <Button onClick={handlers.onCreatePage}>{t('commands.createPage')}</Button>
+                  ) : undefined
+                }
+              >
+                {t(model.query ? 'documentList.noMatches' : 'documentList.empty')}
+              </EmptyState>
             ) : (
-              <Stack gap={0}>
-                {pages.map((p) => (
+              <Stack gap={0} role="list" aria-label={t('nav.pages')}>
+                {rows.map(({ page: p, depth }) => (
                   <Link
                     key={p.slug}
+                    role="listitem"
                     to="/pages/$slug"
                     params={{ slug: p.slug }}
                     style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
@@ -56,7 +71,7 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                       gap="xs"
                       py={6}
                       pr="md"
-                      pl={12 + pageDepth(pages, p) * 16}
+                      pl={12 + depth * 16}
                       style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
                     >
                       <Box
