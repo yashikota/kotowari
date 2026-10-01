@@ -128,3 +128,7 @@ second patch. Page-composer state and submission moved out of Shell into `useShe
 The composer guards concurrent submission and retains the title/project selection after failure.
 Focused browser coverage verifies persisted associations, visibility back in project documents,
 context reset, and keyboard submission/retry.
+Creation from an explicitly project-filtered document list now carries that project into the
+composer as well. All-project and No-project filters start with no selected project. The current
+reference Project filter submenu has no options because the workspace has no projects; this
+context behavior is a Kotowari workflow improvement built on its existing project filter.

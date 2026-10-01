@@ -93,3 +93,48 @@ test('document creation can select a project and holds the selection when saving
   await request.delete(`/api/pages/${slug}`);
   await request.delete(`/api/projects/${project.slug}`);
 });
+
+test('creating from a project-filtered document list carries only an explicit project filter', async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  const projectResponse = await request.post('/api/projects', {
+    data: {
+      name: `Filtered project ${stamp}`,
+      slug: `filtered-project-${stamp}`,
+      status: 'planned',
+    },
+  });
+  expect(projectResponse.ok()).toBeTruthy();
+  const project = (await projectResponse.json()) as { id: number; slug: string };
+  await page.goto('/pages');
+  const projectFilter = page.getByRole('combobox', {
+    name: 'Filter documents by project',
+    exact: true,
+  });
+  await projectFilter.selectOption(String(project.id));
+  const create = page.getByRole('button', { name: 'Create page', exact: true }).first();
+  await create.click();
+  const composer = page.getByRole('dialog', { name: 'Create page', exact: true });
+  const selection = composer.getByRole('combobox', { name: 'Project', exact: true });
+  await expect(selection).toHaveValue(String(project.id));
+  const title = `Filtered document ${stamp}`;
+  await composer.getByRole('textbox', { name: 'Page title', exact: true }).fill(title);
+  await composer.getByRole('button', { name: 'Create', exact: true }).click();
+  await expect(composer).toHaveCount(0);
+  await expect(page).toHaveURL(/\/pages\//);
+  const slug = new URL(page.url()).pathname.split('/').at(-1)!;
+  const created = await request.get(`/api/pages/${slug}`);
+  expect(await created.json()).toMatchObject({ title, projectId: project.id });
+  await page.goto('/pages');
+  for (const filter of ['none', 'all']) {
+    await projectFilter.selectOption(filter);
+    await create.click();
+    await expect(selection).toHaveValue('');
+    await page.keyboard.press('Escape');
+    await expect(composer).toHaveCount(0);
+  }
+  await request.delete(`/api/pages/${slug}`);
+  await request.delete(`/api/projects/${project.slug}`);
+});

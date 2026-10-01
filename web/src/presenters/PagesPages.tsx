@@ -100,7 +100,10 @@ export function usePagesPagePresenter() {
       },
       onProjectFilter: (event: React.ChangeEvent<HTMLSelectElement>) =>
         setProjectFilter(event.currentTarget.value),
-      onCreatePage: () => sendIntent('page.create'),
+      onCreatePage: () => {
+        const project = projects.find((project) => String(project.id) === projectFilter);
+        return sendIntent('page.create', { projectId: project?.id });
+      },
       onQuery: (event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.currentTarget.value),
       onOrder: (event: React.ChangeEvent<HTMLSelectElement>) => {
         const order = event.currentTarget.value as PageListOrder;
