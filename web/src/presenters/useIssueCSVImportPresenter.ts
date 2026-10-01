@@ -25,6 +25,7 @@ export function useIssueCSVImportPresenter({
   const router = useRouter();
   const { statuses } = useIssueWorkflow();
   const fileReadVersion = useRef(0);
+  const importInFlight = useRef(false);
   const [fileName, setFileName] = useState('');
   const [rows, setRows] = useState<IssueImportPlanRow[]>([]);
   const [error, setError] = useState('');
@@ -39,7 +40,7 @@ export function useIssueCSVImportPresenter({
   const warningCount = rows.reduce((count, row) => count + row.warnings.length, 0);
 
   async function chooseFile(file?: File) {
-    if (!file) return;
+    if (!file || importInFlight.current) return;
     const version = ++fileReadVersion.current;
     setReading(true);
     setPreviewPage(1);
@@ -87,7 +88,8 @@ export function useIssueCSVImportPresenter({
   }
 
   async function importIssues() {
-    if (busy || importableRows.length === 0) return;
+    if (importInFlight.current || reading || result !== null || importableRows.length === 0) return;
+    importInFlight.current = true;
     setBusy(true);
     setError('');
     setProgress(0);
@@ -110,11 +112,12 @@ export function useIssueCSVImportPresenter({
     }
     if (imported > 0) await router.invalidate().catch(() => undefined);
     setResult({ imported, failed });
+    importInFlight.current = false;
     setBusy(false);
   }
 
   function close() {
-    if (busy) return;
+    if (importInFlight.current) return;
     fileReadVersion.current += 1;
     setReading(false);
     setFileName('');
