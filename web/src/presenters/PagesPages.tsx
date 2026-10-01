@@ -1,10 +1,17 @@
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
+import { useLocalStorage } from '@mantine/hooks';
 import { api } from '../api.ts';
 import i18n from '../i18n/index.ts';
 import { useIntent } from '../application/Root.tsx';
-import { groupPageList, type PageListOrder } from '../page-list.ts';
+import {
+  groupPageList,
+  DEFAULT_DOCUMENT_DISPLAY,
+  parseDocumentDisplay,
+  type DocumentDisplay,
+  type PageListOrder,
+} from '../page-list.ts';
 import type { Page, Project } from '../types.ts';
 
 export function usePagesPagePresenter() {
@@ -14,10 +21,13 @@ export function usePagesPagePresenter() {
   };
   const sendIntent = useIntent();
   const [query, setQuery] = useState('');
-  const [grouping, setGrouping] = useState<'none' | 'project'>('project');
+  const [display, setDisplay] = useLocalStorage<DocumentDisplay>({
+    key: 'kotowari.document-display',
+    defaultValue: DEFAULT_DOCUMENT_DISPLAY,
+    deserialize: parseDocumentDisplay,
+  });
+  const { grouping, order, direction, showCreated, showUpdated } = display;
   const [projectFilter, setProjectFilter] = useState('all');
-  const [order, setOrder] = useState<PageListOrder>('name');
-  const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
   return {
     _view: 0 as const,
     pages,
@@ -28,16 +38,34 @@ export function usePagesPagePresenter() {
     query,
     order,
     direction,
+    showCreated,
+    showUpdated,
     handlers: {
-      onGrouping: (event: React.ChangeEvent<HTMLSelectElement>) =>
-        setGrouping(event.currentTarget.value as 'none' | 'project'),
+      onGrouping: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const grouping = event.currentTarget.value as 'none' | 'project';
+        setDisplay((current) => ({ ...current, grouping }));
+      },
       onProjectFilter: (event: React.ChangeEvent<HTMLSelectElement>) =>
         setProjectFilter(event.currentTarget.value),
       onCreatePage: () => sendIntent('page.create'),
       onQuery: (event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.currentTarget.value),
-      onOrder: (event: React.ChangeEvent<HTMLSelectElement>) =>
-        setOrder(event.currentTarget.value as PageListOrder),
-      onDirection: () => setDirection((value) => (value === 'asc' ? 'desc' : 'asc')),
+      onOrder: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const order = event.currentTarget.value as PageListOrder;
+        setDisplay((current) => ({ ...current, order }));
+      },
+      onDirection: () =>
+        setDisplay((current) => ({
+          ...current,
+          direction: current.direction === 'asc' ? 'desc' : 'asc',
+        })),
+      onShowCreated: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const checked = event.currentTarget.checked;
+        setDisplay((current) => ({ ...current, showCreated: checked }));
+      },
+      onShowUpdated: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const checked = event.currentTarget.checked;
+        setDisplay((current) => ({ ...current, showUpdated: checked }));
+      },
     },
   };
 }

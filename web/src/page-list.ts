@@ -94,3 +94,32 @@ export function groupPageList(
       }));
     });
 }
+
+export type DocumentDisplay = {
+  grouping: 'none' | 'project';
+  order: PageListOrder;
+  direction: 'asc' | 'desc';
+  showCreated: boolean;
+  showUpdated: boolean;
+};
+export const DEFAULT_DOCUMENT_DISPLAY: DocumentDisplay = {
+  grouping: 'project',
+  order: 'name',
+  direction: 'asc',
+  showCreated: false,
+  showUpdated: false,
+};
+export function parseDocumentDisplay(raw: string | undefined): DocumentDisplay {
+  try {
+    const value = JSON.parse(raw ?? 'null') as Record<string, unknown> | null;
+    return {
+      grouping: value?.grouping === 'none' ? 'none' : 'project',
+      order: value?.order === 'created' || value?.order === 'updated' ? value.order : 'name',
+      direction: value?.direction === 'desc' ? 'desc' : 'asc',
+      showCreated: value?.showCreated === true,
+      showUpdated: value?.showUpdated === true,
+    };
+  } catch {
+    return { ...DEFAULT_DOCUMENT_DISPLAY };
+  }
+}

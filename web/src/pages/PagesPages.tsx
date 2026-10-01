@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
+import { Box, Button, Checkbox, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -68,6 +68,18 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 )}
               </Button>
             </Group>
+            <Group px="sm" pb="sm">
+              <Checkbox
+                label={t('documentList.created')}
+                checked={model.showCreated}
+                onChange={handlers.onShowCreated}
+              />
+              <Checkbox
+                label={t('documentList.updated')}
+                checked={model.showUpdated}
+                onChange={handlers.onShowUpdated}
+              />
+            </Group>
             {rows.length === 0 ? (
               <EmptyState
                 action={
@@ -118,6 +130,29 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                           {p.title}
                         </Text>
                         <MetaBadge>{p.slug}</MetaBadge>
+                        {(
+                          [
+                            ['createdAt', model.showCreated, t('documentList.created')],
+                            ['updatedAt', model.showUpdated, t('documentList.updated')],
+                          ] as const
+                        ).map(([field, visible, label]) =>
+                          visible && Number.isFinite(new Date(p[field]).getTime()) ? (
+                            <Text
+                              key={field}
+                              component="time"
+                              dateTime={p[field]}
+                              size="xs"
+                              c="dimmed"
+                              aria-label={`${label}: ${p[field]}`}
+                              title={`${label}: ${p[field]}`}
+                              style={{ flexShrink: 0 }}
+                            >
+                              {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
+                                new Date(p[field]),
+                              )}
+                            </Text>
+                          ) : null,
+                        )}
                       </Group>
                     </Link>
                   </Box>

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { groupPageList, projectPageList } from './page-list.ts';
+import {
+  groupPageList,
+  projectPageList,
+  parseDocumentDisplay,
+  DEFAULT_DOCUMENT_DISPLAY,
+} from './page-list.ts';
 import type { Page } from './types.ts';
 
 const page = (id: number, title: string, extra: Partial<Page> = {}): Page => ({
@@ -87,4 +92,21 @@ it('groups documents by project and filters unassigned documents', () => {
   expect(
     groupPageList(pages, projects, '', 'name', 'asc', 'none', '20')[0]?.heading,
   ).toBeUndefined();
+});
+
+it('validates saved document display settings and recovers invalid storage', () => {
+  for (const raw of [undefined, 'broken', 'null', '{"order":"unknown","showCreated":"yes"}']) {
+    expect(parseDocumentDisplay(raw)).toEqual(DEFAULT_DOCUMENT_DISPLAY);
+  }
+  expect(
+    parseDocumentDisplay(
+      '{"grouping":"none","order":"updated","direction":"desc","showCreated":true,"showUpdated":true}',
+    ),
+  ).toEqual({
+    grouping: 'none',
+    order: 'updated',
+    direction: 'desc',
+    showCreated: true,
+    showUpdated: true,
+  });
 });
