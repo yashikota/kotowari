@@ -87,3 +87,11 @@ test('My issues number shortcuts switch personal tabs and ignore title input', a
   await expect(title).toHaveValue('4');
   expect(new URL(page.url()).searchParams.get('myIssuesTab')).toBe('assigned');
 });
+
+test('personal number shortcuts stay inactive on the workspace issue list', async ({ page }) => {
+  await page.goto('/issues');
+  await expect(page.getByRole('button', { name: 'Display options', exact: true })).toBeVisible();
+  await page.keyboard.press('4');
+  expect(new URL(page.url()).searchParams.has('myIssuesTab')).toBe(false);
+  await expect(page.getByRole('tablist', { name: 'My issues', exact: true })).toHaveCount(0);
+});
