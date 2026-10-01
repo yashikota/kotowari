@@ -4,6 +4,7 @@ import type { ChangeEvent } from 'react';
 import type { DocumentDisplay } from '../page-list.ts';
 
 type DisplayHandlers = {
+  onOnlyMyProjects: (event: ChangeEvent<HTMLInputElement>) => void;
   onGrouping: (event: ChangeEvent<HTMLSelectElement>) => void;
   onOrder: (event: ChangeEvent<HTMLSelectElement>) => void;
   onDirection: () => void;
@@ -64,6 +65,11 @@ export function DocumentListDisplayOptions({
             {t(model.direction === 'asc' ? 'documentList.ascending' : 'documentList.descending')}
           </Button>
           <Group px="sm" pb="sm">
+            <Checkbox
+              label={t('documentList.onlyMyProjects')}
+              checked={model.onlyMyProjects}
+              onChange={handlers.onOnlyMyProjects}
+            />
             <Checkbox
               label={t('documentList.showInactive')}
               checked={model.showInactive}

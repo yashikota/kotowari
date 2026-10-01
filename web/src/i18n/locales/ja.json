@@ -1,5 +1,7 @@
 {
   "documentList": {
+    "onlyMyProjects": "自分のプロジェクトのみ表示",
+    "clearFilters": "文書の絞り込みを解除",
     "showInactive": "非アクティブなプロジェクトを表示",
     "dateField": "絞り込む日時",
     "dateRange": "日時の範囲",

@@ -248,3 +248,64 @@ test('document display options fit a narrow viewport and close with Escape', asy
   await expect(grouping).toHaveCount(0);
   await expect(button).toHaveAttribute('aria-expanded', 'false');
 });
+
+test('my project documents can be focused and filters cleared without resetting display', async ({
+  page,
+}) => {
+  await page.route('**/api/pages', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: 1,
+          slug: 'mine',
+          title: 'My document',
+          projectId: 10,
+          parentId: null,
+          status: 'draft',
+          tags: [],
+          createdAt: '2026-01-01',
+          updatedAt: '2026-01-01',
+        },
+        {
+          id: 2,
+          slug: 'other',
+          title: 'Other document',
+          projectId: 20,
+          parentId: null,
+          status: 'draft',
+          tags: [],
+          createdAt: '2026-01-01',
+          updatedAt: '2026-01-01',
+        },
+      ],
+    }),
+  );
+  await page.route('**/api/projects', (route) =>
+    route.fulfill({
+      json: [
+        { id: 10, slug: 'mine', name: 'Mine', status: 'started', lead: 'self', labels: [] },
+        { id: 20, slug: 'other', name: 'Other', status: 'started', lead: '', labels: [] },
+      ],
+    }),
+  );
+  await page.goto('/pages');
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Show only my projects', exact: true }).check();
+  await page.getByRole('combobox', { name: 'Document ordering' }).selectOption('updated');
+  await page.keyboard.press('Escape');
+  const list = page.getByRole('list', { name: 'Pages', exact: true });
+  await expect(list.getByRole('listitem')).toHaveCount(1);
+  await expect(list).toContainText('My document');
+  await page.getByRole('textbox', { name: 'Search documents' }).fill('missing');
+  await page.getByRole('button', { name: 'Clear document filters', exact: true }).click();
+  await expect(list.getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('textbox', { name: 'Search documents' })).toHaveValue('');
+  await expect(
+    page.getByRole('button', { name: 'Clear document filters', exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Document ordering' })).toHaveValue('updated');
+  await expect(
+    page.getByRole('checkbox', { name: 'Show only my projects', exact: true }),
+  ).not.toBeChecked();
+});

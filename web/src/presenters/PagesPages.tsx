@@ -34,14 +34,13 @@ export function usePagesPagePresenter() {
     defaultValue: DEFAULT_DOCUMENT_DISPLAY,
     deserialize: parseDocumentDisplay,
   });
-  const { grouping, order, direction, showCreated, showUpdated, showInactive } = display;
+  const { grouping, order, direction, showCreated, showUpdated, showInactive, onlyMyProjects } =
+    display;
   const [projectFilter, setProjectFilter] = useState('all');
   return {
     _view: 0 as const,
     pages,
-    rows: groupPageList(
-      pages,
-      projects,
+    rows: groupPageList(pages, projects, {
       query,
       order,
       direction,
@@ -49,7 +48,8 @@ export function usePagesPagePresenter() {
       projectFilter,
       dateFilter,
       showInactive,
-    ),
+      onlyMyProjects,
+    }),
     projects,
     grouping,
     projectFilter,
@@ -60,8 +60,19 @@ export function usePagesPagePresenter() {
     showCreated,
     showUpdated,
     showInactive,
+    onlyMyProjects,
     displayOptionsOpen,
     handlers: {
+      onOnlyMyProjects: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const checked = event.currentTarget.checked;
+        setDisplay((current) => ({ ...current, onlyMyProjects: checked }));
+      },
+      onClearFilters: () => {
+        setQuery('');
+        setProjectFilter('all');
+        setDateFilter({ field: 'createdAt', range: 'all', from: '', to: '' });
+        setDisplay((current) => ({ ...current, onlyMyProjects: false }));
+      },
       onDisplayOptionsChange: setDisplayOptionsOpen,
       onShowInactive: (event: React.ChangeEvent<HTMLInputElement>) => {
         const checked = event.currentTarget.checked;

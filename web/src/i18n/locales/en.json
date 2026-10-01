@@ -1,5 +1,7 @@
 {
   "documentList": {
+    "onlyMyProjects": "Show only my projects",
+    "clearFilters": "Clear document filters",
     "showInactive": "Show inactive projects",
     "dateField": "Filter date field",
     "dateRange": "Filter date range",

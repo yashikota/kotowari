@@ -74,7 +74,11 @@ it('groups documents by project and filters unassigned documents', () => {
     { id: 10, name: 'Design', slug: 'design' },
     { id: 20, name: 'Release', slug: 'release' },
   ];
-  const rows = groupPageList(pages, projects, '', 'name', 'asc', 'project', 'all');
+  const rows = groupPageList(pages, projects, {
+    query: '',
+    grouping: 'project',
+    projectFilter: 'all',
+  });
   expect(rows.map(({ page }) => page.id)).toEqual([1, 3, 4, 2]);
   expect(rows.filter((row) => row.heading).map((row) => row.heading)).toEqual([
     { name: 'Design', count: 2 },
@@ -82,15 +86,20 @@ it('groups documents by project and filters unassigned documents', () => {
     { name: null, count: 1 },
   ]);
   expect(
-    groupPageList(pages, projects, '', 'name', 'asc', 'project', 'none').map(({ page }) => page.id),
-  ).toEqual([2]);
-  expect(
-    groupPageList(pages, projects, 'Child', 'name', 'asc', 'project', '10').map(
+    groupPageList(pages, projects, { query: '', grouping: 'project', projectFilter: 'none' }).map(
       ({ page }) => page.id,
     ),
+  ).toEqual([2]);
+  expect(
+    groupPageList(pages, projects, {
+      query: 'Child',
+      grouping: 'project',
+      projectFilter: '10',
+    }).map(({ page }) => page.id),
   ).toEqual([1, 3]);
   expect(
-    groupPageList(pages, projects, '', 'name', 'asc', 'none', '20')[0]?.heading,
+    groupPageList(pages, projects, { query: '', grouping: 'none', projectFilter: '20' })[0]
+      ?.heading,
   ).toBeUndefined();
 });
 
@@ -109,6 +118,7 @@ it('validates saved document display settings and recovers invalid storage', () 
     showCreated: true,
     showUpdated: true,
     showInactive: false,
+    onlyMyProjects: false,
   });
 });
 
@@ -128,10 +138,39 @@ it('hides completed, canceled, and archived projects while retaining unassigned 
     { id: 40, name: 'Archived', slug: 'archived', status: 'started', archivedAt: '2026-01-01' },
   ];
   expect(
-    groupPageList(pages, projects, '', 'name', 'asc', 'none', 'all').map(({ page }) => page.id),
+    groupPageList(pages, projects, { query: '', grouping: 'none', projectFilter: 'all' }).map(
+      ({ page }) => page.id,
+    ),
   ).toEqual([1, 5, 6]);
   expect(
-    groupPageList(pages, projects, '', 'name', 'asc', 'none', 'all', undefined, true),
+    groupPageList(pages, projects, {
+      query: '',
+      grouping: 'none',
+      projectFilter: 'all',
+      showInactive: true,
+    }),
   ).toHaveLength(6);
-  expect(groupPageList(pages, projects, '', 'name', 'asc', 'none', '20')).toEqual([]);
+  expect(
+    groupPageList(pages, projects, { query: '', grouping: 'none', projectFilter: '20' }),
+  ).toEqual([]);
+});
+
+it('my-project filtering requires self leadership and respects inactive visibility', () => {
+  const pages = [
+    page(1, 'Mine', { projectId: 10 }),
+    page(2, 'Other', { projectId: 20 }),
+    page(3, 'No project'),
+    page(4, 'Completed mine', { projectId: 30 }),
+  ];
+  const projects = [
+    { id: 10, name: 'Mine', slug: 'mine', lead: 'self' as const, status: 'started' },
+    { id: 20, name: 'Other', slug: 'other', lead: '' as const, status: 'started' },
+    { id: 30, name: 'Completed', slug: 'completed', lead: 'self' as const, status: 'completed' },
+  ];
+  expect(
+    groupPageList(pages, projects, { onlyMyProjects: true }).map(({ page }) => page.id),
+  ).toEqual([1]);
+  expect(groupPageList(pages, projects, { onlyMyProjects: true, showInactive: true })).toHaveLength(
+    2,
+  );
 });

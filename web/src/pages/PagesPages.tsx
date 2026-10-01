@@ -98,6 +98,16 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 </>
               ) : null}
             </Group>
+            {model.query ||
+            model.projectFilter !== 'all' ||
+            model.dateFilter.range !== 'all' ||
+            model.onlyMyProjects ? (
+              <Group px="sm" pb="sm">
+                <Button variant="subtle" onClick={handlers.onClearFilters}>
+                  {t('documentList.clearFilters')}
+                </Button>
+              </Group>
+            ) : null}
             {rows.length === 0 ? (
               <EmptyState
                 action={

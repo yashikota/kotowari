@@ -67,16 +67,30 @@ export function groupPageList(
     name: string;
     slug: string;
     status?: string;
+    lead?: 'self' | '';
     archivedAt?: string | null;
   }[],
-  query: string,
-  order: PageListOrder,
-  direction: 'asc' | 'desc',
-  grouping: 'none' | 'project',
-  projectFilter: string,
-  dateFilter?: DocumentDateFilter,
-  showInactive = false,
+  options: {
+    query?: string;
+    order?: PageListOrder;
+    direction?: 'asc' | 'desc';
+    grouping?: 'none' | 'project';
+    projectFilter?: string;
+    dateFilter?: DocumentDateFilter;
+    showInactive?: boolean;
+    onlyMyProjects?: boolean;
+  } = {},
 ) {
+  const {
+    query = '',
+    order = 'name',
+    direction = 'asc',
+    grouping = 'project',
+    projectFilter = 'all',
+    dateFilter,
+    showInactive = false,
+    onlyMyProjects = false,
+  } = options;
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const filtered = pages.filter((page) => {
     const project = page.projectId ? projectById.get(page.projectId) : undefined;
@@ -85,6 +99,7 @@ export function groupPageList(
       (project.status === 'completed' || project.status === 'canceled' || !!project.archivedAt);
     return (
       (showInactive || !inactive) &&
+      (!onlyMyProjects || project?.lead === 'self') &&
       (projectFilter === 'all' ||
         (projectFilter === 'none' ? !page.projectId : String(page.projectId) === projectFilter))
     );
@@ -120,6 +135,7 @@ export type DocumentDisplay = {
   showCreated: boolean;
   showUpdated: boolean;
   showInactive: boolean;
+  onlyMyProjects: boolean;
 };
 export const DEFAULT_DOCUMENT_DISPLAY: DocumentDisplay = {
   grouping: 'project',
@@ -128,6 +144,7 @@ export const DEFAULT_DOCUMENT_DISPLAY: DocumentDisplay = {
   showCreated: false,
   showUpdated: false,
   showInactive: false,
+  onlyMyProjects: false,
 };
 export function parseDocumentDisplay(raw: string | undefined): DocumentDisplay {
   try {
@@ -139,6 +156,7 @@ export function parseDocumentDisplay(raw: string | undefined): DocumentDisplay {
       showCreated: value?.showCreated === true,
       showUpdated: value?.showUpdated === true,
       showInactive: value?.showInactive === true,
+      onlyMyProjects: value?.onlyMyProjects === true,
     };
   } catch {
     return { ...DEFAULT_DOCUMENT_DISPLAY };
