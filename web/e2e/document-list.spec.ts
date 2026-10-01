@@ -27,6 +27,7 @@ test('document list searches, sorts and opens creation directly', async ({ page 
   await page.goto('/pages');
   const list = page.getByRole('list', { name: 'Pages', exact: true });
   await expect(list.getByRole('listitem').first()).toContainText('Alpha plan');
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await page.getByRole('button', { name: 'Ascending', exact: true }).click();
   await expect(list.getByRole('listitem').first()).toContainText('Zulu note');
   await page.getByRole('combobox', { name: 'Document ordering' }).selectOption('created');
@@ -99,6 +100,7 @@ test('document projects group and filter the list', async ({ page }) => {
   await expect(list).toContainText('Design note');
   await page.getByRole('combobox', { name: 'Filter documents by project' }).selectOption('none');
   await expect(list).toContainText('Personal note');
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await page.getByRole('combobox', { name: 'Document grouping' }).selectOption('none');
   await expect(page.getByRole('heading', { name: 'No project · 1', exact: true })).toHaveCount(0);
 });
@@ -122,12 +124,14 @@ test('document display settings and date properties survive reload', async ({ pa
     }),
   );
   await page.goto('/pages');
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Created', exact: true }).check();
   await page.getByRole('checkbox', { name: 'Last edited', exact: true }).check();
   await page.getByRole('combobox', { name: 'Document grouping' }).selectOption('none');
   await page.getByRole('combobox', { name: 'Document ordering' }).selectOption('updated');
   await page.getByRole('button', { name: 'Ascending', exact: true }).click();
   await page.reload();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await expect(page.getByRole('combobox', { name: 'Document grouping' })).toHaveValue('none');
   await expect(page.getByRole('combobox', { name: 'Document ordering' })).toHaveValue('updated');
   await expect(page.getByRole('button', { name: 'Descending', exact: true })).toBeVisible();
@@ -217,12 +221,30 @@ test('inactive project document visibility can be enabled and is remembered', as
     page.getByText('No documents match the current filters.', { exact: true }),
   ).toBeVisible();
   const toggle = page.getByRole('checkbox', { name: 'Show inactive projects', exact: true });
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await toggle.check();
   const list = page.getByRole('list', { name: 'Pages', exact: true });
   await expect(list).toContainText('Finished note');
   await page.reload();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await expect(toggle).toBeChecked();
   await expect(list).toContainText('Finished note');
   await toggle.uncheck();
   await expect(list).toHaveCount(0);
+});
+
+test('document display options fit a narrow viewport and close with Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.route('**/api/pages', (route) => route.fulfill({ json: [] }));
+  await page.goto('/pages');
+  const button = page.getByRole('button', { name: 'Display options', exact: true });
+  await button.click();
+  const grouping = page.getByRole('combobox', { name: 'Document grouping' });
+  await expect(grouping).toBeVisible();
+  const bounds = await grouping.boundingBox();
+  expect(bounds?.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(360);
+  await page.keyboard.press('Escape');
+  await expect(grouping).toHaveCount(0);
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
 });

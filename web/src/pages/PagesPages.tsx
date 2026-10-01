@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Checkbox, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
+import { Box, Button, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { AIPanel } from '../components/AIPanel.tsx';
+import { DocumentListDisplayOptions } from '../components/DocumentListDisplayOptions.tsx';
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
 import { usePageDetailPagePresenter, usePagesPagePresenter } from '../presenters/PagesPages.tsx';
 import { PAGE_STATUSES } from '../types.ts';
@@ -30,14 +31,10 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 onChange={handlers.onQuery}
                 style={{ flex: 1, minWidth: 160 }}
               />
-              <NativeSelect
-                aria-label={t('documentList.grouping')}
-                value={model.grouping}
-                onChange={handlers.onGrouping}
-                data={[
-                  { value: 'project', label: t('documentList.project') },
-                  { value: 'none', label: t('documentList.noGrouping') },
-                ]}
+              <DocumentListDisplayOptions
+                model={model}
+                opened={model.displayOptionsOpen}
+                onChange={handlers.onDisplayOptionsChange}
               />
               <NativeSelect
                 aria-label={t('documentList.projectFilter')}
@@ -52,39 +49,8 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                   })),
                 ]}
               />
-              <NativeSelect
-                aria-label={t('documentList.ordering')}
-                value={model.order}
-                onChange={handlers.onOrder}
-                data={[
-                  { value: 'name', label: t('documentList.name') },
-                  { value: 'created', label: t('documentList.created') },
-                  { value: 'updated', label: t('documentList.updated') },
-                ]}
-              />
-              <Button variant="default" onClick={handlers.onDirection}>
-                {t(
-                  model.direction === 'asc' ? 'documentList.ascending' : 'documentList.descending',
-                )}
-              </Button>
             </Group>
-            <Group px="sm" pb="sm">
-              <Checkbox
-                label={t('documentList.showInactive')}
-                checked={model.showInactive}
-                onChange={handlers.onShowInactive}
-              />
-              <Checkbox
-                label={t('documentList.created')}
-                checked={model.showCreated}
-                onChange={handlers.onShowCreated}
-              />
-              <Checkbox
-                label={t('documentList.updated')}
-                checked={model.showUpdated}
-                onChange={handlers.onShowUpdated}
-              />
-            </Group>
+
             <Group px="sm" pb="sm" wrap="wrap">
               <NativeSelect
                 aria-label={t('documentList.dateField')}

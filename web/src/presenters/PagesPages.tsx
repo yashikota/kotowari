@@ -22,6 +22,7 @@ export function usePagesPagePresenter() {
   };
   const sendIntent = useIntent();
   const [query, setQuery] = useState('');
+  const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState<DocumentDateFilter>({
     field: 'createdAt',
     range: 'all',
@@ -59,7 +60,9 @@ export function usePagesPagePresenter() {
     showCreated,
     showUpdated,
     showInactive,
+    displayOptionsOpen,
     handlers: {
+      onDisplayOptionsChange: setDisplayOptionsOpen,
       onShowInactive: (event: React.ChangeEvent<HTMLInputElement>) => {
         const checked = event.currentTarget.checked;
         setDisplay((current) => ({ ...current, showInactive: checked }));
