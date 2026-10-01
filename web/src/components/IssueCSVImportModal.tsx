@@ -1,5 +1,15 @@
 import { useRouter } from '@tanstack/react-router';
-import { Alert, Badge, Button, Group, Modal, ScrollArea, Stack, Text } from '@mantine/core';
+import {
+  Alert,
+  Badge,
+  Button,
+  Group,
+  Modal,
+  Pagination,
+  ScrollArea,
+  Stack,
+  Text,
+} from '@mantine/core';
 import { IconFileImport } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,10 +39,13 @@ export function IssueCSVImportModal({
   const router = useRouter();
   const { statuses } = useIssueWorkflow();
   const fileInput = useRef<HTMLInputElement>(null);
+  const fileReadVersion = useRef(0);
   const [fileName, setFileName] = useState('');
   const [rows, setRows] = useState<IssueImportPlanRow[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [previewPage, setPreviewPage] = useState(1);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ imported: number; failed: string[] } | null>(null);
 
@@ -42,6 +55,9 @@ export function IssueCSVImportModal({
 
   async function chooseFile(file?: File) {
     if (!file) return;
+    const version = ++fileReadVersion.current;
+    setReading(true);
+    setPreviewPage(1);
     setFileName(file.name);
     setRows([]);
     setError('');
@@ -49,6 +65,7 @@ export function IssueCSVImportModal({
     setProgress(0);
     if (file.size > MAX_FILE_SIZE) {
       setError(t('issueImport.fileTooLarge'));
+      setReading(false);
       return;
     }
     try {
@@ -63,12 +80,14 @@ export function IssueCSVImportModal({
       if (planned.some((row) => row.warnings.some((warning) => warning.field === 'parent'))) {
         planned = planIssueCSVImport(content, { ...context, issues: await api.issues() });
       }
+      if (version !== fileReadVersion.current) return;
       if (planned.length > MAX_ISSUES) {
         setError(t('issueImport.tooManyRows', { count: MAX_ISSUES }));
         return;
       }
       setRows(planned);
     } catch (cause) {
+      if (version !== fileReadVersion.current) return;
       const message = cause instanceof Error ? cause.message : '';
       const translatedErrors: Record<string, string> = {
         EMPTY_CSV: t('issueImport.fileError.empty'),
@@ -77,6 +96,8 @@ export function IssueCSVImportModal({
         TOO_MANY_ROWS: t('issueImport.tooManyRows', { count: MAX_ISSUES }),
       };
       setError(translatedErrors[message] ?? (message || t('issueImport.readFailed')));
+    } finally {
+      if (version === fileReadVersion.current) setReading(false);
     }
   }
 
@@ -109,6 +130,8 @@ export function IssueCSVImportModal({
 
   function close() {
     if (busy) return;
+    fileReadVersion.current += 1;
+    setReading(false);
     setFileName('');
     setRows([]);
     setError('');
@@ -179,7 +202,7 @@ export function IssueCSVImportModal({
             </Text>
             <ScrollArea h={220} type="auto" offsetScrollbars>
               <Stack gap="xs" pr="sm">
-                {rows.slice(0, 20).map((row) => (
+                {rows.slice((previewPage - 1) * 20, previewPage * 20).map((row) => (
                   <Stack
                     key={row.rowNumber}
                     gap={2}
@@ -204,13 +227,16 @@ export function IssueCSVImportModal({
                     ))}
                   </Stack>
                 ))}
-                {rows.length > 20 ? (
-                  <Text size="xs" c="dimmed">
-                    {t('issueImport.moreRows', { count: rows.length - 20 })}
-                  </Text>
-                ) : null}
               </Stack>
             </ScrollArea>
+            {rows.length > 20 ? (
+              <Pagination
+                total={Math.ceil(rows.length / 20)}
+                value={previewPage}
+                onChange={setPreviewPage}
+                size="sm"
+              />
+            ) : null}
           </>
         ) : null}
 
@@ -252,7 +278,7 @@ export function IssueCSVImportModal({
           </Button>
           <Button
             type="button"
-            disabled={busy || result !== null || importableRows.length === 0}
+            disabled={busy || reading || result !== null || importableRows.length === 0}
             loading={busy}
             onClick={() => void importIssues()}
           >
