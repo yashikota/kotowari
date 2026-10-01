@@ -137,3 +137,52 @@ test('document display settings and date properties survive reload', async ({ pa
   await page.getByRole('checkbox', { name: 'Created', exact: true }).uncheck();
   await expect(list.locator('time')).toHaveCount(1);
 });
+
+test('document date filters distinguish creation from editing and can be cleared', async ({
+  page,
+}) => {
+  const now = new Date().toISOString();
+  await page.route('**/api/pages', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: 1,
+          slug: 'recent',
+          title: 'Recent note',
+          projectId: null,
+          parentId: null,
+          status: 'draft',
+          tags: [],
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 2,
+          slug: 'old',
+          title: 'Old revised note',
+          projectId: null,
+          parentId: null,
+          status: 'draft',
+          tags: [],
+          createdAt: '2020-01-01T12:00:00Z',
+          updatedAt: now,
+        },
+      ],
+    }),
+  );
+  await page.goto('/pages');
+  const list = page.getByRole('list', { name: 'Pages', exact: true });
+  await page.getByRole('combobox', { name: 'Filter date range' }).selectOption('last:1w');
+  await expect(list.getByRole('listitem')).toHaveCount(1);
+  await expect(list).toContainText('Recent note');
+  await page.getByRole('combobox', { name: 'Filter date field' }).selectOption('updatedAt');
+  await expect(list.getByRole('listitem')).toHaveCount(2);
+  await page.getByRole('combobox', { name: 'Filter date range' }).selectOption('custom');
+  await page.getByRole('combobox', { name: 'Filter date field' }).selectOption('createdAt');
+  await page.getByRole('textbox', { name: 'On or after', exact: true }).fill('2020-01-01');
+  await page.getByRole('textbox', { name: 'On or before', exact: true }).fill('2020-01-02');
+  await expect(list.getByRole('listitem')).toHaveCount(1);
+  await expect(list).toContainText('Old revised note');
+  await page.getByRole('combobox', { name: 'Filter date range' }).selectOption('all');
+  await expect(list.getByRole('listitem')).toHaveCount(2);
+});

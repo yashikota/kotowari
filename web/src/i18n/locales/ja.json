@@ -1,5 +1,18 @@
 {
   "documentList": {
+    "dateField": "絞り込む日時",
+    "dateRange": "日時の範囲",
+    "anyDate": "すべての日時",
+    "dayAgo": "1日前以降",
+    "threeDaysAgo": "3日前以降",
+    "weekAgo": "1週間前以降",
+    "monthAgo": "1か月前以降",
+    "quarterAgo": "3か月前以降",
+    "halfYearAgo": "6か月前以降",
+    "yearAgo": "1年前以降",
+    "customDate": "期間を指定",
+    "dateFrom": "この日以降",
+    "dateTo": "この日以前",
     "grouping": "文書のグループ化",
     "project": "プロジェクト",
     "noGrouping": "グループ化なし",

@@ -1,3 +1,4 @@
+import { matchesDocumentDate, type DocumentDateFilter } from './date-filter.ts';
 import type { Page } from './types.ts';
 
 export type PageListOrder = 'name' | 'created' | 'updated';
@@ -7,14 +8,16 @@ export function projectPageList(
   query: string,
   order: PageListOrder,
   direction: 'asc' | 'desc',
+  dateFilter?: DocumentDateFilter,
 ) {
   const needle = query.trim().toLocaleLowerCase();
   const matches = pages.filter(
     (page) =>
-      !needle ||
-      [page.title, page.slug, ...page.tags].some((value) =>
-        value.toLocaleLowerCase().includes(needle),
-      ),
+      (!dateFilter || matchesDocumentDate(page[dateFilter.field], dateFilter)) &&
+      (!needle ||
+        [page.title, page.slug, ...page.tags].some((value) =>
+          value.toLocaleLowerCase().includes(needle),
+        )),
   );
   const included = new Set(matches.map((page) => page.id));
   const byId = new Map(pages.map((page) => [page.id, page]));
@@ -65,6 +68,7 @@ export function groupPageList(
   direction: 'asc' | 'desc',
   grouping: 'none' | 'project',
   projectFilter: string,
+  dateFilter?: DocumentDateFilter,
 ) {
   const filtered = pages.filter(
     (page) =>
@@ -72,7 +76,7 @@ export function groupPageList(
       (projectFilter === 'none' ? !page.projectId : String(page.projectId) === projectFilter),
   );
   if (grouping === 'none')
-    return projectPageList(filtered, query, order, direction).map((row) => ({
+    return projectPageList(filtered, query, order, direction, dateFilter).map((row) => ({
       ...row,
       heading: undefined as { name: string | null; count: number } | undefined,
     }));
@@ -87,7 +91,7 @@ export function groupPageList(
       a === null ? 1 : b === null ? -1 : (name(a) ?? '').localeCompare(name(b) ?? ''),
     )
     .flatMap(([id, items]) => {
-      const rows = projectPageList(items, query, order, direction);
+      const rows = projectPageList(items, query, order, direction, dateFilter);
       return rows.map((row, index) => ({
         ...row,
         heading: index === 0 ? { name: name(id), count: rows.length } : undefined,

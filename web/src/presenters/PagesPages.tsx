@@ -12,6 +12,7 @@ import {
   type DocumentDisplay,
   type PageListOrder,
 } from '../page-list.ts';
+import type { DocumentDateFilter } from '../date-filter.ts';
 import type { Page, Project } from '../types.ts';
 
 export function usePagesPagePresenter() {
@@ -21,6 +22,12 @@ export function usePagesPagePresenter() {
   };
   const sendIntent = useIntent();
   const [query, setQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState<DocumentDateFilter>({
+    field: 'createdAt',
+    range: 'all',
+    from: '',
+    to: '',
+  });
   const [display, setDisplay] = useLocalStorage<DocumentDisplay>({
     key: 'kotowari.document-display',
     defaultValue: DEFAULT_DOCUMENT_DISPLAY,
@@ -31,16 +38,42 @@ export function usePagesPagePresenter() {
   return {
     _view: 0 as const,
     pages,
-    rows: groupPageList(pages, projects, query, order, direction, grouping, projectFilter),
+    rows: groupPageList(
+      pages,
+      projects,
+      query,
+      order,
+      direction,
+      grouping,
+      projectFilter,
+      dateFilter,
+    ),
     projects,
     grouping,
     projectFilter,
+    dateFilter,
     query,
     order,
     direction,
     showCreated,
     showUpdated,
     handlers: {
+      onDateField: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const field = event.currentTarget.value as DocumentDateFilter['field'];
+        setDateFilter((current) => ({ ...current, field }));
+      },
+      onDateRange: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const range = event.currentTarget.value;
+        setDateFilter((current) => ({ ...current, range }));
+      },
+      onDateFrom: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const from = event.currentTarget.value;
+        setDateFilter((current) => ({ ...current, from }));
+      },
+      onDateTo: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const to = event.currentTarget.value;
+        setDateFilter((current) => ({ ...current, to }));
+      },
       onGrouping: (event: React.ChangeEvent<HTMLSelectElement>) => {
         const grouping = event.currentTarget.value as 'none' | 'project';
         setDisplay((current) => ({ ...current, grouping }));

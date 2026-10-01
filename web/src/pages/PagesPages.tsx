@@ -80,16 +80,65 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 onChange={handlers.onShowUpdated}
               />
             </Group>
+            <Group px="sm" pb="sm" wrap="wrap">
+              <NativeSelect
+                aria-label={t('documentList.dateField')}
+                value={model.dateFilter.field}
+                onChange={handlers.onDateField}
+                data={[
+                  { value: 'createdAt', label: t('documentList.created') },
+                  { value: 'updatedAt', label: t('documentList.updated') },
+                ]}
+              />
+              <NativeSelect
+                aria-label={t('documentList.dateRange')}
+                value={model.dateFilter.range}
+                onChange={handlers.onDateRange}
+                data={[
+                  { value: 'all', label: t('documentList.anyDate') },
+                  ...(
+                    [
+                      ['last:1d', 'dayAgo'],
+                      ['last:3d', 'threeDaysAgo'],
+                      ['last:1w', 'weekAgo'],
+                      ['last:1m', 'monthAgo'],
+                      ['last:3m', 'quarterAgo'],
+                      ['last:6m', 'halfYearAgo'],
+                      ['last:1y', 'yearAgo'],
+                    ] as const
+                  ).map(([value, label]) => ({ value, label: t(`documentList.${label}`) })),
+                  { value: 'custom', label: t('documentList.customDate') },
+                ]}
+              />
+              {model.dateFilter.range === 'custom' ? (
+                <>
+                  <TextInput
+                    type="date"
+                    aria-label={t('documentList.dateFrom')}
+                    value={model.dateFilter.from}
+                    onChange={handlers.onDateFrom}
+                  />
+                  <TextInput
+                    type="date"
+                    aria-label={t('documentList.dateTo')}
+                    value={model.dateFilter.to}
+                    onChange={handlers.onDateTo}
+                  />
+                </>
+              ) : null}
+            </Group>
             {rows.length === 0 ? (
               <EmptyState
                 action={
-                  !model.query && model.projectFilter === 'all' ? (
+                  !model.query &&
+                  model.projectFilter === 'all' &&
+                  model.dateFilter.range === 'all' ? (
                     <Button onClick={handlers.onCreatePage}>{t('commands.createPage')}</Button>
                   ) : undefined
                 }
               >
                 {t(
-                  model.query || model.projectFilter !== 'all'
+                  model.query || model.projectFilter !== 'all' || model.dateFilter.range !== 'all'
                     ? 'documentList.noMatches'
                     : 'documentList.empty',
                 )}

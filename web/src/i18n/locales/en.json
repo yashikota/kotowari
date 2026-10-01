@@ -1,5 +1,18 @@
 {
   "documentList": {
+    "dateField": "Filter date field",
+    "dateRange": "Filter date range",
+    "anyDate": "Any date",
+    "dayAgo": "Since 1 day ago",
+    "threeDaysAgo": "Since 3 days ago",
+    "weekAgo": "Since 1 week ago",
+    "monthAgo": "Since 1 month ago",
+    "quarterAgo": "Since 3 months ago",
+    "halfYearAgo": "Since 6 months ago",
+    "yearAgo": "Since 1 year ago",
+    "customDate": "Custom date range",
+    "dateFrom": "On or after",
+    "dateTo": "On or before",
     "grouping": "Document grouping",
     "project": "Project",
     "noGrouping": "No grouping",

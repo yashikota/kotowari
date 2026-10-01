@@ -1,3 +1,4 @@
+import { dateBeforePeriod } from './date-filter.ts';
 import type { Project } from './types.ts';
 import { matchesProjectTitleSummary } from './project-view-search.ts';
 import type { ProjectFilterCondition, ProjectViewSearch } from './project-view-search.ts';
@@ -24,34 +25,6 @@ function dateAfterPeriod(today: Date, period: string): string | undefined {
   }
   if (match[2] === 'y') result.setFullYear(result.getFullYear() + amount);
   return localDateString(result);
-}
-
-function dateBeforePeriod(now: Date, period: string): Date | undefined {
-  const match = /^last:(\d+)([dwmy])$/.exec(period);
-  if (!match) return undefined;
-  const amount = Number(match[1]);
-  const result = new Date(now);
-  if (match[2] === 'd') result.setDate(result.getDate() - amount);
-  if (match[2] === 'w') result.setDate(result.getDate() - amount * 7);
-  if (match[2] === 'm') {
-    const day = result.getDate();
-    result.setDate(1);
-    result.setMonth(result.getMonth() - amount);
-    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
-    result.setDate(Math.min(day, lastDay));
-  }
-  if (match[2] === 'y') {
-    const month = result.getMonth();
-    const day = result.getDate();
-    result.setFullYear(result.getFullYear() - amount);
-    if (result.getMonth() !== month) {
-      result.setDate(0);
-      result.setMonth(month);
-    } else if (result.getDate() !== day) {
-      result.setDate(0);
-    }
-  }
-  return result;
 }
 
 function matchesDateValue(project: Project, field: ProjectFilterCondition): boolean {
