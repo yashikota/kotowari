@@ -212,7 +212,15 @@ export function planIssueCSVImport(
   if (records.length === 0) throw new Error('EMPTY_CSV');
   if (records.length > 5001) throw new Error('TOO_MANY_ROWS');
   const headerRow = records[0];
-  const headers = new Map(headerRow.map((header, index) => [headerKey(header), index]));
+  const headers = new Map<string, number>();
+  for (const [index, header] of headerRow.entries()) {
+    const key = headerKey(header);
+    if (!key || headers.has(key)) throw new Error('INVALID_CSV');
+    headers.set(key, index);
+  }
+  if (records.slice(1).some((record) => record.length !== headerRow.length)) {
+    throw new Error('INVALID_CSV');
+  }
   const titleColumn = column(headers, 'Title');
   if (titleColumn === undefined) throw new Error('MISSING_TITLE_COLUMN');
 

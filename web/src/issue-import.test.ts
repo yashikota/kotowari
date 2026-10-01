@@ -79,4 +79,13 @@ describe('Linear CSV import', () => {
       'TOO_MANY_ROWS',
     );
   });
+
+  it.each([
+    'Title,title\nFirst,Second',
+    'Title,\nFirst,Second',
+    'Title,Description\nFirst',
+    'Title,Description\nFirst,Second,Third',
+  ])('rejects ambiguous headers and shifted columns: %s', (csv) => {
+    expect(() => planIssueCSVImport(csv, context)).toThrow('INVALID_CSV');
+  });
 });
