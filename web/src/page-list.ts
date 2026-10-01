@@ -56,3 +56,41 @@ export function projectPageList(
   for (const page of [...pages].sort(compare)) if (included.has(page.id)) visit(page, 0);
   return rows;
 }
+
+export function groupPageList(
+  pages: Page[],
+  projects: { id: number; name: string; slug: string }[],
+  query: string,
+  order: PageListOrder,
+  direction: 'asc' | 'desc',
+  grouping: 'none' | 'project',
+  projectFilter: string,
+) {
+  const filtered = pages.filter(
+    (page) =>
+      projectFilter === 'all' ||
+      (projectFilter === 'none' ? !page.projectId : String(page.projectId) === projectFilter),
+  );
+  if (grouping === 'none')
+    return projectPageList(filtered, query, order, direction).map((row) => ({
+      ...row,
+      heading: undefined as { name: string | null; count: number } | undefined,
+    }));
+  const groups = new Map<number | null, Page[]>();
+  for (const page of filtered)
+    groups.set(page.projectId ?? null, [...(groups.get(page.projectId ?? null) ?? []), page]);
+  const byId = new Map(projects.map((project) => [project.id, project]));
+  const name = (id: number | null) =>
+    id === null ? null : (byId.get(id)?.name ?? groups.get(id)?.[0]?.projectSlug ?? String(id));
+  return [...groups.entries()]
+    .sort(([a], [b]) =>
+      a === null ? 1 : b === null ? -1 : (name(a) ?? '').localeCompare(name(b) ?? ''),
+    )
+    .flatMap(([id, items]) => {
+      const rows = projectPageList(items, query, order, direction);
+      return rows.map((row, index) => ({
+        ...row,
+        heading: index === 0 ? { name: name(id), count: rows.length } : undefined,
+      }));
+    });
+}

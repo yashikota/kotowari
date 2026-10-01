@@ -31,6 +31,28 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 style={{ flex: 1, minWidth: 160 }}
               />
               <NativeSelect
+                aria-label={t('documentList.grouping')}
+                value={model.grouping}
+                onChange={handlers.onGrouping}
+                data={[
+                  { value: 'project', label: t('documentList.project') },
+                  { value: 'none', label: t('documentList.noGrouping') },
+                ]}
+              />
+              <NativeSelect
+                aria-label={t('documentList.projectFilter')}
+                value={model.projectFilter}
+                onChange={handlers.onProjectFilter}
+                data={[
+                  { value: 'all', label: t('documentList.allProjects') },
+                  { value: 'none', label: t('documentList.noProject') },
+                  ...model.projects.map((project) => ({
+                    value: String(project.id),
+                    label: project.name,
+                  })),
+                ]}
+              />
+              <NativeSelect
                 aria-label={t('documentList.ordering')}
                 value={model.order}
                 onChange={handlers.onOrder}
@@ -49,46 +71,56 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
             {rows.length === 0 ? (
               <EmptyState
                 action={
-                  !model.query ? (
+                  !model.query && model.projectFilter === 'all' ? (
                     <Button onClick={handlers.onCreatePage}>{t('commands.createPage')}</Button>
                   ) : undefined
                 }
               >
-                {t(model.query ? 'documentList.noMatches' : 'documentList.empty')}
+                {t(
+                  model.query || model.projectFilter !== 'all'
+                    ? 'documentList.noMatches'
+                    : 'documentList.empty',
+                )}
               </EmptyState>
             ) : (
               <Stack gap={0} role="list" aria-label={t('nav.pages')}>
-                {rows.map(({ page: p, depth }) => (
-                  <Link
-                    key={p.slug}
-                    role="listitem"
-                    to="/pages/$slug"
-                    params={{ slug: p.slug }}
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-                  >
-                    <Group
-                      wrap="nowrap"
-                      gap="xs"
-                      py={6}
-                      pr="md"
-                      pl={12 + depth * 16}
-                      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                {rows.map(({ page: p, depth, heading }) => (
+                  <Box key={p.slug}>
+                    {heading ? (
+                      <Text role="heading" aria-level={3} fw={600} px="md" py="xs">
+                        {heading.name ?? t('documentList.noProject')} · {heading.count}
+                      </Text>
+                    ) : null}
+                    <Link
+                      role="listitem"
+                      to="/pages/$slug"
+                      params={{ slug: p.slug }}
+                      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
                     >
-                      <Box
-                        w={2}
-                        h={16}
-                        bg="var(--mantine-color-default-border)"
-                        style={{ borderRadius: 1, flexShrink: 0 }}
-                      />
-                      <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
-                        {p.status}
-                      </Text>
-                      <Text flex={1} truncate>
-                        {p.title}
-                      </Text>
-                      <MetaBadge>{p.slug}</MetaBadge>
-                    </Group>
-                  </Link>
+                      <Group
+                        wrap="nowrap"
+                        gap="xs"
+                        py={6}
+                        pr="md"
+                        pl={12 + depth * 16}
+                        style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                      >
+                        <Box
+                          w={2}
+                          h={16}
+                          bg="var(--mantine-color-default-border)"
+                          style={{ borderRadius: 1, flexShrink: 0 }}
+                        />
+                        <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
+                          {p.status}
+                        </Text>
+                        <Text flex={1} truncate>
+                          {p.title}
+                        </Text>
+                        <MetaBadge>{p.slug}</MetaBadge>
+                      </Group>
+                    </Link>
+                  </Box>
                 ))}
               </Stack>
             )}

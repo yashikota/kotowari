@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { projectPageList } from './page-list.ts';
+import { groupPageList, projectPageList } from './page-list.ts';
 import type { Page } from './types.ts';
 
 const page = (id: number, title: string, extra: Partial<Page> = {}): Page => ({
@@ -56,4 +56,35 @@ describe('document list projection', () => {
     expect(projectPageList(input, 'A', 'name', 'asc').map(({ page }) => page.id)).toEqual([1, 2]);
     expect(projectPageList(input, 'missing', 'name', 'asc')).toEqual([]);
   });
+});
+
+it('groups documents by project and filters unassigned documents', () => {
+  const pages = [
+    page(1, 'Zulu', { projectId: 10 }),
+    page(2, 'Alpha'),
+    page(3, 'Child', { projectId: 10, parentId: 1 }),
+    page(4, 'Other', { projectId: 20 }),
+  ];
+  const projects = [
+    { id: 10, name: 'Design', slug: 'design' },
+    { id: 20, name: 'Release', slug: 'release' },
+  ];
+  const rows = groupPageList(pages, projects, '', 'name', 'asc', 'project', 'all');
+  expect(rows.map(({ page }) => page.id)).toEqual([1, 3, 4, 2]);
+  expect(rows.filter((row) => row.heading).map((row) => row.heading)).toEqual([
+    { name: 'Design', count: 2 },
+    { name: 'Release', count: 1 },
+    { name: null, count: 1 },
+  ]);
+  expect(
+    groupPageList(pages, projects, '', 'name', 'asc', 'project', 'none').map(({ page }) => page.id),
+  ).toEqual([2]);
+  expect(
+    groupPageList(pages, projects, 'Child', 'name', 'asc', 'project', '10').map(
+      ({ page }) => page.id,
+    ),
+  ).toEqual([1, 3]);
+  expect(
+    groupPageList(pages, projects, '', 'name', 'asc', 'none', '20')[0]?.heading,
+  ).toBeUndefined();
 });

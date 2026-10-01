@@ -1,5 +1,11 @@
 {
   "documentList": {
+    "grouping": "Document grouping",
+    "project": "Project",
+    "noGrouping": "No grouping",
+    "projectFilter": "Filter documents by project",
+    "allProjects": "All projects",
+    "noProject": "No project",
     "search": "Search documents",
     "ordering": "Document ordering",
     "name": "Name",

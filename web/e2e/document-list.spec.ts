@@ -53,3 +53,50 @@ test('empty document list offers creation without the command palette', async ({
     .click();
   await expect(page.getByRole('dialog', { name: /^Create page/ })).toBeVisible();
 });
+
+test('document projects group and filter the list', async ({ page }) => {
+  await page.route('**/api/pages', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: 1,
+          slug: 'design-note',
+          title: 'Design note',
+          projectId: 10,
+          parentId: null,
+          status: 'draft',
+          tags: [],
+          createdAt: '2026-01-01',
+          updatedAt: '2026-01-01',
+        },
+        {
+          id: 2,
+          slug: 'personal-note',
+          title: 'Personal note',
+          projectId: null,
+          parentId: null,
+          status: 'draft',
+          tags: [],
+          createdAt: '2026-01-01',
+          updatedAt: '2026-01-01',
+        },
+      ],
+    }),
+  );
+  await page.route('**/api/projects', (route) =>
+    route.fulfill({
+      json: [{ id: 10, slug: 'design', name: 'Design', status: 'planned', labels: [] }],
+    }),
+  );
+  await page.goto('/pages');
+  await expect(page.getByRole('heading', { name: 'Design · 1', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No project · 1', exact: true })).toBeVisible();
+  const list = page.getByRole('list', { name: 'Pages', exact: true });
+  await page.getByRole('combobox', { name: 'Filter documents by project' }).selectOption('10');
+  await expect(list.getByRole('listitem')).toHaveCount(1);
+  await expect(list).toContainText('Design note');
+  await page.getByRole('combobox', { name: 'Filter documents by project' }).selectOption('none');
+  await expect(list).toContainText('Personal note');
+  await page.getByRole('combobox', { name: 'Document grouping' }).selectOption('none');
+  await expect(page.getByRole('heading', { name: 'No project · 1', exact: true })).toHaveCount(0);
+});

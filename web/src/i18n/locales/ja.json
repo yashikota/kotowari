@@ -1,5 +1,11 @@
 {
   "documentList": {
+    "grouping": "文書のグループ化",
+    "project": "プロジェクト",
+    "noGrouping": "グループ化なし",
+    "projectFilter": "文書をプロジェクトで絞り込む",
+    "allProjects": "すべてのプロジェクト",
+    "noProject": "プロジェクトなし",
     "search": "文書を検索",
     "ordering": "文書の並び順",
     "name": "名前",

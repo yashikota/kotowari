@@ -465,7 +465,10 @@ const viewsRoute = createRoute({
 const pagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/pages',
-  loader: () => api.pages(),
+  loader: async () => {
+    const [pages, projects] = await Promise.all([api.pages(), api.projects()]);
+    return { pages, projects };
+  },
   component: lazyRouteComponent(() => import('./pages/PagesPages.tsx'), 'PagesPage'),
 });
 

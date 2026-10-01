@@ -4,23 +4,35 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.ts';
 import i18n from '../i18n/index.ts';
 import { useIntent } from '../application/Root.tsx';
-import { projectPageList, type PageListOrder } from '../page-list.ts';
+import { groupPageList, type PageListOrder } from '../page-list.ts';
 import type { Page, Project } from '../types.ts';
 
 export function usePagesPagePresenter() {
-  const pages = useLoaderData({ from: '/pages' }) as Page[];
+  const { pages, projects } = useLoaderData({ from: '/pages' }) as {
+    pages: Page[];
+    projects: Project[];
+  };
   const sendIntent = useIntent();
   const [query, setQuery] = useState('');
+  const [grouping, setGrouping] = useState<'none' | 'project'>('project');
+  const [projectFilter, setProjectFilter] = useState('all');
   const [order, setOrder] = useState<PageListOrder>('name');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
   return {
     _view: 0 as const,
     pages,
-    rows: projectPageList(pages, query, order, direction),
+    rows: groupPageList(pages, projects, query, order, direction, grouping, projectFilter),
+    projects,
+    grouping,
+    projectFilter,
     query,
     order,
     direction,
     handlers: {
+      onGrouping: (event: React.ChangeEvent<HTMLSelectElement>) =>
+        setGrouping(event.currentTarget.value as 'none' | 'project'),
+      onProjectFilter: (event: React.ChangeEvent<HTMLSelectElement>) =>
+        setProjectFilter(event.currentTarget.value),
       onCreatePage: () => sendIntent('page.create'),
       onQuery: (event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.currentTarget.value),
       onOrder: (event: React.ChangeEvent<HTMLSelectElement>) =>
