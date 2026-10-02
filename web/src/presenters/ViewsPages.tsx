@@ -6,7 +6,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import type { IssueSearch } from '../issue-search.ts';
 import { patchIssueOptimistically } from '../application/issues.ts';
@@ -64,6 +64,17 @@ export function useViewPagePresenter() {
     (data.view.orderBy || 'manual') as IssueOrderBy,
   );
   const [view, setView] = useState(data.view);
+  const loadedView = useRef(data.view);
+  const nameDirty = useRef(false);
+  const latestName = useRef(view.name);
+  latestName.current = view.name;
+  const currentSlug = useRef(slug);
+  currentSlug.current = slug;
+  const queue = useRef(Promise.resolve());
+  const failedPatch = useRef<Record<string, unknown> | null>(null);
+  const [savingCount, setSavingCount] = useState(0);
+  const [saveError, setSaveError] = useState('');
+  const [saved, setSaved] = useState(false);
   const subscribedIds = new Set(subscriptionSnapshot.split('\0').filter(Boolean));
   const advancedFilterGroup = parseIssueFilterGroup(view.advancedFilterGroup);
   const matchingIssues = (data.issues ?? []).filter((issue) => {
@@ -117,18 +128,51 @@ export function useViewPagePresenter() {
     return false;
   }, true);
 
-  if (view.slug !== data.view.slug || view.updatedAt !== data.view.updatedAt) {
-    setView(data.view);
+  if (
+    loadedView.current.slug !== data.view.slug ||
+    loadedView.current.updatedAt !== data.view.updatedAt
+  ) {
+    const changedScope = loadedView.current.slug !== data.view.slug;
+    loadedView.current = data.view;
+    if (changedScope) {
+      nameDirty.current = false;
+      failedPatch.current = null;
+      setSaveError('');
+      setSaved(false);
+    }
+    setView(nameDirty.current ? { ...data.view, name: latestName.current } : data.view);
     setSelected(null);
     setDetailsOpen(false);
     setGroupBy((data.view.groupBy || 'priority') as IssueGroupBy);
     setOrderBy((data.view.orderBy || 'manual') as IssueOrderBy);
   }
 
-  async function save(body: Record<string, unknown>) {
-    const next = await api.patchView(slug, body);
-    setView(next);
-    await router.invalidate();
+  function save(body: Record<string, unknown>) {
+    setSavingCount((count) => count + 1);
+    setSaved(false);
+    const operation = queue.current.then(async () => {
+      try {
+        const next = await api.patchView(slug, body);
+        if (currentSlug.current !== slug) return;
+        if (body.name === latestName.current) nameDirty.current = false;
+        setView(nameDirty.current ? { ...next, name: latestName.current } : next);
+        if (failedPatch.current && Object.keys(failedPatch.current).every((key) => key in body)) {
+          failedPatch.current = null;
+          setSaveError('');
+        }
+        setSaved(!nameDirty.current && !failedPatch.current);
+        await router.invalidate().catch(() => undefined);
+      } catch (reason) {
+        if (currentSlug.current !== slug) return;
+        failedPatch.current = { ...failedPatch.current, ...body };
+        setSaveError(reason instanceof Error ? reason.message : String(reason));
+        setSaved(false);
+      } finally {
+        setSavingCount((count) => Math.max(0, count - 1));
+      }
+    });
+    queue.current = operation;
+    return operation;
   }
 
   const search: IssueSearch = {
@@ -230,7 +274,17 @@ export function useViewPagePresenter() {
     displayProperties: (view.displayProperties as IssueDisplayProperty[] | undefined) ?? [
       ...DEFAULT_DISPLAY_PROPERTIES,
     ],
+    saving: savingCount > 0,
+    saved,
+    saveError,
     handlers: {
+      onRetrySave: () => {
+        if (!failedPatch.current || savingCount > 0) return;
+        return save({
+          ...failedPatch.current,
+          ...('name' in failedPatch.current ? { name: latestName.current } : {}),
+        });
+      },
       onClick0: () => {
         if (!window.confirm(i18n.t('ui.deleteViewConfirmation', { name: view.name }))) {
           return;
@@ -242,8 +296,13 @@ export function useViewPagePresenter() {
       },
       View_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setView({ ...view, name: e.target.value }),
-      View_name_onBlur2: () => save({ name: view.name }),
+      ) => {
+        nameDirty.current = true;
+        latestName.current = e.target.value;
+        setSaved(false);
+        setView({ ...view, name: e.target.value });
+      },
+      View_name_onBlur2: () => (nameDirty.current ? save({ name: view.name }) : undefined),
       onToggleFavorite: async () => {
         await save({ isFavorite: !view.isFavorite });
         signals.dispatchEvent(new Event('kotowari:refresh'));

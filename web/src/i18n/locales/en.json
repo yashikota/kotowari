@@ -1,4 +1,10 @@
 {
+  "viewSave": {
+    "saving": "Saving view…",
+    "saved": "View saved",
+    "failed": "View changes could not be saved",
+    "retry": "Retry saving"
+  },
   "documentEditorStatus": {
     "loadFailed": "Unable to load document",
     "historyFailed": "Unable to load history",

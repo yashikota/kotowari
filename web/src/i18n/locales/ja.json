@@ -1,4 +1,10 @@
 {
+  "viewSave": {
+    "saving": "ビューを保存中…",
+    "saved": "ビューを保存しました",
+    "failed": "ビューの変更を保存できませんでした",
+    "retry": "保存を再試行"
+  },
   "documentEditorStatus": {
     "loadFailed": "文書を読み込めませんでした",
     "historyFailed": "履歴を読み込めませんでした",

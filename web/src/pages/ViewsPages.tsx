@@ -2,6 +2,7 @@ import { ActionIcon, Box, Button, Group, Stack, Text, TextInput } from '@mantine
 import { IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { IssueDetail } from '../components/IssueDetail.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
@@ -90,7 +91,20 @@ export function ViewPageView({
                   value={view.name}
                   onChange={handlers.View_name_onChange1}
                   onBlur={handlers.View_name_onBlur2}
+                  readOnly={model.saving}
                   size="sm"
+                />
+              </Box>
+              <Box px="md">
+                <SaveFeedback
+                  saving={model.saving}
+                  saved={model.saved}
+                  error={model.saveError}
+                  savingLabel={t('viewSave.saving')}
+                  savedLabel={t('viewSave.saved')}
+                  failureLabel={t('viewSave.failed')}
+                  retryLabel={t('viewSave.retry')}
+                  onRetry={handlers.onRetrySave}
                 />
               </Box>
               {view.description ? (
