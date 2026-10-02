@@ -1,6 +1,30 @@
 import { expect, test, type APIResponse } from '@playwright/test';
 import { expandMoreNavigation, fillIssueSearch, returnToIssues } from './issue-list-controls.ts';
 
+test('ADR list offers creation and recovers from filters with no results', async ({
+  page,
+  request,
+}) => {
+  const slug = `adr-empty-${Date.now()}`;
+  const project = await request.post('/api/projects', { data: { name: slug, slug } });
+  expect(project.ok()).toBeTruthy();
+  const response = await request.post('/api/adrs', { data: { title: slug, projectSlug: slug } });
+  expect(response.ok()).toBeTruthy();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/adrs');
+  await page.getByRole('button', { name: 'Create ADR', exact: true }).first().click();
+  await expect(page.getByRole('dialog', { name: 'Create ADR', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Create ADR', exact: true })).toHaveCount(0);
+  await page.getByLabel('Filter ADR project').selectOption(slug);
+  await page.getByLabel('Filter ADR status').selectOption('superseded');
+  await expect(page.getByText('No decisions match these filters.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
+  await expect(page.getByLabel('Filter ADR status')).toHaveValue('');
+  await expect(page.getByLabel('Filter ADR project')).toHaveValue('');
+  await expect(page.getByRole('link').filter({ hasText: slug })).toBeVisible();
+});
+
 async function json<T>(res: APIResponse): Promise<T> {
   if (!res.ok()) {
     throw new Error(`${res.status()} ${await res.text()}`);

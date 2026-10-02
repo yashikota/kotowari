@@ -99,10 +99,11 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 </>
               ) : null}
             </Group>
-            {model.query ||
-            model.projectFilter !== 'all' ||
-            model.dateFilter.range !== 'all' ||
-            model.onlyMyProjects ? (
+            {rows.length > 0 &&
+            (model.query ||
+              model.projectFilter !== 'all' ||
+              model.dateFilter.range !== 'all' ||
+              model.onlyMyProjects) ? (
               <Group px="sm" pb="sm">
                 <Button variant="subtle" onClick={handlers.onClearFilters}>
                   {t('documentList.clearFilters')}
@@ -114,16 +115,22 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                 action={
                   !model.query &&
                   model.projectFilter === 'all' &&
-                  model.dateFilter.range === 'all' ? (
+                  model.dateFilter.range === 'all' &&
+                  !model.onlyMyProjects ? (
                     <Button onClick={handlers.onCreatePage}>{t('commands.createPage')}</Button>
-                  ) : undefined
+                  ) : (
+                    <Button variant="default" onClick={handlers.onClearFilters}>
+                      {t('documentList.clearFilters')}
+                    </Button>
+                  )
                 }
               >
                 {t(
                   model.pages.length > 0 ||
                     model.query ||
                     model.projectFilter !== 'all' ||
-                    model.dateFilter.range !== 'all'
+                    model.dateFilter.range !== 'all' ||
+                    model.onlyMyProjects
                     ? 'documentList.noMatches'
                     : 'documentList.empty',
                 )}

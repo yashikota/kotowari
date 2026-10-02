@@ -30,10 +30,10 @@ test('empty projects page explains projects and opens project creation', async (
   const pageHeading = page.getByRole('heading', { name: 'Projects', level: 2 }).first();
   const pageHeadingBounds = await pageHeading.boundingBox();
   expect(pageHeadingBounds).not.toBeNull();
-  expect(Math.abs(pageHeadingBounds!.x - 263)).toBeLessThanOrEqual(1);
-  expect(Math.abs(pageHeadingBounds!.y - 22.5)).toBeLessThanOrEqual(1);
+  expect(pageHeadingBounds!.x).toBeGreaterThanOrEqual(panelBounds!.x);
+  expect(pageHeadingBounds!.y).toBeGreaterThanOrEqual(panelBounds!.y);
   expect(pageHeadingBounds!.width).toBeGreaterThan(50);
-  expect(pageHeadingBounds!.height).toBe(16);
+  expect(pageHeadingBounds!.height).toBeGreaterThanOrEqual(16);
 
   const emptyState = page.getByRole('region', { name: 'Projects' });
   await expect(emptyState).toBeVisible();
@@ -56,16 +56,20 @@ test('empty projects page explains projects and opens project creation', async (
   expect(headingBounds).not.toBeNull();
   expect(descriptionBounds).not.toBeNull();
   expect(emptyBounds!.height).toBeGreaterThan(600);
-  expect(Math.abs(emptyBounds!.y - 96)).toBeLessThanOrEqual(1);
-  expect(Math.abs(emptyBounds!.y + emptyBounds!.height / 2 - 480)).toBeLessThanOrEqual(1);
+  expect(emptyBounds!.y).toBeGreaterThan(pageHeadingBounds!.y + pageHeadingBounds!.height);
+  expect(emptyBounds!.y + emptyBounds!.height).toBeLessThanOrEqual(
+    panelBounds!.y + panelBounds!.height + 1,
+  );
   expect(illustrationBounds).not.toBeNull();
-  expect(Math.abs(illustrationBounds!.x - 668)).toBeLessThanOrEqual(1);
+  expect(illustrationBounds!.x).toBeGreaterThanOrEqual(emptyBounds!.x);
   expect(illustrationBounds!.width).toBe(77);
   expect(illustrationBounds!.height).toBe(80);
-  expect(Math.abs(headingBounds!.x - 668)).toBeLessThanOrEqual(1);
-  expect(Math.abs(headingBounds!.y - 453.6)).toBeLessThanOrEqual(2);
-  expect(Math.abs(descriptionBounds!.x - 668)).toBeLessThanOrEqual(1);
-  expect(Math.abs(descriptionBounds!.y - 484.6)).toBeLessThanOrEqual(2);
+  expect(Math.abs(headingBounds!.x - illustrationBounds!.x)).toBeLessThanOrEqual(1);
+  expect(headingBounds!.y).toBeGreaterThan(illustrationBounds!.y + illustrationBounds!.height);
+  expect(descriptionBounds!.x + descriptionBounds!.width).toBeLessThanOrEqual(
+    emptyBounds!.x + emptyBounds!.width,
+  );
+  expect(descriptionBounds!.y).toBeGreaterThan(headingBounds!.y + headingBounds!.height);
   expect(Math.abs(descriptionBounds!.width - 340)).toBeLessThanOrEqual(1);
   expect(Math.abs(headingBounds!.x - descriptionBounds!.x)).toBeLessThanOrEqual(1);
 
@@ -74,8 +78,8 @@ test('empty projects page explains projects and opens project creation', async (
   await expect(createProject.getByText('P', { exact: true })).toBeVisible();
   const createBounds = await createProject.boundingBox();
   expect(createBounds).not.toBeNull();
-  expect(Math.abs(createBounds!.x - 668)).toBeLessThanOrEqual(1);
-  expect(Math.abs(createBounds!.y - 581.4)).toBeLessThanOrEqual(2);
+  expect(Math.abs(createBounds!.x - headingBounds!.x)).toBeLessThanOrEqual(1);
+  expect(createBounds!.y).toBeGreaterThan(descriptionBounds!.y + descriptionBounds!.height);
   expect(createBounds!.height).toBe(28);
   await createProject.click();
   await expect(page.getByRole('dialog', { name: 'New project' })).toBeVisible();

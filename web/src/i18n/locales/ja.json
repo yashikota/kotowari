@@ -1,4 +1,9 @@
 {
+  "adrList": {
+    "empty": "意思決定はまだありません。次の判断の理由を記録しましょう。",
+    "noMatches": "条件に一致する意思決定はありません。",
+    "clearFilters": "絞り込みを解除"
+  },
   "issueComposer": {
     "loadingProperties": "課題のプロパティを読み込んでいます…",
     "propertiesFailed": "課題のプロパティを読み込めませんでした。選択内容を保持するため、保存前に再読み込みしてください。",

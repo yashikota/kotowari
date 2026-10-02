@@ -5,8 +5,10 @@ import { api } from '../api.ts';
 import i18n from '../i18n/index.ts';
 import type { ADR, Issue, Project } from '../types.ts';
 import { entityDir } from '../types.ts';
+import { useIntent } from '../application/Root.tsx';
 
 export function useADRsPagePresenter() {
+  const sendIntent = useIntent();
   const adrs = useLoaderData({ from: '/adrs' }) as ADR[];
   const [status, setStatus] = useState('');
   const [project, setProject] = useState('');
@@ -20,6 +22,11 @@ export function useADRsPagePresenter() {
     project,
     filtered,
     handlers: {
+      onCreateADR: () => sendIntent('adr.create'),
+      onClearFilters: () => {
+        setStatus('');
+        setProject('');
+      },
       Filter_ADR_status_onChange0: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => setStatus(e.target.value),

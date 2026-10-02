@@ -1,4 +1,9 @@
 {
+  "adrList": {
+    "empty": "No decisions yet. Record the reasoning behind your next choice.",
+    "noMatches": "No decisions match these filters.",
+    "clearFilters": "Clear filters"
+  },
   "issueComposer": {
     "loadingProperties": "Loading issue properties…",
     "propertiesFailed": "Issue properties could not be loaded. Retry before saving to preserve your selections.",

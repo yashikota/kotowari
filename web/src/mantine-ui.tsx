@@ -275,10 +275,17 @@ export function SplitLayout({ children, single }: { children: ReactNode; single?
 
 export function EmptyState({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <Stack align="center" justify="center" py="xl" gap="xs">
-      <Text c="dimmed" ta="center">
+    <Stack align="center" justify="center" py="xl" px="md" gap="md" mih={160}>
+      <Box
+        maw={480}
+        style={{
+          color: 'var(--mantine-color-dimmed)',
+          textAlign: 'center',
+          overflowWrap: 'anywhere',
+        }}
+      >
         {children}
-      </Text>
+      </Box>
       {action}
     </Stack>
   );

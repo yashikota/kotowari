@@ -17,7 +17,7 @@ import { AIPanel } from '../components/AIPanel.tsx';
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
 import { ADR_STATUSES } from '../types.ts';
 import { adrStatusLabel } from '../i18n/labels.ts';
-import { EmptyState, MetaBadge, PageHeader, Pane, Shortcut, SplitLayout } from '../mantine-ui.tsx';
+import { EmptyState, MetaBadge, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -33,35 +33,46 @@ export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePr
           <Pane single>
             <PageHeader
               title={t('nav.adrs')}
-              actions={
-                <Group gap="xs" wrap="wrap">
-                  <NativeSelect
-                    aria-label={t('ui.filterAdrStatus')}
-                    value={status}
-                    onChange={handlers.Filter_ADR_status_onChange0}
-                    data={[
-                      { value: '', label: t('ui.allStatuses') },
-                      ...ADR_STATUSES.map((s) => ({ value: s, label: adrStatusLabel(s) })),
-                    ]}
-                  />
-                  <NativeSelect
-                    aria-label={t('ui.filterAdrProject')}
-                    value={project}
-                    onChange={handlers.Filter_ADR_project_onChange1}
-                    data={[
-                      { value: '', label: t('ui.allProjects') },
-                      ...[...new Set(adrs.map((a) => a.projectSlug).filter(Boolean))].map((p) => ({
-                        value: p!,
-                        label: p!,
-                      })),
-                    ]}
-                  />
-                </Group>
-              }
+              actions={<Button onClick={handlers.onCreateADR}>{t('commands.createAdr')}</Button>}
             />
-            {adrs.length === 0 ? (
-              <EmptyState>
-                {t('ui.noAdrsStart')} <Shortcut>p</Shortcut> {t('ui.toCreateOne')}
+            <Group px="md" py="sm" wrap="wrap">
+              <Group gap="xs" wrap="wrap">
+                <NativeSelect
+                  aria-label={t('ui.filterAdrStatus')}
+                  value={status}
+                  onChange={handlers.Filter_ADR_status_onChange0}
+                  data={[
+                    { value: '', label: t('ui.allStatuses') },
+                    ...ADR_STATUSES.map((s) => ({ value: s, label: adrStatusLabel(s) })),
+                  ]}
+                />
+                <NativeSelect
+                  aria-label={t('ui.filterAdrProject')}
+                  value={project}
+                  onChange={handlers.Filter_ADR_project_onChange1}
+                  data={[
+                    { value: '', label: t('ui.allProjects') },
+                    ...[...new Set(adrs.map((a) => a.projectSlug).filter(Boolean))].map((p) => ({
+                      value: p!,
+                      label: p!,
+                    })),
+                  ]}
+                />
+              </Group>
+            </Group>
+            {filtered.length === 0 ? (
+              <EmptyState
+                action={
+                  status || project ? (
+                    <Button variant="default" onClick={handlers.onClearFilters}>
+                      {t('adrList.clearFilters')}
+                    </Button>
+                  ) : (
+                    <Button onClick={handlers.onCreateADR}>{t('commands.createAdr')}</Button>
+                  )
+                }
+              >
+                {t(status || project ? 'adrList.noMatches' : 'adrList.empty')}
               </EmptyState>
             ) : (
               <Stack gap={0} role="list">
