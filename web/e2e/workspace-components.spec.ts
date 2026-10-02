@@ -853,17 +853,18 @@ test('issue list applies bulk project, cycle, and label changes without replacin
     const item = page.getByRole('menuitem', { name, exact: true });
     await item.hover();
   };
+  const cycleCandidatesResponse = await request.get('/api/cycles');
+  expect(cycleCandidatesResponse.ok()).toBeTruthy();
+  const existingCycles = await cycleCandidatesResponse.json();
+  const additionalCycles = Array.from({ length: 60 }, (_, index) => ({
+    ...existingCycles[0],
+    id: 90000 + index,
+    number: 90000 + index,
+    name: `Extra cycle ${index}`,
+  }));
   await page.route('**/api/cycles', async (route) => {
     if (route.request().method() !== 'GET') return route.continue();
-    const response = await route.fetch();
-    const existing = await response.json();
-    const additional = Array.from({ length: 60 }, (_, index) => ({
-      ...existing[0],
-      id: 90000 + index,
-      number: 90000 + index,
-      name: `Extra cycle ${index}`,
-    }));
-    await route.fulfill({ response, json: [...existing, ...additional] });
+    await route.fulfill({ json: [...existingCycles, ...additionalCycles] });
   });
   await page.reload();
   await fillIssueSearch(page, String(stamp));
