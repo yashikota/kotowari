@@ -10,7 +10,8 @@ import { DocumentListDisplayOptions } from '../components/DocumentListDisplayOpt
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
 import { usePageDetailPagePresenter, usePagesPagePresenter } from '../presenters/PagesPages.tsx';
 import { PAGE_STATUSES } from '../types.ts';
-import { EmptyState, MetaBadge, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
+import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
+import styles from './PagesPages.module.css';
 
 export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPagePresenter> }) {
   const { t } = useTranslation();
@@ -148,52 +149,47 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                       role="listitem"
                       to="/pages/$slug"
                       params={{ slug: p.slug }}
-                      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                      className={styles.documentLink}
                     >
-                      <Group
-                        wrap="nowrap"
-                        gap="xs"
-                        py={6}
-                        pr="md"
-                        pl={12 + depth * 16}
-                        style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-                      >
-                        <Box
-                          w={2}
-                          h={16}
-                          bg="var(--mantine-color-default-border)"
-                          style={{ borderRadius: 1, flexShrink: 0 }}
-                        />
+                      <Group className={styles.documentRow} pl={12 + Math.min(depth, 4) * 16}>
                         <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
                           {p.status}
                         </Text>
-                        <Text flex={1} truncate>
+                        <Text
+                          lineClamp={2}
+                          title={p.title}
+                          style={{ minWidth: 0, overflowWrap: 'anywhere' }}
+                        >
                           {p.title}
                         </Text>
-                        <MetaBadge>{p.slug}</MetaBadge>
-                        {(
-                          [
-                            ['createdAt', model.showCreated, t('documentList.created')],
-                            ['updatedAt', model.showUpdated, t('documentList.updated')],
-                          ] as const
-                        ).map(([field, visible, label]) =>
-                          visible && Number.isFinite(new Date(p[field]).getTime()) ? (
-                            <Text
-                              key={field}
-                              component="time"
-                              dateTime={p[field]}
-                              size="xs"
-                              c="dimmed"
-                              aria-label={`${label}: ${p[field]}`}
-                              title={`${label}: ${p[field]}`}
-                              style={{ flexShrink: 0 }}
-                            >
-                              {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
-                                new Date(p[field]),
-                              )}
-                            </Text>
-                          ) : null,
-                        )}
+                        <Group className={styles.metadata} gap="xs" wrap="wrap">
+                          <Text className={styles.slug} ff="monospace" size="xs" c="dimmed">
+                            {p.slug}
+                          </Text>
+                          {(
+                            [
+                              ['createdAt', model.showCreated, t('documentList.created')],
+                              ['updatedAt', model.showUpdated, t('documentList.updated')],
+                            ] as const
+                          ).map(([field, visible, label]) =>
+                            visible && Number.isFinite(new Date(p[field]).getTime()) ? (
+                              <Text
+                                key={field}
+                                component="time"
+                                dateTime={p[field]}
+                                size="xs"
+                                c="dimmed"
+                                aria-label={`${label}: ${p[field]}`}
+                                title={`${label}: ${p[field]}`}
+                                style={{ flexShrink: 0 }}
+                              >
+                                {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
+                                  new Date(p[field]),
+                                )}
+                              </Text>
+                            ) : null,
+                          )}
+                        </Group>
                       </Group>
                     </Link>
                   </Box>

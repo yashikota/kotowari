@@ -1,5 +1,44 @@
 import { expect, test } from '@playwright/test';
 
+test('document rows preserve titles and metadata on narrow screens', async ({ page }, testInfo) => {
+  const title = 'A detailed decision record with enough context to find the right document';
+  const slug = 'a-very-long-document-identifier-that-must-not-push-the-title-out-of-view';
+  await page.route('**/api/pages', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: 1,
+          slug,
+          title,
+          projectId: null,
+          parentId: null,
+          status: 'proposed',
+          tags: [],
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-02-01T00:00:00Z',
+        },
+      ],
+    }),
+  );
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/pages');
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Created', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Last edited', exact: true }).check();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('checkbox', { name: 'Created', exact: true })).not.toBeVisible();
+  const row = page.getByRole('list', { name: 'Pages', exact: true }).getByRole('listitem');
+  await expect(row).toContainText(title);
+  await expect(row).toContainText(slug);
+  await expect(row.locator('time')).toHaveCount(2);
+  const titleBounds = await row.getByText(title, { exact: true }).boundingBox();
+  expect(titleBounds!.width).toBeGreaterThan(180);
+  expect(
+    await row.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+  ).toBeTruthy();
+  await page.screenshot({ path: testInfo.outputPath('document-list-mobile.png') });
+});
+
 test('document list searches, sorts and opens creation directly', async ({ page }) => {
   const documents = [
     {
