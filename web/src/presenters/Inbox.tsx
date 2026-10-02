@@ -50,6 +50,10 @@ export function useInboxPresenter() {
   }));
   const [filterMenu, setFilterMenu] = useState<InboxFilterMenuState>(CLOSED_INBOX_FILTER_MENU);
   const [commentPreview, setCommentPreview] = useState('');
+  const [commentStatus, setCommentStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>(
+    'idle',
+  );
+  const [commentRequest, setCommentRequest] = useState(0);
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<'all' | 'read' | null>(null);
   const { t, i18n } = useTranslation();
@@ -118,6 +122,7 @@ export function useInboxPresenter() {
   useEffect(() => {
     let active = true;
     setCommentPreview('');
+    setCommentStatus('idle');
     const commentId = selectedActivity?.payload.commentId;
     if (
       !selectedActivity ||
@@ -129,19 +134,22 @@ export function useInboxPresenter() {
         active = false;
       };
     }
+    setCommentStatus('loading');
     void api
       .comments(selectedActivity.identifier)
       .then((comments) => {
-        if (active)
+        if (active) {
           setCommentPreview(comments.find((comment) => comment.id === commentId)?.body ?? '');
+          setCommentStatus('ready');
+        }
       })
       .catch(() => {
-        if (active) setCommentPreview('');
+        if (active) setCommentStatus('failed');
       });
     return () => {
       active = false;
     };
-  }, [selectedActivity]);
+  }, [selectedActivity, commentRequest]);
   const unreadCount = unreadActivities.length;
 
   useEffect(() => {
@@ -229,6 +237,7 @@ export function useInboxPresenter() {
   }
 
   const handlers = useActions({
+    onRetryComment: () => setCommentRequest((request) => request + 1),
     onRetry: async () => {
       if (retrying) return;
       setRetrying(true);
@@ -414,6 +423,7 @@ export function useInboxPresenter() {
     selectedActivity,
     selectedIsRead: selectedId === null || inboxState.readIds.includes(selectedId),
     commentPreview,
+    commentStatus,
     loadFailed,
     retrying,
     selectedId,

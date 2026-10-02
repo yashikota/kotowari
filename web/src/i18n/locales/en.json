@@ -1896,6 +1896,9 @@
     "attachmentRemoved": "Removed attachment {{name}}"
   },
   "inbox": {
+    "commentLoading": "Loading comment…",
+    "commentFailed": "Comment could not be loaded",
+    "retryComment": "Retry loading comment",
     "loadFailed": "Notifications could not be loaded",
     "retry": "Retry loading",
     "resetFilters": "Show all notifications",

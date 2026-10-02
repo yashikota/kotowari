@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Button, Group, Menu, Stack, Text, Title } from '@mantine/core';
+import { Alert, ActionIcon, Box, Button, Group, Menu, Stack, Text, Title } from '@mantine/core';
 import {
   IconArchive,
   IconCheck,
@@ -18,7 +18,12 @@ import styles from './InboxPages.module.css';
 
 type InboxDetailsModel = Pick<
   ReturnType<typeof useInboxPresenter>,
-  'selectedActivity' | 'commentPreview' | 'selectedIsRead' | 'snoozeMenuOpen' | 'handlers'
+  | 'selectedActivity'
+  | 'commentPreview'
+  | 'commentStatus'
+  | 'selectedIsRead'
+  | 'snoozeMenuOpen'
+  | 'handlers'
 >;
 
 export function InboxActivityDetails({ model }: { model: InboxDetailsModel }) {
@@ -142,7 +147,17 @@ export function InboxActivityDetails({ model }: { model: InboxDetailsModel }) {
               {selected.title}
             </Title>
             <Text size="sm">{formatActivity(selected.action, selected.payload)}</Text>
-            {model.commentPreview ? (
+            {model.commentStatus === 'loading' ? (
+              <Text size="sm" c="dimmed" role="status">
+                {t('inbox.commentLoading')}
+              </Text>
+            ) : model.commentStatus === 'failed' ? (
+              <Alert color="red" role="alert" title={t('inbox.commentFailed')}>
+                <Button mt="sm" variant="default" onClick={model.handlers.onRetryComment}>
+                  {t('inbox.retryComment')}
+                </Button>
+              </Alert>
+            ) : model.commentPreview ? (
               <Box className={styles.commentPreview}>
                 <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
                   {model.commentPreview}

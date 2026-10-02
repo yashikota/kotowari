@@ -82,3 +82,53 @@ test('inbox failure retries and filtered empty state restores notifications', as
   );
   await request.delete(`/api/issues/${issue.identifier}`);
 });
+
+test('inbox comment loading failure can retry without losing notification context', async ({
+  page,
+  request,
+}, testInfo) => {
+  const title = `InboxCommentRecovery${Date.now()}`;
+  const response = await request.post('/api/issues', { data: { title, status: 'todo' } });
+  expect(response.ok()).toBeTruthy();
+  const issue = await response.json();
+  const body =
+    'The reasoning behind this update remains available after retry. ' +
+    'LongCommentWithoutSpaces'.repeat(50);
+  const comment = await request.post(`/api/issues/${issue.identifier}/comments`, {
+    data: { body },
+  });
+  expect(comment.ok()).toBeTruthy();
+  await page.setViewportSize({ width: 360, height: 800 });
+  let failing = true;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/issues/${issue.identifier}/comments`, async (route) => {
+    if (failing) {
+      await gate;
+      await route.fulfill({ status: 503, body: 'Unavailable' });
+    } else await route.continue();
+  });
+  await page.goto('/inbox');
+  await page
+    .getByRole('region', { name: 'Notifications' })
+    .getByRole('button', { name: new RegExp(`${issue.identifier}: ${title}.*Added a note`) })
+    .click();
+  const details = page.getByRole('region', { name: 'Notification details' });
+  await expect(details.getByRole('status')).toHaveText('Loading comment…');
+  release();
+  await expect(details.getByRole('alert')).toContainText('Comment could not be loaded');
+  await expect(details.getByRole('link', { name: 'Open issue' })).toBeVisible();
+  failing = false;
+  await details.getByRole('button', { name: 'Retry loading comment' }).click();
+  await expect(details.getByText(body, { exact: true })).toBeVisible();
+  await expect(details.getByRole('alert')).toHaveCount(0);
+  expect(
+    await details.evaluate((element) => element.scrollWidth <= element.clientWidth),
+  ).toBeTruthy();
+  await page.screenshot({ path: testInfo.outputPath('inbox-comment-recovered.png') });
+  const back = details.getByRole('button', { name: 'Back to inbox' });
+  await expect(back).toBeVisible();
+  await request.delete(`/api/issues/${issue.identifier}`);
+});

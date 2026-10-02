@@ -1885,6 +1885,9 @@
     "attachmentRemoved": "添付ファイル「{{name}}」を削除"
   },
   "inbox": {
+    "commentLoading": "コメントを読み込み中…",
+    "commentFailed": "コメントを読み込めませんでした",
+    "retryComment": "コメントを再読み込み",
     "loadFailed": "通知を読み込めませんでした",
     "retry": "読み込みを再試行",
     "resetFilters": "すべての通知を表示",
