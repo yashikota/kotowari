@@ -125,6 +125,8 @@ export function ProjectBoardView({
                     p={8}
                     mih={112}
                     style={{
+                      maxHeight: 'max(112px, calc(100dvh - 220px))',
+                      overflowY: 'auto',
                       borderRadius: 'var(--mantine-radius-md)',
                       background: 'var(--mantine-color-default-hover)',
                     }}

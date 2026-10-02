@@ -447,12 +447,13 @@ test('project list and saved-view previews group by labels, health, and dates', 
   );
 
   await page.goto('/views/projects/new?groupBy=health');
-  await expect(page.getByText('On track', { exact: true })).toBeVisible();
-  await expect(page.getByText('At risk', { exact: true })).toBeVisible();
-  await expect(page.getByText('No update', { exact: true })).toBeVisible();
-  await expect(page.getByText(labeledName)).toBeVisible();
-  await expect(page.getByText(atRiskName)).toBeVisible();
-  await expect(page.getByText(unassignedName)).toBeVisible();
+  const preview = page.locator('[aria-label="Preview"]');
+  await expect(preview.getByText('On track', { exact: true })).toBeVisible();
+  await expect(preview.getByText('At risk', { exact: true })).toBeVisible();
+  await expect(preview.getByText('No update', { exact: true })).toBeVisible();
+  await expect(preview.getByText(labeledName)).toBeVisible();
+  await expect(preview.getByText(atRiskName)).toBeVisible();
+  await expect(preview.getByText(unassignedName)).toBeVisible();
 });
 
 test('personal project views can be created, updated, reopened, and deleted', async ({
@@ -1043,8 +1044,18 @@ test('project board groups can be reordered, hidden, and saved in the view previ
 test('project board cards move across status and priority columns by drag and keyboard', async ({
   page,
   request,
-}) => {
+}, testInfo) => {
   const stamp = Date.now();
+  const backgroundSlugs = Array.from(
+    { length: 30 },
+    (_, index) => `board-background-${stamp}-${index}`,
+  );
+  for (const slug of backgroundSlugs) {
+    const created = await request.post('/api/projects', {
+      data: { slug, name: slug, status: 'planned', priority: 3 },
+    });
+    expect(created.ok()).toBeTruthy();
+  }
   const statusProject = {
     name: `Board status ${stamp}`,
     slug: `board-status-${stamp}`,
@@ -1073,6 +1084,7 @@ test('project board cards move across status and priority columns by drag and ke
     statusProject.name,
   );
 
+  await page.screenshot({ path: testInfo.outputPath('many-project-board.png') });
   await statusCard.focus();
   await page.keyboard.press('Alt+ArrowLeft');
   await expect
@@ -1107,6 +1119,7 @@ test('project board cards move across status and priority columns by drag and ke
   await expect(page.getByRole('gridcell', { name: 'Medium · In progress' })).toContainText(
     statusProject.name,
   );
+  for (const slug of backgroundSlugs) await request.delete(`/api/projects/${slug}`);
 });
 
 test('project priority can be changed by dropping a board card in the destination column', async ({
