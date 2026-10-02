@@ -151,9 +151,15 @@
   flex-direction: column;
 }
 
+.detailPane:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+
 .detailToolbar {
-  flex: 0 0 42px;
-  padding: 0 12px;
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
@@ -162,6 +168,9 @@
 }
 
 .detailContent {
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  min-height: 0;
   max-width: 760px;
   padding: 28px clamp(20px, 5vw, 64px);
 }
@@ -178,6 +187,11 @@
   color: var(--mantine-primary-color-filled);
   font-size: var(--mantine-font-size-sm);
   text-decoration: none;
+}
+
+.openIssue:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 3px;
 }
 
 .openIssue:hover {

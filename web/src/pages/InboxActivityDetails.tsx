@@ -7,6 +7,7 @@ import {
   IconInbox,
   IconTrash,
 } from '@tabler/icons-react';
+import { useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatActivity } from '../activity.ts';
@@ -23,14 +24,33 @@ type InboxDetailsModel = Pick<
 export function InboxActivityDetails({ model }: { model: InboxDetailsModel }) {
   const { t, i18n } = useTranslation();
   const selected = model.selectedActivity;
+  const detailRef = useRef<HTMLElement>(null);
+  const previousId = useRef<number | null>(null);
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 560px)').matches) {
+      if (selected && previousId.current !== selected.id) detailRef.current?.focus();
+      else if (!selected && previousId.current !== null) {
+        detailRef.current?.parentElement
+          ?.querySelector<HTMLButtonElement>(`[data-inbox-activity-id="${previousId.current}"]`)
+          ?.focus();
+      }
+    }
+    previousId.current = selected?.id ?? null;
+  }, [selected]);
   return (
-    <Box component="section" aria-label={t('inbox.details')} className={styles.detailPane}>
+    <Box
+      component="section"
+      ref={detailRef}
+      tabIndex={-1}
+      aria-label={t('inbox.details')}
+      className={styles.detailPane}
+    >
       {selected ? (
         <>
           <Group
             justify="space-between"
             align="center"
-            wrap="nowrap"
+            wrap="wrap"
             className={styles.detailToolbar}
           >
             <Group gap="xs" wrap="nowrap">

@@ -35,6 +35,16 @@ for (const scheme of ['light', 'dark']) {
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBeTruthy();
     await page.screenshot({ path: testInfo.outputPath(`inbox-${scheme}.png`) });
+    await row.press('Enter');
+    const detail = page.getByRole('region', { name: 'Notification details' });
+    await expect(detail).toBeFocused();
+    await expect(detail.getByRole('heading', { name: title })).toBeVisible();
+    expect(
+      await detail.evaluate((element) => element.scrollWidth <= element.clientWidth),
+    ).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath(`inbox-detail-${scheme}.png`) });
+    await detail.getByRole('button', { name: 'Back to inbox', exact: true }).click();
+    await expect(row).toBeFocused();
     await request.delete(`/api/issues/${issue.identifier}`);
   });
 }
