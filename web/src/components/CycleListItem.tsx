@@ -29,6 +29,22 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
   const name = cycle.name || t('field.cycleN', { number: cycle.number });
   const startDate = formatCalendarDate(cycle.startsAt, locale);
 
+  const summary = (
+    <Group gap="sm" wrap="nowrap" className={styles.summary}>
+      <Badge variant="light" color={cycle.status === 'active' ? 'indigo' : 'gray'} size="sm">
+        {t(`cycle.status.${cycle.status}`)}
+      </Badge>
+      {cycle.status === 'completed' ? (
+        <Text size="xs" c="dimmed" className={styles.summaryMetric}>
+          {t('cycle.completedCount', { count: cycle.completedCount })}
+        </Text>
+      ) : null}
+      <Text size="xs" c="dimmed" className={styles.summaryMetric}>
+        {t('cycle.scopeCount', { count: cycle.issueCount })}
+      </Text>
+    </Group>
+  );
+
   return (
     <Group
       component="section"
@@ -41,9 +57,18 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
         to="/cycles/$number"
         params={{ number: String(cycle.number) }}
         label={
-          <Text size="sm" fw={550}>
-            {name}
-          </Text>
+          <Box>
+            <Text
+              size="sm"
+              fw={550}
+              lineClamp={2}
+              title={name}
+              style={{ overflowWrap: 'anywhere' }}
+            >
+              {name}
+            </Text>
+            <Box className={styles.mobileSummary}>{summary}</Box>
+          </Box>
         }
         leftSection={
           <Box className={styles.dateRail}>
@@ -62,21 +87,7 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
             )}
           </Box>
         }
-        rightSection={
-          <Group gap="sm" wrap="nowrap" className={styles.summary}>
-            <Badge variant="light" color={cycle.status === 'active' ? 'indigo' : 'gray'} size="sm">
-              {t(`cycle.status.${cycle.status}`)}
-            </Badge>
-            {cycle.status === 'completed' ? (
-              <Text size="xs" c="dimmed" className={styles.summaryMetric}>
-                {t('cycle.completedCount', { count: cycle.completedCount })}
-              </Text>
-            ) : null}
-            <Text size="xs" c="dimmed" className={styles.summaryMetric}>
-              {t('cycle.scopeCount', { count: cycle.issueCount })}
-            </Text>
-          </Group>
-        }
+        rightSection={<Box className={styles.desktopSummary}>{summary}</Box>}
         styles={{
           root: {
             minHeight: 72,

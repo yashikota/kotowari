@@ -10,6 +10,10 @@
   white-space: nowrap;
 }
 
+.mobileSummary {
+  display: none;
+}
+
 .row::after {
   position: absolute;
   right: 0;
@@ -71,6 +75,17 @@
 }
 
 @media (max-width: 680px) {
+  .desktopSummary {
+    display: none;
+  }
+  .mobileSummary {
+    display: block;
+    margin-top: var(--mantine-spacing-xs);
+  }
+  .mobileSummary .summary {
+    flex-wrap: wrap;
+    gap: var(--mantine-spacing-xs);
+  }
   .row::after {
     left: 82px;
   }
