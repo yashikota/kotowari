@@ -38,6 +38,17 @@ Evaluate consistency by behavior as well as appearance: identical actions should
 pending/error feedback, keyboard behavior, and placement across screens. Screen-specific
 information can have its own layout when the workflow needs it.
 
+## Adoption rules
+
+- Audit each workflow before choosing its layout: capture, plan, decide, or retrieve context.
+- Use the shared heading, empty state, editable title, and save feedback where their contracts fit.
+- Keep equivalent actions consistent across task, project, and decision screens: label,
+  prominence, placement, disabled state, and recovery must agree.
+- A migration is incomplete while a screen still has conflicting local versions of the same
+  interaction. Record those exceptions in the audit with the reason and next action.
+- Review the rendered screen with long content, a narrow viewport, both color schemes,
+  keyboard operation, and the user's text-size preference before closing its audit item.
+
 ## Foundations and ownership
 
 `web/src/design-system/tokens.ts` owns shared color roles, spacing values, radii, layout dimensions,

@@ -252,6 +252,8 @@
     "noResults": "No results found",
     "noResultsFiltered": "No results found for “{{query}}” with the selected filters.",
     "tryDifferentQuery": "Try a different search term.",
+    "editSearch": "Edit search term",
+    "allCategories": "Search all categories",
     "startTitle": "Search your workspace",
     "startDescription": "Find issues, projects, documents, and saved views.",
     "recentTitle": "Recent searches",

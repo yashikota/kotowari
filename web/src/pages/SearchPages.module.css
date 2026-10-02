@@ -11,6 +11,7 @@
 
 .tabs {
   min-width: 0;
+  flex: 1 1 400px;
 }
 
 .displayOptions {
@@ -113,6 +114,11 @@
 
 .resultKind {
   flex: 0 0 auto;
+}
+
+.resultTitle,
+.snippet {
+  overflow-wrap: anywhere;
 }
 
 .recentSearch {

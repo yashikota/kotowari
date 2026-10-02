@@ -29,6 +29,7 @@ export function useSearchPagePresenter() {
   const { hits } = useLoaderData({ from: '/search' });
   const navigate = useNavigate({ from: '/search' });
   const [query, setQuery] = useState(search.q ?? '');
+  const [searchFocusRequest, setSearchFocusRequest] = useState(0);
   const [recentSearches, setRecentSearches] = useState(loadRecentSearches);
   const tab = search.tab ?? 'all';
   const order = search.ordering ?? 'relevance';
@@ -54,6 +55,7 @@ export function useSearchPagePresenter() {
   return {
     _view: 0 as const,
     query,
+    searchFocusRequest,
     recentSearches,
     submittedQuery: search.q ?? '',
     tab,
@@ -87,6 +89,7 @@ export function useSearchPagePresenter() {
       search.q ?? '',
     ),
     handlers: {
+      onEditSearch: () => setSearchFocusRequest((request) => request + 1),
       onQueryChange: (value: string) => setQuery(value),
       onSubmit: (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();

@@ -40,6 +40,7 @@ import {
 import { ISSUE_STATUSES, type SearchHit } from '../types.ts';
 import { useSearchPagePresenter } from '../presenters/SearchPages.tsx';
 import styles from './SearchPages.module.css';
+import { EmptyState } from '../mantine-ui.tsx';
 
 const searchAssigneeLabels: Record<SearchAssignee, string> = {
   self: 'issueAssignment.you',
@@ -162,7 +163,7 @@ function SearchPageView({
                   onChange={(event) => handlers.onQueryChange(event.currentTarget.value)}
                 />
               </form>
-              <Group justify="space-between" align="center" gap="sm" mt="md" wrap="nowrap">
+              <Group justify="space-between" align="center" gap="sm" mt="md" wrap="wrap">
                 <Tabs
                   value={tab}
                   onChange={handlers.onTabChange}
@@ -477,10 +478,16 @@ function SearchPageView({
                               <SearchKindIcon kind={hit.kind} />
                             </Box>
                             <Stack gap={3} style={{ minWidth: 0, flex: 1 }}>
-                              <Group gap="xs" wrap="nowrap" align="baseline">
-                                <Text size="sm" fw={500} truncate>
-                                  {hit.title}
-                                </Text>
+                              <Text
+                                size="sm"
+                                fw={600}
+                                lineClamp={2}
+                                title={hit.title}
+                                className={styles.resultTitle}
+                              >
+                                {hit.title}
+                              </Text>
+                              <Group gap="xs" wrap="wrap" align="baseline">
                                 <Text size="xs" c="dimmed" className={styles.resultKind}>
                                   {t(`searchPage.kinds.${hit.kind}`)}
                                 </Text>
@@ -491,7 +498,7 @@ function SearchPageView({
                                 ) : null}
                               </Group>
                               {hit.snippet ? (
-                                <Text size="xs" c="dimmed" lineClamp={2}>
+                                <Text size="sm" c="dimmed" lineClamp={2} className={styles.snippet}>
                                   {hit.snippet}
                                 </Text>
                               ) : null}
@@ -502,16 +509,35 @@ function SearchPageView({
                     ))}
                   </Stack>
                 ) : (
-                  <Stack align="center" gap={4} py="xl" role="status">
-                    <Text fw={550}>
+                  <EmptyState
+                    action={
+                      <Button
+                        variant="default"
+                        onClick={
+                          hasFilters
+                            ? handlers.onClearFilters
+                            : tab !== 'all'
+                              ? () => handlers.onTabChange('all')
+                              : handlers.onEditSearch
+                        }
+                      >
+                        {hasFilters
+                          ? t('searchPage.filters.clear')
+                          : tab !== 'all'
+                            ? t('searchPage.allCategories')
+                            : t('searchPage.editSearch')}
+                      </Button>
+                    }
+                  >
+                    <Text fw={600} role="status">
                       {hasFilters
                         ? t('searchPage.noResultsFiltered', { query: submittedQuery })
                         : t('searchPage.noResults')}
                     </Text>
-                    <Text size="sm" c="dimmed">
+                    <Text size="sm" c="dimmed" style={{ overflowWrap: 'anywhere' }}>
                       {t('searchPage.tryDifferentQuery')}
                     </Text>
-                  </Stack>
+                  </EmptyState>
                 )
               ) : recentSearches.length > 0 ? (
                 <Stack gap="xs" data-testid="recent-searches">
@@ -584,6 +610,6 @@ export function SearchPage() {
 function SearchPageBinding() {
   const model = useSearchPagePresenter();
   const handlers = useActions(model.handlers);
-  const searchRef = useFocusWhen<HTMLInputElement>(true);
+  const searchRef = useFocusWhen<HTMLInputElement>(true, [model.searchFocusRequest]);
   return <SearchPageView model={{ ...model, handlers } as typeof model} searchRef={searchRef} />;
 }

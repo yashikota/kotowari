@@ -251,6 +251,8 @@
     "noResults": "結果が見つかりません",
     "noResultsFiltered": "「{{query}}」に一致する結果が選択したフィルター内にありません。",
     "tryDifferentQuery": "別の検索語をお試しください。",
+    "editSearch": "検索語を変更",
+    "allCategories": "すべての種類から検索",
     "startTitle": "ワークスペースを検索",
     "startDescription": "イシュー、プロジェクト、ドキュメント、保存済みビューを検索できます。",
     "recentTitle": "最近の検索",
