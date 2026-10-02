@@ -1,11 +1,13 @@
 import { Box, Button, Group, Stack, Tabs, Text, UnstyledButton } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
+import { Link } from '@tanstack/react-router';
+import styles from './ViewsIndexPages.module.css';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { ViewIcon } from '../components/ViewIcon.tsx';
 import { ViewsCollectionControls } from '../components/ViewsCollectionControls.tsx';
 import { ViewsEmptyState } from '../components/ViewsEmptyState.tsx';
-import { PageHeader, RouterNavLink } from '../mantine-ui.tsx';
+import { PageHeader } from '../mantine-ui.tsx';
 import { useViewsIndexPresenter } from '../presenters/ViewsIndexPages.tsx';
 import type { ViewCollectionEntity, ViewDisplayProperty } from '../presenters/ViewsIndexPages.tsx';
 import type { ProjectSavedView } from '../project-views.ts';
@@ -130,45 +132,28 @@ function SavedViewRow({
   return (
     <Group
       component="div"
-      wrap="nowrap"
-      gap="md"
+      wrap="wrap"
+      gap="sm"
       px="sm"
       py={5}
       style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
     >
       {issueView ? (
-        <RouterNavLink
-          to="/views/$slug"
-          params={{ slug: issueView.slug }}
-          label={issueView.name}
-          description={issueView.description || undefined}
-          leftSection={<ViewIcon name={issueView.icon} size={14} />}
-          style={{ flex: 1 }}
-        />
+        <Link to="/views/$slug" params={{ slug: issueView.slug }} className={styles.open}>
+          <SavedViewContent view={view} />
+        </Link>
       ) : (
         <UnstyledButton
           type="button"
           onClick={onOpen}
           aria-label={projectView?.name}
-          style={{ flex: 1, minWidth: 0, textAlign: 'start', borderRadius: 4 }}
+          className={styles.open}
         >
-          <Group gap="xs" wrap="nowrap" py={5}>
-            <ViewIcon name={projectView?.icon ?? 'list'} size={14} />
-            <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-              <Text size="sm" truncate>
-                {projectView?.name}
-              </Text>
-              {projectView?.description ? (
-                <Text size="xs" c="dimmed" truncate>
-                  {projectView.description}
-                </Text>
-              ) : null}
-            </Stack>
-          </Group>
+          <SavedViewContent view={view} />
         </UnstyledButton>
       )}
       {displayProperties.map((property) => (
-        <Text key={property} size="xs" c="dimmed" w={100} ta="end" visibleFrom="sm">
+        <Text key={property} size="xs" c="dimmed" className={styles.date}>
           <span>{labels[property]} · </span>
           {formatCollectionDate(
             property === 'updated'
@@ -178,6 +163,26 @@ function SavedViewRow({
           )}
         </Text>
       ))}
+    </Group>
+  );
+}
+
+function SavedViewContent({ view }: { view: View | ProjectSavedView }) {
+  return (
+    <Group gap="sm" wrap="nowrap" align="flex-start" py="xs">
+      <Box style={{ flex: '0 0 auto' }} aria-hidden>
+        <ViewIcon name={view.icon ?? 'list'} size={16} />
+      </Box>
+      <Stack gap={3} style={{ minWidth: 0, flex: 1 }}>
+        <Text size="sm" fw={600} lineClamp={2} title={view.name} className={styles.title}>
+          {view.name}
+        </Text>
+        {view.description ? (
+          <Text size="sm" c="dimmed" lineClamp={2} className={styles.title}>
+            {view.description}
+          </Text>
+        ) : null}
+      </Stack>
     </Group>
   );
 }
