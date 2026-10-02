@@ -103,3 +103,49 @@ test('view preview exposes result titles and prevents focusing preview actions',
   await expect(page.locator('[inert][aria-label="Preview"]')).toHaveCount(1);
   await request.delete(`/api/issues/${issue.identifier}`);
 });
+
+test('many preview titles remain scrollable with visible creation controls', async ({
+  page,
+  request,
+}, testInfo) => {
+  const response = await request.post('/api/issues', {
+    data: { title: `ManyPreview${Date.now()}`, status: 'todo' },
+  });
+  expect(response.ok()).toBeTruthy();
+  const issue = await response.json();
+  const rows = Array.from({ length: 40 }, (_, index) => ({
+    ...issue,
+    id: 90000 + index,
+    identifier: `PREVIEW-${index}`,
+    title: `Result ${index} ${'LongTitleWithoutSpaces'.repeat(6)}`,
+  }));
+  await page.route('**/api/issues*', async (route) => {
+    if (
+      route.request().method() === 'GET' &&
+      new URL(route.request().url()).pathname === '/api/issues'
+    )
+      await route.fulfill({ json: rows });
+    else await route.continue();
+  });
+  await page.setViewportSize({ width: 360, height: 600 });
+  await page.goto('/views/new');
+  const summary = page.getByText('Review matching results', { exact: true });
+  await summary.focus();
+  await summary.press('Enter');
+  const results = page.getByRole('region', { name: 'Matching result titles' });
+  await results.focus();
+  expect(
+    await results.evaluate((element) => Number.parseFloat(getComputedStyle(element).outlineWidth)),
+  ).toBeGreaterThanOrEqual(2);
+  expect(
+    await results.evaluate((element) => element.scrollHeight > element.clientHeight),
+  ).toBeTruthy();
+  await results.press('Control+End');
+  await expect(results.getByRole('listitem').last()).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Create view', exact: true })).toBeInViewport();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+  ).toBeTruthy();
+  await page.screenshot({ path: testInfo.outputPath('many-preview.png') });
+  await request.delete(`/api/issues/${issue.identifier}`);
+});
