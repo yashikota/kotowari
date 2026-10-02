@@ -966,7 +966,7 @@ test('new cycle continues the latest cycle schedule', async ({ page, request }) 
   const cycle = (await cycleResponse.json()) as { number: number };
 
   await page.goto('/cycles?scope=all');
-  await page.getByRole('button', { name: 'New cycle' }).click();
+  await page.getByRole('button', { name: 'New cycle' }).first().click();
   await expect(page).toHaveURL(new RegExp(`/cycles/${cycle.number + 1}$`));
 
   const nextCycleResponse = await request.get(`/api/cycles/${cycle.number + 1}`);

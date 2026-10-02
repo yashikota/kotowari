@@ -47,7 +47,9 @@ export function useIssueDetailProperties({ identifier, issue, setIssue, patch }:
   return {
     data: { due, issuePropertyMenu, optionalIssuePropertyVisibility },
     handlers: {
-      onTitleChange: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) => {
+      onTitleChange: (
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
+      ) => {
         if (issue) setIssue({ ...issue, title: e.target.value });
       },
       onTitleBlur: () => (issue ? patch({ title: issue.title }) : undefined),

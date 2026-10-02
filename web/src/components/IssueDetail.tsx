@@ -1,4 +1,5 @@
-import { ActionIcon, Alert, Box, Group, Stack, Text, TextInput } from '@mantine/core';
+import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
+import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
 import { IconPaperclip } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
@@ -52,7 +53,7 @@ export function IssueDetailView({
   noteRef,
 }: {
   model: ReturnType<typeof useIssueDetailPresenter>;
-  titleRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+  titleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
   subRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
@@ -92,24 +93,12 @@ export function IssueDetailView({
             style={issue.archivedAt ? { opacity: 0.72 } : undefined}
           >
             <Box className={layoutStyles.title}>
-              <TextInput
+              <DocumentTitle
                 ref={titleRef}
                 aria-label={t('ui.issueTitle')}
                 value={issue.title}
                 onChange={handlers.onTitleChange}
                 onBlur={handlers.onTitleBlur}
-                variant="unstyled"
-                styles={{
-                  input: {
-                    height: 'auto',
-                    minHeight: 0,
-                    padding: 0,
-                    color: 'var(--mantine-color-text)',
-                    fontSize: '24px',
-                    fontWeight: 600,
-                    lineHeight: 1.3,
-                  },
-                }}
               />
             </Box>
 
@@ -238,7 +227,7 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
   const identifier = model._view === 2 ? model.identifier : '';
   const focusSub = model._view === 2 ? model.focusSub : 0;
   const focusNote = model._view === 2 ? model.focusNote : 0;
-  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle && model._view === 2, [
+  const titleRef = useFocusWhen<HTMLTextAreaElement>(autofocusTitle && model._view === 2, [
     identifier,
   ]);
   const subRef = useFocusWhen<HTMLTextAreaElement>(focusSub > 0, [focusSub]);

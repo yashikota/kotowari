@@ -298,7 +298,7 @@ test('create issue, comment, and page', async ({ page, request }) => {
     });
 
   await page.getByRole('link', { name: 'Cycles' }).click();
-  await page.getByRole('button', { name: 'New cycle' }).click();
+  await page.getByRole('button', { name: 'New cycle' }).first().click();
   await expect(page).toHaveURL(/\/cycles\/\d+$/);
   const cycleNameButton = page
     .getByRole('navigation', { name: 'Breadcrumb' })
