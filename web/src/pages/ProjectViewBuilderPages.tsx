@@ -5,6 +5,7 @@ import { ProjectListControls } from '../components/ProjectListControls.tsx';
 import { ProjectBoardView } from '../components/ProjectBoardView.tsx';
 import { ProjectTimelineView } from '../components/ProjectTimelineView.tsx';
 import { ProjectListItem } from '../components/ProjectListItem.tsx';
+import { ViewPreviewSummary } from '../components/ViewPreviewSummary.tsx';
 import { ViewBuilderHeader } from '../components/ViewBuilderHeader.tsx';
 import { ViewEntityTabs } from '../components/ViewEntityTabs.tsx';
 import { EmptyState, Section } from '../mantine-ui.tsx';
@@ -38,7 +39,9 @@ export function ProjectViewBuilderPageView({
               leading={<ViewEntityTabs active="projects" />}
             />
           </Box>
+          <ViewPreviewSummary titles={model.filteredProjects.map((project) => project.name)} />
           <Box
+            inert
             aria-label={t('viewBuilder.preview')}
             aria-hidden="true"
             style={{

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
+import { ViewPreviewSummary } from '../components/ViewPreviewSummary.tsx';
 import { ViewBuilderHeader } from '../components/ViewBuilderHeader.tsx';
 import { ViewEntityTabs } from '../components/ViewEntityTabs.tsx';
 import { EmptyState } from '../mantine-ui.tsx';
@@ -55,7 +56,11 @@ export function ViewBuilderPageView({
             displayProperties={model.displayProperties}
             onDisplayPropertyToggle={model.handlers.onDisplayPropertyToggle}
           />
+          <ViewPreviewSummary
+            titles={model.issues.map((issue) => `${issue.identifier}: ${issue.title}`)}
+          />
           <Box
+            inert
             aria-label={t('viewBuilder.preview')}
             aria-hidden="true"
             style={{

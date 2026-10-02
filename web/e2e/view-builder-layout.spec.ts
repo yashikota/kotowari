@@ -70,3 +70,33 @@ test('project view storage failure retains input and can retry creation', async 
     );
   }, name);
 });
+
+test('view preview exposes result titles and prevents focusing preview actions', async ({
+  page,
+  request,
+}) => {
+  const title = `AccessiblePreview${Date.now()}`;
+  const response = await request.post('/api/issues', { data: { title, status: 'todo' } });
+  expect(response.ok()).toBeTruthy();
+  const issue = await response.json();
+  await page.goto('/views/new');
+  const preview = page.getByRole('region', { name: 'Preview results' });
+  await expect(preview.getByRole('status')).toContainText('Preview:');
+  await expect(preview.getByRole('listitem').filter({ hasText: title })).toHaveCount(1);
+  const visualPreview = page.locator('[inert][aria-label="Preview"]');
+  await expect(visualPreview).toHaveCount(1);
+  const count = await visualPreview.locator('button, a, input, [tabindex]').count();
+  expect(count).toBeGreaterThan(0);
+  await page.getByRole('textbox', { name: 'View name', exact: true }).focus();
+  await visualPreview
+    .locator('button, a, input, [tabindex]')
+    .first()
+    .evaluate((element) => (element as HTMLElement).focus());
+  await expect(page.getByRole('textbox', { name: 'View name', exact: true })).toBeFocused();
+  await page.goto('/views/projects/new');
+  await expect(
+    page.getByRole('region', { name: 'Preview results' }).getByRole('status'),
+  ).toContainText('Preview:');
+  await expect(page.locator('[inert][aria-label="Preview"]')).toHaveCount(1);
+  await request.delete(`/api/issues/${issue.identifier}`);
+});
