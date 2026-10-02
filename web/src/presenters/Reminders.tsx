@@ -108,6 +108,12 @@ export function useRemindersPresenter() {
     timeZone,
     error,
     loading,
-    handlers: { onClearReminder: clearReminder, onRetry: load },
+    handlers: {
+      onClearReminder: clearReminder,
+      onRetry: async () => {
+        await load();
+        signals.dispatchEvent(new Event('kotowari:refresh'));
+      },
+    },
   };
 }

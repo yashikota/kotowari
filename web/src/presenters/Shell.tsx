@@ -138,8 +138,16 @@ export function useShellPresenter() {
   const [favoritesOpen, setFavoritesOpen] = useState(true);
   const [teamsOpen, setTeamsOpen] = useState(true);
   const [teamNavigationOpen, setTeamNavigationOpen] = useState(true);
-  const { cycles, initiatives, views, favoriteIssues, workspaceName, sidebarBadgeCounts } =
-    useShellWorkspace({ setError, setProjects });
+  const {
+    cycles,
+    initiatives,
+    views,
+    favoriteIssues,
+    workspaceName,
+    sidebarBadgeCounts,
+    workspaceError,
+    dismissWorkspaceError,
+  } = useShellWorkspace({ setProjects });
   const issueComposerState = useShellIssueComposer({
     open: createIssue,
     setOpen: setCreateIssue,
@@ -556,7 +564,7 @@ export function useShellPresenter() {
     ...pageComposer.data,
     adrTitle,
     adrLinkIssue,
-    error,
+    error: error || workspaceError,
     handlers: {
       ...cycleNavigationHandlers,
       onToggleIssueViewFavorite: () => {
@@ -583,7 +591,10 @@ export function useShellPresenter() {
       },
       onOpenSearch: () => navigate({ to: '/search', search: {} }),
       ...issueComposerHandlers,
-      onDismissError: () => setError(''),
+      onDismissError: () => {
+        if (error) setError('');
+        else dismissWorkspaceError();
+      },
       onToggleMobileNavigation: () => setMobileNavigationOpen((open) => !open),
       onToggleSidebar: () => send('navigation.sidebar.toggle'),
       onToggleWorkspaceNavigation: () => setWorkspaceNavigationOpen((open) => !open),

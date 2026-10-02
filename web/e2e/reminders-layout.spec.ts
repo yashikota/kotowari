@@ -33,6 +33,8 @@ test('reminders retain their heading on failure and recover into usable mobile r
       .getByRole('alert')
       .filter({ has: page.getByRole('button', { name: 'Retry', exact: true }) }),
   ).toHaveCount(0);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('kotowari');
   const row = page.getByRole('listitem').filter({ hasText: title });
   await expect(row).toBeVisible();
   const dismiss = row.getByRole('button', { name: 'Dismiss', exact: true });

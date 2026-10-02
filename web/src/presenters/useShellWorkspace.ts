@@ -13,11 +13,11 @@ import { ISSUE_DRAFTS_EVENT, listIssueDrafts } from '../issue-drafts.ts';
 import type { Cycle, Initiative, Issue, Project, View } from '../types.ts';
 
 type Props = {
-  setError: (message: string) => void;
   setProjects: (projects: Project[]) => void;
 };
 
-export function useShellWorkspace({ setError, setProjects }: Props) {
+export function useShellWorkspace({ setProjects }: Props) {
+  const [workspaceError, setWorkspaceError] = useState('');
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [views, setViews] = useState<View[]>([]);
@@ -30,7 +30,7 @@ export function useShellWorkspace({ setError, setProjects }: Props) {
   const loadWorkspace = useCallback(async () => {
     try {
       const [workspace, nextCycles, nextViews, nextProjects, favorites, nextInitiatives] =
-        await Promise.all([
+        await Promise.allSettled([
           api.workspace(),
           api.cycles(),
           api.views(),
@@ -38,16 +38,31 @@ export function useShellWorkspace({ setError, setProjects }: Props) {
           api.issues('?favorite=true'),
           api.initiatives(),
         ]);
-      setWorkspaceName(workspace.name);
-      setCycles(nextCycles);
-      setViews(nextViews);
-      setProjects(nextProjects);
-      setFavoriteIssues(favorites);
-      setInitiatives(nextInitiatives);
+      if (workspace.status === 'fulfilled') setWorkspaceName(workspace.value.name);
+      if (nextCycles.status === 'fulfilled') setCycles(nextCycles.value);
+      if (nextViews.status === 'fulfilled') setViews(nextViews.value);
+      if (nextProjects.status === 'fulfilled') setProjects(nextProjects.value);
+      if (favorites.status === 'fulfilled') setFavoriteIssues(favorites.value);
+      if (nextInitiatives.status === 'fulfilled') setInitiatives(nextInitiatives.value);
+      const failure = [
+        workspace,
+        nextCycles,
+        nextViews,
+        nextProjects,
+        favorites,
+        nextInitiatives,
+      ].find((result) => result.status === 'rejected');
+      setWorkspaceError(
+        failure?.status === 'rejected'
+          ? failure.reason instanceof Error
+            ? failure.reason.message
+            : 'failed to load workspace'
+          : '',
+      );
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'failed to load workspace');
+      setWorkspaceError(error instanceof Error ? error.message : 'failed to load workspace');
     }
-  }, [setError, setProjects]);
+  }, [setProjects]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -98,6 +113,8 @@ export function useShellWorkspace({ setError, setProjects }: Props) {
   }, []);
 
   return {
+    workspaceError,
+    dismissWorkspaceError: () => setWorkspaceError(''),
     cycles,
     initiatives,
     views,
