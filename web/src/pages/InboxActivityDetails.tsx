@@ -74,7 +74,19 @@ export function InboxActivityDetails({ model }: { model: InboxDetailsModel }) {
                 {t('inbox.issueActivity')}
               </Text>
             </Group>
-            <Group gap={4} wrap="nowrap">
+            <Group gap={4} wrap="wrap">
+              <Button
+                renderRoot={(props) => (
+                  <Link
+                    {...props}
+                    to="/issues/$identifier"
+                    params={{ identifier: selected.identifier }}
+                  />
+                )}
+                size="compact-sm"
+              >
+                {t('inbox.openIssue')}
+              </Button>
               <Menu
                 opened={model.snoozeMenuOpen}
                 onChange={model.handlers.onSetSnoozeMenuOpen}
@@ -143,7 +155,7 @@ export function InboxActivityDetails({ model }: { model: InboxDetailsModel }) {
                 {selected.identifier} · {formatRelativeTime(selected.createdAt, i18n.language)}
               </Text>
             </Group>
-            <Title order={2} size="lg" fw={550}>
+            <Title order={2} size="lg" fw={600}>
               {selected.title}
             </Title>
             <Text size="sm">{formatActivity(selected.action, selected.payload)}</Text>
@@ -164,13 +176,6 @@ export function InboxActivityDetails({ model }: { model: InboxDetailsModel }) {
                 </Text>
               </Box>
             ) : null}
-            <Link
-              to="/issues/$identifier"
-              params={{ identifier: selected.identifier }}
-              className={styles.openIssue}
-            >
-              {t('inbox.openIssue')}
-            </Link>
           </Stack>
         </>
       ) : (

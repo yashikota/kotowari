@@ -182,22 +182,6 @@
   background: var(--mantine-color-default-hover);
 }
 
-.openIssue {
-  width: fit-content;
-  color: var(--mantine-primary-color-filled);
-  font-size: var(--mantine-font-size-sm);
-  text-decoration: none;
-}
-
-.openIssue:focus-visible {
-  outline: 2px solid var(--mantine-primary-color-filled);
-  outline-offset: 3px;
-}
-
-.openIssue:hover {
-  text-decoration: underline;
-}
-
 .noSelection {
   display: flex;
   flex: 1 1 auto;

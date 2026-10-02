@@ -128,7 +128,19 @@ test('inbox comment loading failure can retry without losing notification contex
     await details.evaluate((element) => element.scrollWidth <= element.clientWidth),
   ).toBeTruthy();
   await page.screenshot({ path: testInfo.outputPath('inbox-comment-recovered.png') });
+  const openIssue = details.getByRole('link', { name: 'Open issue' });
+  await expect(openIssue).toBeInViewport();
+  const content = details.getByText(body, { exact: true });
+  await content.evaluate((element) => {
+    const scroll = element.closest('[class*="detailContent"]');
+    if (scroll) scroll.scrollTop = scroll.scrollHeight;
+  });
+  await expect(openIssue).toBeInViewport();
+  await openIssue.focus();
+  await expect(openIssue).toBeFocused();
   const back = details.getByRole('button', { name: 'Back to inbox' });
   await expect(back).toBeVisible();
+  await openIssue.press('Enter');
+  await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}`));
   await request.delete(`/api/issues/${issue.identifier}`);
 });
