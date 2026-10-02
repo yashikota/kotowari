@@ -98,9 +98,19 @@ export function useProjectDetailPagePresenter() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState(data.project);
+  const latestProject = useRef(project);
+  latestProject.current = project;
   const summaryDraft = useRef({ slug: data.project.slug, value: data.project.summary ?? '' });
   const persistedSummary = useRef({ slug: data.project.slug, value: data.project.summary ?? '' });
   const projectSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const [projectSavingCount, setProjectSavingCount] = useState(0);
+  const [projectSaveError, setProjectSaveError] = useState('');
+  const [projectSaved, setProjectSaved] = useState(false);
+  const failedProjectPatch = useRef<Record<string, unknown> | null>(null);
+  const saveScope = useRef(slug);
+  const saveGeneration = useRef(0);
+  const pendingProjectSaves = useRef(0);
+  saveScope.current = slug;
   const [milestoneName, setMilestoneName] = useState('');
   const [milestoneDescription, setMilestoneDescription] = useState('');
   const [milestoneTargetDate, setMilestoneTargetDate] = useState('');
@@ -229,6 +239,12 @@ export function useProjectDetailPagePresenter() {
   });
 
   if (project.slug !== data.project.slug) {
+    saveGeneration.current++;
+    pendingProjectSaves.current = 0;
+    setProjectSavingCount(0);
+    setProjectSaveError('');
+    setProjectSaved(false);
+    failedProjectPatch.current = null;
     setProject(data.project);
     summaryDraft.current = { slug: data.project.slug, value: data.project.summary ?? '' };
     persistedSummary.current = { slug: data.project.slug, value: data.project.summary ?? '' };
@@ -245,6 +261,10 @@ export function useProjectDetailPagePresenter() {
 
   async function save(body: Record<string, unknown>) {
     const before = project;
+    const token = saveGeneration.current;
+    pendingProjectSaves.current++;
+    setProjectSavingCount((count) => count + 1);
+    setProjectSaved(false);
     const pending = projectSaveQueue.current
       .catch(() => undefined)
       .then(async () => {
@@ -258,6 +278,14 @@ export function useProjectDetailPagePresenter() {
           patch.summary = summaryDraft.current.value;
         }
         const next = await api.patchProject(slug, patch);
+        if (saveScope.current !== slug || token !== saveGeneration.current) return;
+        if (
+          failedProjectPatch.current &&
+          Object.keys(failedProjectPatch.current).every((key) => key in patch)
+        ) {
+          failedProjectPatch.current = null;
+          setProjectSaveError('');
+        }
         if ('summary' in patch && persistedSummary.current.slug === slug) {
           persistedSummary.current = { slug, value: next.summary ?? '' };
         }
@@ -287,13 +315,32 @@ export function useProjectDetailPagePresenter() {
           );
           return current.slug === before.slug ? { ...next, ...newerEdits } : current;
         });
-        await router.invalidate();
+        const latest = latestProject.current;
+        const newerText =
+          latest.slug === slug &&
+          ((latest.summary !== before.summary && latest.summary !== next.summary) ||
+            (latest.description !== before.description && latest.description !== next.description));
+        setProjectSaved(!newerText);
+        await router.invalidate().catch(() => undefined);
       });
     projectSaveQueue.current = pending.then(
       () => undefined,
       () => undefined,
     );
-    await pending;
+    try {
+      await pending;
+    } catch (error) {
+      if (saveScope.current === slug && token === saveGeneration.current) {
+        failedProjectPatch.current = { ...failedProjectPatch.current, ...body };
+        setProjectSaveError(error instanceof Error ? error.message : String(error));
+        setProjectSaved(false);
+      }
+    } finally {
+      if (saveScope.current === slug && token === saveGeneration.current) {
+        pendingProjectSaves.current--;
+        setProjectSavingCount((count) => count - 1);
+      }
+    }
   }
 
   async function refreshProject() {
@@ -360,6 +407,9 @@ export function useProjectDetailPagePresenter() {
     projectTemplateOpen,
     projectTemplateName,
     projectTemplateError,
+    projectSaving: projectSavingCount > 0,
+    projectSaveError,
+    projectSaved: projectSaved && !projectSaveError,
     availableDependencyProjects: data.projects.filter(
       (candidate) =>
         candidate.slug !== slug &&
@@ -373,6 +423,13 @@ export function useProjectDetailPagePresenter() {
     milestoneDescription,
     milestoneTargetDate,
     handlers: {
+      onRetryProjectSave: () => {
+        if (pendingProjectSaves.current > 0 || !failedProjectPatch.current) return;
+        const patch = { ...failedProjectPatch.current };
+        if ('summary' in patch) patch.summary = project.summary ?? '';
+        if ('description' in patch) patch.description = project.description;
+        return save(patch);
+      },
       onStatusChange: (e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0]) =>
         save({ workflowStatus: e.target.value }),
       onPriorityChange: (
@@ -476,12 +533,16 @@ export function useProjectDetailPagePresenter() {
       },
       onDescriptionChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setProject({ ...project, description: e.target.value }),
+      ) => {
+        setProjectSaved(false);
+        setProject({ ...project, description: e.target.value });
+      },
       onDescriptionBlur: () => save({ description: project.description }),
       onSummaryChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
         const summaryValue = e.currentTarget.value;
+        setProjectSaved(false);
         summaryDraft.current = { slug, value: summaryValue };
         setProject((current) => ({ ...current, summary: summaryValue }));
       },

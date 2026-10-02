@@ -16,6 +16,7 @@ import { IconDotsVertical, IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { IssueList } from '../components/IssueList.tsx';
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { HealthUpdateFeed } from '../components/HealthUpdateFeed.tsx';
@@ -190,6 +191,16 @@ export function ProjectDetailPageView({
                 }
               />
               <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
+                <SaveFeedback
+                  saving={model.projectSaving}
+                  saved={model.projectSaved}
+                  error={model.projectSaveError}
+                  savingLabel={t('projectSave.saving')}
+                  savedLabel={t('projectSave.saved')}
+                  failureLabel={t('projectSave.failed')}
+                  retryLabel={t('projectSave.retry')}
+                  onRetry={handlers.onRetryProjectSave}
+                />
                 <TextInput
                   aria-label={t('ui.projectSummary')}
                   label={t('ui.projectSummary')}

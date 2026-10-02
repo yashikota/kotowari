@@ -1,5 +1,6 @@
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
-import { ActionIcon, Alert, Box, Button, Group, Stack, Text } from '@mantine/core';
+import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
 import { IconPaperclip } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
@@ -101,21 +102,18 @@ export function IssueDetailView({
                 onBlur={handlers.onTitleBlur}
                 readOnly={model.propertySaveState === 'saving'}
               />
-              {model.propertySaveState === 'saving' || model.propertySaveState === 'saved' ? (
-                <Text role="status" size="sm" c="dimmed" mt="xs">
-                  {t(`issueProperties.${model.propertySaveState}`)}
-                </Text>
-              ) : null}
-              {model.propertySaveState === 'failed' ? (
-                <Alert color="red" role="alert" mt="sm" title={t('issueProperties.saveFailed')}>
-                  <Stack gap="xs">
-                    <Text size="sm">{model.propertySaveError}</Text>
-                    <Button size="xs" variant="default" onClick={handlers.onRetryPropertySave}>
-                      {t('issueProperties.retrySave')}
-                    </Button>
-                  </Stack>
-                </Alert>
-              ) : null}
+              <Box mt="xs">
+                <SaveFeedback
+                  saving={model.propertySaveState === 'saving'}
+                  saved={model.propertySaveState === 'saved'}
+                  error={model.propertySaveError}
+                  savingLabel={t('issueProperties.saving')}
+                  savedLabel={t('issueProperties.saved')}
+                  failureLabel={t('issueProperties.saveFailed')}
+                  retryLabel={t('issueProperties.retrySave')}
+                  onRetry={handlers.onRetryPropertySave}
+                />
+              </Box>
             </Box>
 
             <Stack className={layoutStyles.content} gap="lg">

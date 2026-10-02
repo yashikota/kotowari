@@ -685,6 +685,12 @@
     "improvement": "改善",
     "task": "タスク"
   },
+  "projectSave": {
+    "saving": "プロジェクトの変更を保存中…",
+    "saved": "プロジェクトの変更を保存しました",
+    "failed": "プロジェクトの変更を保存できませんでした",
+    "retry": "もう一度保存"
+  },
   "issueProperties": {
     "saving": "タスクの変更を保存中…",
     "saved": "タスクの変更を保存しました",

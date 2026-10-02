@@ -693,6 +693,12 @@
     "improvement": "Improvement",
     "task": "Task"
   },
+  "projectSave": {
+    "saving": "Saving project changes…",
+    "saved": "Project changes saved",
+    "failed": "Project changes could not be saved",
+    "retry": "Retry saving"
+  },
   "issueProperties": {
     "saving": "Saving task changes…",
     "saved": "Task changes saved",
