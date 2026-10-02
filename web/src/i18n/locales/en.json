@@ -299,6 +299,8 @@
     "notAvailable": "—"
   },
   "viewBuilder": {
+    "reviewResults": "Review matching results",
+    "resultTitles": "Matching result titles",
     "previewResults": "Preview results",
     "previewCount": "Preview: {{count}} results",
     "saveFailed": "View could not be saved",

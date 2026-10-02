@@ -298,6 +298,8 @@
     "notAvailable": "—"
   },
   "viewBuilder": {
+    "reviewResults": "条件に一致する結果を確認",
+    "resultTitles": "一致する結果のタイトル",
     "previewResults": "プレビュー結果",
     "previewCount": "プレビュー：{{count}}件",
     "saveFailed": "ビューを保存できませんでした",

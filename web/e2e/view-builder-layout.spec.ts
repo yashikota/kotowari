@@ -82,7 +82,10 @@ test('view preview exposes result titles and prevents focusing preview actions',
   await page.goto('/views/new');
   const preview = page.getByRole('region', { name: 'Preview results' });
   await expect(preview.getByRole('status')).toContainText('Preview:');
-  await expect(preview.getByRole('listitem').filter({ hasText: title })).toHaveCount(1);
+  await preview.getByText('Review matching results', { exact: true }).click();
+  await expect(preview.getByRole('listitem').filter({ hasText: title })).toBeVisible();
+  await preview.getByRole('region', { name: 'Matching result titles' }).focus();
+  await expect(preview.getByRole('region', { name: 'Matching result titles' })).toBeFocused();
   const visualPreview = page.locator('[inert][aria-label="Preview"]');
   await expect(visualPreview).toHaveCount(1);
   const count = await visualPreview.locator('button, a, input, [tabindex]').count();
