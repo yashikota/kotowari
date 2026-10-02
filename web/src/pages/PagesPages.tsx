@@ -228,7 +228,7 @@ export function PageDetailPageView({
         <SplitLayout single>
           <Pane single>
             <PageHeader
-              title={page.slug}
+              title={page.title}
               actions={
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect

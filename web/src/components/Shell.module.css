@@ -10,7 +10,7 @@
   min-height: 0;
   overflow: hidden;
   padding: 8px 8px 36px var(--app-shell-navbar-offset, 244px) !important;
-  background: var(--mantine-color-gray-1);
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-8));
 }
 
 .workspacePanel {
@@ -21,7 +21,7 @@
   min-height: 0;
   overflow: hidden;
   border-radius: 12px;
-  background: var(--mantine-color-gray-0);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-body));
   box-shadow:
     0 3px 6px -2px rgb(0 0 0 / 2%),
     0 1px 1px rgb(0 0 0 / 4%);

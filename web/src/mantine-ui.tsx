@@ -16,6 +16,8 @@ import {
   type NavLinkProps,
 } from '@mantine/core';
 import type { CSSProperties, ReactNode } from 'react';
+import { designTokens } from './design-system/tokens.ts';
+import headerStyles from './design-system/PageHeader.module.css';
 
 export function RouterNavLink({
   to,
@@ -81,11 +83,11 @@ function RouterNavLinkView({
 export function PageHeader({
   title,
   actions,
-  minHeight = 42,
-  titleSize = 'sm',
-  titleWeight = 550,
+  minHeight = designTokens.layout.pageHeaderMinHeight,
+  titleSize = 'md',
+  titleWeight = 600,
   titleLineHeight,
-  paddingX = 16,
+  paddingX = designTokens.layout.pagePadding,
 }: {
   title: ReactNode;
   actions?: ReactNode;
@@ -98,24 +100,25 @@ export function PageHeader({
   return (
     <Group
       component="header"
+      className={headerStyles.header}
       justify="space-between"
       gap="md"
-      wrap="nowrap"
+      wrap="wrap"
       mih={minHeight}
       px={paddingX}
-      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
     >
       <Title
         order={2}
+        className={headerStyles.title}
         size={titleSize}
         fw={titleWeight}
         lh={titleLineHeight}
-        c="var(--mantine-color-text)"
+        c={designTokens.color.text}
       >
         {title}
       </Title>
       {actions ? (
-        <Group gap="xs" wrap="wrap" justify="flex-end">
+        <Group className={headerStyles.actions} gap="xs" wrap="wrap" justify="flex-end">
           {actions}
         </Group>
       ) : null}

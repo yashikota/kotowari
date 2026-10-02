@@ -1,6 +1,7 @@
 import { createTheme } from '@mantine/core';
 import type { MantineThemeOverride } from '@mantine/core';
 import type { FontSize } from './preferences.ts';
+import { designTokens } from './design-system/tokens.ts';
 
 const baseTheme = {
   primaryColor: 'indigo',
@@ -18,12 +19,12 @@ const baseTheme = {
       '#303a70',
     ],
   },
-  fontFamily: 'Inter Variable, ui-sans-serif, system-ui, sans-serif',
-  fontFamilyMonospace: 'IBM Plex Mono, ui-monospace, monospace',
-  headings: { fontFamily: 'Inter Variable, ui-sans-serif, system-ui, sans-serif' },
-  fontSizes: { xs: '0.6875rem', sm: '0.75rem', md: '0.8125rem' },
+  fontFamily: designTokens.typography.fontFamily,
+  fontFamilyMonospace: designTokens.typography.monospace,
+  headings: { fontFamily: designTokens.typography.fontFamily },
+  fontSizes: designTokens.typography.fontSizes.default,
   defaultRadius: 'sm',
-  radius: { xs: '4px', sm: '6px', md: '8px', lg: '12px', xl: '16px' },
+  radius: designTokens.radius,
   components: {
     Button: {
       styles: { root: { fontWeight: 500 } },
@@ -53,14 +54,8 @@ const baseTheme = {
   },
 } satisfies MantineThemeOverride;
 
-const fontSizes: Record<FontSize, { xs: string; sm: string; md: string }> = {
-  small: { xs: '0.625rem', sm: '0.6875rem', md: '0.75rem' },
-  default: { xs: '0.6875rem', sm: '0.75rem', md: '0.8125rem' },
-  large: { xs: '0.75rem', sm: '0.8125rem', md: '0.875rem' },
-};
-
 export function themeForFontSize(fontSize: FontSize) {
-  return createTheme({ ...baseTheme, fontSizes: fontSizes[fontSize] });
+  return createTheme({ ...baseTheme, fontSizes: designTokens.typography.fontSizes[fontSize] });
 }
 
 export const theme = themeForFontSize('default');

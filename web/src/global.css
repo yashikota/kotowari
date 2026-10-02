@@ -1,4 +1,8 @@
-:root {
+:root[data-mantine-color-scheme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-mantine-color-scheme='light'] {
   color-scheme: light;
 }
 

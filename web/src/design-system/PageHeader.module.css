@@ -1,0 +1,25 @@
+.header {
+  min-width: 0;
+  flex: 0 0 auto;
+  padding-block: var(--mantine-spacing-xs);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.title {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 30em) {
+  .actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+}
