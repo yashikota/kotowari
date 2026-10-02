@@ -1,4 +1,4 @@
-import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
+import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import {
@@ -26,8 +26,10 @@ import type { IssueStatus } from '../types.ts';
 
 export function useSearchPagePresenter() {
   const search = useSearch({ from: '/search' });
-  const { hits } = useLoaderData({ from: '/search' });
+  const { hits, searchFailed } = useLoaderData({ from: '/search' });
   const navigate = useNavigate({ from: '/search' });
+  const router = useRouter();
+  const [retrying, setRetrying] = useState(false);
   const [query, setQuery] = useState(search.q ?? '');
   const [searchFocusRequest, setSearchFocusRequest] = useState(0);
   const [recentSearches, setRecentSearches] = useState(loadRecentSearches);
@@ -55,6 +57,8 @@ export function useSearchPagePresenter() {
   return {
     _view: 0 as const,
     query,
+    searchFailed,
+    retrying,
     searchFocusRequest,
     recentSearches,
     submittedQuery: search.q ?? '',
@@ -89,6 +93,15 @@ export function useSearchPagePresenter() {
       search.q ?? '',
     ),
     handlers: {
+      onRetry: async () => {
+        if (retrying) return;
+        setRetrying(true);
+        try {
+          await router.invalidate();
+        } finally {
+          setRetrying(false);
+        }
+      },
       onEditSearch: () => setSearchFocusRequest((request) => request + 1),
       onQueryChange: (value: string) => setQuery(value),
       onSubmit: (event: FormEvent<HTMLFormElement>) => {

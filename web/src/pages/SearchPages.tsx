@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import {
   ActionIcon,
+  Alert,
   Box,
   Button,
   Group,
@@ -128,6 +129,8 @@ function SearchPageView({
         customDateGranularity,
         hasFilters,
         hits,
+        searchFailed,
+        retrying,
         handlers,
       } = model;
       return (
@@ -467,7 +470,16 @@ function SearchPageView({
           </Box>
           <ScrollArea className={styles.scroll} type="auto">
             <Box className={styles.content} py="md">
-              {submittedQuery ? (
+              {searchFailed ? (
+                <Alert color="red" role="alert" title={t('searchPage.loadFailed')}>
+                  <Stack gap="sm">
+                    <Text size="sm">{t('searchPage.retryDescription')}</Text>
+                    <Button variant="default" onClick={handlers.onRetry} loading={retrying}>
+                      {t('searchPage.retry')}
+                    </Button>
+                  </Stack>
+                </Alert>
+              ) : submittedQuery ? (
                 hits.length ? (
                   <Stack gap={2} role="list" aria-label={t('searchPage.results')}>
                     {hits.map((hit) => (

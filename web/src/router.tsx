@@ -146,7 +146,13 @@ const searchRoute = createRoute({
   path: '/search',
   validateSearch: (raw: Record<string, unknown>) => parseSearchPageSearch(raw),
   loaderDeps: ({ search }) => ({ q: search.q }),
-  loader: async ({ deps }) => ({ hits: deps.q ? await api.search(deps.q) : [] }),
+  loader: async ({ deps }) => {
+    try {
+      return { hits: deps.q ? await api.search(deps.q) : [], searchFailed: false };
+    } catch {
+      return { hits: [], searchFailed: true };
+    }
+  },
   component: lazyRouteComponent(() => import('./pages/SearchPages.tsx'), 'SearchPage'),
 });
 

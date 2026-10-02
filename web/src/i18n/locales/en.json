@@ -175,6 +175,9 @@
     "recurring": "Recurring"
   },
   "searchPage": {
+    "loadFailed": "Search could not be loaded",
+    "retryDescription": "Your search term and filters are kept. Try again.",
+    "retry": "Retry search",
     "heading": "Search",
     "inputLabel": "Search issues, projects, and documents",
     "placeholder": "Search issues, projects, and documents…",

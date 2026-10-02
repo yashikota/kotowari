@@ -51,3 +51,26 @@ for (const scheme of ['light', 'dark']) {
     await request.delete(`/api/issues/${issue.identifier}`);
   });
 }
+
+test('search failure retains query and filters and retries in place', async ({ page, request }) => {
+  const query = `SearchRecovery${Date.now()}`;
+  const response = await request.post('/api/issues', { data: { title: query, status: 'todo' } });
+  const issue = await response.json();
+  let attempts = 0;
+  await page.route('**/api/search?*', async (route) => {
+    attempts += 1;
+    if (attempts === 1) await route.fulfill({ status: 503, body: 'Unavailable' });
+    else await route.continue();
+  });
+  await page.goto(`/search?q=${query}&status=todo`);
+  await expect(page.getByRole('alert')).toContainText('Search could not be loaded');
+  await expect(
+    page.getByRole('textbox', { name: 'Search issues, projects, and documents' }),
+  ).toHaveValue(query);
+  await expect(page.getByText('No results found', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Retry search' }).click();
+  await expect(page.getByRole('list', { name: 'Search results' })).toContainText(query);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(new URL(page.url()).searchParams.get('status')).toBe('todo');
+  await request.delete(`/api/issues/${issue.identifier}`);
+});
