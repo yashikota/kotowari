@@ -1,6 +1,6 @@
 import { useLoaderData, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.ts';
 import { useMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
@@ -30,6 +30,8 @@ export function useHomePagePresenter() {
   const [resourceURL, setResourceURL] = useState('');
   const [resourceTitle, setResourceTitle] = useState('');
   const [resourceSaving, setResourceSaving] = useState(false);
+  const resourcePending = useRef(false);
+  const [resourceError, setResourceError] = useState('');
   const [urlEditing, setUrlEditing] = useMachineFlag('url-editor');
   const [githubEditing, setGithubEditing] = useMachineFlag('github-editor');
 
@@ -47,6 +49,7 @@ export function useHomePagePresenter() {
     resourceURL,
     resourceTitle,
     resourceSaving,
+    resourceError,
     urlEditing,
     githubEditing,
     handlers: {
@@ -55,12 +58,15 @@ export function useHomePagePresenter() {
       onEditGithub: () => setGithubEditing(true),
       onBlurGithub: () => setGithubEditing(false),
       onOpenResource: () => {
-        setError('');
+        if (resourcePending.current) return;
+        setResourceError('');
         setResourceURL('');
         setResourceTitle('');
         setResourceOpen(true);
       },
-      onCloseResource: () => setResourceOpen(false),
+      onCloseResource: () => {
+        if (!resourcePending.current) setResourceOpen(false);
+      },
       onResourceURLChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => setResourceURL(e.target.value),
@@ -71,8 +77,10 @@ export function useHomePagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0],
       ) => {
         e.preventDefault();
+        if (resourcePending.current) return;
+        resourcePending.current = true;
         setResourceSaving(true);
-        setError('');
+        setResourceError('');
         return api
           .createWorkspaceResource({ url: resourceURL, title: resourceTitle })
           .then(async (resource) => {
@@ -82,12 +90,15 @@ export function useHomePagePresenter() {
             }));
             setResourceOpen(false);
             signals.dispatchEvent(new Event('kotowari:refresh'));
-            await router.invalidate();
+            await router.invalidate().catch(() => undefined);
           })
           .catch((err: unknown) =>
-            setError(err instanceof Error ? err.message : i18n.t('common.saveFailed')),
+            setResourceError(err instanceof Error ? err.message : i18n.t('common.saveFailed')),
           )
-          .finally(() => setResourceSaving(false));
+          .finally(() => {
+            resourcePending.current = false;
+            setResourceSaving(false);
+          });
       },
       onRemoveResource: (id: number) => {
         setError('');

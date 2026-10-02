@@ -180,6 +180,7 @@ export function HomePageView({
         resourceURL,
         resourceTitle,
         resourceSaving,
+        resourceError,
         handlers,
       } = model;
 
@@ -338,12 +339,16 @@ export function HomePageView({
                 opened={resourceOpen}
                 onClose={handlers.onCloseResource}
                 title={t('home.addResource')}
+                closeOnEscape={!resourceSaving}
+                closeOnClickOutside={!resourceSaving}
+                withCloseButton={!resourceSaving}
                 centered
               >
                 <Box component="form" onSubmit={handlers.onCreateResource}>
                   <Stack gap="md">
                     <TextInput
                       autoFocus
+                      disabled={resourceSaving}
                       required
                       type="url"
                       label={t('home.resourceURL')}
@@ -353,12 +358,23 @@ export function HomePageView({
                     />
                     <TextInput
                       label={t('home.resourceTitle')}
+                      disabled={resourceSaving}
                       placeholder={t('home.resourceTitlePlaceholder')}
                       value={resourceTitle}
                       onChange={handlers.onResourceTitleChange}
                     />
+                    {resourceError ? (
+                      <Alert color="red" role="alert" title={t('common.saveFailed')}>
+                        {resourceError}
+                      </Alert>
+                    ) : null}
                     <Group justify="flex-end">
-                      <Button type="button" variant="default" onClick={handlers.onCloseResource}>
+                      <Button
+                        type="button"
+                        variant="default"
+                        disabled={resourceSaving}
+                        onClick={handlers.onCloseResource}
+                      >
                         {t('common.cancel')}
                       </Button>
                       <Button type="submit" loading={resourceSaving}>
