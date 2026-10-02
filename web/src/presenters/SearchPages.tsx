@@ -1,4 +1,10 @@
-import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import {
+  useLoaderData,
+  useNavigate,
+  useRouter,
+  useRouterState,
+  useSearch,
+} from '@tanstack/react-router';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import {
@@ -29,6 +35,9 @@ export function useSearchPagePresenter() {
   const { hits, searchFailed } = useLoaderData({ from: '/search' });
   const navigate = useNavigate({ from: '/search' });
   const router = useRouter();
+  const searching = useRouterState({
+    select: (state) => state.isLoading && state.location.pathname === '/search',
+  });
   const [retrying, setRetrying] = useState(false);
   const [query, setQuery] = useState(search.q ?? '');
   const [searchFocusRequest, setSearchFocusRequest] = useState(0);
@@ -59,6 +68,7 @@ export function useSearchPagePresenter() {
     query,
     searchFailed,
     retrying,
+    searching,
     searchFocusRequest,
     recentSearches,
     submittedQuery: search.q ?? '',

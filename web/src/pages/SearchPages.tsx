@@ -6,6 +6,7 @@ import {
   Button,
   Group,
   Menu,
+  Loader,
   ScrollArea,
   Stack,
   Tabs,
@@ -131,6 +132,7 @@ function SearchPageView({
         hits,
         searchFailed,
         retrying,
+        searching,
         handlers,
       } = model;
       return (
@@ -470,7 +472,14 @@ function SearchPageView({
           </Box>
           <ScrollArea className={styles.scroll} type="auto">
             <Box className={styles.content} py="md">
-              {searchFailed ? (
+              {searching && !retrying ? (
+                <EmptyState>
+                  <Group gap="sm" role="status">
+                    <Loader size="sm" aria-hidden />
+                    <Text size="sm">{t('searchPage.loading')}</Text>
+                  </Group>
+                </EmptyState>
+              ) : searchFailed ? (
                 <Alert color="red" role="alert" title={t('searchPage.loadFailed')}>
                   <Stack gap="sm">
                     <Text size="sm">{t('searchPage.retryDescription')}</Text>

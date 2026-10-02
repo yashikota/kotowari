@@ -175,6 +175,7 @@
     "recurring": "Recurring"
   },
   "searchPage": {
+    "loading": "Searching…",
     "loadFailed": "Search could not be loaded",
     "retryDescription": "Your search term and filters are kept. Try again.",
     "retry": "Retry search",

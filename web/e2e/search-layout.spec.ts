@@ -74,3 +74,32 @@ test('search failure retains query and filters and retries in place', async ({ p
   expect(new URL(page.url()).searchParams.get('status')).toBe('todo');
   await request.delete(`/api/issues/${issue.identifier}`);
 });
+
+test('search navigation hides old results while loading a new query', async ({
+  page,
+  request,
+}, testInfo) => {
+  const query = `SearchPending${Date.now()}`;
+  const response = await request.post('/api/issues', { data: { title: query, status: 'todo' } });
+  const issue = await response.json();
+  await page.goto(`/search?q=${query}`);
+  await expect(page.getByRole('list', { name: 'Search results' })).toContainText(query);
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/search?*', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  const input = page.getByRole('textbox', { name: 'Search issues, projects, and documents' });
+  await input.fill(`${query}missing`);
+  await input.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('Searching…');
+  await expect(page.getByRole('list', { name: 'Search results' })).toHaveCount(0);
+  await expect(input).toHaveValue(`${query}missing`);
+  await page.screenshot({ path: testInfo.outputPath('search-pending.png') });
+  release();
+  await expect(page.getByRole('status')).toHaveText('No results found');
+  await request.delete(`/api/issues/${issue.identifier}`);
+});
