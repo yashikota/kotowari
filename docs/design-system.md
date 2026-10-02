@@ -17,6 +17,9 @@ migration assumptions. Existing data and supported features remain usable during
 - Support keyboard and pointer operation equally. Focus must be visible and restored after overlays.
 - Adapt to the available space. Titles may wrap; controls must remain reachable without horizontal scrolling.
 - Use density for lists and breathing room for reading and writing. Do not shrink text everywhere to fit more controls.
+- Keep action menus short enough to navigate. Group property choices by their field; scroll
+  candidate lists without clipping nested menus or hiding search and clear actions. Check with
+  many existing resources, not only a fresh workspace.
 
 ## Choosing improvements
 

@@ -59,9 +59,11 @@ test('app controls and the emoji picker follow the configured Japanese locale', 
   await expect(issueTitle).toBeFocused();
   await issueTitle.fill('絵文字検索のロケール確認');
   await issueTitle.press('ControlOrMeta+Enter');
-  await expect(page.locator('input[aria-label="イシューのタイトル"]')).toHaveValue(
-    '絵文字検索のロケール確認',
-  );
+  await expect(
+    page
+      .getByTestId('workspace-panel')
+      .getByRole('textbox', { name: 'イシューのタイトル', exact: true }),
+  ).toHaveValue('絵文字検索のロケール確認');
 
   await page.getByRole('button', { name: 'リアクションを追加' }).first().click();
   const picker = page.locator('emoji-picker');

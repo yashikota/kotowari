@@ -57,17 +57,18 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
         to="/cycles/$number"
         params={{ number: String(cycle.number) }}
         label={
-          <Box>
+          <Box className={styles.body}>
             <Text
               size="sm"
               fw={550}
               lineClamp={2}
               title={name}
               style={{ overflowWrap: 'anywhere' }}
+              className={styles.name}
             >
               {name}
             </Text>
-            <Box className={styles.mobileSummary}>{summary}</Box>
+            {summary}
           </Box>
         }
         leftSection={
@@ -87,7 +88,6 @@ export function CycleListItem({ cycle }: { cycle: CycleSummary }) {
             )}
           </Box>
         }
-        rightSection={<Box className={styles.desktopSummary}>{summary}</Box>}
         styles={{
           root: {
             minHeight: 72,

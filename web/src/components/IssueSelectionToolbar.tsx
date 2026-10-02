@@ -1,4 +1,4 @@
-import { Button, Group, Menu, Paper, Text, TextInput } from '@mantine/core';
+import { Box, Button, Group, Menu, Paper, Text, TextInput } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useIssueSelectionToolbarPresenter } from '../presenters/IssueSelectionToolbar.ts';
@@ -55,26 +55,38 @@ function IssueSelectionToolbarView({
               {t('ui.issueSelectionActions')}
             </Button>
           </Menu.Target>
-          <Menu.Dropdown style={{ maxHeight: 'min(60vh, 420px)', overflowY: 'auto' }}>
-            <Menu.Label>{t('field.status')}</Menu.Label>
-            {statuses.map((status) => (
-              <Menu.Item key={status.id} onClick={() => handlers.onSetStatus(status.id)}>
-                {t('ui.setSelectedIssueStatus', { status: status.label })}
-              </Menu.Item>
-            ))}
+          <Menu.Dropdown>
+            <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>{t('field.status')}</Menu.Sub.Item>
+              </Menu.Sub.Target>
+              <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                {statuses.map((status) => (
+                  <Menu.Item key={status.id} onClick={() => handlers.onSetStatus(status.id)}>
+                    {t('ui.setSelectedIssueStatus', { status: status.label })}
+                  </Menu.Item>
+                ))}
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
             <Menu.Item onClick={handlers.onArchive}>
               {t(archived ? 'ui.restoreSelectedIssues' : 'ui.archiveSelectedIssues')}
             </Menu.Item>
             <Menu.Divider />
-            <Menu.Label>{t('field.priority')}</Menu.Label>
-            {priorities.map((priority) => (
-              <Menu.Item
-                key={priority.value}
-                onClick={() => handlers.onSetPriority(priority.value)}
-              >
-                {t('ui.setSelectedIssuePriority', { priority: priority.label })}
-              </Menu.Item>
-            ))}
+            <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>{t('field.priority')}</Menu.Sub.Item>
+              </Menu.Sub.Target>
+              <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                {priorities.map((priority) => (
+                  <Menu.Item
+                    key={priority.value}
+                    onClick={() => handlers.onSetPriority(priority.value)}
+                  >
+                    {t('ui.setSelectedIssuePriority', { priority: priority.label })}
+                  </Menu.Item>
+                ))}
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
             <Menu.Divider />
             <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
               <Menu.Sub.Target>
@@ -154,18 +166,24 @@ function IssueSelectionToolbarView({
               </Menu.Sub.Dropdown>
             </Menu.Sub>
             <Menu.Divider />
-            <Menu.Label>{t('field.estimate')}</Menu.Label>
-            {estimates.map((estimate) => (
-              <Menu.Item
-                key={estimate.value ?? 'none'}
-                onClick={() => handlers.onSetEstimate(estimate.value)}
-              >
-                {t('ui.setSelectedIssueEstimate', {
-                  estimate:
-                    estimate.value == null ? t('issueProperties.noEstimate') : estimate.label,
-                })}
-              </Menu.Item>
-            ))}
+            <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>{t('field.estimate')}</Menu.Sub.Item>
+              </Menu.Sub.Target>
+              <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                {estimates.map((estimate) => (
+                  <Menu.Item
+                    key={estimate.value ?? 'none'}
+                    onClick={() => handlers.onSetEstimate(estimate.value)}
+                  >
+                    {t('ui.setSelectedIssueEstimate', {
+                      estimate:
+                        estimate.value == null ? t('issueProperties.noEstimate') : estimate.label,
+                    })}
+                  </Menu.Item>
+                ))}
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
             <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
               <Menu.Sub.Target>
                 <Menu.Sub.Item>{t('ui.bulkCycle')}</Menu.Sub.Item>
@@ -183,15 +201,17 @@ function IssueSelectionToolbarView({
                 <Menu.Item onClick={() => handlers.onSetCycle(null)}>
                   {t('field.noCycle')}
                 </Menu.Item>
-                {cycles.length === 0 ? (
-                  <Menu.Item disabled>{t('issueProperties.noCyclesFound')}</Menu.Item>
-                ) : (
-                  cycles.map((cycle) => (
-                    <Menu.Item key={cycle.id} onClick={() => handlers.onSetCycle(cycle.id)}>
-                      {cycle.name || t('field.cycleN', { number: cycle.number })}
-                    </Menu.Item>
-                  ))
-                )}
+                <Box mah="min(40vh, 280px)" style={{ overflowY: 'auto' }}>
+                  {cycles.length === 0 ? (
+                    <Menu.Item disabled>{t('issueProperties.noCyclesFound')}</Menu.Item>
+                  ) : (
+                    cycles.map((cycle) => (
+                      <Menu.Item key={cycle.id} onClick={() => handlers.onSetCycle(cycle.id)}>
+                        {cycle.name || t('field.cycleN', { number: cycle.number })}
+                      </Menu.Item>
+                    ))
+                  )}
+                </Box>
               </Menu.Sub.Dropdown>
             </Menu.Sub>
             <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
@@ -264,31 +284,49 @@ function IssueSelectionToolbarView({
               </Menu.Sub.Dropdown>
             </Menu.Sub>
             <Menu.Divider />
-            <Menu.Label>{t('field.assignee')}</Menu.Label>
-            <Menu.Item onClick={() => handlers.onSetAssignee('self')}>
-              {t('ui.assignSelectedIssuesToMe')}
-            </Menu.Item>
-            <Menu.Item onClick={() => handlers.onSetAssignee('agent')}>
-              {t('ui.assignSelectedIssuesToAgent')}
-            </Menu.Item>
-            <Menu.Item onClick={() => handlers.onSetAssignee('')}>
-              {t('ui.unassignSelectedIssues')}
-            </Menu.Item>
+            <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>{t('field.assignee')}</Menu.Sub.Item>
+              </Menu.Sub.Target>
+              <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                <Menu.Item onClick={() => handlers.onSetAssignee('self')}>
+                  {t('ui.assignSelectedIssuesToMe')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onSetAssignee('agent')}>
+                  {t('ui.assignSelectedIssuesToAgent')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onSetAssignee('')}>
+                  {t('ui.unassignSelectedIssues')}
+                </Menu.Item>
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
             <Menu.Divider />
-            <Menu.Label>{t('issueSubscription.section')}</Menu.Label>
-            <Menu.Item onClick={() => handlers.onSetSubscribed(true)}>
-              {t('ui.subscribeSelectedIssues')}
-            </Menu.Item>
-            <Menu.Item onClick={() => handlers.onSetSubscribed(false)}>
-              {t('ui.unsubscribeSelectedIssues')}
-            </Menu.Item>
+            <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>{t('issueSubscription.section')}</Menu.Sub.Item>
+              </Menu.Sub.Target>
+              <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                <Menu.Item onClick={() => handlers.onSetSubscribed(true)}>
+                  {t('ui.subscribeSelectedIssues')}
+                </Menu.Item>
+                <Menu.Item onClick={() => handlers.onSetSubscribed(false)}>
+                  {t('ui.unsubscribeSelectedIssues')}
+                </Menu.Item>
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
             <Menu.Divider />
-            <Menu.Label>{t('field.type')}</Menu.Label>
-            {types.map((type) => (
-              <Menu.Item key={type.value} onClick={() => handlers.onSetType(type.value)}>
-                {t('ui.setSelectedIssueType', { type: type.label })}
-              </Menu.Item>
-            ))}
+            <Menu.Sub position="left-start" openDelay={100} closeDelay={150}>
+              <Menu.Sub.Target>
+                <Menu.Sub.Item>{t('field.type')}</Menu.Sub.Item>
+              </Menu.Sub.Target>
+              <Menu.Sub.Dropdown style={{ maxHeight: 'min(55vh, 380px)', overflowY: 'auto' }}>
+                {types.map((type) => (
+                  <Menu.Item key={type.value} onClick={() => handlers.onSetType(type.value)}>
+                    {t('ui.setSelectedIssueType', { type: type.label })}
+                  </Menu.Item>
+                ))}
+              </Menu.Sub.Dropdown>
+            </Menu.Sub>
           </Menu.Dropdown>
         </Menu>
         <Button type="button" size="compact-sm" onClick={handlers.onAskAgent}>

@@ -771,7 +771,10 @@ test('Linear-style workspace shell and collapsible priority groups', async ({ pa
   await page.getByRole('option', { name: 'No priority' }).click();
   await title.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/issues\/[A-Z]+-\d+/);
-  await expect(page.locator('input[aria-label="Issue title"]')).toHaveValue(createdIssueTitle);
+  await expect(page.getByRole('dialog', { name: 'New issue', exact: true })).toBeHidden();
+  await expect(
+    page.getByTestId('workspace-panel').getByRole('textbox', { name: 'Issue title', exact: true }),
+  ).toHaveValue(createdIssueTitle);
   const issueOptions = page.getByRole('button', { name: 'Issue options', exact: true });
   await expect(issueOptions).toBeVisible();
   await expect(page.getByRole('listbox', { name: 'Issues' })).toHaveCount(0);

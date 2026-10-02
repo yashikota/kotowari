@@ -189,6 +189,7 @@ test('issue board bulk actions update the selected issues', async ({ page, reque
   }
   await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
   await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Status', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Set status to In Progress' }).click();
 
   await expect(page.getByRole('group', { name: /selected/ })).toHaveCount(0);
@@ -255,6 +256,7 @@ test('issue list can assign selected issues to Agent', async ({ page, request })
   }
 
   await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Assignee', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Assign to Agent', exact: true }).click();
   await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
   for (const identifier of identifiers) {

@@ -10,8 +10,16 @@
   white-space: nowrap;
 }
 
-.mobileSummary {
-  display: none;
+.body {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  min-width: 0;
+}
+
+.name {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .row::after {
@@ -75,14 +83,12 @@
 }
 
 @media (max-width: 680px) {
-  .desktopSummary {
-    display: none;
+  .body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--mantine-spacing-xs);
   }
-  .mobileSummary {
-    display: block;
-    margin-top: var(--mantine-spacing-xs);
-  }
-  .mobileSummary .summary {
+  .summary {
     flex-wrap: wrap;
     gap: var(--mantine-spacing-xs);
   }

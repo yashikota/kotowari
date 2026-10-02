@@ -116,7 +116,16 @@ test('issue detail keeps Linear-style properties in a right rail with editable f
   await expect(properties).toBeVisible();
   await expect(properties.getByRole('heading', { name: 'Properties', level: 3 })).toBeVisible();
   const propertyHeading = properties.getByRole('heading', { name: 'Properties', level: 3 });
-  await expect(propertyHeading).toHaveCSS('font-size', '13px');
+  expect(
+    await propertyHeading.evaluate((element) => {
+      const probe = document.createElement('span');
+      probe.style.fontSize = 'var(--mantine-font-size-sm)';
+      element.append(probe);
+      const expected = getComputedStyle(probe).fontSize;
+      probe.remove();
+      return getComputedStyle(element).fontSize === expected;
+    }),
+  ).toBeTruthy();
   await expect(propertyHeading).toHaveCSS('font-weight', '500');
   await expect(propertyHeading).toHaveCSS('padding-left', '8px');
   await expect(properties.getByRole('group', { name: 'Project' })).toBeVisible();
@@ -425,6 +434,7 @@ test('issue list selects multiple issues and applies bulk status changes', async
   }
   await expect(page.getByRole('group', { name: '2 selected' })).toBeVisible();
   await page.getByRole('button', { name: 'Actions' }).click();
+  await page.getByRole('menuitem', { name: 'Status', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Set status to In Progress' }).click();
 
   await expect
@@ -546,11 +556,13 @@ test('issue list subscribes to and unsubscribes from selected issues', async ({
     );
 
   await selectAll();
+  await page.getByRole('menuitem', { name: 'Selected issues', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Subscribe', exact: true }).click();
   await expect.poll(storedSubscriptions).toEqual(identifiers.sort());
   await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
 
   await selectAll();
+  await page.getByRole('menuitem', { name: 'Selected issues', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Unsubscribe', exact: true }).click();
   await expect.poll(storedSubscriptions).toEqual([]);
   await expect(page.getByRole('group', { name: '2 selected' })).toHaveCount(0);
@@ -724,6 +736,7 @@ test('issue list applies bulk assignee, type, and estimate changes', async ({ pa
   };
 
   await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Assignee', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Assign to me' }).click();
   await expect
     .poll(async () =>
@@ -737,6 +750,7 @@ test('issue list applies bulk assignee, type, and estimate changes', async ({ pa
     .toEqual(['self', 'self']);
 
   await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Assignee', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Unassign' }).click();
   await expect
     .poll(async () =>
@@ -750,6 +764,7 @@ test('issue list applies bulk assignee, type, and estimate changes', async ({ pa
     .toEqual(['', '']);
 
   await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Type', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Set type to Bug' }).click();
   await expect
     .poll(async () =>
@@ -763,6 +778,7 @@ test('issue list applies bulk assignee, type, and estimate changes', async ({ pa
     .toEqual(['bug', 'bug']);
 
   await selectAllRows();
+  await page.getByRole('menuitem', { name: 'Estimate', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Set estimate to 8' }).click();
   await expect
     .poll(async () =>
@@ -837,6 +853,20 @@ test('issue list applies bulk project, cycle, and label changes without replacin
     const item = page.getByRole('menuitem', { name, exact: true });
     await item.hover();
   };
+  await page.route('**/api/cycles', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const response = await route.fetch();
+    const existing = await response.json();
+    const additional = Array.from({ length: 60 }, (_, index) => ({
+      ...existing[0],
+      id: 90000 + index,
+      number: 90000 + index,
+      name: `Extra cycle ${index}`,
+    }));
+    await route.fulfill({ response, json: [...existing, ...additional] });
+  });
+  await page.reload();
+  await fillIssueSearch(page, String(stamp));
   const selectedIssues = () =>
     Promise.all(
       identifiers.map(async (identifier) => {

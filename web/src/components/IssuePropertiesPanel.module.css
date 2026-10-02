@@ -1,4 +1,5 @@
 .aside {
+  container-type: inline-size;
   width: 100%;
   min-width: 0;
   padding: 0;
@@ -99,7 +100,8 @@
 .select {
   width: fit-content;
   min-width: 48px;
-  max-width: 100%;
+  max-width: calc(100% - 20px);
+  flex-shrink: 1;
 }
 
 .select :global(.mantine-Input-wrapper) {
@@ -312,6 +314,13 @@
 @media (hover: none) {
   .addPropertyButton {
     opacity: 1;
+  }
+}
+
+@container (max-width: 300px) {
+  .properties,
+  .coreProperties {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
