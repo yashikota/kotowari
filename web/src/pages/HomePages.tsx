@@ -1,3 +1,4 @@
+import styles from './HomePages.module.css';
 import { Link } from '@tanstack/react-router';
 import {
   ActionIcon,
@@ -70,8 +71,9 @@ function LinkPropertyInput({
           target="_blank"
           rel="noreferrer"
           size="sm"
-          truncate
-          style={{ flex: 1, minWidth: 0 }}
+          lineClamp={2}
+          title={value.trim()}
+          className={styles.link}
         >
           {value.trim()}
         </Anchor>
@@ -119,7 +121,7 @@ function PropertyRow({
 }) {
   return (
     <Group
-      wrap="nowrap"
+      className={styles.property}
       align="flex-start"
       gap="sm"
       py={6}
@@ -304,13 +306,16 @@ export function HomePageView({
                           target="_blank"
                           rel="noreferrer"
                           size="sm"
-                          truncate
+                          lineClamp={2}
+                          title={resource.title || resource.url}
+                          className={styles.link}
                         >
                           {resource.title || resource.url}
                         </Anchor>
                         <ActionIcon
                           type="button"
                           variant="subtle"
+                          style={{ flexShrink: 0 }}
                           color="gray"
                           aria-label={t('home.removeResource', {
                             title: resource.title || resource.url,
