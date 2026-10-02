@@ -1,4 +1,9 @@
 {
+  "workspaceSave": {
+    "saving": "Saving workspace…",
+    "retry": "Retry saving",
+    "failed": "Workspace changes could not be saved"
+  },
   "viewSave": {
     "saving": "Saving view…",
     "saved": "View saved",
@@ -460,8 +465,6 @@
     "resourceTitle": "Title (optional)",
     "resourceTitlePlaceholder": "Give this link a name",
     "removeResource": "Remove resource {{title}}",
-    "saving": "Saving workspace…",
-    "retrySave": "Retry saving",
     "removingResource": "Removing resource…",
     "removalFailed": "Resource could not be removed",
     "retryRemoval": "Retry removing",

@@ -285,10 +285,10 @@ export function HomePageView({
                     saving={saving}
                     saved={saved}
                     error={saveError}
-                    savingLabel={t('home.saving')}
+                    savingLabel={t('workspaceSave.saving')}
                     savedLabel={t('home.saved')}
-                    failureLabel={t('common.saveFailed')}
-                    retryLabel={t('home.retrySave')}
+                    failureLabel={t('workspaceSave.failed')}
+                    retryLabel={t('workspaceSave.retry')}
                     onRetry={handlers.onRetrySave}
                   />
                   <Group justify="flex-end">

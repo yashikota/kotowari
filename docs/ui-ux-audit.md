@@ -33,7 +33,7 @@ current files in `web/src/pages`, rather than Linear's screen inventory.
 | Reminders | Partial: management row, load recovery and dismissal | Pending dismissal, all entity types, themes and text sizes |
 | Templates / recurring tasks | Partial: management row and mobile actions | Empty guidance, pending mutations, deletion recovery, themes and text sizes |
 | Drafts | Existing dedicated empty state | Inspect restoration, deletion and keyboard behavior across layouts |
-| Settings | Partial: section navigation, bounded width and workspace save feedback | Cycle/automation/workflow save feedback, long fields and full theme/text-size inspection |
+| Settings | Partial: section navigation and bounded width; workspace section shares progress/error/retry feedback with Home. Workspace presenter owns its save state and keeps editable name/timezone/locale drafts across loader refresh; disabled fields and duplicate guards remain consistent | Three workspace-save tests cover delayed failure, explicit retry, draft retention across cycle settings save and persistence; both themes with large text on mobile inspected. Home/preferences/workspace-save regression group passes 20 tests. Cycle/automation/workflow feedback, full long fields, navigation with unsaved input and all settings themes/text sizes remain to inspect |
 | Agent / AI panels | Shared Markdown containment | Inspect conversation loading, permissions, failures, composer and responsive layout |
 | Shared navigation and overlays | Partial: scheme surfaces and composer busy guards | Inspect every menu/dialog/popover, route errors and focus return |
 

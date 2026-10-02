@@ -1,4 +1,9 @@
 {
+  "workspaceSave": {
+    "saving": "ワークスペースを保存中…",
+    "retry": "保存を再試行",
+    "failed": "ワークスペースの変更を保存できませんでした"
+  },
   "viewSave": {
     "saving": "ビューを保存中…",
     "saved": "ビューを保存しました",
@@ -454,8 +459,6 @@
     "resourceTitle": "タイトル（任意）",
     "resourceTitlePlaceholder": "リンクの名前",
     "removeResource": "リソース「{{title}}」を削除",
-    "saving": "ワークスペースを保存中…",
-    "retrySave": "保存を再試行",
     "removingResource": "リソースを削除中…",
     "removalFailed": "リソースを削除できませんでした",
     "retryRemoval": "削除を再試行",

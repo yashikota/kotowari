@@ -76,7 +76,7 @@ The shared pattern inventory currently includes:
 | Management row | `design-system/ManagementRow.tsx` | Named resources and their associated management actions |
 | Reading surface | `mantine-ui.tsx`, `design-system/MarkdownContent.module.css` | Shared typography and contained tables, code and media |
 | View creation header | `components/ViewBuilderHeader.tsx` | Shared labeled name/description, icon picker and create/cancel controls for task and project views |
-| Save feedback | `design-system/SaveFeedback.tsx` | Progress, confirmed success, failure details and a retry action; used by task and project editing |
+| Save feedback | `design-system/SaveFeedback.tsx` | Progress, confirmed success, failure details and a retry action; used by task, project, saved view and workspace editing |
 
 This inventory is a starting point, not a declaration that the design system is finished.
 Property controls, dialogs, toolbars, selection and save feedback still need consistent patterns.

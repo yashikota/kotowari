@@ -1,5 +1,5 @@
 import { useLoaderData } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useOverlay } from '../application/Root.tsx';
 import { normalizeWorkspace } from '../i18n/locale.ts';
 import type { Diagnostic, Workspace } from '../types.ts';
@@ -18,15 +18,9 @@ type ConfigData = {
 export function useConfigPagePresenter() {
   const data = useLoaderData({ from: '/config' }) as ConfigData;
   const { set: setOverlay } = useOverlay();
-  const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
   const normalizedWorkspace = useMemo(() => normalizeWorkspace(data.workspace), [data.workspace]);
 
-  const workspaceSettings = useConfigWorkspaceSettings({
-    initialWorkspace: data.workspace,
-    setError,
-    setSaved,
-  });
+  const workspaceSettings = useConfigWorkspaceSettings(data.workspace);
   const cycleSettings = useConfigCycleSettings(normalizedWorkspace.cycleSettings);
   const issueAutomationSettings = useConfigIssueAutomationSettings(
     normalizedWorkspace.issueAutomationSettings,
@@ -52,8 +46,6 @@ export function useConfigPagePresenter() {
     ...codingToolsData,
     ...workflowSettingsData,
     diagnostics: data.diagnostics,
-    error,
-    saved,
     handlers: {
       ...workspaceSettingsHandlers,
       ...cycleSettingsHandlers,
