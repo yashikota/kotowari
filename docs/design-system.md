@@ -18,6 +18,23 @@ migration assumptions. Existing data and supported features remain usable during
 - Adapt to the available space. Titles may wrap; controls must remain reachable without horizontal scrolling.
 - Use density for lists and breathing room for reading and writing. Do not shrink text everywhere to fit more controls.
 
+## Choosing improvements
+
+Start from a concrete Kotowari workflow and the friction in its current screen. Before changing
+the UI, identify what the person is trying to accomplish, which information they need first,
+and how the proposed change reduces navigation, ambiguity, or repeated work. A resemblance
+to another product is not sufficient justification.
+
+Prioritize frequent task capture and editing, reading and recording decisions, and finding
+related work. Fix inaccessible controls, lost input, unclear save state, and unreadable layouts
+before adding secondary interactions. Prefer improving an existing flow over adding a feature
+whose use has not been established.
+
+For each change, record the affected workflow and remaining gaps in `docs/ui-ux-audit.md`.
+Evaluate consistency by behavior as well as appearance: identical actions should share labels,
+pending/error feedback, keyboard behavior, and placement across screens. Screen-specific
+information can have its own layout when the workflow needs it.
+
 ## Foundations and ownership
 
 `web/src/design-system/tokens.ts` owns shared color roles, spacing values, radii, layout dimensions,
@@ -29,13 +46,32 @@ Do not introduce another independently styled button/input library.
 screens share behavior or visual hierarchy; avoid wrappers that merely rename a Mantine primitive.
 Presenters own interaction and persistence. Shared UI components render state and forward actions.
 
+Before adding local styles or a new component, check the existing shared pattern. Extend that
+pattern when the same interaction is needed elsewhere; migrate its existing consumers together
+when changing its contract. Keep domain-specific behavior in the screen or presenter rather
+than putting task, project, or decision persistence into generic UI components.
+
+The shared pattern inventory currently includes:
+
+| Pattern | Owner | Intended use |
+| --- | --- | --- |
+| Theme foundations | `design-system/tokens.ts`, `theme.ts` | Semantic colors, typography, spacing and control defaults |
+| Screen heading and empty state | `mantine-ui.tsx` | Orientation, primary actions and a useful next step |
+| Editable heading | `design-system/DocumentTitle.tsx` | Task, document and decision titles with consistent focus and composition behavior |
+| Document list row | `design-system/DocumentListRow.module.css` | Readable titles and secondary metadata across widths |
+| Management row | `design-system/ManagementRow.tsx` | Named resources and their associated management actions |
+| Reading surface | `mantine-ui.tsx`, `design-system/MarkdownContent.module.css` | Shared typography and contained tables, code and media |
+
+This inventory is a starting point, not a declaration that the design system is finished.
+Property controls, dialogs, toolbars, selection and save feedback still need consistent patterns.
+
 ## Current migration
 
 The shared PageHeader now wraps long titles and moves actions onto their own row on narrow
 screens. Heading weight and size are consistent, and document detail uses the document title
 instead of its slug. Existing imports continue to use the same component.
 
-Pages and decisions share `DocumentTitle`: a heading that expands to show the full title,
+Tasks, pages and decisions share `DocumentTitle`: a heading that expands to show the full title,
 retains focus styling, saves on blur, and commits with Enter without inserting a newline.
 Composition with an IME is preserved. Their editing content shares a bounded reading width;
 the document body precedes the optional AI conversation. Page tags have a visible label.
