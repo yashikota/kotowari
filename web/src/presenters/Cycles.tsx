@@ -1,6 +1,6 @@
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api } from '../api.ts';
 
 import { signals } from '../application/mediator.ts';
@@ -14,6 +14,8 @@ import type { Activity, Cycle, Issue, Workspace } from '../types.ts';
 import { cycleCalendarFeedURL, cycleURL } from './projectCycleHelpers.ts';
 
 export function useCyclesPagePresenter() {
+  const [cycleCreating, setCycleCreating] = useState(false);
+  const creating = useRef(false);
   const data = useLoaderData({ from: '/cycles' }) as {
     cycles: Cycle[];
     issues: Issue[];
@@ -177,6 +179,7 @@ export function useCyclesPagePresenter() {
     startDateDraft,
     endDateDraft,
     datesValid: !!startDateDraft && !!endDateDraft && endDateDraft > startDateDraft,
+    cycleCreating,
     handlers: {
       onCloseMetadata: () => setMetadataCycle(null),
       onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => setNameDraft(e.target.value),
@@ -188,14 +191,22 @@ export function useCyclesPagePresenter() {
         setStartDateDraft(e.target.value),
       onEndDateChange: (e: React.ChangeEvent<HTMLInputElement>) => setEndDateDraft(e.target.value),
       onSaveDates: saveCycleDates,
-      onClick0: () => {
-        const range = nextCycleRange(data.cycles, new Date(), data.workspace.cycleSettings);
-        return api.createCycle(range).then((c) =>
-          navigate({
-            to: '/cycles/$number',
-            params: { number: String(c.number) },
-          }),
-        );
+      onClick0: async () => {
+        if (creating.current) return;
+        creating.current = true;
+        setCycleCreating(true);
+        try {
+          const range = nextCycleRange(data.cycles, new Date(), data.workspace.cycleSettings);
+          await api.createCycle(range).then((c) =>
+            navigate({
+              to: '/cycles/$number',
+              params: { number: String(c.number) },
+            }),
+          );
+        } finally {
+          creating.current = false;
+          setCycleCreating(false);
+        }
       },
       onToggleArchivedCycles: () =>
         navigate({ to: '/cycles', search: { scope: scope === 'archived' ? 'all' : 'archived' } }),

@@ -1,14 +1,4 @@
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Group,
-  Modal,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-} from '@mantine/core';
+import { Box, Button, Group, Modal, Stack, Text, Textarea, TextInput } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
@@ -45,9 +35,6 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
           <Pane single flush>
             <PageHeader
               title={t('nav.cycles')}
-              minHeight={44}
-              titleSize="md"
-              paddingX={19}
               actions={
                 <Group gap="xs">
                   <Button
@@ -59,21 +46,41 @@ export function CyclesPageView({ model }: { model: ReturnType<typeof useCyclesPa
                     {t(scope === 'archived' ? 'cycle.showActive' : 'cycle.showArchived')}
                   </Button>
                   {scope !== 'archived' ? (
-                    <ActionIcon
+                    <Button
                       type="button"
-                      variant="default"
+                      loading={model.cycleCreating}
+                      disabled={model.cycleCreating}
                       aria-label={t('cycle.newCycle')}
                       title={t('cycle.newCycle')}
+                      leftSection={<IconPlus size={16} stroke={1.7} aria-hidden="true" />}
                       onClick={handlers.onClick0}
                     >
-                      <IconPlus size={16} stroke={1.7} aria-hidden="true" />
-                    </ActionIcon>
+                      {t('cycle.newCycle')}
+                    </Button>
                   ) : null}
                 </Group>
               }
             />
             {cycles.length === 0 ? (
-              <EmptyState>{t('cycle.emptyState')}</EmptyState>
+              <EmptyState
+                action={
+                  scope !== 'archived' ? (
+                    <Button
+                      loading={model.cycleCreating}
+                      disabled={model.cycleCreating}
+                      onClick={handlers.onClick0}
+                    >
+                      {t('cycle.newCycle')}
+                    </Button>
+                  ) : (
+                    <Button variant="default" onClick={handlers.onToggleArchivedCycles}>
+                      {t('cycle.showActive')}
+                    </Button>
+                  )
+                }
+              >
+                {t('cycle.emptyState')}
+              </EmptyState>
             ) : (
               <Box className={timelineStyles.timeline}>
                 <Stack gap={0} px="md" pb="xl">
