@@ -24,7 +24,10 @@ export function useHomePagePresenter() {
   const data = useLoaderData({ from: '/' }) as HomeData;
   const router = useRouter();
   const [workspace, setWorkspace] = useState(() => normalizeWorkspace(data.workspace));
-  const [error, setError] = useState('');
+  const removingIds = useRef(new Set<number>());
+  const [removingResources, setRemovingResources] = useState<number[]>([]);
+  const [removalErrors, setRemovalErrors] = useState<Record<number, string>>({});
+  const [removedResource, setRemovedResource] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -69,7 +72,7 @@ export function useHomePagePresenter() {
       })
       .then(async (next) => {
         dirty.current = false;
-        setWorkspace(normalizeWorkspace(next));
+        setWorkspace((current) => ({ ...normalizeWorkspace(next), resources: current.resources }));
         setSaved(true);
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await router.invalidate().catch(() => undefined);
@@ -87,7 +90,9 @@ export function useHomePagePresenter() {
     _view: 0 as const,
     workspace,
     counts: data.counts,
-    error,
+    removingResources,
+    removalErrors,
+    removedResource,
     saved,
     saving,
     saveError,
@@ -148,27 +153,42 @@ export function useHomePagePresenter() {
           });
       },
       onRemoveResource: (id: number) => {
-        setError('');
+        if (removingIds.current.has(id)) return Promise.resolve(false);
+        removingIds.current.add(id);
+        setRemovingResources([...removingIds.current]);
+        setRemovalErrors((current) => ({ ...current, [id]: '' }));
+        setRemovedResource('');
+        const resource = workspace.resources.find((item) => item.id === id);
         return api
           .deleteWorkspaceResource(id)
           .then(async () => {
             setWorkspace((current) => ({
               ...current,
-              resources: current.resources.filter((resource) => resource.id !== id),
+              resources: current.resources.filter((item) => item.id !== id),
             }));
+            setRemovedResource(resource?.title || resource?.url || '');
             signals.dispatchEvent(new Event('kotowari:refresh'));
-            await router.invalidate();
+            await router.invalidate().catch(() => undefined);
+            return true;
           })
-          .catch((err: unknown) =>
-            setError(err instanceof Error ? err.message : i18n.t('common.saveFailed')),
-          );
+          .catch((err: unknown) => {
+            setRemovalErrors((current) => ({
+              ...current,
+              [id]: err instanceof Error ? err.message : i18n.t('home.removalFailed'),
+            }));
+            return false;
+          })
+          .finally(() => {
+            removingIds.current.delete(id);
+            setRemovingResources([...removingIds.current]);
+          });
       },
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
         e.preventDefault();
         return saveWorkspace();
       },
       Workspace_name_onChange1: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => updateField('name', e.target.value),
       Workspace_url_onChange2: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

@@ -16,10 +16,11 @@ import {
 } from '@mantine/core';
 import { IconBrandGithub, IconLink } from '@tabler/icons-react';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
-import type { ComponentProps, ReactNode } from 'react';
+import { useRef, type ComponentProps, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { Pane, SplitLayout } from '../mantine-ui.tsx';
+import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { useHomePagePresenter } from '../presenters/HomePages.tsx';
 
@@ -168,12 +169,35 @@ export function HomePageView({
   model: ReturnType<typeof useHomePagePresenter>;
   t: ReturnType<typeof useTranslation>['t'];
 }) {
+  const resourcesRef = useRef<HTMLDivElement>(null);
+  const addResourceRef = useRef<HTMLButtonElement>(null);
+  const removeResource = async (id: number) => {
+    const focused = document.activeElement;
+    const buttons = Array.from(
+      resourcesRef.current?.querySelectorAll<HTMLButtonElement>('[data-remove-resource]') ?? [],
+    );
+    const index = buttons.findIndex((button) => button.dataset.removeResource === String(id));
+    if (!(await model.handlers.onRemoveResource(id))) return;
+    requestAnimationFrame(() => {
+      if (
+        document.activeElement !== focused &&
+        !(document.activeElement === document.body && !focused?.isConnected)
+      )
+        return;
+      const remaining =
+        resourcesRef.current?.querySelectorAll<HTMLButtonElement>('[data-remove-resource]');
+      const next = remaining?.[Math.min(index, remaining.length - 1)];
+      (next ?? addResourceRef.current)?.focus();
+    });
+  };
   switch (model._view) {
     case 0: {
       const {
         workspace,
         counts,
-        error,
+        removingResources,
+        removalErrors,
+        removedResource,
         saved,
         saving,
         saveError,
@@ -191,33 +215,17 @@ export function HomePageView({
         <SplitLayout single>
           <Pane single>
             <Box maw={720} mx="auto" py={48} px="md">
-              {error ? (
-                <Alert color="red" variant="light" mb="lg">
-                  {error}
-                </Alert>
-              ) : null}
-
               <Box component="form" onSubmit={handlers.onSubmit0}>
                 <Box
                   component="fieldset"
                   disabled={saving}
                   style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
                 >
-                  <TextInput
+                  <DocumentTitle
                     aria-label={t('config.name')}
-                    variant="unstyled"
                     placeholder={t('home.namePlaceholder')}
                     value={workspace.name}
                     onChange={handlers.Workspace_name_onChange1}
-                    styles={{
-                      input: {
-                        ...unstyledField.input,
-                        fontSize: 'var(--mantine-h1-font-size)',
-                        lineHeight: 1.2,
-                        fontWeight: 700,
-                        fontFamily: 'var(--mantine-font-family-headings)',
-                      },
-                    }}
                   />
 
                   <Stack gap={0} mt={28}>
@@ -277,10 +285,10 @@ export function HomePageView({
                     saving={saving}
                     saved={saved}
                     error={saveError}
-                    savingLabel={t('viewSave.saving')}
+                    savingLabel={t('home.saving')}
                     savedLabel={t('home.saved')}
                     failureLabel={t('common.saveFailed')}
-                    retryLabel={t('viewSave.retry')}
+                    retryLabel={t('home.retrySave')}
                     onRetry={handlers.onRetrySave}
                   />
                   <Group justify="flex-end">
@@ -302,7 +310,13 @@ export function HomePageView({
                 </Text>
               </Group>
 
-              <Stack component="section" aria-label={t('home.resources')} gap="sm" mt={40}>
+              <Stack
+                ref={resourcesRef}
+                component="section"
+                aria-label={t('home.resources')}
+                gap="sm"
+                mt={40}
+              >
                 <Group justify="space-between" align="center">
                   <Text fw={600}>{t('home.resources')}</Text>
                   <Button
@@ -310,6 +324,7 @@ export function HomePageView({
                     variant="subtle"
                     size="compact-sm"
                     leftSection={<IconPlus size={16} aria-hidden />}
+                    ref={addResourceRef}
                     onClick={handlers.onOpenResource}
                   >
                     {t('home.addResource')}
@@ -318,31 +333,45 @@ export function HomePageView({
                 {workspace.resources.length ? (
                   <Stack gap={4}>
                     {workspace.resources.map((resource) => (
-                      <Group key={resource.id} justify="space-between" wrap="nowrap" gap="sm">
-                        <Anchor
-                          href={resource.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          size="sm"
-                          lineClamp={2}
-                          title={resource.title || resource.url}
-                          className={styles.link}
-                        >
-                          {resource.title || resource.url}
-                        </Anchor>
-                        <ActionIcon
-                          type="button"
-                          variant="subtle"
-                          style={{ flexShrink: 0 }}
-                          color="gray"
-                          aria-label={t('home.removeResource', {
-                            title: resource.title || resource.url,
-                          })}
-                          onClick={() => handlers.onRemoveResource(resource.id)}
-                        >
-                          <IconTrash size={16} aria-hidden />
-                        </ActionIcon>
-                      </Group>
+                      <Stack key={resource.id} gap="xs">
+                        <Group justify="space-between" wrap="nowrap" gap="sm">
+                          <Anchor
+                            href={resource.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            size="sm"
+                            lineClamp={2}
+                            title={resource.title || resource.url}
+                            className={styles.link}
+                          >
+                            {resource.title || resource.url}
+                          </Anchor>
+                          <ActionIcon
+                            type="button"
+                            variant="subtle"
+                            style={{ flexShrink: 0 }}
+                            color="gray"
+                            aria-label={t('home.removeResource', {
+                              title: resource.title || resource.url,
+                            })}
+                            data-remove-resource={resource.id}
+                            loading={removingResources.includes(resource.id)}
+                            onClick={() => removeResource(resource.id)}
+                          >
+                            <IconTrash size={16} aria-hidden />
+                          </ActionIcon>
+                        </Group>
+                        <SaveFeedback
+                          saving={removingResources.includes(resource.id)}
+                          saved={false}
+                          error={removalErrors[resource.id] ?? ''}
+                          savingLabel={t('home.removingResource')}
+                          savedLabel=""
+                          failureLabel={t('home.removalFailed')}
+                          retryLabel={t('home.retryRemoval')}
+                          onRetry={() => removeResource(resource.id)}
+                        />
+                      </Stack>
                     ))}
                   </Stack>
                 ) : (
@@ -350,6 +379,11 @@ export function HomePageView({
                     {t('home.noResources')}
                   </Text>
                 )}
+                {removedResource ? (
+                  <Text role="status" size="sm" c="dimmed">
+                    {t('home.resourceRemoved', { title: removedResource })}
+                  </Text>
+                ) : null}
               </Stack>
 
               <Modal

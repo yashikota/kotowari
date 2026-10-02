@@ -459,7 +459,13 @@
     "resourceURLPlaceholder": "https://…",
     "resourceTitle": "Title (optional)",
     "resourceTitlePlaceholder": "Give this link a name",
-    "removeResource": "Remove resource {{title}}"
+    "removeResource": "Remove resource {{title}}",
+    "saving": "Saving workspace…",
+    "retrySave": "Retry saving",
+    "removingResource": "Removing resource…",
+    "removalFailed": "Resource could not be removed",
+    "retryRemoval": "Retry removing",
+    "resourceRemoved": "Removed {{title}}"
   },
   "config": {
     "sections": "Settings sections",
