@@ -17,6 +17,12 @@
   overflow-x: auto;
 }
 
+.content th,
+.content td {
+  min-width: 8rem;
+  overflow-wrap: normal;
+}
+
 .content img,
 .content iframe,
 .content svg {

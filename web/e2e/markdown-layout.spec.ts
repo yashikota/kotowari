@@ -28,6 +28,14 @@ test('long document content keeps horizontal scrolling inside code and tables', 
   expect(await code.evaluate((element) => element.scrollWidth > element.clientWidth)).toBeTruthy();
   await expect(code).toHaveCSS('overflow-x', 'auto');
   await expect(editor.getByRole('table')).toHaveCSS('overflow-x', 'auto');
+  expect(
+    (await editor.getByRole('columnheader').first().boundingBox())!.width,
+  ).toBeGreaterThanOrEqual(100);
+  expect(
+    await editor
+      .getByRole('table')
+      .evaluate((element) => element.scrollWidth > element.clientWidth),
+  ).toBeTruthy();
   await editor.scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('markdown-mobile.png') });
   await request.delete(`/api/pages/${slug}`);
