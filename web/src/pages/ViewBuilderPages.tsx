@@ -1,10 +1,9 @@
-import { Box, Button, Group, Popover, SimpleGrid, Text, Textarea, TextInput } from '@mantine/core';
-import { IconChevronLeft } from '@tabler/icons-react';
+import { Box, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
 import { IssueFilters } from '../components/IssueFilters.tsx';
-import { ViewIcon } from '../components/ViewIcon.tsx';
+import { ViewBuilderHeader } from '../components/ViewBuilderHeader.tsx';
 import { ViewEntityTabs } from '../components/ViewEntityTabs.tsx';
 import { EmptyState } from '../mantine-ui.tsx';
 import { useFocusWhen } from '../focus.ts';
@@ -25,100 +24,7 @@ export function ViewBuilderPageView({
           h="100%"
           style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
         >
-          <Group
-            component="header"
-            px="md"
-            py="xs"
-            gap="sm"
-            wrap="nowrap"
-            style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-          >
-            <Popover
-              opened={model.iconPickerOpen}
-              onChange={model.handlers.onIconPickerChange}
-              position="bottom-start"
-              shadow="md"
-            >
-              <Popover.Target>
-                <Button
-                  type="button"
-                  variant="default"
-                  px="xs"
-                  aria-label={t('viewBuilder.chooseIcon')}
-                  onClick={() => model.handlers.onIconPickerChange(!model.iconPickerOpen)}
-                >
-                  <ViewIcon name={model.icon} />
-                </Button>
-              </Popover.Target>
-              <Popover.Dropdown>
-                <SimpleGrid cols={6} spacing={4} aria-label={t('viewBuilder.iconChoices')}>
-                  {model.iconOptions.map((name) => (
-                    <Button
-                      key={name}
-                      type="button"
-                      variant={model.icon === name ? 'light' : 'subtle'}
-                      color="gray"
-                      aria-label={t(`viewBuilder.icons.${name}`)}
-                      aria-pressed={model.icon === name}
-                      onClick={() => {
-                        model.handlers.onIconChange(name);
-                        model.handlers.onIconPickerChange(false);
-                      }}
-                    >
-                      <ViewIcon name={name} />
-                    </Button>
-                  ))}
-                </SimpleGrid>
-              </Popover.Dropdown>
-            </Popover>
-            <TextInput
-              ref={nameRef}
-              data-autofocus
-              aria-label={t('viewBuilder.name')}
-              value={model.name}
-              maxLength={100}
-              onChange={model.handlers.onNameChange}
-              onKeyDown={model.handlers.onNameKeyDown}
-              styles={{
-                input: {
-                  height: 36,
-                  minHeight: 36,
-                  borderColor: 'transparent',
-                  background: 'transparent',
-                  fontSize: 20,
-                  fontWeight: 600,
-                },
-              }}
-              style={{ flex: 1, minWidth: 140 }}
-            />
-            <Button type="button" variant="default" onClick={model.handlers.onCancel}>
-              <IconChevronLeft size={14} aria-hidden="true" />
-              {t('common.cancel')}
-            </Button>
-            <Button
-              type="button"
-              onClick={model.handlers.onCreate}
-              loading={model.saving}
-              disabled={!model.name.trim()}
-            >
-              {t('viewBuilder.createView')}
-            </Button>
-          </Group>
-          <Textarea
-            aria-label={t('viewBuilder.description')}
-            placeholder={t('viewBuilder.descriptionPlaceholder')}
-            value={model.description}
-            maxLength={1000}
-            autosize
-            minRows={1}
-            maxRows={3}
-            onChange={model.handlers.onDescriptionChange}
-            px="md"
-            py={6}
-            styles={{
-              input: { borderColor: 'transparent', background: 'transparent', resize: 'none' },
-            }}
-          />
+          <ViewBuilderHeader model={model} nameRef={nameRef} />
           <IssueFilters
             leading={<ViewEntityTabs active="issues" />}
             search={model.search}
