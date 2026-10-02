@@ -1,6 +1,6 @@
 import { Select } from '@mantine/core';
 import type { ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useFocusWhen } from '../focus.ts';
 import type { SelectProps } from '@mantine/core';
 import { Text } from '@mantine/core';
 import styles from './IssuePropertiesPanel.module.css';
@@ -38,10 +38,7 @@ export function IssuePropertySelect({
   compactLabel,
   ...props
 }: SelectProps<string> & { compactChars?: number; compactLabel?: string }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (props.dropdownOpened) inputRef.current?.focus();
-  }, [props.dropdownOpened]);
+  const inputRef = useFocusWhen<HTMLInputElement>(Boolean(props.dropdownOpened));
   const labelWidth = Array.from(compactLabel ?? props.value ?? '').reduce(
     (width, character) => width + ((character.codePointAt(0) ?? 0) <= 0xff ? 1 : 2),
     0,
@@ -51,6 +48,7 @@ export function IssuePropertySelect({
     <Select
       {...props}
       ref={inputRef}
+      comboboxProps={{ width: 240, ...props.comboboxProps }}
       size="sm"
       className={styles.select}
       classNames={{ input: styles.input, option: styles.option, dropdown: styles.dropdown }}

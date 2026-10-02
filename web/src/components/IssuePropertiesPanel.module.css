@@ -139,9 +139,21 @@
   min-height: 30px;
   border-radius: 4px;
   font-size: var(--mantine-font-size-sm);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.option > * {
+  min-width: 0;
+}
+
+.option svg {
+  flex-shrink: 0;
 }
 
 .dropdown {
+  min-width: min(240px, calc(100dvw - 24px));
+  max-width: calc(100dvw - 24px);
   padding: 4px;
   border-color: var(--mantine-color-default-border);
 }

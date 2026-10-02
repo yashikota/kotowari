@@ -241,6 +241,7 @@ test('issue property shortcuts open focused status, priority, label, and estimat
   await expect(page.getByRole('listbox')).toBeVisible();
   await page.getByRole('option', { name: 'Agent', exact: true }).click();
   await expect(assignee).toHaveValue('Agent');
+  await expect(assignee).toBeEnabled();
 
   const status = page.getByRole('combobox', { name: 'Status' });
   await issueOptions.focus();
@@ -258,6 +259,7 @@ test('issue property shortcuts open focused status, priority, label, and estimat
   await expect(priority).toBeFocused();
   await page.getByRole('option', { name: 'Urgent' }).click();
   await expect(priority).toHaveValue('Urgent');
+  await expect(priority).toBeEnabled();
 
   const estimate = page.getByRole('combobox', { name: 'Estimate' });
   await issueOptions.focus();

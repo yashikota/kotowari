@@ -63,6 +63,7 @@ export function useIssueDetailProperties({
     const token = generation.current;
     pending.current = true;
     failedPatch.current = body;
+    setIssuePropertyMenu(null);
     setPropertySaveState('saving');
     setPropertySaveError('');
     try {
@@ -119,10 +120,14 @@ export function useIssueDetailProperties({
       },
       onStatusChange: (value: string | null) =>
         value ? patch({ workflowStatus: value }) : undefined,
-      onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setIssuePropertyMenu(property),
+      onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => {
+        if (!pending.current) setIssuePropertyMenu(property);
+      },
       onCloseIssuePropertyMenu: () => setIssuePropertyMenu(null),
-      onToggleIssuePropertyMenu: (property: Exclude<IssuePropertyMenu, null>) =>
-        setIssuePropertyMenu((current) => (current === property ? null : property)),
+      onToggleIssuePropertyMenu: (property: Exclude<IssuePropertyMenu, null>) => {
+        if (!pending.current)
+          setIssuePropertyMenu((current) => (current === property ? null : property));
+      },
       onAssigneeChange: (value: string | null) =>
         patch({ assignee: value === 'self' || value === 'agent' ? value : null }),
       onTypeChange: (value: string | null) =>
