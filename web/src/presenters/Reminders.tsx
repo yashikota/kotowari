@@ -13,6 +13,19 @@ export function useRemindersPresenter() {
   const [reminders, setReminders] = useState<ReminderItem[]>([]);
   const [timeZone, setTimeZone] = useState('UTC');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    setError('');
+    try {
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'load failed');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function reload() {
     const [issues, initiatives, activeProjects, archivedProjects, workspace] = await Promise.all([
@@ -71,8 +84,8 @@ export function useRemindersPresenter() {
   }
 
   useEffect(() => {
-    void reload().catch((e: unknown) => setError(e instanceof Error ? e.message : 'load failed'));
-    const refresh = () => void reload().catch(() => undefined);
+    void load();
+    const refresh = () => void load();
     signals.addEventListener('kotowari:refresh', refresh);
     return () => signals.removeEventListener('kotowari:refresh', refresh);
   }, []);
@@ -94,6 +107,7 @@ export function useRemindersPresenter() {
     reminders,
     timeZone,
     error,
-    handlers: { onClearReminder: clearReminder },
+    loading,
+    handlers: { onClearReminder: clearReminder, onRetry: load },
   };
 }

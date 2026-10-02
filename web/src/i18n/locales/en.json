@@ -1498,6 +1498,7 @@
     "restoreAsDraft": "{{date}} — Restore as draft"
   },
   "reminders": {
+    "retry": "Retry",
     "heading": "Reminders",
     "empty": "No scheduled reminders.",
     "upcoming": "Upcoming",

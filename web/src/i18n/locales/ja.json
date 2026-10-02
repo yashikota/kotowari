@@ -1488,6 +1488,7 @@
     "restoreAsDraft": "{{date}} — 下書きに復元"
   },
   "reminders": {
+    "retry": "再読み込み",
     "heading": "リマインダー",
     "empty": "設定済みのリマインダーはありません。",
     "upcoming": "予定",

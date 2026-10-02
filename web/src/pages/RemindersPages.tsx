@@ -1,3 +1,4 @@
+import { ManagementRow } from '../design-system/ManagementRow.tsx';
 import { Link } from '@tanstack/react-router';
 import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
@@ -7,27 +8,45 @@ import { useRemindersPresenter, type ReminderItem } from '../presenters/Reminder
 
 function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPresenter> }) {
   const { t, i18n } = useTranslation();
-  if (model.error) return <Alert color="red">{model.error}</Alert>;
+
   const now = Date.now();
   return (
     <SplitLayout single>
       <Pane single>
         <PageHeader title={t('reminders.heading')} />
-        {model.reminders.length === 0 ? (
+        {model.error ? (
+          <Alert color="red" role="alert" my="md">
+            {model.error}
+            <Button variant="default" mt="sm" onClick={model.handlers.onRetry}>
+              {t('reminders.retry')}
+            </Button>
+          </Alert>
+        ) : null}
+        {model.loading ? (
+          <Text role="status" c="dimmed" p="md">
+            {t('ui.loading')}
+          </Text>
+        ) : null}
+        {model.reminders.length === 0 && !model.loading && !model.error ? (
           <EmptyState>{t('reminders.empty')}</EmptyState>
         ) : (
-          <Stack gap={0}>
+          <Stack gap={0} role="list" aria-label={t('reminders.heading')}>
             {model.reminders.map((item: ReminderItem) => {
               const reminder = new Date(item.reminderAt).getTime();
               const overdue = reminder <= now;
               return (
-                <Group
+                <ManagementRow
                   key={item.key}
-                  justify="space-between"
-                  wrap="nowrap"
-                  py="sm"
-                  px="md"
-                  style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                  actions={
+                    <Button
+                      variant="subtle"
+                      color="gray"
+                      size="compact-sm"
+                      onClick={() => model.handlers.onClearReminder(item)}
+                    >
+                      {t('reminders.dismiss')}
+                    </Button>
+                  }
                 >
                   <Stack gap={2} style={{ minWidth: 0 }}>
                     <Group gap="xs">
@@ -48,7 +67,7 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
                         params={{ identifier: item.identifier }}
                         style={{ color: 'inherit', textDecoration: 'none' }}
                       >
-                        <Text fw={500} truncate>
+                        <Text fw={500} lineClamp={2}>
                           <Text span ff="monospace" c="dimmed" mr="xs">
                             {item.identifier}
                           </Text>
@@ -61,7 +80,7 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
                         params={{ slug: item.slug }}
                         style={{ color: 'inherit', textDecoration: 'none' }}
                       >
-                        <Text fw={500} truncate>
+                        <Text fw={500} lineClamp={2}>
                           {item.title}
                         </Text>
                       </Link>
@@ -71,21 +90,13 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
                         params={{ slug: item.slug }}
                         style={{ color: 'inherit', textDecoration: 'none' }}
                       >
-                        <Text fw={500} truncate>
+                        <Text fw={500} lineClamp={2}>
                           {item.title}
                         </Text>
                       </Link>
                     )}
                   </Stack>
-                  <Button
-                    variant="subtle"
-                    color="gray"
-                    size="compact-sm"
-                    onClick={() => model.handlers.onClearReminder(item)}
-                  >
-                    {t('reminders.dismiss')}
-                  </Button>
-                </Group>
+                </ManagementRow>
               );
             })}
           </Stack>
