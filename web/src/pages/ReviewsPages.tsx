@@ -7,11 +7,11 @@ import { EmptyState, MetaBadge, PageHeader, Pane, SplitLayout } from '../mantine
 import { useReviewsPagePresenter } from '../presenters/ReviewsPages.tsx';
 import type { LinkedPullRequest } from '../reviews.ts';
 
-function formatLinkedDate(value: string): string {
+function formatLinkedDate(value: string, locale: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? value
-    : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+    : new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
 }
 
 export function ReviewsPageView({ model }: { model: ReturnType<typeof useReviewsPagePresenter> }) {
@@ -30,13 +30,14 @@ export function ReviewsPageView({ model }: { model: ReturnType<typeof useReviews
         />
         <ScrollArea style={{ flex: 1, minHeight: 0 }}>
           {requests.length === 0 ? (
-            <EmptyState>
-              <Stack align="center" gap="sm">
-                <Text>{t('reviews.empty')}</Text>
-                <Button component={Link} to="/issues" variant="subtle" size="xs">
+            <EmptyState
+              action={
+                <Button component={Link} to="/issues" variant="default">
                   {t('reviews.emptyAction')}
                 </Button>
-              </Stack>
+              }
+            >
+              {t('reviews.empty')}
             </EmptyState>
           ) : (
             <Stack gap={0}>
@@ -55,7 +56,7 @@ export function ReviewsPageView({ model }: { model: ReturnType<typeof useReviews
 }
 
 function PullRequestRow({ request }: { request: LinkedPullRequest }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <Group
       component="article"
@@ -67,22 +68,24 @@ function PullRequestRow({ request }: { request: LinkedPullRequest }) {
     >
       <IconGitPullRequest size={16} color="var(--mantine-color-dimmed)" aria-hidden="true" />
       <Box style={{ minWidth: 0, flex: 1 }}>
-        <Group gap="xs" wrap="nowrap">
+        <Group gap="xs" wrap="wrap" align="flex-start">
           <Anchor
             href={request.url}
             target="_blank"
             rel="noreferrer"
             size="sm"
             fw={500}
-            lineClamp={1}
+            lineClamp={2}
+            title={request.title}
+            style={{ flex: '1 1 200px', minWidth: 0, overflowWrap: 'anywhere' }}
           >
             {request.title}
           </Anchor>
-          <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
-            {formatLinkedDate(request.createdAt)}
+          <Text component="time" dateTime={request.createdAt} size="xs" c="dimmed">
+            {formatLinkedDate(request.createdAt, i18n.language)}
           </Text>
         </Group>
-        <Group gap="xs" wrap="nowrap">
+        <Group gap="xs" wrap="wrap">
           <Link
             to="/issues/$identifier"
             params={{ identifier: request.issueIdentifier }}
@@ -93,7 +96,13 @@ function PullRequestRow({ request }: { request: LinkedPullRequest }) {
           >
             {request.issueIdentifier}
           </Link>
-          <Text size="xs" c="dimmed" truncate>
+          <Text
+            size="xs"
+            c="dimmed"
+            lineClamp={2}
+            title={request.issueTitle}
+            style={{ flex: '1 1 160px', minWidth: 0, overflowWrap: 'anywhere' }}
+          >
             {request.issueTitle}
           </Text>
           <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
