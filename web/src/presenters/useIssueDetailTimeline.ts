@@ -54,7 +54,9 @@ export function useIssueDetailTimeline({
   }
 
   async function refreshActivities() {
-    setActivities(await api.activities(identifier));
+    const token = generation.current;
+    const nextActivities = await api.activities(identifier);
+    if (token === generation.current) setActivities(nextActivities);
   }
 
   useEffect(() => {

@@ -694,6 +694,10 @@
     "task": "Task"
   },
   "issueProperties": {
+    "saving": "Saving task changes…",
+    "saved": "Task changes saved",
+    "saveFailed": "Task changes could not be saved",
+    "retrySave": "Retry saving",
     "ariaLabel": "Issue properties",
     "heading": "Properties",
     "coreProperties": "Core properties",

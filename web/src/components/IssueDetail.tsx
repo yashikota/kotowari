@@ -1,5 +1,5 @@
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
-import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
+import { ActionIcon, Alert, Box, Button, Group, Stack, Text } from '@mantine/core';
 import { IconPaperclip } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
@@ -99,7 +99,23 @@ export function IssueDetailView({
                 value={issue.title}
                 onChange={handlers.onTitleChange}
                 onBlur={handlers.onTitleBlur}
+                readOnly={model.propertySaveState === 'saving'}
               />
+              {model.propertySaveState === 'saving' || model.propertySaveState === 'saved' ? (
+                <Text role="status" size="sm" c="dimmed" mt="xs">
+                  {t(`issueProperties.${model.propertySaveState}`)}
+                </Text>
+              ) : null}
+              {model.propertySaveState === 'failed' ? (
+                <Alert color="red" role="alert" mt="sm" title={t('issueProperties.saveFailed')}>
+                  <Stack gap="xs">
+                    <Text size="sm">{model.propertySaveError}</Text>
+                    <Button size="xs" variant="default" onClick={handlers.onRetryPropertySave}>
+                      {t('issueProperties.retrySave')}
+                    </Button>
+                  </Stack>
+                </Alert>
+              ) : null}
             </Box>
 
             <Stack className={layoutStyles.content} gap="lg">
@@ -200,7 +216,13 @@ export function IssueDetailView({
               </Box>
             </Stack>
             <Box component="aside" className={layoutStyles.properties}>
-              <IssuePropertiesPanel model={model} />
+              <Box
+                component="fieldset"
+                disabled={model.propertySaveState === 'saving'}
+                style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
+              >
+                <IssuePropertiesPanel model={model} />
+              </Box>
             </Box>
           </Box>
           <IssueDetailDialogs model={model} />

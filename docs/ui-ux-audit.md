@@ -20,7 +20,7 @@ current files in `web/src/pages`, rather than Linear's screen inventory.
 
 | Screens | Current coverage | Next evidence or improvement needed |
 | --- | --- | --- |
-| Task list / detail | Partial: themed selections, touch controls, composer recovery, shared Markdown and multiline titles; narrow properties use labeled two-column groups | Inspect property mutation feedback, bulk actions and all overlay states across themes/text sizes |
+| Task list / detail | Partial: themed selections, touch controls, composer recovery, shared Markdown and multiline titles; narrow properties use labeled two-column groups; title/property saving and failure retry | Inspect label/reminder mutations, bulk actions and all overlay states across themes/text sizes; verify navigation during pending writes |
 | Documents / decisions | Partial: headers, title editing, list layout, empty recovery, editor feedback | Property save feedback, decision publishing/linking, destructive flows and full keyboard paths |
 | Projects / project detail | Partial: existing creation and empty-state tests | Inspect detail navigation, properties, document sections, activity and long content |
 | Initiatives / initiative detail | Not audited comprehensively | Inspect planning, project associations, update feed, dialogs and all recovery states |

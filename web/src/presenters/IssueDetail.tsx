@@ -1,5 +1,5 @@
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import { useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import { patchIssueOptimistically } from '../application/issues.ts';
 import {
@@ -50,6 +50,9 @@ export function useIssueDetailPresenter({
   issueListLayout = 'list',
 }: Props) {
   const sendIntent = useIntent();
+  const currentIdentifier = useRef(identifier);
+  const titleDraft = useRef<{ identifier: string; title: string } | null>(null);
+  currentIdentifier.current = identifier;
   const { statuses: issueWorkflowStatuses } = useIssueWorkflow();
   const { preferences } = usePersonalPreferences();
   const { preferences: codingToolPreferences } = useCodingToolPreferences();
@@ -127,13 +130,29 @@ export function useIssueDetailPresenter({
         )
       : body;
     const next = await patchIssueOptimistically(identifier, adjustedBody);
-    setIssue(next);
-    await refreshActivities();
+    if (currentIdentifier.current !== identifier) return;
+    const draft = titleDraft.current;
+    if (draft?.identifier === identifier && body.title === draft.title) titleDraft.current = null;
+    setIssue(
+      titleDraft.current?.identifier === identifier
+        ? { ...next, title: titleDraft.current.title }
+        : next,
+    );
+    // The write is confirmed even if refreshing its activity feed fails.
+    await refreshActivities().catch(() => undefined);
   }
 
   const labelsState = useIssueDetailLabels({ issue, labels, setLabels, patch });
   const { data: labelsData, handlers: labelsHandlers } = labelsState;
-  const propertiesState = useIssueDetailProperties({ identifier, issue, setIssue, patch });
+  const propertiesState = useIssueDetailProperties({
+    identifier,
+    issue,
+    setIssue,
+    patch,
+    onTitleDraftChange: (title) => {
+      titleDraft.current = { identifier, title };
+    },
+  });
   const { data: propertiesData, handlers: propertiesHandlers } = propertiesState;
 
   const dueDateState = useIssueDetailDueDate({

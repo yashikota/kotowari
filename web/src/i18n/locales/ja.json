@@ -686,6 +686,10 @@
     "task": "タスク"
   },
   "issueProperties": {
+    "saving": "タスクの変更を保存中…",
+    "saved": "タスクの変更を保存しました",
+    "saveFailed": "タスクの変更を保存できませんでした",
+    "retrySave": "もう一度保存",
     "ariaLabel": "イシューのプロパティ",
     "heading": "プロパティ",
     "coreProperties": "基本プロパティ",

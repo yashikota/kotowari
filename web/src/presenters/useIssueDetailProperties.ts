@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   IssueOptionalProperty,
   IssuePropertyMenu,
@@ -16,6 +16,7 @@ type Props = {
   issue: Issue | null;
   setIssue: (issue: Issue) => void;
   patch: (body: Record<string, unknown>) => Promise<void>;
+  onTitleDraftChange: (title: string) => void;
 };
 
 function readOptionalPropertyOverrides(): OptionalPropertyOverrides {
@@ -31,7 +32,53 @@ function readOptionalPropertyOverrides(): OptionalPropertyOverrides {
   }
 }
 
-export function useIssueDetailProperties({ identifier, issue, setIssue, patch }: Props) {
+export function useIssueDetailProperties({
+  identifier,
+  issue,
+  setIssue,
+  patch: commit,
+  onTitleDraftChange,
+}: Props) {
+  const [propertySaveState, setPropertySaveState] = useState<
+    'idle' | 'saving' | 'saved' | 'failed'
+  >('idle');
+  const [propertySaveError, setPropertySaveError] = useState('');
+  const failedPatch = useRef<Record<string, unknown> | null>(null);
+  const pending = useRef(false);
+  const titleDirty = useRef(false);
+  const generation = useRef(0);
+  useEffect(() => {
+    generation.current++;
+    pending.current = false;
+    failedPatch.current = null;
+    titleDirty.current = false;
+    setPropertySaveState('idle');
+    setPropertySaveError('');
+    return () => {
+      generation.current++;
+    };
+  }, [identifier]);
+  async function patch(body: Record<string, unknown>) {
+    if (pending.current) return;
+    const token = generation.current;
+    pending.current = true;
+    failedPatch.current = body;
+    setPropertySaveState('saving');
+    setPropertySaveError('');
+    try {
+      await commit(body);
+      if (token !== generation.current) return;
+      failedPatch.current = null;
+      if ('title' in body) titleDirty.current = false;
+      setPropertySaveState('saved');
+    } catch (error) {
+      if (token !== generation.current) return;
+      setPropertySaveError(error instanceof Error ? error.message : String(error));
+      setPropertySaveState('failed');
+    } finally {
+      if (token === generation.current) pending.current = false;
+    }
+  }
   const [optionalPropertyOverrides, setOptionalPropertyOverrides] =
     useState<OptionalPropertyOverrides>(readOptionalPropertyOverrides);
   const [issuePropertyMenu, setIssuePropertyMenu] = useState<IssuePropertyMenu>(null);
@@ -45,14 +92,31 @@ export function useIssueDetailProperties({ identifier, issue, setIssue, patch }:
   };
 
   return {
-    data: { due, issuePropertyMenu, optionalIssuePropertyVisibility },
+    data: {
+      due,
+      issuePropertyMenu,
+      optionalIssuePropertyVisibility,
+      propertySaveState,
+      propertySaveError,
+    },
     handlers: {
+      onRetryPropertySave: () => (failedPatch.current ? patch(failedPatch.current) : undefined),
       onTitleChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => {
-        if (issue) setIssue({ ...issue, title: e.target.value });
+        if (issue) {
+          titleDirty.current = true;
+          onTitleDraftChange(e.target.value);
+          failedPatch.current = null;
+          setPropertySaveState('idle');
+          setPropertySaveError('');
+          setIssue({ ...issue, title: e.target.value });
+        }
       },
-      onTitleBlur: () => (issue ? patch({ title: issue.title }) : undefined),
+      onTitleBlur: () => {
+        if (!issue || !titleDirty.current) return;
+        return patch({ title: issue.title });
+      },
       onStatusChange: (value: string | null) =>
         value ? patch({ workflowStatus: value }) : undefined,
       onOpenIssuePropertyMenu: (property: IssuePropertyMenu) => setIssuePropertyMenu(property),
