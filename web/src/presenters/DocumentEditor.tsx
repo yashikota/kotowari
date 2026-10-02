@@ -4,6 +4,7 @@ import { queryCache } from '../query-cache.ts';
 import { useMachineFlag } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
 import { renderMarkdown } from '../markdown.ts';
+import i18n from '../i18n/index.ts';
 
 type Document = { body: string; revision: string; savedAt?: string };
 async function request(path: string, init?: RequestInit): Promise<Document> {
@@ -69,6 +70,8 @@ export function useEditorPresenter({
     'loading' | 'recovered' | 'saved' | 'unsaved' | 'failed' | 'saving'
   >('loading');
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [loadRequest, setLoadRequest] = useState(0);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Document[]>([]);
   const [historyRequested, setHistoryRequested] = useState(false);
@@ -105,6 +108,7 @@ export function useEditorPresenter({
         const doc = await request(path);
         if (!active || saving.current || token !== generation.current) return;
         setServer(doc);
+        setLoadError('');
         if (!loaded.current) {
           loaded.current = true;
           let saved: { body: string; revision: string } | null = null;
@@ -128,7 +132,8 @@ export function useEditorPresenter({
           setBase(doc.revision);
         }
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : 'Unable to load document');
+        if (active)
+          setLoadError(e instanceof Error ? e.message : i18n.t('documentEditorStatus.loadFailed'));
       } finally {
         pending = false;
       }
@@ -141,7 +146,7 @@ export function useEditorPresenter({
       active = false;
       clearInterval(timer);
     };
-  }, [path, draftKey]);
+  }, [path, draftKey, loadRequest]);
 
   useEffect(() => {
     if (historyRequest < 1) return;
@@ -149,7 +154,7 @@ export function useEditorPresenter({
     setHistoryOpened(true);
     void fetch(`${path}/history`)
       .then(async (response) => {
-        if (!response.ok) throw new Error('Unable to load history');
+        if (!response.ok) throw new Error(i18n.t('documentEditorStatus.historyFailed'));
         setHistory((await response.json()) as Document[]);
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
@@ -171,7 +176,7 @@ export function useEditorPresenter({
     try {
       localStorage.setItem(draftKey, JSON.stringify({ body, revision }));
     } catch {
-      setError('Draft cannot be stored in this browser. Save before leaving.');
+      setError(i18n.t('documentEditorStatus.storageFailed'));
     }
   }
   async function save() {
@@ -218,7 +223,8 @@ export function useEditorPresenter({
     base,
     mode,
     status,
-    error,
+    error: error || loadError,
+    loadError,
     busy,
     history,
     historyRequested,
@@ -229,6 +235,7 @@ export function useEditorPresenter({
     html,
     conflict,
     handlers: {
+      onRetryLoad: () => setLoadRequest((value) => value + 1),
       onHistoryOpenChange: (value: string | null) => setHistoryOpened(value === 'history'),
       onModeChange: (next: string) => {
         if (next === 'preview' || next === 'edit' || next === 'compare') setMode(next);
@@ -243,7 +250,7 @@ export function useEditorPresenter({
         setHistoryOpened(true);
         return fetch(`${path}/history`)
           .then(async (r) => {
-            if (!r.ok) throw new Error('Unable to load history');
+            if (!r.ok) throw new Error(i18n.t('documentEditorStatus.historyFailed'));
             setHistory((await r.json()) as Document[]);
           })
           .catch((e) => setError(String(e)));

@@ -80,6 +80,7 @@ export function EditorView({
         mode,
         status,
         error,
+        loadError,
         busy,
         history,
         historyRequested,
@@ -149,7 +150,7 @@ export function EditorView({
                       size="sm"
                       c={status === 'failed' ? 'red' : 'dimmed'}
                     >
-                      {t(`documentEditorStatus.${status}`)}
+                      {t(`documentEditorStatus.${loadError && !server ? 'loadFailed' : status}`)}
                     </Text>
                   </>
                 )}
@@ -165,6 +166,13 @@ export function EditorView({
           {error ? (
             <Alert color="red" role="alert">
               {error}
+              {loadError ? (
+                <Group mt="sm">
+                  <Button variant="default" onClick={handlers.onRetryLoad}>
+                    {t('documentEditorStatus.retry')}
+                  </Button>
+                </Group>
+              ) : null}
             </Alert>
           ) : null}
 

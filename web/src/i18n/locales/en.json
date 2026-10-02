@@ -1,5 +1,9 @@
 {
   "documentEditorStatus": {
+    "loadFailed": "Unable to load document",
+    "historyFailed": "Unable to load history",
+    "storageFailed": "Draft cannot be stored in this browser. Save before leaving.",
+    "retry": "Retry loading",
     "loading": "Loading…",
     "recovered": "Recovered unsaved draft",
     "saved": "Saved",
