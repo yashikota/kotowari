@@ -43,25 +43,12 @@ export function ConfigPageView({
         sidebarCustomizationOpen,
         colorScheme,
         diagnostics,
-        error,
-        saved,
         handlers,
       } = model;
       return (
         <SplitLayout single>
           <Pane single>
             <PageHeader title={t('config.title')} />
-
-            {error ? (
-              <Alert color="red" variant="light" mb="md">
-                {error}
-              </Alert>
-            ) : null}
-            {saved ? (
-              <Alert color="green" variant="light" mb="md">
-                {t('config.saved')}
-              </Alert>
-            ) : null}
 
             <Group component="nav" aria-label={t('config.sections')} gap="xs" py="md" wrap="wrap">
               {(
