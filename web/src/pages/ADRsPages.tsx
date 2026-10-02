@@ -1,23 +1,14 @@
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Box,
-  Button,
-  Group,
-  NativeSelect,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Alert, Button, Group, NativeSelect, Stack, Text, TextInput, Title } from '@mantine/core';
 
 import { AIPanel } from '../components/AIPanel.tsx';
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
 import { ADR_STATUSES } from '../types.ts';
 import { adrStatusLabel } from '../i18n/labels.ts';
-import { EmptyState, MetaBadge, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
+import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
+import styles from '../design-system/DocumentListRow.module.css';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -81,28 +72,24 @@ export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePr
                     key={a.identifier}
                     to="/adrs/$identifier"
                     params={{ identifier: a.identifier }}
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                    className={styles.documentLink}
                   >
-                    <Group
-                      wrap="nowrap"
-                      gap="xs"
-                      py={6}
-                      px="md"
-                      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-                    >
-                      <Box
-                        w={2}
-                        h={16}
-                        bg="var(--mantine-color-default-border)"
-                        style={{ borderRadius: 1, flexShrink: 0 }}
-                      />
+                    <Group className={styles.documentRow} pl="md">
                       <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
                         {a.identifier}
                       </Text>
-                      <Text flex={1} truncate>
+                      <Text
+                        lineClamp={2}
+                        title={a.title}
+                        style={{ minWidth: 0, overflowWrap: 'anywhere' }}
+                      >
                         {a.title}
                       </Text>
-                      <MetaBadge>{adrStatusLabel(a.status)}</MetaBadge>
+                      <Group className={styles.metadata} gap="xs" wrap="wrap">
+                        <Text size="xs" c="dimmed">
+                          {adrStatusLabel(a.status)}
+                        </Text>
+                      </Group>
                     </Group>
                   </Link>
                 ))}

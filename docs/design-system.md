@@ -40,6 +40,11 @@ retains focus styling, saves on blur, and commits with Enter without inserting a
 Composition with an IME is preserved. Their editing content shares a bounded reading width;
 the document body precedes the optional AI conversation. Page tags have a visible label.
 
+Document and decision lists share `DocumentListRow.module.css`: a two-line title,
+semantic hover/focus colors, and metadata that moves below the title on narrow screens.
+Identifiers and optional dates must not crowd out the title or cause horizontal overflow.
+Filtered empty lists provide a clear-filters action; the decision list also exposes creation.
+
 The rest of the UI has not yet been unified. These are the next priorities:
 
 | Priority | Area | Required outcome |

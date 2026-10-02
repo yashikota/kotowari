@@ -1,6 +1,45 @@
 import { expect, test, type APIResponse } from '@playwright/test';
 import { expandMoreNavigation, fillIssueSearch, returnToIssues } from './issue-list-controls.ts';
 
+test('decision rows share readable mobile titles and keyboard focus', async ({
+  page,
+}, testInfo) => {
+  const title = 'A decision with detailed reasoning that remains readable in a narrow list';
+  await page.route('**/api/adrs', (route) =>
+    route.fulfill({
+      json: [
+        {
+          number: 12345,
+          identifier: 'ADR-12345',
+          title,
+          status: 'proposed',
+          projectSlug: null,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    }),
+  );
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/adrs');
+  const row = page.getByRole('link').filter({ hasText: title });
+  await expect(row).toBeVisible();
+  const bounds = await row.getByText(title, { exact: true }).boundingBox();
+  expect(bounds!.width).toBeGreaterThan(180);
+  expect(
+    await row.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+  ).toBeTruthy();
+  await page.getByLabel('Filter ADR project').focus();
+  await page.keyboard.press('Tab');
+  await expect(row).toBeFocused();
+  await expect
+    .poll(() =>
+      row.evaluate((element) => Number.parseFloat(getComputedStyle(element).outlineWidth)),
+    )
+    .toBeGreaterThanOrEqual(2);
+  await page.screenshot({ path: testInfo.outputPath('decision-list-mobile.png') });
+});
+
 test('ADR list offers creation and recovers from filters with no results', async ({
   page,
   request,

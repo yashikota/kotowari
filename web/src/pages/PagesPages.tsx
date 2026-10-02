@@ -11,7 +11,7 @@ import { DocumentEditor } from '../components/DocumentEditor.tsx';
 import { usePageDetailPagePresenter, usePagesPagePresenter } from '../presenters/PagesPages.tsx';
 import { PAGE_STATUSES } from '../types.ts';
 import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
-import styles from './PagesPages.module.css';
+import styles from '../design-system/DocumentListRow.module.css';
 
 export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPagePresenter> }) {
   const { t } = useTranslation();
