@@ -48,3 +48,37 @@ for (const scheme of ['light', 'dark']) {
     await request.delete(`/api/issues/${issue.identifier}`);
   });
 }
+
+test('inbox failure retries and filtered empty state restores notifications', async ({
+  page,
+  request,
+}) => {
+  const title = `InboxRecovery${Date.now()}`;
+  const response = await request.post('/api/issues', { data: { title, status: 'todo' } });
+  expect(response.ok()).toBeTruthy();
+  const issue = await response.json();
+  let failing = true;
+  await page.route('**/api/inbox/activities', async (route) => {
+    if (failing) await route.fulfill({ status: 503, body: 'Unavailable' });
+    else await route.continue();
+  });
+  await page.goto('/inbox');
+  const notifications = page.getByRole('region', { name: 'Notifications' });
+  await expect(notifications.getByRole('alert')).toContainText('Notifications could not be loaded');
+  await expect(notifications.getByText("You're all caught up")).toHaveCount(0);
+  failing = false;
+  await notifications.getByRole('button', { name: 'Retry loading' }).click();
+  const row = notifications.getByRole('button', { name: new RegExp(issue.identifier) }).first();
+  await expect(row).toBeVisible();
+  await page.getByRole('button', { name: 'Notification actions' }).click();
+  await page.getByRole('menuitem', { name: 'Mark all as read', exact: true }).click();
+  await page.getByRole('button', { name: /Show unreads only/ }).click();
+  await expect(notifications.getByRole('status')).toContainText('No activities match');
+  await notifications.getByRole('button', { name: 'Show all notifications' }).click();
+  await expect(row).toBeVisible();
+  await expect(page.getByRole('button', { name: /Show unreads only/ })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await request.delete(`/api/issues/${issue.identifier}`);
+});

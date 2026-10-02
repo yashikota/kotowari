@@ -165,7 +165,13 @@ const remindersRoute = createRoute({
 const inboxRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/inbox',
-  loader: () => api.inboxActivities(),
+  loader: async () => {
+    try {
+      return { activities: await api.inboxActivities(), loadFailed: false };
+    } catch {
+      return { activities: [], loadFailed: true };
+    }
+  },
   component: lazyRouteComponent(() => import('./pages/InboxPages.tsx'), 'InboxPage'),
 });
 

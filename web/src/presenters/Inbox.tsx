@@ -1,4 +1,4 @@
-import { useLoaderData } from '@tanstack/react-router';
+import { useLoaderData, useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
@@ -27,7 +27,7 @@ import {
   type InboxFilterMenuState,
 } from '../inbox-filter.ts';
 import { inboxShortcutFromKeyboard } from '../keymap.ts';
-import type { InboxActivity, IssueStatus } from '../types.ts';
+import type { IssueStatus } from '../types.ts';
 
 function readInboxState(): InboxState {
   if (typeof window === 'undefined') return { ...DEFAULT_INBOX_STATE };
@@ -35,7 +35,9 @@ function readInboxState(): InboxState {
 }
 
 export function useInboxPresenter() {
-  const activities = useLoaderData({ from: '/inbox' }) as InboxActivity[];
+  const { activities, loadFailed } = useLoaderData({ from: '/inbox' });
+  const router = useRouter();
+  const [retrying, setRetrying] = useState(false);
   const [inboxState, setInboxState] = useState(readInboxState);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [focusUnreadCollapsed, setFocusUnreadCollapsed] = useState(false);
@@ -227,6 +229,19 @@ export function useInboxPresenter() {
   }
 
   const handlers = useActions({
+    onRetry: async () => {
+      if (retrying) return;
+      setRetrying(true);
+      try {
+        await router.invalidate();
+      } finally {
+        setRetrying(false);
+      }
+    },
+    onResetVisibleFilters: () => {
+      setOnlyUnread(false);
+      setFilters(EMPTY_INBOX_FILTERS);
+    },
     onSelect: (id: number) => {
       setSelectedId(id);
       markRead([id], true);
@@ -399,6 +414,8 @@ export function useInboxPresenter() {
     selectedActivity,
     selectedIsRead: selectedId === null || inboxState.readIds.includes(selectedId),
     commentPreview,
+    loadFailed,
+    retrying,
     selectedId,
     onlyUnread,
     filters,

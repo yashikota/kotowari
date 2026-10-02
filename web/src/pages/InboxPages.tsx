@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Alert,
   Box,
   Badge,
   Button,
@@ -214,8 +215,31 @@ function InboxPageView({ model }: { model: InboxModel }) {
       <Box className={styles.layout}>
         <Box component="section" aria-label={t('inbox.notifications')} className={styles.listPane}>
           <ScrollArea type="auto" className={styles.listScroll}>
-            {groups.length === 0 ? (
-              <EmptyState>{emptyMessage}</EmptyState>
+            {model.loadFailed ? (
+              <Box p="md">
+                <Alert color="red" role="alert" title={t('inbox.loadFailed')}>
+                  <Button
+                    mt="sm"
+                    variant="default"
+                    onClick={model.handlers.onRetry}
+                    loading={model.retrying}
+                  >
+                    {t('inbox.retry')}
+                  </Button>
+                </Alert>
+              </Box>
+            ) : groups.length === 0 ? (
+              <EmptyState
+                action={
+                  model.onlyUnread || hasFilters ? (
+                    <Button variant="default" onClick={model.handlers.onResetVisibleFilters}>
+                      {t('inbox.resetFilters')}
+                    </Button>
+                  ) : undefined
+                }
+              >
+                <Text role="status">{emptyMessage}</Text>
+              </EmptyState>
             ) : (
               <Stack gap={0}>
                 {groups.map((group) => (

@@ -1896,6 +1896,9 @@
     "attachmentRemoved": "Removed attachment {{name}}"
   },
   "inbox": {
+    "loadFailed": "Notifications could not be loaded",
+    "retry": "Retry loading",
+    "resetFilters": "Show all notifications",
     "heading": "Inbox",
     "goToSettings": "Go to settings",
     "settingsHeading": "Inbox notifications",

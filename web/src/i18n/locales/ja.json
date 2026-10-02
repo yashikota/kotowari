@@ -1885,6 +1885,9 @@
     "attachmentRemoved": "添付ファイル「{{name}}」を削除"
   },
   "inbox": {
+    "loadFailed": "通知を読み込めませんでした",
+    "retry": "読み込みを再試行",
+    "resetFilters": "すべての通知を表示",
     "heading": "受信トレイ",
     "goToSettings": "設定へ移動",
     "settingsHeading": "受信トレイの通知",
