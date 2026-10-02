@@ -1,4 +1,4 @@
-import { Button, Group, Popover, SimpleGrid, Textarea, TextInput } from '@mantine/core';
+import { Alert, Box, Button, Group, Popover, SimpleGrid, Textarea, TextInput } from '@mantine/core';
 import { IconChevronLeft } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ComponentProps, Ref } from 'react';
@@ -11,7 +11,8 @@ type HeaderModel = {
   icon: ViewIconName;
   iconPickerOpen: boolean;
   iconOptions: readonly ViewIconName[];
-  saving?: boolean;
+  saving: boolean;
+  error: string;
   handlers: {
     onNameChange: NonNullable<ComponentProps<typeof TextInput>['onChange']>;
     onNameKeyDown?: ComponentProps<typeof TextInput>['onKeyDown'];
@@ -109,6 +110,13 @@ export function ViewBuilderHeader({
           {t('viewBuilder.createView')}
         </Button>
       </Group>
+      {model.error ? (
+        <Box px="md" pt="sm">
+          <Alert color="red" role="alert" title={t('viewBuilder.saveFailed')}>
+            {model.error}
+          </Alert>
+        </Box>
+      ) : null}
       <Textarea
         label={t('viewBuilder.description')}
         disabled={model.saving}

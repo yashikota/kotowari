@@ -25,3 +25,48 @@ for (const scheme of ['light', 'dark']) {
     });
   }
 }
+
+test('project view storage failure retains input and can retry creation', async ({ page }) => {
+  await page.goto('/views/projects/new?priority=1');
+  const name = `ProjectViewRecovery${Date.now()}`;
+  const input = page.getByRole('textbox', { name: 'View name', exact: true });
+  const description = page.getByRole('textbox', { name: 'Description', exact: true });
+  await input.fill(name);
+  await description.fill('Keep the next important work together.');
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    let fail = true;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'kotowari.project-views.v1' && fail) {
+        fail = false;
+        throw new DOMException('Storage unavailable', 'QuotaExceededError');
+      }
+      return original.call(this, key, value);
+    };
+  });
+  await page.getByRole('button', { name: 'Create view', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('View could not be saved');
+  await expect(input).toHaveValue(name);
+  await expect(description).toHaveValue('Keep the next important work together.');
+  await expect(input).toBeEnabled();
+  await expect(page).toHaveURL(/priority=1/);
+  await page.getByRole('button', { name: 'Create view', exact: true }).click();
+  await expect(page).toHaveURL(/projectView=/);
+  const saved = await page.evaluate(
+    (value) =>
+      JSON.parse(localStorage.getItem('kotowari.project-views.v1') ?? '[]').filter(
+        (view: { name: string }) => view.name === value,
+      ),
+    name,
+  );
+  expect(saved).toHaveLength(1);
+  expect(saved[0].description).toBe('Keep the next important work together.');
+  expect(saved[0].search.priority).toBe(1);
+  await page.evaluate((value) => {
+    const views = JSON.parse(localStorage.getItem('kotowari.project-views.v1') ?? '[]');
+    localStorage.setItem(
+      'kotowari.project-views.v1',
+      JSON.stringify(views.filter((view: { name: string }) => view.name !== value)),
+    );
+  }, name);
+});

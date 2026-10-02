@@ -298,6 +298,8 @@
     "notAvailable": "—"
   },
   "viewBuilder": {
+    "saveFailed": "ビューを保存できませんでした",
+    "storageFailed": "ブラウザーにビューを保存できませんでした。名前・説明・条件は保持されています。もう一度作成をお試しください。",
     "defaultName": "すべてのイシュー",
     "name": "ビュー名",
     "description": "説明",

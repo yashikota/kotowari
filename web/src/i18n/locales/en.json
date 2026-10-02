@@ -299,6 +299,8 @@
     "notAvailable": "—"
   },
   "viewBuilder": {
+    "saveFailed": "View could not be saved",
+    "storageFailed": "This browser could not store the view. Your name, description, and filters are kept. Try creating it again.",
     "defaultName": "All issues",
     "name": "View name",
     "description": "Description",

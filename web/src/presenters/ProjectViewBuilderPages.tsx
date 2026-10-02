@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { ProjectListControlsModel } from '../project-list-controls.ts';
@@ -60,6 +60,9 @@ export function useProjectViewBuilderPresenter() {
   const projectViews = useProjectViews();
   const [name, setName] = useState(() => t('projectViews.defaultName'));
   const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const creating = useRef(false);
   const [icon, setIcon] = useState<ViewIconName>('list');
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const displayProperties = (search.displayProperties ??
@@ -407,9 +410,12 @@ export function useProjectViewBuilderPresenter() {
     },
   };
 
-  function createView() {
+  async function createView() {
     const cleanName = name.trim();
-    if (!cleanName) return;
+    if (!cleanName || creating.current) return;
+    creating.current = true;
+    setSaving(true);
+    setError('');
     const now = new Date().toISOString();
     const view: ProjectSavedView = {
       slug: uniqueSlug(cleanName, projectViews.views),
@@ -420,11 +426,20 @@ export function useProjectViewBuilderPresenter() {
       createdAt: now,
       updatedAt: now,
     };
-    projectViews.save(view);
-    void navigate({
-      to: '/projects',
-      search: { ...view.search, projectView: view.slug },
-    });
+    try {
+      projectViews.save(view);
+    } catch {
+      setError(t('viewBuilder.storageFailed'));
+      creating.current = false;
+      setSaving(false);
+      return;
+    }
+    try {
+      await navigate({ to: '/projects', search: { ...view.search, projectView: view.slug } });
+    } finally {
+      creating.current = false;
+      setSaving(false);
+    }
   }
 
   return {
@@ -445,6 +460,8 @@ export function useProjectViewBuilderPresenter() {
     ),
     displayProperties,
     name,
+    saving,
+    error,
     description,
     icon,
     iconPickerOpen,

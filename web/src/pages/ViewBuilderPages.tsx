@@ -1,4 +1,4 @@
-import { Box, Text } from '@mantine/core';
+import { Box } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { IssueBoard, IssueList } from '../components/IssueList.tsx';
@@ -55,11 +55,6 @@ export function ViewBuilderPageView({
             displayProperties={model.displayProperties}
             onDisplayPropertyToggle={model.handlers.onDisplayPropertyToggle}
           />
-          {model.error ? (
-            <Text role="alert" c="red" size="sm" px="md" py={6}>
-              {model.error}
-            </Text>
-          ) : null}
           <Box
             aria-label={t('viewBuilder.preview')}
             aria-hidden="true"
