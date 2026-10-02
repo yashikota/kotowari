@@ -1,3 +1,4 @@
+import markdownStyles from './design-system/MarkdownContent.module.css';
 import { Link, useMatchRoute, type LinkProps } from '@tanstack/react-router';
 import {
   Badge,
@@ -331,7 +332,7 @@ export function MetaBadge({ children, color }: { children: ReactNode; color?: st
 
 export function MarkdownContent({ html }: { html: string }) {
   return (
-    <Typography>
+    <Typography className={markdownStyles.content}>
       <Box dangerouslySetInnerHTML={{ __html: html }} />
     </Typography>
   );
