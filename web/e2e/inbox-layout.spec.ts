@@ -144,3 +144,43 @@ test('inbox comment loading failure can retry without losing notification contex
   await expect(page).toHaveURL(new RegExp(`/issues/${issue.identifier}`));
   await request.delete(`/api/issues/${issue.identifier}`);
 });
+
+for (const emptyView of ['priority', 'other'] as const) {
+  test(`empty ${emptyView} inbox directs to notifications in the other tab`, async ({
+    page,
+    request,
+  }) => {
+    const title = `InboxBucket${Date.now()}`;
+    const response = await request.post('/api/issues', { data: { title, status: 'todo' } });
+    expect(response.ok()).toBeTruthy();
+    const issue = await response.json();
+    await page.addInitScript((view) => {
+      localStorage.setItem(
+        'kotowari.inbox.v1',
+        JSON.stringify({
+          priorityInboxEnabled: true,
+          priorityView: view,
+          ...(view === 'priority' ? { priorityTypes: [] } : {}),
+        }),
+      );
+    }, emptyView);
+    await page.goto('/inbox');
+    const notifications = page.getByRole('region', { name: 'Notifications' });
+    await expect(notifications.getByRole('status')).toHaveText(
+      emptyView === 'priority' ? 'No priority notifications' : 'No other notifications',
+    );
+    await expect(notifications.getByText("You're all caught up")).toHaveCount(0);
+    await notifications
+      .getByRole('button', {
+        name: emptyView === 'priority' ? 'Show other notifications' : 'Show priority notifications',
+      })
+      .click();
+    await expect(
+      notifications.getByRole('button', { name: new RegExp(issue.identifier) }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('tab', { name: emptyView === 'priority' ? /Other/ : /Priority/ }),
+    ).toHaveAttribute('aria-selected', 'true');
+    await request.delete(`/api/issues/${issue.identifier}`);
+  });
+}

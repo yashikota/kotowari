@@ -81,7 +81,12 @@ function InboxPageView({ model }: { model: InboxModel }) {
   }, [model.activities, model.groupByDate, model.unreadGrouping]);
 
   const hasFilters = Object.values(model.filters).some((values) => values.length > 0);
-  const emptyMessage = model.onlyUnread || hasFilters ? t('inbox.emptyFiltered') : t('inbox.empty');
+  const emptyMessage =
+    model.onlyUnread || hasFilters
+      ? t('inbox.emptyFiltered')
+      : model.priorityInboxEnabled
+        ? t(model.priorityView === 'priority' ? 'inbox.emptyPriority' : 'inbox.emptyOther')
+        : t('inbox.empty');
 
   return (
     <Stack gap={0} className={styles.root}>
@@ -234,6 +239,21 @@ function InboxPageView({ model }: { model: InboxModel }) {
                   model.onlyUnread || hasFilters ? (
                     <Button variant="default" onClick={model.handlers.onResetVisibleFilters}>
                       {t('inbox.resetFilters')}
+                    </Button>
+                  ) : model.priorityInboxEnabled && model.alternateActivityCount > 0 ? (
+                    <Button
+                      variant="default"
+                      onClick={() =>
+                        model.handlers.onSetPriorityView(
+                          model.priorityView === 'priority' ? 'other' : 'priority',
+                        )
+                      }
+                    >
+                      {t(
+                        model.priorityView === 'priority'
+                          ? 'inbox.showOther'
+                          : 'inbox.showPriority',
+                      )}
                     </Button>
                   ) : undefined
                 }

@@ -441,6 +441,8 @@ export function useInboxPresenter() {
     priorityInboxEnabled: inboxState.priorityInboxEnabled,
     priorityTypes: inboxState.priorityTypes,
     priorityView: inboxState.priorityView,
+    alternateActivityCount:
+      priorityActivities[inboxState.priorityView === 'priority' ? 'other' : 'priority'].length,
     badgeCount: inboxState.badgeCount,
     priorityUnreadCount: unreadBuckets.priority.length,
     otherUnreadCount: unreadBuckets.other.length,

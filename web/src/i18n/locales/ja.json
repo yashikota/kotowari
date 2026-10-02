@@ -1885,6 +1885,10 @@
     "attachmentRemoved": "添付ファイル「{{name}}」を削除"
   },
   "inbox": {
+    "emptyPriority": "優先通知はありません",
+    "emptyOther": "その他の通知はありません",
+    "showOther": "その他の通知を表示",
+    "showPriority": "優先通知を表示",
     "commentLoading": "コメントを読み込み中…",
     "commentFailed": "コメントを読み込めませんでした",
     "retryComment": "コメントを再読み込み",

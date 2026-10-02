@@ -1896,6 +1896,10 @@
     "attachmentRemoved": "Removed attachment {{name}}"
   },
   "inbox": {
+    "emptyPriority": "No priority notifications",
+    "emptyOther": "No other notifications",
+    "showOther": "Show other notifications",
+    "showPriority": "Show priority notifications",
     "commentLoading": "Loading comment…",
     "commentFailed": "Comment could not be loaded",
     "retryComment": "Retry loading comment",
