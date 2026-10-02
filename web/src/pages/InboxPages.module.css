@@ -5,9 +5,11 @@
 }
 
 .toolbar {
-  flex: 0 0 44px;
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding-block: 8px;
   min-width: 0;
-  padding: 0 12px 0 16px;
+  padding-inline: 16px;
   border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
@@ -51,6 +53,11 @@
   color: inherit;
   cursor: pointer;
   text-align: start;
+}
+
+.activity:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
 }
 
 .activity:hover {
@@ -118,6 +125,7 @@
   overflow: hidden;
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
+  overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -190,10 +198,6 @@
   .layout {
     grid-template-columns: minmax(220px, 40%) minmax(0, 1fr);
   }
-
-  .toolbar {
-    overflow-x: auto;
-  }
 }
 
 @media (max-width: 560px) {
@@ -222,7 +226,8 @@
     display: flex;
   }
 
-  .heading {
-    display: none;
+  .toolbar > :last-child {
+    width: 100%;
+    justify-content: space-between;
   }
 }

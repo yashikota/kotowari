@@ -88,11 +88,11 @@ function InboxPageView({ model }: { model: InboxModel }) {
         component="header"
         justify="space-between"
         gap="sm"
-        wrap="nowrap"
+        wrap="wrap"
         className={styles.toolbar}
       >
         <Group gap="xs" wrap="nowrap">
-          <Title order={2} size="sm" fw={550} className={styles.heading}>
+          <Title order={2} size="md" fw={600} className={styles.heading}>
             {t('inbox.heading')}
           </Title>
           <Menu position="bottom-start" withinPortal>
