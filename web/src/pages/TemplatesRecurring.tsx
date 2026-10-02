@@ -1,3 +1,4 @@
+import { ManagementRow } from '../design-system/ManagementRow.tsx';
 import { Link } from '@tanstack/react-router';
 import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
@@ -25,15 +26,19 @@ function TemplatesPageView({ model }: { model: ReturnType<typeof useTemplatesPag
         ) : (
           <Stack gap={0} role="list" aria-label={t('templates.heading')}>
             {model.templates.map((template) => (
-              <Group
+              <ManagementRow
                 key={template.slug}
-                role="listitem"
-                justify="space-between"
-                align="flex-start"
-                wrap="nowrap"
-                py="sm"
-                px="md"
-                style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                actions={
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    color="red"
+                    size="compact-sm"
+                    onClick={() => handlers.onDelete(template)}
+                  >
+                    {t('templates.delete')}
+                  </Button>
+                }
               >
                 <Stack gap={3} style={{ minWidth: 0 }}>
                   <Text fw={500}>{template.name}</Text>
@@ -46,16 +51,7 @@ function TemplatesPageView({ model }: { model: ReturnType<typeof useTemplatesPag
                     </Text>
                   ) : null}
                 </Stack>
-                <Button
-                  type="button"
-                  variant="subtle"
-                  color="red"
-                  size="compact-sm"
-                  onClick={() => handlers.onDelete(template)}
-                >
-                  {t('templates.delete')}
-                </Button>
-              </Group>
+              </ManagementRow>
             ))}
           </Stack>
         )}
@@ -102,15 +98,23 @@ function RecurringIssuesPageView({
         ) : (
           <Stack gap={0} role="list" aria-label={t('recurringIssues.heading')}>
             {model.items.map((item) => (
-              <Group
+              <ManagementRow
                 key={item.slug}
-                role="listitem"
-                justify="space-between"
-                align="flex-start"
-                wrap="nowrap"
-                py="sm"
-                px="md"
-                style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+                actions={
+                  <>
+                    <Button type="button" variant="subtle" onClick={() => handlers.onToggle(item)}>
+                      {t(item.enabled ? 'recurringIssues.pause' : 'recurringIssues.resume')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      color="red"
+                      onClick={() => handlers.onDelete(item)}
+                    >
+                      {t('recurringIssues.delete')}
+                    </Button>
+                  </>
+                }
               >
                 <Stack gap={4} style={{ minWidth: 0 }}>
                   <Group gap="xs">
@@ -142,20 +146,7 @@ function RecurringIssuesPageView({
                     </Text>
                   ) : null}
                 </Stack>
-                <Group gap="xs" wrap="nowrap">
-                  <Button type="button" variant="subtle" onClick={() => handlers.onToggle(item)}>
-                    {t(item.enabled ? 'recurringIssues.pause' : 'recurringIssues.resume')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    color="red"
-                    onClick={() => handlers.onDelete(item)}
-                  >
-                    {t('recurringIssues.delete')}
-                  </Button>
-                </Group>
-              </Group>
+              </ManagementRow>
             ))}
           </Stack>
         )}
