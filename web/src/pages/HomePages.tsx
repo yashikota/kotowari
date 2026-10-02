@@ -20,6 +20,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { Pane, SplitLayout } from '../mantine-ui.tsx';
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { useHomePagePresenter } from '../presenters/HomePages.tsx';
 
 const unstyledField = {
@@ -174,6 +175,8 @@ export function HomePageView({
         counts,
         error,
         saved,
+        saving,
+        saveError,
         urlEditing,
         githubEditing,
         resourceOpen,
@@ -195,83 +198,97 @@ export function HomePageView({
               ) : null}
 
               <Box component="form" onSubmit={handlers.onSubmit0}>
-                <TextInput
-                  aria-label={t('config.name')}
-                  variant="unstyled"
-                  placeholder={t('home.namePlaceholder')}
-                  value={workspace.name}
-                  onChange={handlers.Workspace_name_onChange1}
-                  styles={{
-                    input: {
-                      ...unstyledField.input,
-                      fontSize: 'var(--mantine-h1-font-size)',
-                      lineHeight: 1.2,
-                      fontWeight: 700,
-                      fontFamily: 'var(--mantine-font-family-headings)',
-                    },
-                  }}
-                />
+                <Box
+                  component="fieldset"
+                  disabled={saving}
+                  style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+                >
+                  <TextInput
+                    aria-label={t('config.name')}
+                    variant="unstyled"
+                    placeholder={t('home.namePlaceholder')}
+                    value={workspace.name}
+                    onChange={handlers.Workspace_name_onChange1}
+                    styles={{
+                      input: {
+                        ...unstyledField.input,
+                        fontSize: 'var(--mantine-h1-font-size)',
+                        lineHeight: 1.2,
+                        fontWeight: 700,
+                        fontFamily: 'var(--mantine-font-family-headings)',
+                      },
+                    }}
+                  />
 
-                <Stack gap={0} mt={28}>
-                  <PropertyRow
-                    icon={<IconLink size={16} stroke={1.5} aria-hidden />}
-                    label={t('config.url')}
-                  >
-                    <LinkPropertyInput
-                      ariaLabel={t('config.url')}
-                      editLabel={t('home.editLink')}
-                      placeholder={t('config.urlPlaceholder')}
-                      value={workspace.url}
-                      editing={urlEditing}
-                      onEdit={handlers.onEditUrl}
-                      onBlur={handlers.onBlurUrl}
-                      onChange={handlers.Workspace_url_onChange2}
-                    />
-                  </PropertyRow>
-                  <PropertyRow
-                    icon={<IconBrandGithub size={16} stroke={1.5} aria-hidden />}
-                    label={t('config.githubUrl')}
-                  >
-                    <LinkPropertyInput
-                      ariaLabel={t('config.githubUrl')}
-                      editLabel={t('home.editLink')}
-                      placeholder={t('config.githubUrlPlaceholder')}
-                      value={workspace.githubUrl}
-                      editing={githubEditing}
-                      onEdit={handlers.onEditGithub}
-                      onBlur={handlers.onBlurGithub}
-                      onChange={handlers.Workspace_githubUrl_onChange3}
-                    />
-                  </PropertyRow>
+                  <Stack gap={0} mt={28}>
+                    <PropertyRow
+                      icon={<IconLink size={16} stroke={1.5} aria-hidden />}
+                      label={t('config.url')}
+                    >
+                      <LinkPropertyInput
+                        ariaLabel={t('config.url')}
+                        editLabel={t('home.editLink')}
+                        placeholder={t('config.urlPlaceholder')}
+                        value={workspace.url}
+                        editing={urlEditing}
+                        onEdit={handlers.onEditUrl}
+                        onBlur={handlers.onBlurUrl}
+                        onChange={handlers.Workspace_url_onChange2}
+                      />
+                    </PropertyRow>
+                    <PropertyRow
+                      icon={<IconBrandGithub size={16} stroke={1.5} aria-hidden />}
+                      label={t('config.githubUrl')}
+                    >
+                      <LinkPropertyInput
+                        ariaLabel={t('config.githubUrl')}
+                        editLabel={t('home.editLink')}
+                        placeholder={t('config.githubUrlPlaceholder')}
+                        value={workspace.githubUrl}
+                        editing={githubEditing}
+                        onEdit={handlers.onEditGithub}
+                        onBlur={handlers.onBlurGithub}
+                        onChange={handlers.Workspace_githubUrl_onChange3}
+                      />
+                    </PropertyRow>
+                  </Stack>
+
+                  <Textarea
+                    aria-label={t('config.description')}
+                    variant="unstyled"
+                    mt={32}
+                    placeholder={t('config.descriptionPlaceholder')}
+                    value={workspace.description}
+                    onChange={handlers.Workspace_description_onChange4}
+                    minRows={10}
+                    autosize
+                    styles={{
+                      input: {
+                        ...unstyledField.input,
+                        fontSize: 'var(--mantine-font-size-md)',
+                        lineHeight: 1.65,
+                        paddingBlock: 0,
+                      },
+                    }}
+                  />
+                </Box>
+                <Stack gap="sm" mt="lg">
+                  <SaveFeedback
+                    saving={saving}
+                    saved={saved}
+                    error={saveError}
+                    savingLabel={t('viewSave.saving')}
+                    savedLabel={t('home.saved')}
+                    failureLabel={t('common.saveFailed')}
+                    retryLabel={t('viewSave.retry')}
+                    onRetry={handlers.onRetrySave}
+                  />
+                  <Group justify="flex-end">
+                    <Button type="submit" loading={saving} size="sm">
+                      {t('home.save')}
+                    </Button>
+                  </Group>
                 </Stack>
-
-                <Textarea
-                  aria-label={t('config.description')}
-                  variant="unstyled"
-                  mt={32}
-                  placeholder={t('config.descriptionPlaceholder')}
-                  value={workspace.description}
-                  onChange={handlers.Workspace_description_onChange4}
-                  minRows={10}
-                  autosize
-                  styles={{
-                    input: {
-                      ...unstyledField.input,
-                      fontSize: 'var(--mantine-font-size-md)',
-                      lineHeight: 1.65,
-                      paddingBlock: 0,
-                    },
-                  }}
-                />
-
-                <Group justify="space-between" align="center" mt="lg">
-                  <Text size="xs" c={saved ? 'dimmed' : 'transparent'} aria-live="polite">
-                    {t('home.saved')}
-                  </Text>
-                  <Button type="submit" variant="subtle" size="compact-sm" color="gray">
-                    {t('home.save')}
-                  </Button>
-                </Group>
               </Box>
 
               <Divider my={40} color="var(--mantine-color-default-border)" />

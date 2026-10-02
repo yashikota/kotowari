@@ -26,6 +26,10 @@ export function useHomePagePresenter() {
   const [workspace, setWorkspace] = useState(() => normalizeWorkspace(data.workspace));
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const savePending = useRef(false);
+  const dirty = useRef(false);
   const [resourceOpen, setResourceOpen] = useState(false);
   const [resourceURL, setResourceURL] = useState('');
   const [resourceTitle, setResourceTitle] = useState('');
@@ -36,8 +40,48 @@ export function useHomePagePresenter() {
   const [githubEditing, setGithubEditing] = useMachineFlag('github-editor');
 
   useEffect(() => {
-    setWorkspace(normalizeWorkspace(data.workspace));
+    setWorkspace((current) =>
+      dirty.current || savePending.current
+        ? { ...current, resources: data.workspace.resources }
+        : normalizeWorkspace(data.workspace),
+    );
   }, [data.workspace]);
+
+  const updateField = (field: 'name' | 'url' | 'githubUrl' | 'description', value: string) => {
+    if (savePending.current) return;
+    dirty.current = true;
+    setSaved(false);
+    setWorkspace((current) => ({ ...current, [field]: value }));
+  };
+
+  const saveWorkspace = () => {
+    if (savePending.current) return;
+    savePending.current = true;
+    setSaving(true);
+    setSaved(false);
+    setSaveError('');
+    return api
+      .patchWorkspace({
+        name: workspace.name,
+        url: workspace.url,
+        description: workspace.description,
+        githubUrl: workspace.githubUrl,
+      })
+      .then(async (next) => {
+        dirty.current = false;
+        setWorkspace(normalizeWorkspace(next));
+        setSaved(true);
+        signals.dispatchEvent(new Event('kotowari:refresh'));
+        await router.invalidate().catch(() => undefined);
+      })
+      .catch((err: unknown) => {
+        setSaveError(err instanceof Error ? err.message : i18n.t('common.saveFailed'));
+      })
+      .finally(() => {
+        savePending.current = false;
+        setSaving(false);
+      });
+  };
 
   return {
     _view: 0 as const,
@@ -45,6 +89,8 @@ export function useHomePagePresenter() {
     counts: data.counts,
     error,
     saved,
+    saving,
+    saveError,
     resourceOpen,
     resourceURL,
     resourceTitle,
@@ -53,6 +99,7 @@ export function useHomePagePresenter() {
     urlEditing,
     githubEditing,
     handlers: {
+      onRetrySave: saveWorkspace,
       onEditUrl: () => setUrlEditing(true),
       onBlurUrl: () => setUrlEditing(false),
       onEditGithub: () => setGithubEditing(true),
@@ -118,36 +165,20 @@ export function useHomePagePresenter() {
       },
       onSubmit0: (e: Parameters<NonNullable<React.ComponentProps<'form'>['onSubmit']>>[0]) => {
         e.preventDefault();
-        setSaved(false);
-        return api
-          .patchWorkspace({
-            name: workspace.name,
-            url: workspace.url,
-            description: workspace.description,
-            githubUrl: workspace.githubUrl,
-          })
-          .then(async (next) => {
-            setWorkspace(normalizeWorkspace(next));
-            setSaved(true);
-            signals.dispatchEvent(new Event('kotowari:refresh'));
-            await router.invalidate();
-          })
-          .catch((err: unknown) =>
-            setError(err instanceof Error ? err.message : i18n.t('common.saveFailed')),
-          );
+        return saveWorkspace();
       },
       Workspace_name_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setWorkspace({ ...workspace, name: e.target.value }),
+      ) => updateField('name', e.target.value),
       Workspace_url_onChange2: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setWorkspace({ ...workspace, url: e.target.value }),
+      ) => updateField('url', e.target.value),
       Workspace_githubUrl_onChange3: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setWorkspace({ ...workspace, githubUrl: e.target.value }),
+      ) => updateField('githubUrl', e.target.value),
       Workspace_description_onChange4: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setWorkspace({ ...workspace, description: e.target.value }),
+      ) => updateField('description', e.target.value),
     },
   };
 }
