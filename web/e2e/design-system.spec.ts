@@ -50,6 +50,13 @@ for (const scheme of ['light', 'dark']) {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.screenshot({ path: testInfo.outputPath(`document-header-${scheme}.png`) });
     await titleEditor.fill(`${title} revised`);
+    await expect
+      .poll(() =>
+        titleEditor.evaluate((element) =>
+          Number.parseFloat(getComputedStyle(element).outlineWidth),
+        ),
+      )
+      .toBeGreaterThanOrEqual(2);
     await titleEditor.press('Enter');
     await expect
       .poll(async () => (await (await request.get(`/api/pages/${slug}`)).json()).title)

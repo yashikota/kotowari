@@ -1,11 +1,13 @@
 import { Textarea, type TextareaProps } from '@mantine/core';
 import type { Ref } from 'react';
+import styles from './DocumentTitle.module.css';
 
 /** Editable document heading shared by pages and decisions. */
 export function DocumentTitle(props: TextareaProps & { ref?: Ref<HTMLTextAreaElement> }) {
   return (
     <Textarea
       {...props}
+      classNames={{ input: styles.input }}
       autosize
       minRows={1}
       variant="unstyled"

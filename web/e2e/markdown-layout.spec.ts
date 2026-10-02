@@ -38,5 +38,23 @@ test('long document content keeps horizontal scrolling inside code and tables', 
   ).toBeTruthy();
   await editor.scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('markdown-mobile.png') });
+  const sizes: number[] = [];
+  for (const fontSize of ['small', 'large']) {
+    await page.evaluate(
+      (value) =>
+        localStorage.setItem('kotowari.preferences.v1', JSON.stringify({ fontSize: value })),
+      fontSize,
+    );
+    await page.reload();
+    const heading = editor.getByRole('heading', { name: 'Reading layout', exact: true });
+    await expect(heading).toBeVisible();
+    sizes.push(
+      await heading.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
+    );
+    expect(
+      await editor.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+    ).toBeTruthy();
+  }
+  expect(sizes[1]).toBeGreaterThan(sizes[0]!);
   await request.delete(`/api/pages/${slug}`);
 });

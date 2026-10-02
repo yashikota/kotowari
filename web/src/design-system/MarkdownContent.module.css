@@ -2,6 +2,21 @@
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
+  font-size: var(--mantine-font-size-md);
+  line-height: 1.65;
+}
+
+.content h1 {
+  font-size: calc(var(--mantine-font-size-md) * 1.85);
+}
+.content h2 {
+  font-size: calc(var(--mantine-font-size-md) * 1.5);
+}
+.content h3 {
+  font-size: calc(var(--mantine-font-size-md) * 1.25);
+}
+.content :is(h1, h2, h3, h4, h5, h6) {
+  line-height: 1.3;
 }
 
 .content pre {
