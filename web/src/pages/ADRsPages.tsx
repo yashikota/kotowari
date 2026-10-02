@@ -1,3 +1,4 @@
+import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -122,7 +123,7 @@ export function ADRDetailPageView({
   titleRef,
 }: {
   model: ReturnType<typeof useADRDetailPagePresenter>;
-  titleRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+  titleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
   switch (model._view) {
@@ -165,26 +166,18 @@ export function ADRDetailPageView({
                 </Group>
               }
             />
-            <Stack gap="md">
+            <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
               {error ? (
                 <Alert color="red" variant="light">
                   {error}
                 </Alert>
               ) : null}
-              <TextInput
+              <DocumentTitle
                 ref={titleRef}
                 aria-label={t('ui.adrTitle')}
                 value={adr.title}
                 onChange={handlers.ADR_title_onChange3}
                 onBlur={handlers.ADR_title_onBlur4}
-                variant="unstyled"
-                styles={{
-                  input: {
-                    fontSize: 'var(--mantine-h3-font-size)',
-                    fontWeight: 600,
-                    padding: 0,
-                  },
-                }}
               />
               <Text size="sm" c="dimmed">
                 {t('ui.sandbox')} {sandbox} {t('ui.sandboxDisclaimer')}
@@ -234,11 +227,11 @@ export function ADRDetailPageView({
                 onChange={handlers.Supersedes_ADR_number_onChange8}
                 onBlur={handlers.Supersedes_ADR_number_onBlur9}
               />
-              <AIPanel kind="adrs" id={identifier} />
               <DocumentEditor
                 documentKey={`adrs/${identifier}/body`}
                 assetBase={`/api/adrs/${identifier}/`}
               />
+              <AIPanel kind="adrs" id={identifier} />
               <Stack gap="xs">
                 <Text size="sm" c="dimmed">
                   {t('ui.publishMdEnglish')}
@@ -339,6 +332,6 @@ function ADRDetailPageBinding() {
   const model = useADRDetailPagePresenter();
   const handlers = useActions(model.handlers);
   const autofocusTitle = useAutofocusTarget('title');
-  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [model.identifier]);
+  const titleRef = useFocusWhen<HTMLTextAreaElement>(autofocusTitle, [model.identifier]);
   return <ADRDetailPageView model={{ ...model, handlers } as typeof model} titleRef={titleRef} />;
 }

@@ -35,6 +35,11 @@ The shared PageHeader now wraps long titles and moves actions onto their own row
 screens. Heading weight and size are consistent, and document detail uses the document title
 instead of its slug. Existing imports continue to use the same component.
 
+Pages and decisions share `DocumentTitle`: a heading that expands to show the full title,
+retains focus styling, saves on blur, and commits with Enter without inserting a newline.
+Composition with an IME is preserved. Their editing content shares a bounded reading width;
+the document body precedes the optional AI conversation. Page tags have a visible label.
+
 The rest of the UI has not yet been unified. These are the next priorities:
 
 | Priority | Area | Required outcome |

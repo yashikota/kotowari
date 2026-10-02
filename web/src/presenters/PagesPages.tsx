@@ -175,7 +175,7 @@ export function usePageDetailPagePresenter() {
         });
       },
       Page_title_onChange2: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setPage({ ...page, title: e.target.value }),
       Page_title_onBlur3: () => save({ title: page.title }),
       Parent_page_onChange4: (

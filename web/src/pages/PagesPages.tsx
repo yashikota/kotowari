@@ -1,3 +1,4 @@
+import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
@@ -218,7 +219,7 @@ export function PageDetailPageView({
   titleRef,
 }: {
   model: ReturnType<typeof usePageDetailPagePresenter>;
-  titleRef: ReturnType<typeof useFocusWhen<HTMLInputElement>>;
+  titleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
   switch (model._view) {
@@ -243,21 +244,13 @@ export function PageDetailPageView({
                 </Group>
               }
             />
-            <Stack gap="md">
-              <TextInput
+            <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
+              <DocumentTitle
                 ref={titleRef}
                 aria-label={t('ui.pageTitle')}
                 value={page.title}
                 onChange={handlers.Page_title_onChange2}
                 onBlur={handlers.Page_title_onBlur3}
-                variant="unstyled"
-                styles={{
-                  input: {
-                    fontSize: 'var(--mantine-h3-font-size)',
-                    fontWeight: 600,
-                    padding: 0,
-                  },
-                }}
               />
               <Group gap="md" wrap="wrap" align="flex-end">
                 <NativeSelect
@@ -295,13 +288,14 @@ export function PageDetailPageView({
               </Group>
               <TextInput
                 aria-label={t('ui.tags')}
+                label={t('ui.tags')}
                 placeholder={t('ui.tagsCommaSeparated')}
                 value={tagDraft}
                 onChange={handlers.Tags_onChange7}
                 onBlur={handlers.Tags_onBlur8}
               />
-              <AIPanel kind="pages" id={slug} />
               <DocumentEditor documentKey={`pages/${slug}/body`} />
+              <AIPanel kind="pages" id={slug} />
             </Stack>
           </Pane>
         </SplitLayout>
@@ -322,6 +316,6 @@ function PageDetailPageBinding() {
   const model = usePageDetailPagePresenter();
   const handlers = useActions(model.handlers);
   const autofocusTitle = useAutofocusTarget('title');
-  const titleRef = useFocusWhen<HTMLInputElement>(autofocusTitle, [model.slug]);
+  const titleRef = useFocusWhen<HTMLTextAreaElement>(autofocusTitle, [model.slug]);
   return <PageDetailPageView model={{ ...model, handlers } as typeof model} titleRef={titleRef} />;
 }

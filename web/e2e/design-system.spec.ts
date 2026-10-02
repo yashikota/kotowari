@@ -23,6 +23,12 @@ for (const scheme of ['light', 'dark']) {
     await expect(header.getByRole('heading', { level: 2 })).toHaveText(title);
     const action = header.getByRole('button', { name: 'Delete', exact: true });
     await expect(action).toBeVisible();
+    const titleEditor = page.getByRole('textbox', { name: 'Page title', exact: true });
+    await expect(titleEditor).toHaveJSProperty('tagName', 'TEXTAREA');
+    await expect(titleEditor).toHaveValue(title);
+    expect(
+      await titleEditor.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
+    ).toBeTruthy();
     for (const width of [360, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       const headerBounds = await header.boundingBox();
@@ -43,6 +49,11 @@ for (const scheme of ['light', 'dark']) {
     }
     await page.setViewportSize({ width: 360, height: 800 });
     await page.screenshot({ path: testInfo.outputPath(`document-header-${scheme}.png`) });
+    await titleEditor.fill(`${title} revised`);
+    await titleEditor.press('Enter');
+    await expect
+      .poll(async () => (await (await request.get(`/api/pages/${slug}`)).json()).title)
+      .toBe(`${title} revised`);
     await request.delete(`/api/pages/${slug}`);
   });
 }

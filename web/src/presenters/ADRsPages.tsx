@@ -110,7 +110,7 @@ export function useADRDetailPagePresenter() {
         });
       },
       ADR_title_onChange3: (
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => setAdr({ ...adr, title: e.target.value }),
       ADR_title_onBlur4: () => save({ title: adr.title }),
       ADR_project_onChange5: (
