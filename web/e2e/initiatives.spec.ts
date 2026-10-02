@@ -19,13 +19,9 @@ test('initiative list matches Linear views, filters, grouping, ordering, and dis
   await page.goto('/initiatives');
   await expect(
     page.getByText(
-      'Initiatives are larger, strategic product efforts that set the direction of your company. They bring together projects aligned with a shared goal so you can monitor progress at scale.',
+      'Bring related projects together around a longer-term goal. Record the purpose, track progress, and keep updates in one place.',
     ),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Documentation' })).toHaveAttribute(
-    'href',
-    'https://linear.app/docs/initiatives',
-  );
   await page.keyboard.press('n');
   await page.keyboard.press('i');
   const shortcutCreateDialog = page.getByRole('dialog', { name: 'New initiative' });
@@ -570,7 +566,8 @@ test('deleting an initiative preserves projects and removes their initiative pro
 
   await page.goto(`/initiatives/${initiative.slug}`);
   const confirmation = page.waitForEvent('dialog').then((dialog) => dialog.accept());
-  await page.getByRole('button', { name: 'Delete initiative', exact: true }).click();
+  await page.getByRole('button', { name: 'More actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Delete initiative', exact: true }).click();
   await confirmation;
   await expect(page).toHaveURL('/initiatives');
 

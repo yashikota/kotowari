@@ -1,5 +1,4 @@
 import {
-  Anchor,
   Badge,
   Button,
   Group,
@@ -65,7 +64,7 @@ export function InitiativesPageView({
   } = model;
   const statusOptions = INITIATIVE_STATUSES.map((value) => ({
     value,
-    label: handlers.onStatusLabel(value),
+    label: t(`initiatives.${value}`),
   }));
   const colorOptions = INITIATIVE_COLORS.map((value) => ({ value, label: value }));
   return (
@@ -132,9 +131,6 @@ export function InitiativesPageView({
                 <Text size="xs" c="dimmed">
                   {t('initiatives.shortcutCreate')}
                 </Text>
-                <Anchor href="https://linear.app/docs/initiatives" target="_blank" rel="noreferrer">
-                  {t('initiatives.emptyDocumentation')}
-                </Anchor>
               </Stack>
             </EmptyState>
           ) : groups.every((group) => group.initiatives.length === 0) ? (
@@ -157,7 +153,7 @@ export function InitiativesPageView({
                     {group.status ? (
                       <Group gap="xs" px="xs">
                         <Text size="sm" fw={600}>
-                          {handlers.onStatusLabel(group.status)}
+                          {t(`initiatives.${group.status}`)}
                         </Text>
                         <Badge size="sm" variant="light" color="gray">
                           {group.initiatives.length}
@@ -183,7 +179,7 @@ export function InitiativesPageView({
                               initiative={initiative}
                               displayProperties={displayProperties}
                               activeProjects={onActiveProjectCount(initiative)}
-                              statusLabel={handlers.onStatusLabel(initiative.status)}
+                              statusLabel={t(`initiatives.${initiative.status}`)}
                             />
                           ))}
                         </Table.Tbody>

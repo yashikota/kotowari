@@ -199,7 +199,6 @@ export function useInitiativesPagePresenter() {
       onOpenInitiative: (initiative: Initiative) =>
         void navigate({ to: '/initiatives/$slug', params: { slug: initiative.slug } }),
       onProjectOpen: (slug: string) => void navigate({ to: '/projects/$slug', params: { slug } }),
-      onStatusLabel: (value: InitiativeStatus) => t(`initiatives.${value}`),
       onScopeChange: (value: string | null) =>
         updateListSearch({ scope: (value ?? 'all') as InitiativeListSearch['scope'] }),
       onQueryChange: (event: ChangeEvent<HTMLInputElement>) =>
@@ -300,6 +299,7 @@ export function useInitiativeDetailPresenter() {
   const [updateError, setUpdateError] = useState('');
   const [updating, setUpdating] = useState(false);
   const ownerSequenceSince = useRef<number | null>(null);
+  const mutationPending = useRef(false);
 
   const updates: HealthUpdateItem[] = activities.flatMap((activity) => {
     if (activity.action !== 'status_update_posted') return [];
@@ -325,7 +325,8 @@ export function useInitiativeDetailPresenter() {
 
   async function saveInitiative(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving) return;
+    if (mutationPending.current) return;
+    mutationPending.current = true;
     setSaving(true);
     setError('');
     try {
@@ -346,6 +347,7 @@ export function useInitiativeDetailPresenter() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.error'));
     } finally {
+      mutationPending.current = false;
       setSaving(false);
     }
   }
@@ -370,7 +372,9 @@ export function useInitiativeDetailPresenter() {
   }
 
   async function deleteInitiative() {
+    if (mutationPending.current) return;
     if (!window.confirm(t('initiatives.deleteConfirm'))) return;
+    mutationPending.current = true;
     setSaving(true);
     setError('');
     try {
@@ -380,6 +384,8 @@ export function useInitiativeDetailPresenter() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.error'));
       setSaving(false);
+    } finally {
+      mutationPending.current = false;
     }
   }
 
@@ -535,7 +541,6 @@ export function useInitiativeDetailPresenter() {
         setUpdateBody(event.currentTarget.value),
       onSubmitUpdate: postUpdate,
       onProjectOpen: (slug: string) => void navigate({ to: '/projects/$slug', params: { slug } }),
-      onStatusLabel: (value: InitiativeStatus) => t(`initiatives.${value}`),
     },
   };
 }

@@ -107,7 +107,13 @@ export function useActions<T extends object>(handlers: T): T {
   return useMemo(() => {
     const actions: Record<string, (...args: never[]) => unknown> = {};
     for (const name of names.split('\0').filter(Boolean))
-      actions[name] = (...args) => mediator.dispatch(scope, name, args);
+      actions[name] = (...args) => {
+        // A pending operation may suppress dispatch, but native form submission must still stop.
+        const event = args[0] as { preventDefault?: () => void } | undefined;
+        if (name.startsWith('onSubmit') && typeof event?.preventDefault === 'function')
+          event.preventDefault();
+        return mediator.dispatch(scope, name, args);
+      };
     return actions as T;
   }, [scope, names]);
 }

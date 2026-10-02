@@ -1,6 +1,8 @@
 import {
   ActionIcon,
   Badge,
+  Box,
+  SimpleGrid,
   Button,
   Group,
   Menu,
@@ -11,7 +13,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { IconArrowLeft, IconDotsVertical, IconStar, IconTrash } from '@tabler/icons-react';
+import { IconArrowLeft, IconDotsVertical, IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { EntityReminderMenu } from '../components/EntityReminderMenu.tsx';
@@ -106,6 +108,10 @@ export function InitiativeDetailPageView({
                   <Menu.Item onClick={handlers.onCopyInitiativeTitle}>
                     {t('issueActions.copyTitle')}
                   </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item color="red" disabled={saving} onClick={handlers.onDelete}>
+                    {t('initiatives.delete')}
+                  </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
               <ActionIcon
@@ -136,161 +142,160 @@ export function InitiativeDetailPageView({
               >
                 {t('nav.initiatives')}
               </Button>
-              <Button
-                type="button"
-                variant="subtle"
-                color="red"
-                leftSection={<IconTrash size={15} />}
-                onClick={handlers.onDelete}
-              >
-                {t('initiatives.delete')}
-              </Button>
             </Group>
           }
         />
         <form onSubmit={handlers.onSubmit}>
-          <Stack p="md" maw={900} style={{ overflow: 'auto', minHeight: 0 }}>
-            <Group grow align="flex-start">
-              <TextInput
-                label={t('initiatives.name')}
-                value={name}
-                onChange={handlers.onNameChange}
-                required
-                maxLength={120}
-              />
-              <Select
-                label={t('initiatives.status')}
-                value={status}
-                onChange={handlers.onStatusChange}
-                data={INITIATIVE_STATUSES.map((value) => ({
-                  value,
-                  label: handlers.onStatusLabel(value),
-                }))}
-              />
-              <Select
-                label={t('initiatives.color')}
-                value={color}
-                onChange={handlers.onColorChange}
-                data={INITIATIVE_COLORS.map((value) => ({ value, label: value }))}
-              />
-            </Group>
-            <Textarea
-              label={t('initiatives.description')}
-              value={description}
-              onChange={handlers.onDescriptionChange}
-              minRows={5}
-              autosize
-            />
-            <Group grow>
-              <TextInput
-                type="date"
-                label={t('initiatives.startDate')}
-                value={startDate}
-                onChange={handlers.onStartDateChange}
-              />
-              <TextInput
-                ref={targetDateRef}
-                type="date"
-                label={t('initiatives.targetDate')}
-                value={targetDate}
-                onChange={handlers.onTargetDateChange}
-              />
-            </Group>
-            <Group grow align="flex-start">
-              <Select
-                ref={ownerRef}
-                label={t('initiatives.owner')}
-                value={owner}
-                onChange={handlers.onOwnerChange}
-                data={[
-                  { value: '', label: t('projectList.leadUnassigned') },
-                  { value: 'self', label: t('projectList.leadYou') },
-                ]}
-                searchable
-                openOnFocus
-                comboboxProps={{ withinPortal: false }}
-              />
-              <Select
-                label={t('initiativeList.priority')}
-                value={String(priority)}
-                onChange={handlers.onPriorityChange}
-                data={['0', '1', '2', '3', '4'].map((value) => ({
-                  value,
-                  label: t(`initiativeList.priorityValue.${value}`),
-                }))}
-              />
-              <Stack gap={4}>
-                <Text size="sm" fw={500}>
-                  {t('initiativeList.health')}
-                </Text>
-                <Group gap="xs" wrap="nowrap">
-                  <Badge
-                    variant="light"
-                    color={health ? 'green' : 'gray'}
-                    aria-label={t('initiativeList.health')}
-                  >
-                    {health
-                      ? t(`initiativeList.healthValue.${health}`)
-                      : t('initiativeList.noHealth')}
-                  </Badge>
-                  <Button type="button" size="compact-sm" onClick={handlers.onOpenUpdate}>
-                    {t('initiativeUpdates.postButton')}
+          <Stack p="md" maw={960} mx="auto" w="100%" style={{ minHeight: 0 }}>
+            <Box
+              component="fieldset"
+              disabled={saving}
+              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            >
+              <Stack gap="md">
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <TextInput
+                    label={t('initiatives.name')}
+                    value={name}
+                    onChange={handlers.onNameChange}
+                    required
+                    maxLength={120}
+                  />
+                  <Select
+                    label={t('initiatives.status')}
+                    value={status}
+                    onChange={handlers.onStatusChange}
+                    data={INITIATIVE_STATUSES.map((value) => ({
+                      value,
+                      label: t(`initiatives.${value}`),
+                    }))}
+                  />
+                  <Select
+                    label={t('initiatives.color')}
+                    value={color}
+                    onChange={handlers.onColorChange}
+                    data={INITIATIVE_COLORS.map((value) => ({ value, label: value }))}
+                  />
+                </SimpleGrid>
+                <Textarea
+                  label={t('initiatives.description')}
+                  value={description}
+                  onChange={handlers.onDescriptionChange}
+                  minRows={5}
+                  autosize
+                />
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <TextInput
+                    type="date"
+                    label={t('initiatives.startDate')}
+                    value={startDate}
+                    onChange={handlers.onStartDateChange}
+                  />
+                  <TextInput
+                    ref={targetDateRef}
+                    type="date"
+                    label={t('initiatives.targetDate')}
+                    value={targetDate}
+                    onChange={handlers.onTargetDateChange}
+                  />
+                </SimpleGrid>
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <Select
+                    ref={ownerRef}
+                    label={t('initiatives.owner')}
+                    value={owner}
+                    onChange={handlers.onOwnerChange}
+                    data={[
+                      { value: '', label: t('projectList.leadUnassigned') },
+                      { value: 'self', label: t('projectList.leadYou') },
+                    ]}
+                    searchable
+                    openOnFocus
+                    comboboxProps={{ withinPortal: false }}
+                  />
+                  <Select
+                    label={t('initiativeList.priority')}
+                    value={String(priority)}
+                    onChange={handlers.onPriorityChange}
+                    data={['0', '1', '2', '3', '4'].map((value) => ({
+                      value,
+                      label: t(`initiativeList.priorityValue.${value}`),
+                    }))}
+                  />
+                  <Stack gap={4}>
+                    <Text size="sm" fw={500}>
+                      {t('initiativeList.health')}
+                    </Text>
+                    <Group gap="xs" wrap="wrap">
+                      <Badge
+                        variant="light"
+                        color={health ? 'green' : 'gray'}
+                        aria-label={t('initiativeList.health')}
+                      >
+                        {health
+                          ? t(`initiativeList.healthValue.${health}`)
+                          : t('initiativeList.noHealth')}
+                      </Badge>
+                      <Button type="button" size="compact-sm" onClick={handlers.onOpenUpdate}>
+                        {t('initiativeUpdates.postButton')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                  <MultiSelect
+                    label={t('initiativeList.labels')}
+                    value={labels}
+                    onChange={handlers.onLabelsChange}
+                    data={availableLabels}
+                    searchable
+                    clearable
+                  />
+                </SimpleGrid>
+                <MultiSelect
+                  label={t('initiatives.addProjects')}
+                  aria-label={t('initiatives.addProjects')}
+                  value={projectSlugs}
+                  onChange={handlers.onProjectSlugsChange}
+                  data={availableProjects}
+                  searchable
+                  clearable
+                  comboboxProps={{ withinPortal: false }}
+                />
+                <Stack gap="xs">
+                  <Text size="sm" fw={600}>
+                    {t('initiatives.projects')}
+                  </Text>
+                  {linkedProjects.length === 0 ? (
+                    <Text size="sm" c="dimmed">
+                      {t('initiatives.noProjects')}
+                    </Text>
+                  ) : (
+                    <Group gap="xs">
+                      {linkedProjects.map((project) => (
+                        <Button
+                          key={project.slug}
+                          type="button"
+                          size="compact-sm"
+                          variant="default"
+                          onClick={() => handlers.onProjectOpen(project.slug)}
+                        >
+                          {project.name}
+                        </Button>
+                      ))}
+                    </Group>
+                  )}
+                </Stack>
+                {error ? (
+                  <Text c="red" role="alert">
+                    {error}
+                  </Text>
+                ) : null}
+                <Group justify="flex-end">
+                  <Button type="submit" loading={saving} disabled={!name.trim()}>
+                    {t('initiatives.save')}
                   </Button>
                 </Group>
               </Stack>
-              <MultiSelect
-                label={t('initiativeList.labels')}
-                value={labels}
-                onChange={handlers.onLabelsChange}
-                data={availableLabels}
-                searchable
-                clearable
-              />
-            </Group>
-            <MultiSelect
-              label={t('initiatives.addProjects')}
-              aria-label={t('initiatives.addProjects')}
-              value={projectSlugs}
-              onChange={handlers.onProjectSlugsChange}
-              data={availableProjects}
-              searchable
-              clearable
-              comboboxProps={{ withinPortal: false }}
-            />
-            <Stack gap="xs">
-              <Text size="sm" fw={600}>
-                {t('initiatives.projects')}
-              </Text>
-              {linkedProjects.length === 0 ? (
-                <Text size="sm" c="dimmed">
-                  {t('initiatives.noProjects')}
-                </Text>
-              ) : (
-                <Group gap="xs">
-                  {linkedProjects.map((project) => (
-                    <Button
-                      key={project.slug}
-                      type="button"
-                      size="compact-sm"
-                      variant="default"
-                      onClick={() => handlers.onProjectOpen(project.slug)}
-                    >
-                      {project.name}
-                    </Button>
-                  ))}
-                </Group>
-              )}
-            </Stack>
-            {error ? (
-              <Text c="red" role="alert">
-                {error}
-              </Text>
-            ) : null}
-            <Group justify="flex-end">
-              <Button type="submit" loading={saving} disabled={!name.trim()}>
-                {t('initiatives.save')}
-              </Button>
-            </Group>
+            </Box>
           </Stack>
         </form>
         <Stack
@@ -299,7 +304,9 @@ export function InitiativeDetailPageView({
           aria-label={t('initiativeUpdates.heading')}
           p="md"
           pt={0}
-          maw={900}
+          maw={960}
+          mx="auto"
+          w="100%"
           gap="sm"
           style={{ overflow: 'auto', minHeight: 0 }}
         >
