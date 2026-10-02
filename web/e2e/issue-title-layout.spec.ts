@@ -18,6 +18,25 @@ for (const scheme of ['light', 'dark']) {
     const input = page.getByRole('textbox', { name: 'Issue title', exact: true });
     await expect(input).toHaveValue(title);
     await expect(input).toHaveJSProperty('tagName', 'TEXTAREA');
+    const priority = page.getByRole('combobox', { name: 'Priority', exact: true });
+    const status = page.getByRole('combobox', { name: 'Status', exact: true });
+    const coreProperties = page.getByRole('group', { name: 'Core properties', exact: true });
+    await expect(coreProperties.getByText('Status', { exact: true })).toBeVisible();
+    await expect(coreProperties.getByText('Priority', { exact: true })).toBeVisible();
+    const statusBounds = await status.boundingBox();
+    const priorityBounds = await priority.boundingBox();
+    expect(statusBounds).not.toBeNull();
+    expect(priorityBounds).not.toBeNull();
+    expect(Math.abs(statusBounds!.y - priorityBounds!.y)).toBeLessThan(2);
+    expect(priorityBounds!.x).toBeGreaterThan(statusBounds!.x);
+    expect(priorityBounds!.height).toBeGreaterThanOrEqual(36);
+    await priority.click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await priority.press('Escape');
+    await expect(page.getByRole('listbox')).toBeHidden();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBeTruthy();
     expect(
       await input.evaluate((element) => element.scrollHeight <= element.clientHeight + 1),
     ).toBeTruthy();
@@ -34,6 +53,15 @@ for (const scheme of ['light', 'dark']) {
       .toBe(`${title} revised`);
     await page.reload();
     await expect(input).toHaveValue(`${title} revised`);
+    await page.evaluate(() =>
+      localStorage.setItem('kotowari.preferences.v1', JSON.stringify({ fontSize: 'large' })),
+    );
+    await page.reload();
+    await expect(input).toHaveValue(`${title} revised`);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath(`issue-properties-${scheme}-large.png`) });
     await request.delete(`/api/issues/${issue.identifier}`);
   });
 }

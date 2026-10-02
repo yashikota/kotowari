@@ -37,7 +37,7 @@
   margin: 0 0 7px;
   padding-inline: 8px;
   color: var(--mantine-color-dimmed);
-  font-size: 13px;
+  font-size: var(--mantine-font-size-sm);
   font-weight: 500;
   line-height: 16px;
 }
@@ -258,6 +258,54 @@
 @media (max-width: 76em) {
   .aside {
     padding-top: 0;
+  }
+
+  .properties {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--mantine-spacing-sm);
+  }
+
+  .coreProperties {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1 / -1;
+    gap: var(--mantine-spacing-xs);
+  }
+
+  .coreProperties > .heading {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+
+  .coreProperties > .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding-block: 4px;
+    border-color: var(--mantine-color-default-border);
+  }
+
+  .coreProperties .label {
+    display: block;
+    max-width: 100%;
+  }
+
+  .optionalProperties {
+    grid-column: 1 / -1;
+  }
+
+  .input,
+  .labelPickerTarget {
+    min-height: 36px;
+    height: 36px;
+  }
+
+  .addPropertyButton {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+    opacity: 1;
   }
 }
 
