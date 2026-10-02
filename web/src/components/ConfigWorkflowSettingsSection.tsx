@@ -40,7 +40,13 @@ export function ConfigWorkflowSettingsSection({ model, t }: Props) {
 
   return (
     <>
-      <Stack gap="md" component="section" aria-label={t('config.issueStatuses')}>
+      <Stack
+        id="settings-issue-statuses"
+        tabIndex={-1}
+        gap="md"
+        component="section"
+        aria-label={t('config.issueStatuses')}
+      >
         <Title order={4}>{t('config.issueStatuses')}</Title>
         <Text size="sm" c="dimmed">
           {t('config.issueStatusesDescription')}
@@ -153,7 +159,13 @@ export function ConfigWorkflowSettingsSection({ model, t }: Props) {
         </Box>
       </Stack>
 
-      <Stack gap="md" component="section" aria-label={t('config.projectStatuses')}>
+      <Stack
+        id="settings-project-statuses"
+        tabIndex={-1}
+        gap="md"
+        component="section"
+        aria-label={t('config.projectStatuses')}
+      >
         <Title order={4}>{t('config.projectStatuses')}</Title>
         <Text size="sm" c="dimmed">
           {t('config.projectStatusesDescription')}

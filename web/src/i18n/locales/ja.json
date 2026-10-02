@@ -438,6 +438,7 @@
     "removeResource": "リソース「{{title}}」を削除"
   },
   "config": {
+    "sections": "設定項目",
     "title": "設定",
     "workspace": "ワークスペース",
     "name": "名前",

@@ -444,6 +444,7 @@
     "removeResource": "Remove resource {{title}}"
   },
   "config": {
+    "sections": "Settings sections",
     "title": "Config",
     "workspace": "Workspace",
     "name": "Name",

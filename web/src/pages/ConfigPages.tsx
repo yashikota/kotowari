@@ -63,12 +63,37 @@ export function ConfigPageView({
               </Alert>
             ) : null}
 
-            <Stack gap="xl">
-              <ConfigWorkspaceSettingsSection model={model} handlers={handlers} t={t} />
-              <ConfigCycleSettingsSection model={model} handlers={handlers} t={t} />
-              <ConfigIssueAutomationSettingsSection model={model} handlers={handlers} t={t} />
+            <Group component="nav" aria-label={t('config.sections')} gap="xs" py="md" wrap="wrap">
+              {(
+                [
+                  ['workspace', 'config.workspace'],
+                  ['preferences', 'config.personalPreferences'],
+                  ['coding-tools', 'codingTools.heading'],
+                  ['application', 'config.application'],
+                  ['issue-statuses', 'config.issueStatuses'],
+                  ['project-statuses', 'config.projectStatuses'],
+                  ['diagnostics', 'config.diagnostics'],
+                ] as const
+              ).map(([id, label]) => (
+                <Button key={id} component="a" href={`#settings-${id}`} variant="default" size="xs">
+                  {t(label)}
+                </Button>
+              ))}
+            </Group>
+            <Stack gap="xl" maw={960} mx="auto" w="100%" pb="xl">
+              <Stack id="settings-workspace" tabIndex={-1} gap="xl">
+                <ConfigWorkspaceSettingsSection model={model} handlers={handlers} t={t} />
+                <ConfigCycleSettingsSection model={model} handlers={handlers} t={t} />
+                <ConfigIssueAutomationSettingsSection model={model} handlers={handlers} t={t} />
+              </Stack>
 
-              <Stack gap="md" component="section" aria-label={t('config.personalPreferences')}>
+              <Stack
+                id="settings-preferences"
+                tabIndex={-1}
+                gap="md"
+                component="section"
+                aria-label={t('config.personalPreferences')}
+              >
                 <Title order={4}>{t('config.personalPreferences')}</Title>
                 <Stack gap="md" maw={480}>
                   <Select
@@ -169,7 +194,13 @@ export function ConfigPageView({
 
               <InboxNotificationSettings />
 
-              <Stack gap="md" component="section" aria-label={t('codingTools.heading')}>
+              <Stack
+                id="settings-coding-tools"
+                tabIndex={-1}
+                gap="md"
+                component="section"
+                aria-label={t('codingTools.heading')}
+              >
                 <Title order={4}>{t('codingTools.heading')}</Title>
                 {codingToolError ? (
                   <Alert color="red" variant="light">
@@ -224,7 +255,13 @@ export function ConfigPageView({
                 </Text>
               </Stack>
 
-              <Stack gap="md" component="section" aria-label={t('config.application')}>
+              <Stack
+                id="settings-application"
+                tabIndex={-1}
+                gap="md"
+                component="section"
+                aria-label={t('config.application')}
+              >
                 <Title order={4}>{t('config.application')}</Title>
                 <Stack gap="xs" maw={480}>
                   <Button variant="light" onClick={handlers.onOpenCommandPalette}>
@@ -244,7 +281,13 @@ export function ConfigPageView({
 
               <ConfigWorkflowSettingsSection model={model} t={t} />
 
-              <Stack gap="md" component="section" aria-label={t('config.diagnostics')}>
+              <Stack
+                id="settings-diagnostics"
+                tabIndex={-1}
+                gap="md"
+                component="section"
+                aria-label={t('config.diagnostics')}
+              >
                 <Title order={4}>{t('config.diagnostics')}</Title>
                 {diagnostics.length === 0 ? (
                   <EmptyState>{t('config.noDiagnostics')}</EmptyState>

@@ -1,6 +1,28 @@
 import { expect, test } from '@playwright/test';
 import { expandMoreNavigation, fillIssueSearch } from './issue-list-controls.ts';
 
+test('settings navigation reaches each section on a narrow screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/config');
+  const navigation = page.getByRole('navigation', { name: 'Settings sections', exact: true });
+  await expect(navigation).toBeVisible();
+  expect(
+    await navigation.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+  ).toBeTruthy();
+  for (const id of [
+    'workspace',
+    'preferences',
+    'coding-tools',
+    'application',
+    'issue-statuses',
+    'project-statuses',
+    'diagnostics',
+  ]) {
+    await navigation.locator(`a[href="#settings-${id}"]`).click();
+    await expect(page.locator(`#settings-${id}`).getByRole('heading').first()).toBeInViewport();
+  }
+});
+
 async function choose(page: import('@playwright/test').Page, label: string, option: string) {
   await page.getByRole('combobox', { name: label }).click();
   await page.getByRole('option', { name: option, exact: true }).click();
