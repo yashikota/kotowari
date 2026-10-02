@@ -465,6 +465,12 @@
     "resourceRemoved": "「{{title}}」を削除しました"
   },
   "config": {
+    "cycleSettingsSaving": "サイクルのスケジュールを保存中…",
+    "issueAutomationSettingsSaving": "イシューの自動処理を保存中…",
+    "cycleGenerationFailed": "設定は保存しましたが、サイクルを準備できませんでした",
+    "retryCycleGeneration": "サイクルの準備を再試行",
+    "generatingCycles": "サイクルを準備中…",
+    "cyclesReady": "サイクルの準備が完了しました",
     "sections": "設定項目",
     "title": "設定",
     "workspace": "ワークスペース",

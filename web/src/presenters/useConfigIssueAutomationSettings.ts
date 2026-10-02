@@ -1,6 +1,6 @@
 import { useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
 import { signals } from '../application/mediator.ts';
@@ -14,82 +14,96 @@ export function useConfigIssueAutomationSettings(initialSettings: IssueAutomatio
   const [issueAutomationSettingsError, setIssueAutomationSettingsError] = useState('');
   const [issueAutomationSettingsSaved, setIssueAutomationSettingsSaved] = useState(false);
 
-  useEffect(() => setIssueAutomationSettings(initialSettings), [initialSettings]);
+  const [issueAutomationSettingsSaving, setIssueAutomationSettingsSaving] = useState(false);
+  const pending = useRef(false);
+  const dirty = useRef(false);
+  useEffect(() => {
+    if (!dirty.current && !pending.current) setIssueAutomationSettings(initialSettings);
+  }, [initialSettings]);
+
+  const changeSettings = (update: Partial<IssueAutomationSettings>) => {
+    if (pending.current) return;
+    dirty.current = true;
+    setIssueAutomationSettingsSaved(false);
+    setIssueAutomationSettings((current) => ({ ...current, ...update }));
+  };
+
+  const saveSettings = () => {
+    if (pending.current) return;
+    pending.current = true;
+    setIssueAutomationSettingsSaving(true);
+    setIssueAutomationSettingsError('');
+    setIssueAutomationSettingsSaved(false);
+    return api
+      .patchWorkspace({ issueAutomationSettings })
+      .then(async (next) => {
+        dirty.current = false;
+        setIssueAutomationSettings(normalizeWorkspace(next).issueAutomationSettings);
+        setIssueAutomationSettingsSaved(true);
+        signals.dispatchEvent(new Event('kotowari:refresh'));
+        await router.invalidate().catch(() => undefined);
+      })
+      .catch((error: unknown) => {
+        setIssueAutomationSettingsError(
+          error instanceof Error ? error.message : t('config.issueAutomationSettingsSaveFailed'),
+        );
+      })
+      .finally(() => {
+        pending.current = false;
+        setIssueAutomationSettingsSaving(false);
+      });
+  };
 
   return {
     data: {
       issueAutomationSettings,
       issueAutomationSettingsError,
       issueAutomationSettingsSaved,
+      issueAutomationSettingsSaving,
     },
     handlers: {
+      onRetryIssueAutomationSettingsSave: saveSettings,
       onSaveIssueAutomationSettings: (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setIssueAutomationSettingsError('');
-        setIssueAutomationSettingsSaved(false);
-        void api
-          .patchWorkspace({ issueAutomationSettings })
-          .then(async (next) => {
-            setIssueAutomationSettings(normalizeWorkspace(next).issueAutomationSettings);
-            setIssueAutomationSettingsSaved(true);
-            signals.dispatchEvent(new Event('kotowari:refresh'));
-            await router.invalidate();
-          })
-          .catch((error: unknown) =>
-            setIssueAutomationSettingsError(
-              error instanceof Error
-                ? error.message
-                : t('config.issueAutomationSettingsSaveFailed'),
-            ),
-          );
+        return saveSettings();
       },
       onAutoCloseParentIssuesChange: (
         event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
         const checked = event.currentTarget.checked;
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
+        changeSettings({
           autoCloseParentIssues: checked,
-        }));
+        });
       },
       onAutoCloseSubIssuesChange: (
         event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
         const checked = event.currentTarget.checked;
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
+        changeSettings({
           autoCloseSubIssues: checked,
-        }));
+        });
       },
       onStatusProgressionOrderChange: (value: string | null) => {
         if (value !== 'first' && value !== 'last' && value !== 'no_action') return;
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
+        changeSettings({
           statusProgressionOrder: value,
-        }));
+        });
       },
       onAutoCloseStaleIssuesAfterMonthsChange: (value: string | null) => {
         const months = Number(value);
         if (value === null || ![0, 1, 3, 6, 12].includes(months)) return;
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
+        changeSettings({
           autoCloseStaleIssuesAfterMonths: months,
-        }));
+        });
       },
       onAutoArchiveClosedIssuesAfterMonthsChange: (value: string | null) => {
         const months = Number(value);
         if (value === null || ![0, 1, 3, 6, 12].includes(months)) return;
-        setIssueAutomationSettingsSaved(false);
-        setIssueAutomationSettings((current) => ({
-          ...current,
+        changeSettings({
           autoArchiveClosedIssuesAfterMonths: months,
           autoArchiveCompletedProjectsAfterMonths: months,
           autoArchiveCompletedCyclesAfterMonths: months,
-        }));
+        });
       },
     },
   };

@@ -471,6 +471,12 @@
     "resourceRemoved": "Removed {{title}}"
   },
   "config": {
+    "cycleSettingsSaving": "Saving cycle schedule…",
+    "issueAutomationSettingsSaving": "Saving issue automations…",
+    "cycleGenerationFailed": "Settings saved, but cycles could not be prepared",
+    "retryCycleGeneration": "Retry preparing cycles",
+    "generatingCycles": "Preparing cycles…",
+    "cyclesReady": "Cycle preparation completed",
     "sections": "Settings sections",
     "title": "Config",
     "workspace": "Workspace",

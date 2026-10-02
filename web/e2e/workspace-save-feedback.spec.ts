@@ -90,6 +90,9 @@ for (const scheme of ['light', 'dark']) {
       await retry.press('Enter');
       await expect(alert).toBeHidden();
       await expect(workspace.getByRole('status')).toHaveText('Workspace saved');
+      await expect(
+        workspace.getByRole('button', { name: 'Save workspace', exact: true }),
+      ).toBeFocused();
       expect(attempts).toBe(2);
       await page.reload();
       await expect(name).toHaveValue(draftName);

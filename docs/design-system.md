@@ -77,6 +77,8 @@ The shared pattern inventory currently includes:
 | Reading surface | `mantine-ui.tsx`, `design-system/MarkdownContent.module.css` | Shared typography and contained tables, code and media |
 | View creation header | `components/ViewBuilderHeader.tsx` | Shared labeled name/description, icon picker and create/cancel controls for task and project views |
 | Save feedback | `design-system/SaveFeedback.tsx` | Progress, confirmed success, failure details and a retry action; used by task, project, saved view and workspace editing |
+| Settings form | `design-system/SettingsForm.tsx` | Shared native fieldset, bounded fields, progress/error/retry and primary save action for workspace, cycle and automation settings |
+| Action focus return | `focus.ts` | Restore a usable control after retry completion and enabled rendering; preserve focus if the user moves elsewhere while waiting |
 
 This inventory is a starting point, not a declaration that the design system is finished.
 Property controls, dialogs, toolbars, selection and save feedback still need consistent patterns.

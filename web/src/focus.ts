@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 
 export type AutofocusTarget = 'title' | 'name' | 'body' | 'description';
@@ -38,6 +38,34 @@ export function useFocusWhen<T extends HTMLElement>(
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deps list is caller-controlled
   }, [active, ...deps]);
   return ref;
+}
+
+/** Restore focus after pending controls have been rendered enabled again. */
+export function useActionFocusReturn(busy: boolean, fallback: () => HTMLElement | null) {
+  const pending = useRef<HTMLElement | null>(null);
+  const latestFallback = useRef(fallback);
+  latestFallback.current = fallback;
+  const [completion, setCompletion] = useState(0);
+  useEffect(() => {
+    if (busy) return;
+    const trigger = pending.current;
+    pending.current = null;
+    if (!trigger) return;
+    const frame = requestAnimationFrame(() => {
+      if (document.activeElement === document.body) latestFallback.current()?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [busy, completion]);
+  return async (action: () => unknown) => {
+    const trigger = document.activeElement;
+    try {
+      return await action();
+    } finally {
+      pending.current =
+        trigger instanceof HTMLElement && trigger !== document.body ? trigger : null;
+      setCompletion((current) => current + 1);
+    }
+  };
 }
 
 declare module '@tanstack/history' {
