@@ -28,7 +28,8 @@ test('a project can be saved as a template and reused without stale dates', asyn
   expect(created.ok(), await created.text()).toBeTruthy();
 
   await page.goto(`/projects/${sourceSlug}`);
-  await page.getByRole('button', { name: 'Save as template' }).click();
+  await page.getByRole('button', { name: 'More actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Save as template' }).click();
   const saveDialog = page.getByRole('dialog', { name: 'Save project template' });
   await saveDialog.getByLabel('Template name').fill(`Launch template ${stamp}`);
   await saveDialog.getByRole('button', { name: 'Save as template' }).click();

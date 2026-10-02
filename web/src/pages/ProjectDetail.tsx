@@ -90,14 +90,19 @@ export function ProjectDetailPageView({
             <Pane single>
               <PageHeader
                 title={
-                  <Group gap="xs" wrap="nowrap">
+                  <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
                     <ProjectIconPicker
                       icon={project.icon}
                       color={project.iconColor}
                       onChange={handlers.onProjectIconChange}
                       onColorChange={handlers.onProjectIconColorChange}
                     />
-                    <Text component="span" size="sm" fw={550} truncate>
+                    <Text
+                      component="span"
+                      size="md"
+                      fw={600}
+                      style={{ overflowWrap: 'anywhere', minWidth: 0 }}
+                    >
                       {project.name}
                     </Text>
                   </Group>
@@ -142,6 +147,17 @@ export function ProjectDetailPageView({
                         <Menu.Item onClick={handlers.onCopyProjectTitle}>
                           {t('issueActions.copyTitle')}
                         </Menu.Item>
+                        <Menu.Divider />
+                        <Menu.Item onClick={handlers.onOpenProjectTemplate}>
+                          {t('projectTemplates.saveAsTemplate')}
+                        </Menu.Item>
+                        <Menu.Item onClick={handlers.onToggleProjectArchived}>
+                          {t(project.archivedAt ? 'projectList.restore' : 'projectList.archive')}
+                        </Menu.Item>
+                        <Menu.Divider />
+                        <Menu.Item color="red" onClick={handlers.onDeleteProject}>
+                          {t('ui.delete')}
+                        </Menu.Item>
                       </Menu.Dropdown>
                     </Menu>
                     <ActionIcon
@@ -164,66 +180,16 @@ export function ProjectDetailPageView({
                         aria-hidden="true"
                       />
                     </ActionIcon>
-                    <NativeSelect
-                      ref={statusRef}
-                      aria-label={t('ui.projectStatus')}
-                      value={project.workflowStatus ?? project.status}
-                      onChange={handlers.onStatusChange}
-                      data={model.projectWorkflowStatuses.map((status) => ({
-                        value: status.id,
-                        label: projectWorkflowStatusLabel(
-                          status.id,
-                          model.projectWorkflowStatuses,
-                          t,
-                        ),
-                      }))}
-                    />
-                    <NativeSelect
-                      aria-label={t('field.priority')}
-                      value={String(project.priority)}
-                      onChange={handlers.onPriorityChange}
-                      data={[0, 1, 2, 3, 4].map((priority) => ({
-                        value: String(priority),
-                        label: priorityLabel(priority),
-                      }))}
-                    />
-                    <NativeSelect
-                      aria-label={t('projectList.property.health')}
-                      value={project.health || 'none'}
-                      onChange={handlers.onProjectHealthChange}
-                      data={['none', 'on_track', 'at_risk', 'off_track'].map((health) => ({
-                        value: health,
-                        label: t(`projectHealth.status.${health}`),
-                      }))}
-                    />
-                    <Button type="button" variant="subtle" onClick={handlers.onCreateIssue}>
+                    <Button type="button" onClick={handlers.onCreateIssue}>
                       {t('ui.newIssue')}
                     </Button>
                     <Button type="button" variant="default" onClick={handlers.onOpenProjectUpdate}>
                       {t('projectUpdates.postButton')}
                     </Button>
-                    <Button type="button" variant="subtle" onClick={handlers.onOpenProjectTemplate}>
-                      {t('projectTemplates.saveAsTemplate')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="subtle"
-                      onClick={handlers.onToggleProjectArchived}
-                    >
-                      {t(project.archivedAt ? 'projectList.restore' : 'projectList.archive')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="subtle"
-                      color="red"
-                      onClick={handlers.onDeleteProject}
-                    >
-                      {t('ui.delete')}
-                    </Button>
                   </Group>
                 }
               />
-              <Stack gap="md">
+              <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
                 <TextInput
                   aria-label={t('ui.projectSummary')}
                   label={t('ui.projectSummary')}
@@ -235,6 +201,9 @@ export function ProjectDetailPageView({
                   ref={descriptionRef}
                   aria-label={t('ui.projectDescription')}
                   placeholder={t('ui.description')}
+                  label={t('ui.projectDescription')}
+                  autosize
+                  minRows={2}
                   value={project.description}
                   onChange={handlers.onDescriptionChange}
                   onBlur={handlers.onDescriptionBlur}
@@ -256,6 +225,42 @@ export function ProjectDetailPageView({
                   />
                 </Section>
                 <Group gap="md" wrap="wrap" align="flex-end">
+                  <NativeSelect
+                    ref={statusRef}
+                    aria-label={t('ui.projectStatus')}
+                    label={t('ui.projectStatus')}
+                    value={project.workflowStatus ?? project.status}
+                    onChange={handlers.onStatusChange}
+                    data={model.projectWorkflowStatuses.map((status) => ({
+                      value: status.id,
+                      label: projectWorkflowStatusLabel(
+                        status.id,
+                        model.projectWorkflowStatuses,
+                        t,
+                      ),
+                    }))}
+                  />
+                  <NativeSelect
+                    aria-label={t('field.priority')}
+                    label={t('field.priority')}
+                    value={String(project.priority)}
+                    onChange={handlers.onPriorityChange}
+                    data={[0, 1, 2, 3, 4].map((priority) => ({
+                      value: String(priority),
+                      label: priorityLabel(priority),
+                    }))}
+                  />
+                  <NativeSelect
+                    aria-label={t('projectList.property.health')}
+                    label={t('projectList.property.health')}
+                    value={project.health || 'none'}
+                    onChange={handlers.onProjectHealthChange}
+                    data={['none', 'on_track', 'at_risk', 'off_track'].map((health) => ({
+                      value: health,
+                      label: t(`projectHealth.status.${health}`),
+                    }))}
+                  />
+
                   <NativeSelect
                     ref={leadRef}
                     aria-label={t('projectList.property.lead')}
