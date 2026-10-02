@@ -35,7 +35,11 @@ test('Shift+H sets a project reminder that appears in Reminders', async ({ page,
   await page.goto('/reminders');
   const reminderLink = page.getByRole('link', { name });
   await expect(reminderLink).toBeVisible();
-  await reminderLink.locator('xpath=../..').getByRole('button', { name: 'Dismiss' }).click();
+  await page
+    .getByRole('listitem')
+    .filter({ has: reminderLink })
+    .getByRole('button', { name: 'Dismiss', exact: true })
+    .click();
   await expect
     .poll(async () => {
       const response = await request.get(`/api/projects/${slug}`);
