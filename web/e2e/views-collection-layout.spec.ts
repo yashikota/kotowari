@@ -43,6 +43,15 @@ for (const scheme of ['light', 'dark']) {
     ).toBeGreaterThanOrEqual(2);
     expect((await link.getByText(name, { exact: true }).boundingBox())!.width).toBeGreaterThan(220);
     await page.screenshot({ path: testInfo.outputPath('issue-views.png') });
+    await link.press('Enter');
+    const nameInput = page.getByRole('textbox', { name: 'View name', exact: true });
+    await expect(nameInput).toHaveValue(name);
+    expect((await nameInput.boundingBox())!.width).toBeGreaterThan(280);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath('view-detail.png') });
+    await page.goto('/views');
     await page.getByRole('tab', { name: 'Projects', exact: true }).click();
     const button = collection.getByRole('button', { name, exact: true });
     await button.focus();

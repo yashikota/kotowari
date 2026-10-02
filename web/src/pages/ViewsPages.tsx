@@ -54,13 +54,13 @@ export function ViewPageView({
             <Pane single={view.display === 'board'}>
               <PageHeader
                 title={
-                  <Group gap="xs" wrap="nowrap">
+                  <Group gap="xs" wrap="nowrap" align="flex-start" style={{ minWidth: 0 }}>
                     <ViewIcon name={view.icon} />
-                    <span>{view.name}</span>
+                    <span style={{ overflowWrap: 'anywhere', minWidth: 0 }}>{view.name}</span>
                   </Group>
                 }
                 actions={
-                  <Group gap="xs" wrap="nowrap">
+                  <Group gap="xs" wrap="wrap">
                     <ActionIcon
                       type="button"
                       variant="subtle"
@@ -77,23 +77,31 @@ export function ViewPageView({
                         aria-hidden="true"
                       />
                     </ActionIcon>
-                    <TextInput
-                      ref={viewNameRef}
-                      aria-label={t('ui.viewName')}
-                      value={view.name}
-                      onChange={handlers.View_name_onChange1}
-                      onBlur={handlers.View_name_onBlur2}
-                      size="xs"
-                      w={180}
-                    />
                     <Button type="button" variant="subtle" color="red" onClick={handlers.onClick0}>
                       {t('ui.delete')}
                     </Button>
                   </Group>
                 }
               />
+              <Box px="md" py="xs" maw={520} w="100%">
+                <TextInput
+                  ref={viewNameRef}
+                  label={t('ui.viewName')}
+                  value={view.name}
+                  onChange={handlers.View_name_onChange1}
+                  onBlur={handlers.View_name_onBlur2}
+                  size="sm"
+                />
+              </Box>
               {view.description ? (
-                <Text size="sm" c="dimmed" px="md" py={6} aria-label={t('viewBuilder.description')}>
+                <Text
+                  size="sm"
+                  c="dimmed"
+                  px="md"
+                  py={6}
+                  aria-label={t('viewBuilder.description')}
+                  style={{ overflowWrap: 'anywhere' }}
+                >
                   {view.description}
                 </Text>
               ) : null}
