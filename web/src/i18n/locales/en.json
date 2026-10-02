@@ -1,4 +1,12 @@
 {
+  "documentEditorStatus": {
+    "loading": "Loading…",
+    "recovered": "Recovered unsaved draft",
+    "saved": "Saved",
+    "unsaved": "Unsaved draft",
+    "failed": "Not saved",
+    "saving": "Saving…"
+  },
   "adrList": {
     "empty": "No decisions yet. Record the reasoning behind your next choice.",
     "noMatches": "No decisions match these filters.",

@@ -65,7 +65,9 @@ export function useEditorPresenter({
   useEffect(() => {
     if (focusRequest > 0) setMode('edit');
   }, [focusRequest]);
-  const [status, setStatus] = useState('Loading…');
+  const [status, setStatus] = useState<
+    'loading' | 'recovered' | 'saved' | 'unsaved' | 'failed' | 'saving'
+  >('loading');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Document[]>([]);
@@ -119,8 +121,8 @@ export function useEditorPresenter({
           dirty.current = !!saved && saved.body !== doc.body;
           if (dirty.current) {
             setMode('edit');
-            setStatus('Recovered unsaved draft');
-          } else setStatus('Saved');
+            setStatus('recovered');
+          } else setStatus('saved');
         } else if (!dirty.current) {
           setDraft(doc.body);
           setBase(doc.revision);
@@ -165,7 +167,7 @@ export function useEditorPresenter({
     setDraft(body);
     setBase(revision);
     dirty.current = true;
-    setStatus('Unsaved draft');
+    setStatus('unsaved');
     try {
       localStorage.setItem(draftKey, JSON.stringify({ body, revision }));
     } catch {
@@ -175,6 +177,7 @@ export function useEditorPresenter({
   async function save() {
     if (saving.current) return;
     saving.current = true;
+    setStatus('saving');
     generation.current++;
     setBusy(true);
     setError('');
@@ -188,7 +191,7 @@ export function useEditorPresenter({
       setServer(next);
       setDraft(next.body);
       setBase(next.revision);
-      setStatus('Saved');
+      setStatus('saved');
       try {
         localStorage.removeItem(draftKey);
       } catch {
@@ -198,7 +201,7 @@ export function useEditorPresenter({
       signals.dispatchEvent(new Event('kotowari:refresh'));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
-      setStatus('Not saved');
+      setStatus('failed');
     } finally {
       saving.current = false;
       setBusy(false);

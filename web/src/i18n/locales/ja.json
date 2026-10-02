@@ -1,4 +1,12 @@
 {
+  "documentEditorStatus": {
+    "loading": "読み込み中…",
+    "recovered": "未保存の下書きを復元しました",
+    "saved": "保存済み",
+    "unsaved": "未保存の下書き",
+    "failed": "保存できませんでした",
+    "saving": "保存中…"
+  },
   "adrList": {
     "empty": "意思決定はまだありません。次の判断の理由を記録しましょう。",
     "noMatches": "条件に一致する意思決定はありません。",

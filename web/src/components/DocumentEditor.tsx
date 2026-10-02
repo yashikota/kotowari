@@ -137,13 +137,19 @@ export function EditorView({
                   <>
                     <Button
                       type="button"
+                      loading={busy}
                       disabled={!server || busy || conflict || !dirty.current}
                       onClick={handlers.onClick3}
                     >
                       {t('common.save')}
                     </Button>
-                    <Text component="span" role="status" size="sm" c="dimmed">
-                      {status}
+                    <Text
+                      component="span"
+                      role="status"
+                      size="sm"
+                      c={status === 'failed' ? 'red' : 'dimmed'}
+                    >
+                      {t(`documentEditorStatus.${status}`)}
                     </Text>
                   </>
                 )}
