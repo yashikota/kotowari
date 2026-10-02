@@ -370,11 +370,15 @@ test('create issue, comment, and page', async ({ page, request }) => {
   await pageTitle.fill(pageTitleText);
   await pageTitle.press('ControlOrMeta+Enter');
   await expect(page).toHaveURL(/\/pages\//);
+  await expect(page.getByRole('dialog', { name: 'Create page', exact: true })).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Page title' }).first()).toHaveValue(
     pageTitleText,
   );
-  await page.getByLabel('Project').selectOption({ label: projectName });
-  await expect(page.getByLabel('Project')).not.toHaveValue('');
+  const documentProject = page
+    .getByTestId('workspace-panel')
+    .getByRole('combobox', { name: 'Project', exact: true });
+  await documentProject.selectOption({ label: projectName });
+  await expect(documentProject).not.toHaveValue('');
 });
 
 test('sub-issue and saved view', async ({ page, request }) => {
