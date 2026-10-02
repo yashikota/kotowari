@@ -77,6 +77,7 @@ export function ViewBuilderPageView({
             ) : model.display === 'board' ? (
               <Box p="md" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
                 <IssueBoard
+                  preview
                   issues={model.issues}
                   onOpen={() => undefined}
                   onMove={() => undefined}
@@ -87,6 +88,7 @@ export function ViewBuilderPageView({
               </Box>
             ) : (
               <IssueList
+                preview
                 issues={model.issues}
                 selectedId={null}
                 onSelect={() => undefined}

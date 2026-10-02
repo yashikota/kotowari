@@ -129,13 +129,14 @@ export function IssueList(
   props: Parameters<typeof useIssueListPresenter>[0] & {
     groupBy?: IssueGroupBy;
     hideProjectSlug?: boolean;
+    preview?: boolean;
     projects?: import('../types.ts').Project[];
     cycles?: import('../types.ts').Cycle[];
     labels?: import('../types.ts').Label[];
   },
 ) {
   return (
-    <PresenterScope name="IssueList">
+    <PresenterScope name="IssueList" disabled={props.preview}>
       <IssueListBinding {...props} />
     </PresenterScope>
   );
@@ -223,9 +224,11 @@ export function IssueBoardView({ model }: { model: ReturnType<typeof useIssueBoa
   }
 }
 
-export function IssueBoard(props: Parameters<typeof useIssueBoardPresenter>[0]) {
+export function IssueBoard(
+  props: Parameters<typeof useIssueBoardPresenter>[0] & { preview?: boolean },
+) {
   return (
-    <PresenterScope name="IssueBoard">
+    <PresenterScope name="IssueBoard" disabled={props.preview}>
       <IssueBoardBinding {...props} />
     </PresenterScope>
   );

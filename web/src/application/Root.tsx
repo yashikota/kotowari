@@ -41,18 +41,26 @@ const GLOBAL_NAVIGATION_HREF: Record<GlobalNavigationAction, string> = {
   settings: '/config',
 };
 
-export function PresenterScope({ name, children }: { name: string; children: ReactNode }) {
+export function PresenterScope({
+  name,
+  children,
+  disabled = false,
+}: {
+  name: string;
+  children: ReactNode;
+  disabled?: boolean;
+}) {
   const parent = useContext(ScopeContext);
   const id = useId();
   const scope = useMemo(() => new EventScope(`${name}:${id}`, parent), [name, id, parent]);
   useLayoutEffect(() => {
-    scope.active = true;
+    scope.active = !disabled;
     mediator.scopes.set(scope.id, scope);
     return () => {
       scope.active = false;
       mediator.scopes.delete(scope.id);
     };
-  }, [scope]);
+  }, [scope, disabled]);
   return (
     <ScopeContext.Provider value={scope}>
       <div style={{ display: 'contents' }} data-presenter={scope.id}>
@@ -372,7 +380,7 @@ export function Root({
               event.target.closest('[data-presenter]')?.getAttribute('data-presenter') ?? '',
             )
           : undefined;
-      const activeScopes = [...mediator.scopes.values()];
+      const activeScopes = [...mediator.scopes.values()].filter((candidate) => candidate.active);
       if (dialog) {
         // A modal consumes all unhandled keys; never send them to a background list.
         if (!(event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey))) return;
