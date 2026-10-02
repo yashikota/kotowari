@@ -10,7 +10,7 @@
   flex-direction: column;
   border: 1px solid var(--mantine-color-default-border);
   border-radius: var(--mantine-radius-sm);
-  background: var(--mantine-color-gray-0);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
   min-height: 0;
 }
 
@@ -21,7 +21,7 @@
   padding: var(--mantine-spacing-xs);
   border: 1px solid var(--mantine-color-default-border);
   border-radius: var(--mantine-radius-sm);
-  background: var(--mantine-color-white);
+  background: var(--mantine-color-body);
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
   cursor: grab;
   text-align: left;
@@ -46,14 +46,17 @@
   opacity: 1;
 }
 
-.issueCard:hover,
-.issueCard:focus-visible {
+.issueCard:hover {
   border-color: var(--mantine-primary-color-5);
-  outline: none;
+}
+
+.issueCard:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
 }
 
 .dragging {
-  background: var(--mantine-color-gray-1);
+  background: var(--mantine-color-default-hover);
 }
 
 .overdue {
@@ -71,4 +74,10 @@
   bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
+}
+
+@media (hover: none) {
+  .cardCheckbox {
+    opacity: 1;
+  }
 }

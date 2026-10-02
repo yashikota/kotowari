@@ -191,7 +191,7 @@ export function ShellSidebar({ model, t }: Props) {
       className={styles.sidebar}
       styles={{
         navbar: {
-          backgroundColor: 'var(--mantine-color-gray-1)',
+          backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-8))',
           borderColor: 'var(--mantine-color-default-border)',
         },
       }}

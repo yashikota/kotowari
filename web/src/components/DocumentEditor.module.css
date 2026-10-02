@@ -21,3 +21,9 @@
 .inlinePreview:focus-within .inlineEditTrigger {
   opacity: 1;
 }
+
+@media (hover: none) {
+  .inlineEditTrigger {
+    opacity: 1;
+  }
+}
