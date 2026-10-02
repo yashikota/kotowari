@@ -75,16 +75,16 @@ function LinkPropertyInput({
         >
           {value.trim()}
         </Anchor>
-        <Text
-          component="button"
+        <Button
           type="button"
-          size="xs"
-          c="dimmed"
-          style={{ border: 0, background: 'none', cursor: 'pointer', flexShrink: 0 }}
+          size="compact-xs"
+          variant="subtle"
+          color="gray"
+          style={{ flexShrink: 0 }}
           onClick={onEdit}
         >
           {editLabel}
-        </Text>
+        </Button>
       </Group>
     );
   }
