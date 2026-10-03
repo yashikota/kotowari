@@ -91,7 +91,7 @@ export function IssueDetailView({
             mt="md"
             inert={issue.archivedAt ? true : undefined}
             aria-disabled={issue.archivedAt ? true : undefined}
-            style={issue.archivedAt ? { opacity: 0.72 } : undefined}
+            style={issue.archivedAt ? { color: 'var(--mantine-color-dimmed)' } : undefined}
           >
             <Box className={layoutStyles.title}>
               <DocumentTitle

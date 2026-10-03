@@ -1,3 +1,4 @@
+import { contrastFailures } from './contrast.ts';
 import { expect, test } from '@playwright/test';
 
 for (const scheme of ['light', 'dark']) {
@@ -56,6 +57,7 @@ for (const scheme of ['light', 'dark']) {
       await expect(dialog.getByRole('alert')).toContainText('Due date could not be saved');
       await expect(input).toHaveValue('2030-02-03');
       await expect(input).toBeEnabled();
+      expect(await contrastFailures(page, '[role=dialog]')).toEqual([]);
       await page.screenshot({
         path: testInfo.outputPath('due-date-failure.png'),
         animations: 'disabled',
@@ -73,6 +75,7 @@ for (const scheme of ['light', 'dark']) {
         removal.getByText('The due date is still set. Retry to remove it.'),
       ).toBeVisible();
       await expect(removal.getByRole('textbox')).toHaveCount(0);
+      expect(await contrastFailures(page, '[role=dialog]')).toEqual([]);
       await removal.getByRole('button', { name: 'Retry removing due date', exact: true }).click();
       await expect(removal).toHaveCount(0);
       expect((await (await request.get(endpoint)).json()).dueDate).toBeNull();

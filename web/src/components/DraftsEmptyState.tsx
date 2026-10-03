@@ -32,7 +32,7 @@ export function DraftsEmptyState({ message }: { message: string }) {
         <path d="m66 42 35-35c2-2 5-1 6 1l3 4c1 2 1 4-1 6L74 53" />
         <path d="m66 42 8 11m35-41-8-7" />
       </svg>
-      <Text size="sm" c="var(--mantine-color-text)" ta="center" style={{ opacity: 0.82 }}>
+      <Text size="sm" c="dimmed" ta="center">
         {message}
       </Text>
     </Stack>

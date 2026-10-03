@@ -1,3 +1,4 @@
+import { issueGroupLabel } from '../issue-group-label.ts';
 import {
   useLoaderData,
   useNavigate,
@@ -14,6 +15,7 @@ import type { IssueSearch } from '../issue-search.ts';
 import { patchIssueOptimistically } from '../application/issues.ts';
 import {
   buildIssueFacetOptions,
+  issueGroupOptions,
   DEFAULT_DISPLAY_PROPERTIES,
   filterCompletedIssues,
   includeNestedIssueMatches,
@@ -154,6 +156,8 @@ export function useIssuesPagePresenter() {
   const groupBy =
     search.groupBy ??
     (myIssuesTab === 'assigned' ? 'focus' : personalRecentIssues ? 'none' : 'priority');
+  const groupOrder = search.groupOrder ?? [];
+  const hiddenGroups = search.hiddenGroups ?? [];
   const layout = search.layout ?? locationState.issueListLayout ?? 'list';
   const orderBy = search.orderBy ?? (personalRecentIssues ? 'created' : 'manual');
   const subGroupBy = search.subGroupBy ?? 'none';
@@ -329,6 +333,13 @@ export function useIssuesPagePresenter() {
     completedIssues,
     data.cycles,
   );
+  const groupOptions = issueGroupOptions(
+    issues,
+    groupBy,
+    issueWorkflowStatuses,
+    showEmptyGroups,
+    data.cycles.find((cycle) => cycle.status === 'active')?.id,
+  ).map((group) => ({ ...group, label: issueGroupLabel(groupBy, group, issueWorkflowStatuses) }));
   const selectedFacetValues: string[] = (() => {
     switch (facet) {
       case 'assignees':
@@ -359,6 +370,9 @@ export function useIssuesPagePresenter() {
     restoreScrollTop,
     view: activeView,
     groupBy,
+    groupOptions,
+    groupOrder,
+    hiddenGroups,
     layout,
     orderBy,
     subGroupBy,
@@ -444,6 +458,14 @@ export function useIssuesPagePresenter() {
         }
       },
       onMyIssuesTabChange: changeMyIssuesTab,
+      onGroupOrderChange: (next: string[]) =>
+        updateIssueDisplay({ groupOrder: next.length ? next : undefined }),
+      onGroupVisibilityChange: (key: string, visible: boolean) => {
+        const next = new Set(latestSearch.current.hiddenGroups ?? []);
+        if (visible) next.delete(key);
+        else next.add(key);
+        return updateIssueDisplay({ hiddenGroups: next.size ? [...next] : undefined });
+      },
       onGroupBy5: (next: IssueGroupBy) => updateIssueDisplay({ groupBy: next }),
       onLayout6: (next: IssueLayout) => updateIssueDisplay({ layout: next }),
       onOrderBy7: (next: IssueOrderBy) => updateIssueDisplay({ orderBy: next }),

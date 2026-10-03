@@ -1,4 +1,5 @@
 {
+  "groupOrdering": { "hide": "非表示", "show": "表示" },
   "workspaceSave": {
     "saving": "ワークスペースを保存中…",
     "retry": "保存を再試行",

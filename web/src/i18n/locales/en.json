@@ -1,4 +1,5 @@
 {
+  "groupOrdering": { "hide": "Hide", "show": "Show" },
   "workspaceSave": {
     "saving": "Saving workspace…",
     "retry": "Retry saving",

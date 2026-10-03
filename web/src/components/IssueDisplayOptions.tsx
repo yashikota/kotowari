@@ -1,3 +1,4 @@
+import { GroupOrdering } from '../design-system/GroupOrdering.tsx';
 import {
   ActionIcon,
   Button,
@@ -12,11 +13,8 @@ import {
 import {
   IconAdjustments,
   IconChevronDown,
-  IconChevronLeft,
-  IconChevronUp,
   IconDownload,
   IconFileImport,
-  IconGripVertical,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
@@ -340,123 +338,37 @@ function IssueGroupOrdering({
   groupOrder: string[];
   hiddenGroups: ReadonlySet<string>;
   onBack: () => void;
-  onGroupOrderChange: (groupOrder: string[]) => void;
+  onGroupOrderChange: (order: string[]) => void;
   onGroupVisibilityChange: (key: string, visible: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const orderIndex = new Map(groupOrder.map((key, index) => [key, index]));
-  const orderedGroups = [...groups].sort((left, right) => {
-    const leftIndex = orderIndex.get(left.key);
-    const rightIndex = orderIndex.get(right.key);
-    if (leftIndex === undefined) return rightIndex === undefined ? 0 : 1;
-    if (rightIndex === undefined) return -1;
-    return leftIndex - rightIndex;
-  });
-  const visibleCount = orderedGroups.filter((group) => !hiddenGroups.has(group.key)).length;
-
-  function moveGroup(key: string, destinationIndex: number) {
-    const next = [...orderedGroups];
-    const sourceIndex = next.findIndex((group) => group.key === key);
-    if (sourceIndex < 0 || destinationIndex < 0 || destinationIndex >= next.length) return;
-    const [group] = next.splice(sourceIndex, 1);
-    next.splice(destinationIndex, 0, group!);
-    onGroupOrderChange(next.map((item) => item.key));
-  }
-
+  const indexes = new Map(groupOrder.map((key, index) => [key, index]));
+  const ordered = [...groups].sort(
+    (left, right) =>
+      (indexes.get(left.key) ?? groups.length) - (indexes.get(right.key) ?? groups.length),
+  );
   return (
-    <Stack gap="xs">
-      <Group justify="space-between" wrap="nowrap">
-        <Button
-          type="button"
-          variant="subtle"
-          size="xs"
-          leftSection={<IconChevronLeft size={14} aria-hidden="true" />}
-          onClick={onBack}
-        >
-          {t('displayOptions.back')}
-        </Button>
-        <Text size="sm" fw={600}>
-          {t('displayOptions.groupOrdering')}
-        </Text>
-      </Group>
-      <Stack gap={4} role="list" aria-label={t('displayOptions.groupOrdering')}>
-        {orderedGroups.map((group, index) => {
-          const visible = !hiddenGroups.has(group.key);
-          return (
-            <Group
-              key={group.key}
-              role="listitem"
-              data-issue-group={group.key}
-              gap={4}
-              wrap="nowrap"
-              p={4}
-              draggable
-              onDragStart={(event) => {
-                event.dataTransfer.setData('text/plain', group.key);
-                event.dataTransfer.effectAllowed = 'move';
-              }}
-              onDragOver={(event) => {
-                if (!Array.from(event.dataTransfer.types).includes('text/plain')) return;
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-              }}
-              onDrop={(event) => {
-                const sourceKey = event.dataTransfer.getData('text/plain');
-                if (!sourceKey || sourceKey === group.key) return;
-                event.preventDefault();
-                const sourceIndex = orderedGroups.findIndex((item) => item.key === sourceKey);
-                moveGroup(sourceKey, sourceIndex < index ? index : index);
-              }}
-              style={{
-                borderRadius: 'var(--mantine-radius-sm)',
-                background: visible ? undefined : 'var(--mantine-color-default-hover)',
-                cursor: 'grab',
-                opacity: visible ? 1 : 0.68,
-              }}
-            >
-              <IconGripVertical size={14} aria-hidden="true" />
-              <Text size="sm" truncate style={{ flex: 1 }}>
-                {group.label}
-              </Text>
-              <ActionIcon
-                type="button"
-                variant="subtle"
-                size="sm"
-                aria-label={t('displayOptions.moveGroupUp', { group: group.label })}
-                disabled={index === 0}
-                onClick={() => moveGroup(group.key, index - 1)}
-              >
-                <IconChevronUp size={14} aria-hidden="true" />
-              </ActionIcon>
-              <ActionIcon
-                type="button"
-                variant="subtle"
-                size="sm"
-                aria-label={t('displayOptions.moveGroupDown', { group: group.label })}
-                disabled={index === orderedGroups.length - 1}
-                onClick={() => moveGroup(group.key, index + 1)}
-              >
-                <IconChevronDown size={14} aria-hidden="true" />
-              </ActionIcon>
-              <Button
-                type="button"
-                variant="subtle"
-                size="compact-xs"
-                aria-pressed={visible}
-                aria-label={t(visible ? 'displayOptions.hideGroup' : 'displayOptions.showGroup', {
-                  group: group.label,
-                })}
-                disabled={visible && visibleCount <= 1}
-                onClick={() => onGroupVisibilityChange(group.key, !visible)}
-              >
-                {t(visible ? 'displayOptions.hideGroup' : 'displayOptions.showGroup', {
-                  group: group.label,
-                })}
-              </Button>
-            </Group>
-          );
-        })}
-      </Stack>
-    </Stack>
+    <GroupOrdering
+      groups={ordered.map((group) => ({ ...group, visible: !hiddenGroups.has(group.key) }))}
+      onBack={onBack}
+      onMove={(key, destination) => {
+        const next = [...ordered];
+        const source = next.findIndex((group) => group.key === key);
+        if (source < 0 || destination < 0 || destination >= next.length) return;
+        const [group] = next.splice(source, 1);
+        next.splice(destination, 0, group!);
+        onGroupOrderChange(next.map((item) => item.key));
+      }}
+      onVisibilityChange={onGroupVisibilityChange}
+      dataAttribute="data-issue-group"
+      labels={{
+        title: t('displayOptions.groupOrdering'),
+        back: t('displayOptions.back'),
+        moveUp: (group) => t('displayOptions.moveGroupUp', { group }),
+        moveDown: (group) => t('displayOptions.moveGroupDown', { group }),
+        hide: (group) => t('displayOptions.hideGroup', { group }),
+        show: (group) => t('displayOptions.showGroup', { group }),
+      }}
+    />
   );
 }

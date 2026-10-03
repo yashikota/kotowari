@@ -54,20 +54,29 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
         title={t('nav.drafts')}
         paddingX={0}
         actions={
-          model.drafts.length > 0 ? (
-            <ActionIcon
-              className={styles.discardAction}
-              type="button"
-              variant="subtle"
-              color="gray"
-              aria-label={t('drafts.discardAll')}
-              title={t('drafts.discardAll')}
+          <Group gap="xs">
+            <Button
+              className={styles.createAction}
+              onClick={model.handlers.onCreateIssue}
               disabled={Boolean(model.error)}
-              onClick={model.handlers.onRequestDiscardAll}
             >
-              <IconTrash size={15} aria-hidden />
-            </ActionIcon>
-          ) : null
+              {t('ui.newIssue')}
+            </Button>
+            {model.drafts.length > 0 ? (
+              <ActionIcon
+                className={styles.discardAction}
+                type="button"
+                variant="subtle"
+                color="gray"
+                aria-label={t('drafts.discardAll')}
+                title={t('drafts.discardAll')}
+                disabled={Boolean(model.error)}
+                onClick={model.handlers.onRequestDiscardAll}
+              >
+                <IconTrash size={15} aria-hidden />
+              </ActionIcon>
+            ) : null}
+          </Group>
         }
       />
       <SaveFeedback

@@ -1,3 +1,4 @@
+import { contrastFailures } from './contrast.ts';
 import { expect, test, type Page } from '@playwright/test';
 
 async function openMenu(page: Page, kind: string) {
@@ -35,6 +36,7 @@ for (const scheme of ['light', 'dark']) {
       await dialog.getByRole('button', { name: 'Save', exact: true }).click();
       await expect(dialog.getByText('Choose a future date and time.')).toBeVisible();
       await expect(input).toBeFocused();
+      expect(await contrastFailures(page, '[role=dialog]')).toEqual([]);
       await input.fill('2020-01-02T03:04');
       await dialog.getByRole('button', { name: 'Save', exact: true }).click();
       await expect(input).toBeFocused();
@@ -68,6 +70,7 @@ for (const scheme of ['light', 'dark']) {
         await expect(dialog.getByRole('alert')).toContainText('Reminder temporarily unavailable');
         await expect(input).toHaveValue('2030-01-02T03:04');
         await expect(input).toBeEnabled();
+        expect(await contrastFailures(page, '[role=dialog]')).toEqual([]);
         await page.screenshot({ path: testInfo.outputPath('reminder-failure.png') });
         expect(
           await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),

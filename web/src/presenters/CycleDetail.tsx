@@ -1,3 +1,4 @@
+import { issueGroupLabel } from '../issue-group-label.ts';
 import {
   useLoaderData,
   useNavigate,
@@ -37,7 +38,7 @@ import { useIssueWorkflow } from '../workflow.tsx';
 import { usePersonalPreferences } from '../preferences.ts';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 
-import { cycleCalendarFeedURL, cycleIssueGroupLabel, cycleURL } from './projectCycleHelpers.ts';
+import { cycleCalendarFeedURL, cycleURL } from './projectCycleHelpers.ts';
 import { useCycleProgressPresenter } from './useCycleProgressPresenter.ts';
 import { useCycleResourcesPresenter } from './useCycleResourcesPresenter.ts';
 
@@ -180,7 +181,7 @@ export function useCycleDetailPagePresenter() {
         data.cycles.find((candidate) => candidate.status === 'active')?.id,
       ).map((group) => ({
         ...group,
-        label: cycleIssueGroupLabel(groupBy, group, issueWorkflowStatuses),
+        label: issueGroupLabel(groupBy, group, issueWorkflowStatuses),
       })),
     [data.cycles, groupBy, issueWorkflowStatuses, issues, showEmptyGroups],
   );

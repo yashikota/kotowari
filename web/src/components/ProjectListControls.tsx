@@ -1,3 +1,4 @@
+import { GroupOrdering } from '../design-system/GroupOrdering.tsx';
 import {
   ActionIcon,
   Box,
@@ -12,10 +13,6 @@ import {
 } from '@mantine/core';
 import {
   IconAdjustments,
-  IconChevronDown,
-  IconChevronLeft,
-  IconChevronUp,
-  IconGripVertical,
   IconArrowsSort,
   IconList,
   IconLayoutBoard,
@@ -369,102 +366,25 @@ function ProjectBoardGroupOrdering({
 }: {
   groups: ProjectBoardGroup[];
   onBack: () => void;
-  onMove: (key: string, destinationIndex: number) => void;
+  onMove: (key: string, destination: number) => void;
   onVisibilityChange: (key: string, visible: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const visibleCount = groups.filter((group) => group.visible).length;
-
   return (
-    <Stack gap="xs">
-      <Group justify="space-between" wrap="nowrap">
-        <Button
-          type="button"
-          variant="subtle"
-          size="xs"
-          leftSection={<IconChevronLeft size={14} aria-hidden="true" />}
-          onClick={onBack}
-        >
-          {t('projectList.back')}
-        </Button>
-        <Text size="sm" fw={600}>
-          {t('projectList.groupOrdering')}
-        </Text>
-      </Group>
-      <Stack gap={4} role="list" aria-label={t('projectList.groupOrdering')}>
-        {groups.map((group, index) => (
-          <Group
-            key={group.key}
-            role="listitem"
-            data-project-board-group={group.key}
-            gap={4}
-            wrap="nowrap"
-            p={4}
-            draggable
-            onDragStart={(event) => {
-              event.dataTransfer.setData('text/plain', group.key);
-              event.dataTransfer.effectAllowed = 'move';
-            }}
-            onDragOver={(event) => {
-              if (!Array.from(event.dataTransfer.types).includes('text/plain')) return;
-              event.preventDefault();
-              event.dataTransfer.dropEffect = 'move';
-            }}
-            onDrop={(event) => {
-              const sourceKey = event.dataTransfer.getData('text/plain');
-              if (!sourceKey || sourceKey === group.key) return;
-              event.preventDefault();
-              onMove(sourceKey, index);
-            }}
-            style={{
-              borderRadius: 'var(--mantine-radius-sm)',
-              background: group.visible ? undefined : 'var(--mantine-color-default-hover)',
-              cursor: 'grab',
-              opacity: group.visible ? 1 : 0.68,
-            }}
-          >
-            <IconGripVertical size={14} aria-hidden="true" />
-            <Text size="sm" truncate style={{ flex: 1 }}>
-              {group.label}
-            </Text>
-            <ActionIcon
-              type="button"
-              variant="subtle"
-              size="sm"
-              aria-label={t('projectList.moveGroupUp', { group: group.label })}
-              disabled={index === 0}
-              onClick={() => onMove(group.key, index - 1)}
-            >
-              <IconChevronUp size={14} aria-hidden="true" />
-            </ActionIcon>
-            <ActionIcon
-              type="button"
-              variant="subtle"
-              size="sm"
-              aria-label={t('projectList.moveGroupDown', { group: group.label })}
-              disabled={index === groups.length - 1}
-              onClick={() => onMove(group.key, index + 1)}
-            >
-              <IconChevronDown size={14} aria-hidden="true" />
-            </ActionIcon>
-            <Button
-              type="button"
-              variant="subtle"
-              size="compact-xs"
-              aria-pressed={group.visible}
-              aria-label={t(group.visible ? 'projectList.hideGroup' : 'projectList.showGroup', {
-                group: group.label,
-              })}
-              disabled={group.visible && visibleCount <= 1}
-              onClick={() => onVisibilityChange(group.key, !group.visible)}
-            >
-              {t(group.visible ? 'projectList.hideGroup' : 'projectList.showGroup', {
-                group: group.label,
-              })}
-            </Button>
-          </Group>
-        ))}
-      </Stack>
-    </Stack>
+    <GroupOrdering
+      groups={groups}
+      onBack={onBack}
+      onMove={onMove}
+      onVisibilityChange={onVisibilityChange}
+      dataAttribute="data-project-board-group"
+      labels={{
+        title: t('projectList.groupOrdering'),
+        back: t('projectList.back'),
+        moveUp: (group) => t('projectList.moveGroupUp', { group }),
+        moveDown: (group) => t('projectList.moveGroupDown', { group }),
+        hide: (group) => t('projectList.hideGroup', { group }),
+        show: (group) => t('projectList.showGroup', { group }),
+      }}
+    />
   );
 }

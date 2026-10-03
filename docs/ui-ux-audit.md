@@ -84,3 +84,43 @@ scan covers visible content after initial navigation; it does not exhaust scroll
 content, hover/selected/error overlays, arbitrary user colors, ancestor opacity,
 gradients or every chart distinction. Continue the per-screen interaction audit and
 verify those states against the same shared contrast thresholds.
+
+## Overlay contrast and group configuration follow-up
+
+The browser contrast scanner is shared across page and overlay cases. It accounts
+for nested group opacity, translucent surfaces, sRGB computed colors and clipping.
+Finite opening/loading transitions settle before measuring; permanent low opacity
+still counts. A fixture proves that faint text fails while clipped text is excluded.
+Unsupported computed color spaces raise an error instead of silently passing.
+
+Contrast assertions now cover label creation/assignment failure and selected choices;
+due date save/removal failure; issue creation and failed creation; and reminder
+validation/save failure on issues/projects/initiatives, in both color schemes.
+Normal page coverage remains scoped to visible content on the 17 routes. Background
+images, arbitrary overlapping elements and every hover/error state remain unproven.
+
+Issue and project group configuration now share GroupOrdering. Move/show/hide/back
+controls have 44px targets, bounded short visual labels and explicit full accessible
+names. Hidden groups retain readable semantic text and show their state through
+background and Show/Hide text. Fixed group opacity has been removed. Group names
+remain available in titles and action names when visually truncated.
+
+The normal issue page now supplies group options, ordering and visibility to the
+shared display controls and issue list. It previously parsed the settings but did
+not connect them to the UI. Localized issue group labels are extracted from cycle
+helpers into a shared module. New light/dark cases cover issue/project group hiding,
+contrast, re-showing and move targets; issue settings persist across reload. Existing
+cycle group and saved project board preview cases remain regression checks.
+
+Drafts now has a directly reachable New issue action at narrow and wide widths,
+with a 44px target and the same intent as the workspace composer. Read errors disable
+it until storage recovery. Mobile creation/retry cases exercise this entry point.
+Draft empty-state text uses the shared muted color. Archived issue content also
+uses the shared muted color instead of reducing the opacity of its whole subtree.
+These changes do not establish completion of the overall per-screen UI/UX audit.
+
+Verification: 33 combined browser cases pass after the final shared component changes;
+the existing cycle group case and saved project board preview case also pass (35
+cases in total). Formatting/lint/type checks and the production build pass. Mobile
+light/dark group configuration screenshots were inspected after the 44px controls
+and short action labels were applied. Full UI/UX completion remains unproven.

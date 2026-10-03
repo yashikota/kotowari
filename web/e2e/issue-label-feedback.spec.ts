@@ -1,3 +1,4 @@
+import { contrastFailures } from './contrast.ts';
 import { expect, test } from '@playwright/test';
 
 for (const scheme of ['light', 'dark']) {
@@ -52,6 +53,7 @@ for (const scheme of ['light', 'dark']) {
       await expect(page.getByRole('alert')).toContainText('Label creation unavailable');
       await expect(input).toHaveValue(name);
       await expect(input).toBeEnabled();
+      expect(await contrastFailures(page, '[role=dialog]')).toEqual([]);
       await page.screenshot({ path: testInfo.outputPath('label-create-failure.png') });
       await page.getByRole('button', { name: 'Retry saving labels', exact: true }).click();
       await expect(page.getByRole('alert')).toContainText('Label assignment unavailable');
@@ -75,6 +77,7 @@ for (const scheme of ['light', 'dark']) {
           return Boolean(box && box.y >= 0 && box.y + box.height <= 800);
         })
         .toBeTruthy();
+      expect(await contrastFailures(page, '[role=dialog]')).toEqual([]);
       await page.screenshot({
         path: testInfo.outputPath('label-assignment-failure.png'),
         animations: 'disabled',
@@ -85,6 +88,7 @@ for (const scheme of ['light', 'dark']) {
       if (!(await popup.isVisible()))
         await page.getByRole('button', { name: 'Change labels', exact: true }).click();
       await expect(choice).toHaveAttribute('aria-checked', 'true');
+      expect(await contrastFailures(page, '[role=dialog]')).toEqual([]);
       await expect(input).toHaveValue('');
       expect(creations).toBe(2);
       expect(assignments).toBe(2);

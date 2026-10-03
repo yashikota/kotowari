@@ -25,6 +25,7 @@ export function useDraftsPresenter() {
     error,
     handlers: {
       onRetry: refresh,
+      onCreateIssue: () => !error && send('issue.create', {}),
       onOpenDraft: (id: string) => {
         if (error) return;
         const draft = drafts.find((candidate) => candidate.id === id);

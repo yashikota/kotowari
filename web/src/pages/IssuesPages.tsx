@@ -32,6 +32,9 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
         selected,
         view,
         groupBy,
+        groupOptions,
+        groupOrder,
+        hiddenGroups,
         layout,
         orderBy,
         subGroupBy,
@@ -67,6 +70,11 @@ export function IssuesPageView({ model }: { model: ReturnType<typeof useIssuesPa
           onFind={handlers.onFind2}
           groupBy={groupBy}
           onGroupBy={handlers.onGroupBy5}
+          groupOptions={groupOptions}
+          groupOrder={groupOrder}
+          hiddenGroups={hiddenGroups}
+          onGroupOrderChange={handlers.onGroupOrderChange}
+          onGroupVisibilityChange={handlers.onGroupVisibilityChange}
           layout={layout}
           onLayout={handlers.onLayout6}
           orderBy={orderBy}
