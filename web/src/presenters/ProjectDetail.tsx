@@ -1,3 +1,4 @@
+import { useReminderEditor } from './useReminderEditor.ts';
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useRef, useState } from 'react';
@@ -134,7 +135,12 @@ export function useProjectDetailPagePresenter() {
   const [focusProjectTargetDate, setFocusProjectTargetDate] = useState(0);
   const [focusProjectUpdates, setFocusProjectUpdates] = useState(0);
   const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
-  const [reminderError, setReminderError] = useState('');
+  const reminderEditor = useReminderEditor({
+    entityKey: slug,
+    reminderAt: project.reminderAt,
+    save: setReminder,
+    onSuccess: () => setReminderMenuOpen(false),
+  });
   const [copied, setCopied] = useState(false);
   const projectStatusSequenceSince = useRef<number | null>(null);
   const projectStatusSequenceSlug = useRef(slug);
@@ -163,15 +169,16 @@ export function useProjectDetailPagePresenter() {
   }
 
   async function setReminder(value: Date | null) {
-    setReminderError('');
-    try {
-      await save(value ? { reminderAt: value.toISOString() } : { clearReminder: true });
-      signals.dispatchEvent(new Event('kotowari:refresh'));
-    } catch (cause) {
-      setReminderError(cause instanceof Error ? cause.message : i18n.t('common.error'));
-    } finally {
-      setReminderMenuOpen(false);
-    }
+    const next = await api.patchProject(
+      slug,
+      value ? { reminderAt: value.toISOString() } : { clearReminder: true },
+    );
+    if (saveScope.current !== slug) return;
+    setProject((current) =>
+      current.slug === slug ? { ...current, reminderAt: next.reminderAt } : current,
+    );
+    await router.invalidate().catch(() => undefined);
+    signals.dispatchEvent(new Event('kotowari:refresh'));
   }
 
   useKeyboard((event) => {
@@ -255,7 +262,6 @@ export function useProjectDetailPagePresenter() {
     setProjectUpdateBody('');
     setProjectUpdateOpen(false);
     setReminderMenuOpen(false);
-    setReminderError('');
     setCopied(false);
   }
 
@@ -375,7 +381,7 @@ export function useProjectDetailPagePresenter() {
     focusProjectTargetDate,
     focusProjectUpdates,
     reminderMenuOpen,
-    reminderError,
+    reminderEditor: reminderEditor.data,
     copied,
     projectWorkflowStatuses,
     selected,
@@ -439,7 +445,12 @@ export function useProjectDetailPagePresenter() {
         await save({ isFavorite: !project.isFavorite });
         signals.dispatchEvent(new Event('kotowari:refresh'));
       },
-      onSetReminder: setReminder,
+      onSetReminder: reminderEditor.write,
+      onOpenCustomReminder: reminderEditor.open,
+      onCloseCustomReminder: reminderEditor.close,
+      onCustomReminderChange: reminderEditor.change,
+      onCustomReminderSave: reminderEditor.submit,
+      onRetryReminder: reminderEditor.retry,
       onReminderMenuChange: setReminderMenuOpen,
       onCopyProjectId: copyProjectId,
       onCopyProjectURL: copyProjectURL,

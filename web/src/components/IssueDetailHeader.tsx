@@ -68,6 +68,7 @@ type IssueHeaderModel = Pick<
   | 'copied'
   | 'issueOptionsOpen'
   | 'reminderMenuOpen'
+  | 'reminderEditor'
   | 'codingToolName'
   | 'codingToolURL'
 > & {
@@ -119,6 +120,11 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
       onChange={handlers.onIssueOptionsChange}
     >
       <Box className={layoutStyles.issueHeader}>
+        {model.reminderEditor.saving ? (
+          <Text role="status" size="sm" c="dimmed">
+            {t('issueActions.reminder.saving')}
+          </Text>
+        ) : null}
         <Group justify="space-between" wrap="nowrap" className={layoutStyles.issueHeaderPrimary}>
           <Group
             gap="xs"
@@ -482,6 +488,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                 <Menu.Sub opened={reminderMenuOpen} onChange={handlers.onReminderMenuChange}>
                   <Menu.Sub.Target>
                     <Menu.Sub.Item
+                      disabled={model.reminderEditor.saving}
                       aria-keyshortcuts="Shift+H"
                       rightSection={<CopyShortcut label={`${shiftKey} H`} />}
                     >

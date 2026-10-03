@@ -1,3 +1,4 @@
+import { useReminderEditor } from './useReminderEditor.ts';
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useMemo, useRef, useState } from 'react';
@@ -286,6 +287,12 @@ export function useInitiativeDetailPresenter() {
   const [focusTargetDate, setFocusTargetDate] = useState(0);
   const [focusUpdates, setFocusUpdates] = useState(0);
   const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
+  const reminderEditor = useReminderEditor({
+    entityKey: initiative.slug,
+    reminderAt: initiative.reminderAt,
+    save: setReminder,
+    onSuccess: () => setReminderMenuOpen(false),
+  });
   const [copied, setCopied] = useState(false);
   const [priority, setPriority] = useState(initiative.priority ?? 0);
   const health = initiative.health ?? '';
@@ -409,19 +416,13 @@ export function useInitiativeDetailPresenter() {
   }
 
   async function setReminder(value: Date | null) {
-    setError('');
-    try {
-      await api.patchInitiative(
-        initiative.slug,
-        value ? { reminderAt: value.toISOString() } : { clearReminder: true },
-      );
-      queryCache.invalidate();
-      signals.dispatchEvent(new Event('kotowari:refresh'));
-      await router.invalidate();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('common.error'));
-    }
-    setReminderMenuOpen(false);
+    await api.patchInitiative(
+      initiative.slug,
+      value ? { reminderAt: value.toISOString() } : { clearReminder: true },
+    );
+    queryCache.invalidate();
+    signals.dispatchEvent(new Event('kotowari:refresh'));
+    await router.invalidate().catch(() => undefined);
   }
 
   async function copyText(value: string) {
@@ -495,6 +496,7 @@ export function useInitiativeDetailPresenter() {
     focusTargetDate,
     focusUpdates,
     reminderMenuOpen,
+    reminderEditor: reminderEditor.data,
     copied,
     priority,
     health,
@@ -529,7 +531,12 @@ export function useInitiativeDetailPresenter() {
       onBack: () => void navigate({ to: '/initiatives' }),
       onOpenUpdate: openUpdate,
       onToggleFavorite: toggleFavorite,
-      onSetReminder: setReminder,
+      onSetReminder: reminderEditor.write,
+      onOpenCustomReminder: reminderEditor.open,
+      onCloseCustomReminder: reminderEditor.close,
+      onCustomReminderChange: reminderEditor.change,
+      onCustomReminderSave: reminderEditor.submit,
+      onRetryReminder: reminderEditor.retry,
       onReminderMenuChange: setReminderMenuOpen,
       onCopyInitiativeId: copyInitiativeId,
       onCopyInitiativeURL: copyInitiativeURL,

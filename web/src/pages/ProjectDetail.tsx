@@ -81,7 +81,6 @@ export function ProjectDetailPageView({
         dependencyProjectSlug,
         dependencyKind,
         reminderMenuOpen,
-        reminderError,
         copied,
         handlers,
       } = model;
@@ -111,6 +110,12 @@ export function ProjectDetailPageView({
                 actions={
                   <Group gap="xs" wrap="wrap">
                     <EntityReminderMenu
+                      editor={model.reminderEditor}
+                      onOpenCustom={handlers.onOpenCustomReminder}
+                      onCloseCustom={handlers.onCloseCustomReminder}
+                      onCustomChange={handlers.onCustomReminderChange}
+                      onCustomSave={handlers.onCustomReminderSave}
+                      onRetry={handlers.onRetryReminder}
                       reminderAt={project.reminderAt}
                       opened={reminderMenuOpen}
                       onMenuChange={handlers.onReminderMenuChange}
@@ -119,11 +124,6 @@ export function ProjectDetailPageView({
                     {copied ? (
                       <Text size="xs" c="dimmed" role="status">
                         {t('ui.copied')}
-                      </Text>
-                    ) : null}
-                    {reminderError ? (
-                      <Text size="xs" c="red" role="alert">
-                        {reminderError}
                       </Text>
                     ) : null}
                     <Menu withinPortal position="bottom-end">

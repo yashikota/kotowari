@@ -76,6 +76,12 @@ export function InitiativeDetailPageView({
           actions={
             <Group gap="xs">
               <EntityReminderMenu
+                editor={model.reminderEditor}
+                onOpenCustom={handlers.onOpenCustomReminder}
+                onCloseCustom={handlers.onCloseCustomReminder}
+                onCustomChange={handlers.onCustomReminderChange}
+                onCustomSave={handlers.onCustomReminderSave}
+                onRetry={handlers.onRetryReminder}
                 reminderAt={initiative.reminderAt}
                 opened={model.reminderMenuOpen}
                 onMenuChange={handlers.onReminderMenuChange}

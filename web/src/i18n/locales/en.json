@@ -1532,7 +1532,16 @@
       "custom": "Custom…",
       "customTitle": "Set reminder",
       "dateTime": "Date and time",
-      "clear": "Cancel reminder"
+      "clear": "Cancel reminder",
+      "saving": "Saving reminder…",
+      "failed": "Reminder could not be saved",
+      "futureRequired": "Choose a future date and time.",
+      "hint": "Use your local date and time. The reminder appears in Kotowari.",
+      "retry": "Retry saving reminder",
+      "clearing": "Canceling reminder…",
+      "clearFailed": "Reminder could not be canceled",
+      "retryClear": "Retry canceling reminder",
+      "clearHint": "The reminder is still active. Retry to cancel it."
     },
     "descriptionHistory": "Show description history",
     "archive": "Archive",

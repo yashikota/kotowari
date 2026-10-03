@@ -1,3 +1,4 @@
+import { ReminderDialog } from './ReminderDialog.tsx';
 import {
   Button,
   Group,
@@ -33,6 +34,7 @@ type IssueDetailDialogHandlers = Pick<
   | 'onCreateRelatedSubmit'
   | 'onCustomReminderChange'
   | 'onCustomReminderSave'
+  | 'onRetryReminder'
   | 'onDueDateChange'
   | 'onRelatedIssueTitleChange'
   | 'onSaveDueDate'
@@ -47,8 +49,7 @@ type IssueDetailDialogHandlers = Pick<
 >;
 type IssueDetailDialogModel = Pick<
   IssueDetailModel,
-  | 'customReminderOpen'
-  | 'customReminderValue'
+  | 'reminderEditor'
   | 'relatedIssueKind'
   | 'relatedIssueTitle'
   | 'markAsKind'
@@ -77,8 +78,7 @@ type IssueDetailDialogModel = Pick<
 export function IssueDetailDialogs({ model }: { model: IssueDetailDialogModel }) {
   const { t } = useTranslation();
   const {
-    customReminderOpen,
-    customReminderValue,
+    reminderEditor,
     relatedIssueKind,
     relatedIssueTitle,
     markAsKind,
@@ -105,29 +105,13 @@ export function IssueDetailDialogs({ model }: { model: IssueDetailDialogModel })
 
   return (
     <>
-      <Modal
-        opened={customReminderOpen}
+      <ReminderDialog
+        data={reminderEditor}
         onClose={handlers.onCloseCustomReminder}
-        title={t('issueActions.reminder.customTitle')}
-        centered
-      >
-        <Stack>
-          <TextInput
-            type="datetime-local"
-            label={t('issueActions.reminder.dateTime')}
-            value={customReminderValue}
-            onChange={handlers.onCustomReminderChange}
-          />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={handlers.onCloseCustomReminder}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handlers.onCustomReminderSave} disabled={!customReminderValue}>
-              {t('common.save')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        onChange={handlers.onCustomReminderChange}
+        onSave={handlers.onCustomReminderSave}
+        onRetry={handlers.onRetryReminder}
+      />
       <Modal
         opened={relatedIssueKind !== null}
         onClose={handlers.onCloseCreateRelated}
