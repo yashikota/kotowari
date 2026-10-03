@@ -190,7 +190,7 @@ function FloatingPanel({ model }: { model: ReturnType<typeof usePanelPresenter> 
                   borderRadius: 'var(--mantine-radius-md)',
                 }}
               >
-                <IconSparkles size={15} color="var(--mantine-color-indigo-6)" aria-hidden />
+                <IconSparkles size={15} color="var(--mantine-color-indigo-text)" aria-hidden />
                 <Stack gap={0} style={{ minWidth: 0 }}>
                   <Text size="xs" fw={600} ff="var(--mantine-font-family-monospace)">
                     {id}

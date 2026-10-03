@@ -387,7 +387,7 @@ export function IssueFilterCategoryEditor({ category, data, handlers }: Props) {
               <Group gap={4}>
                 <LabelChip
                   name={t('filters.noProjectLabels')}
-                  color="var(--mantine-color-gray-6)"
+                  color="var(--mantine-color-dimmed)"
                   selected={selectedProjectLabels.includes('__none__')}
                   onClick={() => onToggleProjectLabel('__none__')}
                 />
@@ -424,7 +424,7 @@ export function IssueFilterCategoryEditor({ category, data, handlers }: Props) {
               <LabelChip
                 key={phase}
                 name={t(`filters.addedToCycle${phase[0]!.toUpperCase()}${phase.slice(1)}`)}
-                color="var(--mantine-color-gray-6)"
+                color="var(--mantine-color-dimmed)"
                 selected={selectedAddedToCycle.includes(phase)}
                 onClick={() => onToggleAddedToCycle(phase)}
               />

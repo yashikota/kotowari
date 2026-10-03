@@ -28,3 +28,22 @@ html[data-underline-links='true'] :is(p, li, blockquote, .mantine-Text-root, .Pr
   text-decoration-line: underline;
   text-underline-offset: 2px;
 }
+
+/* Input boundaries and keyboard focus must remain identifiable in either scheme. */
+.mantine-Input-input,
+.mantine-Checkbox-input,
+.mantine-Radio-radio,
+.mantine-Switch-track,
+.mantine-Button-root[data-variant='default'] {
+  border-color: var(--kotowari-control-border);
+}
+
+:root :is(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--kotowari-focus);
+  outline-offset: 2px;
+}
+
+:where(input, textarea)::placeholder {
+  color: var(--mantine-color-placeholder);
+  opacity: 1;
+}

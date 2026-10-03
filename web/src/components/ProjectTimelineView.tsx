@@ -216,7 +216,7 @@ export function ProjectTimelineView({
                             bottom={0}
                             left={`${model.todayPosition}%`}
                             w={1}
-                            style={{ background: 'var(--mantine-color-orange-6)', zIndex: 1 }}
+                            style={{ background: 'var(--mantine-color-orange-text)', zIndex: 1 }}
                             aria-hidden
                           />
                         ) : null}

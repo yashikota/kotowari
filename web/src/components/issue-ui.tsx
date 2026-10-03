@@ -23,28 +23,32 @@ export function IssueStatusIcon({ status }: { status: IssueStatus }) {
         <IconCircleDashed
           size={STATUS_ICON_SIZE}
           stroke={1.75}
-          color="var(--mantine-color-gray-5)"
+          color="var(--mantine-color-dimmed)"
         />
       );
     case 'todo':
       return (
-        <IconCircle size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-gray-5)" />
+        <IconCircle size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-dimmed)" />
       );
     case 'in_progress':
       return (
-        <IconProgress size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-yellow-5)" />
+        <IconProgress
+          size={STATUS_ICON_SIZE}
+          stroke={1.75}
+          color="var(--mantine-color-yellow-text)"
+        />
       );
     case 'done':
       return (
         <IconCircleCheck
           size={STATUS_ICON_SIZE}
           stroke={1.75}
-          color="var(--mantine-color-teal-5)"
+          color="var(--mantine-color-teal-text)"
         />
       );
     case 'canceled':
       return (
-        <IconCircleX size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-gray-6)" />
+        <IconCircleX size={STATUS_ICON_SIZE} stroke={1.75} color="var(--mantine-color-dimmed)" />
       );
   }
 }
@@ -54,20 +58,20 @@ export function IssuePriorityIcon({ priority }: { priority: number }) {
     return null;
   }
   if (priority === 1) {
-    return <IconAlertTriangle size={13} stroke={1.75} color="var(--mantine-color-red-5)" />;
+    return <IconAlertTriangle size={13} stroke={1.75} color="var(--mantine-color-red-text)" />;
   }
   if (priority === 2) {
-    return <IconAntennaBars5 size={13} stroke={1.75} color="var(--mantine-color-orange-5)" />;
+    return <IconAntennaBars5 size={13} stroke={1.75} color="var(--mantine-color-orange-text)" />;
   }
   if (priority === 3) {
-    return <IconAntennaBars3 size={13} stroke={1.75} color="var(--mantine-color-gray-5)" />;
+    return <IconAntennaBars3 size={13} stroke={1.75} color="var(--mantine-color-dimmed)" />;
   }
-  return <IconAntennaBars1 size={13} stroke={1.75} color="var(--mantine-color-gray-6)" />;
+  return <IconAntennaBars1 size={13} stroke={1.75} color="var(--mantine-color-dimmed)" />;
 }
 
 export function IssueEstimateIcon({ size = 13 }: { size?: number }) {
   return (
-    <IconTriangle size={size} stroke={1.8} color="var(--mantine-color-gray-5)" aria-hidden="true" />
+    <IconTriangle size={size} stroke={1.8} color="var(--mantine-color-dimmed)" aria-hidden="true" />
   );
 }
 

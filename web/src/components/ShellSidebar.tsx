@@ -66,7 +66,7 @@ function SidebarBadge({
         title={label}
         w={7}
         h={7}
-        style={{ borderRadius: '50%', background: 'var(--mantine-color-blue-5)' }}
+        style={{ borderRadius: '50%', background: 'var(--mantine-color-blue-text)' }}
       />
     );
   return (
@@ -374,7 +374,7 @@ export function ShellSidebar({ model, t }: Props) {
                   to="/issues/$identifier"
                   params={{ identifier: issue.identifier }}
                   label={`${issue.identifier} ${issue.title}`}
-                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-text)" />}
                 />
               ))}
               {favoriteIssueViews.map((view) => (
@@ -383,7 +383,7 @@ export function ShellSidebar({ model, t }: Props) {
                   to="/issues"
                   search={view === 'archived' ? { archived: true } : { view }}
                   label={t(`issueViews.${view}`)}
-                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-text)" />}
                 />
               ))}
               {favoriteProjects.map((project) => (
@@ -392,7 +392,7 @@ export function ShellSidebar({ model, t }: Props) {
                   to="/projects/$slug"
                   params={{ slug: project.slug }}
                   label={project.name}
-                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-text)" />}
                 />
               ))}
               {favoriteInitiatives.map((initiative) => (
@@ -401,7 +401,7 @@ export function ShellSidebar({ model, t }: Props) {
                   to="/initiatives/$slug"
                   params={{ slug: initiative.slug }}
                   label={initiative.name}
-                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-text)" />}
                 />
               ))}
               {favoriteViews.map((view) => (
@@ -410,7 +410,7 @@ export function ShellSidebar({ model, t }: Props) {
                   to="/views/$slug"
                   params={{ slug: view.slug }}
                   label={view.name}
-                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-text)" />}
                 />
               ))}
               {favoriteCycles.map((cycle) => (
@@ -419,7 +419,7 @@ export function ShellSidebar({ model, t }: Props) {
                   to="/cycles/$number"
                   params={{ number: String(cycle.number) }}
                   label={cycle.name || t('field.cycleN', { number: cycle.number })}
-                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-6)" />}
+                  leftSection={<IconStar size={14} color="var(--mantine-color-yellow-text)" />}
                 />
               ))}
             </Stack>

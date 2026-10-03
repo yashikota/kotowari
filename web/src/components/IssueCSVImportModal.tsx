@@ -125,7 +125,7 @@ export function IssueCSVImportModal({
                       </Text>
                     ) : null}
                     {row.warnings.map((warning, index) => (
-                      <Text key={`${warning.field}:${index}`} size="xs" c="yellow.8">
+                      <Text key={`${warning.field}:${index}`} size="xs" c="yellow">
                         {t(`issueImport.warning.${warning.field}`, { value: warning.value })}
                       </Text>
                     ))}

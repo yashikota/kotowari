@@ -242,7 +242,7 @@ export function IssueListRow({
               <IconStar
                 size={13}
                 stroke={1.8}
-                color="var(--mantine-color-yellow-6)"
+                color="var(--mantine-color-yellow-text)"
                 aria-hidden="true"
               />
             ) : null}

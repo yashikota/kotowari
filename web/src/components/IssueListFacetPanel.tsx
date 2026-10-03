@@ -107,7 +107,7 @@ export function IssueListFacetPanel({
                             <IconCircleDashed
                               size={14}
                               stroke={1.7}
-                              color="var(--mantine-color-gray-6)"
+                              color="var(--mantine-color-dimmed)"
                               aria-hidden="true"
                             />
                           ) : (
@@ -123,7 +123,7 @@ export function IssueListFacetPanel({
                             <IconCircleDashed
                               size={14}
                               stroke={1.7}
-                              color="var(--mantine-color-gray-6)"
+                              color="var(--mantine-color-dimmed)"
                               aria-hidden="true"
                             />
                           ) : (

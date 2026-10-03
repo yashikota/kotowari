@@ -177,7 +177,7 @@ export function CycleProgressChart({
         <path
           d={idealPath}
           fill="none"
-          stroke="var(--mantine-color-indigo-5)"
+          stroke="var(--mantine-color-indigo-text)"
           strokeDasharray="3 4"
           strokeWidth="1.25"
           opacity="0.8"
@@ -185,19 +185,19 @@ export function CycleProgressChart({
         <path
           d={stepPath(points, 'scope', start, end, max)}
           fill="none"
-          stroke="var(--mantine-color-gray-6)"
+          stroke="var(--mantine-color-dimmed)"
           strokeWidth="1.4"
         />
         <path
           d={stepPath(points, 'started', start, end, max)}
           fill="none"
-          stroke="var(--mantine-color-yellow-7)"
+          stroke="var(--mantine-color-yellow-text)"
           strokeWidth="1.8"
         />
         <path
           d={stepPath(points, 'completed', start, end, max)}
           fill="none"
-          stroke="var(--mantine-color-indigo-5)"
+          stroke="var(--mantine-color-indigo-text)"
           strokeWidth="1.8"
         />
         {selectedPoint && selectedX != null ? (
@@ -216,19 +216,19 @@ export function CycleProgressChart({
               cx={selectedX}
               cy={yAt(selectedPoint.scope, max)}
               r="3"
-              fill="var(--mantine-color-gray-6)"
+              fill="var(--mantine-color-dimmed)"
             />
             <circle
               cx={selectedX}
               cy={yAt(selectedPoint.started, max)}
               r="3"
-              fill="var(--mantine-color-yellow-7)"
+              fill="var(--mantine-color-yellow-text)"
             />
             <circle
               cx={selectedX}
               cy={yAt(selectedPoint.completed, max)}
               r="3"
-              fill="var(--mantine-color-indigo-5)"
+              fill="var(--mantine-color-indigo-text)"
             />
             {tooltipX != null && tooltipY != null ? (
               <g role="tooltip" aria-label={`${selectedDate}: ${progressDescription}`}>
@@ -293,10 +293,10 @@ export function CycleProgressChart({
       </svg>
       {showLegend ? (
         <Group gap="sm" wrap="wrap" aria-hidden="true">
-          <Legend label={t('cycle.scope')} color="var(--mantine-color-gray-6)" />
-          <Legend label={t('cycle.started')} color="var(--mantine-color-yellow-7)" />
-          <Legend label={t('cycle.completed')} color="var(--mantine-color-indigo-5)" />
-          <Legend label={t('cycle.ideal')} color="var(--mantine-color-indigo-5)" dashed />
+          <Legend label={t('cycle.scope')} color="var(--mantine-color-dimmed)" />
+          <Legend label={t('cycle.started')} color="var(--mantine-color-yellow-text)" />
+          <Legend label={t('cycle.completed')} color="var(--mantine-color-indigo-text)" />
+          <Legend label={t('cycle.ideal')} color="var(--mantine-color-indigo-text)" dashed />
         </Group>
       ) : null}
     </Stack>

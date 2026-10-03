@@ -56,3 +56,31 @@ The label smoke test now waits for the save to finish and focuses the picker bef
 sending Escape. Disabled controls can leave focus on the document body, where the
 popover's keyboard dismissal does not receive the event. The three smoke cases pass
 locally; CI still needs to confirm this change.
+
+## WCAG color foundations
+
+Target WCAG 2.2 AA color contrast: normal text and placeholders 4.5:1, large text
+3:1, necessary control boundaries and state/focus indicators 3:1. References:
+https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html and
+https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html.
+
+The shared theme now has scheme-specific readable muted text, placeholder text,
+errors, links, boundaries, and keyboard focus. All named palettes have accessible
+semantic text/outline colors and filled/hover colors with white text; hue is retained
+while luminance is adjusted. Status/priority icons, stars, chart series, selected
+checks and drag/drop indicators use semantic colors rather than fixed palette shades.
+The CSV warning text now follows the active scheme as well.
+
+Three unit cases verify the WCAG formula, every named semantic palette and filled
+hover pair, placeholders, boundaries and focus. Browser coverage scans rendered text,
+input values, placeholders, input boundaries and a focused settings field across 17
+routes in light/dark at 360px/1280px. Fixtures include an issue with a custom label,
+a project and a document; translucent backgrounds are composited before measuring.
+Settings and document screenshots are recorded. Related document-header and coding
+settings validation/recovery cases also pass.
+
+This is scoped color evidence, not a claim of full WCAG conformance. The automated
+scan covers visible content after initial navigation; it does not exhaust scrolled
+content, hover/selected/error overlays, arbitrary user colors, ancestor opacity,
+gradients or every chart distinction. Continue the per-screen interaction audit and
+verify those states against the same shared contrast thresholds.

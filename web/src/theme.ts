@@ -1,6 +1,7 @@
 import { createTheme } from '@mantine/core';
 import type { CSSVariablesResolver, MantineThemeOverride } from '@mantine/core';
 import type { FontSize } from './preferences.ts';
+import { accessibleColor } from './design-system/contrast.ts';
 import { designTokens } from './design-system/tokens.ts';
 
 const baseTheme = {
@@ -63,9 +64,42 @@ export function themeForFontSize(fontSize: FontSize) {
 
 export const theme = themeForFontSize('default');
 
-/** Validation text and invalid field values must remain readable in both schemes. */
-export const cssVariablesForTheme: CSSVariablesResolver = () => ({
-  variables: {},
-  light: { '--mantine-color-error': designTokens.color.errorText.light },
-  dark: { '--mantine-color-error': designTokens.color.errorText.dark },
-});
+/** Shared semantic colors meet AA on the supported surfaces and hover backgrounds. */
+export const cssVariablesForTheme: CSSVariablesResolver = (theme) => {
+  const light: Record<string, string> = {
+    '--mantine-color-dimmed': '#495057',
+    '--mantine-color-placeholder': '#495057',
+    '--mantine-color-error': '#a61e4d',
+    '--mantine-color-anchor': '#3c478f',
+    '--mantine-color-default-border': '#737b83',
+    '--kotowari-control-border': '#737b83',
+    '--kotowari-focus': '#3c478f',
+  };
+  const dark: Record<string, string> = {
+    '--mantine-color-text': '#f1f3f5',
+    '--mantine-color-dimmed': '#c1c2c5',
+    '--mantine-color-placeholder': '#c1c2c5',
+    '--mantine-color-error': '#ffa8a8',
+    '--mantine-color-anchor': '#c7cbef',
+    '--mantine-color-default-border': '#a6a7ab',
+    '--kotowari-control-border': '#a6a7ab',
+    '--kotowari-focus': '#c7cbef',
+  };
+  for (const [name, palette] of Object.entries(theme.colors)) {
+    if (name === 'dark') continue;
+    const lightText = accessibleColor(palette[8], '#e2e2e2');
+    const darkText = accessibleColor(palette[3], '#424242');
+    const filled = accessibleColor(palette[6], '#ffffff');
+    const filledHover = accessibleColor(palette[7], '#ffffff');
+    for (const scheme of [light, dark]) {
+      scheme[`--mantine-color-${name}-filled`] = filled;
+      scheme[`--mantine-color-${name}-filled-hover`] = filledHover;
+      scheme[`--mantine-color-${name}-contrast`] = '#ffffff';
+    }
+    for (const suffix of ['text', 'light-color', 'outline']) {
+      light[`--mantine-color-${name}-${suffix}`] = lightText;
+      dark[`--mantine-color-${name}-${suffix}`] = darkText;
+    }
+  }
+  return { variables: {}, light, dark };
+};

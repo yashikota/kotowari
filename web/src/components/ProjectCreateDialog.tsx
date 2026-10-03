@@ -271,7 +271,7 @@ export function ProjectCreateDialog({
                       <IconCircleDashed
                         size={14}
                         stroke={1.75}
-                        color="var(--mantine-color-orange-5)"
+                        color="var(--mantine-color-orange-text)"
                         aria-hidden="true"
                       />
                     ) : (
@@ -312,7 +312,7 @@ export function ProjectCreateDialog({
                       <IconAntennaBars1
                         size={13}
                         stroke={1.75}
-                        color="var(--mantine-color-gray-5)"
+                        color="var(--mantine-color-dimmed)"
                         aria-hidden="true"
                       />
                     ) : (
@@ -349,7 +349,7 @@ export function ProjectCreateDialog({
                     <IconUser
                       size={14}
                       stroke={1.7}
-                      color="var(--mantine-color-gray-5)"
+                      color="var(--mantine-color-dimmed)"
                       aria-hidden="true"
                     />
                   }
