@@ -1,3 +1,6 @@
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import { useActionFocusReturn } from '../focus.ts';
+import { useRef } from 'react';
 import {
   Box,
   Button,
@@ -17,6 +20,10 @@ import styles from './IssuePropertiesPanel.module.css';
 import { IssuePropertyRow } from './IssuePropertyControls.tsx';
 
 export function IssueLabelsProperty({
+  saving,
+  saved,
+  error,
+  onRetry,
   labels,
   selectedLabelIds,
   labelName,
@@ -28,6 +35,10 @@ export function IssueLabelsProperty({
   onToggleLabel,
   onCreateLabel,
 }: {
+  saving: boolean;
+  saved: boolean;
+  error: string;
+  onRetry: () => unknown;
   labels: Label[];
   selectedLabelIds: Set<number>;
   labelName: string;
@@ -40,6 +51,15 @@ export function IssueLabelsProperty({
   onCreateLabel: () => void;
 }) {
   const { t } = useTranslation();
+  const target = useRef<HTMLButtonElement>(null);
+  const popup = useRef<HTMLDivElement>(null);
+  const run = useActionFocusReturn(
+    saving,
+    () =>
+      popup.current?.querySelector<HTMLButtonElement>('[role="alert"] button:not(:disabled)') ??
+      popup.current?.querySelector<HTMLInputElement>('input:not(:disabled)') ??
+      target.current,
+  );
   const selectedLabels = labels.filter((label) => selectedLabelIds.has(label.id));
   const labelQuery = labelName.trim().toLocaleLowerCase();
   const visibleLabels = labels.filter((label) =>
@@ -49,6 +69,18 @@ export function IssueLabelsProperty({
     labelQuery.length > 0 &&
     !labels.some((label) => label.name.trim().toLocaleLowerCase() === labelQuery);
 
+  const feedback = (
+    <SaveFeedback
+      saving={saving}
+      saved={saved}
+      error={error}
+      savingLabel={t('issueProperties.savingLabels')}
+      savedLabel={t('issueProperties.labelsSaved')}
+      failureLabel={t('issueProperties.labelsFailed')}
+      retryLabel={t('issueProperties.retryLabels')}
+      onRetry={() => run(onRetry)}
+    />
+  );
   return (
     <Box
       role="group"
@@ -58,6 +90,7 @@ export function IssueLabelsProperty({
       <Text component="h3" className={styles.heading}>
         {t('issueProperties.labels')}
       </Text>
+      {!opened ? feedback : null}
       <IssuePropertyRow
         label={t('issueProperties.labels')}
         icon={<IconTag size={14} stroke={1.7} />}
@@ -65,6 +98,12 @@ export function IssueLabelsProperty({
       >
         <Popover
           position="bottom-start"
+          preventPositionChangeWhenVisible={false}
+          middlewares={{
+            flip: { padding: 12 },
+            shift: { crossAxis: true, padding: 12 },
+            size: true,
+          }}
           shadow="md"
           width={264}
           withinPortal
@@ -73,13 +112,14 @@ export function IssueLabelsProperty({
         >
           <Popover.Target>
             <UnstyledButton
+              ref={target}
               type="button"
               aria-label={t('issueProperties.changeLabels')}
               aria-expanded={opened}
               className={styles.labelPickerTarget}
               onClick={onToggleOpen}
             >
-              <Group gap={4} wrap="nowrap" className={styles.selectedLabels}>
+              <Group gap={4} wrap="wrap" className={styles.selectedLabels}>
                 {selectedLabels.length > 0 ? (
                   selectedLabels.map((label) => (
                     <span
@@ -104,14 +144,18 @@ export function IssueLabelsProperty({
             </UnstyledButton>
           </Popover.Target>
           <Popover.Dropdown
+            ref={popup}
             role="dialog"
             aria-label={t('issueProperties.changeLabels')}
             className={styles.labelPicker}
           >
+            {feedback}
             <TextInput
               aria-label={t('issueProperties.changeLabels')}
               placeholder={t('issueProperties.findOrCreateLabel')}
               autoFocus={opened}
+              disabled={saving}
+              maxLength={100}
               value={labelName}
               onChange={onLabelQueryChange}
               onKeyDown={onLabelQueryKeyDown}
@@ -129,7 +173,8 @@ export function IssueLabelsProperty({
                       role="checkbox"
                       aria-label={label.name}
                       aria-checked={selected}
-                      onClick={() => onToggleLabel(label)}
+                      disabled={saving}
+                      onClick={() => run(() => onToggleLabel(label))}
                       className={styles.labelOption}
                     >
                       <Group gap="xs" wrap="nowrap">
@@ -142,7 +187,7 @@ export function IssueLabelsProperty({
                             backgroundColor: label.color,
                           }}
                         />
-                        <Text size="xs" truncate>
+                        <Text size="sm" style={{ overflowWrap: 'anywhere', minWidth: 0 }}>
                           {label.name}
                         </Text>
                         {selected ? <IconCheck size={14} className={styles.check} /> : null}
@@ -164,7 +209,9 @@ export function IssueLabelsProperty({
                 size="compact-xs"
                 fullWidth
                 mt="xs"
-                onClick={onCreateLabel}
+                disabled={saving}
+                className={styles.labelCreate}
+                onClick={() => run(onCreateLabel)}
               >
                 {t('issueProperties.createLabel', { name: labelName.trim() })}
               </Button>

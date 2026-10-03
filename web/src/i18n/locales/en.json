@@ -773,7 +773,11 @@
     "noLabelsFound": "No matching labels",
     "newLabel": "New label",
     "findOrCreateLabel": "Find or create a label…",
-    "createLabel": "Create “{{name}}”"
+    "createLabel": "Create “{{name}}”",
+    "savingLabels": "Saving labels…",
+    "labelsSaved": "Labels saved",
+    "labelsFailed": "Labels could not be saved",
+    "retryLabels": "Retry saving labels"
   },
   "issueAssignment": {
     "you": "You",

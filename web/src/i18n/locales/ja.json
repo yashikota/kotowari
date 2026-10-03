@@ -765,7 +765,11 @@
     "noLabelsFound": "一致するラベルがありません",
     "newLabel": "新しいラベル",
     "findOrCreateLabel": "ラベルを検索または作成…",
-    "createLabel": "「{{name}}」を作成"
+    "createLabel": "「{{name}}」を作成",
+    "savingLabels": "ラベルを保存中…",
+    "labelsSaved": "ラベルを保存しました",
+    "labelsFailed": "ラベルを保存できませんでした",
+    "retryLabels": "ラベルの保存を再試行"
   },
   "issueAssignment": {
     "you": "自分",

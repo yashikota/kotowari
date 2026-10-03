@@ -210,13 +210,14 @@
   padding: 2px 5px;
   border-radius: 5px;
   color: var(--mantine-color-text);
-  font-size: 11px;
-  line-height: 16px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .labelPickerTarget {
+  height: auto;
   display: flex;
   width: fit-content;
   min-width: 0;
@@ -225,7 +226,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  padding: 0 2px;
+  padding: 4px 2px;
   border-radius: 4px;
   color: var(--mantine-color-text);
   font-size: var(--mantine-font-size-sm);
@@ -248,10 +249,12 @@
 }
 
 .labelPicker {
+  max-width: calc(100dvw - 24px);
   border-color: var(--mantine-color-default-border);
 }
 
 .labelOption {
+  min-height: 44px;
   width: 100%;
   padding: 6px 8px;
   border-radius: 4px;
@@ -315,6 +318,10 @@
     height: 36px;
   }
 
+  .labelPickerTarget {
+    height: auto;
+  }
+
   .addPropertyButton {
     width: 36px;
     height: 36px;
@@ -338,4 +345,17 @@
 
 .coreProperties > .heading {
   margin-bottom: 7.5px;
+}
+
+.labelOption:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.labelCreate {
+  height: auto;
+  min-height: 44px;
+}
+.labelCreate :global(.mantine-Button-label) {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

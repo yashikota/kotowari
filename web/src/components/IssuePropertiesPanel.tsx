@@ -24,6 +24,9 @@ export function IssuePropertiesPanel({
     | 'labels'
     | 'selectedLabelIds'
     | 'labelName'
+    | 'labelSaving'
+    | 'labelError'
+    | 'labelSaved'
     | 'due'
     | 'handlers'
   >;
@@ -60,6 +63,10 @@ export function IssuePropertiesPanel({
           onCycleChange={handlers.onCycleChange}
         />
         <IssueLabelsProperty
+          saving={model.labelSaving}
+          error={model.labelError}
+          saved={model.labelSaved}
+          onRetry={handlers.onRetryLabelSave}
           labels={labels}
           selectedLabelIds={selectedLabelIds}
           labelName={labelName}

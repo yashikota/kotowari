@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.ts';
 import { isSubmitShortcut } from '../keymap.ts';
 import { LABEL_COLORS } from '../label-colors.ts';
@@ -14,36 +14,96 @@ type Props = {
 
 export function useIssueDetailLabels({ issue, labels, setLabels, patch }: Props) {
   const [labelName, setLabelName] = useState('');
-  const [focusLabel, setFocusLabel] = useState(0);
+  const [labelSaving, setLabelSaving] = useState(false);
+  const [labelError, setLabelError] = useState('');
+  const [labelSaved, setLabelSaved] = useState(false);
+  const pending = useRef(false);
+  const generation = useRef(0);
+  type Operation = { name: string; created?: Label } | { label: Label; selected: boolean };
+  const failed = useRef<Operation | null>(null);
   const selectedLabelIds = new Set(issue?.labels.map((label) => label.id) ?? []);
-
-  async function addLabel() {
-    const name = labelName.trim();
-    if (!name || !issue) return;
-    const created = await api.createLabel({
-      name,
-      color: LABEL_COLORS[labels.length % LABEL_COLORS.length] ?? '#c4a574',
-    });
+  useEffect(() => {
+    generation.current++;
+    pending.current = false;
+    failed.current = null;
     setLabelName('');
-    setFocusLabel((current) => current + 1);
-    setLabels(await api.labels());
-    await patch({ labelIds: [...issue.labels.map((label) => label.id), created.id] });
+    setLabelError('');
+    setLabelSaving(false);
+    setLabelSaved(false);
+    return () => {
+      generation.current++;
+    };
+  }, [issue?.identifier]);
+
+  async function write(operation: Operation) {
+    if (!issue || pending.current) return;
+    const token = generation.current;
+    pending.current = true;
+    setLabelSaving(true);
+    setLabelError('');
+    setLabelSaved(false);
+    failed.current = operation;
+    try {
+      let label: Label;
+      let selected: boolean;
+      if ('name' in operation) {
+        label =
+          operation.created ??
+          labels.find(
+            (entry) => entry.name.trim().toLocaleLowerCase() === operation.name.toLocaleLowerCase(),
+          ) ??
+          (await api.createLabel({
+            name: operation.name,
+            color: LABEL_COLORS[labels.length % LABEL_COLORS.length] ?? '#c4a574',
+          }));
+        operation.created = label;
+        if (token !== generation.current) return;
+        if (!labels.some((entry) => entry.id === label.id)) setLabels([...labels, label]);
+        selected = true;
+      } else {
+        label = operation.label;
+        selected = operation.selected;
+      }
+      const ids = new Set(issue.labels.map((entry) => entry.id));
+      if (selected) ids.add(label.id);
+      else ids.delete(label.id);
+      await patch({ labelIds: [...ids] });
+      if (token !== generation.current) return;
+      failed.current = null;
+      setLabelSaved(true);
+      if ('name' in operation) setLabelName('');
+    } catch (cause) {
+      if (token === generation.current)
+        setLabelError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      if (token === generation.current) {
+        pending.current = false;
+        setLabelSaving(false);
+      }
+    }
+  }
+  function addLabel() {
+    const name = labelName.trim();
+    return name ? write({ name }) : undefined;
   }
 
   return {
-    data: { labelName, focusLabel, selectedLabelIds },
+    data: { labelName, selectedLabelIds, labelSaving, labelError, labelSaved },
     handlers: {
       onToggleIssueLabel: (label: Label) => {
         if (!issue) return;
-        const isSelected = issue.labels.some((current) => current.id === label.id);
-        const next = isSelected
-          ? issue.labels.filter((current) => current.id !== label.id).map((current) => current.id)
-          : [...issue.labels.map((current) => current.id), label.id];
-        return patch({ labelIds: next });
+        return write({ label, selected: !selectedLabelIds.has(label.id) });
       },
+      onRetryLabelSave: () => (failed.current ? write(failed.current) : undefined),
       onLabelQueryChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setLabelName(e.target.value),
+      ) => {
+        if (pending.current) return;
+        setLabelName(e.target.value);
+        failed.current = null;
+        setLabelError('');
+        setLabelSaved(false);
+      },
       onLabelQueryKeyDown: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onKeyDown']>>[0],
       ) => {
