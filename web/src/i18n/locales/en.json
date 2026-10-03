@@ -1480,7 +1480,15 @@
       "week": "In one week",
       "cycle": "End of next cycle",
       "custom": "Custom…",
-      "clear": "Remove due date"
+      "clear": "Remove due date",
+      "hint": "Set a calendar date. Past dates are kept as overdue.",
+      "saving": "Saving due date…",
+      "clearing": "Removing due date…",
+      "failed": "Due date could not be saved",
+      "clearFailed": "Due date could not be removed",
+      "retry": "Retry saving due date",
+      "retryClear": "Retry removing due date",
+      "clearHint": "The due date is still set. Retry to remove it."
     },
     "copy": "Copy",
     "copyId": "Copy ID",

@@ -69,6 +69,7 @@ type IssueHeaderModel = Pick<
   | 'issueOptionsOpen'
   | 'reminderMenuOpen'
   | 'reminderEditor'
+  | 'dueDateSaving'
   | 'codingToolName'
   | 'codingToolURL'
 > & {
@@ -120,6 +121,11 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
       onChange={handlers.onIssueOptionsChange}
     >
       <Box className={layoutStyles.issueHeader}>
+        {model.dueDateSaving ? (
+          <Text role="status" size="sm" c="dimmed">
+            {t('issueActions.dueDate.saving')}
+          </Text>
+        ) : null}
         {model.reminderEditor.saving ? (
           <Text role="status" size="sm" c="dimmed">
             {t('issueActions.reminder.saving')}

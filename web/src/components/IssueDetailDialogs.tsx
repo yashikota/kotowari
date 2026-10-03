@@ -1,3 +1,4 @@
+import { DateEditorDialog } from './DateEditorDialog.tsx';
 import { ReminderDialog } from './ReminderDialog.tsx';
 import {
   Button,
@@ -38,6 +39,7 @@ type IssueDetailDialogHandlers = Pick<
   | 'onDueDateChange'
   | 'onRelatedIssueTitleChange'
   | 'onSaveDueDate'
+  | 'onRetryDueDate'
   | 'onSelectMarkAs'
   | 'onTemplateNameChange'
   | 'Project_conversion_description_onChange'
@@ -70,6 +72,9 @@ type IssueDetailDialogModel = Pick<
   | 'externalLinkKind'
   | 'dueDateOpen'
   | 'dueDateValue'
+  | 'dueDateSaving'
+  | 'dueDateError'
+  | 'dueDateClearing'
 > & {
   issue: Pick<IssueDetailModel['issue'], 'dueDate' | 'identifier' | 'title'>;
   handlers: IssueDetailDialogHandlers;
@@ -305,38 +310,38 @@ export function IssueDetailDialogs({ model }: { model: IssueDetailDialogModel })
           </Stack>
         </form>
       </Modal>
-      <Modal
-        opened={dueDateOpen}
+      <DateEditorDialog
+        inputType="date"
+        data={{
+          opened: dueDateOpen,
+          value: dueDateValue,
+          saving: model.dueDateSaving,
+          error: model.dueDateError,
+          clearing: model.dueDateClearing,
+          validation: '',
+          validationAttempt: 0,
+        }}
+        canClear={Boolean(issue.dueDate)}
+        onClear={handlers.onClearDueDate}
         onClose={handlers.onCloseDueDate}
-        title={t('issueActions.dueDate.title')}
-        centered
-      >
-        <Stack>
-          <TextInput
-            type="date"
-            label={t('issueActions.dueDate.label')}
-            value={dueDateValue}
-            onChange={handlers.onDueDateChange}
-          />
-          <Group justify="space-between">
-            {issue.dueDate ? (
-              <Button type="button" variant="subtle" color="red" onClick={handlers.onClearDueDate}>
-                {t('issueActions.dueDate.clear')}
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Group>
-              <Button type="button" variant="default" onClick={handlers.onCloseDueDate}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="button" onClick={handlers.onSaveDueDate} disabled={!dueDateValue}>
-                {t('common.save')}
-              </Button>
-            </Group>
-          </Group>
-        </Stack>
-      </Modal>
+        onChange={handlers.onDueDateChange}
+        onSave={handlers.onSaveDueDate}
+        onRetry={handlers.onRetryDueDate}
+        labels={{
+          title: t('issueActions.dueDate.title'),
+          clearTitle: t('issueActions.dueDate.clear'),
+          input: t('issueActions.dueDate.label'),
+          hint: t('issueActions.dueDate.hint'),
+          saving: t('issueActions.dueDate.saving'),
+          clearing: t('issueActions.dueDate.clearing'),
+          failed: t('issueActions.dueDate.failed'),
+          clearFailed: t('issueActions.dueDate.clearFailed'),
+          retry: t('issueActions.dueDate.retry'),
+          clearRetry: t('issueActions.dueDate.retryClear'),
+          clearHint: t('issueActions.dueDate.clearHint'),
+          clearAction: t('issueActions.dueDate.clear'),
+        }}
+      />
     </>
   );
 }

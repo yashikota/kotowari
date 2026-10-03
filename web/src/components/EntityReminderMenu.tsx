@@ -15,7 +15,7 @@ type Props = {
   reminderAt?: string | null;
   opened: boolean;
   onMenuChange: (opened: boolean) => void;
-  onSetReminder: (value: Date | null) => Promise<void>;
+  onSetReminder: (value: Date | null) => Promise<void> | undefined;
 };
 
 export function EntityReminderMenu({

@@ -1,5 +1,5 @@
-import type * as React from 'react';
-import { useState } from 'react';
+import { useRetriableSave } from './useRetriableSave.ts';
+import { useEffect, useState } from 'react';
 import type { Cycle, Issue } from '../types.ts';
 
 type Props = {
@@ -12,6 +12,27 @@ type Props = {
 export function useIssueDetailDueDate({ issue, cycles, patch, onCloseIssueOptions }: Props) {
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [dueDateValue, setDueDateValue] = useState('');
+  const [dueDateClearing, setDueDateClearing] = useState(false);
+  const mutation = useRetriableSave<string | null>({
+    scope: issue?.identifier ?? '',
+    save: async (value) => {
+      await patch({ dueDate: value });
+    },
+    onSuccess: () => {
+      setDueDateOpen(false);
+      onCloseIssueOptions();
+    },
+    onFailure: (value) => {
+      if (value !== null) setDueDateValue(value);
+      setDueDateOpen(true);
+      onCloseIssueOptions();
+    },
+  });
+  useEffect(() => {
+    setDueDateOpen(false);
+    setDueDateValue('');
+    setDueDateClearing(false);
+  }, [issue?.identifier]);
 
   function localDateValue(date: Date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -30,29 +51,45 @@ export function useIssueDetailDueDate({ issue, cycles, patch, onCloseIssueOption
   }
 
   function openDueDate() {
+    if (mutation.isPending()) return;
+    mutation.invalidate();
+    setDueDateClearing(false);
     onCloseIssueOptions();
     setDueDateValue(issue?.dueDate ?? '');
     setDueDateOpen(true);
   }
 
-  async function saveDueDate(value: string | null) {
-    await patch({ dueDate: value });
-    setDueDateOpen(false);
-    onCloseIssueOptions();
+  function saveDueDate(value: string | null) {
+    if (mutation.isPending()) return;
+    setDueDateClearing(value === null);
+    return mutation.write(value);
   }
 
   return {
-    data: { dueDateOpen, dueDateValue },
+    data: {
+      dueDateOpen,
+      dueDateValue,
+      dueDateClearing,
+      dueDateSaving: mutation.saving,
+      dueDateError: mutation.error,
+    },
     handlers: {
       onOpenDueDate: () => openDueDate(),
       onSetDueDatePreset: (kind: 'tomorrow' | 'week' | 'cycle') => {
         const value = dueDatePreset(kind);
         return value ? saveDueDate(value) : undefined;
       },
-      onDueDateChange: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) =>
-        setDueDateValue(e.target.value),
-      onCloseDueDate: () => setDueDateOpen(false),
-      onSaveDueDate: () => saveDueDate(dueDateValue || null),
+      onDueDateChange: (value: string) => {
+        if (!mutation.isPending()) {
+          setDueDateValue(value);
+          mutation.invalidate();
+        }
+      },
+      onCloseDueDate: () => {
+        if (!mutation.isPending()) setDueDateOpen(false);
+      },
+      onSaveDueDate: () => (dueDateValue ? saveDueDate(dueDateValue) : undefined),
+      onRetryDueDate: mutation.retry,
       onClearDueDate: () => saveDueDate(null),
     },
   };
