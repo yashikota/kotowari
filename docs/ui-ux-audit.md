@@ -124,3 +124,23 @@ the existing cycle group case and saved project board preview case also pass (35
 cases in total). Formatting/lint/type checks and the production build pass. Mobile
 light/dark group configuration screenshots were inspected after the 44px controls
 and short action labels were applied. Full UI/UX completion remains unproven.
+
+## Document property feedback and contrast
+
+Document property edits now retain failed changes, prevent overlapping writes and
+retry the exact failed payload. Saving another property includes earlier unsaved
+changes. Confirmed PATCH responses update the local document without coupling a
+successful write to a route reload. Parent/project option failures are presented
+locally with retry; incomplete choices remain disabled until recovery.
+
+Shared save feedback wraps long messages and button labels; retry controls have
+44px minimum height at mobile widths. The document properties feedback uses the
+same accessible theme and saving/error/success states as other editors.
+
+Verification: 11 document property browser cases pass, including title/status/date/
+tags failure retention and retry in light/dark at 360px, cumulative edits, option
+recovery and fresh list titles after navigation. The 17-route contrast sweep also
+passes in light/dark at 360px and 1280px (15 browser cases total in this run).
+Mobile light/dark document error screenshots were inspected. Formatting, lint,
+types and locale parity pass. Parent/project write recovery and all deletion flows
+still need separate interaction evidence; overall UI/UX completion remains unproven.

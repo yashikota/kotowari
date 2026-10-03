@@ -1,4 +1,14 @@
 {
+  "pageProperties": {
+    "saving": "文書の属性を保存しています…",
+    "saved": "文書の属性を保存しました",
+    "failed": "文書の属性を保存できませんでした",
+    "retry": "属性の保存を再試行",
+    "unsaved": "未保存の文書属性があります",
+    "save": "属性を保存",
+    "loadFailed": "文書の選択肢を読み込めませんでした",
+    "retryLoad": "選択肢の読み込みを再試行"
+  },
   "groupOrdering": { "hide": "非表示", "show": "表示" },
   "workspaceSave": {
     "saving": "ワークスペースを保存中…",

@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 
 /** A scoped write owns its retry value and ignores results after navigation. */
-export function useRetriableSave<Value>({
+export function useRetriableSave<Value, Result = void>({
   scope,
   save,
   onSuccess,
   onFailure,
 }: {
   scope: string;
-  save: (value: Value) => Promise<void>;
-  onSuccess: () => void;
+  save: (value: Value) => Promise<Result>;
+  onSuccess: (result: Result) => void;
   onFailure: (value: Value) => void;
 }) {
   const [saving, setSaving] = useState(false);
@@ -34,10 +34,10 @@ export function useRetriableSave<Value>({
     setSaving(true);
     setError('');
     try {
-      await save(value);
+      const result = await save(value);
       if (generation.current !== token) return;
       failed.current = null;
-      onSuccess();
+      onSuccess(result);
     } catch (cause) {
       if (generation.current !== token) return;
       failed.current = { value };

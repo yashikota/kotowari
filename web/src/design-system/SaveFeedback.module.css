@@ -1,0 +1,18 @@
+.message {
+  overflow-wrap: anywhere;
+}
+.retry {
+  max-width: 100%;
+  height: auto;
+  min-height: 32px;
+  padding-block: 6px;
+}
+.retry :global(.mantine-Button-label) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 48em) {
+  .retry {
+    min-height: 44px;
+  }
+}

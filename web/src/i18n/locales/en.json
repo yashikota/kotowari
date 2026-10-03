@@ -1,4 +1,14 @@
 {
+  "pageProperties": {
+    "saving": "Saving document properties…",
+    "saved": "Document properties saved",
+    "failed": "Document properties could not be saved",
+    "retry": "Retry saving properties",
+    "unsaved": "Unsaved document properties",
+    "save": "Save properties",
+    "loadFailed": "Document options could not be loaded",
+    "retryLoad": "Retry loading document options"
+  },
   "groupOrdering": { "hide": "Hide", "show": "Show" },
   "workspaceSave": {
     "saving": "Saving workspace…",

@@ -1,10 +1,13 @@
+import { useRef } from 'react';
+import { adrStatusLabel } from '../i18n/labels.ts';
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Group, NativeSelect, Stack, Text, TextInput } from '@mantine/core';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
-import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
+import { useAutofocusTarget, useFocusWhen, useActionFocusReturn } from '../focus.ts';
 import { AIPanel } from '../components/AIPanel.tsx';
 import { DocumentListDisplayOptions } from '../components/DocumentListDisplayOptions.tsx';
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
@@ -225,6 +228,15 @@ export function PageDetailPageView({
   titleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const runPropertyAction = useActionFocusReturn(
+    model.propertiesSaving,
+    () =>
+      feedbackRef.current?.querySelector<HTMLButtonElement>(
+        '[role="alert"] button:not(:disabled)',
+      ) ?? titleRef.current,
+  );
+
   switch (model._view) {
     case 0: {
       const { slug, page, pages, projects, tagDraft, handlers } = model;
@@ -236,19 +248,62 @@ export function PageDetailPageView({
               actions={
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect
+                    disabled={model.propertiesSaving}
                     aria-label={t('ui.pageStatus')}
                     value={page.status}
                     onChange={handlers.Page_status_onChange0}
-                    data={PAGE_STATUSES.map((s) => ({ value: s, label: s }))}
+                    data={PAGE_STATUSES.map((s) => ({ value: s, label: adrStatusLabel(s) }))}
                   />
-                  <Button type="button" variant="subtle" color="red" onClick={handlers.onClick1}>
+                  <Button
+                    type="button"
+                    disabled={model.propertiesSaving}
+                    variant="subtle"
+                    color="red"
+                    onClick={handlers.onClick1}
+                  >
                     {t('ui.delete')}
                   </Button>
                 </Group>
               }
             />
             <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
+              <Box ref={feedbackRef}>
+                <SaveFeedback
+                  saving={model.propertiesSaving}
+                  saved={model.propertiesSaved}
+                  error={model.propertiesError}
+                  savingLabel={t('pageProperties.saving')}
+                  savedLabel={t('pageProperties.saved')}
+                  failureLabel={t('pageProperties.failed')}
+                  retryLabel={t('pageProperties.retry')}
+                  onRetry={() => runPropertyAction(handlers.onRetryProperties)}
+                />
+              </Box>
+              {model.propertiesDirty && !model.propertiesSaving && !model.propertiesError ? (
+                <Group>
+                  <Text size="sm" c="dimmed" role="status">
+                    {t('pageProperties.unsaved')}
+                  </Text>
+                  <Button
+                    variant="default"
+                    onClick={() => runPropertyAction(handlers.onSaveProperties)}
+                  >
+                    {t('pageProperties.save')}
+                  </Button>
+                </Group>
+              ) : null}
+              <SaveFeedback
+                saving={false}
+                saved={false}
+                error={model.optionsError}
+                savingLabel=""
+                savedLabel=""
+                failureLabel={t('pageProperties.loadFailed')}
+                retryLabel={t('pageProperties.retryLoad')}
+                onRetry={handlers.onRetryPropertyOptions}
+              />
               <DocumentTitle
+                disabled={model.propertiesSaving}
                 ref={titleRef}
                 aria-label={t('ui.pageTitle')}
                 value={page.title}
@@ -257,6 +312,9 @@ export function PageDetailPageView({
               />
               <Group gap="md" wrap="wrap" align="flex-end">
                 <NativeSelect
+                  disabled={
+                    model.propertiesSaving || model.optionsLoading || Boolean(model.optionsError)
+                  }
                   aria-label={t('ui.parentPage')}
                   label={t('ui.parentPage')}
                   value={page.parentId ?? ''}
@@ -270,6 +328,9 @@ export function PageDetailPageView({
                   style={{ flex: 1, minWidth: 160 }}
                 />
                 <NativeSelect
+                  disabled={
+                    model.propertiesSaving || model.optionsLoading || Boolean(model.optionsError)
+                  }
                   aria-label={t('ui.project')}
                   label={t('field.project')}
                   value={page.projectId ?? ''}
@@ -281,6 +342,7 @@ export function PageDetailPageView({
                   style={{ flex: 1, minWidth: 160 }}
                 />
                 <TextInput
+                  disabled={model.propertiesSaving}
                   type="date"
                   aria-label={t('ui.documentDate')}
                   label={t('ui.documentDate')}
@@ -290,6 +352,7 @@ export function PageDetailPageView({
                 />
               </Group>
               <TextInput
+                disabled={model.propertiesSaving}
                 aria-label={t('ui.tags')}
                 label={t('ui.tags')}
                 placeholder={t('ui.tagsCommaSeparated')}

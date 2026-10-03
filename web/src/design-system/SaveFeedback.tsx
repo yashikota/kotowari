@@ -1,3 +1,4 @@
+import styles from './SaveFeedback.module.css';
 import { Alert, Button, Stack, Text } from '@mantine/core';
 
 export function SaveFeedback({
@@ -29,8 +30,16 @@ export function SaveFeedback({
       {error ? (
         <Alert color="red" role="alert" title={failureLabel}>
           <Stack gap="xs">
-            <Text size="sm">{error}</Text>
-            <Button size="xs" variant="default" disabled={saving} onClick={onRetry}>
+            <Text size="sm" className={styles.message}>
+              {error}
+            </Text>
+            <Button
+              className={styles.retry}
+              size="xs"
+              variant="default"
+              disabled={saving}
+              onClick={onRetry}
+            >
               {retryLabel}
             </Button>
           </Stack>

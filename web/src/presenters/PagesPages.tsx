@@ -1,6 +1,7 @@
+import { useRetriableSave } from './useRetriableSave.ts';
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
 import { api } from '../api.ts';
 import i18n from '../i18n/index.ts';
@@ -136,22 +137,91 @@ export function usePageDetailPagePresenter() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tagDraft, setTagDraft] = useState(initial.tags.join(', '));
 
+  type Properties = Pick<Page, 'title' | 'status' | 'parentId' | 'projectId' | 'date' | 'tags'>;
+  const confirmed = useRef(initial);
+  const dirty = useRef(false);
+  const [propertiesDirty, setPropertiesDirty] = useState(false);
+  const [propertiesSaved, setPropertiesSaved] = useState(false);
+  const [optionsError, setOptionsError] = useState('');
+  const [optionsLoading, setOptionsLoading] = useState(true);
+  const optionsGeneration = useRef(0);
+  const mutation = useRetriableSave<Partial<Properties>, Page>({
+    scope: slug,
+    save: (body) => api.patchPage(slug, body),
+    onSuccess: (next) => {
+      confirmed.current = next;
+      dirty.current = false;
+      setPage(next);
+      setTagDraft(next.tags.join(', '));
+      setPropertiesDirty(false);
+      setPropertiesSaved(true);
+    },
+    onFailure: () => {},
+  });
   useEffect(() => {
-    setPage(initial);
-    setTagDraft(initial.tags.join(', '));
+    if (initial.slug !== confirmed.current.slug || !dirty.current) {
+      confirmed.current = initial;
+      dirty.current = false;
+      setPage(initial);
+      setTagDraft(initial.tags.join(', '));
+      setPropertiesDirty(false);
+      setPropertiesSaved(false);
+    }
   }, [initial]);
-
-  useEffect(() => {
-    void Promise.all([api.pages(), api.projects()]).then(([all, proj]) => {
+  const loadOptions = useCallback(async () => {
+    const generation = ++optionsGeneration.current;
+    setOptionsLoading(true);
+    setOptionsError('');
+    try {
+      const [all, projects] = await Promise.all([api.pages(), api.projects()]);
+      if (generation !== optionsGeneration.current) return;
       setPages(all);
-      setProjects(proj);
-    });
+      setProjects(projects);
+    } catch (cause) {
+      if (generation === optionsGeneration.current)
+        setOptionsError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      if (generation === optionsGeneration.current) setOptionsLoading(false);
+    }
   }, [slug]);
-
-  async function save(body: Record<string, unknown>) {
-    const next = await api.patchPage(slug, body);
-    setPage(next);
-    await router.invalidate();
+  useEffect(() => {
+    setPages([]);
+    setProjects([]);
+    void loadOptions();
+    return () => {
+      optionsGeneration.current++;
+    };
+  }, [loadOptions]);
+  function markDirty() {
+    dirty.current = true;
+    setPropertiesDirty(true);
+    setPropertiesSaved(false);
+    mutation.invalidate();
+  }
+  function save(changes: Partial<Properties>) {
+    if (mutation.isPending()) return;
+    const draft: Properties = {
+      ...page,
+      tags: tagDraft
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+      ...changes,
+    };
+    const fields = ['title', 'status', 'parentId', 'projectId', 'date', 'tags'] as const;
+    const body = Object.fromEntries(
+      fields
+        .filter((key) => JSON.stringify(draft[key]) !== JSON.stringify(confirmed.current[key]))
+        .map((key) => [key, draft[key]]),
+    ) as Partial<Properties>;
+    if (!Object.keys(body).length) {
+      dirty.current = false;
+      setPropertiesDirty(false);
+      return;
+    }
+    markDirty();
+    setPage((current) => ({ ...current, ...draft }));
+    return mutation.write(body);
   }
 
   return {
@@ -161,7 +231,16 @@ export function usePageDetailPagePresenter() {
     pages,
     projects,
     tagDraft,
+    propertiesSaving: mutation.saving,
+    propertiesError: mutation.error,
+    propertiesSaved,
+    propertiesDirty,
+    optionsError,
+    optionsLoading,
     handlers: {
+      onRetryProperties: mutation.retry,
+      onSaveProperties: () => save({}),
+      onRetryPropertyOptions: loadOptions,
       Page_status_onChange0: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ status: e.target.value }),
@@ -176,7 +255,11 @@ export function usePageDetailPagePresenter() {
       },
       Page_title_onChange2: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setPage({ ...page, title: e.target.value }),
+      ) => {
+        if (mutation.isPending()) return;
+        markDirty();
+        setPage((current) => ({ ...current, title: e.target.value }));
+      },
       Page_title_onBlur3: () => save({ title: page.title }),
       Parent_page_onChange4: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
@@ -193,8 +276,13 @@ export function usePageDetailPagePresenter() {
       Document_date_onChange6: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => save({ date: e.target.value ? e.target.value : null }),
-      Tags_onChange7: (e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0]) =>
-        setTagDraft(e.target.value),
+      Tags_onChange7: (
+        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
+      ) => {
+        if (mutation.isPending()) return;
+        markDirty();
+        setTagDraft(e.target.value);
+      },
       Tags_onBlur8: () =>
         save({
           tags: tagDraft
