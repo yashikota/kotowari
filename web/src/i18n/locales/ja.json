@@ -1580,7 +1580,10 @@
     "empty": "設定済みのリマインダーはありません。",
     "upcoming": "予定",
     "overdue": "通知時刻",
-    "dismiss": "解除"
+    "dismiss": "解除",
+    "dismissing": "リマインダーを解除中…",
+    "dismissFailed": "リマインダーを解除できませんでした",
+    "retryDismiss": "解除を再試行"
   },
   "templates": {
     "heading": "イシューテンプレート",

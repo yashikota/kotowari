@@ -1,3 +1,6 @@
+import { useRef } from 'react';
+import { useActionFocusReturn } from '../focus.ts';
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { ManagementRow } from '../design-system/ManagementRow.tsx';
 import { Link } from '@tanstack/react-router';
 import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core';
@@ -9,15 +12,57 @@ import { useRemindersPresenter, type ReminderItem } from '../presenters/Reminder
 function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPresenter> }) {
   const { t, i18n } = useTranslation();
 
+  const list = useRef<HTMLDivElement>(null);
+  const heading = useRef<HTMLSpanElement>(null);
+  const focusKeys = useRef<string[]>([]);
+  const run = useActionFocusReturn(
+    Object.values(model.dismissStates).some((state) => state.saving),
+    () => {
+      for (const key of focusKeys.current) {
+        const row = list.current
+          ?.querySelector(`[data-reminder-key="${CSS.escape(key)}"]`)
+          ?.closest('[role="listitem"]');
+        const retry = row?.querySelector<HTMLButtonElement>('[role="alert"] button:not(:disabled)');
+        const action = retry ?? row?.querySelector<HTMLButtonElement>('button:not(:disabled)');
+        if (action) return action;
+      }
+      return (
+        list.current?.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? heading.current
+      );
+    },
+  );
+  const clear = (item: ReminderItem) => {
+    const index = model.reminders.findIndex((entry) => entry.key === item.key);
+    focusKeys.current = [
+      item.key,
+      ...model.reminders.slice(index + 1).map((entry) => entry.key),
+      ...model.reminders
+        .slice(0, index)
+        .reverse()
+        .map((entry) => entry.key),
+    ];
+    return run(() => model.handlers.onClearReminder(item));
+  };
   const now = Date.now();
   return (
     <SplitLayout single>
       <Pane single>
-        <PageHeader title={t('reminders.heading')} />
+        <PageHeader
+          title={
+            <span ref={heading} tabIndex={-1}>
+              {t('reminders.heading')}
+            </span>
+          }
+        />
         {model.error ? (
           <Alert color="red" role="alert" my="md">
             {model.error}
-            <Button variant="default" mt="sm" onClick={model.handlers.onRetry}>
+            <Button
+              variant="default"
+              mt="sm"
+              disabled={model.loading}
+              onClick={model.handlers.onRetry}
+            >
               {t('reminders.retry')}
             </Button>
           </Alert>
@@ -30,7 +75,7 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
         {model.reminders.length === 0 && !model.loading && !model.error ? (
           <EmptyState>{t('reminders.empty')}</EmptyState>
         ) : (
-          <Stack gap={0} role="list" aria-label={t('reminders.heading')}>
+          <Stack ref={list} gap={0} role="list" aria-label={t('reminders.heading')}>
             {model.reminders.map((item: ReminderItem) => {
               const reminder = new Date(item.reminderAt).getTime();
               const overdue = reminder <= now;
@@ -42,13 +87,24 @@ function RemindersPageView({ model }: { model: ReturnType<typeof useRemindersPre
                       variant="subtle"
                       color="gray"
                       size="compact-sm"
-                      onClick={() => model.handlers.onClearReminder(item)}
+                      loading={model.dismissStates[item.key]?.saving ?? false}
+                      onClick={() => clear(item)}
                     >
                       {t('reminders.dismiss')}
                     </Button>
                   }
                 >
-                  <Stack gap={2} style={{ minWidth: 0 }}>
+                  <Stack gap={2} style={{ minWidth: 0 }} data-reminder-key={item.key}>
+                    <SaveFeedback
+                      saving={model.dismissStates[item.key]?.saving ?? false}
+                      saved={false}
+                      error={model.dismissStates[item.key]?.error ?? ''}
+                      savingLabel={t('reminders.dismissing')}
+                      savedLabel=""
+                      failureLabel={t('reminders.dismissFailed')}
+                      retryLabel={t('reminders.retryDismiss')}
+                      onRetry={() => clear(item)}
+                    />
                     <Group gap="xs">
                       <Badge color={overdue ? 'red' : 'gray'} variant="light">
                         {t(overdue ? 'reminders.overdue' : 'reminders.upcoming')}
