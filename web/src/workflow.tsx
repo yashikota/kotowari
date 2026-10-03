@@ -14,15 +14,9 @@ export const DEFAULT_ISSUE_WORKFLOW_STATUSES: IssueWorkflowStatus[] = [
   { id: 'duplicate', name: 'Duplicate', category: 'canceled' },
 ];
 
-type IssueWorkflowContextValue = {
-  statuses: IssueWorkflowStatus[];
-  updateStatuses: (statuses: IssueWorkflowStatus[]) => Promise<IssueWorkflowStatus[]>;
-};
-
-const IssueWorkflowContext = createContext<IssueWorkflowContextValue>({
-  statuses: DEFAULT_ISSUE_WORKFLOW_STATUSES,
-  updateStatuses: async (statuses) => statuses,
-});
+const IssueWorkflowContext = createContext<ReturnType<
+  typeof useWorkflowStatuses<IssueWorkflowStatus>
+> | null>(null);
 
 export function IssueWorkflowProvider({ children }: { children: ReactNode }) {
   const state = useWorkflowStatuses(
@@ -35,7 +29,9 @@ export function IssueWorkflowProvider({ children }: { children: ReactNode }) {
 }
 
 export function useIssueWorkflow() {
-  return useContext(IssueWorkflowContext);
+  const context = useContext(IssueWorkflowContext);
+  if (!context) throw new Error('IssueWorkflowProvider is required');
+  return context;
 }
 
 export function workflowStatusLabel(

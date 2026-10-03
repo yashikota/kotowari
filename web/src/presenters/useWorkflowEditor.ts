@@ -15,6 +15,7 @@ export function useWorkflowEditor<Category extends string>(
   initialCategory: Category,
   idPrefix: string,
   messages: { nameRequired: string; saveFailed: string },
+  ready: boolean,
 ) {
   const pending = useRef(false);
   const draftDirty = useRef(false);
@@ -33,13 +34,16 @@ export function useWorkflowEditor<Category extends string>(
     if (!pending.current && !draftDirty.current) setStatuses(source);
   }, [source]);
 
+  // A clean editor renders the loaded source immediately, before its sync effect runs.
+  const currentStatuses = !draftDirty.current && !pending.current ? source : statuses;
   const clearFeedback = () => {
     setSaved(false);
     setError('');
     failedAttempt.current = null;
   };
   const write = async (next: WorkflowStatus<Category>[], onSuccess?: () => void) => {
-    if (pending.current) return;
+    if (!ready || pending.current) return;
+    setStatuses(currentStatuses);
     pending.current = true;
     setSaving(true);
     clearFeedback();
@@ -61,25 +65,27 @@ export function useWorkflowEditor<Category extends string>(
     id: string,
     changes: Partial<Pick<WorkflowStatus<Category>, 'name' | 'description'>>,
   ) => {
-    if (pending.current) return;
-    const next = statuses.map((status) => (status.id === id ? { ...status, ...changes } : status));
+    if (!ready || pending.current) return;
+    const next = currentStatuses.map((status) =>
+      status.id === id ? { ...status, ...changes } : status,
+    );
     draftDirty.current = JSON.stringify(next) !== JSON.stringify(source);
     clearFeedback();
     setStatuses(next);
   };
   const changeName = (value: string) => {
-    if (pending.current) return;
+    if (!ready || pending.current) return;
     clearFeedback();
     setNameError('');
     setName(value);
   };
   const changeDescription = (value: string) => {
-    if (pending.current) return;
+    if (!ready || pending.current) return;
     clearFeedback();
     setDescription(value);
   };
   const changeCategory = (value: Category) => {
-    if (pending.current) return;
+    if (!ready || pending.current) return;
     clearFeedback();
     setCategory(value);
   };
@@ -91,7 +97,7 @@ export function useWorkflowEditor<Category extends string>(
   };
   return {
     data: {
-      statuses,
+      statuses: currentStatuses,
       name,
       description,
       category,
@@ -100,7 +106,7 @@ export function useWorkflowEditor<Category extends string>(
       saving,
       saved,
       error,
-      dirty: JSON.stringify(statuses) !== JSON.stringify(source),
+      dirty: JSON.stringify(currentStatuses) !== JSON.stringify(source),
     },
     handlers: {
       changeName,
@@ -108,23 +114,23 @@ export function useWorkflowEditor<Category extends string>(
       changeCategory,
       editStatus,
       open: (value: Category) => {
-        if (pending.current) return;
+        if (!ready || pending.current) return;
         clearFeedback();
         setCategory(value);
         setFormOpen(true);
       },
       close: () => {
-        if (pending.current) return;
+        if (!ready || pending.current) return;
         clearFeedback();
         resetCreation();
       },
       save: (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        return write(statuses);
+        return write(currentStatuses);
       },
       add: (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (pending.current) return;
+        if (!ready || pending.current) return;
         const trimmedName = name.trim();
         if (!trimmedName) {
           clearFeedback();
@@ -137,11 +143,11 @@ export function useWorkflowEditor<Category extends string>(
           .replace(/^-|-$/g, '')
           .slice(0, 48);
         const base = slug || `${idPrefix}-${Date.now().toString(36)}`;
-        const used = new Set(statuses.map((status) => status.id));
+        const used = new Set(currentStatuses.map((status) => status.id));
         let id = base;
         for (let suffix = 2; used.has(id); suffix++) id = `${base.slice(0, 43)}-${suffix}`;
         const next = [
-          ...statuses,
+          ...currentStatuses,
           {
             id,
             name: trimmedName,
@@ -151,7 +157,7 @@ export function useWorkflowEditor<Category extends string>(
         ];
         return write(next, resetCreation);
       },
-      remove: (id: string) => write(statuses.filter((status) => status.id !== id)),
+      remove: (id: string) => write(currentStatuses.filter((status) => status.id !== id)),
       retry: () => failedAttempt.current?.(),
     },
   };

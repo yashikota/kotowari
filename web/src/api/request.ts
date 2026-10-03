@@ -32,8 +32,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function req<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!init?.method || init.method === 'GET')
+  if (!init?.method || init.method === 'GET') {
+    if (init?.cache === 'no-store') return request<T>(path, init);
     return queryCache.read(path, () => request<T>(path, init));
+  }
   queryCache.invalidate();
   return request<T>(path, init).finally(() => queryCache.invalidate());
 }

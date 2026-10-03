@@ -630,7 +630,10 @@
     "noDiagnostics": "No diagnostics. Workspace files look consistent.",
     "workflowSaving": "Saving issue statuses…",
     "projectWorkflowSaving": "Saving project statuses…",
-    "retryWorkflowSave": "Retry saving statuses"
+    "retryWorkflowSave": "Retry saving statuses",
+    "loadingWorkflowStatuses": "Loading statuses…",
+    "workflowLoadFailed": "Statuses could not be loaded",
+    "retryWorkflowLoad": "Retry loading statuses"
   },
   "codingTools": {
     "heading": "Coding tools",

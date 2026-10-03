@@ -12,15 +12,9 @@ export const DEFAULT_PROJECT_WORKFLOW_STATUSES: ProjectWorkflowStatus[] = [
   { id: 'canceled', name: 'Canceled', category: 'canceled' },
 ];
 
-type ProjectWorkflowContextValue = {
-  statuses: ProjectWorkflowStatus[];
-  updateStatuses: (statuses: ProjectWorkflowStatus[]) => Promise<ProjectWorkflowStatus[]>;
-};
-
-const ProjectWorkflowContext = createContext<ProjectWorkflowContextValue>({
-  statuses: DEFAULT_PROJECT_WORKFLOW_STATUSES,
-  updateStatuses: async (statuses) => statuses,
-});
+const ProjectWorkflowContext = createContext<ReturnType<
+  typeof useWorkflowStatuses<ProjectWorkflowStatus>
+> | null>(null);
 
 export function ProjectWorkflowProvider({ children }: { children: ReactNode }) {
   const state = useWorkflowStatuses(
@@ -35,7 +29,9 @@ export function ProjectWorkflowProvider({ children }: { children: ReactNode }) {
 }
 
 export function useProjectWorkflow() {
-  return useContext(ProjectWorkflowContext);
+  const context = useContext(ProjectWorkflowContext);
+  if (!context) throw new Error('ProjectWorkflowProvider is required');
+  return context;
 }
 
 export function projectWorkflowStatusCategory(

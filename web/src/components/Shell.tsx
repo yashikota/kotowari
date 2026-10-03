@@ -382,9 +382,13 @@ export function ShellView({
 
 export function Shell() {
   return (
-    <PresenterScope name="Shell">
-      <ShellBinding />
-    </PresenterScope>
+    <IssueWorkflowProvider>
+      <ProjectWorkflowProvider>
+        <PresenterScope name="Shell">
+          <ShellBinding />
+        </PresenterScope>
+      </ProjectWorkflowProvider>
+    </IssueWorkflowProvider>
   );
 }
 
@@ -399,16 +403,12 @@ function ShellBinding() {
   const adrTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createADR);
   const pageTitleRef = useFocusWhen<HTMLTextAreaElement>(model.createPage);
   return (
-    <IssueWorkflowProvider>
-      <ProjectWorkflowProvider>
-        <ShellView
-          model={{ ...model, handlers } as typeof model}
-          t={t}
-          issueTitleRef={issueTitleRef}
-          adrTitleRef={adrTitleRef}
-          pageTitleRef={pageTitleRef}
-        />
-      </ProjectWorkflowProvider>
-    </IssueWorkflowProvider>
+    <ShellView
+      model={{ ...model, handlers } as typeof model}
+      t={t}
+      issueTitleRef={issueTitleRef}
+      adrTitleRef={adrTitleRef}
+      pageTitleRef={pageTitleRef}
+    />
   );
 }

@@ -16,6 +16,7 @@ export function useConfigWorkflowSettings() {
       nameRequired: t('config.workflowNameRequired'),
       saveFailed: t('config.workflowSaveFailed'),
     },
+    issue.ready,
   );
   const projectEditor = useWorkflowEditor(
     project.statuses,
@@ -26,10 +27,22 @@ export function useConfigWorkflowSettings() {
       nameRequired: t('config.workflowNameRequired'),
       saveFailed: t('config.projectWorkflowSaveFailed'),
     },
+    project.ready,
   );
   return {
-    data: { issueWorkflowEditor: issueEditor.data, projectWorkflowEditor: projectEditor.data },
+    data: {
+      issueWorkflowEditor: {
+        ...issueEditor.data,
+        loadState: { ready: issue.ready, loading: issue.loading, error: issue.loadError },
+      },
+      projectWorkflowEditor: {
+        ...projectEditor.data,
+        loadState: { ready: project.ready, loading: project.loading, error: project.loadError },
+      },
+    },
     handlers: {
+      onRetryWorkflowLoad: issue.refresh,
+      onRetryProjectWorkflowLoad: project.refresh,
       onWorkflowStatusChange: issueEditor.handlers.editStatus,
       onWorkflowNameChange: issueEditor.handlers.changeName,
       onWorkflowDescriptionChange: issueEditor.handlers.changeDescription,

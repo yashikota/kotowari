@@ -21,13 +21,15 @@ export const workspaceApi = {
     }),
   deleteWorkspaceResource: (id: number) =>
     req<void>(`/api/workspace/resources/${id}`, { method: 'DELETE' }),
-  issueWorkflowStatuses: () => req<IssueWorkflowStatus[]>('/api/issue-workflow-statuses'),
+  issueWorkflowStatuses: () =>
+    req<IssueWorkflowStatus[]>('/api/issue-workflow-statuses', { cache: 'no-store' }),
   updateIssueWorkflowStatuses: (statuses: IssueWorkflowStatus[]) =>
     req<IssueWorkflowStatus[]>('/api/issue-workflow-statuses', {
       method: 'PUT',
       body: JSON.stringify({ statuses }),
     }),
-  projectWorkflowStatuses: () => req<ProjectWorkflowStatus[]>('/api/project-workflow-statuses'),
+  projectWorkflowStatuses: () =>
+    req<ProjectWorkflowStatus[]>('/api/project-workflow-statuses', { cache: 'no-store' }),
   updateProjectWorkflowStatuses: (statuses: ProjectWorkflowStatus[]) =>
     req<ProjectWorkflowStatus[]>('/api/project-workflow-statuses', {
       method: 'PUT',

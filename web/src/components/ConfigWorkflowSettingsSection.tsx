@@ -22,6 +22,9 @@ export function ConfigWorkflowSettingsSection({ model, t }: Props) {
     create: t('config.createProjectStatus'),
     cancel: t('config.cancelProjectStatus'),
     retry: t('config.retryWorkflowSave'),
+    loading: t('config.loadingWorkflowStatuses'),
+    loadFailed: t('config.workflowLoadFailed'),
+    retryLoad: t('config.retryWorkflowLoad'),
   };
   return (
     <>
@@ -41,6 +44,7 @@ export function ConfigWorkflowSettingsSection({ model, t }: Props) {
           add: model.handlers.onAddWorkflowStatus,
           remove: model.handlers.onDeleteWorkflowStatus,
           retry: model.handlers.onRetryWorkflow,
+          retryLoad: model.handlers.onRetryWorkflowLoad,
         }}
         protectedIds={['backlog', 'todo', 'in_progress', 'done', 'canceled', 'duplicate']}
         creationPlacement="footer"
@@ -85,6 +89,7 @@ export function ConfigWorkflowSettingsSection({ model, t }: Props) {
           add: model.handlers.onAddProjectWorkflowStatus,
           remove: model.handlers.onDeleteProjectWorkflowStatus,
           retry: model.handlers.onRetryProjectWorkflow,
+          retryLoad: model.handlers.onRetryProjectWorkflowLoad,
         }}
         protectedIds={['backlog', 'planned', 'started', 'completed', 'canceled']}
         creationPlacement="category"
