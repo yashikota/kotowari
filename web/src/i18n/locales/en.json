@@ -607,7 +607,7 @@
     "issueStatuses": "Issue statuses",
     "issueStatusesDescription": "Customize the workflow states issues move through.",
     "projectStatuses": "Project statuses",
-    "projectStatusesDescription": "Customize project workflow states within Linear's five status categories.",
+    "projectStatusesDescription": "Customize the statuses you use to plan, track and complete projects.",
     "createProjectStatus": "Create new project status",
     "cancelProjectStatus": "Cancel",
     "workflowStatusName": "Status name: {{status}}",
@@ -629,7 +629,8 @@
     "diagnostics": "Diagnostics",
     "noDiagnostics": "No diagnostics. Workspace files look consistent.",
     "workflowSaving": "Saving issue statuses…",
-    "projectWorkflowSaving": "Saving project statuses…"
+    "projectWorkflowSaving": "Saving project statuses…",
+    "retryWorkflowSave": "Retry saving statuses"
   },
   "codingTools": {
     "heading": "Coding tools",

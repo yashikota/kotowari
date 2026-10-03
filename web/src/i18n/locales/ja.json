@@ -599,7 +599,7 @@
     "issueStatuses": "イシューのステータス",
     "issueStatusesDescription": "イシューが進むワークフローの状態をカスタマイズします。",
     "projectStatuses": "プロジェクトのステータス",
-    "projectStatusesDescription": "Linearの5つのステータスカテゴリ内で、プロジェクトのワークフロー状態をカスタマイズします。",
+    "projectStatusesDescription": "プロジェクトの計画・進行・完了に使うステータスを設定します。",
     "createProjectStatus": "プロジェクトステータスを新規作成",
     "cancelProjectStatus": "キャンセル",
     "workflowStatusName": "ステータス名：{{status}}",
@@ -621,7 +621,8 @@
     "diagnostics": "診断",
     "noDiagnostics": "診断結果はありません。ワークスペースファイルは整合しています。",
     "workflowSaving": "課題のステータスを保存中…",
-    "projectWorkflowSaving": "プロジェクトのステータスを保存中…"
+    "projectWorkflowSaving": "プロジェクトのステータスを保存中…",
+    "retryWorkflowSave": "ステータスの保存を再試行"
   },
   "codingTools": {
     "heading": "コーディングツール",

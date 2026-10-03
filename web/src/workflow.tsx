@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { api } from './api.ts';
-import { signals } from './application/mediator.ts';
+import { useWorkflowStatuses } from './useWorkflowStatuses.ts';
 import { issueStatusLabel } from './i18n/labels.ts';
 import type { IssueStatus, IssueWorkflowStatus } from './types.ts';
 
@@ -16,46 +16,22 @@ export const DEFAULT_ISSUE_WORKFLOW_STATUSES: IssueWorkflowStatus[] = [
 
 type IssueWorkflowContextValue = {
   statuses: IssueWorkflowStatus[];
-  updateStatuses: (statuses: IssueWorkflowStatus[]) => Promise<void>;
+  updateStatuses: (statuses: IssueWorkflowStatus[]) => Promise<IssueWorkflowStatus[]>;
 };
 
 const IssueWorkflowContext = createContext<IssueWorkflowContextValue>({
   statuses: DEFAULT_ISSUE_WORKFLOW_STATUSES,
-  updateStatuses: async () => {},
+  updateStatuses: async (statuses) => statuses,
 });
 
 export function IssueWorkflowProvider({ children }: { children: ReactNode }) {
-  const [statuses, setStatuses] = useState(DEFAULT_ISSUE_WORKFLOW_STATUSES);
-
-  useEffect(() => {
-    let active = true;
-    const refresh = () => {
-      void api
-        .issueWorkflowStatuses()
-        .then((next) => {
-          if (active && next.length >= DEFAULT_ISSUE_WORKFLOW_STATUSES.length) setStatuses(next);
-        })
-        .catch(() => {});
-    };
-    refresh();
-    signals.addEventListener('kotowari:refresh', refresh);
-    return () => {
-      active = false;
-      signals.removeEventListener('kotowari:refresh', refresh);
-    };
-  }, []);
-
-  const updateStatuses = useCallback(async (next: IssueWorkflowStatus[]) => {
-    const saved = await api.updateIssueWorkflowStatuses(next);
-    setStatuses(saved);
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-  }, []);
-
-  return (
-    <IssueWorkflowContext.Provider value={{ statuses, updateStatuses }}>
-      {children}
-    </IssueWorkflowContext.Provider>
+  const state = useWorkflowStatuses(
+    DEFAULT_ISSUE_WORKFLOW_STATUSES,
+    api.issueWorkflowStatuses,
+    api.updateIssueWorkflowStatuses,
   );
+
+  return <IssueWorkflowContext.Provider value={state}>{children}</IssueWorkflowContext.Provider>;
 }
 
 export function useIssueWorkflow() {

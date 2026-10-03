@@ -92,8 +92,10 @@ export function useIntentHandler(type: string, handler: (payload: unknown) => un
   }, [scope, type]);
 }
 
-/** Stable event ports; View closures only supply DOM values and row parameters. */
-export function useActions<T extends object>(handlers: T): T {
+/** Stable function ports; nested handler objects are rejected by the type contract. */
+export function useActions<T extends { [Key in keyof T]: (...args: never[]) => unknown }>(
+  handlers: T,
+): T {
   const scope = useContext(ScopeContext);
   const current = useRef(handlers);
   useLayoutEffect(() => {

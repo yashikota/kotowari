@@ -1,20 +1,8 @@
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Group,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
-import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
-import { IconTrash } from '@tabler/icons-react';
 import type { useTranslation } from 'react-i18next';
 import type { IssueStatus, ProjectStatus } from '../types.ts';
-import { IssueStatusIcon } from '../components/issue-ui.tsx';
+import { IssueStatusIcon } from './issue-ui.tsx';
 import type { useConfigPagePresenter } from '../presenters/ConfigPages.tsx';
+import { WorkflowSettingsEditor } from './WorkflowSettingsEditor.tsx';
 
 type Props = {
   model: ReturnType<typeof useConfigPagePresenter>;
@@ -22,279 +10,98 @@ type Props = {
 };
 
 export function ConfigWorkflowSettingsSection({ model, t }: Props) {
-  const {
-    issueWorkflowStatuses,
-    workflowError,
-    workflowSaved,
-    workflowDirty,
-    projectWorkflowStatuses,
-    projectWorkflowError,
-    projectWorkflowSaved,
-    projectWorkflowDirty,
-    projectWorkflowFormOpen,
-    projectWorkflowCategory,
-    projectWorkflowName,
-    projectWorkflowDescription,
-  } = model;
-  const { handlers } = model;
-
+  const labels = {
+    name: (status: string) => t('config.workflowStatusName', { status }),
+    description: (status: string) => t('config.workflowStatusDescription', { status }),
+    remove: (status: string) => t('config.removeWorkflowStatus', { status }),
+    newName: t('config.newWorkflowStatus'),
+    newDescription: t('config.newWorkflowStatusDescription'),
+    category: t('config.workflowCategory'),
+    add: t('config.addWorkflowStatus'),
+    save: t('config.saveWorkflow'),
+    create: t('config.createProjectStatus'),
+    cancel: t('config.cancelProjectStatus'),
+    retry: t('config.retryWorkflowSave'),
+  };
   return (
     <>
-      <Stack
+      <WorkflowSettingsEditor<IssueStatus>
         id="settings-issue-statuses"
-        tabIndex={-1}
-        gap="md"
-        component="section"
-        aria-label={t('config.issueStatuses')}
-      >
-        <Title order={4}>{t('config.issueStatuses')}</Title>
-        <Text size="sm" c="dimmed">
-          {t('config.issueStatusesDescription')}
-        </Text>
-        <SaveFeedback
-          saving={model.workflowSaving}
-          saved={workflowSaved}
-          error={workflowError}
-          savingLabel={t('config.workflowSaving')}
-          savedLabel={t('config.workflowSaved')}
-          failureLabel={t('workspaceSave.failed')}
-          retryLabel={t('workspaceSave.retry')}
-          onRetry={handlers.onRetryWorkflow}
-        />
-        <Box
-          component="fieldset"
-          disabled={model.workflowSaving}
-          aria-busy={model.workflowSaving}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <Stack gap="md">
-            {(
-              [
-                { id: 'backlog', category: 'backlog' },
-                { id: 'todo', category: 'todo' },
-                { id: 'in_progress', category: 'in_progress' },
-                { id: 'done', category: 'done' },
-                { id: 'canceled', category: 'canceled' },
-                { id: 'duplicate', category: 'canceled', statusId: 'duplicate' },
-              ] as { id: string; category: IssueStatus; statusId?: string }[]
-            ).map(({ id, category, statusId }) => (
-              <Stack key={id} component="section" aria-label={t(`issueStatus.${id}`)} gap="xs">
-                <Group gap="xs">
-                  <IssueStatusIcon status={category} />
-                  <Text size="sm" fw={600}>
-                    {t(`issueStatus.${id}`)}
-                  </Text>
-                </Group>
-                {issueWorkflowStatuses
-                  .filter(
-                    (status) =>
-                      status.category === category &&
-                      (statusId ? status.id === statusId : status.id !== 'duplicate'),
-                  )
-                  .map((status) => (
-                    <Group key={status.id} align="flex-end" wrap="wrap" w="100%">
-                      <TextInput
-                        label={t('config.workflowStatusName', { status: status.name })}
-                        value={status.name}
-                        maxLength={48}
-                        onChange={(event) =>
-                          handlers.onWorkflowStatusNameChange(status.id, event.target.value)
-                        }
-                        style={{ flex: 1, minWidth: 150 }}
-                      />
-                      <TextInput
-                        label={t('config.workflowStatusDescription', { status: status.name })}
-                        value={status.description ?? ''}
-                        maxLength={200}
-                        onChange={(event) =>
-                          handlers.onWorkflowStatusDescriptionChange(status.id, event.target.value)
-                        }
-                        style={{ flex: 1, minWidth: 150 }}
-                      />
-                      {['backlog', 'todo', 'in_progress', 'done', 'canceled', 'duplicate'].includes(
-                        status.id,
-                      ) ? null : (
-                        <ActionIcon
-                          type="button"
-                          variant="subtle"
-                          color="red"
-                          aria-label={t('config.removeWorkflowStatus', {
-                            status: status.name,
-                          })}
-                          onClick={() => handlers.onDeleteWorkflowStatus(status.id)}
-                        >
-                          <IconTrash size={16} aria-hidden />
-                        </ActionIcon>
-                      )}
-                    </Group>
-                  ))}
-              </Stack>
-            ))}
-            <Box component="form" onSubmit={handlers.onAddWorkflowStatus}>
-              <Group align="flex-end">
-                <TextInput
-                  label={t('config.newWorkflowStatus')}
-                  value={model.workflowName}
-                  maxLength={48}
-                  onChange={handlers.onWorkflowNameChange}
-                />
-                <TextInput
-                  label={t('config.newWorkflowStatusDescription')}
-                  value={model.workflowDescription}
-                  maxLength={200}
-                  onChange={handlers.onWorkflowDescriptionChange}
-                />
-                <Select
-                  label={t('config.workflowCategory')}
-                  value={model.workflowCategory}
-                  onChange={handlers.onWorkflowCategoryChange}
-                  data={(
-                    ['backlog', 'todo', 'in_progress', 'done', 'canceled'] as IssueStatus[]
-                  ).map((category) => ({
-                    value: category,
-                    label: t(`issueStatus.${category}`),
-                  }))}
-                  allowDeselect={false}
-                />
-                <Button type="submit">{t('config.addWorkflowStatus')}</Button>
-              </Group>
-            </Box>
-            <Box component="form" onSubmit={handlers.onSaveWorkflow}>
-              <Button type="submit" disabled={!workflowDirty}>
-                {t('config.saveWorkflow')}
-              </Button>
-            </Box>
-          </Stack>
-        </Box>
-      </Stack>
-
-      <Stack
+        title={t('config.issueStatuses')}
+        description={t('config.issueStatusesDescription')}
+        data={model.issueWorkflowEditor}
+        handlers={{
+          editStatus: model.handlers.onWorkflowStatusChange,
+          changeName: model.handlers.onWorkflowNameChange,
+          changeDescription: model.handlers.onWorkflowDescriptionChange,
+          changeCategory: model.handlers.onWorkflowCategoryChange,
+          open: model.handlers.onOpenWorkflowStatus,
+          close: model.handlers.onCloseWorkflowStatus,
+          save: model.handlers.onSaveWorkflow,
+          add: model.handlers.onAddWorkflowStatus,
+          remove: model.handlers.onDeleteWorkflowStatus,
+          retry: model.handlers.onRetryWorkflow,
+        }}
+        protectedIds={['backlog', 'todo', 'in_progress', 'done', 'canceled', 'duplicate']}
+        creationPlacement="footer"
+        groups={[
+          ...(['backlog', 'todo', 'in_progress', 'done', 'canceled'] as IssueStatus[]).map(
+            (category) => ({
+              id: category,
+              category,
+              label: t(`issueStatus.${category}`),
+              icon: <IssueStatusIcon status={category} />,
+              excludedStatusId: 'duplicate',
+            }),
+          ),
+          {
+            id: 'duplicate',
+            category: 'canceled',
+            statusId: 'duplicate',
+            label: t('issueStatus.duplicate'),
+            icon: <IssueStatusIcon status="canceled" />,
+          },
+        ]}
+        labels={{
+          ...labels,
+          saving: t('config.workflowSaving'),
+          saved: t('config.workflowSaved'),
+          failed: t('config.workflowSaveFailed'),
+        }}
+      />
+      <WorkflowSettingsEditor<ProjectStatus>
         id="settings-project-statuses"
-        tabIndex={-1}
-        gap="md"
-        component="section"
-        aria-label={t('config.projectStatuses')}
-      >
-        <Title order={4}>{t('config.projectStatuses')}</Title>
-        <Text size="sm" c="dimmed">
-          {t('config.projectStatusesDescription')}
-        </Text>
-        <SaveFeedback
-          saving={model.projectWorkflowSaving}
-          saved={projectWorkflowSaved}
-          error={projectWorkflowError}
-          savingLabel={t('config.projectWorkflowSaving')}
-          savedLabel={t('config.projectWorkflowSaved')}
-          failureLabel={t('workspaceSave.failed')}
-          retryLabel={t('workspaceSave.retry')}
-          onRetry={handlers.onRetryProjectWorkflow}
-        />
-        <Box
-          component="fieldset"
-          disabled={model.projectWorkflowSaving}
-          aria-busy={model.projectWorkflowSaving}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <Stack gap="md">
-            {(['backlog', 'planned', 'started', 'completed', 'canceled'] as ProjectStatus[]).map(
-              (category) => (
-                <Stack
-                  key={category}
-                  component="section"
-                  aria-label={t(`projectStatus.${category}`)}
-                  gap="xs"
-                >
-                  <Text size="sm" fw={600}>
-                    {t(`projectStatus.${category}`)}
-                  </Text>
-                  {projectWorkflowStatuses
-                    .filter((status) => status.category === category)
-                    .map((status) => (
-                      <Group key={status.id} align="flex-end" wrap="wrap" w="100%">
-                        <TextInput
-                          label={t('config.workflowStatusName', { status: status.name })}
-                          value={status.name}
-                          maxLength={48}
-                          onChange={(event) =>
-                            handlers.onProjectWorkflowStatusNameChange(
-                              status.id,
-                              event.target.value,
-                            )
-                          }
-                          style={{ flex: 1, minWidth: 150 }}
-                        />
-                        <TextInput
-                          label={t('config.workflowStatusDescription', { status: status.name })}
-                          value={status.description ?? ''}
-                          maxLength={200}
-                          onChange={(event) =>
-                            handlers.onProjectWorkflowStatusDescriptionChange(
-                              status.id,
-                              event.target.value,
-                            )
-                          }
-                          style={{ flex: 1, minWidth: 150 }}
-                        />
-                        {['backlog', 'planned', 'started', 'completed', 'canceled'].includes(
-                          status.id,
-                        ) ? null : (
-                          <ActionIcon
-                            type="button"
-                            variant="subtle"
-                            color="red"
-                            aria-label={t('config.removeWorkflowStatus', { status: status.name })}
-                            onClick={() => handlers.onDeleteProjectWorkflowStatus(status.id)}
-                          >
-                            <IconTrash size={16} aria-hidden />
-                          </ActionIcon>
-                        )}
-                      </Group>
-                    ))}
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    size="compact-sm"
-                    onClick={() => handlers.onOpenProjectWorkflowStatus(category)}
-                  >
-                    {t('config.createProjectStatus')}
-                  </Button>
-                  {projectWorkflowFormOpen && projectWorkflowCategory === category ? (
-                    <Box component="form" onSubmit={handlers.onAddProjectWorkflowStatus}>
-                      <Group align="flex-end" wrap="wrap">
-                        <TextInput
-                          label={t('config.newWorkflowStatus')}
-                          value={projectWorkflowName}
-                          maxLength={48}
-                          onChange={handlers.onProjectWorkflowNameChange}
-                        />
-                        <TextInput
-                          label={t('config.newWorkflowStatusDescription')}
-                          value={projectWorkflowDescription}
-                          maxLength={200}
-                          onChange={handlers.onProjectWorkflowDescriptionChange}
-                        />
-                        <Button type="submit">{t('config.addWorkflowStatus')}</Button>
-                        <Button
-                          type="button"
-                          variant="default"
-                          onClick={handlers.onCloseProjectWorkflowStatus}
-                        >
-                          {t('config.cancelProjectStatus')}
-                        </Button>
-                      </Group>
-                    </Box>
-                  ) : null}
-                </Stack>
-              ),
-            )}
-            <Box component="form" onSubmit={handlers.onSaveProjectWorkflow}>
-              <Button type="submit" disabled={!projectWorkflowDirty}>
-                {t('config.saveWorkflow')}
-              </Button>
-            </Box>
-          </Stack>
-        </Box>
-      </Stack>
+        title={t('config.projectStatuses')}
+        description={t('config.projectStatusesDescription')}
+        data={model.projectWorkflowEditor}
+        handlers={{
+          editStatus: model.handlers.onProjectWorkflowStatusChange,
+          changeName: model.handlers.onProjectWorkflowNameChange,
+          changeDescription: model.handlers.onProjectWorkflowDescriptionChange,
+          changeCategory: model.handlers.onProjectWorkflowCategoryChange,
+          open: model.handlers.onOpenProjectWorkflowStatus,
+          close: model.handlers.onCloseProjectWorkflowStatus,
+          save: model.handlers.onSaveProjectWorkflow,
+          add: model.handlers.onAddProjectWorkflowStatus,
+          remove: model.handlers.onDeleteProjectWorkflowStatus,
+          retry: model.handlers.onRetryProjectWorkflow,
+        }}
+        protectedIds={['backlog', 'planned', 'started', 'completed', 'canceled']}
+        creationPlacement="category"
+        groups={(['backlog', 'planned', 'started', 'completed', 'canceled'] as ProjectStatus[]).map(
+          (category) => ({
+            id: category,
+            category,
+            label: t(`projectStatus.${category}`),
+          }),
+        )}
+        labels={{
+          ...labels,
+          saving: t('config.projectWorkflowSaving'),
+          saved: t('config.projectWorkflowSaved'),
+          failed: t('config.projectWorkflowSaveFailed'),
+        }}
+      />
     </>
   );
 }

@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { api } from './api.ts';
-import { signals } from './application/mediator.ts';
+import { useWorkflowStatuses } from './useWorkflowStatuses.ts';
 import type { ProjectStatus, ProjectWorkflowStatus } from './types.ts';
 
 export const DEFAULT_PROJECT_WORKFLOW_STATUSES: ProjectWorkflowStatus[] = [
@@ -14,45 +14,23 @@ export const DEFAULT_PROJECT_WORKFLOW_STATUSES: ProjectWorkflowStatus[] = [
 
 type ProjectWorkflowContextValue = {
   statuses: ProjectWorkflowStatus[];
-  updateStatuses: (statuses: ProjectWorkflowStatus[]) => Promise<void>;
+  updateStatuses: (statuses: ProjectWorkflowStatus[]) => Promise<ProjectWorkflowStatus[]>;
 };
 
 const ProjectWorkflowContext = createContext<ProjectWorkflowContextValue>({
   statuses: DEFAULT_PROJECT_WORKFLOW_STATUSES,
-  updateStatuses: async () => {},
+  updateStatuses: async (statuses) => statuses,
 });
 
 export function ProjectWorkflowProvider({ children }: { children: ReactNode }) {
-  const [statuses, setStatuses] = useState(DEFAULT_PROJECT_WORKFLOW_STATUSES);
-
-  useEffect(() => {
-    let active = true;
-    const refresh = () => {
-      void api
-        .projectWorkflowStatuses()
-        .then((next) => {
-          if (active && next.length >= DEFAULT_PROJECT_WORKFLOW_STATUSES.length) setStatuses(next);
-        })
-        .catch(() => {});
-    };
-    refresh();
-    signals.addEventListener('kotowari:refresh', refresh);
-    return () => {
-      active = false;
-      signals.removeEventListener('kotowari:refresh', refresh);
-    };
-  }, []);
-
-  const updateStatuses = useCallback(async (next: ProjectWorkflowStatus[]) => {
-    const saved = await api.updateProjectWorkflowStatuses(next);
-    setStatuses(saved);
-    signals.dispatchEvent(new Event('kotowari:refresh'));
-  }, []);
+  const state = useWorkflowStatuses(
+    DEFAULT_PROJECT_WORKFLOW_STATUSES,
+    api.projectWorkflowStatuses,
+    api.updateProjectWorkflowStatuses,
+  );
 
   return (
-    <ProjectWorkflowContext.Provider value={{ statuses, updateStatuses }}>
-      {children}
-    </ProjectWorkflowContext.Provider>
+    <ProjectWorkflowContext.Provider value={state}>{children}</ProjectWorkflowContext.Provider>
   );
 }
 
