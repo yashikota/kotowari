@@ -5,6 +5,7 @@ export const ISSUE_DRAFTS_EVENT = 'kotowari:issue-drafts-changed';
 
 export type IssueDraft = {
   id: string;
+  publishedIssue?: string;
   title: string;
   body: string;
   skipDefaultTemplate?: boolean;
@@ -115,9 +116,49 @@ export function parseIssueDrafts(value: string | null): IssueDraft[] {
   }
 }
 
+const publishedDrafts = new Map<string, string>();
+const PUBLISHED_DRAFTS_KEY = 'kotowari.published-drafts.v1';
+export function publishedDraftIssue(id: string): string | undefined {
+  if (publishedDrafts.has(id)) return publishedDrafts.get(id);
+  try {
+    const stored: unknown = JSON.parse(window.sessionStorage.getItem(PUBLISHED_DRAFTS_KEY) ?? '{}');
+    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+      for (const [key, value] of Object.entries(stored)) {
+        if (typeof value === 'string') publishedDrafts.set(key, value);
+      }
+      return publishedDrafts.get(id);
+    }
+  } catch {
+    /* Keep the confirmed outcome in memory when browser storage is unavailable. */
+  }
+  return undefined;
+}
+function persistPublishedDrafts() {
+  try {
+    window.sessionStorage.setItem(
+      PUBLISHED_DRAFTS_KEY,
+      JSON.stringify(Object.fromEntries(publishedDrafts)),
+    );
+  } catch {
+    /* The in-memory outcome still prevents resubmitting this draft. */
+  }
+}
+export function rememberPublishedDraft(id: string, identifier: string) {
+  publishedDrafts.set(id, identifier);
+  persistPublishedDrafts();
+  window.dispatchEvent(new Event(ISSUE_DRAFTS_EVENT));
+}
+function forgetPublishedDraft(id: string) {
+  publishedDrafts.delete(id);
+  persistPublishedDrafts();
+}
+
 export function listIssueDrafts(): IssueDraft[] {
   if (typeof window === 'undefined') return [];
-  return parseIssueDrafts(window.localStorage.getItem(ISSUE_DRAFTS_KEY));
+  return parseIssueDrafts(window.localStorage.getItem(ISSUE_DRAFTS_KEY)).map((draft) => ({
+    ...draft,
+    publishedIssue: publishedDraftIssue(draft.id),
+  }));
 }
 
 function writeIssueDrafts(drafts: IssueDraft[]) {
@@ -137,11 +178,17 @@ export function saveIssueDraft(draft: IssueDraft) {
 
 export function deleteIssueDraft(id: string) {
   const current = listIssueDrafts();
-  if (!current.some((draft) => draft.id === id)) return;
+  if (!current.some((draft) => draft.id === id)) {
+    forgetPublishedDraft(id);
+    return;
+  }
   writeIssueDrafts(current.filter((draft) => draft.id !== id));
+  forgetPublishedDraft(id);
 }
 
 export function deleteAllIssueDrafts() {
   if (listIssueDrafts().length === 0) return;
   writeIssueDrafts([]);
+  publishedDrafts.clear();
+  persistPublishedDrafts();
 }

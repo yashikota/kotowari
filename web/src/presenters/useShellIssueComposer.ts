@@ -12,6 +12,8 @@ import {
   deleteAllIssueDrafts,
   deleteIssueDraft,
   listIssueDrafts,
+  publishedDraftIssue,
+  rememberPublishedDraft,
   saveIssueDraft,
   type IssueDraft,
 } from '../issue-drafts.ts';
@@ -79,6 +81,11 @@ export function useShellIssueComposer({
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
   const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>(defaultIssueAssignee);
+  const [draftCleanup, setDraftCleanup] = useState<{
+    id: string;
+    identifier: string;
+    error: string;
+  } | null>(null);
   const [issueDraftDiscardError, setIssueDraftDiscardError] = useState('');
   const [issueDraftDiscardRequest, setIssueDraftDiscardRequest] =
     useState<IssueDraftDiscardRequest | null>(null);
@@ -258,6 +265,11 @@ export function useShellIssueComposer({
     if (issueSubmissionInFlight.current) return;
     metadata.prepare();
     const draft = value as IssueDraft;
+    const published = publishedDraftIssue(draft.id);
+    if (published) {
+      void navigate({ to: '/issues/$identifier', params: { identifier: published } });
+      return;
+    }
     issueDraftIdRef.current = draft.id;
     setIssueDraftId(draft.id);
     setIssueDraftSaved(true);
@@ -379,10 +391,22 @@ export function useShellIssueComposer({
           : undefined,
       });
       const submittedDraftId = issueDraftIdRef.current || issueDraftId;
-      if (submittedDraftId) deleteIssueDraft(submittedDraftId);
+      if (submittedDraftId) {
+        rememberPublishedDraft(submittedDraftId, issue.identifier);
+        try {
+          deleteIssueDraft(submittedDraftId);
+        } catch (cause) {
+          setDraftCleanup({
+            id: submittedDraftId,
+            identifier: issue.identifier,
+            error: cause instanceof Error ? cause.message : String(cause),
+          });
+        }
+      }
       issueDraftIdRef.current = '';
       setIssueDraftId('');
       setIssueDraftSaved(false);
+      setSavedIssueDraft(null);
       const attachmentUploadFailed = await attachments.upload(issue.identifier);
       setIssueTitle('');
       setIssueBody('');
@@ -411,7 +435,7 @@ export function useShellIssueComposer({
         setOpen(false);
       }
       if (attachmentUploadFailed) setError(t('issueAttachments.issueUploadFailed'));
-      await router.invalidate();
+      await router.invalidate().catch(() => undefined);
       if (createMore) return;
       await navigate({
         to: '/issues/$identifier',
@@ -438,6 +462,7 @@ export function useShellIssueComposer({
       savedIssueDraft,
       issueDraftDiscardRequest,
       issueDraftDiscardError,
+      draftCleanup,
       issueCreateMore,
       issueCreateMoreFocusRequest,
       issueStatus,
@@ -510,6 +535,23 @@ export function useShellIssueComposer({
         setIssueDraftDiscardRequest(null);
       },
       onConfirmIssueDraftDiscard: confirmIssueDraftDiscard,
+      onRetryDraftCleanup: () => {
+        if (!draftCleanup) return;
+        try {
+          deleteIssueDraft(draftCleanup.id);
+          setDraftCleanup(null);
+        } catch (cause) {
+          setDraftCleanup({
+            ...draftCleanup,
+            error: cause instanceof Error ? cause.message : String(cause),
+          });
+        }
+      },
+      onDismissDraftCleanup: () => setDraftCleanup(null),
+      onOpenPublishedIssue: () =>
+        draftCleanup
+          ? navigate({ to: '/issues/$identifier', params: { identifier: draftCleanup.identifier } })
+          : undefined,
       onCloseCreateIssue: closeCreateIssue,
       onToggleIssueComposerExpanded: () => setIssueComposerExpanded((expanded) => !expanded),
       onComposerTitleChange: (

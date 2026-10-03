@@ -707,7 +707,11 @@
     "saved": "Issue draft saved",
     "open": "Open draft",
     "discardFailed": "Drafts could not be discarded",
-    "retryDiscard": "Retry discarding"
+    "retryDiscard": "Retry discarding",
+    "issueCreated": "Issue {{identifier}} created",
+    "cleanupFailed": "The issue was created, but its saved draft could not be removed. Retry removes only the draft.",
+    "retryCleanup": "Retry removing saved draft",
+    "viewCreatedIssue": "View created issue"
   },
   "field": {
     "status": "Status",

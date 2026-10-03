@@ -1,3 +1,4 @@
+import noticeStyles from '../design-system/TransientNotice.module.css';
 import {
   ActionIcon,
   Alert,
@@ -359,21 +360,8 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
       </Modal>
 
       {savedIssueDraft ? (
-        <Alert
-          color="teal"
-          variant="light"
-          role="status"
-          styles={{
-            root: {
-              position: 'fixed',
-              bottom: 16,
-              left: 260,
-              zIndex: 1000,
-              maxWidth: 460,
-            },
-          }}
-        >
-          <Group justify="space-between" wrap="nowrap">
+        <Alert color="teal" variant="light" role="status" className={noticeStyles.notice}>
+          <Group justify="space-between" wrap="wrap">
             <Text size="sm">{t('drafts.saved')}</Text>
             <Group gap="xs" wrap="nowrap">
               <Button
@@ -394,6 +382,46 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
               </Button>
             </Group>
           </Group>
+        </Alert>
+      ) : null}
+
+      {model.draftCleanup ? (
+        <Alert
+          role="alert"
+          color="orange"
+          className={noticeStyles.notice}
+          title={t('drafts.issueCreated', { identifier: model.draftCleanup.identifier })}
+        >
+          <Stack gap="xs">
+            <Text size="sm">{t('drafts.cleanupFailed')}</Text>
+            <Text size="sm">{model.draftCleanup.error}</Text>
+            <Group gap="xs" wrap="wrap">
+              <Button
+                type="button"
+                size="xs"
+                variant="default"
+                onClick={handlers.onRetryDraftCleanup}
+              >
+                {t('drafts.retryCleanup')}
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="subtle"
+                onClick={handlers.onOpenPublishedIssue}
+              >
+                {t('drafts.viewCreatedIssue')}
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="subtle"
+                onClick={handlers.onDismissDraftCleanup}
+              >
+                {t('common.dismiss')}
+              </Button>
+            </Group>
+          </Stack>
         </Alert>
       ) : null}
 

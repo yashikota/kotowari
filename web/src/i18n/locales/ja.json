@@ -699,7 +699,11 @@
     "saved": "イシューの下書きを保存しました",
     "open": "下書きを開く",
     "discardFailed": "下書きを破棄できませんでした",
-    "retryDiscard": "破棄を再試行"
+    "retryDiscard": "破棄を再試行",
+    "issueCreated": "課題 {{identifier}} を作成しました",
+    "cleanupFailed": "課題は作成済みですが、保存した下書きを削除できませんでした。再試行では下書きだけを削除します。",
+    "retryCleanup": "保存済み下書きの削除を再試行",
+    "viewCreatedIssue": "作成した課題を開く"
   },
   "field": {
     "status": "ステータス",

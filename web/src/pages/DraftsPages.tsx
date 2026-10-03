@@ -1,6 +1,16 @@
 import { PageHeader } from '../mantine-ui.tsx';
 import styles from './DraftsPages.module.css';
-import { ActionIcon, Box, Button, Group, Paper, ScrollArea, Stack, Text } from '@mantine/core';
+import {
+  Badge,
+  ActionIcon,
+  Box,
+  Button,
+  Group,
+  Paper,
+  ScrollArea,
+  Stack,
+  Text,
+} from '@mantine/core';
 import { IconCircleDashed, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -85,6 +95,11 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
                   shadow="xs"
                 >
                   <Stack gap="sm">
+                    {draft.publishedIssue ? (
+                      <Badge variant="light" color="teal">
+                        {t('drafts.issueCreated', { identifier: draft.publishedIssue })}
+                      </Badge>
+                    ) : null}
                     <Group gap={6} wrap="nowrap">
                       <Button
                         className={styles.openButton}
