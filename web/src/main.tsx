@@ -10,7 +10,7 @@ import { localStorageColorSchemeManager, MantineProvider } from '@mantine/core';
 import { router } from './router.tsx';
 import { Root } from './application/Root.tsx';
 import { getPersonalPreferences, PERSONAL_PREFERENCES_EVENT } from './preferences.ts';
-import { themeForFontSize } from './theme.ts';
+import { cssVariablesForTheme, themeForFontSize } from './theme.ts';
 import { installDemoApi } from './demo-api.ts';
 
 if (import.meta.env.VITE_DEMO === 'true') {
@@ -49,6 +49,7 @@ function App() {
   return (
     <MantineProvider
       theme={appTheme}
+      cssVariablesResolver={cssVariablesForTheme}
       colorSchemeManager={localStorageColorSchemeManager({ key: 'kotowari.color-scheme' })}
       defaultColorScheme="light"
     >

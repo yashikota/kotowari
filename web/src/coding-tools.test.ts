@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import {
   DEFAULT_CODING_TOOL_PREFERENCES,
+  CODING_TOOLS_EVENT,
+  CODING_TOOLS_KEY,
+  saveCodingToolPreferences,
   buildCodingToolURL,
   isWebCodingToolURLTemplate,
   parseCodingToolPreferences,
@@ -35,6 +38,42 @@ const issue: Issue = {
 };
 
 describe('coding tool preferences and issue links', () => {
+  it('reports failed storage writes without announcing updated preferences', () => {
+    const dispatchEvent = vi.fn();
+    const failure = new Error('Storage unavailable');
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => {
+          throw failure;
+        },
+      },
+      dispatchEvent,
+    });
+    try {
+      expect(() => saveCodingToolPreferences({ customLinkName: 'New tool' })).toThrow(failure);
+      expect(dispatchEvent).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('returns and announces only normalized preferences that have been stored', () => {
+    const setItem = vi.fn();
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', { localStorage: { getItem: () => null, setItem }, dispatchEvent });
+    try {
+      const confirmed = saveCodingToolPreferences({ customLinkName: '  Task agent  ' });
+      expect(confirmed.customLinkName).toBe('Task agent');
+      expect(setItem).toHaveBeenCalledWith(CODING_TOOLS_KEY, JSON.stringify(confirmed));
+      expect(dispatchEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ type: CODING_TOOLS_EVENT }),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('defaults safely and ignores invalid or oversized settings', () => {
     expect(parseCodingToolPreferences(null)).toEqual(DEFAULT_CODING_TOOL_PREFERENCES);
     expect(parseCodingToolPreferences('{')).toEqual(DEFAULT_CODING_TOOL_PREFERENCES);
@@ -83,7 +122,7 @@ describe('coding tool preferences and issue links', () => {
     );
     expect(url).toContain('https://agent.example/run?prompt=');
     expect(url).toContain('&issue=KOT-1');
-    expect(new URL(url!).searchParams.get('prompt')).toContain('Work on Linear issue KOT-1:');
+    expect(new URL(url!).searchParams.get('prompt')).toContain('Work on Kotowari issue KOT-1:');
     expect(
       buildCodingToolURL(
         issue,

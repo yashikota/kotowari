@@ -54,6 +54,9 @@ information can have its own layout when the workflow needs it.
 `web/src/design-system/tokens.ts` owns shared color roles, spacing values, radii, layout dimensions,
 and typography scales. Semantic colors use Mantine's active scheme so light/dark appearance stays
 consistent. `theme.ts` adapts these foundations to Mantine and preserves the user's font-size choice.
+Its CSS variable resolver assigns readable validation colors in both schemes; error helpers use
+the shared small text size instead of shrinking below it. Coding-tool field errors are measured
+against their actual rendered background (at least 4.5:1); other error surfaces still need audit.
 Do not introduce another independently styled button/input library.
 
 `mantine-ui.tsx` exposes shared screen patterns. Introduce a new shared component when multiple
@@ -77,7 +80,7 @@ The shared pattern inventory currently includes:
 | Reading surface | `mantine-ui.tsx`, `design-system/MarkdownContent.module.css` | Shared typography and contained tables, code and media |
 | View creation header | `components/ViewBuilderHeader.tsx` | Shared labeled name/description, icon picker and create/cancel controls for task and project views |
 | Save feedback | `design-system/SaveFeedback.tsx` | Progress, confirmed success, failure details and a retry action; used by task, project, saved view and workspace editing |
-| Settings form | `design-system/SettingsForm.tsx` | Shared native fieldset, bounded fields, progress/error/retry and primary save action for workspace, cycle and automation settings |
+| Settings form | `design-system/SettingsForm.tsx` | Shared native fieldset, bounded fields, progress/error/retry and primary save action for workspace, cycle, automation and coding-tool settings |
 | Workflow settings editor | `components/WorkflowSettingsEditor.tsx`, `WorkflowSettingsEditor.module.css` | Common issue/project status rows, responsive name/description fields, local name validation, separate add/save actions and focus after retry/removal |
 | Action focus return | `focus.ts` | Restore a usable control after retry completion and enabled rendering; preserve focus if the user moves elsewhere while waiting |
 

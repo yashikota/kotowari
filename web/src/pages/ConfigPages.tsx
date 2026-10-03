@@ -1,21 +1,9 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Checkbox,
-  Group,
-  Kbd,
-  Select,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Alert, Button, Checkbox, Group, Kbd, Select, Stack, Text, Title } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { FIRST_DAYS_OF_WEEK } from '../preferences.ts';
 import { InboxNotificationSettings } from '../components/InboxNotificationSettings.tsx';
 import { SidebarCustomizationModal } from '../components/SidebarCustomizationModal.tsx';
+import { ConfigCodingToolsSettingsSection } from '../components/ConfigCodingToolsSettingsSection.tsx';
 import { ConfigWorkflowSettingsSection } from '../components/ConfigWorkflowSettingsSection.tsx';
 import { ConfigWorkspaceSettingsSection } from '../components/ConfigWorkspaceSettingsSection.tsx';
 import { ConfigCycleSettingsSection } from '../components/ConfigCycleSettingsSection.tsx';
@@ -36,9 +24,6 @@ export function ConfigPageView({
     case 0: {
       const {
         preferences,
-        codingToolDraft,
-        codingToolError,
-        codingToolSaved,
         sidebarGroups,
         sidebarCustomizationOpen,
         colorScheme,
@@ -181,66 +166,7 @@ export function ConfigPageView({
 
               <InboxNotificationSettings />
 
-              <Stack
-                id="settings-coding-tools"
-                tabIndex={-1}
-                gap="md"
-                component="section"
-                aria-label={t('codingTools.heading')}
-              >
-                <Title order={4}>{t('codingTools.heading')}</Title>
-                {codingToolError ? (
-                  <Alert color="red" variant="light">
-                    {codingToolError}
-                  </Alert>
-                ) : null}
-                {codingToolSaved ? (
-                  <Alert color="green" variant="light">
-                    {t('codingTools.saved')}
-                  </Alert>
-                ) : null}
-                <Box component="form" onSubmit={handlers.onSaveCodingTools}>
-                  <Stack gap="md" maw={480}>
-                    <Checkbox
-                      label={t('codingTools.enableCustomLink')}
-                      checked={codingToolDraft.customLinkEnabled}
-                      onChange={handlers.onCodingToolEnabledChange}
-                    />
-                    <TextInput
-                      label={t('codingTools.name')}
-                      value={codingToolDraft.customLinkName}
-                      onChange={handlers.onCodingToolNameChange}
-                    />
-                    <TextInput
-                      label={t('codingTools.url')}
-                      placeholder={t('codingTools.urlPlaceholder')}
-                      value={codingToolDraft.customLinkURL}
-                      onChange={handlers.onCodingToolURLChange}
-                    />
-                    <Text size="xs" c="dimmed">
-                      {t('codingTools.urlHint')}
-                    </Text>
-                    <Textarea
-                      required
-                      maxLength={10000}
-                      minRows={6}
-                      autosize
-                      label={t('codingTools.promptTemplate')}
-                      value={codingToolDraft.promptTemplate}
-                      onChange={handlers.onCodingToolPromptChange}
-                    />
-                    <Text size="xs" c="dimmed">
-                      {t('codingTools.promptHint')}
-                    </Text>
-                    <Group>
-                      <Button type="submit">{t('codingTools.save')}</Button>
-                    </Group>
-                  </Stack>
-                </Box>
-                <Text size="xs" c="dimmed">
-                  {t('config.preferencesSavedLocally')}
-                </Text>
-              </Stack>
+              <ConfigCodingToolsSettingsSection model={model} t={t} />
 
               <Stack
                 id="settings-application"

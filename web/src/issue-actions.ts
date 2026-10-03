@@ -85,7 +85,7 @@ export function selectedIssuesAgentPrompt(issues: Issue[], baseURL: string): str
 }
 
 export const DEFAULT_CODING_PROMPT_TEMPLATE =
-  'Work on Linear issue {{issue.identifier}}:\nSuggested branch name: {{issue.branchName}}\n{{context}}';
+  'Work on Kotowari issue {{issue.identifier}}:\nSuggested branch name: {{issue.branchName}}\n{{context}}';
 
 export function renderIssuePrompt(issue: Issue, template: string, issueURL: string): string {
   const values: Record<string, string> = {

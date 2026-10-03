@@ -63,11 +63,7 @@ export function saveCodingToolPreferences(
     JSON.stringify({ ...getCodingToolPreferences(), ...changes }),
   );
   if (typeof window !== 'undefined') {
-    try {
-      window.localStorage.setItem(CODING_TOOLS_KEY, JSON.stringify(next));
-    } catch {
-      // Keep the current page usable if browser storage is unavailable.
-    }
+    window.localStorage.setItem(CODING_TOOLS_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event(CODING_TOOLS_EVENT));
   }
   return next;

@@ -12,6 +12,7 @@ export function SettingsForm({
   labels,
   onSave,
   onRetry,
+  noValidate = false,
 }: {
   children: ReactNode;
   saving: boolean;
@@ -21,6 +22,7 @@ export function SettingsForm({
   labels: { saving: string; saved: string; failed: string; retry: string };
   onSave: NonNullable<ComponentProps<'form'>['onSubmit']>;
   onRetry: () => unknown;
+  noValidate?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const retryWithFocusReturn = useActionFocusReturn(
@@ -31,7 +33,7 @@ export function SettingsForm({
       ) ?? null,
   );
   return (
-    <Box ref={formRef} component="form" onSubmit={onSave}>
+    <Box ref={formRef} component="form" onSubmit={onSave} noValidate={noValidate}>
       <Stack gap="md" maw={480}>
         <Box
           component="fieldset"

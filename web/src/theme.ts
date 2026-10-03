@@ -1,5 +1,5 @@
 import { createTheme } from '@mantine/core';
-import type { MantineThemeOverride } from '@mantine/core';
+import type { CSSVariablesResolver, MantineThemeOverride } from '@mantine/core';
 import type { FontSize } from './preferences.ts';
 import { designTokens } from './design-system/tokens.ts';
 
@@ -26,6 +26,9 @@ const baseTheme = {
   defaultRadius: 'sm',
   radius: designTokens.radius,
   components: {
+    InputWrapper: {
+      styles: { error: { fontSize: 'var(--mantine-font-size-sm)' } },
+    },
     Button: {
       styles: { root: { fontWeight: 500 } },
     },
@@ -59,3 +62,10 @@ export function themeForFontSize(fontSize: FontSize) {
 }
 
 export const theme = themeForFontSize('default');
+
+/** Validation text and invalid field values must remain readable in both schemes. */
+export const cssVariablesForTheme: CSSVariablesResolver = () => ({
+  variables: {},
+  light: { '--mantine-color-error': designTokens.color.errorText.light },
+  dark: { '--mantine-color-error': designTokens.color.errorText.dark },
+});

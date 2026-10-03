@@ -647,7 +647,11 @@
     "save": "Save coding tools",
     "saved": "Coding tool settings saved locally.",
     "invalidURL": "Enter a valid HTTP or HTTPS URL to enable the custom tool.",
-    "promptRequired": "Prompt template cannot be empty."
+    "promptRequired": "Prompt template cannot be empty.",
+    "saving": "Saving coding tool settings…",
+    "saveFailed": "Coding tool settings could not be saved",
+    "retrySave": "Retry saving",
+    "storageFailed": "These settings could not be stored on this device. Your edits have been kept."
   },
   "modal": {
     "createIssue": "Create issue",

@@ -5,6 +5,7 @@ export const designTokens = {
     muted: 'var(--mantine-color-dimmed)',
     surface: 'var(--mantine-color-body)',
     border: 'var(--mantine-color-default-border)',
+    errorText: { light: 'var(--mantine-color-red-9)', dark: 'var(--mantine-color-red-3)' },
   },
   space: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
   radius: { xs: '4px', sm: '6px', md: '8px', lg: '12px', xl: '16px' },

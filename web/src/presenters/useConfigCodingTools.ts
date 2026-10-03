@@ -1,5 +1,5 @@
-import type * as React from 'react';
-import { useEffect, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   isWebCodingToolURLTemplate,
@@ -10,64 +10,75 @@ import {
 export function useConfigCodingTools() {
   const { t } = useTranslation();
   const { preferences, update: updatePreferences } = useCodingToolPreferences();
+  const dirty = useRef(false);
   const [draft, setDraft] = useState(preferences);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => setDraft(preferences), [preferences]);
-
+  const [fieldErrors, setFieldErrors] = useState({ url: '', prompt: '' });
+  const [validationFocus, setValidationFocus] = useState<{
+    field: 'url' | 'prompt' | null;
+    attempt: number;
+  }>({ field: null, attempt: 0 });
+  useEffect(() => {
+    if (!dirty.current) setDraft(preferences);
+  }, [preferences]);
+  const change = (values: Partial<CodingToolPreferences>, field?: 'url' | 'prompt') => {
+    dirty.current = true;
+    setSaved(false);
+    setError('');
+    setValidationFocus((current) => ({ ...current, field: null }));
+    if (field) setFieldErrors((current) => ({ ...current, [field]: '' }));
+    setDraft((current) => ({ ...current, ...values }));
+  };
+  const save = () => {
+    setSaved(false);
+    setError('');
+    const next: CodingToolPreferences = {
+      ...draft,
+      customLinkName: draft.customLinkName.trim() || 'Custom link',
+      customLinkURL: draft.customLinkURL.trim(),
+    };
+    const errors = {
+      url:
+        next.customLinkEnabled && !isWebCodingToolURLTemplate(next.customLinkURL)
+          ? t('codingTools.invalidURL')
+          : '',
+      prompt: !next.promptTemplate.trim() ? t('codingTools.promptRequired') : '',
+    };
+    setFieldErrors(errors);
+    const field = errors.url ? 'url' : errors.prompt ? 'prompt' : null;
+    setValidationFocus((current) => ({ field, attempt: current.attempt + 1 }));
+    if (field) return;
+    try {
+      const confirmed = updatePreferences(next);
+      dirty.current = false;
+      setDraft(confirmed);
+      setSaved(true);
+    } catch {
+      setError(t('codingTools.storageFailed'));
+    }
+  };
   return {
-    data: { codingToolDraft: draft, codingToolError: error, codingToolSaved: saved },
+    data: {
+      codingToolDraft: draft,
+      codingToolError: error,
+      codingToolSaved: saved,
+      codingToolFieldErrors: fieldErrors,
+      codingToolValidationFocus: validationFocus,
+    },
     handlers: {
-      onCodingToolEnabledChange: (
-        event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
-        const enabled = event.currentTarget.checked;
-        setSaved(false);
-        setDraft((current) => ({ ...current, customLinkEnabled: enabled }));
-      },
-      onCodingToolNameChange: (
-        event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
-        const name = event.currentTarget.value;
-        setSaved(false);
-        setDraft((current) => ({ ...current, customLinkName: name }));
-      },
-      onCodingToolURLChange: (
-        event: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => {
-        const url = event.currentTarget.value;
-        setSaved(false);
-        setDraft((current) => ({ ...current, customLinkURL: url }));
-      },
-      onCodingToolPromptChange: (
-        event: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => {
-        const prompt = event.currentTarget.value;
-        setSaved(false);
-        setDraft((current) => ({ ...current, promptTemplate: prompt }));
-      },
-      onSaveCodingTools: (event: React.FormEvent<HTMLFormElement>) => {
+      onCodingToolEnabledChange: (event: ChangeEvent<HTMLInputElement>) =>
+        change({ customLinkEnabled: event.currentTarget.checked }, 'url'),
+      onCodingToolNameChange: (event: ChangeEvent<HTMLInputElement>) =>
+        change({ customLinkName: event.currentTarget.value }),
+      onCodingToolURLChange: (event: ChangeEvent<HTMLInputElement>) =>
+        change({ customLinkURL: event.currentTarget.value }, 'url'),
+      onCodingToolPromptChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
+        change({ promptTemplate: event.currentTarget.value }, 'prompt'),
+      onRetryCodingToolsSave: save,
+      onSaveCodingTools: (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const next: CodingToolPreferences = {
-          ...draft,
-          customLinkName: draft.customLinkName.trim() || 'Custom link',
-          customLinkURL: draft.customLinkURL.trim(),
-        };
-        if (!next.promptTemplate.trim()) {
-          setError(t('codingTools.promptRequired'));
-          setSaved(false);
-          return;
-        }
-        if (next.customLinkEnabled && !isWebCodingToolURLTemplate(next.customLinkURL)) {
-          setError(t('codingTools.invalidURL'));
-          setSaved(false);
-          return;
-        }
-        setError('');
-        setDraft(next);
-        updatePreferences(next);
-        setSaved(true);
+        save();
       },
     },
   };
