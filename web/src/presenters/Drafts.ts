@@ -1,31 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useIntent } from '../application/Root.tsx';
-import { ISSUE_DRAFTS_EVENT, listIssueDrafts } from '../issue-drafts.ts';
+import { ISSUE_DRAFTS_EVENT, readIssueDrafts } from '../issue-drafts.ts';
 
 export function useDraftsPresenter() {
   const send = useIntent();
-  const [drafts, setDrafts] = useState(listIssueDrafts);
+  const [state, setState] = useState(readIssueDrafts);
+  const { drafts, error } = state;
+  const refresh = useCallback(() => {
+    const next = readIssueDrafts();
+    setState((current) => (next.error ? { ...current, error: next.error } : next));
+  }, []);
 
   useEffect(() => {
-    const refresh = () => setDrafts(listIssueDrafts());
     window.addEventListener(ISSUE_DRAFTS_EVENT, refresh);
     window.addEventListener('storage', refresh);
     return () => {
       window.removeEventListener(ISSUE_DRAFTS_EVENT, refresh);
       window.removeEventListener('storage', refresh);
     };
-  }, []);
+  }, [refresh]);
 
   return {
     drafts,
+    error,
     handlers: {
+      onRetry: refresh,
       onOpenDraft: (id: string) => {
+        if (error) return;
         const draft = drafts.find((candidate) => candidate.id === id);
         if (draft) send('issue.openDraft', draft);
       },
       onRequestDiscardDraft: (id: string) =>
-        send('issue.requestDiscardDraft', { kind: 'draft', id }),
-      onRequestDiscardAll: () => send('issue.requestDiscardDraft', { kind: 'all' }),
+        !error && send('issue.requestDiscardDraft', { kind: 'draft', id }),
+      onRequestDiscardAll: () => !error && send('issue.requestDiscardDraft', { kind: 'all' }),
     },
   };
 }

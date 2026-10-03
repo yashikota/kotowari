@@ -9,7 +9,7 @@ import {
 } from '../inbox-state.ts';
 import { listLinkedPullRequests } from '../reviews.ts';
 import type { SidebarItemId } from '../preferences.ts';
-import { ISSUE_DRAFTS_EVENT, listIssueDrafts } from '../issue-drafts.ts';
+import { ISSUE_DRAFTS_EVENT, readIssueDrafts } from '../issue-drafts.ts';
 import type { Cycle, Initiative, Issue, Project, View } from '../types.ts';
 
 type Props = {
@@ -77,13 +77,17 @@ export function useShellWorkspace({ setProjects }: Props) {
         const [activities, issues] = await Promise.all([api.inboxActivities(), api.issues()]);
         if (!active) return;
         const inboxState = parseInboxState(window.localStorage.getItem(INBOX_STATE_KEY));
-        setSidebarBadgeCounts({
+        const draftState = readIssueDrafts();
+        setSidebarBadgeCounts((current) => ({
+          ...current,
           '/inbox': unreadInboxBadgeCount(activities, inboxState),
           '/reviews': listLinkedPullRequests(issues).length,
-          '/drafts': listIssueDrafts().length,
-        });
+          ...(draftState.error ? {} : { '/drafts': draftState.drafts.length }),
+        }));
       } catch {
-        if (active) setSidebarBadgeCounts({ '/drafts': listIssueDrafts().length });
+        const draftState = readIssueDrafts();
+        if (active && !draftState.error)
+          setSidebarBadgeCounts((current) => ({ ...current, '/drafts': draftState.drafts.length }));
       }
     };
     const onInboxStateChange = () => void refreshBadges();
@@ -101,7 +105,9 @@ export function useShellWorkspace({ setProjects }: Props) {
 
   useEffect(() => {
     const refreshDraftBadge = () => {
-      setSidebarBadgeCounts((current) => ({ ...current, '/drafts': listIssueDrafts().length }));
+      const draftState = readIssueDrafts();
+      if (!draftState.error)
+        setSidebarBadgeCounts((current) => ({ ...current, '/drafts': draftState.drafts.length }));
     };
     refreshDraftBadge();
     window.addEventListener(ISSUE_DRAFTS_EVENT, refreshDraftBadge);

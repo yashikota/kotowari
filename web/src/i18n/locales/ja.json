@@ -686,6 +686,8 @@
     "willLinkIssue": "イシュー {{issue}} にリンクします"
   },
   "drafts": {
+    "loadFailed": "下書きを読み込めませんでした",
+    "retryLoad": "下書きの読み込みを再試行",
     "empty": "有効な下書きはありません",
     "issues": "イシュー",
     "addDescription": "説明を追加…",

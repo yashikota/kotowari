@@ -42,3 +42,17 @@ current files in `web/src/pages`, rather than Linear's screen inventory.
 Continue with task detail and everyday editing, then project/initiative planning, inbox/search,
 and saved views. Close each row with direct evidence for all required states. Keep this audit
 current; do not mark completion by counting migrated components or passing tests alone.
+
+## Draft storage recovery follow-up
+
+Draft reads now report failure through shared feedback instead of crashing the page or
+showing a false empty state. Failed refreshes preserve the last visible cards and disable
+open/discard actions until recovery. Sidebar badge reads preserve known counts when
+storage is unavailable. Two 360px light/dark browser cases verify initial read failure,
+failed background refresh, recovery, and unchanged saved content. Full focus restoration,
+all text preferences, and desktop rendered inspection remain outstanding.
+
+The label smoke test now waits for the save to finish and focuses the picker before
+sending Escape. Disabled controls can leave focus on the document body, where the
+popover's keyboard dismissal does not receive the event. The three smoke cases pass
+locally; CI still needs to confirm this change.

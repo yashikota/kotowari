@@ -98,6 +98,8 @@ test('create issue, comment, and page', async ({ page, request }) => {
     'aria-checked',
     'true',
   );
+  await expect(labelPicker.getByRole('checkbox', { name: 'Bug' })).toBeEnabled();
+  await labelPicker.getByRole('textbox', { name: 'Change labels' }).focus();
   await page.keyboard.press('Escape');
   await expect(labelPicker).toBeHidden();
 

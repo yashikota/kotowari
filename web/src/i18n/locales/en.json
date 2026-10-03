@@ -694,6 +694,8 @@
     "willLinkIssue": "Will link issue {{issue}}"
   },
   "drafts": {
+    "loadFailed": "Drafts could not be loaded",
+    "retryLoad": "Retry loading drafts",
     "empty": "No active drafts",
     "issues": "Issues",
     "addDescription": "Add description…",

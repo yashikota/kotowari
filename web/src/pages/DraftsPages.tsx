@@ -1,3 +1,4 @@
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { PageHeader } from '../mantine-ui.tsx';
 import styles from './DraftsPages.module.css';
 import {
@@ -61,6 +62,7 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
               color="gray"
               aria-label={t('drafts.discardAll')}
               title={t('drafts.discardAll')}
+              disabled={Boolean(model.error)}
               onClick={model.handlers.onRequestDiscardAll}
             >
               <IconTrash size={15} aria-hidden />
@@ -68,7 +70,17 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
           ) : null
         }
       />
-      {model.drafts.length === 0 ? (
+      <SaveFeedback
+        saving={false}
+        saved={false}
+        error={model.error}
+        savingLabel=""
+        savedLabel=""
+        failureLabel={t('drafts.loadFailed')}
+        retryLabel={t('drafts.retryLoad')}
+        onRetry={model.handlers.onRetry}
+      />
+      {model.drafts.length === 0 && model.error ? null : model.drafts.length === 0 ? (
         <DraftsEmptyState message={t('drafts.empty')} />
       ) : (
         <ScrollArea style={{ flex: 1, minHeight: 0 }}>
@@ -109,6 +121,7 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
                         size="compact-sm"
                         justify="flex-start"
                         leftSection={<IconCircleDashed size={14} aria-hidden />}
+                        disabled={Boolean(model.error)}
                         onClick={() => model.handlers.onOpenDraft(draft.id)}
                         style={{ flex: 1, minWidth: 0, height: 'auto', paddingInline: 0 }}
                       >
@@ -137,6 +150,7 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
                         color="gray"
                         aria-label={t('drafts.discardDraft')}
                         title={t('drafts.discardDraft')}
+                        disabled={Boolean(model.error)}
                         onClick={model.handlers.onRequestDiscardDraft.bind(null, draft.id)}
                       >
                         <IconTrash size={15} aria-hidden />
@@ -148,6 +162,7 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
                       color="gray"
                       size="compact-sm"
                       justify="flex-start"
+                      disabled={Boolean(model.error)}
                       onClick={() => model.handlers.onOpenDraft(draft.id)}
                       style={{ minHeight: 64, height: 'auto', paddingInline: 0 }}
                     >

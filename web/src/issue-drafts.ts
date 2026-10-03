@@ -161,6 +161,14 @@ export function listIssueDrafts(): IssueDraft[] {
   }));
 }
 
+export function readIssueDrafts(): { drafts: IssueDraft[]; error: string } {
+  try {
+    return { drafts: listIssueDrafts(), error: '' };
+  } catch (error) {
+    return { drafts: [], error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 function writeIssueDrafts(drafts: IssueDraft[]) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(ISSUE_DRAFTS_KEY, JSON.stringify(drafts));
