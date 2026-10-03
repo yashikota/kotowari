@@ -398,6 +398,7 @@ export function IssueComposerOverlays({ model, t, issueTitleRef }: Props) {
       ) : null}
 
       <DraftDiscardDialog
+        error={model.issueDraftDiscardError}
         opened={issueDraftDiscardRequest !== null}
         title={
           issueDraftDiscardRequest?.kind === 'all'

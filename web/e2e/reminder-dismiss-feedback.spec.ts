@@ -96,3 +96,102 @@ for (const scheme of ['light', 'dark']) {
     });
   }
 }
+
+test('confirmed dismissal stays confirmed when refreshing the list fails', async ({
+  page,
+  request,
+}) => {
+  const title = `Confirmed dismissal ${Date.now()}`;
+  const created = await request.post('/api/issues', { data: { title } });
+  const issue = await created.json();
+  const endpoint = `/api/issues/${issue.identifier}`;
+  await request.patch(endpoint, { data: { reminderAt: '2030-01-02T03:04:00Z' } });
+  let writes = 0;
+  let failRefresh = true;
+  await page.route(`**${endpoint}`, async (route) => {
+    if (route.request().method() === 'PATCH') writes++;
+    await route.continue();
+  });
+  await page.route('**/api/initiatives', async (route) => {
+    if (writes && failRefresh)
+      return route.fulfill({ status: 503, json: { error: 'List refresh unavailable' } });
+    return route.continue();
+  });
+  try {
+    await page.goto('/reminders');
+    const row = page.getByRole('listitem').filter({
+      has: page.getByRole('link', { name: `${issue.identifier}${title}`, exact: true }),
+    });
+    await row.getByRole('button', { name: 'Dismiss', exact: true }).click();
+    await expect(row).toHaveCount(0);
+    const loadError = page
+      .getByRole('alert')
+      .filter({ has: page.getByRole('button', { name: 'Retry', exact: true }) });
+    await expect(loadError).toContainText('List refresh unavailable');
+    await expect(page.getByRole('button', { name: 'Retry dismissing', exact: true })).toHaveCount(
+      0,
+    );
+    expect((await (await request.get(endpoint)).json()).reminderAt).toBeNull();
+    expect(writes).toBe(1);
+    failRefresh = false;
+    await loadError.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(loadError).toHaveCount(0);
+    await expect(row).toHaveCount(0);
+    expect(writes).toBe(1);
+  } finally {
+    await request.delete(endpoint);
+  }
+});
+
+test('a list read begun before dismissal cannot restore the dismissed row', async ({
+  page,
+  request,
+}) => {
+  const title = `Stale reminder ${Date.now()}`;
+  const created = await request.post('/api/issues', { data: { title } });
+  const issue = await created.json();
+  const endpoint = `/api/issues/${issue.identifier}`;
+  await request.patch(endpoint, { data: { reminderAt: '2030-01-02T03:04:00Z' } });
+  let writes = 0;
+  let captured = false;
+  let completed = false;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**${endpoint}`, async (route) => {
+    if (route.request().method() !== 'PATCH') return route.continue();
+    writes++;
+    if (writes === 1)
+      return route.fulfill({ status: 503, json: { error: 'First dismissal unavailable' } });
+    return route.continue();
+  });
+  await page.route('**/api/issues', async (route) => {
+    if (writes !== 1 || captured) return route.continue();
+    const response = await route.fetch();
+    captured = true;
+    await gate;
+    await route.fulfill({ response });
+    completed = true;
+  });
+  try {
+    await page.goto('/reminders');
+    const row = page.getByRole('listitem').filter({
+      has: page.getByRole('link', { name: `${issue.identifier}${title}`, exact: true }),
+    });
+    await row.getByRole('button', { name: 'Dismiss', exact: true }).click();
+    await expect(row.getByRole('alert')).toContainText('First dismissal unavailable');
+    await expect.poll(() => captured).toBeTruthy();
+    await row.getByRole('button', { name: 'Retry dismissing', exact: true }).click();
+    await expect(row).toHaveCount(0);
+    await expect(page.getByRole('status').filter({ hasText: 'Loading' })).toHaveCount(0);
+    release();
+    await expect.poll(() => completed).toBeTruthy();
+    await expect(row).toHaveCount(0);
+    expect((await (await request.get(endpoint)).json()).reminderAt).toBeNull();
+    expect(writes).toBe(2);
+  } finally {
+    release();
+    await request.delete(endpoint);
+  }
+});

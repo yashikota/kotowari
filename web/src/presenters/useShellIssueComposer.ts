@@ -79,6 +79,7 @@ export function useShellIssueComposer({
   const [issueProjectId, setIssueProjectId] = useState('');
   const [issueCycleId, setIssueCycleId] = useState('');
   const [issueAssignee, setIssueAssignee] = useState<'self' | 'agent' | ''>(defaultIssueAssignee);
+  const [issueDraftDiscardError, setIssueDraftDiscardError] = useState('');
   const [issueDraftDiscardRequest, setIssueDraftDiscardRequest] =
     useState<IssueDraftDiscardRequest | null>(null);
   const [savedIssueDraft, setSavedIssueDraft] = useState<IssueDraft | null>(null);
@@ -166,8 +167,14 @@ export function useShellIssueComposer({
     if (!request) return;
 
     const discardedCurrentDraft = request.kind === 'all' || request.id === issueDraftIdRef.current;
-    if (request.kind === 'all') deleteAllIssueDrafts();
-    else deleteIssueDraft(request.id);
+    setIssueDraftDiscardError('');
+    try {
+      if (request.kind === 'all') deleteAllIssueDrafts();
+      else deleteIssueDraft(request.id);
+    } catch (cause) {
+      setIssueDraftDiscardError(cause instanceof Error ? cause.message : String(cause));
+      return;
+    }
 
     if (discardedCurrentDraft && open) {
       issueDraftIdRef.current = '';
@@ -285,7 +292,10 @@ export function useShellIssueComposer({
   });
   useIntentHandler('issue.requestDiscardDraft', (value) => {
     const request = value as IssueDraftDiscardRequest;
-    if (request.kind === 'all' || request.kind === 'draft') setIssueDraftDiscardRequest(request);
+    if (request.kind === 'all' || request.kind === 'draft') {
+      setIssueDraftDiscardError('');
+      setIssueDraftDiscardRequest(request);
+    }
   });
   useIntentHandler('issue.createRecurring', (value) => {
     if (issueSubmissionInFlight.current) return;
@@ -427,6 +437,7 @@ export function useShellIssueComposer({
       issueDraftSaved,
       savedIssueDraft,
       issueDraftDiscardRequest,
+      issueDraftDiscardError,
       issueCreateMore,
       issueCreateMoreFocusRequest,
       issueStatus,
@@ -494,7 +505,10 @@ export function useShellIssueComposer({
         if (draft) send('issue.openDraft', draft);
       },
       onDismissSavedIssueDraft: () => setSavedIssueDraft(null),
-      onCancelIssueDraftDiscard: () => setIssueDraftDiscardRequest(null),
+      onCancelIssueDraftDiscard: () => {
+        setIssueDraftDiscardError('');
+        setIssueDraftDiscardRequest(null);
+      },
       onConfirmIssueDraftDiscard: confirmIssueDraftDiscard,
       onCloseCreateIssue: closeCreateIssue,
       onToggleIssueComposerExpanded: () => setIssueComposerExpanded((expanded) => !expanded),

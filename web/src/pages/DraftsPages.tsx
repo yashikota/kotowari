@@ -1,14 +1,6 @@
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Group,
-  Paper,
-  ScrollArea,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { PageHeader } from '../mantine-ui.tsx';
+import styles from './DraftsPages.module.css';
+import { ActionIcon, Box, Button, Group, Paper, ScrollArea, Stack, Text } from '@mantine/core';
 import { IconCircleDashed, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { PresenterScope, useActions } from '../application/Root.tsx';
@@ -47,23 +39,25 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
   const { t, i18n } = useTranslation();
   return (
     <Stack gap={0} h="100%" px="md">
-      <Group component="header" justify="space-between" h={48} wrap="nowrap">
-        <Title order={2} size="sm" fw={550}>
-          {t('nav.drafts')}
-        </Title>
-        {model.drafts.length > 0 ? (
-          <ActionIcon
-            type="button"
-            variant="subtle"
-            color="gray"
-            aria-label={t('drafts.discardAll')}
-            title={t('drafts.discardAll')}
-            onClick={model.handlers.onRequestDiscardAll}
-          >
-            <IconTrash size={15} aria-hidden />
-          </ActionIcon>
-        ) : null}
-      </Group>
+      <PageHeader
+        title={t('nav.drafts')}
+        paddingX={0}
+        actions={
+          model.drafts.length > 0 ? (
+            <ActionIcon
+              className={styles.discardAction}
+              type="button"
+              variant="subtle"
+              color="gray"
+              aria-label={t('drafts.discardAll')}
+              title={t('drafts.discardAll')}
+              onClick={model.handlers.onRequestDiscardAll}
+            >
+              <IconTrash size={15} aria-hidden />
+            </ActionIcon>
+          ) : null
+        }
+      />
       {model.drafts.length === 0 ? (
         <DraftsEmptyState message={t('drafts.empty')} />
       ) : (
@@ -93,6 +87,7 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
                   <Stack gap="sm">
                     <Group gap={6} wrap="nowrap">
                       <Button
+                        className={styles.openButton}
                         type="button"
                         variant="subtle"
                         color="gray"
@@ -102,7 +97,13 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
                         onClick={() => model.handlers.onOpenDraft(draft.id)}
                         style={{ flex: 1, minWidth: 0, height: 'auto', paddingInline: 0 }}
                       >
-                        <Text size="sm" fw={550} truncate w="100%">
+                        <Text
+                          size="sm"
+                          fw={550}
+                          lineClamp={2}
+                          w="100%"
+                          className={styles.draftTitle}
+                        >
                           {draft.title}
                         </Text>
                       </Button>
@@ -115,6 +116,7 @@ function DraftsPageView({ model }: { model: DraftsModel }) {
                         {formatRelativeUpdatedAt(draft.updatedAt, i18n.language)}
                       </Text>
                       <ActionIcon
+                        className={styles.discardAction}
                         type="button"
                         variant="subtle"
                         color="gray"

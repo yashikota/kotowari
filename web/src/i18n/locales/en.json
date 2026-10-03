@@ -705,7 +705,9 @@
     "discardAllDescription": "All your drafts will be deleted.",
     "discard": "Discard",
     "saved": "Issue draft saved",
-    "open": "Open draft"
+    "open": "Open draft",
+    "discardFailed": "Drafts could not be discarded",
+    "retryDiscard": "Retry discarding"
   },
   "field": {
     "status": "Status",

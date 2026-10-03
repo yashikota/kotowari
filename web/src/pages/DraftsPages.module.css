@@ -1,0 +1,16 @@
+.openButton :global(.mantine-Button-label) {
+  white-space: normal;
+  min-width: 0;
+  width: 100%;
+}
+.openButton {
+  min-height: 44px;
+}
+.draftTitle {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.discardAction {
+  min-width: 44px;
+  min-height: 44px;
+}

@@ -697,7 +697,9 @@
     "discardAllDescription": "すべての下書きが削除されます。",
     "discard": "破棄",
     "saved": "イシューの下書きを保存しました",
-    "open": "下書きを開く"
+    "open": "下書きを開く",
+    "discardFailed": "下書きを破棄できませんでした",
+    "retryDiscard": "破棄を再試行"
   },
   "field": {
     "status": "ステータス",
