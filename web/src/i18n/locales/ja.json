@@ -619,7 +619,9 @@
     "commandPalette": "コマンドパレット",
     "keyboardShortcuts": "キーボードショートカット",
     "diagnostics": "診断",
-    "noDiagnostics": "診断結果はありません。ワークスペースファイルは整合しています。"
+    "noDiagnostics": "診断結果はありません。ワークスペースファイルは整合しています。",
+    "workflowSaving": "課題のステータスを保存中…",
+    "projectWorkflowSaving": "プロジェクトのステータスを保存中…"
   },
   "codingTools": {
     "heading": "コーディングツール",

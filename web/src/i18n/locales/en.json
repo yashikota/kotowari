@@ -627,7 +627,9 @@
     "commandPalette": "Command palette",
     "keyboardShortcuts": "Keyboard shortcuts",
     "diagnostics": "Diagnostics",
-    "noDiagnostics": "No diagnostics. Workspace files look consistent."
+    "noDiagnostics": "No diagnostics. Workspace files look consistent.",
+    "workflowSaving": "Saving issue statuses…",
+    "projectWorkflowSaving": "Saving project statuses…"
   },
   "codingTools": {
     "heading": "Coding tools",

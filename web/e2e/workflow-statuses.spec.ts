@@ -71,3 +71,31 @@ test('custom issue workflow states can be configured, used, filtered, and remove
   await expect(settings.getByRole('status')).toHaveText('Issue workflow saved.');
   await expect(settings.getByLabel(`Status name: ${statusName}`)).toHaveCount(0);
 });
+
+test('failed status creation keeps its draft and retries the same operation', async ({ page }) => {
+  const name = `Recovery ${Date.now()}`;
+  let writes = 0;
+  await page.route('**/api/issue-workflow-statuses', async (route) => {
+    if (route.request().method() !== 'PUT') return route.continue();
+    writes++;
+    if (writes === 1)
+      return route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Status save unavailable' }),
+      });
+    return route.continue();
+  });
+  await page.goto('/config');
+  const settings = page.getByRole('region', { name: 'Issue statuses' });
+  await settings.getByLabel('New status name').fill(name);
+  await settings.getByRole('button', { name: 'Add status' }).click();
+  await expect(settings.getByRole('alert')).toBeVisible();
+  await expect(settings.getByLabel('New status name')).toHaveValue(name);
+  await settings.getByRole('alert').getByRole('button').click();
+  await expect(settings.getByRole('status')).toHaveText('Issue workflow saved.');
+  await expect(settings.getByLabel(`Status name: ${name}`)).toHaveValue(name);
+  expect(writes).toBe(2);
+  await settings.getByRole('button', { name: `Remove ${name}` }).click();
+  await expect(settings.getByLabel(`Status name: ${name}`)).toHaveCount(0);
+});
