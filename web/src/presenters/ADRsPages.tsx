@@ -1,4 +1,4 @@
-import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
+import { useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRetriableSave } from './useRetriableSave.ts';
@@ -41,7 +41,6 @@ export function useADRsPagePresenter() {
 export function useADRDetailPagePresenter() {
   const { identifier } = useParams({ from: '/adrs/$identifier' });
   const initial = useLoaderData({ from: '/adrs/$identifier' }) as ADR;
-  const router = useRouter();
   const navigate = useNavigate();
   const [allADRs, setAllADRs] = useState<ADR[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -69,6 +68,43 @@ export function useADRDetailPagePresenter() {
     },
     onFailure: () => {},
   });
+  type Operation = { kind: 'publish' } | { kind: 'link' | 'unlink'; number: number };
+  const [operationKind, setOperationKind] = useState<Operation['kind']>('publish');
+  const [operationSaved, setOperationSaved] = useState(false);
+  const operation = useRetriableSave<Operation, { next: ADR; kind: Operation['kind'] }>({
+    scope: identifier,
+    save: async (action) => {
+      const current = confirmed.current;
+      if (action.kind === 'unlink') {
+        await api.unlinkADRIssue(identifier, action.number);
+        return {
+          next: {
+            ...current,
+            issueNumbers: current.issueNumbers.filter((n) => n !== action.number),
+          },
+          kind: action.kind,
+        };
+      }
+      const next =
+        action.kind === 'publish'
+          ? await api.publishADR(identifier)
+          : await api.linkADRIssue(identifier, action.number);
+      return { next, kind: action.kind };
+    },
+    onSuccess: ({ next, kind }) => {
+      confirmed.current = next;
+      setAdr(next);
+      if (kind === 'link') setLinkNumber('');
+      setOperationSaved(true);
+    },
+    onFailure: () => {},
+  });
+  function runOperation(action: Operation) {
+    if (operation.isPending() || mutation.isPending() || dirty.current) return;
+    setOperationKind(action.kind);
+    setOperationSaved(false);
+    return operation.write(action);
+  }
 
   useEffect(() => {
     if (initial.identifier !== confirmed.current.identifier || !dirty.current) {
@@ -77,6 +113,7 @@ export function useADRDetailPagePresenter() {
       setAdr(initial);
       setPropertiesDirty(false);
       setPropertiesSaved(false);
+      setOperationSaved(false);
     }
   }, [initial]);
 
@@ -114,14 +151,16 @@ export function useADRDetailPagePresenter() {
     setPropertiesDirty(true);
     setPropertiesSaved(false);
     mutation.invalidate();
+    operation.invalidate();
+    setOperationSaved(false);
   }
   function edit(changes: Partial<Properties>) {
-    if (mutation.isPending()) return;
+    if (mutation.isPending() || operation.isPending()) return;
     markDirty();
     setAdr((current) => ({ ...current, ...changes }));
   }
   function save(changes: Partial<Properties>) {
-    if (mutation.isPending()) return;
+    if (mutation.isPending() || operation.isPending()) return;
     const draft = { ...adr, ...changes };
     const fields = ['title', 'status', 'projectSlug', 'evaluation', 'supersedes'] as const;
     const body = Object.fromEntries(
@@ -158,6 +197,10 @@ export function useADRDetailPagePresenter() {
     supersedesLocked: confirmed.current.supersedes != null,
     optionsError,
     optionsLoading,
+    operationKind,
+    operationSaved,
+    operationSaving: operation.saving,
+    operationError: operation.error,
     linked,
     unlinked,
     sandbox,
@@ -165,6 +208,10 @@ export function useADRDetailPagePresenter() {
       onRetryProperties: mutation.retry,
       onSaveProperties: () => save({}),
       onRetryPropertyOptions: loadOptions,
+      onRetryOperation: () => {
+        if (mutation.isPending() || dirty.current) return;
+        return operation.retry();
+      },
       onClick0: () => {
         const title = window.prompt(i18n.t('modal.adrTitle'), adr.title);
         if (title?.trim())
@@ -186,12 +233,7 @@ export function useADRDetailPagePresenter() {
         const status = ADR_STATUSES.find((status) => status === e.target.value);
         if (status) return save({ status });
       },
-      onClick2: () => {
-        return api.publishADR(identifier).then(async (next) => {
-          setAdr(next);
-          await router.invalidate();
-        });
-      },
+      onClick2: () => runOperation({ kind: 'publish' }),
       ADR_title_onChange3: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => edit({ title: e.target.value }),
@@ -210,29 +252,22 @@ export function useADRDetailPagePresenter() {
           supersedes: e.target.value ? Number(e.target.value) : null,
         }),
       Supersedes_ADR_number_onBlur9: () => save({ supersedes: adr.supersedes }),
-      onClick10: (iss: Issue) => {
-        return api.unlinkADRIssue(identifier, iss.number).then(async () => {
-          setAdr(await api.adr(identifier));
-          await router.invalidate();
-        });
-      },
+      onClick10: (iss: Issue) => runOperation({ kind: 'unlink', number: iss.number }),
       Link_issue_onChange11: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => setLinkNumber(e.target.value),
+      ) => {
+        if (!operation.isPending()) {
+          setLinkNumber(e.target.value);
+          operation.invalidate();
+          setOperationSaved(false);
+        }
+      },
       onClick12: () => {
         const n = Number(linkNumber);
         if (!n) {
           return;
         }
-        setError('');
-        return api
-          .linkADRIssue(identifier, n)
-          .then(async (next) => {
-            setAdr(next);
-            setLinkNumber('');
-            await router.invalidate();
-          })
-          .catch((e: unknown) => setError(e instanceof Error ? e.message : 'link failed'));
+        return runOperation({ kind: 'link', number: n });
       },
     },
   };

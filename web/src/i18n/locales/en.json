@@ -9,7 +9,10 @@
     "loadFailed": "Document options could not be loaded",
     "retryLoad": "Retry loading document options"
   },
-  "groupOrdering": { "hide": "Hide", "show": "Show" },
+  "groupOrdering": {
+    "hide": "Hide",
+    "show": "Show"
+  },
   "workspaceSave": {
     "saving": "Saving workspace…",
     "retry": "Retry saving",
@@ -2453,5 +2456,23 @@
     "deletePageConfirmation": "Delete page {{slug}}?",
     "deleteProjectConfirmation": "Delete project {{name}}?",
     "deleteViewConfirmation": "Delete view {{name}}?"
+  },
+  "adrOperations": {
+    "publish": {
+      "saving": "Publishing decision…",
+      "saved": "Decision published",
+      "failed": "Decision could not be published"
+    },
+    "link": {
+      "saving": "Linking issue…",
+      "saved": "Issue linked",
+      "failed": "Issue could not be linked"
+    },
+    "unlink": {
+      "saving": "Unlinking issue…",
+      "saved": "Issue unlinked",
+      "failed": "Issue could not be unlinked"
+    },
+    "retry": "Retry operation"
   }
 }

@@ -9,7 +9,10 @@
     "loadFailed": "文書の選択肢を読み込めませんでした",
     "retryLoad": "選択肢の読み込みを再試行"
   },
-  "groupOrdering": { "hide": "非表示", "show": "表示" },
+  "groupOrdering": {
+    "hide": "非表示",
+    "show": "表示"
+  },
   "workspaceSave": {
     "saving": "ワークスペースを保存中…",
     "retry": "保存を再試行",
@@ -2440,5 +2443,23 @@
     "deletePageConfirmation": "ページ「{{slug}}」を削除しますか？",
     "deleteProjectConfirmation": "プロジェクト「{{name}}」を削除しますか？",
     "deleteViewConfirmation": "ビュー「{{name}}」を削除しますか？"
+  },
+  "adrOperations": {
+    "publish": {
+      "saving": "決定を公開しています…",
+      "saved": "決定を公開しました",
+      "failed": "決定を公開できませんでした"
+    },
+    "link": {
+      "saving": "課題を関連付けています…",
+      "saved": "課題を関連付けました",
+      "failed": "課題を関連付けできませんでした"
+    },
+    "unlink": {
+      "saving": "課題の関連付けを解除しています…",
+      "saved": "課題の関連付けを解除しました",
+      "failed": "課題の関連付けを解除できませんでした"
+    },
+    "retry": "もう一度実行"
   }
 }

@@ -137,6 +137,17 @@ export function ADRDetailPageView({
 }) {
   const { t } = useTranslation();
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const operationFeedbackRef = useRef<HTMLDivElement>(null);
+  const publishRef = useRef<HTMLButtonElement>(null);
+  const linkRef = useRef<HTMLSelectElement>(null);
+  const runOperation = useActionFocusReturn(
+    model.operationSaving,
+    () =>
+      operationFeedbackRef.current?.querySelector<HTMLButtonElement>(
+        '[role="alert"] button:not(:disabled)',
+      ) ?? (model.operationKind === 'publish' ? publishRef.current : linkRef.current),
+  );
+  const editingDisabled = model.propertiesSaving || model.operationSaving;
   const runPropertyAction = useActionFocusReturn(
     model.propertiesSaving,
     () =>
@@ -144,7 +155,7 @@ export function ADRDetailPageView({
         '[role="alert"] button:not(:disabled)',
       ) ?? titleRef.current,
   );
-  const otherActionsDisabled = model.propertiesSaving || model.propertiesDirty;
+  const otherActionsDisabled = editingDisabled || model.propertiesDirty;
   switch (model._view) {
     case 0: {
       const {
@@ -173,17 +184,18 @@ export function ADRDetailPageView({
                     {t('ui.revisitDecision')}
                   </Button>
                   <NativeSelect
-                    disabled={model.propertiesSaving}
+                    disabled={editingDisabled}
                     aria-label={t('ui.adrStatus')}
                     value={adr.status}
                     onChange={handlers.ADR_status_onChange1}
                     data={ADR_STATUSES.map((s) => ({ value: s, label: adrStatusLabel(s) }))}
                   />
                   <Button
+                    ref={publishRef}
                     type="button"
                     disabled={otherActionsDisabled}
                     variant="subtle"
-                    onClick={handlers.onClick2}
+                    onClick={() => runOperation(handlers.onClick2)}
                   >
                     {t('ui.publish')}
                   </Button>
@@ -191,6 +203,18 @@ export function ADRDetailPageView({
               }
             />
             <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
+              <Box ref={operationFeedbackRef}>
+                <SaveFeedback
+                  saving={model.operationSaving}
+                  saved={model.operationSaved}
+                  error={model.operationError}
+                  savingLabel={t(`adrOperations.${model.operationKind}.saving`)}
+                  savedLabel={t(`adrOperations.${model.operationKind}.saved`)}
+                  failureLabel={t(`adrOperations.${model.operationKind}.failed`)}
+                  retryLabel={t('adrOperations.retry')}
+                  onRetry={() => runOperation(handlers.onRetryOperation)}
+                />
+              </Box>
               <Box ref={feedbackRef}>
                 <SaveFeedback
                   saving={model.propertiesSaving}
@@ -232,7 +256,7 @@ export function ADRDetailPageView({
                 </Alert>
               ) : null}
               <DocumentTitle
-                disabled={model.propertiesSaving}
+                disabled={editingDisabled}
                 ref={titleRef}
                 aria-label={t('ui.adrTitle')}
                 value={adr.title}
@@ -243,9 +267,7 @@ export function ADRDetailPageView({
                 {t('ui.sandbox')} {sandbox} {t('ui.sandboxDisclaimer')}
               </Text>
               <NativeSelect
-                disabled={
-                  model.propertiesSaving || model.optionsLoading || Boolean(model.optionsError)
-                }
+                disabled={editingDisabled || model.optionsLoading || Boolean(model.optionsError)}
                 label={t('field.project')}
                 aria-label={t('ui.adrProject')}
                 value={adr.projectSlug ?? ''}
@@ -274,7 +296,7 @@ export function ADRDetailPageView({
                 </Stack>
               </Stack>
               <TextInput
-                disabled={model.propertiesSaving}
+                disabled={editingDisabled}
                 label={t('ui.evaluation')}
                 aria-label={t('ui.evaluation')}
                 placeholder={t('ui.evaluationFunctionOneLine')}
@@ -287,7 +309,7 @@ export function ADRDetailPageView({
                 type="number"
                 min={1}
                 aria-label={t('ui.supersedesAdrNumber')}
-                disabled={model.propertiesSaving || model.supersedesLocked}
+                disabled={editingDisabled || model.supersedesLocked}
                 placeholder={t('ui.supersedesAdrNumber')}
                 value={adr.supersedes ?? ''}
                 onChange={handlers.Supersedes_ADR_number_onChange8}
@@ -347,7 +369,7 @@ export function ADRDetailPageView({
                           variant="subtle"
                           size="compact-sm"
                           aria-label={t('issueADRs.unlink', { identifier: iss.identifier })}
-                          onClick={() => handlers.onClick10(iss)}
+                          onClick={() => runOperation(() => handlers.onClick10(iss))}
                         >
                           {t('ui.unlink')}
                         </Button>
@@ -357,6 +379,7 @@ export function ADRDetailPageView({
                 )}
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect
+                    ref={linkRef}
                     disabled={
                       otherActionsDisabled || model.optionsLoading || Boolean(model.optionsError)
                     }
@@ -376,7 +399,7 @@ export function ADRDetailPageView({
                     type="button"
                     variant="subtle"
                     disabled={otherActionsDisabled || !linkNumber}
-                    onClick={handlers.onClick12}
+                    onClick={() => runOperation(handlers.onClick12)}
                   >
                     {t('ui.link')}
                   </Button>

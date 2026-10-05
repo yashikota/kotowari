@@ -165,3 +165,28 @@ rendered contrast assertions, exact retry and focus restoration. Mobile light/da
 screenshots were inspected. Formatting/lint/types, locale parity and production build
 pass. Publication, revisit and link/unlink operation failure/pending recovery remain
 unproven; this does not establish completion of the full screen audit.
+
+## Decision publication and issue-link feedback
+
+Publication and issue link/unlink now use the shared scoped retry writer and
+SaveFeedback. Operation labels distinguish pending, failure and confirmed success;
+retry reuses the original operation and payload. Metadata and conflicting actions
+are disabled while a write is pending, with synchronous guards in the presenter.
+Changing metadata or the issue selection clears an obsolete operation retry.
+
+Confirmed publish/link responses update the document locally. Unlink updates the
+known relation after its successful DELETE, without making another read part of
+the write's success condition. Navigation still reloads the document through the
+normal query cache. Retry focus moves to the error action; successful operations
+restore focus to publication or issue selection, including after a removed row.
+
+Verification: 23 browser cases pass: six new operation cases (three operations,
+both schemes, 360px/large preference), 12 property cases and five existing decision
+cases. New cases cover pending guards, preserved failed link choice, exact retry,
+focus, persisted writes and no edited-route refetch after success. Rendered contrast
+assertions pass on each failure state; mobile light/dark screenshots were inspected.
+Formatting/lint/types, locale parity and production build pass. Revisit still uses
+a native prompt, and publication with unsaved document-body edits needs a separate
+flow audit. Full UI/UX completion remains unproven.
+The 17-route contrast sweep also passes in both schemes at 360px/1280px after the
+operation changes (four additional browser cases, 27 cases across the final runs).
