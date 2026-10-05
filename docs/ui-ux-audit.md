@@ -144,3 +144,24 @@ passes in light/dark at 360px and 1280px (15 browser cases total in this run).
 Mobile light/dark document error screenshots were inspected. Formatting, lint,
 types and locale parity pass. Parent/project write recovery and all deletion flows
 still need separate interaction evidence; overall UI/UX completion remains unproven.
+
+## Decision property editing consistency
+
+Decision metadata now uses the shared scoped retry writer and SaveFeedback, matching
+document properties. Failed title/status/project/evaluation/predecessor changes stay
+in the form. Retry submits the same payload; saving a different property includes
+all earlier unsaved property edits. Controls are disabled while writing. Publishing,
+revisiting and issue linking wait until metadata is saved, with a visible save action.
+Confirmed metadata uses the PATCH response without coupling success to route reload.
+
+Option loading has local error/retry and generation guards; project and issue choices
+remain disabled when unavailable. Evaluation/predecessor fields have persistent labels.
+A successfully saved predecessor remains locked under the existing append-only rules.
+
+Verification: 28 browser cases pass after the final edits: 12 decision property cases,
+5 existing decision interaction cases and 11 document property cases. Decision failure
+coverage includes five properties in both schemes at 360px with large font preference,
+rendered contrast assertions, exact retry and focus restoration. Mobile light/dark
+screenshots were inspected. Formatting/lint/types, locale parity and production build
+pass. Publication, revisit and link/unlink operation failure/pending recovery remain
+unproven; this does not establish completion of the full screen audit.

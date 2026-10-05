@@ -1,10 +1,11 @@
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRetriableSave } from './useRetriableSave.ts';
 import { api } from '../api.ts';
 import i18n from '../i18n/index.ts';
 import type { ADR, Issue, Project } from '../types.ts';
-import { entityDir } from '../types.ts';
+import { ADR_STATUSES, entityDir } from '../types.ts';
 import { useIntent } from '../application/Root.tsx';
 
 export function useADRsPagePresenter() {
@@ -48,30 +49,92 @@ export function useADRDetailPagePresenter() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [linkNumber, setLinkNumber] = useState('');
   const [error, setError] = useState('');
+  type Properties = Pick<ADR, 'title' | 'status' | 'projectSlug' | 'evaluation' | 'supersedes'>;
+  const confirmed = useRef(initial);
+  const dirty = useRef(false);
+  const [propertiesDirty, setPropertiesDirty] = useState(false);
+  const [propertiesSaved, setPropertiesSaved] = useState(false);
+  const [optionsError, setOptionsError] = useState('');
+  const [optionsLoading, setOptionsLoading] = useState(true);
+  const optionsGeneration = useRef(0);
+  const mutation = useRetriableSave<Partial<Properties>, ADR>({
+    scope: identifier,
+    save: (body) => api.patchADR(identifier, body),
+    onSuccess: (next) => {
+      confirmed.current = next;
+      dirty.current = false;
+      setAdr(next);
+      setPropertiesDirty(false);
+      setPropertiesSaved(true);
+    },
+    onFailure: () => {},
+  });
 
   useEffect(() => {
-    setAdr(initial);
+    if (initial.identifier !== confirmed.current.identifier || !dirty.current) {
+      confirmed.current = initial;
+      dirty.current = false;
+      setAdr(initial);
+      setPropertiesDirty(false);
+      setPropertiesSaved(false);
+    }
   }, [initial]);
 
-  useEffect(() => {
-    void Promise.all([api.issues(), api.adrs(), api.projects()])
-      .then(([i, a, p]) => {
-        setIssues(i);
-        setAllADRs(a);
-        setProjects(p);
-      })
-      .catch((e) => setError(String(e)));
-  }, [identifier]);
-
-  async function save(body: Record<string, unknown>) {
+  const loadOptions = useCallback(async () => {
+    const generation = ++optionsGeneration.current;
+    setOptionsLoading(true);
+    setOptionsError('');
     try {
-      setError('');
-      const next = await api.patchADR(identifier, body);
-      setAdr(next);
-      await router.invalidate();
-    } catch (e) {
-      setError(String(e));
+      const [i, a, p] = await Promise.all([api.issues(), api.adrs(), api.projects()]);
+      if (generation !== optionsGeneration.current) return;
+      setIssues(i);
+      setAllADRs(a);
+      setProjects(p);
+    } catch (cause) {
+      if (generation === optionsGeneration.current)
+        setOptionsError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      if (generation === optionsGeneration.current) setOptionsLoading(false);
     }
+  }, [identifier]);
+  useEffect(() => {
+    setIssues([]);
+    setAllADRs([]);
+    setProjects([]);
+    setLinkNumber('');
+    setError('');
+    void loadOptions();
+    return () => {
+      optionsGeneration.current++;
+    };
+  }, [loadOptions]);
+
+  function markDirty() {
+    dirty.current = true;
+    setPropertiesDirty(true);
+    setPropertiesSaved(false);
+    mutation.invalidate();
+  }
+  function edit(changes: Partial<Properties>) {
+    if (mutation.isPending()) return;
+    markDirty();
+    setAdr((current) => ({ ...current, ...changes }));
+  }
+  function save(changes: Partial<Properties>) {
+    if (mutation.isPending()) return;
+    const draft = { ...adr, ...changes };
+    const fields = ['title', 'status', 'projectSlug', 'evaluation', 'supersedes'] as const;
+    const body = Object.fromEntries(
+      fields.filter((key) => draft[key] !== confirmed.current[key]).map((key) => [key, draft[key]]),
+    ) as Partial<Properties>;
+    if (!Object.keys(body).length) {
+      dirty.current = false;
+      setPropertiesDirty(false);
+      return;
+    }
+    markDirty();
+    setAdr(draft);
+    return mutation.write(body);
   }
 
   const linked = issues.filter((i) => adr.issueNumbers.includes(i.number));
@@ -88,10 +151,20 @@ export function useADRDetailPagePresenter() {
     issues,
     linkNumber,
     error,
+    propertiesDirty,
+    propertiesSaved,
+    propertiesSaving: mutation.saving,
+    propertiesError: mutation.error,
+    supersedesLocked: confirmed.current.supersedes != null,
+    optionsError,
+    optionsLoading,
     linked,
     unlinked,
     sandbox,
     handlers: {
+      onRetryProperties: mutation.retry,
+      onSaveProperties: () => save({}),
+      onRetryPropertyOptions: loadOptions,
       onClick0: () => {
         const title = window.prompt(i18n.t('modal.adrTitle'), adr.title);
         if (title?.trim())
@@ -109,7 +182,10 @@ export function useADRDetailPagePresenter() {
       },
       ADR_status_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
-      ) => save({ status: e.target.value }),
+      ) => {
+        const status = ADR_STATUSES.find((status) => status === e.target.value);
+        if (status) return save({ status });
+      },
       onClick2: () => {
         return api.publishADR(identifier).then(async (next) => {
           setAdr(next);
@@ -118,20 +194,19 @@ export function useADRDetailPagePresenter() {
       },
       ADR_title_onChange3: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setAdr({ ...adr, title: e.target.value }),
+      ) => edit({ title: e.target.value }),
       ADR_title_onBlur4: () => save({ title: adr.title }),
       ADR_project_onChange5: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ projectSlug: e.target.value || null }),
       Evaluation_onChange6: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setAdr({ ...adr, evaluation: e.target.value }),
+      ) => edit({ evaluation: e.target.value }),
       Evaluation_onBlur7: () => save({ evaluation: adr.evaluation }),
       Supersedes_ADR_number_onChange8: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) =>
-        setAdr({
-          ...adr,
+        edit({
           supersedes: e.target.value ? Number(e.target.value) : null,
         }),
       Supersedes_ADR_number_onBlur9: () => save({ supersedes: adr.supersedes }),

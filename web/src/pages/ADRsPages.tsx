@@ -1,7 +1,19 @@
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import { useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Group, NativeSelect, Stack, Text, TextInput, Title } from '@mantine/core';
+import {
+  Alert,
+  Box,
+  Button,
+  Group,
+  NativeSelect,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
 
 import { AIPanel } from '../components/AIPanel.tsx';
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
@@ -11,7 +23,7 @@ import { EmptyState, PageHeader, Pane, SplitLayout } from '../mantine-ui.tsx';
 import styles from '../design-system/DocumentListRow.module.css';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
-import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
+import { useAutofocusTarget, useFocusWhen, useActionFocusReturn } from '../focus.ts';
 import { useADRDetailPagePresenter, useADRsPagePresenter } from '../presenters/ADRsPages.tsx';
 
 export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePresenter> }) {
@@ -124,11 +136,19 @@ export function ADRDetailPageView({
   titleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const runPropertyAction = useActionFocusReturn(
+    model.propertiesSaving,
+    () =>
+      feedbackRef.current?.querySelector<HTMLButtonElement>(
+        '[role="alert"] button:not(:disabled)',
+      ) ?? titleRef.current,
+  );
+  const otherActionsDisabled = model.propertiesSaving || model.propertiesDirty;
   switch (model._view) {
     case 0: {
       const {
         identifier,
-        initial,
         allADRs,
         projects,
         adr,
@@ -149,28 +169,70 @@ export function ADRDetailPageView({
                   <Button component="a" href={`/api/adrs/${identifier}/export`} variant="subtle">
                     {t('ui.exportWithAssets')}
                   </Button>
-                  <Button type="button" onClick={handlers.onClick0}>
+                  <Button type="button" disabled={otherActionsDisabled} onClick={handlers.onClick0}>
                     {t('ui.revisitDecision')}
                   </Button>
                   <NativeSelect
+                    disabled={model.propertiesSaving}
                     aria-label={t('ui.adrStatus')}
                     value={adr.status}
                     onChange={handlers.ADR_status_onChange1}
                     data={ADR_STATUSES.map((s) => ({ value: s, label: adrStatusLabel(s) }))}
                   />
-                  <Button type="button" variant="subtle" onClick={handlers.onClick2}>
+                  <Button
+                    type="button"
+                    disabled={otherActionsDisabled}
+                    variant="subtle"
+                    onClick={handlers.onClick2}
+                  >
                     {t('ui.publish')}
                   </Button>
                 </Group>
               }
             />
             <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
+              <Box ref={feedbackRef}>
+                <SaveFeedback
+                  saving={model.propertiesSaving}
+                  saved={model.propertiesSaved}
+                  error={model.propertiesError}
+                  savingLabel={t('pageProperties.saving')}
+                  savedLabel={t('pageProperties.saved')}
+                  failureLabel={t('pageProperties.failed')}
+                  retryLabel={t('pageProperties.retry')}
+                  onRetry={() => runPropertyAction(handlers.onRetryProperties)}
+                />
+              </Box>
+              {model.propertiesDirty && !model.propertiesSaving && !model.propertiesError ? (
+                <Group>
+                  <Text size="sm" c="dimmed" role="status">
+                    {t('pageProperties.unsaved')}
+                  </Text>
+                  <Button
+                    variant="default"
+                    onClick={() => runPropertyAction(handlers.onSaveProperties)}
+                  >
+                    {t('pageProperties.save')}
+                  </Button>
+                </Group>
+              ) : null}
+              <SaveFeedback
+                saving={false}
+                saved={false}
+                error={model.optionsError}
+                savingLabel=""
+                savedLabel=""
+                failureLabel={t('pageProperties.loadFailed')}
+                retryLabel={t('pageProperties.retryLoad')}
+                onRetry={handlers.onRetryPropertyOptions}
+              />
               {error ? (
-                <Alert color="red" variant="light">
+                <Alert color="red" variant="light" role="alert">
                   {error}
                 </Alert>
               ) : null}
               <DocumentTitle
+                disabled={model.propertiesSaving}
                 ref={titleRef}
                 aria-label={t('ui.adrTitle')}
                 value={adr.title}
@@ -181,6 +243,9 @@ export function ADRDetailPageView({
                 {t('ui.sandbox')} {sandbox} {t('ui.sandboxDisclaimer')}
               </Text>
               <NativeSelect
+                disabled={
+                  model.propertiesSaving || model.optionsLoading || Boolean(model.optionsError)
+                }
                 label={t('field.project')}
                 aria-label={t('ui.adrProject')}
                 value={adr.projectSlug ?? ''}
@@ -209,6 +274,8 @@ export function ADRDetailPageView({
                 </Stack>
               </Stack>
               <TextInput
+                disabled={model.propertiesSaving}
+                label={t('ui.evaluation')}
                 aria-label={t('ui.evaluation')}
                 placeholder={t('ui.evaluationFunctionOneLine')}
                 value={adr.evaluation}
@@ -216,10 +283,11 @@ export function ADRDetailPageView({
                 onBlur={handlers.Evaluation_onBlur7}
               />
               <TextInput
+                label={t('ui.supersedesAdrNumber')}
                 type="number"
                 min={1}
                 aria-label={t('ui.supersedesAdrNumber')}
-                disabled={initial.supersedes != null}
+                disabled={model.propertiesSaving || model.supersedesLocked}
                 placeholder={t('ui.supersedesAdrNumber')}
                 value={adr.supersedes ?? ''}
                 onChange={handlers.Supersedes_ADR_number_onChange8}
@@ -274,6 +342,7 @@ export function ADRDetailPageView({
                           {iss.title}
                         </Text>
                         <Button
+                          disabled={otherActionsDisabled}
                           type="button"
                           variant="subtle"
                           size="compact-sm"
@@ -288,6 +357,9 @@ export function ADRDetailPageView({
                 )}
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect
+                    disabled={
+                      otherActionsDisabled || model.optionsLoading || Boolean(model.optionsError)
+                    }
                     aria-label={t('ui.linkIssue')}
                     value={linkNumber}
                     onChange={handlers.Link_issue_onChange11}
@@ -303,7 +375,7 @@ export function ADRDetailPageView({
                   <Button
                     type="button"
                     variant="subtle"
-                    disabled={!linkNumber}
+                    disabled={otherActionsDisabled || !linkNumber}
                     onClick={handlers.onClick12}
                   >
                     {t('ui.link')}
