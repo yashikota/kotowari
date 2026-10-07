@@ -1090,3 +1090,21 @@ including the full rendered route inventory at mobile/desktop widths. This adds
 evidence for late failure after leaving; rapid A-to-B-to-A transitions and
 root-shell rendering failures still require direct verification. Mandatory
 web:check passes; source matches the previously successful build.
+
+
+## Bound browser environment preparation
+
+CI 37686953775 is now terminal failure. Browser (4/4) timed out during
+`playwright install --with-deps chromium`: after apt mirror requests around
+21:06:53 UTC, no progress appeared before the 20-minute step cancellation at
+21:26:45. Browser tests never started in that shard, so no Playwright report
+exists; this is separate from the proven UI navigation and locator failures.
+
+Browser dependency installation now has its own six-minute step and runner-local
+APT configuration with three retries, 30-second HTTP/HTTPS inactivity timeouts and
+a 60-second dpkg lock limit. The regression step retains twenty minutes and report
+upload still runs unconditionally. APT parses all four values under local Ubuntu
+24.04; actionlint v1.7.12 and the shard-4 task dry run pass. Options follow the
+Ubuntu apt.conf manual (https://manpages.ubuntu.com/manpages/noble/man5/apt.conf.5.html).
+This bounds stalled setup and makes the failed phase visible; reliable remote
+execution and full CI success still require a fresh run.

@@ -145,13 +145,17 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
 
+      - name: Install browser dependencies
+        timeout-minutes: 6
+        run: |
+          sudo install -m 644 .github/apt-network.conf /etc/apt/apt.conf.d/99-kotowari-network
+          pnpm --dir web exec playwright install --with-deps chromium
+
       - name: Playwright regression
         timeout-minutes: 20
         env:
           CI: true
-        run: |
-          pnpm --dir web exec playwright install --with-deps chromium
-          task web:e2e -- --shard=${{ matrix.shard }}/4
+        run: task web:e2e -- --shard=${{ matrix.shard }}/4
 
       - name: Upload Playwright report
         if: always()
