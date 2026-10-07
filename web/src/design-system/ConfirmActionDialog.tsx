@@ -56,6 +56,11 @@ export function ConfirmActionDialog({
       closeOnEscape={!pending}
       closeOnClickOutside={!pending}
       withCloseButton={!pending}
+      onEnterTransitionEnd={() => {
+        if (pending || confirmed || error) return;
+        const dialog = cancelRef.current?.closest('[role="dialog"]');
+        if (dialog && !dialog.contains(document.activeElement)) cancelRef.current?.focus();
+      }}
       onExitTransitionEnd={() => returnFocusTo?.()?.focus()}
     >
       <Stack gap="md">

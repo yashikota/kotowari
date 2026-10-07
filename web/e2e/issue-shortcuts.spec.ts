@@ -14,12 +14,10 @@ test('issue shortcuts delete with confirmation and restore archived issues', asy
   await expect(
     page.getByRole('heading', { name: new RegExp(deletedIssue.identifier) }),
   ).toBeVisible();
-  const confirmation = page.waitForEvent('dialog').then(async (dialog) => {
-    expect(dialog.type()).toBe('confirm');
-    await dialog.accept();
-  });
   await page.keyboard.press('Control+Delete');
-  await confirmation;
+  const confirmation = page.getByRole('dialog', { name: 'Delete issue', exact: true });
+  await expect(confirmation.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+  await confirmation.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page).toHaveURL(/\/issues$/);
   expect((await request.get(`/api/issues/${deletedIssue.identifier}`)).status()).toBe(404);
 

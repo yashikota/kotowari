@@ -76,9 +76,15 @@ export function useIssueDetailPresenter({
   }
   const [loadRetrying, setLoadRetrying] = useState(false);
   const loadRetryPending = useRef(false);
+  const loadVisit = useRef(0);
   useEffect(() => {
+    loadVisit.current++;
     loadRetryPending.current = false;
     setLoadRetrying(false);
+    setErrorRecord({ identifier, message: '' });
+    return () => {
+      loadVisit.current++;
+    };
   }, [identifier]);
   const issueData = useIssueDetailData(identifier, (loadError) =>
     setError(loadError instanceof Error ? loadError.message : 'load failed'),
@@ -237,23 +243,29 @@ export function useIssueDetailPresenter({
 
   async function retryLoad() {
     if (loadRetryPending.current) return;
+    const visit = loadVisit.current;
     loadRetryPending.current = true;
     setLoadRetrying(true);
     try {
       await issueData.reload();
-      if (currentIdentifier.current !== identifier) return;
+      if (loadVisit.current !== visit || currentIdentifier.current !== identifier) return;
       setError('');
       requestAnimationFrame(() => {
-        if (currentIdentifier.current === identifier && document.activeElement === document.body) {
+        if (
+          loadVisit.current === visit &&
+          currentIdentifier.current === identifier &&
+          document.activeElement === document.body
+        ) {
           Array.from(document.querySelectorAll<HTMLTextAreaElement>('textarea'))
             .find((element) => element.getAttribute('aria-label') === i18n.t('ui.issueTitle'))
             ?.focus();
         }
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      if (loadVisit.current === visit)
+        setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      if (currentIdentifier.current === identifier) {
+      if (loadVisit.current === visit && currentIdentifier.current === identifier) {
         loadRetryPending.current = false;
         setLoadRetrying(false);
       }

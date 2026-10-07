@@ -32,6 +32,8 @@ export function useFocusWhen<T extends HTMLElement>(
       return;
     }
     const id = window.requestAnimationFrame(() => {
+      const modal = document.querySelector('[role="dialog"][aria-modal="true"]');
+      if (modal && !modal.contains(ref.current)) return;
       ref.current?.focus();
     });
     return () => window.cancelAnimationFrame(id);

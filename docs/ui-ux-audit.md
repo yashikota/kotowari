@@ -402,3 +402,27 @@ Final light/dark load failure screenshots were inspected. Mandatory checks, 2369
 locale keys and production build pass. Remote CI 37596042116 remains live (Check
 passed). Ancillary resource failures, repeated route visits, all language/text-size
 combinations and broader screen completion remain unproven.
+
+## Revisited issue loading and CI confirmation follow-up
+
+Revisiting a failed issue through browser history reproduced a persistent previous
+error even after its new read succeeded. Visit changes now clear the previous error
+and retry state; retry completion/focus is guarded by a visit generation as well as
+the identifier, covering returns to the same identifier.
+
+CI 37596042116 completed with 480 passes, one failure and one flaky case. The failed
+issue-shortcuts test still awaited a native confirm; it now operates the shared
+confirmation dialog and checks safe Cancel focus. The flaky Japanese/light document
+case lost initial Cancel focus. Its downloaded failure artifact confirms the focus
+failure but does not establish its cause. Background useFocusWhen requests now avoid
+active modal dialogs, and confirmation entry restores safe focus if it remains outside
+the dialog, preserving focus already inside. A held editor read/recovered draft case
+passes; it also passed before these guards, so it is regression coverage rather than
+proof of the original CI cause.
+
+Verification: 27 related browser cases pass, including the previously failing history
+revisit, keyboard deletion/restoration, loading recovery, both-language/scheme deletion,
+held draft recovery and eleven workflow/focus cases. The flaky Japanese/light case
+passes five independent repetitions with retries disabled. Mandatory checks and build
+pass. The next full CI run remains required; full screen and WCAG completion is still
+unproven.

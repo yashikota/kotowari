@@ -142,3 +142,46 @@ test('confirmed deletion waits for its response without background route reload'
     release();
   }
 });
+
+test('a recovered editor draft cannot steal focus from deletion confirmation', async ({
+  page,
+  request,
+}) => {
+  const slug = `delete-focus-${Date.now()}`;
+  expect((await request.post('/api/pages', { data: { slug, title: slug } })).ok()).toBeTruthy();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.addInitScript(
+    (key) =>
+      localStorage.setItem(
+        `kotowari:draft:${location.origin}:pages/${key}/body`,
+        JSON.stringify({ body: 'Recovered behind confirmation', revision: 'old' }),
+      ),
+    slug,
+  );
+  await page.route(`**/api/documents/pages/${slug}/body`, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    await gate;
+    return route.continue();
+  });
+  try {
+    await page.goto(`/pages/${slug}`);
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Delete document', exact: true });
+    const cancel = dialog.getByRole('button', { name: 'Cancel', exact: true });
+    await expect(cancel).toBeFocused();
+    release();
+    await expect(page.locator('textarea[aria-label="Markdown body"]')).toHaveValue(
+      'Recovered behind confirmation',
+    );
+    await expect(cancel).toBeFocused();
+    await cancel.click();
+    await expect(dialog).toHaveCount(0);
+    expect((await request.get(`/api/pages/${slug}`)).ok()).toBeTruthy();
+  } finally {
+    release();
+    await request.delete(`/api/pages/${slug}`);
+  }
+});

@@ -147,3 +147,38 @@ test('a failed issue can return to its list while retry is pending', async ({ pa
     await request.delete(`/api/issues/${issue.identifier}`);
   }
 });
+
+test('revisiting a previously failed issue starts a fresh load', async ({ page, request }) => {
+  const stamp = `Revisit load ${Date.now()}`;
+  const issues: { identifier: string; title: string }[] = [];
+  for (let index = 0; index < 2; index++) {
+    const response = await request.post('/api/issues', { data: { title: `${stamp} ${index}` } });
+    issues.push(await response.json());
+  }
+  try {
+    await page.goto('/issues');
+    await fillIssueSearch(page, stamp);
+    const rows = page.getByRole('listbox', { name: 'Issues' }).getByRole('option');
+    await expect(rows).toHaveCount(2);
+    await rows.first().click();
+    const title = page.getByRole('textbox', { name: 'Issue title', exact: true });
+    await expect(title).toBeVisible();
+    const firstTitle = await title.inputValue();
+    const other = issues.find((issue) => issue.title !== firstTitle)!;
+    let reads = 0;
+    await page.route(`**/api/issues/${other.identifier}`, async (route) => {
+      if (route.request().method() === 'GET' && ++reads === 1)
+        return route.fulfill({ status: 503, json: { error: 'First visit unavailable' } });
+      return route.continue();
+    });
+    await page.getByRole('button', { name: 'Navigate to next issue' }).click();
+    await expect(page.getByRole('alert')).toContainText('First visit unavailable');
+    await page.goBack();
+    await expect(title).toHaveValue(firstTitle);
+    await page.goForward();
+    await expect(title).toHaveValue(other.title);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  } finally {
+    for (const issue of issues) await request.delete(`/api/issues/${issue.identifier}`);
+  }
+});
