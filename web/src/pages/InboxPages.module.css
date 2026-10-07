@@ -229,3 +229,12 @@
     justify-content: space-between;
   }
 }
+
+@media (max-width: 560px) {
+  .detailToolbar button,
+  .detailToolbar a {
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
+  }
+}

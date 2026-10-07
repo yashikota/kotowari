@@ -1,5 +1,5 @@
 import { useLoaderData, useRouter } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
 import { useActions, useKeyboard } from '../application/Root.tsx';
@@ -59,13 +59,33 @@ export function useInboxPresenter() {
   const [deleteConfirmation, setDeleteConfirmation] = useState<'all' | 'read' | null>(null);
   const { t, i18n } = useTranslation();
 
-  function updateInboxState(update: (current: InboxState) => InboxState) {
-    setInboxState((current) => {
-      const next = update(current);
+  const [storageError, setStorageError] = useState('');
+  const [storageSaved, setStorageSaved] = useState(false);
+  const failedStorage = useRef<{
+    update: (current: InboxState) => InboxState;
+    onSuccess?: () => void;
+  } | null>(null);
+  const stateRef = useRef(inboxState);
+  stateRef.current = inboxState;
+
+  function updateInboxState(update: (current: InboxState) => InboxState, onSuccess?: () => void) {
+    try {
+      const next = update(stateRef.current);
       window.localStorage.setItem(INBOX_STATE_KEY, serializeInboxState(next));
+      stateRef.current = next;
+      setInboxState(next);
       window.dispatchEvent(new Event(INBOX_STATE_EVENT));
-      return next;
-    });
+      failedStorage.current = null;
+      setStorageError('');
+      setStorageSaved(true);
+      onSuccess?.();
+      return true;
+    } catch (cause) {
+      failedStorage.current = { update, onSuccess };
+      setStorageError(cause instanceof Error ? cause.message : String(cause));
+      setStorageSaved(false);
+      return false;
+    }
   }
 
   const filteredActivities = useMemo(
@@ -159,17 +179,13 @@ export function useInboxPresenter() {
     const wakeAt = Math.min(...deadlines);
     const timer = window.setTimeout(
       () => {
-        setInboxState((current) => {
-          const now = Date.now();
-          const snoozedUntil = Object.fromEntries(
-            Object.entries(current.snoozedUntil).filter(([, until]) => until > now),
-          );
-          if (Object.keys(snoozedUntil).length === Object.keys(current.snoozedUntil).length)
-            return current;
-          const next = { ...current, snoozedUntil };
-          window.localStorage.setItem(INBOX_STATE_KEY, serializeInboxState(next));
-          return next;
-        });
+        // Expired snoozes need no storage write: their deadline already makes them visible.
+        setInboxState((current) => ({
+          ...current,
+          snoozedUntil: Object.fromEntries(
+            Object.entries(current.snoozedUntil).filter(([, until]) => until > Date.now()),
+          ),
+        }));
       },
       Math.max(0, wakeAt - Date.now() + 1),
     );
@@ -187,11 +203,15 @@ export function useInboxPresenter() {
   }
 
   function archive(ids: number[]) {
-    updateInboxState((current) => ({
-      ...current,
-      archivedIds: [...new Set([...current.archivedIds, ...ids])],
-    }));
-    if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
+    updateInboxState(
+      (current) => ({
+        ...current,
+        archivedIds: [...new Set([...current.archivedIds, ...ids])],
+      }),
+      () => {
+        if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
+      },
+    );
   }
 
   function archiveReadNotifications() {
@@ -232,7 +252,11 @@ export function useInboxPresenter() {
       return { next, ids };
     },
     onSuccess: ({ next, ids }) => {
+      stateRef.current = next;
       setInboxState(next);
+      failedStorage.current = null;
+      setStorageError('');
+      setStorageSaved(false);
       window.dispatchEvent(new Event(INBOX_STATE_EVENT));
       if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
       setDeleteConfirmation(null);
@@ -261,6 +285,10 @@ export function useInboxPresenter() {
   }
 
   const handlers = useActions({
+    onRetryStorage: () => {
+      const failed = failedStorage.current;
+      return failed ? updateInboxState(failed.update, failed.onSuccess) : false;
+    },
     onRetryComment: () => setCommentRequest((request) => request + 1),
     onRetry: async () => {
       if (retrying) return;
@@ -328,8 +356,10 @@ export function useInboxPresenter() {
         priorityInboxEnabled: !current.priorityInboxEnabled,
       })),
     onSetPriorityView: (priorityView: InboxState['priorityView']) => {
-      setSelectedId(null);
-      updateInboxState((current) => ({ ...current, priorityView }));
+      updateInboxState(
+        (current) => ({ ...current, priorityView }),
+        () => setSelectedId(null),
+      );
     },
     onTogglePriorityType: (priorityType: InboxPriorityType) =>
       updateInboxState((current) => ({
@@ -353,22 +383,29 @@ export function useInboxPresenter() {
     },
     onDeleteSelected: () => {
       if (selectedId === null) return;
-      updateInboxState((current) => ({
-        ...current,
-        deletedIds: [...new Set([...current.deletedIds, selectedId])],
-      }));
-      setSelectedId(null);
+      updateInboxState(
+        (current) => ({
+          ...current,
+          deletedIds: [...new Set([...current.deletedIds, selectedId])],
+        }),
+        () => setSelectedId(null),
+      );
     },
     onSetSnoozeMenuOpen: (opened: boolean) => setSnoozeMenuOpen(opened),
     onSnoozeSelected: (preset: InboxSnoozePreset) => {
       if (selectedId === null) return;
       const until = inboxSnoozeUntil(preset);
-      updateInboxState((current) => ({
-        ...current,
-        snoozedUntil: { ...current.snoozedUntil, [selectedId]: until },
-      }));
-      setSelectedId(null);
       setSnoozeMenuOpen(false);
+      updateInboxState(
+        (current) => ({
+          ...current,
+          snoozedUntil: { ...current.snoozedUntil, [selectedId]: until },
+        }),
+        () => {
+          setSelectedId(null);
+          setSnoozeMenuOpen(false);
+        },
+      );
     },
     onMarkAllRead: () => markAllNotificationsRead(),
     onArchiveReadActivities: () => archiveReadNotifications(),
@@ -408,11 +445,13 @@ export function useInboxPresenter() {
     if (shortcut === 'delete-notification') {
       if (!selectedActivity) return false;
       event.preventDefault();
-      updateInboxState((current) => ({
-        ...current,
-        deletedIds: [...new Set([...current.deletedIds, selectedActivity.id])],
-      }));
-      setSelectedId(null);
+      updateInboxState(
+        (current) => ({
+          ...current,
+          deletedIds: [...new Set([...current.deletedIds, selectedActivity.id])],
+        }),
+        () => setSelectedId(null),
+      );
       return true;
     }
     if (shortcut === 'delete-read-notifications') {
@@ -477,6 +516,8 @@ export function useInboxPresenter() {
     otherUnreadCount: unreadBuckets.other.length,
     snoozeMenuOpen,
     deleteConfirmation,
+    storageError,
+    storageSaved,
     deletionPending: deletion.saving,
     deletionError: deletion.error,
     unreadCount,

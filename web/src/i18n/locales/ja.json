@@ -2080,7 +2080,11 @@
     "deleting": "通知を削除しています…",
     "deleted": "通知を削除しました",
     "deleteFailed": "通知を削除できませんでした",
-    "retryDelete": "通知の削除を再試行"
+    "retryDelete": "通知の削除を再試行",
+    "savingState": "受信トレイの変更を保存しています…",
+    "savedState": "受信トレイの変更を保存しました",
+    "stateFailed": "受信トレイの変更を保存できませんでした",
+    "retryState": "受信トレイの変更の保存を再試行"
   },
   "commands": {
     "createIssue": "イシューを作成",

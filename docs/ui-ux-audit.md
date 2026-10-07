@@ -286,3 +286,22 @@ Formatting/lint/types, 2346 locale keys and production build pass. CI 3759383980
 for the preceding push remains in progress; this change is committed locally while
 that run finishes. Single-notification and other inbox storage mutations still need
 failure recovery auditing; overall completion remains unproven.
+
+## Inbox state writes and touch controls
+
+Inbox state writes now run outside React state updater callbacks, persist before
+changing visible state, and report local storage exceptions with shared SaveFeedback.
+Failed operations retain their update and completion callback for retry. Archive,
+single deletion and snooze keep the selected notification until persistence succeeds.
+Repeated failure retains retry focus; success restores the notification actions focus.
+Display preferences and read/bulk-read operations share the same write path. Expired
+snoozes become visible without an unnecessary storage write. Mobile detail buttons
+and links have a minimum 44px touch area.
+
+Verification: 26 inbox browser cases pass, including eight new cases covering repeated
+storage failure for unread/archive/delete/snooze in both schemes at 360px/large text.
+They check unchanged storage, retained detail context, focus, final persisted IDs,
+44px detail controls and actual alert contrast. Final light/dark failure screenshots
+were inspected. Formatting/lint/types, 2350 locale keys and production build pass.
+Preference and automatic read failures share implementation but lack dedicated
+failure browser cases. Previous remote CI 37593839803 remains in progress.

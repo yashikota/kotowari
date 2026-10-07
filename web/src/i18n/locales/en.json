@@ -2091,7 +2091,11 @@
     "deleting": "Deleting notifications…",
     "deleted": "Notifications deleted",
     "deleteFailed": "Notifications could not be deleted",
-    "retryDelete": "Retry deleting notifications"
+    "retryDelete": "Retry deleting notifications",
+    "savingState": "Saving inbox changes…",
+    "savedState": "Inbox changes saved",
+    "stateFailed": "Inbox changes could not be saved",
+    "retryState": "Retry saving inbox changes"
   },
   "commands": {
     "createIssue": "Create issue",

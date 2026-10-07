@@ -20,8 +20,9 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { Link } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { PresenterScope } from '../application/Root.tsx';
 import { formatActivity } from '../activity.ts';
@@ -53,6 +54,11 @@ function activityGroup(
 
 function InboxPageView({ model }: { model: InboxModel }) {
   const { t, i18n } = useTranslation();
+  const storageFeedbackRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (model.storageError)
+      storageFeedbackRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+  }, [model.storageError]);
   const groups = useMemo(() => {
     const now = new Date();
     const dateGroups = (activities: typeof model.activities) => {
@@ -217,6 +223,27 @@ function InboxPageView({ model }: { model: InboxModel }) {
         </Group>
       ) : null}
 
+      {(model.storageError || model.storageSaved) && (
+        <Box px="md" ref={storageFeedbackRef}>
+          <SaveFeedback
+            saving={false}
+            saved={model.storageSaved}
+            error={model.storageError}
+            savingLabel={t('inbox.savingState')}
+            savedLabel={t('inbox.savedState')}
+            failureLabel={t('inbox.stateFailed')}
+            retryLabel={t('inbox.retryState')}
+            onRetry={() => {
+              if (model.handlers.onRetryStorage())
+                document
+                  .querySelector<HTMLButtonElement>(
+                    `button[aria-label="${t('inbox.notificationActions')}"]`,
+                  )
+                  ?.focus();
+            }}
+          />
+        </Box>
+      )}
       <Box className={styles.layout}>
         <Box component="section" aria-label={t('inbox.notifications')} className={styles.listPane}>
           <ScrollArea type="auto" className={styles.listScroll}>
