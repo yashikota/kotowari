@@ -615,3 +615,32 @@ pushed change e7a2552 completed successfully (37608272149).
 Other editing surfaces, milestone drafts, project update drafts, and archive/restore
 failure recovery remain subject to the full-screen audit. This is not full UI/UX or
 WCAG completion evidence.
+
+## Project archive and restore recovery
+
+Project archive/restore now uses the shared scoped retriable write presenter. The
+result stays on the detail page, matching issue archive behavior and keeping the
+current editing context available. Confirmed archive state appears as a textual
+badge, and restore is available from the same action menu. The action changes only
+archivedAt in local project state; failed summary/description edits and their separate
+retry remain intact. An older queued property response preserves newer archive state.
+
+Pending archive blocks duplicate archive and deletion actions. Retrying a failed
+write retains the intended archived boolean. Late results after a project change do
+not update the new detail, announce a stale result or restore old focus. Shared
+useMenuActionFocus is used by issue and project archive actions to keep an immediate
+failure's retry button focused after the closing menu restores its trigger.
+
+Seven project archive tests cover locale/theme failure and retry for both archive
+and restore, preserving failed text drafts, duplicate/pending guards, immediate
+keyboard retry, and late success/failure after navigation. An additional issue test
+checks immediate failure focus with the shared helper. All 46 related archive,
+clipboard, deletion and unsaved-navigation cases pass without retries. The 13 archive
+cases also pass three repetitions (39 runs) after adding restore-failure checks.
+Mobile large-text retry contrast passes; Japanese light/dark failures were rendered
+and inspected. Mandatory web:check and build pass, with 2400 matching locale keys.
+
+CI 37642920644 for the prior pushed project draft change is still running Playwright
+at this audit point. This archive work has not yet passed the full CI gate. Audit
+other text sizes, languages, simultaneous archive/property writes, and remaining
+project mutations before considering the screen complete.

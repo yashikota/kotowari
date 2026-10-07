@@ -1,4 +1,10 @@
 {
+  "projectArchive": {
+    "saving": "Saving archive change…",
+    "saved": "Archive change saved",
+    "failed": "Archive change could not be saved",
+    "retry": "Retry archive change"
+  },
   "unsavedProject": {
     "title": "Unsaved project changes",
     "description": "The summary or description has not been saved. Save before leaving, or leave without saving.",

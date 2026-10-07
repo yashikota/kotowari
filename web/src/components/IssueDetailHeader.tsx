@@ -10,7 +10,7 @@ import {
   IconLink,
   IconStar,
 } from '@tabler/icons-react';
-import { useActionFocusReturn } from '../focus.ts';
+import { useMenuActionFocus } from '../design-system/useMenuActionFocus.ts';
 import { useTranslation } from 'react-i18next';
 import { useClipboardFocus } from '../design-system/ClipboardFeedback.tsx';
 import { MetaBadge } from '../mantine-ui.tsx';
@@ -103,20 +103,13 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
         (button) => button.getAttribute('aria-label') === t('issueActions.button'),
       ) ?? null,
   });
-  const runArchive = useActionFocusReturn(
-    model.archivePending,
-    () =>
-      document.querySelector<HTMLButtonElement>(
-        '[data-issue-archive-feedback] [role="alert"] button:not(:disabled)',
-      ) ??
-      Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
-        (button) => button.getAttribute('aria-label') === t('issueActions.button'),
-      ) ??
-      null,
-    (active) =>
-      active === document.body || active?.getAttribute('aria-label') === t('issueActions.button'),
-    model.identifier,
-  );
+  const archiveFocus = useMenuActionFocus({
+    pending: model.archivePending,
+    scope: model.identifier,
+    menuSelector: '[data-issue-options-menu]',
+    feedbackSelector: '[data-issue-archive-feedback]',
+    triggerSelector: '[data-issue-actions]',
+  });
   const {
     identifier,
     issueReturnTo,
@@ -146,7 +139,10 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
       withinPortal
       opened={issueOptionsOpen}
       onChange={handlers.onIssueOptionsChange}
-      onExitTransitionEnd={onMenuExited}
+      onExitTransitionEnd={() => {
+        onMenuExited();
+        archiveFocus.onMenuExited();
+      }}
     >
       <Box className={layoutStyles.issueHeader}>
         {model.dueDateSaving ? (
@@ -202,6 +198,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                 type="button"
                 variant="subtle"
                 color="gray"
+                data-issue-actions
                 aria-label={t('issueActions.button')}
                 title={t('issueActions.button')}
               >
@@ -585,7 +582,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                 <Menu.Divider />
                 <Menu.Item
                   disabled={model.archivePending}
-                  onClick={() => runArchive(handlers.onArchiveIssue)}
+                  onClick={() => archiveFocus.run(handlers.onArchiveIssue)}
                 >
                   {t('issueActions.archive')}
                 </Menu.Item>
@@ -666,7 +663,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                 <Menu.Item
                   aria-keyshortcuts="#"
                   disabled={model.archivePending}
-                  onClick={() => runArchive(handlers.onArchiveIssue)}
+                  onClick={() => archiveFocus.run(handlers.onArchiveIssue)}
                   rightSection={<CopyShortcut label="#" />}
                 >
                   {t('issueActions.restore')}

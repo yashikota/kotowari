@@ -163,3 +163,38 @@ test('next issue does not expose the previous title while its request is pending
     for (const issue of issues) await request.delete(`/api/issues/${issue.identifier}`);
   }
 });
+
+test('instant issue archive rejection leaves focus on its shared retry action', async ({
+  page,
+  request,
+}) => {
+  const created = await request.post('/api/issues', {
+    data: { title: `Instant archive ${Date.now()}` },
+  });
+  expect(created.ok()).toBeTruthy();
+  const { identifier } = await created.json();
+  const writes: unknown[] = [];
+  await page.route(`**/api/issues/${identifier}`, async (route) => {
+    if (route.request().method() !== 'PATCH') return route.continue();
+    writes.push(route.request().postDataJSON());
+    if (writes.length === 1)
+      return route.fulfill({ status: 503, json: { error: 'Archive unavailable' } });
+    return route.continue();
+  });
+  try {
+    await page.goto(`/issues/${identifier}`);
+    const options = page.getByRole('button', { name: 'Issue options', exact: true });
+    await options.click();
+    await page.getByRole('menuitem', { name: 'Archive', exact: true }).click();
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    const feedback = page.locator('[data-issue-archive-feedback]');
+    const retry = feedback.getByRole('button', { name: 'Retry archive change', exact: true });
+    await expect(retry).toBeFocused();
+    await retry.press('Enter');
+    await expect(feedback.getByRole('status')).toContainText('Archive change saved');
+    expect((await (await request.get(`/api/issues/${identifier}`)).json()).archivedAt).toBeTruthy();
+    expect(writes).toEqual([{ archived: true }, { archived: true }]);
+  } finally {
+    await request.delete(`/api/issues/${identifier}`);
+  }
+});

@@ -1,9 +1,10 @@
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useClipboardCopy } from './useClipboardCopy.ts';
+import { useRetriableSave } from './useRetriableSave.ts';
 import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.ts';
 import { useIntent, useKeyboard } from '../application/Root.tsx';
 import { signals } from '../application/mediator.ts';
@@ -153,6 +154,22 @@ export function useProjectDetailPagePresenter() {
       await navigate({ to: '/projects' });
       signals.dispatchEvent(new Event('kotowari:refresh'));
     },
+  });
+  const [archiveSaved, setArchiveSaved] = useState(false);
+  useEffect(() => setArchiveSaved(false), [slug]);
+  const archive = useRetriableSave<boolean, Project>({
+    scope: slug,
+    save: (archived) => api.patchProject(slug, { archived }),
+    onSuccess: (next) => {
+      if (saveScope.current !== slug) return;
+      setProject((current) =>
+        current.slug === slug ? { ...current, archivedAt: next.archivedAt } : current,
+      );
+      setArchiveSaved(true);
+      void router.invalidate().catch(() => undefined);
+      signals.dispatchEvent(new Event('kotowari:refresh'));
+    },
+    onFailure: () => setArchiveSaved(false),
   });
   const projectStatusSequenceSince = useRef<number | null>(null);
   const projectStatusSequenceSlug = useRef(slug);
@@ -308,6 +325,7 @@ export function useProjectDetailPagePresenter() {
         setProject((current) => {
           const locallyEditable = [
             'name',
+            'archivedAt',
             'summary',
             'icon',
             'iconColor',
@@ -417,7 +435,8 @@ export function useProjectDetailPagePresenter() {
     deletion: {
       ...deletion,
       confirm: () => {
-        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving) return;
+        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving || archive.isPending())
+          return;
         return deletion.confirm();
       },
     },
@@ -456,6 +475,9 @@ export function useProjectDetailPagePresenter() {
       (project.summary ?? '') !== persistedSummary.current.value ||
       project.description !== persistedDescription.current.value,
     projectSaveError,
+    archivePending: archive.saving,
+    archiveError: archive.error,
+    archiveSaved,
     projectSaved: projectSaved && !projectSaveError,
     availableDependencyProjects: data.projects.filter(
       (candidate) =>
@@ -578,15 +600,22 @@ export function useProjectDetailPagePresenter() {
         await refreshProject();
       },
       onCreateIssue: () => sendIntent('issue.create', { projectId: project.id }),
-      onToggleProjectArchived: async () => {
-        if (deletion.isPending() || deletion.isRemoved()) return;
-        const archived = !project.archivedAt;
-        await api.patchProject(slug, { archived });
-        signals.dispatchEvent(new Event('kotowari:refresh'));
-        await navigate({ to: '/projects', search: { archived } });
+      onRetryProjectArchive: archive.retry,
+      onToggleProjectArchived: () => {
+        if (
+          deletion.isPending() ||
+          deletion.isRemoved() ||
+          pendingProjectSaves.current > 0 ||
+          reminderEditor.data.saving ||
+          archive.isPending()
+        )
+          return;
+        setProjectActionsOpen(false);
+        return archive.write(!project.archivedAt);
       },
       onDeleteProject: () => {
-        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving) return;
+        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving || archive.isPending())
+          return;
         setProjectActionsOpen(false);
         setProjectUpdateOpen(false);
         setProjectTemplateOpen(false);

@@ -16,6 +16,7 @@ import { IconDotsVertical, IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 import { IssueList } from '../components/IssueList.tsx';
+import { useMenuActionFocus } from '../design-system/useMenuActionFocus.ts';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import {
   UnsavedChangesDialog,
@@ -37,7 +38,7 @@ import { projectWorkflowStatusLabel } from '../project-workflow.tsx';
 
 import { priorityLabel } from '../i18n/labels.ts';
 
-import { PageHeader, Pane, Section, SplitLayout } from '../mantine-ui.tsx';
+import { MetaBadge, PageHeader, Pane, Section, SplitLayout } from '../mantine-ui.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
@@ -71,6 +72,13 @@ export function ProjectDetailPageView({
     feedbackSelector: '[data-project-copy-feedback]',
     menuSelector: '[data-project-copy-menu]',
     fallback: () => document.querySelector<HTMLButtonElement>('[data-project-actions]'),
+  });
+  const archiveFocus = useMenuActionFocus({
+    pending: model.archivePending,
+    scope: model.slug,
+    menuSelector: '[data-project-copy-menu]',
+    feedbackSelector: '[data-project-archive-feedback]',
+    triggerSelector: '[data-project-actions]',
   });
   const navigation = useUnsavedNavigation({
     dirty: model.hasUnsavedText && !model.deletion.confirmed,
@@ -118,6 +126,9 @@ export function ProjectDetailPageView({
                         onChange={handlers.onProjectIconChange}
                         onColorChange={handlers.onProjectIconColorChange}
                       />
+                      {project.archivedAt ? (
+                        <MetaBadge>{t('issueActions.archivedBadge')}</MetaBadge>
+                      ) : null}
                       <Text
                         component="span"
                         size="md"
@@ -147,7 +158,10 @@ export function ProjectDetailPageView({
                         position="bottom-end"
                         opened={model.projectActionsOpen}
                         onChange={handlers.onProjectActionsChange}
-                        onExitTransitionEnd={onMenuExited}
+                        onExitTransitionEnd={() => {
+                          onMenuExited();
+                          archiveFocus.onMenuExited();
+                        }}
                       >
                         <Menu.Target>
                           <ActionIcon
@@ -191,7 +205,16 @@ export function ProjectDetailPageView({
                           <Menu.Item onClick={handlers.onOpenProjectTemplate}>
                             {t('projectTemplates.saveAsTemplate')}
                           </Menu.Item>
-                          <Menu.Item onClick={handlers.onToggleProjectArchived}>
+                          <Menu.Item
+                            disabled={
+                              model.archivePending ||
+                              model.projectSaving ||
+                              model.reminderEditor.saving ||
+                              model.deletion.pending ||
+                              model.deletion.confirmed
+                            }
+                            onClick={() => archiveFocus.run(handlers.onToggleProjectArchived)}
+                          >
                             {t(project.archivedAt ? 'projectList.restore' : 'projectList.archive')}
                           </Menu.Item>
                           <Menu.Divider />
@@ -199,6 +222,7 @@ export function ProjectDetailPageView({
                             color="red"
                             disabled={
                               model.projectSaving ||
+                              model.archivePending ||
                               model.reminderEditor.saving ||
                               model.deletion.pending ||
                               model.deletion.confirmed
@@ -251,6 +275,18 @@ export function ProjectDetailPageView({
                       />
                     </Box>
                   ) : null}
+                  <Box data-project-archive-feedback>
+                    <SaveFeedback
+                      saving={model.archivePending}
+                      saved={model.archiveSaved}
+                      error={model.archiveError}
+                      savingLabel={t('projectArchive.saving')}
+                      savedLabel={t('projectArchive.saved')}
+                      failureLabel={t('projectArchive.failed')}
+                      retryLabel={t('projectArchive.retry')}
+                      onRetry={() => archiveFocus.run(handlers.onRetryProjectArchive)}
+                    />
+                  </Box>
                   <SaveFeedback
                     saving={model.projectSaving}
                     saved={model.projectSaved}
