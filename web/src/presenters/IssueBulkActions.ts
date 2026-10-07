@@ -52,8 +52,8 @@ export function useIssueBulkActions({ selectedIds, visibleIssues, onClear }: Pro
         await patchIssueOptimistically(id, adjustedPatch);
       }),
     );
-    await router.invalidate();
     onClear();
+    await router.invalidate();
   }
 
   async function updateSelectedLabels(labelId: number, add: boolean) {
@@ -70,8 +70,8 @@ export function useIssueBulkActions({ selectedIds, visibleIssues, onClear }: Pro
           await patchIssueOptimistically(identifier, { labelIds: next });
       }),
     );
-    await router.invalidate();
     onClear();
+    await router.invalidate();
   }
 
   async function copySelectedIssues(kind: IssueCopyKind) {

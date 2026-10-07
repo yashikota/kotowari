@@ -1236,3 +1236,21 @@ The initial new contrast test used a multi-element scope and failed strict locat
 matching; it now measures the complete main surface. A further 17 ADR list/detail/
 property cases pass, including mobile titles, keyboard focus and cached unlink
 freshness. Overall UI/UX remains Partial.
+
+## Bulk selection completion ordering
+
+Remote CI 37695665905 is terminal failure: Unit test, Check and Browser shards
+1/4, 2/4 and 3/4 succeed. Browser 4/4 has one failing bulk assignee case in all
+three attempts; after unassigning, one of two issues remains assigned. The bulk
+presenter cleared selection after awaiting full route invalidation. A subsequent
+selection begun after confirmed writes could therefore be erased by the preceding
+refresh. Property and label writes now clear their completed selection immediately
+after all writes succeed, before requesting the route refresh.
+
+Two new light/dark cases hold the list read after confirmed assignment, require
+the completed selection to clear, select both issues again, then release the read
+and verify the newer selection survives and unassigns both issues. Both cases and
+the two existing bulk property/project/cycle/label cases pass with zero retries.
+Mandatory web:check and production build pass. Bulk pending/failure feedback,
+partial failure recovery, and navigation during writes still need separate work;
+this ordering fix does not establish completion of all bulk interaction states.
