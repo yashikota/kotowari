@@ -565,10 +565,12 @@ test('deleting an initiative preserves projects and removes their initiative pro
   const initiative = (await initiativeResponse.json()) as { slug: string };
 
   await page.goto(`/initiatives/${initiative.slug}`);
-  const confirmation = page.waitForEvent('dialog').then((dialog) => dialog.accept());
   await page.getByRole('button', { name: 'More actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Delete initiative', exact: true }).click();
-  await confirmation;
+  await page
+    .getByRole('dialog', { name: 'Delete initiative', exact: true })
+    .getByRole('button', { name: 'Delete initiative', exact: true })
+    .click();
   await expect(page).toHaveURL('/initiatives');
 
   const projectAfterDelete = await request.get(`/api/projects/${projectSlug}`);

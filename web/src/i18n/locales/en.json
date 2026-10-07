@@ -2608,6 +2608,7 @@
     "refreshDescription": "The milestone has been deleted. Refresh the project to finish updating this screen."
   },
   "healthUpdate": {
+    "bodyRequired": "Enter update text before posting.",
     "posting": "Posting update…",
     "posted": "Update posted",
     "failed": "Could not post update",
@@ -2615,5 +2616,33 @@
     "refreshing": "Refreshing updates…",
     "refreshFailed": "Update posted, but refresh failed",
     "retryRefresh": "Retry refresh"
+  },
+  "initiativeSave": {
+    "saving": "Saving initiative…",
+    "saved": "Initiative saved",
+    "failed": "Could not save initiative",
+    "retry": "Retry saving",
+    "refreshing": "Refreshing initiative…",
+    "refreshFailed": "Initiative saved, but refresh failed",
+    "retryRefresh": "Retry refresh",
+    "nameRequired": "Enter an initiative name before saving."
+  },
+  "unsavedInitiative": {
+    "title": "Unsaved initiative changes",
+    "description": "Save your edits and update draft before leaving, or discard them.",
+    "stay": "Stay here",
+    "discard": "Discard and leave",
+    "save": "Save and leave"
+  },
+  "initiativeDeletion": {
+    "title": "Delete initiative",
+    "deleted": "Initiative deleted",
+    "deletedDescription": "The initiative has been deleted. Open the initiative list to continue.",
+    "deleting": "Deleting initiative…",
+    "opening": "Opening initiatives…",
+    "failed": "Could not delete initiative",
+    "navigationFailed": "Initiative deleted, but opening the list failed",
+    "retry": "Retry deletion",
+    "retryNavigation": "Open initiatives"
   }
 }

@@ -88,8 +88,7 @@ export function ProjectDetailPageView({
         model.milestoneEdits.dirty ||
         model.milestoneCreation.dirty ||
         model.dependencyChanges.dirty ||
-        Boolean(model.healthUpdate.body) ||
-        model.healthUpdate.confirmed) &&
+        model.healthUpdate.dirty) &&
       !model.deletion.confirmed,
     pending:
       model.projectSaving ||
@@ -638,6 +637,7 @@ export function ProjectDetailPageView({
             }
           />
           <HealthUpdateComposer
+            bodyError={model.healthUpdate.bodyError}
             scope={project.slug}
             error={model.healthUpdate.error}
             submitting={model.healthUpdate.pending}

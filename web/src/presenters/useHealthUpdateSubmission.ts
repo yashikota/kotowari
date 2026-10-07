@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type { Activity, ProjectHealth } from '../types.ts';
 import { useRetriableCreation } from './useRetriableCreation.ts';
+import i18n from '../i18n/index.ts';
 
 /** Keep the draft and confirmed post until its activity feed has been refreshed. */
 export function useHealthUpdateSubmission({
@@ -24,6 +25,7 @@ export function useHealthUpdateSubmission({
     body: '',
     saved: false,
     edited: false,
+    validation: '',
   });
   const generation = useRef(0);
   const currentScope = useRef(scope);
@@ -36,6 +38,7 @@ export function useHealthUpdateSubmission({
       body: '',
       saved: false,
       edited: false,
+      validation: '',
     });
   useEffect(() => {
     generation.current++;
@@ -54,7 +57,11 @@ export function useHealthUpdateSubmission({
     },
   });
   async function submit() {
-    if (transaction.isPending() || (!transaction.hasCreated() && !draft.body.trim())) return false;
+    if (transaction.isPending()) return false;
+    if (!transaction.hasCreated() && !draft.body.trim()) {
+      setDraft((current) => ({ ...current, validation: i18n.t('healthUpdate.bodyRequired') }));
+      return false;
+    }
     const token = generation.current;
     const success = await transaction.submit({ health: draft.health, body: draft.body.trim() });
     if (success && currentScope.current === scope && token === generation.current)
@@ -65,13 +72,18 @@ export function useHealthUpdateSubmission({
         body: '',
         saved: true,
         edited: false,
+        validation: '',
       });
     return success;
   }
   return {
     ...draft,
     pending: transaction.submitting,
-    error: transaction.error,
+    error: draft.validation || transaction.error,
+    bodyError: draft.validation,
+    dirty: Boolean(
+      draft.body || (draft.edited && draft.health !== initialHealth) || transaction.created,
+    ),
     confirmed: transaction.created,
     isPending: transaction.isPending,
     open: () =>
@@ -91,13 +103,14 @@ export function useHealthUpdateSubmission({
         ...current,
         health: (value ?? 'on_track') as ProjectHealth,
         edited: true,
+        validation: '',
       }));
     },
     changeBody: (event: ChangeEvent<HTMLTextAreaElement>) => {
       if (transaction.isPending() || transaction.hasCreated()) return;
       transaction.invalidate();
       const body = event.currentTarget.value;
-      setDraft((current) => ({ ...current, body, edited: true }));
+      setDraft((current) => ({ ...current, body, edited: true, validation: '' }));
     },
     submit,
     onSubmit: (event: FormEvent<HTMLFormElement>) => {

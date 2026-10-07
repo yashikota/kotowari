@@ -2595,6 +2595,7 @@
     "refreshDescription": "マイルストーンは削除済みです。プロジェクトを再読み込みして画面の更新を完了してください。"
   },
   "healthUpdate": {
+    "bodyRequired": "投稿する前に更新内容を入力してください。",
     "posting": "更新を投稿中…",
     "posted": "更新を投稿しました",
     "failed": "更新を投稿できませんでした",
@@ -2602,5 +2603,33 @@
     "refreshing": "更新を再読み込み中…",
     "refreshFailed": "投稿は完了しましたが、再読み込みに失敗しました",
     "retryRefresh": "再読み込みを再試行"
+  },
+  "initiativeSave": {
+    "saving": "イニシアチブを保存中…",
+    "saved": "イニシアチブを保存しました",
+    "failed": "イニシアチブを保存できませんでした",
+    "retry": "保存を再試行",
+    "refreshing": "イニシアチブを再読み込み中…",
+    "refreshFailed": "保存は完了しましたが、再読み込みに失敗しました",
+    "retryRefresh": "再読み込みを再試行",
+    "nameRequired": "保存する前にイニシアチブ名を入力してください。"
+  },
+  "unsavedInitiative": {
+    "title": "未保存のイニシアチブ変更",
+    "description": "移動する前に編集内容と更新の下書きを保存するか、破棄してください。",
+    "stay": "この画面に留まる",
+    "discard": "破棄して移動",
+    "save": "保存して移動"
+  },
+  "initiativeDeletion": {
+    "title": "イニシアチブを削除",
+    "deleted": "イニシアチブを削除しました",
+    "deletedDescription": "削除は完了しました。イニシアチブ一覧を開いて操作を続けてください。",
+    "deleting": "イニシアチブを削除中…",
+    "opening": "イニシアチブ一覧を開いています…",
+    "failed": "イニシアチブを削除できませんでした",
+    "navigationFailed": "削除は完了しましたが、一覧を開けませんでした",
+    "retry": "削除を再試行",
+    "retryNavigation": "一覧を開く"
   }
 }

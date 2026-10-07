@@ -30,6 +30,7 @@ export function HealthUpdateComposer({
   confirmed = false,
   scope,
   onRetry,
+  bodyError,
 }: {
   opened: boolean;
   onClose: () => void;
@@ -50,6 +51,7 @@ export function HealthUpdateComposer({
   confirmed?: boolean;
   scope: string;
   onRetry: () => unknown;
+  bodyError?: string;
 }) {
   const { t } = useTranslation();
   const form = useRef<HTMLFormElement>(null);
@@ -61,17 +63,17 @@ export function HealthUpdateComposer({
     Boolean(active && form.current?.closest('[role="dialog"]')?.contains(active));
   const run = useActionFocusReturn(
     submitting,
-    () => (opened ? (retry() ?? textarea.current) : null),
+    () => (opened ? (bodyError ? textarea.current : (retry() ?? textarea.current)) : null),
     canRestore,
     `${scope}:${opened}`,
   );
   useEffect(() => {
     if (!opened || submitting || !error) return;
     const frame = requestAnimationFrame(() => {
-      if (canRestore(document.activeElement)) retry()?.focus();
+      if (canRestore(document.activeElement)) (bodyError ? textarea.current : retry())?.focus();
     });
     return () => cancelAnimationFrame(frame);
-  }, [opened, submitting, error, scope]);
+  }, [opened, submitting, error, scope, bodyError]);
   const close = () => {
     if (!submitting) onClose();
   };
@@ -85,7 +87,8 @@ export function HealthUpdateComposer({
       closeOnClickOutside={!submitting}
       closeButtonProps={{ disabled: submitting, style: { minWidth: 44, minHeight: 44 } }}
       onEnterTransitionEnd={() => {
-        if (opened && !submitting && error && canRestore(document.activeElement)) retry()?.focus();
+        if (opened && !submitting && error && canRestore(document.activeElement))
+          (bodyError ? textarea.current : retry())?.focus();
       }}
     >
       <form
@@ -106,6 +109,7 @@ export function HealthUpdateComposer({
             readOnly={submitting || confirmed}
           />
           <Textarea
+            error={bodyError}
             label={bodyLabel}
             placeholder={bodyPlaceholder}
             value={body}

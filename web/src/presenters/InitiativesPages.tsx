@@ -1,3 +1,5 @@
+import { useInitiativeEdits } from './useInitiativeEdits.ts';
+import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useHealthUpdateSubmission } from './useHealthUpdateSubmission.ts';
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
@@ -267,7 +269,7 @@ export function useInitiativesPagePresenter() {
 
 export function useInitiativeDetailPresenter() {
   const {
-    initiative,
+    initiative: sourceInitiative,
     projects,
     labels: workspaceLabels,
     activities,
@@ -277,13 +279,23 @@ export function useInitiativeDetailPresenter() {
   const { t } = useTranslation();
   const router = useRouter();
   const navigate = useNavigate();
-  const [name, setName] = useState(initiative.name);
-  const [description, setDescription] = useState(initiative.description);
-  const [status, setStatus] = useState<InitiativeStatus>(initiative.status);
-  const [color, setColor] = useState(initiative.color ?? 'purple');
-  const [startDate, setStartDate] = useState(initiative.startDate ?? '');
-  const [targetDate, setTargetDate] = useState(initiative.targetDate ?? '');
-  const [owner, setOwner] = useState(initiative.owner ?? '');
+  const editor = useInitiativeEdits({
+    source: sourceInitiative,
+    blocked: () => healthUpdate.isPending() || deletion.isPending() || deletion.isRemoved(),
+  });
+  const initiative = editor.entity;
+  const {
+    name,
+    description,
+    status,
+    color,
+    startDate,
+    targetDate,
+    owner,
+    priority,
+    labels,
+    projectSlugs,
+  } = editor;
   const [focusOwner, setFocusOwner] = useState(0);
   const [focusTargetDate, setFocusTargetDate] = useState(0);
   const [focusUpdates, setFocusUpdates] = useState(0);
@@ -295,7 +307,6 @@ export function useInitiativeDetailPresenter() {
     onSuccess: () => setReminderMenuOpen(false),
   });
   const [copied, setCopied] = useState(false);
-  const [priority, setPriority] = useState(initiative.priority ?? 0);
   const currentScope = useRef(initiative.slug);
   currentScope.current = initiative.slug;
   const [localUpdates, setLocalUpdates] = useState<{
@@ -309,12 +320,8 @@ export function useInitiativeDetailPresenter() {
     localUpdates?.scope === initiative.slug && localUpdates.initiative === initiative
       ? localUpdates.health
       : (initiative.health ?? '');
-  const [labels, setLabels] = useState(initiative.labels ?? []);
-  const [projectSlugs, setProjectSlugs] = useState(initiative.projectSlugs);
   const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
   const ownerSequenceSince = useRef<number | null>(null);
-  const mutationPending = useRef(false);
 
   const healthUpdate = useHealthUpdateSubmission({
     scope: initiative.slug,
@@ -381,53 +388,26 @@ export function useInitiativeDetailPresenter() {
 
   async function saveInitiative(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mutationPending.current || healthUpdate.isPending()) return;
-    mutationPending.current = true;
-    setSaving(true);
-    setError('');
-    try {
-      await api.patchInitiative(initiative.slug, {
-        name,
-        description,
-        status,
-        owner,
-        color,
-        priority,
-        labels,
-        ...(startDate ? { startDate } : { clearStartDate: true }),
-        ...(targetDate ? { targetDate } : { clearTargetDate: true }),
-        projectSlugs,
-      });
-      queryCache.invalidate();
-      await router.invalidate();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('common.error'));
-    } finally {
-      mutationPending.current = false;
-      setSaving(false);
-    }
+    return editor.save();
   }
-
-  async function deleteInitiative() {
-    if (mutationPending.current || healthUpdate.isPending()) return;
-    if (!window.confirm(t('initiatives.deleteConfirm'))) return;
-    mutationPending.current = true;
-    setSaving(true);
-    setError('');
-    try {
-      await api.deleteInitiative(initiative.slug);
+  const deletion = useRetriableRemoval({
+    scope: initiative.slug,
+    remove: async (slug) => {
+      await api.deleteInitiative(slug);
       queryCache.invalidate();
-      await navigate({ to: '/initiatives' });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('common.error'));
-      setSaving(false);
-    } finally {
-      mutationPending.current = false;
-    }
+    },
+    openList: () => navigate({ to: '/initiatives' }),
+    onRemoved: () => signals.dispatchEvent(new Event('kotowari:refresh')),
+  });
+  async function saveBeforeLeaving(signal: AbortSignal) {
+    if (editor.isPending() || healthUpdate.isPending() || deletion.isPending()) return;
+    const scope = initiative.slug;
+    if (editor.dirty && !(await editor.save())) return;
+    if (signal.aborted || currentScope.current !== scope) return;
+    if (healthUpdate.dirty) return healthUpdate.submit();
   }
-
   function openUpdate() {
-    if (mutationPending.current) return;
+    if (editor.isPending() || deletion.isPending() || deletion.isRemoved()) return;
     healthUpdate.open();
   }
 
@@ -535,7 +515,9 @@ export function useInitiativeDetailPresenter() {
     availableProjects: projects.map((project) => ({ value: project.slug, label: project.name })),
     linkedProjects: projects.filter((project) => projectSlugs.includes(project.slug)),
     error,
-    saving,
+    saving: editor.pending,
+    editor,
+    deletion,
     updateOpen: healthUpdate.opened,
     updateHealth: healthUpdate.health,
     updateBody: healthUpdate.body,
@@ -543,20 +525,34 @@ export function useInitiativeDetailPresenter() {
     updating: healthUpdate.pending,
     healthUpdate,
     handlers: {
-      onNameChange: (event: ChangeEvent<HTMLInputElement>) => setName(event.target.value),
+      onNameChange: (event: ChangeEvent<HTMLInputElement>) =>
+        editor.change('name', event.target.value),
       onDescriptionChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
-        setDescription(event.target.value),
-      onStatusChange: (value: string | null) => setStatus((value ?? 'planned') as InitiativeStatus),
-      onOwnerChange: (value: string | null) => setOwner((value ?? '') as '' | 'self'),
-      onColorChange: (value: string | null) => setColor(value ?? 'purple'),
-      onStartDateChange: (event: ChangeEvent<HTMLInputElement>) => setStartDate(event.target.value),
+        editor.change('description', event.target.value),
+      onStatusChange: (value: string | null) =>
+        editor.change('status', (value ?? 'planned') as InitiativeStatus),
+      onOwnerChange: (value: string | null) => editor.change('owner', (value ?? '') as '' | 'self'),
+      onColorChange: (value: string | null) => editor.change('color', value ?? 'purple'),
+      onStartDateChange: (event: ChangeEvent<HTMLInputElement>) =>
+        editor.change('startDate', event.target.value),
       onTargetDateChange: (event: ChangeEvent<HTMLInputElement>) =>
-        setTargetDate(event.target.value),
-      onPriorityChange: (value: string | null) => setPriority(Number(value ?? 0)),
-      onLabelsChange: setLabels,
-      onProjectSlugsChange: setProjectSlugs,
+        editor.change('targetDate', event.target.value),
+      onPriorityChange: (value: string | null) => editor.change('priority', Number(value ?? 0)),
+      onLabelsChange: (value: string[]) => editor.change('labels', value),
+      onProjectSlugsChange: (value: string[]) => editor.change('projectSlugs', value),
       onSubmit: saveInitiative,
-      onDelete: deleteInitiative,
+      onDelete: () => {
+        if (!editor.isPending() && !healthUpdate.isPending()) {
+          healthUpdate.close();
+          deletion.request();
+        }
+      },
+      onCloseDeletion: deletion.close,
+      onConfirmDeletion: () => {
+        if (!editor.isPending() && !healthUpdate.isPending()) return deletion.confirm();
+      },
+      onSaveBeforeLeaving: saveBeforeLeaving,
+      onRetrySave: editor.save,
       onBack: () => void navigate({ to: '/initiatives' }),
       onOpenUpdate: openUpdate,
       onToggleFavorite: toggleFavorite,

@@ -700,7 +700,7 @@ export function useProjectDetailPagePresenter() {
             return;
         if (signal?.aborted || token !== saveGeneration.current || saveScope.current !== slug)
           return;
-        if (healthUpdate.body || healthUpdate.confirmed) return healthUpdate.submit();
+        if (healthUpdate.dirty) return healthUpdate.submit();
       },
       onRetryProjectSave: () => {
         if (pendingProjectSaves.current > 0 || !failedProjectPatch.current) return;

@@ -987,3 +987,25 @@ v1.7.12 passes and a dry run confirms the shard flag reaches Playwright. Listing
 the suite and comparing all shard identifiers verifies every browser case occurs
 exactly once. The next remote run must verify runtime coverage and remaining
 navigation failures; dividing execution does not establish that they are fixed.
+
+
+## Initiative editing and update draft navigation
+
+Initiative property editing now separates editable drafts from server baselines,
+reconciles untouched fields after refresh, patches only changed properties and
+retains confirmed saves for read-only refresh recovery. Shared save feedback,
+navigation protection and deletion confirmation replace page-specific handling.
+Health-only drafts now participate in navigation protection; missing update text
+produces a validation message rather than leaving navigation waiting.
+
+The final combined 27-case browser run passes without retries, including ten
+initiative editing/update navigation cases and seventeen existing contrast cases.
+The preceding related run passed twenty-nine cases; its three failures were test
+locator ambiguity and a desktop-only navigation trigger mismatch, repaired before
+the final run. Mandatory web:check and build pass (2469 matching locale keys).
+Additional same-slug late operations and validation focus transitions still need
+direct verification. Overall UI/UX remains Partial.
+
+Remote CI 37684233236 completed with browser failures in milestone/dependency
+navigation. Demo 37684233092 succeeded. Sharding completed but did not establish
+that those navigation failures are fixed; their remote reports need diagnosis.
