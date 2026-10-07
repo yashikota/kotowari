@@ -23,7 +23,7 @@ describe('WCAG color foundations', () => {
         expect(
           contrastRatio(scheme[`--mantine-color-${name}-text`]!, background),
           name,
-        ).toBeGreaterThanOrEqual(4.5);
+        ).toBeGreaterThanOrEqual(7);
         expect(
           contrastRatio(scheme[`--mantine-color-${name}-filled`]!, '#ffffff'),
           name,

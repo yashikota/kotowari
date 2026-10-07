@@ -67,8 +67,8 @@ export const theme = themeForFontSize('default');
 /** Shared semantic colors meet AA on the supported surfaces and hover backgrounds. */
 export const cssVariablesForTheme: CSSVariablesResolver = (theme) => {
   const light: Record<string, string> = {
-    '--mantine-color-dimmed': '#495057',
-    '--mantine-color-placeholder': '#495057',
+    '--mantine-color-dimmed': '#343a40',
+    '--mantine-color-placeholder': '#343a40',
     '--mantine-color-error': '#a61e4d',
     '--mantine-color-anchor': '#3c478f',
     '--mantine-color-default-border': '#737b83',
@@ -77,8 +77,8 @@ export const cssVariablesForTheme: CSSVariablesResolver = (theme) => {
   };
   const dark: Record<string, string> = {
     '--mantine-color-text': '#f1f3f5',
-    '--mantine-color-dimmed': '#c1c2c5',
-    '--mantine-color-placeholder': '#c1c2c5',
+    '--mantine-color-dimmed': '#dee2e6',
+    '--mantine-color-placeholder': '#dee2e6',
     '--mantine-color-error': '#ffa8a8',
     '--mantine-color-anchor': '#c7cbef',
     '--mantine-color-default-border': '#a6a7ab',
@@ -87,8 +87,8 @@ export const cssVariablesForTheme: CSSVariablesResolver = (theme) => {
   };
   for (const [name, palette] of Object.entries(theme.colors)) {
     if (name === 'dark') continue;
-    const lightText = accessibleColor(palette[8], '#e2e2e2');
-    const darkText = accessibleColor(palette[3], '#424242');
+    const lightText = accessibleColor(palette[8], '#e2e2e2', 7);
+    const darkText = accessibleColor(palette[3], '#424242', 7);
     const filled = accessibleColor(palette[6], '#ffffff');
     const filledHover = accessibleColor(palette[7], '#ffffff');
     for (const scheme of [light, dark]) {
