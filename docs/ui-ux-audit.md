@@ -942,3 +942,48 @@ The remaining ring track uses the shared control boundary token. Two additional
 browser cases verify actual ring stroke/background contrast >=3:1 in both schemes,
 including white, black and yellow labels, and keep the percentage text visible.
 Both rendered schemes were inspected. Mandatory web:check and build pass.
+
+## Shared health update submission and recovery
+
+Project and initiative health updates now share a scoped submission controller
+and composer. Pending posts block closing and duplicate writes; read-only fields
+retain readable semantic foregrounds. Cancel/reopen retains health and body.
+Failure offers the shared retry feedback and restores retry focus, including
+reopening an error dialog. Confirmed posts remain in the local feed if refresh
+fails, with read-only recovery that retries only reads. Initiative feed refresh
+does not reload the whole route or overwrite independent property drafts.
+Successful completion announces posting in the shared feed.
+
+Project navigation now includes update-body drafts and confirmed refresh recovery.
+Sequential saving includes the health post after property, milestone and dependency
+work, respecting cancellation before later operations. A pending post hands off
+to one navigation dialog, and staying restores the composer and its retry focus.
+Generation guards protect late completion; initiative navigation protection for
+its full property form and update drafts still needs implementation/verification.
+Health-only navigation drafts and further late-refresh transitions also remain
+direct-verification gaps. Overall UI/UX stays Partial.
+
+The final related 63-case browser run passes without retries. It initially exposed
+new initiative fixtures leaking into an existing empty-state case; scoped cleanup
+fixed the isolation and the complete related run passed. The final 12-case health
+suite also passes, including two additional pending navigation handoff cases.
+Four navigation feedback unit cases, mandatory web:check and build pass with
+2443 matching locale keys. Both rendered schemes and mobile large-text failure
+dialogs were inspected; covered composer states pass rendered contrast checks.
+
+## Complete browser CI within bounded jobs
+
+CI 37664584821 completed Check successfully but its combined Unit test job was
+canceled at the 25-minute limit during Playwright. Its annotations include
+milestone/dependency navigation failures; those cases pass locally, but remote
+failure diagnosis is not considered complete. No full-CI success is claimed.
+
+Browser regression now runs in four independent jobs with fail-fast disabled,
+separate report artifacts and an always-run upload step. Browser execution has
+a 20-minute step limit inside a 30-minute job, leaving time to retain evidence.
+Go/SPA tests remain a separate Unit test job. Task web:e2e accepts CLI arguments
+without removing its build dependency or flaky-test failure gate. Actionlint
+v1.7.12 passes and a dry run confirms the shard flag reaches Playwright. Listing
+the suite and comparing all shard identifiers verifies every browser case occurs
+exactly once. The next remote run must verify runtime coverage and remaining
+navigation failures; dividing execution does not establish that they are fixed.

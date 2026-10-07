@@ -12,6 +12,21 @@ const idle = {
 };
 
 describe('project navigation feedback', () => {
+  it('describes health posting and refresh recovery', () => {
+    expect(
+      projectNavigationFeedback({
+        ...idle,
+        healthUpdate: { pending: true, confirmed: false, error: '' },
+      }).savingLabel,
+    ).toBe('healthUpdate.posting');
+    const feedback = projectNavigationFeedback({
+      ...idle,
+      healthUpdate: { pending: true, confirmed: true, error: 'Read unavailable' },
+    });
+    expect(feedback.savingLabel).toBe('healthUpdate.refreshing');
+    expect(feedback.failureLabel).toBe('healthUpdate.refreshFailed');
+    expect(feedback.error).toBe('Read unavailable');
+  });
   it('describes the actual write and confirmed refresh stage', () => {
     expect(
       projectNavigationFeedback({

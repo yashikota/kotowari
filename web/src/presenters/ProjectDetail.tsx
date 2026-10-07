@@ -1,4 +1,5 @@
 import { useProjectDependencyChanges } from './useProjectDependencyChanges.ts';
+import { useHealthUpdateSubmission } from './useHealthUpdateSubmission.ts';
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useClipboardCopy } from './useClipboardCopy.ts';
 import { useMilestoneEdits } from './useMilestoneEdits.ts';
@@ -140,11 +141,6 @@ export function useProjectDetailPagePresenter() {
   const [dependencyKind, setDependencyKind] = useState<'blocks' | 'blocked_by' | 'related'>(
     'blocks',
   );
-  const [projectUpdateOpen, setProjectUpdateOpen] = useState(false);
-  const [projectUpdateHealth, setProjectUpdateHealth] = useState<ProjectHealth>(
-    project.health ?? 'on_track',
-  );
-  const [projectUpdateBody, setProjectUpdateBody] = useState('');
   const [projectTemplateOpen, setProjectTemplateOpen] = useState(false);
   const [projectTemplateName, setProjectTemplateName] = useState('');
   const [projectTemplateError, setProjectTemplateError] = useState('');
@@ -345,9 +341,6 @@ export function useProjectDetailPagePresenter() {
     setSelected(null);
     setDependencyProjectSlug('');
     setDependencyKind('blocks');
-    setProjectUpdateHealth(data.project.health ?? 'on_track');
-    setProjectUpdateBody('');
-    setProjectUpdateOpen(false);
     setReminderMenuOpen(false);
     setProjectActionsOpen(false);
   }
@@ -481,6 +474,23 @@ export function useProjectDetailPagePresenter() {
     persistedDescription.current = { slug, value: next.description };
   }
 
+  const healthUpdate = useHealthUpdateSubmission({
+    scope: slug,
+    initialHealth: project.health ?? 'on_track',
+    post: (health, body) => api.postProjectUpdate(slug, health, body),
+    onConfirmed: (activity) => {
+      if (saveScope.current !== slug) return;
+      const health = activity.payload.health;
+      if (health === 'on_track' || health === 'at_risk' || health === 'off_track')
+        setProject((current) => ({ ...current, health }));
+      setProjectActivities((current) => [
+        activity,
+        ...current.filter((item) => item.id !== activity.id),
+      ]);
+    },
+    refresh: refreshProject,
+  });
+
   const dependencyChanges = useProjectDependencyChanges({
     scope: slug,
     onConfirmed: (change) => {
@@ -566,7 +576,8 @@ export function useProjectDetailPagePresenter() {
           archive.isPending() ||
           milestoneEdits.isPending() ||
           milestoneCreation.isPending() ||
-          dependencyChanges.isPending()
+          dependencyChanges.isPending() ||
+          healthUpdate.isPending()
         )
           return;
         return deletion.confirm();
@@ -596,9 +607,10 @@ export function useProjectDetailPagePresenter() {
         message: describeProjectActivity(activity, data.projects, projectWorkflowStatuses),
         createdAt: activity.createdAt,
       })),
-    projectUpdateOpen,
-    projectUpdateHealth,
-    projectUpdateBody,
+    projectUpdateOpen: healthUpdate.opened,
+    projectUpdateHealth: healthUpdate.health,
+    projectUpdateBody: healthUpdate.body,
+    healthUpdate,
     projectTemplateOpen,
     projectTemplateName,
     projectTemplateError,
@@ -650,6 +662,7 @@ export function useProjectDetailPagePresenter() {
           milestoneEdits.isPending() ||
           milestoneCreation.isPending() ||
           dependencyChanges.isPending() ||
+          healthUpdate.isPending() ||
           milestoneRemoval.isPending() ||
           deletion.isPending() ||
           deletion.isRemoved()
@@ -675,12 +688,19 @@ export function useProjectDetailPagePresenter() {
           if (!(await createMilestone())) return;
         if (signal?.aborted || token !== saveGeneration.current || saveScope.current !== slug)
           return;
-        if (dependencyChanges.needsRecovery()) return dependencyChanges.retry();
-        if (dependencyProjectSlug)
-          return dependencyChanges.write({
-            action: 'add',
-            dependency: { projectSlug: dependencyProjectSlug, kind: dependencyKind },
-          });
+        if (dependencyChanges.needsRecovery()) {
+          if (!(await dependencyChanges.retry())) return;
+        } else if (dependencyProjectSlug)
+          if (
+            !(await dependencyChanges.write({
+              action: 'add',
+              dependency: { projectSlug: dependencyProjectSlug, kind: dependencyKind },
+            }))
+          )
+            return;
+        if (signal?.aborted || token !== saveGeneration.current || saveScope.current !== slug)
+          return;
+        if (healthUpdate.body || healthUpdate.confirmed) return healthUpdate.submit();
       },
       onRetryProjectSave: () => {
         if (pendingProjectSaves.current > 0 || !failedProjectPatch.current) return;
@@ -714,24 +734,13 @@ export function useProjectDetailPagePresenter() {
       onProjectHealthChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
         save({ health: e.target.value === 'none' ? '' : e.target.value }),
       onOpenProjectUpdate: () => {
-        setProjectUpdateHealth(project.health ?? 'on_track');
-        setProjectUpdateBody('');
-        setProjectUpdateOpen(true);
+        if (pendingProjectSaves.current > 0 || deletion.isPending() || deletion.isRemoved()) return;
+        healthUpdate.open();
       },
-      onCloseProjectUpdate: () => setProjectUpdateOpen(false),
-      onProjectUpdateHealthChange: (value: string | null) =>
-        setProjectUpdateHealth((value ?? 'on_track') as ProjectHealth),
-      onProjectUpdateBodyChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
-        setProjectUpdateBody(e.target.value),
-      onSubmitProjectUpdate: async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const body = projectUpdateBody.trim();
-        if (!body) return;
-        await api.postProjectUpdate(slug, projectUpdateHealth, body);
-        setProjectUpdateOpen(false);
-        setProjectUpdateBody('');
-        await refreshProject();
-      },
+      onCloseProjectUpdate: healthUpdate.close,
+      onProjectUpdateHealthChange: healthUpdate.changeHealth,
+      onProjectUpdateBodyChange: healthUpdate.changeBody,
+      onSubmitProjectUpdate: healthUpdate.onSubmit,
       onOpenProjectTemplate: () => {
         setProjectTemplateName(project.name);
         setProjectTemplateError('');
@@ -791,7 +800,8 @@ export function useProjectDetailPagePresenter() {
           archive.isPending() ||
           milestoneEdits.isPending() ||
           milestoneCreation.isPending() ||
-          dependencyChanges.isPending()
+          dependencyChanges.isPending() ||
+          healthUpdate.isPending()
         )
           return;
         setProjectActionsOpen(false);
@@ -804,11 +814,12 @@ export function useProjectDetailPagePresenter() {
           archive.isPending() ||
           milestoneEdits.isPending() ||
           milestoneCreation.isPending() ||
-          dependencyChanges.isPending()
+          dependencyChanges.isPending() ||
+          healthUpdate.isPending()
         )
           return;
         setProjectActionsOpen(false);
-        setProjectUpdateOpen(false);
+        healthUpdate.close();
         setProjectTemplateOpen(false);
         setReminderMenuOpen(false);
         reminderEditor.close();
@@ -854,6 +865,7 @@ export function useProjectDetailPagePresenter() {
           milestoneEdits.isPending() ||
           milestoneCreation.isPending() ||
           dependencyChanges.isPending() ||
+          healthUpdate.isPending() ||
           milestoneRemoval.isPending() ||
           deletion.isPending() ||
           deletion.isRemoved()

@@ -324,9 +324,16 @@ export function InitiativeDetailPageView({
               {t('initiativeUpdates.postButton')}
             </Button>
           </Group>
-          <HealthUpdateFeed updates={updates} emptyLabel={t('initiativeUpdates.empty')} />
+          <HealthUpdateFeed
+            updates={updates}
+            emptyLabel={t('initiativeUpdates.empty')}
+            posted={model.healthUpdate.saved}
+          />
         </Stack>
         <HealthUpdateComposer
+          scope={initiative.slug}
+          confirmed={model.healthUpdate.confirmed}
+          onRetry={model.healthUpdate.submit}
           opened={updateOpen}
           onClose={handlers.onCloseUpdate}
           title={t('initiativeUpdates.modalTitle')}

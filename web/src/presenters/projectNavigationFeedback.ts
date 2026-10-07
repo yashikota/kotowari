@@ -7,6 +7,7 @@ type Model = {
   milestoneEdits: { pending: boolean; error: string };
   projectSaving: boolean;
   projectSaveError: string;
+  healthUpdate?: { pending: boolean; confirmed: boolean; error: string };
 };
 
 /** Keep the operation label and failure description aligned across navigation states. */
@@ -38,6 +39,10 @@ export function projectNavigationFeedback(model: Model) {
     },
     { pending: model.milestoneEdits.pending, key: 'milestoneSave.saving' },
     { pending: model.projectSaving, key: 'projectSave.saving' },
+    {
+      pending: model.healthUpdate?.pending,
+      key: model.healthUpdate?.confirmed ? 'healthUpdate.refreshing' : 'healthUpdate.posting',
+    },
   ];
   const failures = [
     { error: model.projectSaveError, key: 'projectSave.failed' },
@@ -55,6 +60,10 @@ export function projectNavigationFeedback(model: Model) {
         : 'dependencySave.failed',
     },
   ];
+  failures.push({
+    error: model.healthUpdate?.error ?? '',
+    key: model.healthUpdate?.confirmed ? 'healthUpdate.refreshFailed' : 'healthUpdate.failed',
+  });
   const failure = failures.find((item) => item.error);
   return {
     savingLabel: operations.find((item) => item.pending)?.key ?? 'projectSave.saving',

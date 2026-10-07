@@ -1,4 +1,5 @@
 import { useReminderEditor } from './useReminderEditor.ts';
+import { useHealthUpdateSubmission } from './useHealthUpdateSubmission.ts';
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useMemo, useRef, useState } from 'react';
@@ -25,7 +26,7 @@ import {
   type SearchDateFilter,
 } from '../search.ts';
 import { useProjectWorkflow } from '../project-workflow.tsx';
-import type { Initiative, InitiativeStatus, ProjectHealth } from '../types.ts';
+import type { Activity, Initiative, InitiativeStatus, ProjectHealth } from '../types.ts';
 import type { HealthUpdateItem } from '../components/HealthUpdateFeed.tsx';
 import { useKeyboard, useRootMachineFlag } from '../application/Root.tsx';
 import {
@@ -295,20 +296,68 @@ export function useInitiativeDetailPresenter() {
   });
   const [copied, setCopied] = useState(false);
   const [priority, setPriority] = useState(initiative.priority ?? 0);
-  const health = initiative.health ?? '';
+  const currentScope = useRef(initiative.slug);
+  currentScope.current = initiative.slug;
+  const [localUpdates, setLocalUpdates] = useState<{
+    scope: string;
+    base: Activity[];
+    items: Activity[];
+    health: ProjectHealth | '';
+    initiative: Initiative;
+  } | null>(null);
+  const health =
+    localUpdates?.scope === initiative.slug && localUpdates.initiative === initiative
+      ? localUpdates.health
+      : (initiative.health ?? '');
   const [labels, setLabels] = useState(initiative.labels ?? []);
   const [projectSlugs, setProjectSlugs] = useState(initiative.projectSlugs);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [updateOpen, setUpdateOpen] = useState(false);
-  const [updateHealth, setUpdateHealth] = useState<ProjectHealth>(initiative.health ?? 'on_track');
-  const [updateBody, setUpdateBody] = useState('');
-  const [updateError, setUpdateError] = useState('');
-  const [updating, setUpdating] = useState(false);
   const ownerSequenceSince = useRef<number | null>(null);
   const mutationPending = useRef(false);
 
-  const updates: HealthUpdateItem[] = activities.flatMap((activity) => {
+  const healthUpdate = useHealthUpdateSubmission({
+    scope: initiative.slug,
+    initialHealth: health || 'on_track',
+    post: (value, body) => api.postInitiativeUpdate(initiative.slug, value, body),
+    onConfirmed: (activity) => {
+      const value = activity.payload.health;
+      if (value !== 'on_track' && value !== 'at_risk' && value !== 'off_track') return;
+      setLocalUpdates((current) => ({
+        scope: initiative.slug,
+        base: activities,
+        initiative,
+        health: value,
+        items: [
+          activity,
+          ...(current?.scope === initiative.slug && current.base === activities
+            ? current.items
+            : activities
+          ).filter((item) => item.id !== activity.id),
+        ],
+      }));
+      queryCache.invalidate();
+    },
+    refresh: async (isCurrent) => {
+      const [next, items] = await Promise.all([
+        api.initiative(initiative.slug),
+        api.initiativeActivities(initiative.slug),
+      ]);
+      if (currentScope.current !== initiative.slug || !isCurrent()) return;
+      setLocalUpdates({
+        scope: initiative.slug,
+        base: activities,
+        initiative,
+        health: next.health ?? '',
+        items,
+      });
+    },
+  });
+  const effectiveActivities =
+    localUpdates?.scope === initiative.slug && localUpdates.base === activities
+      ? localUpdates.items
+      : activities;
+  const updates: HealthUpdateItem[] = effectiveActivities.flatMap((activity) => {
     if (activity.action !== 'status_update_posted') return [];
     const activityHealth = activity.payload.health;
     const body = activity.payload.body;
@@ -332,7 +381,7 @@ export function useInitiativeDetailPresenter() {
 
   async function saveInitiative(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mutationPending.current) return;
+    if (mutationPending.current || healthUpdate.isPending()) return;
     mutationPending.current = true;
     setSaving(true);
     setError('');
@@ -359,27 +408,8 @@ export function useInitiativeDetailPresenter() {
     }
   }
 
-  async function postUpdate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const body = updateBody.trim();
-    if (updating || !body) return;
-    setUpdating(true);
-    setUpdateError('');
-    try {
-      await api.postInitiativeUpdate(initiative.slug, updateHealth, body);
-      queryCache.invalidate();
-      await router.invalidate();
-      setUpdateOpen(false);
-      setUpdateBody('');
-    } catch (cause) {
-      setUpdateError(cause instanceof Error ? cause.message : t('common.error'));
-    } finally {
-      setUpdating(false);
-    }
-  }
-
   async function deleteInitiative() {
-    if (mutationPending.current) return;
+    if (mutationPending.current || healthUpdate.isPending()) return;
     if (!window.confirm(t('initiatives.deleteConfirm'))) return;
     mutationPending.current = true;
     setSaving(true);
@@ -397,10 +427,8 @@ export function useInitiativeDetailPresenter() {
   }
 
   function openUpdate() {
-    setUpdateHealth(health || 'on_track');
-    setUpdateBody('');
-    setUpdateError('');
-    setUpdateOpen(true);
+    if (mutationPending.current) return;
+    healthUpdate.open();
   }
 
   async function toggleFavorite() {
@@ -508,11 +536,12 @@ export function useInitiativeDetailPresenter() {
     linkedProjects: projects.filter((project) => projectSlugs.includes(project.slug)),
     error,
     saving,
-    updateOpen,
-    updateHealth,
-    updateBody,
-    updateError,
-    updating,
+    updateOpen: healthUpdate.opened,
+    updateHealth: healthUpdate.health,
+    updateBody: healthUpdate.body,
+    updateError: healthUpdate.error,
+    updating: healthUpdate.pending,
+    healthUpdate,
     handlers: {
       onNameChange: (event: ChangeEvent<HTMLInputElement>) => setName(event.target.value),
       onDescriptionChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
@@ -541,12 +570,10 @@ export function useInitiativeDetailPresenter() {
       onCopyInitiativeId: copyInitiativeId,
       onCopyInitiativeURL: copyInitiativeURL,
       onCopyInitiativeTitle: copyInitiativeTitle,
-      onCloseUpdate: () => setUpdateOpen(false),
-      onUpdateHealthChange: (value: string | null) =>
-        setUpdateHealth((value ?? 'on_track') as ProjectHealth),
-      onUpdateBodyChange: (event: ChangeEvent<HTMLTextAreaElement>) =>
-        setUpdateBody(event.currentTarget.value),
-      onSubmitUpdate: postUpdate,
+      onCloseUpdate: healthUpdate.close,
+      onUpdateHealthChange: healthUpdate.changeHealth,
+      onUpdateBodyChange: healthUpdate.changeBody,
+      onSubmitUpdate: healthUpdate.onSubmit,
       onProjectOpen: (slug: string) => void navigate({ to: '/projects/$slug', params: { slug } }),
     },
   };

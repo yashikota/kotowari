@@ -15,9 +15,11 @@ export type HealthUpdateItem = {
 export function HealthUpdateFeed({
   updates,
   emptyLabel,
+  posted = false,
 }: {
   updates: HealthUpdateItem[];
   emptyLabel: string;
+  posted?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   if (updates.length === 0) {
@@ -29,31 +31,38 @@ export function HealthUpdateFeed({
   }
 
   return (
-    <Stack component="ol" gap="sm" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-      {updates.map((update) => {
-        const date = new Date(update.createdAt);
-        const timestamp = Number.isNaN(date.getTime())
-          ? update.createdAt
-          : new Intl.DateTimeFormat(i18n.language, {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            }).format(date);
-        return (
-          <Card component="li" key={update.id} withBorder padding="sm" radius="sm">
-            <Stack gap="xs">
-              <Group justify="space-between" gap="md" wrap="wrap">
-                <Badge variant="light" color={healthColor(update.health)}>
-                  {t(`projectHealth.status.${update.health}`)}
-                </Badge>
-                <Text component="time" dateTime={update.createdAt} size="xs" c="dimmed">
-                  {timestamp}
-                </Text>
-              </Group>
-              <MarkdownContent html={renderMarkdown(update.body)} />
-            </Stack>
-          </Card>
-        );
-      })}
+    <Stack gap="sm">
+      {posted && (
+        <Text role="status" size="sm" c="dimmed">
+          {t('healthUpdate.posted')}
+        </Text>
+      )}
+      <Stack component="ol" gap="sm" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        {updates.map((update) => {
+          const date = new Date(update.createdAt);
+          const timestamp = Number.isNaN(date.getTime())
+            ? update.createdAt
+            : new Intl.DateTimeFormat(i18n.language, {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              }).format(date);
+          return (
+            <Card component="li" key={update.id} withBorder padding="sm" radius="sm">
+              <Stack gap="xs">
+                <Group justify="space-between" gap="md" wrap="wrap">
+                  <Badge variant="light" color={healthColor(update.health)}>
+                    {t(`projectHealth.status.${update.health}`)}
+                  </Badge>
+                  <Text component="time" dateTime={update.createdAt} size="xs" c="dimmed">
+                    {timestamp}
+                  </Text>
+                </Group>
+                <MarkdownContent html={renderMarkdown(update.body)} />
+              </Stack>
+            </Card>
+          );
+        })}
+      </Stack>
     </Stack>
   );
 }

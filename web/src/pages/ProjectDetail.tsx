@@ -87,13 +87,16 @@ export function ProjectDetailPageView({
       (model.hasUnsavedText ||
         model.milestoneEdits.dirty ||
         model.milestoneCreation.dirty ||
-        model.dependencyChanges.dirty) &&
+        model.dependencyChanges.dirty ||
+        Boolean(model.healthUpdate.body) ||
+        model.healthUpdate.confirmed) &&
       !model.deletion.confirmed,
     pending:
       model.projectSaving ||
       model.milestoneEdits.pending ||
       model.milestoneCreation.pending ||
       model.dependencyChanges.pending ||
+      model.healthUpdate.pending ||
       model.milestoneRemoval.pending ||
       (model.deletion.pending && !model.deletion.confirmed),
     error: navigationFeedback.error,
@@ -355,6 +358,7 @@ export function ProjectDetailPageView({
                     ariaLabel={t('projectUpdates.heading')}
                   >
                     <HealthUpdateFeed
+                      posted={model.healthUpdate.saved}
                       updates={projectUpdates}
                       emptyLabel={t('projectUpdates.empty')}
                     />
@@ -634,7 +638,12 @@ export function ProjectDetailPageView({
             }
           />
           <HealthUpdateComposer
-            opened={projectUpdateOpen}
+            scope={project.slug}
+            error={model.healthUpdate.error}
+            submitting={model.healthUpdate.pending}
+            confirmed={model.healthUpdate.confirmed}
+            onRetry={model.healthUpdate.submit}
+            opened={projectUpdateOpen && !navigation.opened}
             onClose={handlers.onCloseProjectUpdate}
             title={t('projectUpdates.modalTitle')}
             onSubmit={handlers.onSubmitProjectUpdate}

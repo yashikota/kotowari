@@ -2606,5 +2606,14 @@
     "refreshing": "Refreshing project…",
     "refreshFailed": "Milestone deleted, but project refresh failed",
     "refreshDescription": "The milestone has been deleted. Refresh the project to finish updating this screen."
+  },
+  "healthUpdate": {
+    "posting": "Posting update…",
+    "posted": "Update posted",
+    "failed": "Could not post update",
+    "retry": "Retry posting",
+    "refreshing": "Refreshing updates…",
+    "refreshFailed": "Update posted, but refresh failed",
+    "retryRefresh": "Retry refresh"
   }
 }
