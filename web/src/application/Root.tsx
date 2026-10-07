@@ -310,8 +310,7 @@ export function Root({
         initiativeCreatePendingSince = null;
         globalNavigationPendingSince = null;
         quickOpenPendingSince = null;
-        event.preventDefault();
-        mediator.open('none');
+        // The dialog owns dismissal, including its pending-operation guards.
         return;
       }
       if (dialog) {

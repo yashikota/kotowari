@@ -3,17 +3,7 @@ import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Box,
-  Button,
-  Group,
-  NativeSelect,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Box, Button, Group, NativeSelect, Stack, Text, TextInput, Title } from '@mantine/core';
 
 import { AIPanel } from '../components/AIPanel.tsx';
 import { DocumentEditor } from '../components/DocumentEditor.tsx';
@@ -164,7 +154,6 @@ export function ADRDetailPageView({
         projects,
         adr,
         linkNumber,
-        error,
         linked,
         unlinked,
         sandbox,
@@ -250,11 +239,6 @@ export function ADRDetailPageView({
                 retryLabel={t('pageProperties.retryLoad')}
                 onRetry={handlers.onRetryPropertyOptions}
               />
-              {error ? (
-                <Alert color="red" variant="light" role="alert">
-                  {error}
-                </Alert>
-              ) : null}
               <DocumentTitle
                 disabled={editingDisabled}
                 ref={titleRef}

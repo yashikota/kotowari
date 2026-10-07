@@ -125,6 +125,18 @@ test('sidebar Current and Upcoming open their cycle details directly', async ({
   expect(upcomingResponse.ok(), await upcomingResponse.text()).toBeTruthy();
   const upcoming = (await upcomingResponse.json()) as { number: number };
 
+  // Other browser cases and schedule creation share the server's cycle store.
+  // Keep this navigation fixture independent of their earlier upcoming cycles.
+  const fixtures = (await (await request.get('/api/cycles')).json()) as { number: number }[];
+  await page.route('**/api/cycles', (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({
+      json: fixtures.filter(
+        (cycle) => cycle.number === current.number || cycle.number === upcoming.number,
+      ),
+    });
+  });
+
   await page.goto('/cycles');
   const cycleNavigation = page.getByRole('group', { name: 'Cycle navigation' });
   const currentLink = cycleNavigation.getByRole('link', { name: 'Current', exact: true });

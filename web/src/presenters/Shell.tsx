@@ -1,4 +1,3 @@
-import { isSubmitShortcut } from '../keymap.ts';
 import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +32,7 @@ import { useShellPalette } from './useShellPalette.ts';
 import { useShellCycleNavigation } from './useShellCycleNavigation.ts';
 import { useShellIssueComposer } from './useShellIssueComposer.ts';
 import { useShellPageComposer } from './useShellPageComposer.ts';
+import { useShellADRComposer } from './useShellADRComposer.ts';
 
 function issueNumberFromIdent(id: string | null): number | undefined {
   if (!id) {
@@ -128,8 +128,7 @@ export function useShellPresenter() {
   const setHelpOpen = setOverlay('help');
   const [projects, setProjects] = useState<Project[]>([]);
   const pageComposer = useShellPageComposer(setCreatePage);
-  const [adrTitle, setAdrTitle] = useState('');
-  const [adrLinkIssue, setAdrLinkIssue] = useState<number | undefined>(undefined);
+  const adrComposer = useShellADRComposer(setCreateADR);
   const [error, setError] = useState('');
   const [focusedIssue, setFocusedIssue] = useState<string | null>(null);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
@@ -165,11 +164,6 @@ export function useShellPresenter() {
   } = issueComposerState;
   const { issueWorkflowStatuses } = issueComposerData;
   useIntentHandler('issue.focus', (value) => setFocusedIssue(value as string | null));
-  useIntentHandler('adr.create', (value) => {
-    const detail = (value ?? {}) as { issueNumber?: number };
-    setAdrLinkIssue(detail.issueNumber);
-    setCreateADR(true);
-  });
   const currentIdentifier =
     pathname.startsWith('/issues/') && pathname.slice('/issues/'.length).length > 0
       ? pathname.slice('/issues/'.length)
@@ -242,10 +236,11 @@ export function useShellPresenter() {
           openCreateIssue();
           return;
         case 'new-adr':
-          setAdrLinkIssue(
-            pathname.startsWith('/issues/') ? issueNumberFromIdent(currentIdentifier) : undefined,
-          );
-          setCreateADR(true);
+          adrComposer.openCreateADR({
+            issueNumber: pathname.startsWith('/issues/')
+              ? issueNumberFromIdent(currentIdentifier)
+              : undefined,
+          });
           return;
         case 'new-page':
           pageComposer.openCreatePage();
@@ -416,7 +411,7 @@ export function useShellPresenter() {
       setPaletteOpen(false);
       mediator.setQuickOpenTarget(null);
       closeCreateIssue();
-      setCreateADR(false);
+      adrComposer.closeCreateADR();
       setCreatePage(false);
       setHelpOpen(false);
       return true;
@@ -465,10 +460,11 @@ export function useShellPresenter() {
     }
     if (action === 'new-adr') {
       e.preventDefault();
-      setAdrLinkIssue(
-        pathname.startsWith('/issues/') ? issueNumberFromIdent(currentIdentifier) : undefined,
-      );
-      setCreateADR(true);
+      adrComposer.openCreateADR({
+        issueNumber: pathname.startsWith('/issues/')
+          ? issueNumberFromIdent(currentIdentifier)
+          : undefined,
+      });
     }
     if (action === 'status' && currentIdentifier) {
       e.preventDefault();
@@ -486,28 +482,6 @@ export function useShellPresenter() {
 
     return e.defaultPrevented;
   });
-
-  useIntentHandler('submit:ADR', submitADR);
-
-  async function submitADR() {
-    const title = adrTitle.trim();
-    if (!title) {
-      return;
-    }
-    const adr = await api.createADR({
-      title,
-      issueNumbers: adrLinkIssue ? [adrLinkIssue] : [],
-    });
-    setAdrTitle('');
-    setAdrLinkIssue(undefined);
-    setCreateADR(false);
-    await router.invalidate();
-    await navigate({
-      to: '/adrs/$identifier',
-      params: { identifier: adr.identifier },
-      state: { autofocus: 'title' },
-    });
-  }
 
   const cycleNavigationState = useShellCycleNavigation({
     pathname,
@@ -562,8 +536,7 @@ export function useShellPresenter() {
     helpOpen,
     projects,
     ...pageComposer.data,
-    adrTitle,
-    adrLinkIssue,
+    ...adrComposer.data,
     error: error || workspaceError,
     handlers: {
       ...cycleNavigationHandlers,
@@ -576,7 +549,7 @@ export function useShellPresenter() {
             : [...favorites, issueView],
         });
       },
-      submitADR: () => send('submit:ADR'),
+      ...adrComposer.handlers,
       ...pageComposer.handlers,
       onClick0: () =>
         navigate({
@@ -643,23 +616,6 @@ export function useShellPresenter() {
         mediator.setQuickOpenTarget(null);
       },
       onClose9: () => setHelpOpen(false),
-      onClick18: () => setCreateADR(false),
-      Create_ADR_onClick19: (
-        e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
-      ) => e.stopPropagation(),
-      ADR_title_onChange20: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setAdrTitle(e.target.value),
-      ADR_title_onKeyDown21: (
-        e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onKeyDown']>>[0],
-      ) => {
-        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-
-        if (isSubmitShortcut(e)) {
-          e.preventDefault();
-          return send('submit:ADR');
-        }
-      },
       Create_page_onClick23: (
         e: Parameters<NonNullable<React.ComponentProps<'div'>['onClick']>>[0],
       ) => e.stopPropagation(),

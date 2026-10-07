@@ -1,9 +1,8 @@
-import { useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
+import { useLoaderData, useParams } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRetriableSave } from './useRetriableSave.ts';
 import { api } from '../api.ts';
-import i18n from '../i18n/index.ts';
 import type { ADR, Issue, Project } from '../types.ts';
 import { ADR_STATUSES, entityDir } from '../types.ts';
 import { useIntent } from '../application/Root.tsx';
@@ -41,13 +40,12 @@ export function useADRsPagePresenter() {
 export function useADRDetailPagePresenter() {
   const { identifier } = useParams({ from: '/adrs/$identifier' });
   const initial = useLoaderData({ from: '/adrs/$identifier' }) as ADR;
-  const navigate = useNavigate();
+  const sendIntent = useIntent();
   const [allADRs, setAllADRs] = useState<ADR[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [adr, setAdr] = useState(initial);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [linkNumber, setLinkNumber] = useState('');
-  const [error, setError] = useState('');
   type Properties = Pick<ADR, 'title' | 'status' | 'projectSlug' | 'evaluation' | 'supersedes'>;
   const confirmed = useRef(initial);
   const dirty = useRef(false);
@@ -139,7 +137,6 @@ export function useADRDetailPagePresenter() {
     setAllADRs([]);
     setProjects([]);
     setLinkNumber('');
-    setError('');
     void loadOptions();
     return () => {
       optionsGeneration.current++;
@@ -189,7 +186,6 @@ export function useADRDetailPagePresenter() {
     adr,
     issues,
     linkNumber,
-    error,
     propertiesDirty,
     propertiesSaved,
     propertiesSaving: mutation.saving,
@@ -213,19 +209,13 @@ export function useADRDetailPagePresenter() {
         return operation.retry();
       },
       onClick0: () => {
-        const title = window.prompt(i18n.t('modal.adrTitle'), adr.title);
-        if (title?.trim())
-          return api
-            .createADR({
-              title,
-              supersedes: adr.number,
-              projectSlug: adr.projectSlug,
-              issueNumbers: adr.issueNumbers,
-            })
-            .then((a) =>
-              navigate({ to: '/adrs/$identifier', params: { identifier: a.identifier } }),
-            )
-            .catch((e) => setError(String(e)));
+        if (operation.isPending() || mutation.isPending() || dirty.current) return;
+        return sendIntent('adr.create', {
+          title: adr.title,
+          supersedes: adr.number,
+          projectSlug: adr.projectSlug,
+          issueNumbers: adr.issueNumbers,
+        });
       },
       ADR_status_onChange1: (
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],

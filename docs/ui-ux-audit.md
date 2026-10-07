@@ -190,3 +190,35 @@ a native prompt, and publication with unsaved document-body edits needs a separa
 flow audit. Full UI/UX completion remains unproven.
 The 17-route contrast sweep also passes in both schemes at 360px/1280px after the
 operation changes (four additional browser cases, 27 cases across the final runs).
+
+## Shared decision creation and revisit flow
+
+Revisit and project decision creation now open the existing shared decision modal.
+Revisit retains the predecessor, project and linked issues; project creation retains
+its project. The Shell orchestration is extracted to useShellADRComposer. Creation
+has a synchronous pending guard, local failure feedback, preserved title/context
+and retry. Successful creation is retained separately from opening the destination
+so a rejected navigation does not cause another POST on retry. That rejected-
+navigation branch still needs direct verification.
+
+The modal has a persistent title label and disables editing, dismissal and repeated
+submission while pending. It uses SaveFeedback and keyboard focus restoration.
+Root previously dismissed any modal on Escape before its own pending guard could
+run. Root now leaves modal dismissal to the dialog, preserving its closeOnEscape
+and onClose behavior.
+
+Verification: 44 browser cases pass across decision creation/property/operation,
+existing decision flows, cycle navigation, due dates and reminders. Five additional
+issue composer cases pass, including pending dismissal and retained failed input
+(49 cases total). New creation cases cover regular creation, revisit and project
+creation in both schemes at 360px; they check keyboard submission, pending Escape,
+exact retry, inherited properties, one created record and rendered error contrast.
+Light/dark mobile failure screenshots were inspected. Formatting/lint/types,
+locale parity and production build pass.
+
+Previous CI 37301425278 completed with 444 passes and one failing cycle navigation
+case. Its shared server already contained an earlier upcoming cycle, so navigation
+correctly selected that cycle rather than the newly created fixture. The sidebar
+navigation case now isolates its candidate list from other tests and automatic
+schedule creation. All three cycle navigation cases pass locally. The next full
+CI run is required to verify the whole suite; overall UI/UX completion is unproven.

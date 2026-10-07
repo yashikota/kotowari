@@ -14,7 +14,9 @@ import {
 } from '@mantine/core';
 import { IconChevronRight, IconMenu2, IconSearch, IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { useFocusWhen } from '../focus.ts';
+import { useFocusWhen, useActionFocusReturn } from '../focus.ts';
+import { useRef } from 'react';
+import { isSubmitShortcut } from '../keymap.ts';
 import { CycleNavigationMenu } from './CycleNavigationMenu.tsx';
 import { IssueWorkflowProvider } from '../workflow.tsx';
 import { ProjectWorkflowProvider } from '../project-workflow.tsx';
@@ -22,6 +24,7 @@ import { Palette } from './Palette.tsx';
 import { ShortcutHelp } from './ShortcutHelp.tsx';
 import { SidebarCustomizationModal } from './SidebarCustomizationModal.tsx';
 import { IssueComposerOverlays } from './IssueComposerOverlays.tsx';
+import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { ShellSidebar } from './ShellSidebar.tsx';
 import styles from './Shell.module.css';
 
@@ -41,6 +44,14 @@ export function ShellView({
   adrTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
   pageTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
+  const adrFeedbackRef = useRef<HTMLDivElement>(null);
+  const runADRCreation = useActionFocusReturn(
+    model.adrSubmitting,
+    () =>
+      adrFeedbackRef.current?.querySelector<HTMLButtonElement>(
+        '[role="alert"] button:not(:disabled)',
+      ) ?? adrTitleRef.current,
+  );
   switch (model._view) {
     case 0: {
       const {
@@ -293,11 +304,33 @@ export function ShellView({
           <Modal
             opened={createADR}
             onClose={handlers.onClick18}
-            title={t('modal.createAdr')}
+            closeOnEscape={!model.adrSubmitting}
+            closeOnClickOutside={!model.adrSubmitting}
+            withCloseButton={!model.adrSubmitting}
+            title={model.adrSupersedes ? t('ui.revisitDecision') : t('modal.createAdr')}
             centered
             autoFocus={false}
           >
             <Stack gap="md">
+              <Box ref={adrFeedbackRef}>
+                <SaveFeedback
+                  saving={model.adrSubmitting}
+                  saved={false}
+                  error={model.adrCreateError}
+                  savingLabel={t('adrComposer.creating')}
+                  savedLabel=""
+                  failureLabel={t(
+                    model.adrCreated ? 'adrComposer.openFailed' : 'adrComposer.failed',
+                  )}
+                  retryLabel={t(model.adrCreated ? 'adrComposer.openCreated' : 'adrComposer.retry')}
+                  onRetry={() => runADRCreation(handlers.submitADR)}
+                />
+              </Box>
+              {model.adrSupersedes ? (
+                <Text size="sm">
+                  {t('adrComposer.supersedes', { number: model.adrSupersedes })}
+                </Text>
+              ) : null}
               <Textarea
                 ref={adrTitleRef}
                 data-autofocus
@@ -305,15 +338,29 @@ export function ShellView({
                 aria-label={t('modal.adrTitle')}
                 placeholder={t('modal.adrTitle')}
                 value={adrTitle}
+                disabled={model.adrSubmitting || model.adrCreated}
+                label={t('modal.adrTitle')}
                 onChange={handlers.ADR_title_onChange20}
-                onKeyDown={handlers.ADR_title_onKeyDown21}
+                onKeyDown={(event) => {
+                  if (
+                    isSubmitShortcut(event) &&
+                    !event.nativeEvent.isComposing &&
+                    event.keyCode !== 229
+                  )
+                    void runADRCreation(() => handlers.ADR_title_onKeyDown21(event));
+                  else void handlers.ADR_title_onKeyDown21(event);
+                }}
               />
               <Group justify="space-between" align="center">
                 <Text size="sm" c="dimmed">
                   {t('modal.enterHint')}
                 </Text>
-                <Button type="button" onClick={handlers.submitADR}>
-                  {t('modal.create')}
+                <Button
+                  type="button"
+                  disabled={model.adrSubmitting || !adrTitle.trim()}
+                  onClick={() => runADRCreation(handlers.submitADR)}
+                >
+                  {model.adrCreated ? t('adrComposer.openCreated') : t('modal.create')}
                 </Button>
               </Group>
               {adrLinkIssue ? (

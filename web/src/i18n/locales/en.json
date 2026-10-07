@@ -2474,5 +2474,13 @@
       "failed": "Issue could not be unlinked"
     },
     "retry": "Retry operation"
+  },
+  "adrComposer": {
+    "creating": "Creating decision…",
+    "failed": "Decision could not be created",
+    "retry": "Retry creating decision",
+    "openFailed": "Decision created, but could not be opened",
+    "openCreated": "Open created decision",
+    "supersedes": "Revises ADR-{{number}}"
   }
 }

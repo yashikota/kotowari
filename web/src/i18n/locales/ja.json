@@ -2461,5 +2461,13 @@
       "failed": "課題の関連付けを解除できませんでした"
     },
     "retry": "もう一度実行"
+  },
+  "adrComposer": {
+    "creating": "決定を作成しています…",
+    "failed": "決定を作成できませんでした",
+    "retry": "決定の作成を再試行",
+    "openFailed": "決定は作成されましたが、開けませんでした",
+    "openCreated": "作成した決定を開く",
+    "supersedes": "ADR-{{number}}を見直します"
   }
 }
