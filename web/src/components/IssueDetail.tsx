@@ -4,8 +4,8 @@ import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
 import { IconPaperclip } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { useRef } from 'react';
-import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
+import { useEffect, useRef } from 'react';
+import { useActionFocusReturn, useAutofocusTarget, useFocusWhen } from '../focus.ts';
 import { Section } from '../mantine-ui.tsx';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
@@ -60,6 +60,35 @@ export function IssueDetailView({
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
+  const runArchive = useActionFocusReturn(
+    model._view === 2 && model.archivePending,
+    () =>
+      document.querySelector<HTMLButtonElement>(
+        '[data-issue-archive-feedback] [role="alert"] button:not(:disabled)',
+      ) ??
+      Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+        (button) => button.getAttribute('aria-label') === t('issueActions.button'),
+      ) ??
+      null,
+  );
+  const archiveError = model._view === 2 ? model.archiveError : '';
+  useEffect(() => {
+    if (!archiveError) return;
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (
+        active === document.body ||
+        active?.getAttribute('aria-label') === t('issueActions.button')
+      ) {
+        document
+          .querySelector<HTMLButtonElement>(
+            '[data-issue-archive-feedback] [role="alert"] button:not(:disabled)',
+          )
+          ?.focus();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [archiveError, t]);
   switch (model._view) {
     case 0: {
       const { error } = model;
@@ -87,11 +116,23 @@ export function IssueDetailView({
       return (
         <Box maw={1180} mx="auto" px={{ base: 'sm', md: 'xs' }} pb="xl">
           <IssueDetailHeader model={model} />
+          <Box data-issue-archive-feedback mt="xs">
+            <SaveFeedback
+              saving={model.archivePending}
+              saved={model.archiveSaved && !model.archivePending}
+              error={model.archiveError}
+              savingLabel={t('issueArchive.saving')}
+              savedLabel={t('issueArchive.saved')}
+              failureLabel={t('issueArchive.failed')}
+              retryLabel={t('issueArchive.retry')}
+              onRetry={() => runArchive(handlers.onArchiveIssue)}
+            />
+          </Box>
           <Box
             className={layoutStyles.issueLayout}
             mt="md"
-            inert={issue.archivedAt ? true : undefined}
-            aria-disabled={issue.archivedAt ? true : undefined}
+            inert={issue.archivedAt || model.archivePending ? true : undefined}
+            aria-disabled={issue.archivedAt || model.archivePending ? true : undefined}
             style={issue.archivedAt ? { color: 'var(--mantine-color-dimmed)' } : undefined}
           >
             <Box className={layoutStyles.title}>
@@ -294,7 +335,7 @@ function IssueDetailBinding(props: Parameters<typeof useIssueDetailPresenter>[0]
     issueRelationSequenceSince.current = null;
   });
   useKeyboard((event) => {
-    if (model._view !== 2) {
+    if (model._view !== 2 || model.archivePending) {
       linkedCodeSequenceSince.current = null;
       issueRelationSequenceSince.current = null;
       return false;

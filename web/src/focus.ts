@@ -41,10 +41,16 @@ export function useFocusWhen<T extends HTMLElement>(
 }
 
 /** Restore focus after pending controls have been rendered enabled again. */
-export function useActionFocusReturn(busy: boolean, fallback: () => HTMLElement | null) {
+export function useActionFocusReturn(
+  busy: boolean,
+  fallback: () => HTMLElement | null,
+  canRestoreFrom: (active: Element | null) => boolean = (active) => active === document.body,
+) {
   const pending = useRef<HTMLElement | null>(null);
   const latestFallback = useRef(fallback);
   latestFallback.current = fallback;
+  const latestCanRestore = useRef(canRestoreFrom);
+  latestCanRestore.current = canRestoreFrom;
   const [completion, setCompletion] = useState(0);
   useEffect(() => {
     if (busy) return;
@@ -52,7 +58,7 @@ export function useActionFocusReturn(busy: boolean, fallback: () => HTMLElement 
     pending.current = null;
     if (!trigger) return;
     const frame = requestAnimationFrame(() => {
-      if (document.activeElement === document.body) latestFallback.current()?.focus();
+      if (latestCanRestore.current(document.activeElement)) latestFallback.current()?.focus();
     });
     return () => cancelAnimationFrame(frame);
   }, [busy, completion]);

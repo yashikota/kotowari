@@ -1,5 +1,5 @@
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { api } from '../api.ts';
 import { patchIssueOptimistically } from '../application/issues.ts';
 import {
@@ -17,6 +17,8 @@ import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
+import { useRetriableSave } from './useRetriableSave.ts';
+import type { Issue } from '../types.ts';
 import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
 import { useIssueDetailDueDate } from './useIssueDetailDueDate.ts';
@@ -199,6 +201,23 @@ export function useIssueDetailPresenter({
     },
   });
 
+  const [archiveSaved, setArchiveSaved] = useState(false);
+  useEffect(() => setArchiveSaved(false), [identifier]);
+  const archive = useRetriableSave<boolean, Issue>({
+    scope: identifier,
+    save: (archived) => patchIssueOptimistically(identifier, { archived }),
+    onSuccess: (next) => {
+      setIssue(
+        titleDraft.current?.identifier === identifier
+          ? { ...next, title: titleDraft.current.title }
+          : next,
+      );
+      setArchiveSaved(true);
+      void refreshActivities().catch(() => undefined);
+    },
+    onFailure: () => setArchiveSaved(false),
+  });
+
   if (error) {
     return { _view: 0 as const, error, handlers: {} };
   }
@@ -213,14 +232,24 @@ export function useIssueDetailPresenter({
       : new URL(`/issues/${encodeURIComponent(identifier)}`, window.location.origin).href;
   const codingToolURL = buildCodingToolURL(issue, codingToolPreferences, issueURL);
   function remove() {
-    if (propertiesData.propertySaveState === 'saving') return;
+    if (propertiesData.propertySaveState === 'saving' || archive.isPending()) return;
     setIssueOptionsOpen(false);
     deletion.request();
   }
 
-  async function toggleArchive() {
-    await patch({ archived: !issue.archivedAt });
-    await router.invalidate();
+  function toggleArchive() {
+    if (
+      !issue ||
+      archive.isPending() ||
+      deletion.isPending() ||
+      deletion.isRemoved() ||
+      propertiesData.propertySaveState === 'saving'
+    )
+      return;
+    setIssueOptionsOpen(false);
+    setArchiveSaved(false);
+    if (archive.error) return archive.retry();
+    return archive.write(!issue.archivedAt);
   }
 
   async function copyText(text: string) {
@@ -251,6 +280,9 @@ export function useIssueDetailPresenter({
   return {
     _view: 2 as const,
     deletion,
+    archivePending: archive.saving,
+    archiveError: archive.error,
+    archiveSaved,
     identifier,
     navigationPosition: navigationIndex >= 0 ? navigationIndex + 1 : 1,
     navigationTotal: navigationIds.length,

@@ -2520,5 +2520,11 @@
     "openFailed": "Issue deleted, but the issue list could not be opened",
     "openList": "Open issues",
     "deletedDescription": "{{identifier}} has been deleted."
+  },
+  "issueArchive": {
+    "saving": "Saving archive change…",
+    "saved": "Archive change saved",
+    "failed": "Archive change could not be saved",
+    "retry": "Retry archive change"
   }
 }

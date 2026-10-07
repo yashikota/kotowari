@@ -2507,5 +2507,11 @@
     "openFailed": "課題は削除されましたが、課題一覧を開けませんでした",
     "openList": "課題一覧を開く",
     "deletedDescription": "{{identifier}}を削除しました。"
+  },
+  "issueArchive": {
+    "saving": "アーカイブ状態を保存しています…",
+    "saved": "アーカイブ状態を保存しました",
+    "failed": "アーカイブ状態を保存できませんでした",
+    "retry": "アーカイブ状態の保存を再試行"
   }
 }

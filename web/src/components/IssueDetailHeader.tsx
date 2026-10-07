@@ -10,6 +10,7 @@ import {
   IconLink,
   IconStar,
 } from '@tabler/icons-react';
+import { useActionFocusReturn } from '../focus.ts';
 import { useTranslation } from 'react-i18next';
 import { MetaBadge } from '../mantine-ui.tsx';
 import type { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
@@ -67,6 +68,7 @@ type IssueHeaderModel = Pick<
   | 'hasUpcomingCycle'
   | 'copied'
   | 'issueOptionsOpen'
+  | 'archivePending'
   | 'reminderMenuOpen'
   | 'reminderEditor'
   | 'dueDateSaving'
@@ -90,6 +92,19 @@ function CopyShortcut({ label }: { label: string }) {
 
 export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
   const { t } = useTranslation();
+  const runArchive = useActionFocusReturn(
+    model.archivePending,
+    () =>
+      document.querySelector<HTMLButtonElement>(
+        '[data-issue-archive-feedback] [role="alert"] button:not(:disabled)',
+      ) ??
+      Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+        (button) => button.getAttribute('aria-label') === t('issueActions.button'),
+      ) ??
+      null,
+    (active) =>
+      active === document.body || active?.getAttribute('aria-label') === t('issueActions.button'),
+  );
   const {
     identifier,
     issueReturnTo,
@@ -538,7 +553,12 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                   {t('issueActions.descriptionHistory')}
                 </Menu.Item>
                 <Menu.Divider />
-                <Menu.Item onClick={handlers.onArchiveIssue}>{t('issueActions.archive')}</Menu.Item>
+                <Menu.Item
+                  disabled={model.archivePending}
+                  onClick={() => runArchive(handlers.onArchiveIssue)}
+                >
+                  {t('issueActions.archive')}
+                </Menu.Item>
                 <Menu.Item
                   color="red"
                   aria-keyshortcuts={`${modifierShortcut}+Delete`}
@@ -605,7 +625,8 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                 <Menu.Divider />
                 <Menu.Item
                   aria-keyshortcuts="#"
-                  onClick={handlers.onArchiveIssue}
+                  disabled={model.archivePending}
+                  onClick={() => runArchive(handlers.onArchiveIssue)}
                   rightSection={<CopyShortcut label="#" />}
                 >
                   {t('issueActions.restore')}

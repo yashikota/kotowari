@@ -342,3 +342,25 @@ issue archive recovery and broader screen auditing remain outstanding.
 
 CI 37593839803 for 817c6bc completed successfully, including Check and Unit test.
 The accumulated inbox and removal changes are ready for a new full CI run.
+
+## Recoverable issue archive and restoration
+
+Issue archive/restoration now uses scoped useRetriableSave with local SaveFeedback
+outside the archived/inert content. Failure retains the intended boolean for exact
+retry and preserves the original archived state. Pending operations disable content
+editing and detail shortcuts, guard repeat writes and close the issue menu. Confirmed
+writes update the local issue without a full route reload; activity refresh failure
+does not misreport a confirmed write. Unsaved title drafts survive the confirmed update.
+
+Shared focus restoration accepts a narrowly specified menu return target while
+preserving its existing default behavior. Menu-launched failure focuses retry; keyboard
+restoration failure does likewise. Success restores the issue options trigger.
+
+Verification: 20 browser cases pass, covering archive/restoration in both schemes at
+360px/large text (including keyboard restoration), delayed failed writes, original
+server state, exact retry payload, persisted result, focus, and rendered feedback
+contrast, plus issue deletion/property recovery and eleven workflow regressions.
+The workflow case preserving user-moved focus still passes. Final light/dark archive
+failure screenshots were inspected. Mandatory checks, 2365 locale keys and production
+build pass. Current pushed CI 37596042116 remains live. Late scope responses, unsaved
+body interaction and other task actions still require direct evidence.
