@@ -644,3 +644,38 @@ CI 37642920644 for the prior pushed project draft change is still running Playwr
 at this audit point. This archive work has not yet passed the full CI gate. Audit
 other text sizes, languages, simultaneous archive/property writes, and remaining
 project mutations before considering the screen complete.
+
+## Milestone creation recovery
+
+Project milestone creation reuses useRetriableCreation, now with optional entity
+scope and generation guards. A pending operation owns its payload and blocks duplicate
+POSTs. Editing a failed draft invalidates the retained payload, so a subsequent attempt
+uses current input. A confirmed milestone is inserted locally before refresh; a refresh
+failure retains the confirmed record and offers refresh-only retry, without another
+POST. Confirmed creation clears the form, and scope changes clear old form state.
+
+The form has persistent translated name/description/date labels, a required name
+indicator, trimmed-name validation with focus, disabled pending/confirmed-refresh
+fields, translated progress/failure/retry/success feedback, and scoped focus recovery.
+The existing dialog/load-retry action CSS was renamed ActionControl and reused for
+the 44px, wrapping add button rather than introducing another screen-specific action
+style. Dialog and load-retry styles otherwise remain identical.
+
+A deterministic post-create project read failure originally replaced the entire page
+with the route error and prevented local recovery. Project refresh now reads project
+and activity data locally, applies only the latest scoped refresh, and preserves dirty
+summary/description values. Activity entries are merged by immutable id with loader
+updates and sorted by timestamp/id. Both project status-update history and dependency
+refresh regressions pass.
+
+Seven new cases cover en/ja and both themes at mobile large text, empty-name focus,
+duplicate submission, retained failed input, editing before retry, confirmed creation
+with failed refresh and one POST, and late success/failure after moving to another
+project. The final 36-case regression run also covers page/ADR creation, project
+updates, dependencies, deletion and unsaved navigation. It passes without retries.
+Rendered form contrast passes; final Japanese light/dark labeled forms were inspected.
+Mandatory web:check and build pass, with 2409 matching locale keys.
+
+CI 37642920644 for b545d9f succeeded before this work was pushed. Milestone row editing,
+removal, unsubmitted creation draft navigation, and pending project refresh combinations
+remain part of the broader completion audit; the full objective is still unproven.

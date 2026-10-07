@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from '@tanstack/react-router';
 import { useActionFocusReturn } from '../focus.ts';
 import { SaveFeedback } from './SaveFeedback.tsx';
-import styles from './ConfirmActionDialog.module.css';
+import styles from './ActionControl.module.css';
 
 export function useUnsavedNavigation({
   dirty,

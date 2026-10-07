@@ -1,4 +1,14 @@
 {
+  "milestoneCreation": {
+    "nameRequired": "マイルストーン名を入力してください。",
+    "creating": "マイルストーンを追加中…",
+    "refreshing": "マイルストーンを更新中…",
+    "saved": "マイルストーンを追加しました",
+    "failed": "マイルストーンを追加できませんでした",
+    "refreshFailed": "マイルストーンは追加済みですが、プロジェクトを更新できませんでした",
+    "retry": "マイルストーンの追加を再試行",
+    "retryRefresh": "プロジェクトの更新を再試行"
+  },
   "projectArchive": {
     "saving": "アーカイブの変更を保存中…",
     "saved": "アーカイブの変更を保存しました",

@@ -2,7 +2,7 @@ import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { useRef } from 'react';
 import { useActionFocusReturn } from '../focus.ts';
 import { SaveFeedback } from './SaveFeedback.tsx';
-import styles from './ConfirmActionDialog.module.css';
+import styles from './ActionControl.module.css';
 
 export function ConfirmActionDialog({
   opened,

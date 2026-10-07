@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Stack, Text } from '@mantine/core';
 import { useRef } from 'react';
 import { useActionFocusReturn } from '../focus.ts';
-import styles from './ConfirmActionDialog.module.css';
+import styles from './ActionControl.module.css';
 
 export function LoadFailure({
   title,

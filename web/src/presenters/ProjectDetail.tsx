@@ -1,5 +1,6 @@
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useClipboardCopy } from './useClipboardCopy.ts';
+import { useRetriableCreation } from './useRetriableCreation.ts';
 import { useRetriableSave } from './useRetriableSave.ts';
 import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
@@ -102,6 +103,16 @@ export function useProjectDetailPagePresenter() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState(data.project);
+  const [projectActivities, setProjectActivities] = useState(data.activities);
+  const projectRefreshGeneration = useRef(0);
+  useEffect(() => {
+    if (data.project.slug !== slug) return;
+    setProjectActivities((current) =>
+      Array.from(
+        new Map([...current, ...data.activities].map((item) => [item.id, item])).values(),
+      ).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id),
+    );
+  }, [data.activities, data.project.slug, slug]);
   const latestProject = useRef(project);
   latestProject.current = project;
   const summaryDraft = useRef({ slug: data.project.slug, value: data.project.summary ?? '' });
@@ -119,6 +130,9 @@ export function useProjectDetailPagePresenter() {
   const [milestoneName, setMilestoneName] = useState('');
   const [milestoneDescription, setMilestoneDescription] = useState('');
   const [milestoneTargetDate, setMilestoneTargetDate] = useState('');
+  const [milestoneNameError, setMilestoneNameError] = useState('');
+  const [milestoneValidationAttempt, setMilestoneValidationAttempt] = useState(0);
+  const [milestoneCreated, setMilestoneCreated] = useState(false);
   const [dependencyProjectSlug, setDependencyProjectSlug] = useState('');
   const [dependencyKind, setDependencyKind] = useState<'blocks' | 'blocked_by' | 'related'>(
     'blocks',
@@ -276,9 +290,16 @@ export function useProjectDetailPagePresenter() {
     setProjectSaved(false);
     failedProjectPatch.current = null;
     setProject(data.project);
+    setProjectActivities(data.activities);
+    projectRefreshGeneration.current++;
     summaryDraft.current = { slug: data.project.slug, value: data.project.summary ?? '' };
     persistedSummary.current = { slug: data.project.slug, value: data.project.summary ?? '' };
     persistedDescription.current = { slug: data.project.slug, value: data.project.description };
+    setMilestoneName('');
+    setMilestoneDescription('');
+    setMilestoneTargetDate('');
+    setMilestoneNameError('');
+    setMilestoneCreated(false);
     setSelected(null);
     setDependencyProjectSlug('');
     setDependencyKind('blocks');
@@ -388,9 +409,15 @@ export function useProjectDetailPagePresenter() {
 
   async function refreshProject() {
     const token = saveGeneration.current;
-    await router.invalidate();
-    const next = await api.project(slug);
-    if (saveScope.current !== slug || token !== saveGeneration.current) return;
+    const refresh = ++projectRefreshGeneration.current;
+    const [next, activities] = await Promise.all([api.project(slug), api.projectActivities(slug)]);
+    if (
+      saveScope.current !== slug ||
+      token !== saveGeneration.current ||
+      refresh !== projectRefreshGeneration.current
+    )
+      return;
+    setProjectActivities(activities);
     const summary = persistedSummary.current.value;
     const description = persistedDescription.current.value;
     setProject((current) => ({
@@ -402,19 +429,41 @@ export function useProjectDetailPagePresenter() {
     persistedDescription.current = { slug, value: next.description };
   }
 
-  async function createMilestone(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const milestoneCreation = useRetriableCreation({
+    scope: slug,
+    create: (body: { name: string; description?: string; targetDate?: string }) =>
+      api.createMilestone(slug, body),
+    open: async (milestone) => {
+      if (saveScope.current !== slug) return;
+      setProject((current) => ({
+        ...current,
+        milestones: current.milestones.some((item) => item.id === milestone.id)
+          ? current.milestones
+          : [...current.milestones, milestone],
+      }));
+      setMilestoneName('');
+      setMilestoneDescription('');
+      setMilestoneTargetDate('');
+      await refreshProject();
+    },
+  });
+  async function createMilestone() {
+    if (milestoneCreation.isPending()) return;
     const name = milestoneName.trim();
-    if (!name) return;
-    await api.createMilestone(slug, {
+    if (!milestoneCreation.hasCreated() && !name) {
+      setMilestoneNameError(i18n.t('milestoneCreation.nameRequired'));
+      setMilestoneValidationAttempt((value) => value + 1);
+      return;
+    }
+    const token = saveGeneration.current;
+    setMilestoneCreated(false);
+    const success = await milestoneCreation.submit({
       name,
       ...(milestoneDescription.trim() ? { description: milestoneDescription.trim() } : {}),
       ...(milestoneTargetDate ? { targetDate: milestoneTargetDate } : {}),
     });
-    setMilestoneName('');
-    setMilestoneDescription('');
-    setMilestoneTargetDate('');
-    await refreshProject();
+    if (token === saveGeneration.current && saveScope.current === slug)
+      setMilestoneCreated(success);
   }
 
   return {
@@ -443,7 +492,7 @@ export function useProjectDetailPagePresenter() {
     projectWorkflowStatuses,
     selected,
     project,
-    projectUpdates: data.activities.flatMap((activity) => {
+    projectUpdates: projectActivities.flatMap((activity) => {
       if (activity.action !== 'status_update_posted') return [];
       const health = activity.payload.health;
       const body = activity.payload.body;
@@ -457,7 +506,7 @@ export function useProjectDetailPagePresenter() {
         { id: activity.id, health: health as ProjectHealth, body, createdAt: activity.createdAt },
       ];
     }),
-    projectActivityItems: data.activities
+    projectActivityItems: projectActivities
       .filter((activity) => activity.action !== 'status_update_posted')
       .map((activity) => ({
         id: activity.id,
@@ -488,6 +537,15 @@ export function useProjectDetailPagePresenter() {
     ),
     dependencyProjectSlug,
     dependencyKind,
+    milestoneCreation: {
+      scope: slug,
+      pending: milestoneCreation.submitting,
+      created: milestoneCreation.created,
+      saved: milestoneCreated,
+      error: milestoneCreation.error,
+      nameError: milestoneNameError,
+      validationAttempt: milestoneValidationAttempt,
+    },
     milestoneName,
     milestoneDescription,
     milestoneTargetDate,
@@ -699,14 +757,31 @@ export function useProjectDetailPagePresenter() {
       },
       onMilestoneNameDraftChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setMilestoneName(e.target.value),
+      ) => {
+        milestoneCreation.invalidate();
+        setMilestoneCreated(false);
+        setMilestoneNameError('');
+        setMilestoneName(e.target.value);
+      },
       onMilestoneTargetDateDraftChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) => setMilestoneTargetDate(e.target.value),
+      ) => {
+        milestoneCreation.invalidate();
+        setMilestoneCreated(false);
+        setMilestoneTargetDate(e.target.value);
+      },
       onMilestoneDescriptionDraftChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
-      ) => setMilestoneDescription(e.target.value),
-      onCreateMilestone: (e: React.FormEvent<HTMLFormElement>) => createMilestone(e),
+      ) => {
+        milestoneCreation.invalidate();
+        setMilestoneCreated(false);
+        setMilestoneDescription(e.target.value);
+      },
+      onCreateMilestone: (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        return createMilestone();
+      },
+      onRetryMilestoneCreation: createMilestone,
       onIssueSelect: (
         ...args: Parameters<NonNullable<React.ComponentProps<typeof IssueList>['onSelect']>>
       ) => {

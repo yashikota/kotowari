@@ -463,6 +463,8 @@ export function ProjectDetailPageView({
                     name={milestoneName}
                     description={milestoneDescription}
                     targetDate={milestoneTargetDate}
+                    creation={model.milestoneCreation}
+                    onRetryCreate={handlers.onRetryMilestoneCreation}
                     onCreate={handlers.onCreateMilestone}
                     onDraftNameChange={handlers.onMilestoneNameDraftChange}
                     onDraftDescriptionChange={handlers.onMilestoneDescriptionDraftChange}

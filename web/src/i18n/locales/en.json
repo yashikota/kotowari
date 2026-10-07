@@ -1,4 +1,14 @@
 {
+  "milestoneCreation": {
+    "nameRequired": "Enter a milestone name.",
+    "creating": "Adding milestone…",
+    "refreshing": "Refreshing milestones…",
+    "saved": "Milestone added",
+    "failed": "Milestone could not be added",
+    "refreshFailed": "Milestone was added, but the project could not be refreshed",
+    "retry": "Retry adding milestone",
+    "retryRefresh": "Retry refreshing project"
+  },
   "projectArchive": {
     "saving": "Saving archive change…",
     "saved": "Archive change saved",
