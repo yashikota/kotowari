@@ -2076,7 +2076,11 @@
     "thisWeek": "今週",
     "earlier": "それ以前",
     "unread": "未読",
-    "read": "既読"
+    "read": "既読",
+    "deleting": "通知を削除しています…",
+    "deleted": "通知を削除しました",
+    "deleteFailed": "通知を削除できませんでした",
+    "retryDelete": "通知の削除を再試行"
   },
   "commands": {
     "createIssue": "イシューを作成",

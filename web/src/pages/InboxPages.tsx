@@ -6,7 +6,6 @@ import {
   Button,
   Group,
   Menu,
-  Modal,
   ScrollArea,
   Stack,
   Text,
@@ -23,6 +22,7 @@ import {
 import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { PresenterScope } from '../application/Root.tsx';
 import { formatActivity } from '../activity.ts';
 import { formatRelativeTime } from '../time.ts';
@@ -340,27 +340,23 @@ function InboxPageView({ model }: { model: InboxModel }) {
 
         <InboxActivityDetails model={model} />
       </Box>
-      <Modal
+      <ConfirmActionDialog
         opened={model.deleteConfirmation !== null}
         onClose={model.handlers.onCancelDeleteNotifications}
         title={t(
           model.deleteConfirmation === 'read' ? 'inbox.deleteReadTitle' : 'inbox.deleteAllTitle',
         )}
-        centered
-        size="sm"
-      >
-        <Stack gap="md">
-          <Text size="sm">{t('inbox.deleteConfirmBody')}</Text>
-          <Group justify="flex-end" gap="xs">
-            <Button variant="default" onClick={model.handlers.onCancelDeleteNotifications}>
-              {t('inbox.cancel')}
-            </Button>
-            <Button color="red" onClick={model.handlers.onConfirmDeleteNotifications}>
-              {t('inbox.deleteConfirm')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        description={t('inbox.deleteConfirmBody')}
+        pending={model.deletionPending}
+        error={model.deletionError}
+        confirmLabel={t('inbox.deleteConfirm')}
+        cancelLabel={t('inbox.cancel')}
+        savingLabel={t('inbox.deleting')}
+        savedLabel={t('inbox.deleted')}
+        failureLabel={t('inbox.deleteFailed')}
+        retryLabel={t('inbox.retryDelete')}
+        onConfirm={model.handlers.onConfirmDeleteNotifications}
+      />
     </Stack>
   );
 }

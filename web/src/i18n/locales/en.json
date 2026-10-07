@@ -2087,7 +2087,11 @@
     "thisWeek": "This week",
     "earlier": "Earlier",
     "unread": "Unread",
-    "read": "Read"
+    "read": "Read",
+    "deleting": "Deleting notifications…",
+    "deleted": "Notifications deleted",
+    "deleteFailed": "Notifications could not be deleted",
+    "retryDelete": "Retry deleting notifications"
   },
   "commands": {
     "createIssue": "Create issue",

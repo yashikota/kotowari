@@ -27,6 +27,7 @@ import {
   type InboxFilterMenuState,
 } from '../inbox-filter.ts';
 import { inboxShortcutFromKeyboard } from '../keymap.ts';
+import { useRetriableSave } from './useRetriableSave.ts';
 import type { IssueStatus } from '../types.ts';
 
 function readInboxState(): InboxState {
@@ -219,21 +220,44 @@ export function useInboxPresenter() {
     );
   }
 
+  const deletion = useRetriableSave<number[], { next: InboxState; ids: number[] }>({
+    scope: 'inbox-deletion',
+    save: async (ids) => {
+      const current = readInboxState();
+      const next = {
+        ...current,
+        deletedIds: [...new Set([...current.deletedIds, ...ids])],
+      };
+      window.localStorage.setItem(INBOX_STATE_KEY, serializeInboxState(next));
+      return { next, ids };
+    },
+    onSuccess: ({ next, ids }) => {
+      setInboxState(next);
+      window.dispatchEvent(new Event(INBOX_STATE_EVENT));
+      if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
+      setDeleteConfirmation(null);
+    },
+    onFailure: () => {},
+  });
+
+  function requestDeletion(scope: 'all' | 'read') {
+    if (deletion.isPending()) return;
+    deletion.invalidate();
+    setDeleteConfirmation(scope);
+  }
+
   function deleteNotifications(scope: 'all' | 'read') {
-    const ids = activities
-      .filter(
-        (activity) =>
-          !inboxState.archivedIds.includes(activity.id) &&
-          !inboxState.deletedIds.includes(activity.id) &&
-          (scope === 'all' || inboxState.readIds.includes(activity.id)),
-      )
-      .map((activity) => activity.id);
-    updateInboxState((current) => ({
-      ...current,
-      deletedIds: [...new Set([...current.deletedIds, ...ids])],
-    }));
-    if (selectedId !== null && ids.includes(selectedId)) setSelectedId(null);
-    setDeleteConfirmation(null);
+    if (deletion.error) return deletion.retry();
+    return deletion.write(
+      activities
+        .filter(
+          (activity) =>
+            !inboxState.archivedIds.includes(activity.id) &&
+            !inboxState.deletedIds.includes(activity.id) &&
+            (scope === 'all' || inboxState.readIds.includes(activity.id)),
+        )
+        .map((activity) => activity.id),
+    );
   }
 
   const handlers = useActions({
@@ -348,15 +372,20 @@ export function useInboxPresenter() {
     },
     onMarkAllRead: () => markAllNotificationsRead(),
     onArchiveReadActivities: () => archiveReadNotifications(),
-    onRequestDeleteAll: () => setDeleteConfirmation('all'),
-    onRequestDeleteRead: () => setDeleteConfirmation('read'),
-    onCancelDeleteNotifications: () => setDeleteConfirmation(null),
+    onRequestDeleteAll: () => requestDeletion('all'),
+    onRequestDeleteRead: () => requestDeletion('read'),
+    onCancelDeleteNotifications: () => {
+      if (deletion.isPending()) return;
+      deletion.invalidate();
+      setDeleteConfirmation(null);
+    },
     onConfirmDeleteNotifications: () => {
-      if (deleteConfirmation !== null) deleteNotifications(deleteConfirmation);
+      if (deleteConfirmation !== null) void deleteNotifications(deleteConfirmation);
     },
   });
 
   useKeyboard((event) => {
+    if (deleteConfirmation !== null) return false;
     const shortcut = inboxShortcutFromKeyboard(event);
     if (shortcut === 'mark-all-read') {
       event.preventDefault();
@@ -395,7 +424,7 @@ export function useInboxPresenter() {
       );
       if (!hasReadNotifications) return false;
       event.preventDefault();
-      setDeleteConfirmation('read');
+      requestDeletion('read');
       return true;
     }
     if (shortcut !== 'snooze-notification') return false;
@@ -448,6 +477,8 @@ export function useInboxPresenter() {
     otherUnreadCount: unreadBuckets.other.length,
     snoozeMenuOpen,
     deleteConfirmation,
+    deletionPending: deletion.saving,
+    deletionError: deletion.error,
     unreadCount,
     handlers,
     t,

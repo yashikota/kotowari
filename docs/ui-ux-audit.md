@@ -270,3 +270,19 @@ was outside the virtualized list window after unrelated fixtures accumulated. Th
 case now scopes search to its own issues and explicitly seeds/cleans 30 unrelated
 issues; the focused case passes. The next full CI result remains required. Overall
 UI/UX and WCAG conformance remain partially verified.
+
+## Shared inbox deletion recovery
+
+Inbox bulk deletion uses ConfirmActionDialog, sharing document deletion typography,
+semantic colors, 44px wrapped actions, safe Cancel focus and local retry feedback.
+Storage is written before committing visible deletion. A storage exception leaves
+notifications intact; retry retains the original notification IDs. Inbox shortcuts
+are suppressed while confirmation is open. Issues/comments are never deleted.
+
+Verification: 18 inbox browser cases pass, including storage failure/retry in both
+schemes at 360px/large text, rendered dialog contrast, retained notification state,
+focus and underlying issue preservation. Final light/dark screenshots were inspected.
+Formatting/lint/types, 2346 locale keys and production build pass. CI 37593839803
+for the preceding push remains in progress; this change is committed locally while
+that run finishes. Single-notification and other inbox storage mutations still need
+failure recovery auditing; overall completion remains unproven.
