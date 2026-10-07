@@ -17,6 +17,7 @@ import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
+import { useClipboardCopy } from './useClipboardCopy.ts';
 import { useRetriableSave } from './useRetriableSave.ts';
 import type { Issue } from '../types.ts';
 import { useRetriableRemoval } from './useRetriableRemoval.ts';
@@ -122,7 +123,7 @@ export function useIssueDetailPresenter({
     () => issueSubscriptions.has(identifier),
     () => false,
   );
-  const [copied, setCopied] = useState(false);
+  const clipboard = useClipboardCopy(identifier);
   const [historyRequest, setHistoryRequest] = useState(0);
   const [descriptionFocus, setDescriptionFocus] = useState({ identifier, request: 0 });
   const descriptionFocusRequest =
@@ -313,14 +314,8 @@ export function useIssueDetailPresenter({
     return archive.write(!issue.archivedAt);
   }
 
-  async function copyText(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
-    } catch {
-      // Clipboard permission can be unavailable in an embedded or non-secure context.
-    }
+  function copyText(text: string) {
+    return clipboard.copy(text);
   }
 
   function makeCopy() {
@@ -368,7 +363,7 @@ export function useIssueDetailPresenter({
     codingToolName: codingToolPreferences.customLinkName,
     codingToolURL,
     timeZone,
-    copied,
+    clipboard,
     historyRequest,
     descriptionFocusRequest,
     issueOptionsOpen,

@@ -66,7 +66,7 @@ type IssueHeaderModel = Pick<
   | 'navigationTotal'
   | 'cycles'
   | 'hasUpcomingCycle'
-  | 'copied'
+  | 'clipboard'
   | 'issueOptionsOpen'
   | 'archivePending'
   | 'reminderMenuOpen'
@@ -92,6 +92,20 @@ function CopyShortcut({ label }: { label: string }) {
 
 export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
   const { t } = useTranslation();
+  const runCopy = useActionFocusReturn(
+    model.clipboard.pending,
+    () =>
+      document.querySelector<HTMLButtonElement>(
+        '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
+      ) ??
+      model.clipboard.getInitiator() ??
+      Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+        (button) => button.getAttribute('aria-label') === t('issueActions.button'),
+      ) ??
+      null,
+    (active) =>
+      active === document.body || active?.getAttribute('aria-label') === t('issueActions.button'),
+  );
   const runArchive = useActionFocusReturn(
     model.archivePending,
     () =>
@@ -113,7 +127,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
     issue,
     cycles,
     hasUpcomingCycle,
-    copied,
+    clipboard,
     issueOptionsOpen,
     reminderMenuOpen,
     codingToolName,
@@ -241,7 +255,8 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
             radius="xl"
             aria-label={t('issueActions.copyUrl')}
             title={t('issueActions.copyUrl')}
-            onClick={handlers.Copy_url_onClick35}
+            disabled={clipboard.pending}
+            onClick={() => runCopy(handlers.Copy_url_onClick35)}
           >
             <IconLink size={15} stroke={1.7} aria-hidden="true" />
           </ActionIcon>
@@ -249,9 +264,10 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
             type="button"
             variant="default"
             radius="xl"
-            aria-label={copied ? t('ui.copied') : t('ui.copyIdentifier')}
-            title={copied ? t('ui.copied') : t('ui.copyIdentifier')}
-            onClick={handlers.Copy_identifier_onClick0}
+            aria-label={t('ui.copyIdentifier')}
+            title={t('ui.copyIdentifier')}
+            disabled={clipboard.pending}
+            onClick={() => runCopy(handlers.Copy_identifier_onClick0)}
           >
             <IconCopy size={14} stroke={1.8} aria-hidden="true" />
           </ActionIcon>
@@ -261,7 +277,8 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
             radius="xl"
             aria-label={t('issueActions.copyBranch')}
             title={t('issueActions.copyBranch')}
-            onClick={handlers.Copy_branch_onClick40}
+            disabled={clipboard.pending}
+            onClick={() => runCopy(handlers.Copy_branch_onClick40)}
           >
             <IconGitBranch size={15} stroke={1.7} aria-hidden="true" />
           </ActionIcon>
@@ -271,7 +288,8 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
             radius="xl"
             aria-label={t('issueActions.copyPrompt')}
             title={t('issueActions.copyPrompt')}
-            onClick={handlers.Copy_prompt_onClick41}
+            disabled={clipboard.pending}
+            onClick={() => runCopy(handlers.Copy_prompt_onClick41)}
           >
             <IconFileText size={15} stroke={1.7} aria-hidden="true" />
           </ActionIcon>
@@ -291,7 +309,10 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown aria-label={t('codingTools.chooseTool')}>
-              <Menu.Item onClick={handlers.Copy_prompt_onClick41}>
+              <Menu.Item
+                disabled={clipboard.pending}
+                onClick={() => runCopy(handlers.Copy_prompt_onClick41)}
+              >
                 {t('issueActions.copyPrompt')}
               </Menu.Item>
               {codingToolURL ? (
@@ -370,46 +391,56 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                   </Menu.Sub.Target>
                   <Menu.Sub.Dropdown style={{ minWidth: 300 }}>
                     <Menu.Item
-                      onClick={handlers.Copy_id_onClick34}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_id_onClick34)}
                       rightSection={<CopyShortcut label={`${modifierKey} .`} />}
                     >
                       {t('issueActions.copyId')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_url_onClick35}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_url_onClick35)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} ,`} />}
                     >
                       {t('issueActions.copyUrl')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_title_onClick36}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_title_onClick36)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} '`} />}
                     >
                       {t('issueActions.copyTitle')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_title_link_onClick37}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_title_link_onClick37)}
                       rightSection={<CopyShortcut label={`${modifierKey} C`} />}
                     >
                       {t('issueActions.copyTitleLink')}
                     </Menu.Item>
-                    <Menu.Item onClick={handlers.Copy_issue_markdown_onClick38}>
+                    <Menu.Item
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_issue_markdown_onClick38)}
+                    >
                       {t('issueActions.copyIssueMarkdown')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_everything_onClick39}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_everything_onClick39)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} C`} />}
                     >
                       {t('issueActions.copyEverything')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_branch_onClick40}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_branch_onClick40)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} .`} />}
                     >
                       {t('issueActions.copyBranch')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_prompt_onClick41}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_prompt_onClick41)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} P`} />}
                     >
                       {t('issueActions.copyPrompt')}
@@ -576,46 +607,56 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                   </Menu.Sub.Target>
                   <Menu.Sub.Dropdown style={{ minWidth: 300 }}>
                     <Menu.Item
-                      onClick={handlers.Copy_id_onClick34}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_id_onClick34)}
                       rightSection={<CopyShortcut label={`${modifierKey} .`} />}
                     >
                       {t('issueActions.copyId')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_url_onClick35}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_url_onClick35)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} ,`} />}
                     >
                       {t('issueActions.copyUrl')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_title_onClick36}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_title_onClick36)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} '`} />}
                     >
                       {t('issueActions.copyTitle')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_title_link_onClick37}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_title_link_onClick37)}
                       rightSection={<CopyShortcut label={`${modifierKey} C`} />}
                     >
                       {t('issueActions.copyTitleLink')}
                     </Menu.Item>
-                    <Menu.Item onClick={handlers.Copy_issue_markdown_onClick38}>
+                    <Menu.Item
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_issue_markdown_onClick38)}
+                    >
                       {t('issueActions.copyIssueMarkdown')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_everything_onClick39}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_everything_onClick39)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} C`} />}
                     >
                       {t('issueActions.copyEverything')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_branch_onClick40}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_branch_onClick40)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${shiftKey} .`} />}
                     >
                       {t('issueActions.copyBranch')}
                     </Menu.Item>
                     <Menu.Item
-                      onClick={handlers.Copy_prompt_onClick41}
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.Copy_prompt_onClick41)}
                       rightSection={<CopyShortcut label={`${modifierKey} ${alternateKey} P`} />}
                     >
                       {t('issueActions.copyPrompt')}

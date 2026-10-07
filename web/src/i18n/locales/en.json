@@ -2531,5 +2531,10 @@
     "failed": "Issue could not be loaded",
     "retry": "Retry loading issue",
     "back": "Back to issues"
+  },
+  "clipboard": {
+    "copying": "Copying…",
+    "failed": "Could not copy to clipboard",
+    "retry": "Retry copying"
   }
 }

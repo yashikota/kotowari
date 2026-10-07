@@ -61,6 +61,13 @@ export function IssueDetailView({
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
+  const runCopy = useActionFocusReturn(
+    model._view === 2 && model.clipboard.pending,
+    () =>
+      document.querySelector<HTMLButtonElement>(
+        '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
+      ) ?? (model._view === 2 ? model.clipboard.getInitiator() : null),
+  );
   const runArchive = useActionFocusReturn(
     model._view === 2 && model.archivePending,
     () =>
@@ -130,6 +137,18 @@ export function IssueDetailView({
       return (
         <Box maw={1180} mx="auto" px={{ base: 'sm', md: 'xs' }} pb="xl">
           <IssueDetailHeader model={model} />
+          <Box mt="xs" data-issue-copy-feedback>
+            <SaveFeedback
+              saving={model.clipboard.pending}
+              saved={model.clipboard.copied}
+              error={model.clipboard.error}
+              savingLabel={t('clipboard.copying')}
+              savedLabel={t('ui.copied')}
+              failureLabel={t('clipboard.failed')}
+              retryLabel={t('clipboard.retry')}
+              onRetry={() => runCopy(model.clipboard.retry)}
+            />
+          </Box>
           <Box data-issue-archive-feedback mt="xs">
             <SaveFeedback
               saving={model.archivePending}

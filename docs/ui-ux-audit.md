@@ -426,3 +426,20 @@ held draft recovery and eleven workflow/focus cases. The flaky Japanese/light ca
 passes five independent repetitions with retries disabled. Mandatory checks and build
 pass. The next full CI run remains required; full screen and WCAG completion is still
 unproven.
+
+## Recoverable issue clipboard actions
+
+Issue copy actions share useClipboardCopy, retaining failed text for exact retry,
+guarding concurrent copies, ignoring scoped late results and clearing scoped success
+timers. Local SaveFeedback announces copying, failure and success for four seconds.
+Copy controls are disabled while pending. Failure focuses recovery when focus returns
+from a pending control/menu; retry success restores the original connected trigger.
+The identifier button keeps its own label when another value was copied.
+
+Verification: seven related browser cases pass, including two 360px/large-text cases
+with both schemes, delayed clipboard rejection, disabled controls, retry focus,
+identical URL payload, success/trigger focus and rendered alert contrast; archive /
+restore and keyboard deletion regressions pass too. Final light/dark screenshots were
+inspected. Mandatory checks, 2373 locale keys and production build pass. Pushed CI
+37598826758 remains live; Demo succeeded. Menu/keyboard copy paths, scope interleavings,
+and copy operations on other screens still require dedicated evidence.
