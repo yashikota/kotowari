@@ -36,7 +36,9 @@ html[data-underline-links='true'] :is(p, li, blockquote, .mantine-Text-root, .Pr
 .mantine-Switch-track,
 .mantine-Button-root[data-variant='default'],
 .mantine-Button-root[data-variant='filled'],
-.mantine-ActionIcon-root[data-variant='filled'] {
+.mantine-Button-root:not([data-variant]),
+.mantine-ActionIcon-root[data-variant='filled'],
+.mantine-ActionIcon-root:not([data-variant]) {
   border-color: var(--kotowari-control-border);
 }
 

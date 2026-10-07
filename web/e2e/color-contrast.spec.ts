@@ -104,6 +104,10 @@ for (const scheme of ['light', 'dark']) {
           const name = page.getByRole('textbox', { name: 'Name', exact: true });
           await name.focus();
           await expect(name).toHaveCSS('outline-width', '2px');
+          await expect(page.getByRole('button', { name: 'Save workspace', exact: true })).toHaveCSS(
+            'border-top-color',
+            scheme === 'light' ? 'rgb(115, 123, 131)' : 'rgb(166, 167, 171)',
+          );
         }
         const results = await contrastFailures(page);
         failures.push(...results.map((result) => ({ route, ...result })));

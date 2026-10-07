@@ -552,3 +552,10 @@ on next-issue navigation. All 20 related save/queue/copy/archive/deletion cases 
 eight title layout/history/property-menu regressions pass. Mandatory web checks,
 2383 locale keys and production build pass. The full pipeline must be rerun against
 the new pushed commit before claiming CI stability.
+
+## Filled control boundaries
+
+Filled buttons and action icons, including controls using the default variant, use
+the shared control boundary token. The page contrast sweep also asserts the actual
+rendered Save workspace button border in both schemes at 360px and 1280px. This
+prevents an omitted variant attribute from bypassing the shared boundary style.
