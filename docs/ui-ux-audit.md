@@ -864,3 +864,61 @@ the normalized fixture passes in both schemes.
 Unsubmitted relationship selection is not yet integrated into navigation draft
 protection. Full screen/overlay coverage remains Partial. Prior main a603331 CI
 37656089187 is still running; Demo 37656089018 has completed successfully.
+
+
+## Dependency drafts and sequential navigation saving
+
+Unsubmitted dependency selection, failed relationship intent and confirmed writes
+awaiting refresh now participate in project navigation and beforeunload protection.
+Save and leave runs project text, milestone row edits, milestone creation and the
+relationship change in order, stopping at failure. Failed removal retries its
+exact target; confirmed add/refresh recovery repeats no write. Explicit discard
+of an unsubmitted choice performs no POST. Staying preserves the selection.
+
+The shared navigation hook gives sequential saves a cancellation signal. Stay,
+Escape dismissal, scope change and unmount stop subsequent operations, while an
+already-started write still completes and reports its confirmed result. Project
+saving and milestone row batching check this signal between writes. A held
+milestone-create case proves that Stay stops the later dependency write, retains
+an edited relationship choice, and the next Save and leave sends the newer choice
+without repeating milestone creation.
+
+Navigation feedback is now derived by a pure presenter function with structural
+inputs. Its error and failure label use the same ordered source; pending labels
+identify the actual write or refresh. Three unit cases cover stage labels, failure
+priority and validation. Eight new browser cases cover en/ja and light/dark at
+mobile large text, reload prompt/Stay, mixed milestone/dependency save ordering,
+retained failure/retry without duplicate milestone creation, explicit discard,
+confirmed refresh-only retry, failed removal retry, and canceling later writes.
+Japanese failure dialogs in both schemes were rendered and inspected; contrast
+passes. Mandatory web:check and build pass with 2435 matching locale keys.
+
+## Confirmation focus regression from CI 37656089187
+
+Prior main a603331 CI completed with one failed focus assertion in confirmed
+milestone deletion refresh recovery, while 585 browser cases passed. Check and
+Demo passed. The CI screenshot, trace and error context were downloaded and
+inspected. A deterministic browser case moves focus to the dialog itself during
+held refresh: the previous restoration accepted only document.body and reproduced
+the same missing retry focus. ConfirmActionDialog now also restores from its own
+dialog/confirmation controls, scopes action completion to open state, and explicitly
+focuses retry when an error appears in an open dialog. This covers a dialog that
+was temporarily hidden for navigation confirmation as well. Transition completion
+uses the same guarded error focus. Closing/hiding cancels scheduled restoration,
+and focus already moved to unrelated controls is respected.
+
+The deterministic case fails before the fix and passes after it. The first open
+state scope fix exposed four existing navigation-handoff focus failures; those
+led to explicit error-state restoration rather than relying on a still-live click.
+Final related regression evidence is recorded below. Overall UI/UX remains Partial;
+other forms, screen states and remaining inventory requirements still need direct
+verification.
+
+
+Final 105-case related browser run passes without retries on the completed focus
+and navigation changes, including task/project/page/inbox confirmations, handoff
+focus, milestone create/edit/remove, dependency recovery/draft navigation,
+project archive/text navigation and task unsaved titles. The three navigation
+feedback unit cases, mandatory web:check and build pass. No full-CI success or
+all-screen completion is claimed for this revision; the next pushed CI must
+confirm the complete browser suite.

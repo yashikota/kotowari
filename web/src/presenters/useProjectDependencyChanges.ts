@@ -53,6 +53,7 @@ export function useProjectDependencyChanges({
     setAction(change.action);
     const success = await transaction.submit(change);
     if (generation.current === token && currentScope.current === scope) setSaved(success);
+    return success;
   }
   return {
     pending: transaction.submitting,
@@ -61,12 +62,15 @@ export function useProjectDependencyChanges({
     saved,
     action,
     isPending: transaction.isPending,
+    needsRecovery: () =>
+      Boolean(lastChange.current && (transaction.error || transaction.hasCreated())),
     write,
     retry: async () => {
       if (transaction.isPending() || !lastChange.current) return;
       const token = generation.current;
       const success = await transaction.submit(lastChange.current);
       if (generation.current === token && currentScope.current === scope) setSaved(success);
+      return success;
     },
     invalidate: () => {
       transaction.invalidate();

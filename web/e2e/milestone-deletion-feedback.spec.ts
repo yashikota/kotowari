@@ -120,52 +120,69 @@ for (const scheme of ['light', 'dark']) {
   }
 }
 
-test('confirmed milestone deletion retries project refresh without another DELETE', async ({
-  page,
-  request,
-}) => {
-  const slug = `milestone-delete-refresh-${Date.now()}`;
-  expect((await request.post('/api/projects', { data: { slug, name: slug } })).ok()).toBeTruthy();
-  const milestone = await (
-    await request.post(`/api/projects/${slug}/milestones`, { data: { name: 'Only milestone' } })
-  ).json();
-  let deletes = 0;
-  let failRefresh = false;
-  await page.route(`**/api/projects/${slug}/milestones/${milestone.id}`, async (route) => {
-    if (route.request().method() !== 'DELETE') return route.continue();
-    deletes++;
-    const response = await route.fetch();
-    failRefresh = true;
-    return route.fulfill({ response });
-  });
-  await page.route(`**/api/projects/${slug}`, async (route) => {
-    if (route.request().method() === 'GET' && failRefresh) {
-      failRefresh = false;
-      return route.fulfill({ status: 503, json: { error: 'Refresh unavailable' } });
+for (const focusOrigin of ['automatic', 'dialog'] as const) {
+  test(`confirmed milestone deletion retries project refresh without another DELETE from ${focusOrigin} focus`, async ({
+    page,
+    request,
+  }) => {
+    const slug = `milestone-delete-refresh-${Date.now()}`;
+    expect((await request.post('/api/projects', { data: { slug, name: slug } })).ok()).toBeTruthy();
+    const milestone = await (
+      await request.post(`/api/projects/${slug}/milestones`, { data: { name: 'Only milestone' } })
+    ).json();
+    let releaseRefresh!: () => void;
+    const refreshGate = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+    let deletes = 0;
+    let failRefresh = false;
+    await page.route(`**/api/projects/${slug}/milestones/${milestone.id}`, async (route) => {
+      if (route.request().method() !== 'DELETE') return route.continue();
+      deletes++;
+      const response = await route.fetch();
+      failRefresh = true;
+      return route.fulfill({ response });
+    });
+    await page.route(`**/api/projects/${slug}`, async (route) => {
+      if (route.request().method() === 'GET' && failRefresh) {
+        failRefresh = false;
+        await refreshGate;
+        return route.fulfill({ status: 503, json: { error: 'Refresh unavailable' } });
+      }
+      return route.continue();
+    });
+    try {
+      await page.goto(`/projects/${slug}`);
+      await page.locator(`[data-milestone-id="${milestone.id}"] [data-milestone-remove]`).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: en.ui.delete, exact: true })
+        .click();
+      const dialog = page.getByRole('dialog', { name: en.milestoneDeletion.deleted, exact: true });
+      await expect(dialog.getByRole('status')).toContainText(en.milestoneDeletion.refreshing);
+      if (focusOrigin === 'dialog')
+        await dialog.evaluate((element) => (element as HTMLElement).focus());
+      releaseRefresh();
+      const retry = dialog.getByRole('button', { name: en.milestoneDeletion.refresh, exact: true });
+      await expect(dialog.getByRole('alert')).toContainText(en.milestoneDeletion.refreshFailed);
+      await expect(retry).toBeFocused();
+      expect(deletes).toBe(1);
+      expect((await (await request.get(`/api/projects/${slug}`)).json()).milestones).toHaveLength(
+        0,
+      );
+      await retry.click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.locator('[data-milestone-create]')).toBeFocused();
+      expect(deletes).toBe(1);
+      await expect(
+        page.getByRole('status').filter({ hasText: en.milestoneDeletion.deleted }),
+      ).toBeVisible();
+    } finally {
+      releaseRefresh();
+      await request.delete(`/api/projects/${slug}`);
     }
-    return route.continue();
   });
-  try {
-    await page.goto(`/projects/${slug}`);
-    await page.locator(`[data-milestone-id="${milestone.id}"] [data-milestone-remove]`).click();
-    await page.getByRole('dialog').getByRole('button', { name: en.ui.delete, exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: en.milestoneDeletion.deleted, exact: true });
-    const retry = dialog.getByRole('button', { name: en.milestoneDeletion.refresh, exact: true });
-    await expect(dialog.getByRole('alert')).toContainText(en.milestoneDeletion.refreshFailed);
-    await expect(retry).toBeFocused();
-    expect(deletes).toBe(1);
-    expect((await (await request.get(`/api/projects/${slug}`)).json()).milestones).toHaveLength(0);
-    await retry.click();
-    await expect(dialog).toHaveCount(0);
-    await expect(page.locator('[data-milestone-create]')).toBeFocused();
-    expect(deletes).toBe(1);
-    await expect(
-      page.getByRole('status').filter({ hasText: en.milestoneDeletion.deleted }),
-    ).toBeVisible();
-  } finally {
-    await request.delete(`/api/projects/${slug}`);
-  }
-});
+}
 
 test('switching deletion targets preserves the other row draft and unlinks assigned issues', async ({
   page,

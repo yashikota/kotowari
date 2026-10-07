@@ -1,5 +1,5 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useActionFocusReturn } from '../focus.ts';
 import { SaveFeedback } from './SaveFeedback.tsx';
 import styles from './ActionControl.module.css';
@@ -41,12 +41,35 @@ export function ConfirmActionDialog({
 }) {
   const feedbackRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const canRestoreFrom = useCallback(
+    (active: Element | null) =>
+      active === document.body ||
+      active === cancelRef.current ||
+      active === confirmRef.current ||
+      active === feedbackRef.current?.closest('[role="dialog"]'),
+    [],
+  );
+  useEffect(() => {
+    if (!opened || pending || !error) return;
+    const frame = requestAnimationFrame(() => {
+      if (canRestoreFrom(document.activeElement))
+        feedbackRef.current
+          ?.querySelector<HTMLButtonElement>('[role="alert"] button:not(:disabled)')
+          ?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [opened, pending, error, canRestoreFrom]);
   const run = useActionFocusReturn(
     pending,
     () =>
-      feedbackRef.current?.querySelector<HTMLButtonElement>(
-        '[role="alert"] button:not(:disabled)',
-      ) ?? cancelRef.current,
+      !opened
+        ? null
+        : (feedbackRef.current?.querySelector<HTMLButtonElement>(
+            '[role="alert"] button:not(:disabled)',
+          ) ?? cancelRef.current),
+    canRestoreFrom,
+    opened ? 'open' : 'closed',
   );
   return (
     <Modal
@@ -60,7 +83,15 @@ export function ConfirmActionDialog({
       closeOnClickOutside={!pending}
       withCloseButton={!pending}
       onEnterTransitionEnd={() => {
-        if (pending || confirmed || error) return;
+        if (!opened || pending) return;
+        if (error) {
+          if (canRestoreFrom(document.activeElement))
+            feedbackRef.current
+              ?.querySelector<HTMLButtonElement>('[role="alert"] button:not(:disabled)')
+              ?.focus();
+          return;
+        }
+        if (confirmed) return;
         const dialog = cancelRef.current?.closest('[role="dialog"]');
         if (dialog && !dialog.contains(document.activeElement)) cancelRef.current?.focus();
       }}
@@ -98,6 +129,7 @@ export function ConfirmActionDialog({
           {!error && (
             <Button
               className={styles.action}
+              ref={confirmRef}
               color={confirmed ? undefined : 'red'}
               disabled={pending}
               onClick={() => run(onConfirm)}

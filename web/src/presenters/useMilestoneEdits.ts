@@ -153,9 +153,10 @@ export function useMilestoneEdits({
     isPending: () => pending.current.size > 0,
     change,
     commit,
-    saveAll: async () => {
+    saveAll: async (signal?: AbortSignal) => {
       if (pending.current.size > 0) return false;
       for (const id of Object.keys(current.current)) {
+        if (signal?.aborted) return false;
         if (!(await commit(Number(id)))) return false;
       }
       return true;

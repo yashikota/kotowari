@@ -539,6 +539,7 @@ export function useProjectDetailPagePresenter() {
     });
     if (token === saveGeneration.current && saveScope.current === slug)
       setMilestoneCreated(success);
+    return success;
   }
 
   return {
@@ -621,7 +622,12 @@ export function useProjectDetailPagePresenter() {
     ),
     dependencyProjectSlug,
     dependencyKind,
-    dependencyChanges,
+    dependencyChanges: {
+      ...dependencyChanges,
+      dirty: Boolean(
+        dependencyProjectSlug || dependencyChanges.error || dependencyChanges.confirmed,
+      ),
+    },
     milestoneCreation: {
       scope: slug,
       dirty: Boolean(
@@ -638,7 +644,7 @@ export function useProjectDetailPagePresenter() {
     milestoneDescription,
     milestoneTargetDate,
     handlers: {
-      onSaveUnsavedText: async () => {
+      onSaveUnsavedText: async (signal?: AbortSignal) => {
         if (
           pendingProjectSaves.current > 0 ||
           milestoneEdits.isPending() ||
@@ -656,16 +662,25 @@ export function useProjectDetailPagePresenter() {
         if (project.description !== persistedDescription.current.value)
           patch.description = project.description;
         if (Object.keys(patch).length > 0) await save(patch);
-        if (failedProjectPatch.current) return;
-        if (!(await milestoneEdits.saveAll())) return;
-        if (token !== saveGeneration.current || saveScope.current !== slug) return;
+        if (failedProjectPatch.current || signal?.aborted) return;
+        if (!(await milestoneEdits.saveAll(signal))) return;
+        if (signal?.aborted || token !== saveGeneration.current || saveScope.current !== slug)
+          return;
         if (
           milestoneName ||
           milestoneDescription ||
           milestoneTargetDate ||
           milestoneCreation.hasCreated()
         )
-          return createMilestone();
+          if (!(await createMilestone())) return;
+        if (signal?.aborted || token !== saveGeneration.current || saveScope.current !== slug)
+          return;
+        if (dependencyChanges.needsRecovery()) return dependencyChanges.retry();
+        if (dependencyProjectSlug)
+          return dependencyChanges.write({
+            action: 'add',
+            dependency: { projectSlug: dependencyProjectSlug, kind: dependencyKind },
+          });
       },
       onRetryProjectSave: () => {
         if (pendingProjectSaves.current > 0 || !failedProjectPatch.current) return;

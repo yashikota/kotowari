@@ -42,6 +42,7 @@ import { MetaBadge, PageHeader, Pane, Section, SplitLayout } from '../mantine-ui
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useAutofocusTarget, useFocusWhen } from '../focus.ts';
+import { projectNavigationFeedback } from '../presenters/projectNavigationFeedback.ts';
 import { useProjectDetailPagePresenter } from '../presenters/ProjectDetail.tsx';
 
 export function ProjectDetailPageView({
@@ -80,9 +81,13 @@ export function ProjectDetailPageView({
     feedbackSelector: '[data-project-archive-feedback]',
     triggerSelector: '[data-project-actions]',
   });
+  const navigationFeedback = projectNavigationFeedback(model);
   const navigation = useUnsavedNavigation({
     dirty:
-      (model.hasUnsavedText || model.milestoneEdits.dirty || model.milestoneCreation.dirty) &&
+      (model.hasUnsavedText ||
+        model.milestoneEdits.dirty ||
+        model.milestoneCreation.dirty ||
+        model.dependencyChanges.dirty) &&
       !model.deletion.confirmed,
     pending:
       model.projectSaving ||
@@ -91,11 +96,7 @@ export function ProjectDetailPageView({
       model.dependencyChanges.pending ||
       model.milestoneRemoval.pending ||
       (model.deletion.pending && !model.deletion.confirmed),
-    error:
-      model.projectSaveError ||
-      model.milestoneEdits.error ||
-      model.milestoneCreation.error ||
-      model.milestoneCreation.nameError,
+    error: navigationFeedback.error,
     save: model.handlers.onSaveUnsavedText,
     scope: model.slug,
   });
@@ -546,39 +547,8 @@ export function ProjectDetailPageView({
             stayLabel={t('unsavedProject.stay')}
             discardLabel={t('unsavedProject.discard')}
             saveLabel={t('unsavedProject.save')}
-            savingLabel={t(
-              model.deletion.pending
-                ? model.deletion.confirmed
-                  ? 'projectDeletion.opening'
-                  : 'projectDeletion.deleting'
-                : model.milestoneRemoval.pending
-                  ? model.milestoneRemoval.confirmed
-                    ? 'milestoneDeletion.refreshing'
-                    : 'milestoneDeletion.deleting'
-                  : model.dependencyChanges.pending
-                    ? model.dependencyChanges.confirmed
-                      ? 'dependencySave.refreshing'
-                      : model.dependencyChanges.action === 'add'
-                        ? 'dependencySave.adding'
-                        : 'dependencySave.removing'
-                    : model.milestoneCreation.pending
-                      ? model.milestoneCreation.created
-                        ? 'milestoneCreation.refreshing'
-                        : 'milestoneCreation.creating'
-                      : model.milestoneEdits.pending
-                        ? 'milestoneSave.saving'
-                        : 'projectSave.saving',
-            )}
-            failureLabel={t(
-              model.milestoneEdits.error && !model.projectSaveError
-                ? 'milestoneSave.failed'
-                : (model.milestoneCreation.error || model.milestoneCreation.nameError) &&
-                    !model.projectSaveError
-                  ? model.milestoneCreation.created
-                    ? 'milestoneCreation.refreshFailed'
-                    : 'milestoneCreation.failed'
-                  : 'projectSave.failed',
-            )}
+            savingLabel={t(navigationFeedback.savingLabel)}
+            failureLabel={t(navigationFeedback.failureLabel)}
           />
           <ConfirmActionDialog
             opened={model.deletion.opened && !navigation.opened}

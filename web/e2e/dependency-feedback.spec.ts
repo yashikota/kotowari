@@ -248,7 +248,7 @@ test('changing removal targets after failure removes only the newly selected dep
 });
 
 for (const outcome of ['success', 'failure'] as const) {
-  test(`late dependency write ${outcome} preserves the next project's selection and focus`, async ({
+  test(`navigation waits for dependency write ${outcome} and preserves next-project input`, async ({
     page,
     request,
   }) => {
@@ -285,22 +285,21 @@ for (const outcome of ['success', 'failure'] as const) {
       await form.getByRole('button', { name: en.projectDependencies.add, exact: true }).click();
       await expect(selection).toBeDisabled();
       await page.getByRole('link', { name: next, exact: true }).click();
+      const navigation = page.getByRole('dialog', { name: en.unsavedProject.title, exact: true });
+      await expect(
+        navigation.getByRole('button', { name: en.unsavedProject.discard, exact: true }),
+      ).toBeDisabled();
+      await expect(navigation.getByRole('status')).toContainText(en.dependencySave.adding);
+      release();
+      if (outcome === 'failure') {
+        await expect(navigation.getByRole('alert')).toContainText('Old dependency unavailable');
+        await navigation
+          .getByRole('button', { name: en.unsavedProject.discard, exact: true })
+          .click();
+      }
       await expect(page).toHaveURL(new RegExp(`/projects/${next}$`));
       await selection.selectOption(target);
       await selection.focus();
-      const response = page.waitForResponse(
-        (response) =>
-          response.url().endsWith(`/api/projects/${slug}/dependencies`) &&
-          response.request().method() === 'POST',
-      );
-      release();
-      await response;
-      await page.evaluate(
-        async () =>
-          new Promise<void>((resolve) =>
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-          ),
-      );
       await expect(selection).toHaveValue(target);
       await expect(selection).toBeFocused();
       await expect(form.locator('..').getByRole('alert')).toHaveCount(0);

@@ -15,17 +15,19 @@ export function useUnsavedNavigation({
   dirty: boolean;
   pending: boolean;
   error: string;
-  save: () => unknown;
+  save: (signal: AbortSignal) => unknown;
   scope: string;
 }) {
   const [waiting, setWaiting] = useState(false);
   const [localError, setLocalError] = useState('');
   const generation = useRef(0);
+  const saveController = useRef<AbortController | null>(null);
   useEffect(() => {
     generation.current++;
     setWaiting(false);
     setLocalError('');
     return () => {
+      saveController.current?.abort();
       generation.current++;
     };
   }, [scope]);
@@ -47,6 +49,7 @@ export function useUnsavedNavigation({
     pending: pending || waiting,
     error: localError || error,
     stay: () => {
+      saveController.current?.abort();
       setWaiting(false);
       setLocalError('');
       blocker.reset?.();
@@ -57,12 +60,14 @@ export function useUnsavedNavigation({
     save: async () => {
       if (pending || waiting) return;
       const token = generation.current;
+      const controller = new AbortController();
+      saveController.current = controller;
       setLocalError('');
       setWaiting(true);
       try {
-        await save();
+        await save(controller.signal);
       } catch (cause) {
-        if (generation.current === token) {
+        if (generation.current === token && !controller.signal.aborted) {
           setWaiting(false);
           setLocalError(cause instanceof Error ? cause.message : String(cause));
         }
