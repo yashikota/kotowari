@@ -1,4 +1,15 @@
 {
+  "dependencySave": {
+    "adding": "Adding dependency…",
+    "removing": "Removing dependency…",
+    "added": "Dependency added",
+    "removed": "Dependency removed",
+    "failed": "Dependency change could not be saved",
+    "retry": "Retry saving",
+    "refreshing": "Refreshing project…",
+    "refreshFailed": "Change saved, but project could not be refreshed",
+    "retryRefresh": "Retry refresh"
+  },
   "milestoneSave": {
     "saving": "Saving milestone changes…",
     "saved": "Milestone changes saved",

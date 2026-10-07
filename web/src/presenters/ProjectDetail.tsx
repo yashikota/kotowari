@@ -1,3 +1,4 @@
+import { useProjectDependencyChanges } from './useProjectDependencyChanges.ts';
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useClipboardCopy } from './useClipboardCopy.ts';
 import { useMilestoneEdits } from './useMilestoneEdits.ts';
@@ -404,6 +405,7 @@ export function useProjectDetailPagePresenter() {
             'labels',
             'initiativeSlugs',
             'milestones',
+            'dependencies',
           ] as const;
           const newerEdits = Object.fromEntries(
             locallyEditable
@@ -451,6 +453,7 @@ export function useProjectDetailPagePresenter() {
 
   async function refreshProject() {
     const milestonesBeforeRefresh = latestProject.current.milestones;
+    const dependenciesBeforeRefresh = latestProject.current.dependencies;
     const token = saveGeneration.current;
     const refresh = ++projectRefreshGeneration.current;
     const [next, activities] = await Promise.all([api.project(slug), api.projectActivities(slug)]);
@@ -467,12 +470,39 @@ export function useProjectDetailPagePresenter() {
       ...next,
       milestones:
         current.milestones !== milestonesBeforeRefresh ? current.milestones : next.milestones,
+      dependencies:
+        current.dependencies !== dependenciesBeforeRefresh
+          ? current.dependencies
+          : next.dependencies,
       summary: (current.summary ?? '') !== summary ? current.summary : next.summary,
       description: current.description !== description ? current.description : next.description,
     }));
     persistedSummary.current = { slug, value: next.summary ?? '' };
     persistedDescription.current = { slug, value: next.description };
   }
+
+  const dependencyChanges = useProjectDependencyChanges({
+    scope: slug,
+    onConfirmed: (change) => {
+      if (saveScope.current !== slug) return;
+      setProject((current) => ({
+        ...current,
+        dependencies:
+          change.action === 'add'
+            ? [
+                ...(current.dependencies ?? []).filter(
+                  (item) => item.projectSlug !== change.dependency.projectSlug,
+                ),
+                change.dependency,
+              ]
+            : (current.dependencies ?? []).filter(
+                (item) => item.projectSlug !== change.projectSlug,
+              ),
+      }));
+      if (change.action === 'add') setDependencyProjectSlug('');
+    },
+    refresh: refreshProject,
+  });
 
   const milestoneCreation = useRetriableCreation({
     scope: slug,
@@ -534,7 +564,8 @@ export function useProjectDetailPagePresenter() {
           reminderEditor.data.saving ||
           archive.isPending() ||
           milestoneEdits.isPending() ||
-          milestoneCreation.isPending()
+          milestoneCreation.isPending() ||
+          dependencyChanges.isPending()
         )
           return;
         return deletion.confirm();
@@ -590,6 +621,7 @@ export function useProjectDetailPagePresenter() {
     ),
     dependencyProjectSlug,
     dependencyKind,
+    dependencyChanges,
     milestoneCreation: {
       scope: slug,
       dirty: Boolean(
@@ -611,6 +643,7 @@ export function useProjectDetailPagePresenter() {
           pendingProjectSaves.current > 0 ||
           milestoneEdits.isPending() ||
           milestoneCreation.isPending() ||
+          dependencyChanges.isPending() ||
           milestoneRemoval.isPending() ||
           deletion.isPending() ||
           deletion.isRemoved()
@@ -714,24 +747,24 @@ export function useProjectDetailPagePresenter() {
       },
       onProjectLabelsChange: (labels: string[]) => save({ labels }),
       onProjectInitiativesChange: (initiativeSlugs: string[]) => save({ initiativeSlugs }),
-      onDependencyProjectChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
-        setDependencyProjectSlug(e.target.value),
-      onDependencyKindChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
-        setDependencyKind(e.target.value as typeof dependencyKind),
-      onAddProjectDependency: async (e: React.FormEvent<HTMLFormElement>) => {
+      onDependencyProjectChange: (e: React.ChangeEvent<HTMLSelectElement>) => {
+        dependencyChanges.invalidate();
+        setDependencyProjectSlug(e.target.value);
+      },
+      onDependencyKindChange: (e: React.ChangeEvent<HTMLSelectElement>) => {
+        dependencyChanges.invalidate();
+        setDependencyKind(e.target.value as typeof dependencyKind);
+      },
+      onAddProjectDependency: (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!dependencyProjectSlug) return;
-        await api.createProjectDependency(slug, {
-          projectSlug: dependencyProjectSlug,
-          kind: dependencyKind,
+        return dependencyChanges.write({
+          action: 'add',
+          dependency: { projectSlug: dependencyProjectSlug, kind: dependencyKind },
         });
-        setDependencyProjectSlug('');
-        await refreshProject();
       },
-      onRemoveProjectDependency: async (dependencySlug: string) => {
-        await api.deleteProjectDependency(slug, dependencySlug);
-        await refreshProject();
-      },
+      onRemoveProjectDependency: (projectSlug: string) =>
+        dependencyChanges.write({ action: 'remove', projectSlug }),
       onCreateIssue: () => sendIntent('issue.create', { projectId: project.id }),
       onRetryProjectArchive: archive.retry,
       onToggleProjectArchived: () => {
@@ -742,7 +775,8 @@ export function useProjectDetailPagePresenter() {
           reminderEditor.data.saving ||
           archive.isPending() ||
           milestoneEdits.isPending() ||
-          milestoneCreation.isPending()
+          milestoneCreation.isPending() ||
+          dependencyChanges.isPending()
         )
           return;
         setProjectActionsOpen(false);
@@ -754,7 +788,8 @@ export function useProjectDetailPagePresenter() {
           reminderEditor.data.saving ||
           archive.isPending() ||
           milestoneEdits.isPending() ||
-          milestoneCreation.isPending()
+          milestoneCreation.isPending() ||
+          dependencyChanges.isPending()
         )
           return;
         setProjectActionsOpen(false);
@@ -803,6 +838,7 @@ export function useProjectDetailPagePresenter() {
         if (
           milestoneEdits.isPending() ||
           milestoneCreation.isPending() ||
+          dependencyChanges.isPending() ||
           milestoneRemoval.isPending() ||
           deletion.isPending() ||
           deletion.isRemoved()

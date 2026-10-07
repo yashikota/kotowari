@@ -830,3 +830,37 @@ to explicitly dismiss beforeunload. The final six-case run passes. Mandatory
 web:check and build pass; locales retain 2425 matching keys. Prior main a603331
 is pushed; Demo 37656089018 is successful and CI 37656089187 is still running.
 Overall screen audit remains Partial, including other creation forms and overlays.
+
+
+## Project dependency recovery and controls
+
+Dependency add/remove now has one scoped transaction presenter composed from the
+shared confirmed-write/refresh recovery primitive. Pending state prevents repeat
+writes. Failed add retains the project and relationship choice; editing invalidates
+the old retry. New removal intent replaces a failed target rather than deleting the
+previous target. Confirmed changes update the local list immediately; retry after
+failed project refresh repeats only the read. Local dependency changes are also
+preserved against older property and refresh responses. Entity delete/archive and
+milestone removal handlers guard concurrent dependency writes.
+
+The shared section now has visible select labels, 44px controls and actions,
+wrapping relationship rows, and SaveFeedback for pending, failure/retry and success.
+Action focus returns to retry on failure, or an enabled select after completion.
+Late completion after changing projects cannot overwrite selection, feedback or
+focus in the next project. Existing project navigation wait uses the actual
+relationship operation label while a dependency write is active.
+
+Nine new browser cases cover both languages/themes at mobile large text, held
+failure/duplicate submission, retaining and changing relationship choice,
+add/remove failure recovery, local confirmed-list updates, refresh-only retry with
+one write, switching failed deletion targets, and late success/failure after
+navigation. All nine plus two existing reciprocal/create dependency cases pass
+without retries. The related 41-case navigation/archive/creation run also passes.
+Japanese light/dark failure sections were rendered and inspected; contrast passes.
+Mandatory web:check and build pass, with 2435 matching locale keys. Initial Japanese
+fixture failures came from a trailing-space mismatch after server name trimming;
+the normalized fixture passes in both schemes.
+
+Unsubmitted relationship selection is not yet integrated into navigation draft
+protection. Full screen/overlay coverage remains Partial. Prior main a603331 CI
+37656089187 is still running; Demo 37656089018 has completed successfully.

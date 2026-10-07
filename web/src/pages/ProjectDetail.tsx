@@ -88,6 +88,7 @@ export function ProjectDetailPageView({
       model.projectSaving ||
       model.milestoneEdits.pending ||
       model.milestoneCreation.pending ||
+      model.dependencyChanges.pending ||
       model.milestoneRemoval.pending ||
       (model.deletion.pending && !model.deletion.confirmed),
     error:
@@ -230,6 +231,7 @@ export function ProjectDetailPageView({
                               model.archivePending ||
                               model.milestoneEdits.pending ||
                               model.milestoneCreation.pending ||
+                              model.dependencyChanges.pending ||
                               model.projectSaving ||
                               model.reminderEditor.saving ||
                               model.deletion.pending ||
@@ -246,6 +248,7 @@ export function ProjectDetailPageView({
                               model.projectSaving ||
                               model.milestoneEdits.pending ||
                               model.milestoneCreation.pending ||
+                              model.dependencyChanges.pending ||
                               model.archivePending ||
                               model.reminderEditor.saving ||
                               model.deletion.pending ||
@@ -481,6 +484,8 @@ export function ProjectDetailPageView({
                     onKindChange={handlers.onDependencyKindChange}
                     onAdd={handlers.onAddProjectDependency}
                     onRemove={handlers.onRemoveProjectDependency}
+                    changes={model.dependencyChanges}
+                    scope={model.slug}
                   />
                   <ProjectMilestonesSection
                     milestones={project.milestones}
@@ -550,13 +555,19 @@ export function ProjectDetailPageView({
                   ? model.milestoneRemoval.confirmed
                     ? 'milestoneDeletion.refreshing'
                     : 'milestoneDeletion.deleting'
-                  : model.milestoneCreation.pending
-                    ? model.milestoneCreation.created
-                      ? 'milestoneCreation.refreshing'
-                      : 'milestoneCreation.creating'
-                    : model.milestoneEdits.pending
-                      ? 'milestoneSave.saving'
-                      : 'projectSave.saving',
+                  : model.dependencyChanges.pending
+                    ? model.dependencyChanges.confirmed
+                      ? 'dependencySave.refreshing'
+                      : model.dependencyChanges.action === 'add'
+                        ? 'dependencySave.adding'
+                        : 'dependencySave.removing'
+                    : model.milestoneCreation.pending
+                      ? model.milestoneCreation.created
+                        ? 'milestoneCreation.refreshing'
+                        : 'milestoneCreation.creating'
+                      : model.milestoneEdits.pending
+                        ? 'milestoneSave.saving'
+                        : 'projectSave.saving',
             )}
             failureLabel={t(
               model.milestoneEdits.error && !model.projectSaveError
