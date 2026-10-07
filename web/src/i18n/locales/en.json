@@ -1,4 +1,11 @@
 {
+  "milestoneSave": {
+    "saving": "Saving milestone changes…",
+    "saved": "Milestone changes saved",
+    "failed": "Milestone changes could not be saved",
+    "retry": "Retry saving milestone",
+    "save": "Save milestone"
+  },
   "milestoneCreation": {
     "nameRequired": "Enter a milestone name.",
     "creating": "Adding milestone…",
@@ -17,7 +24,7 @@
   },
   "unsavedProject": {
     "title": "Unsaved project changes",
-    "description": "The summary or description has not been saved. Save before leaving, or leave without saving.",
+    "description": "This project has unsaved changes. Save before leaving, or leave without saving.",
     "stay": "Stay on this page",
     "discard": "Leave without saving",
     "save": "Save changes and leave"

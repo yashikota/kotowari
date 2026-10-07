@@ -81,9 +81,9 @@ export function ProjectDetailPageView({
     triggerSelector: '[data-project-actions]',
   });
   const navigation = useUnsavedNavigation({
-    dirty: model.hasUnsavedText && !model.deletion.confirmed,
-    pending: model.projectSaving,
-    error: model.projectSaveError,
+    dirty: (model.hasUnsavedText || model.milestoneEdits.dirty) && !model.deletion.confirmed,
+    pending: model.projectSaving || model.milestoneEdits.pending,
+    error: model.projectSaveError || model.milestoneEdits.error,
     save: model.handlers.onSaveUnsavedText,
     scope: model.slug,
   });
@@ -208,6 +208,7 @@ export function ProjectDetailPageView({
                           <Menu.Item
                             disabled={
                               model.archivePending ||
+                              model.milestoneEdits.pending ||
                               model.projectSaving ||
                               model.reminderEditor.saving ||
                               model.deletion.pending ||
@@ -222,6 +223,7 @@ export function ProjectDetailPageView({
                             color="red"
                             disabled={
                               model.projectSaving ||
+                              model.milestoneEdits.pending ||
                               model.archivePending ||
                               model.reminderEditor.saving ||
                               model.deletion.pending ||
@@ -469,11 +471,9 @@ export function ProjectDetailPageView({
                     onDraftNameChange={handlers.onMilestoneNameDraftChange}
                     onDraftDescriptionChange={handlers.onMilestoneDescriptionDraftChange}
                     onDraftTargetDateChange={handlers.onMilestoneTargetDateDraftChange}
-                    onNameChange={handlers.onMilestoneNameChange}
-                    onNameBlur={handlers.onMilestoneNameBlur}
-                    onTargetDateChange={handlers.onMilestoneTargetDateChange}
-                    onTargetDateBlur={handlers.onMilestoneTargetDateBlur}
-                    onDescriptionBlur={handlers.onMilestoneDescriptionBlur}
+                    edits={model.milestoneEdits}
+                    onEditChange={handlers.onMilestoneEditChange}
+                    onSaveEdit={handlers.onSaveMilestoneEdit}
                     onRemove={handlers.onRemoveMilestone}
                   />
                   <ProjectDocumentsSection

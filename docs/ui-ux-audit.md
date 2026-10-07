@@ -679,3 +679,52 @@ Mandatory web:check and build pass, with 2409 matching locale keys.
 CI 37642920644 for b545d9f succeeded before this work was pushed. Milestone row editing,
 removal, unsubmitted creation draft navigation, and pending project refresh combinations
 remain part of the broader completion audit; the full objective is still unproven.
+
+## Milestone row editing and confirmed-write preservation
+
+Existing milestone rows now share a dedicated scoped edit presenter. Names,
+descriptions and dates are controlled drafts with row-level pending, failure,
+retry and confirmed-success feedback. Pending fields remain focusable but read-only;
+other rows remain editable. Empty names show a translated validation message, and
+explicit save returns focus to the invalid name. Shared 44px wrapping actions and
+SaveFeedback keep the row consistent with other editing surfaces. Moving focus to
+the explicit save action defers blur saving to that action, allowing deterministic
+retry focus after a rejected write.
+
+The project navigation guard includes milestone drafts and pending saves. Saving
+before navigation saves dirty rows sequentially and waits for every confirmed write;
+a failure leaves the dialog and current drafts available. Project property writes
+and local refreshes preserve milestone changes confirmed after their request began.
+Drafts survive unrelated property changes and milestone creation/refresh. Archive,
+project deletion and milestone removal are blocked while milestone writes are pending.
+
+Nine new browser cases cover en/ja and both themes at 360px with large text, held
+503 responses, read-only pending controls, independent rows, retained payload retry,
+trimmed names, clearing dates to null, required-name focus, refresh and navigation
+recovery, multiple dirty rows, revised failed payloads, older property/refresh
+responses, and explicit-save retry focus. Japanese light/dark failure screenshots
+were inspected and rendered row contrast passes. A 102-case related regression run
+passed before the final explicit-save focus adjustment; the final focused regression
+result is recorded after that adjustment below.
+
+Milestone removal still uses browser confirmation and lacks shared failure recovery.
+Unsubmitted creation drafts and other editing surfaces remain part of the full audit.
+The full UI/UX objective remains Partial.
+
+## Readability margin in shared colors
+
+Secondary text and placeholders now use #343a40 in light mode and #dee2e6 in dark
+mode. Named semantic foreground palettes target 7:1 against the supported worst-case
+shared backgrounds, with a matching unit assertion. Existing filled-control text,
+control-boundary and focus tokens remain subject to their AA checks. The prior color
+run passed nine browser cases, including the 27-route sweep in both themes and at
+360/1280px, plus three color-foundation unit cases. Rendered light/dark settings were
+inspected. This establishes the covered color surfaces, not full WCAG compliance.
+
+The final 42-case focused regression run passes without retries after the explicit
+save focus adjustment. Mandatory web:check and build pass with 2415 matching locale
+keys. An earlier run had one browser startup failure: trace showed
+net::ERR_NO_BUFFER_SPACE loading useMatch before the first form interaction. Its
+trace was preserved in the local temporary directory; the subsequent complete run
+passed. Prior CI 37646628920 for 806a2f9 completed successfully before this work was
+pushed. New CI is still required for the current changes.

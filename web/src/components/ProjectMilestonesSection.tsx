@@ -1,5 +1,6 @@
-import { ActionIcon, Box, Button, Group, Stack, Text, Textarea, TextInput } from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
+import { Box, Button, Group, Stack, Text, Textarea, TextInput } from '@mantine/core';
+import { ProjectMilestoneEditor } from './ProjectMilestoneEditor.tsx';
+import type { useMilestoneEdits } from '../presenters/useMilestoneEdits.ts';
 import { useRef } from 'react';
 import { useActionFocusReturn, useFocusWhen } from '../focus.ts';
 import actionStyles from '../design-system/ActionControl.module.css';
@@ -20,11 +21,9 @@ export function ProjectMilestonesSection({
   onDraftNameChange,
   onDraftDescriptionChange,
   onDraftTargetDateChange,
-  onNameChange,
-  onNameBlur,
-  onTargetDateChange,
-  onTargetDateBlur,
-  onDescriptionBlur,
+  edits,
+  onEditChange,
+  onSaveEdit,
   onRemove,
 }: {
   milestones: ProjectMilestone[];
@@ -45,11 +44,9 @@ export function ProjectMilestonesSection({
   onDraftNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onDraftDescriptionChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
   onDraftTargetDateChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onNameChange: (id: number, event: ChangeEvent<HTMLInputElement>) => void;
-  onNameBlur: (id: number) => void;
-  onTargetDateChange: (id: number, event: ChangeEvent<HTMLInputElement>) => void;
-  onTargetDateBlur: (id: number) => void;
-  onDescriptionBlur: (id: number, description: string) => void;
+  edits: ReturnType<typeof useMilestoneEdits>;
+  onEditChange: ReturnType<typeof useMilestoneEdits>['change'];
+  onSaveEdit: ReturnType<typeof useMilestoneEdits>['commit'];
   onRemove: (id: number, name: string) => void;
 }) {
   const { t } = useTranslation();
@@ -156,46 +153,20 @@ export function ProjectMilestonesSection({
             padding: 0,
           }}
         >
-          {milestones.map((milestone) => (
-            <Stack component="li" key={milestone.id} gap="xs">
-              <Group gap="xs" wrap="wrap">
-                <TextInput
-                  aria-label={`${t('projectMilestones.name')}: ${milestone.name}`}
-                  value={milestone.name}
-                  onChange={(event) => onNameChange(milestone.id, event)}
-                  onBlur={() => onNameBlur(milestone.id)}
-                  size="sm"
-                  style={{ flex: '1 1 220px' }}
-                />
-                <TextInput
-                  type="date"
-                  aria-label={`${t('projectMilestones.targetDate')}: ${milestone.name}`}
-                  value={milestone.targetDate?.slice(0, 10) ?? ''}
-                  onChange={(event) => onTargetDateChange(milestone.id, event)}
-                  onBlur={() => onTargetDateBlur(milestone.id)}
-                  size="sm"
-                />
-                <ActionIcon
-                  type="button"
-                  variant="subtle"
-                  color="red"
-                  aria-label={t('projectMilestones.remove', { name: milestone.name })}
-                  onClick={() => onRemove(milestone.id, milestone.name)}
-                >
-                  <IconTrash size={14} stroke={1.7} aria-hidden="true" />
-                </ActionIcon>
-              </Group>
-              <Textarea
-                aria-label={`${t('projectMilestones.description')}: ${milestone.name}`}
-                placeholder={t('projectMilestones.descriptionPlaceholder')}
-                defaultValue={milestone.description ?? ''}
-                onBlur={(event) => onDescriptionBlur(milestone.id, event.currentTarget.value)}
-                minRows={1}
-                autosize
-                size="sm"
+          {milestones.map((milestone) =>
+            edits.rows[milestone.id] ? (
+              <ProjectMilestoneEditor
+                key={milestone.id}
+                milestone={milestone}
+                state={edits.rows[milestone.id]!}
+                scope={`${creation.scope}:${milestone.id}`}
+                onChange={(field, value) => onEditChange(milestone.id, field, value)}
+                onSave={(focusInvalid) => onSaveEdit(milestone.id, focusInvalid)}
+                onRemove={() => onRemove(milestone.id, milestone.name)}
+                removalDisabled={edits.pending}
               />
-            </Stack>
-          ))}
+            ) : null,
+          )}
         </Stack>
       )}
     </Section>

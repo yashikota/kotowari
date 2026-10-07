@@ -1,5 +1,6 @@
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useClipboardCopy } from './useClipboardCopy.ts';
+import { useMilestoneEdits } from './useMilestoneEdits.ts';
 import { useRetriableCreation } from './useRetriableCreation.ts';
 import { useRetriableSave } from './useRetriableSave.ts';
 import { useRetriableRemoval } from './useRetriableRemoval.ts';
@@ -185,6 +186,31 @@ export function useProjectDetailPagePresenter() {
     },
     onFailure: () => setArchiveSaved(false),
   });
+  const milestoneEdits = useMilestoneEdits({
+    scope: slug,
+    milestones: project.milestones,
+    save: (id, body) => api.patchMilestone(slug, id, body),
+    onSaved: (milestone) => {
+      setProject((current) =>
+        current.slug === slug
+          ? {
+              ...current,
+              milestones: current.milestones.map((item) =>
+                item.id === milestone.id ? milestone : item,
+              ),
+            }
+          : current,
+      );
+      const token = saveGeneration.current;
+      void api
+        .projectActivities(slug)
+        .then((activities) => {
+          if (saveScope.current === slug && token === saveGeneration.current)
+            setProjectActivities(activities);
+        })
+        .catch(() => undefined);
+    },
+  });
   const projectStatusSequenceSince = useRef<number | null>(null);
   const projectStatusSequenceSlug = useRef(slug);
 
@@ -362,6 +388,7 @@ export function useProjectDetailPagePresenter() {
             'reminderAt',
             'labels',
             'initiativeSlugs',
+            'milestones',
           ] as const;
           const newerEdits = Object.fromEntries(
             locallyEditable
@@ -408,6 +435,7 @@ export function useProjectDetailPagePresenter() {
   }
 
   async function refreshProject() {
+    const milestonesBeforeRefresh = latestProject.current.milestones;
     const token = saveGeneration.current;
     const refresh = ++projectRefreshGeneration.current;
     const [next, activities] = await Promise.all([api.project(slug), api.projectActivities(slug)]);
@@ -422,6 +450,8 @@ export function useProjectDetailPagePresenter() {
     const description = persistedDescription.current.value;
     setProject((current) => ({
       ...next,
+      milestones:
+        current.milestones !== milestonesBeforeRefresh ? current.milestones : next.milestones,
       summary: (current.summary ?? '') !== summary ? current.summary : next.summary,
       description: current.description !== description ? current.description : next.description,
     }));
@@ -484,7 +514,12 @@ export function useProjectDetailPagePresenter() {
     deletion: {
       ...deletion,
       confirm: () => {
-        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving || archive.isPending())
+        if (
+          pendingProjectSaves.current > 0 ||
+          reminderEditor.data.saving ||
+          archive.isPending() ||
+          milestoneEdits.isPending()
+        )
           return;
         return deletion.confirm();
       },
@@ -524,6 +559,7 @@ export function useProjectDetailPagePresenter() {
       (project.summary ?? '') !== persistedSummary.current.value ||
       project.description !== persistedDescription.current.value,
     projectSaveError,
+    milestoneEdits,
     archivePending: archive.saving,
     archiveError: archive.error,
     archiveSaved,
@@ -550,14 +586,16 @@ export function useProjectDetailPagePresenter() {
     milestoneDescription,
     milestoneTargetDate,
     handlers: {
-      onSaveUnsavedText: () => {
-        if (pendingProjectSaves.current > 0) return;
+      onSaveUnsavedText: async () => {
+        if (pendingProjectSaves.current > 0 || milestoneEdits.isPending()) return;
         const patch = { ...failedProjectPatch.current };
         if ((project.summary ?? '') !== persistedSummary.current.value)
           patch.summary = project.summary ?? '';
         if (project.description !== persistedDescription.current.value)
           patch.description = project.description;
-        return Object.keys(patch).length > 0 ? save(patch) : undefined;
+        if (Object.keys(patch).length > 0) await save(patch);
+        if (failedProjectPatch.current) return;
+        return milestoneEdits.saveAll();
       },
       onRetryProjectSave: () => {
         if (pendingProjectSaves.current > 0 || !failedProjectPatch.current) return;
@@ -665,14 +703,20 @@ export function useProjectDetailPagePresenter() {
           deletion.isRemoved() ||
           pendingProjectSaves.current > 0 ||
           reminderEditor.data.saving ||
-          archive.isPending()
+          archive.isPending() ||
+          milestoneEdits.isPending()
         )
           return;
         setProjectActionsOpen(false);
         return archive.write(!project.archivedAt);
       },
       onDeleteProject: () => {
-        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving || archive.isPending())
+        if (
+          pendingProjectSaves.current > 0 ||
+          reminderEditor.data.saving ||
+          archive.isPending() ||
+          milestoneEdits.isPending()
+        )
           return;
         setProjectActionsOpen(false);
         setProjectUpdateOpen(false);
@@ -714,43 +758,10 @@ export function useProjectDetailPagePresenter() {
       ) => save(e.target.value ? { targetDate: e.target.value } : { clearTargetDate: true }),
       onCreatePage: () => sendIntent('page.create', { projectId: project.id }),
       onCreateADR: () => sendIntent('adr.create', { projectSlug: slug }),
-      onMilestoneNameChange: (
-        id: number,
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) =>
-        setProject({
-          ...project,
-          milestones: project.milestones.map((item) =>
-            item.id === id ? { ...item, name: e.target.value } : item,
-          ),
-        }),
-      onMilestoneNameBlur: async (id: number) => {
-        const milestone = project.milestones.find((item) => item.id === id);
-        if (!milestone) return;
-        await api.patchMilestone(slug, id, { name: milestone.name });
-        await refreshProject();
-      },
-      onMilestoneTargetDateChange: (
-        id: number,
-        e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
-      ) =>
-        setProject({
-          ...project,
-          milestones: project.milestones.map((item) =>
-            item.id === id ? { ...item, targetDate: e.target.value || null } : item,
-          ),
-        }),
-      onMilestoneTargetDateBlur: async (id: number) => {
-        const milestone = project.milestones.find((item) => item.id === id);
-        if (!milestone) return;
-        await api.patchMilestone(slug, id, { targetDate: milestone.targetDate });
-        await refreshProject();
-      },
-      onMilestoneDescriptionBlur: async (id: number, description: string) => {
-        await api.patchMilestone(slug, id, { description });
-        await refreshProject();
-      },
+      onMilestoneEditChange: milestoneEdits.change,
+      onSaveMilestoneEdit: milestoneEdits.commit,
       onRemoveMilestone: async (id: number, name: string) => {
+        if (milestoneEdits.isPending()) return;
         if (!window.confirm(i18n.t('projectMilestones.removeConfirmation', { name }))) return;
         await api.deleteMilestone(slug, id);
         await refreshProject();
