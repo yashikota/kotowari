@@ -925,8 +925,8 @@ confirm the complete browser suite.
 
 ## Creation overlays and global error contrast
 
-Global error dismissal now uses the shared default button surface and text,
-instead of the white variant's palette foreground on a fixed white surface.
+Global error dismissal now uses the shared default button surface and text
+to keep its secondary action consistent with other feedback controls.
 New browser coverage measures issue/project creation, focused inputs and status
 options at 360px and 1280px in both color schemes, plus a real failed favorite
 write's global error notification and its dismissal. All 15 contrast browser
@@ -934,3 +934,11 @@ cases pass without retries, including the existing 27-route rendered inventory,
 hidden groups and opacity/clipping measurement checks. Light/dark screenshots
 were inspected. Mandatory web:check and build pass; 2435 locale keys match.
 This is contrast evidence for the covered states, not a complete WCAG audit.
+
+Cycle progress breakdown no longer uses fixed pale palette shades or raw custom
+label colors. Assignee, priority and project indicators use semantic foreground
+tokens; custom hex label colors are corrected for both supported surface ranges.
+The remaining ring track uses the shared control boundary token. Two additional
+browser cases verify actual ring stroke/background contrast >=3:1 in both schemes,
+including white, black and yellow labels, and keep the percentage text visible.
+Both rendered schemes were inspected. Mandatory web:check and build pass.

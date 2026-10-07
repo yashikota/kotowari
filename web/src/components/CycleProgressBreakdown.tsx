@@ -2,22 +2,25 @@ import { Box, Button, Group, RingProgress, Select, Stack, Text, Tooltip } from '
 import { useTranslation } from 'react-i18next';
 import type { CycleProgressBreakdownBy, CycleProgressBreakdownItem } from '../cycle-progress.ts';
 import { IssueEstimateIcon } from './issue-ui.tsx';
+import { accessibleForeground } from '../design-system/contrast.ts';
 
 const assigneeColors: Record<string, string> = {
-  self: 'indigo.5',
-  agent: 'violet.5',
-  unassigned: 'gray.5',
+  self: 'var(--mantine-color-indigo-text)',
+  agent: 'var(--mantine-color-violet-text)',
+  unassigned: 'var(--mantine-color-dimmed)',
 };
 
 const priorityColors: Record<string, string> = {
-  'priority:1': 'red.6',
-  'priority:2': 'orange.5',
-  'priority:3': 'yellow.5',
-  'priority:4': 'blue.5',
-  'priority:0': 'gray.5',
+  'priority:1': 'var(--mantine-color-red-text)',
+  'priority:2': 'var(--mantine-color-orange-text)',
+  'priority:3': 'var(--mantine-color-yellow-text)',
+  'priority:4': 'var(--mantine-color-blue-text)',
+  'priority:0': 'var(--mantine-color-dimmed)',
 };
 
-const projectColors = ['cyan.5', 'teal.5', 'grape.5', 'pink.5', 'lime.6', 'blue.5'];
+const projectColors = ['cyan', 'teal', 'grape', 'pink', 'lime', 'blue'].map(
+  (color) => `var(--mantine-color-${color}-text)`,
+);
 
 export function CycleProgressBreakdown({
   by,
@@ -56,7 +59,8 @@ export function CycleProgressBreakdown({
   const itemColor = (item: CycleProgressBreakdownItem, index: number) => {
     if (item.key in assigneeColors) return assigneeColors[item.key];
     if (item.key in priorityColors) return priorityColors[item.key];
-    if (by === 'label' && item.color) return item.color;
+    if (by === 'label' && item.color && /^#[\da-f]{6}$/i.test(item.color))
+      return accessibleForeground(item.color);
     return projectColors[index % projectColors.length]!;
   };
 
@@ -135,10 +139,7 @@ export function CycleProgressBreakdown({
                       style={{
                         flex: '0 0 auto',
                         borderRadius: '50%',
-                        background:
-                          color.startsWith('#') || color.startsWith('rgb')
-                            ? color
-                            : `var(--mantine-color-${color.replace('.', '-')}, ${color})`,
+                        background: color,
                       }}
                     />
                     <Text size="xs" truncate>
@@ -178,7 +179,7 @@ export function CycleProgressBreakdown({
                     <RingProgress
                       size={18}
                       thickness={2}
-                      rootColor="gray.3"
+                      rootColor="var(--kotowari-control-border)"
                       sections={[{ value: item.progressPercent, color }]}
                     />
                     <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
