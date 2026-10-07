@@ -17,6 +17,7 @@ import { IconArrowLeft, IconDotsVertical, IconStar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import { ClipboardFeedback, useClipboardFocus } from '../design-system/ClipboardFeedback.tsx';
 import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import {
   UnsavedChangesDialog,
@@ -46,6 +47,22 @@ export function InitiativeDetailPageView({
   };
 }) {
   const { t } = useTranslation();
+  const { runCopy, onMenuExited } = useClipboardFocus({
+    clipboard: model.clipboard,
+    scope: model.initiative.slug,
+    feedbackSelector: '[data-initiative-copy-feedback]',
+    menuSelector: '[data-initiative-copy-menu]',
+    fallback: () => document.querySelector<HTMLButtonElement>('[data-initiative-actions]'),
+  });
+  const runFavorite = useActionFocusReturn(
+    model.favorite.pending,
+    () =>
+      document.querySelector<HTMLButtonElement>(
+        '[data-initiative-favorite-feedback] [role="alert"] button:not(:disabled), [data-initiative-favorite]:not(:disabled)',
+      ),
+    undefined,
+    model.initiative.slug,
+  );
   const form = useRef<HTMLFormElement>(null);
   const navigation = useUnsavedNavigation({
     dirty: (model.editor.dirty || model.healthUpdate.dirty) && !model.deletion.confirmed,
@@ -92,9 +109,8 @@ export function InitiativeDetailPageView({
     labels,
     availableLabels,
     projectSlugs,
-    error,
     saving,
-    copied,
+    clipboard,
     updateOpen,
     updateHealth,
     updateBody,
@@ -125,12 +141,7 @@ export function InitiativeDetailPageView({
                   onMenuChange={handlers.onReminderMenuChange}
                   onSetReminder={handlers.onSetReminder}
                 />
-                {copied ? (
-                  <Text size="xs" c="dimmed" role="status">
-                    {t('ui.copied')}
-                  </Text>
-                ) : null}
-                <Menu withinPortal position="bottom-end">
+                <Menu withinPortal position="bottom-end" onExitTransitionEnd={onMenuExited}>
                   <Menu.Target>
                     <ActionIcon
                       type="button"
@@ -143,23 +154,39 @@ export function InitiativeDetailPageView({
                       <IconDotsVertical size={16} stroke={1.8} aria-hidden="true" />
                     </ActionIcon>
                   </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item onClick={handlers.onCopyInitiativeId}>
+                  <Menu.Dropdown data-initiative-copy-menu>
+                    <Menu.Item
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.onCopyInitiativeId)}
+                    >
                       {t('issueActions.copyId')}
                     </Menu.Item>
-                    <Menu.Item onClick={handlers.onCopyInitiativeURL}>
+                    <Menu.Item
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.onCopyInitiativeURL)}
+                    >
                       {t('issueActions.copyUrl')}
                     </Menu.Item>
-                    <Menu.Item onClick={handlers.onCopyInitiativeTitle}>
+                    <Menu.Item
+                      disabled={clipboard.pending}
+                      onClick={() => runCopy(handlers.onCopyInitiativeTitle)}
+                    >
                       {t('issueActions.copyTitle')}
                     </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Item color="red" disabled={saving} onClick={handlers.onDelete}>
+                    <Menu.Item
+                      color="red"
+                      disabled={saving || model.favorite.pending || model.reminderEditor.saving}
+                      onClick={handlers.onDelete}
+                    >
                       {t('initiatives.delete')}
                     </Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
                 <ActionIcon
+                  data-initiative-favorite
+                  disabled={model.favorite.pending}
+                  aria-busy={model.favorite.pending}
                   type="button"
                   variant="subtle"
                   color={initiative.isFavorite ? 'yellow' : 'gray'}
@@ -174,7 +201,7 @@ export function InitiativeDetailPageView({
                       ? 'initiatives.favoriteRemove'
                       : 'initiatives.favoriteAdd',
                   )}
-                  onClick={handlers.onToggleFavorite}
+                  onClick={() => runFavorite(handlers.onToggleFavorite)}
                 >
                   <IconStar
                     size={15}
@@ -194,6 +221,25 @@ export function InitiativeDetailPageView({
               </Group>
             }
           />
+          {model.favorite.pending || model.favorite.error || model.favorite.saved ? (
+            <Box px="md" py="sm" maw={960} mx="auto" data-initiative-favorite-feedback>
+              <SaveFeedback
+                saving={model.favorite.pending}
+                saved={model.favorite.saved}
+                error={model.favorite.error}
+                savingLabel={t('favoriteSave.saving')}
+                savedLabel={t('favoriteSave.saved')}
+                failureLabel={t('favoriteSave.failed')}
+                retryLabel={t('favoriteSave.retry')}
+                onRetry={() => runFavorite(model.favorite.retry)}
+              />
+            </Box>
+          ) : null}
+          {clipboard.pending || clipboard.error || clipboard.copied ? (
+            <Box px="md" py="sm" maw={960} mx="auto" data-initiative-copy-feedback>
+              <ClipboardFeedback clipboard={clipboard} onRetry={() => runCopy(clipboard.retry)} />
+            </Box>
+          ) : null}
           <form
             ref={form}
             aria-busy={saving}
@@ -348,11 +394,6 @@ export function InitiativeDetailPageView({
                       </Group>
                     )}
                   </Stack>
-                  {error ? (
-                    <Text c="red" role="alert">
-                      {error}
-                    </Text>
-                  ) : null}
                   <SaveFeedback
                     saving={model.editor.pending}
                     saved={model.editor.saved && !model.editor.pending}

@@ -141,7 +141,12 @@ for (const scenario of ['editing', 'late failure', 'late success']) {
   });
 }
 
-for (const entry of ['menu', 'keyboard', 'menu with reduced motion']) {
+for (const entry of [
+  'menu',
+  'keyboard',
+  'keyboard from route landing',
+  'menu with reduced motion',
+]) {
   test(`issue title copy recovers from ${entry}`, async ({ page, request }) => {
     const title = `Copy title ${entry} ${Date.now()}`;
     const response = await request.post('/api/issues', { data: { title } });
@@ -171,7 +176,9 @@ for (const entry of ['menu', 'keyboard', 'menu with reduced motion']) {
         await page.getByRole('menuitem', { name: 'Copy', exact: true }).hover();
         await page.getByRole('menuitem', { name: 'Copy title', exact: true }).click();
       } else {
-        await options.focus();
+        if (entry === 'keyboard from route landing')
+          await page.locator('[data-route-content]').focus();
+        else await options.focus();
         await page.keyboard.press('Control+Shift+Quote');
       }
       const retry = page

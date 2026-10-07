@@ -11,7 +11,12 @@ import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
 import { IconPaperclip } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useRef } from 'react';
-import { useActionFocusReturn, useAutofocusTarget, useFocusWhen } from '../focus.ts';
+import {
+  isPassiveFocus,
+  useActionFocusReturn,
+  useAutofocusTarget,
+  useFocusWhen,
+} from '../focus.ts';
 import { Section } from '../mantine-ui.tsx';
 import { AIPanel } from './AIPanel.tsx';
 import { DocumentEditor } from './DocumentEditor.tsx';
@@ -108,7 +113,7 @@ export function IssueDetailView({
     const frame = requestAnimationFrame(() => {
       const active = document.activeElement;
       if (
-        active === document.body ||
+        isPassiveFocus(active) ||
         active?.getAttribute('aria-label') === t('issueActions.button')
       ) {
         document

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useActionFocusReturn } from '../focus.ts';
+import { isPassiveFocus, useActionFocusReturn } from '../focus.ts';
 
 /** Menu actions keep retry focus after the closing menu restores its trigger. */
 export function useMenuActionFocus({
@@ -24,7 +24,7 @@ export function useMenuActionFocus({
     document.querySelector<HTMLButtonElement>(
       `${feedbackSelector} [role="alert"] button:not(:disabled)`,
     );
-  const canRestore = (active: Element | null) => active === document.body || active === trigger();
+  const canRestore = (active: Element | null) => isPassiveFocus(active) || active === trigger();
   const run = useActionFocusReturn(pending, () => recovery() ?? trigger(), canRestore, scope);
   return {
     run: (action: () => unknown) => {

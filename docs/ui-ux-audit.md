@@ -23,7 +23,7 @@ current files in `web/src/pages`, rather than Linear's screen inventory.
 | Task list / detail | Partial: themed selections, touch controls, composer recovery, shared Markdown and multiline titles; narrow properties use labeled two-column groups; title/property saving and failure retry. Property selects use shared focus scheduling and 240px menus with wrapping labels and viewport bounds; mobile/desktop both themes with large text inspected | CI 37047034509's status focus failure reproduced with a delayed assignment write: shortcuts opened disabled fields. Pending writes now close choices and guard menu shortcuts, and the sequence test waits until controls are enabled after optimistic updates. Five property-menu tests cover long choices, keyboard switching, pending-state consistency and recovery. Reminder editing now shares one dialog and transaction presenter with projects/initiatives: pending guard, retained custom input, inline future-time validation, failed preset retries, and distinct removal recovery. Nine new reminder tests plus 18 related layout/save/shortcut checks pass; mobile large-text failure dialogs inspected in light/dark. Label creation/assignment now has a serial pending guard, retained search input, shared save feedback inside the open picker and outside when closed, and retry of an already-created label without duplicate creation. Long choices and selected pills wrap, choices have 44px targets, and the picker can reposition as error feedback changes its size (the default position lock clipped it below the mobile viewport). Two new light/dark large-text tests cover failed creation then failed assignment, exact retry reuse, confirmed selection/removal and viewport bounds; all 18 related menu/shortcut checks pass. Both rendered failure pickers inspected. Due date and reminder dialogs now share DateEditorDialog and the scoped useRetriableSave transaction primitive. Due date failures retain edits; preset/removal failures reopen with an exact retry and explicit removal context. Native form submission supports Enter and guards pending dismissal/duplicate writes. Past dates remain valid overdue dates. Three new due-date tests and 23 related reminder/shortcut cases pass; both mobile themes rendered and inspected. Inspect bulk actions and all overlay states; verify navigation during pending writes |
 | Documents / decisions | Partial: headers, title editing, list layout, empty recovery, editor feedback | Property save feedback, decision publishing/linking, destructive flows and full keyboard paths |
 | Projects / project detail | Partial: board cells scroll independently with bounded height so many cards do not displace drop targets; 30 extra fixtures reproduce the prior CI drag failure and now pass, all 25 project-list tests pass; preview assertions scoped to the visual preview; creation/empty-state tests; detail action hierarchy, labeled properties, wrapped heading and bounded/autosizing description in both themes; common save feedback, failure retry and newer draft preservation | Inspect multiple queued failures, navigation during saves, document sections, activity, keyboard shortcuts and full long-content layout |
-| Initiatives / initiative detail | Partial: responsive labeled form in both themes/large text, destructive menu, pending form protection and failure retry; existing linking, update history and shortcut tests | Inspect success feedback, navigation with unsaved edits, long project names/associations, dialogs and all recovery states |
+| Initiatives / initiative detail | Partial: responsive labeled form, property/update draft protection, scoped favorite and reminder writes, shared clipboard recovery, pending guards, exact retries and success feedback; verified in both themes/languages, including responses arriving after navigation or newer property saves | Inspect long project names/associations, remaining dialog states and complete keyboard paths |
 | Cycles / cycle detail | Partial: shared list header, creation, mobile summaries | Inspect detail layout, date editing, menus, archived empty state, themes and text sizes |
 | Inbox | Partial: visible heading and wrapping mobile toolbar, contained long notification titles and visible keyboard focus in both themes/large text; 12 tests cover layout and existing filter/read/archive/delete/snooze behavior | Mobile detail wraps long titles, scrolls independently and transfers/restores keyboard focus; both themes inspected and covered by the layout tests. Inbox load failure has in-place retry, and filtered/unread empty state can reset visibility (503 recovery and empty reset test; 13 related tests pass). Comment preview now announces loading, shows failure with retry, and retains notification context; delayed failure/retry and long mobile comment covered (14 related tests pass, rendered inspection). Open-task action uses the common button in the persistent detail toolbar, remains visible through long comment scrolling, and supports keyboard navigation. Priority/other empty messages identify their scope and link to the alternate bucket when it contains matching notifications; both directions covered (16 related tests pass). Inspect initial loading, repeated recovery and mutation failures |
 | Search | Partial: two-line titles with separate metadata, wrapping toolbar, visible link focus, common empty state with query/filter/category recovery in both themes/large text; search failure preserves query/filters with an in-place retry, covered by a 503-to-success test; navigation pending state hides old results, preserves the new query and announces loading (delayed-response test and rendered inspection); existing search/filter/navigation test | Inspect initial pending states, repeated errors, long snippets/IDs, text sizes and keyboard paths across all filters |
@@ -1139,3 +1139,67 @@ Mandatory web:check and production build pass. Overall UI/UX remains Partial;
 these results cover the measured routes and states rather than certifying every
 possible state. Criteria: https://www.w3.org/TR/WCAG22/#contrast-minimum and
 https://www.w3.org/TR/WCAG22/#non-text-contrast.
+
+## Scoped initiative feedback and canonical updates
+
+Initiative copying now uses the shared clipboard transaction and feedback used
+by issues and projects: pending protection, exact-value retry, scoped completion
+and focus recovery after menu closure. Favorite writes expose saving, failure,
+retry and success separately from property saves. Favorite/reminder responses
+update the editor's canonical entity without invalidating the entire route.
+Canonical reconciliation preserves independently edited fields and ignores
+responses older than the current entity. Deletion is guarded while favorite or
+reminder writes are pending; navigation save chains also check their generation.
+
+Direct cases verify overlapping favorite/property writes, another draft entered
+after a confirmed property save, and late favorite success/failure after moving
+to a different initiative. Existing editing, linking, update, shortcut, reminder
+and clipboard cases cover the related behavior in both languages and themes.
+
+## Route freshness and shared recovery focus
+
+The cached-route regression first visits the destination, returns to another
+project, mutates its favorite to invalidate the API cache, then holds the cached
+destination's activity read during navigation. Before the change, both themes
+accept navigation without showing the loading boundary while that read is still
+pending. The router now uses blocking stale reloads so the destination settles
+its loader before accepting edits. QueryCache continues to own data freshness.
+The shared loading boundary mirrors inert with aria-disabled for its subtree.
+
+Recovery focus now treats the route landing container and document body as
+passive targets. Menu actions, clipboard retries and issue archive recovery can
+move from those targets to the relevant retry/control. Deliberately chosen input
+or navigation controls retain focus. Cases cover restore shortcuts starting at
+the route landing target, a sidebar link focused during an archive failure,
+clipboard shortcuts from the landing target, and newer destination drafts during
+late archive completion. Queued title navigation accepts the route landing
+target as the destination's neutral focus state.
+
+## CI evidence and regression fidelity
+
+The complete Browser (2/4) report from CI 37689705958 confirms two obsolete
+disabled-input assertions against intentionally readonly initiative fields.
+Their failure leaked fixtures into the later empty-list case. The layout cases
+now require readonly/readable fields, explicit retry recovery and unconditional
+fixture cleanup. The report also confirms archive retry focus, queued title focus
+and destination input failures. CI 37692641319's Browser (1/4) annotations show
+the same destination readiness problem in dependency selection; that CI is
+terminal failure while Demo 37692641368 succeeds.
+
+A later local milestone trace shows programmatic fill starting before the
+destination activity read finishes. Fill/selectOption omit the pointer-event
+actionability check performed by click (https://playwright.dev/docs/actionability).
+Navigation regressions now require native pointer focus before entering a
+destination draft/selection. This complements direct checks that the pending
+page cannot receive focus or keyboard mutations; it does not merely extend a
+timeout. A local ERR_NO_BUFFER_SPACE occurred before page load in one isolated
+clipboard run; the same case passes on a direct subsequent run. System connection
+counts did not show port exhaustion, and no machine/browser settings were changed.
+
+Final local verification passes: 136 browser cases with zero retries, 425 unit
+tests across 47 files, mandatory web:check and the production build. The browser
+set includes rendered contrast sweeps, composer and cycle feedback, navigation,
+draft preservation, clipboard recovery and initiative metadata in both themes.
+
+Overall UI/UX remains Partial. Full remote CI success and the broader screen/state
+inventory still need authoritative verification.

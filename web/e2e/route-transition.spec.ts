@@ -4,6 +4,79 @@ import ja from '../src/i18n/locales/ja.json' with { type: 'json' };
 import { contrastFailures } from './contrast.ts';
 
 for (const scheme of ['light', 'dark']) {
+  test(`cached project navigation waits for fresh loader data in ${scheme}`, async ({
+    page,
+    request,
+  }) => {
+    await page.addInitScript(
+      (value) => localStorage.setItem('kotowari.color-scheme', value),
+      scheme,
+    );
+    const slug = `cached-navigation-${scheme}-${Date.now()}`;
+    const next = `${slug}-next`;
+    expect(
+      (await request.post('/api/projects', { data: { slug: next, name: next } })).ok(),
+    ).toBeTruthy();
+    expect(
+      (
+        await request.post('/api/projects', {
+          data: {
+            slug,
+            name: slug,
+            dependencies: [{ projectSlug: next, kind: 'related' }],
+          },
+        })
+      ).ok(),
+    ).toBeTruthy();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let reads = 0;
+    try {
+      await page.goto(`/projects/${next}`);
+      await page.waitForLoadState('networkidle');
+      await page.getByRole('link', { name: slug, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`/projects/${slug}$`));
+      await page.waitForLoadState('networkidle');
+      await page.getByRole('button', { name: en.projectFavorite.add, exact: true }).click();
+      await expect(
+        page.getByRole('button', { name: en.projectFavorite.remove, exact: true }),
+      ).toBeVisible();
+      await page.waitForLoadState('networkidle');
+      await page.route(`**/api/projects/${next}/activities`, async (route) => {
+        reads++;
+        await gate;
+        await route.continue();
+      });
+      await page.getByRole('main').getByRole('link', { name: next, exact: true }).click();
+      await expect.poll(() => reads).toBeGreaterThan(0);
+      await expect(page.locator('[data-route-loading]')).toBeVisible();
+      await expect(page.locator('main [inert]')).toHaveCount(1);
+      const form = page.getByRole('form', { name: en.projectMilestones.heading, exact: true });
+      const name = form.getByRole('textbox', { name: en.projectMilestones.name, exact: true });
+      release();
+      await expect(page.locator('[data-route-loading]')).toBeHidden();
+      await expect(page.locator('main [inert]')).toHaveCount(0);
+      await name.fill('Destination draft after cached navigation');
+      await expect(name).toHaveValue('Destination draft after cached navigation');
+      await expect(name).toBeFocused();
+      await form.getByRole('button', { name: en.projectMilestones.add, exact: true }).click();
+      await expect(form.getByRole('status')).toContainText(en.milestoneCreation.saved);
+      expect((await (await request.get(`/api/projects/${next}`)).json()).milestones[0].name).toBe(
+        'Destination draft after cached navigation',
+      );
+      expect((await (await request.get(`/api/projects/${slug}`)).json()).milestones).toHaveLength(
+        0,
+      );
+    } finally {
+      release();
+      for (const key of [slug, next]) await request.delete(`/api/projects/${key}`);
+    }
+  });
+}
+
+for (const scheme of ['light', 'dark']) {
   test(`route loading protects old project input and shortcuts in ${scheme}`, async ({
     page,
     request,

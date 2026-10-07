@@ -106,7 +106,13 @@ for (const scenario of ['retry', 'navigation', 'stay']) {
         await expect(failure).toHaveCount(0);
         await expect(dialog).not.toBeVisible();
         await expect
-          .poll(() => page.evaluate(() => document.activeElement === document.body))
+          .poll(() =>
+            page.evaluate(
+              () =>
+                document.activeElement === document.body ||
+                Boolean(document.activeElement?.matches('[data-route-content]')),
+            ),
+          )
           .toBeTruthy();
       }
     } finally {

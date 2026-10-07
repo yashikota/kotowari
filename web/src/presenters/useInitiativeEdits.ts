@@ -55,6 +55,19 @@ export function useInitiativeEdits({
           },
     );
   }
+  function accept(next: Initiative) {
+    if (currentScope.current !== scope || next.slug !== scope) return;
+    setState((current) => {
+      if (current.scope !== scope || next.updatedAt < current.entity.updatedAt) return current;
+      const baseline = initiativeDraft(next);
+      return {
+        ...current,
+        entity: next,
+        baseline,
+        draft: reconcileInitiativeDraft(current.draft, current.baseline, baseline),
+      };
+    });
+  }
   const transaction = useRetriableCreation({
     scope,
     create: (payload: { draft: InitiativeDraft; baseline: InitiativeDraft }) =>
@@ -74,12 +87,7 @@ export function useInitiativeEdits({
       queryCache.invalidate();
       const next = await api.initiative(scope);
       if (token !== generation.current || currentScope.current !== scope) return;
-      setState((current) => ({
-        ...current,
-        entity: next,
-        baseline: initiativeDraft(next),
-        draft: initiativeDraft(next),
-      }));
+      accept(next);
     },
   });
   async function save() {
@@ -106,6 +114,7 @@ export function useInitiativeEdits({
     nameError: state.validation,
     isPending: transaction.isPending,
     save,
+    accept,
     change: <Key extends keyof InitiativeDraft>(key: Key, value: InitiativeDraft[Key]) => {
       if (transaction.isPending() || transaction.hasCreated() || blocked()) return;
       transaction.invalidate();

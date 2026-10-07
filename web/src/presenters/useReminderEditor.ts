@@ -51,6 +51,7 @@ export function useReminderEditor({
     return mutation.write(next);
   }
   return {
+    isPending: mutation.isPending,
     data: {
       opened,
       value,

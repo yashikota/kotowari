@@ -579,6 +579,8 @@ export const router = createRouter({
   defaultErrorComponent: ErrorPage,
   // QueryCache owns freshness and mutation invalidation; route matches must re-read it.
   defaultStaleTime: 0,
+  // Cached route matches must settle their reload before the destination accepts edits.
+  defaultStaleReloadMode: 'blocking',
   defaultPendingMs: 150,
   defaultPreloadStaleTime: 0,
   scrollRestoration: true,

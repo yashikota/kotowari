@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useActionFocusReturn } from '../focus.ts';
+import { isPassiveFocus, useActionFocusReturn } from '../focus.ts';
 import { SaveFeedback } from './SaveFeedback.tsx';
 
 type ClipboardState = {
@@ -61,7 +61,7 @@ export function useClipboardFocus({
     );
   }
   function canRestoreFrom(active: Element | null) {
-    return active === document.body || active === latestFallback.current();
+    return isPassiveFocus(active) || active === latestFallback.current();
   }
   const runFocus = useActionFocusReturn(
     clipboard?.pending ?? false,
@@ -69,7 +69,9 @@ export function useClipboardFocus({
       const initiator = clipboard?.getInitiator();
       return (
         recoveryTarget() ??
-        (initiator && !initiator.closest(menuSelector) ? initiator : null) ??
+        (initiator && !isPassiveFocus(initiator) && !initiator.closest(menuSelector)
+          ? initiator
+          : null) ??
         latestFallback.current()
       );
     },
@@ -81,7 +83,7 @@ export function useClipboardFocus({
     if (!error) return;
     const frame = requestAnimationFrame(() => {
       const active = document.activeElement;
-      if (active === document.body || active === latestFallback.current())
+      if (canRestoreFrom(active))
         document
           .querySelector<HTMLButtonElement>(
             `${feedbackSelector} [role="alert"] button:not(:disabled)`,
@@ -89,7 +91,7 @@ export function useClipboardFocus({
           ?.focus();
       if (
         !document.querySelector(menuSelector) ||
-        (active !== document.body &&
+        (!isPassiveFocus(active) &&
           active !== latestFallback.current() &&
           !active?.closest(menuSelector))
       )

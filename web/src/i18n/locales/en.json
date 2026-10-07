@@ -2199,6 +2199,12 @@
     "save": "Save",
     "saveFailed": "save failed"
   },
+  "favoriteSave": {
+    "saving": "Updating favorite…",
+    "saved": "Favorite updated",
+    "failed": "Favorite could not be updated",
+    "retry": "Retry updating favorite"
+  },
   "navigationStatus": {
     "loading": "Loading the next page…",
     "failed": "This page could not be loaded",

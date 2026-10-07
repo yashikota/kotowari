@@ -298,6 +298,8 @@ for (const outcome of ['success', 'failure'] as const) {
           .click();
       }
       await expect(page).toHaveURL(new RegExp(`/projects/${next}$`));
+      await selection.click();
+      await expect(selection).toBeFocused();
       await selection.selectOption(target);
       await selection.focus();
       await expect(selection).toHaveValue(target);

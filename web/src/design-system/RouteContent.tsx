@@ -48,7 +48,7 @@ function RouteContentView({ children }: { children: ReactNode }) {
           </Text>
         </Group>
       ) : null}
-      <Box inert={pending ? true : undefined} h="100%">
+      <Box inert={pending ? true : undefined} aria-disabled={pending ? true : undefined} h="100%">
         <PresenterScope name="RouteContent" disabled={pending}>
           {children}
         </PresenterScope>

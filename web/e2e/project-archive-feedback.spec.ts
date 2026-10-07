@@ -202,13 +202,18 @@ for (const outcome of ['failure', 'success']) {
       await page.getByRole('link', { name: otherSlug, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`/projects/${otherSlug}$`));
       await expect(page.getByRole('heading').filter({ hasText: otherSlug })).toBeVisible();
+      const destinationDraft = page
+        .getByRole('form', { name: en.projectMilestones.heading, exact: true })
+        .getByRole('textbox', { name: en.projectMilestones.name, exact: true });
+      await destinationDraft.click();
+      await destinationDraft.fill('Next project milestone draft');
       const response = page.waitForResponse(
         (response) =>
           response.url().endsWith(`/api/projects/${slug}`) &&
           response.request().method() === 'PATCH',
       );
       release();
-      await response;
+      await (await response).finished();
       await page.evaluate(
         async () =>
           new Promise<void>((resolve) =>
@@ -217,9 +222,8 @@ for (const outcome of ['failure', 'success']) {
       );
       await expect(page.locator('[data-project-archive-feedback]')).toBeEmpty();
       await expect(page.getByText(en.issueActions.archivedBadge, { exact: true })).toHaveCount(0);
-      await expect
-        .poll(() => page.evaluate(() => document.activeElement === document.body))
-        .toBeTruthy();
+      await expect(destinationDraft).toHaveValue('Next project milestone draft');
+      await expect(destinationDraft).toBeFocused();
       expect(writes).toEqual([{ archived: true }]);
       expect(Boolean((await (await request.get(`/api/projects/${slug}`)).json()).archivedAt)).toBe(
         outcome === 'success',

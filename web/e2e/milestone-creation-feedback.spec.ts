@@ -215,6 +215,9 @@ for (const outcome of ['success', 'failure']) {
       }
       await expect(page).toHaveURL(new RegExp(`/projects/${otherSlug}$`));
       await expect(name).toBeEnabled();
+      // URL changes before navigation settles; native pointer focus must reach the destination.
+      await name.click();
+      await expect(name).toBeFocused();
       await name.fill('New project draft');
       await expect(name).toHaveValue('New project draft');
       await expect(name).toBeFocused();

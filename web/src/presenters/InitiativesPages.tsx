@@ -1,10 +1,12 @@
 import { useInitiativeEdits } from './useInitiativeEdits.ts';
+import { useClipboardCopy } from './useClipboardCopy.ts';
+import { useRetriableSave } from './useRetriableSave.ts';
 import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useHealthUpdateSubmission } from './useHealthUpdateSubmission.ts';
 import { useLoaderData, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api.ts';
 import { signals } from '../application/mediator.ts';
@@ -50,6 +52,7 @@ function initiativeSlug(name: string, existing: Initiative[]): string {
 }
 
 export function useInitiativesPagePresenter() {
+  const router = useRouter();
   const {
     initiatives,
     projects,
@@ -59,7 +62,6 @@ export function useInitiativesPagePresenter() {
   const { statuses: projectWorkflowStatuses } = useProjectWorkflow();
   const { t } = useTranslation();
   const navigate = useNavigate({ from: '/initiatives' });
-  const router = useRouter();
   const [createOpen, setCreateOpen] = useRootMachineFlag('initiative.create');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -276,8 +278,6 @@ export function useInitiativeDetailPresenter() {
   } = useLoaderData({
     from: '/initiatives/$slug',
   });
-  const { t } = useTranslation();
-  const router = useRouter();
   const navigate = useNavigate();
   const editor = useInitiativeEdits({
     source: sourceInitiative,
@@ -306,9 +306,18 @@ export function useInitiativeDetailPresenter() {
     save: setReminder,
     onSuccess: () => setReminderMenuOpen(false),
   });
-  const [copied, setCopied] = useState(false);
+  const clipboard = useClipboardCopy(initiative.slug);
   const currentScope = useRef(initiative.slug);
   currentScope.current = initiative.slug;
+  const generation = useRef(0);
+  useEffect(() => {
+    generation.current++;
+    setReminderMenuOpen(false);
+    setFavoriteSavedScope('');
+    return () => {
+      generation.current++;
+    };
+  }, [initiative.slug]);
   const [localUpdates, setLocalUpdates] = useState<{
     scope: string;
     base: Activity[];
@@ -320,7 +329,18 @@ export function useInitiativeDetailPresenter() {
     localUpdates?.scope === initiative.slug && localUpdates.initiative === initiative
       ? localUpdates.health
       : (initiative.health ?? '');
-  const [error, setError] = useState('');
+  const [favoriteSavedScope, setFavoriteSavedScope] = useState('');
+  const favorite = useRetriableSave<boolean, Initiative>({
+    scope: initiative.slug,
+    save: (isFavorite) => api.patchInitiative(initiative.slug, { isFavorite }),
+    onSuccess: (next) => {
+      editor.accept(next);
+      queryCache.invalidate();
+      signals.dispatchEvent(new Event('kotowari:refresh'));
+      setFavoriteSavedScope(initiative.slug);
+    },
+    onFailure: () => setFavoriteSavedScope(''),
+  });
   const ownerSequenceSince = useRef<number | null>(null);
 
   const healthUpdate = useHealthUpdateSubmission({
@@ -402,8 +422,9 @@ export function useInitiativeDetailPresenter() {
   async function saveBeforeLeaving(signal: AbortSignal) {
     if (editor.isPending() || healthUpdate.isPending() || deletion.isPending()) return;
     const scope = initiative.slug;
+    const token = generation.current;
     if (editor.dirty && !(await editor.save())) return;
-    if (signal.aborted || currentScope.current !== scope) return;
+    if (signal.aborted || currentScope.current !== scope || token !== generation.current) return;
     if (healthUpdate.dirty) return healthUpdate.submit();
   }
   function openUpdate() {
@@ -412,39 +433,25 @@ export function useInitiativeDetailPresenter() {
   }
 
   async function toggleFavorite() {
-    setError('');
-    try {
-      await api.patchInitiative(initiative.slug, { isFavorite: !initiative.isFavorite });
-      queryCache.invalidate();
-      signals.dispatchEvent(new Event('kotowari:refresh'));
-      await router.invalidate();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('common.error'));
-    }
+    if (favorite.isPending() || deletion.isPending() || deletion.isRemoved()) return;
+    setFavoriteSavedScope('');
+    return favorite.write(!initiative.isFavorite);
   }
 
   async function setReminder(value: Date | null) {
-    await api.patchInitiative(
+    const token = generation.current;
+    const next = await api.patchInitiative(
       initiative.slug,
       value ? { reminderAt: value.toISOString() } : { clearReminder: true },
     );
     queryCache.invalidate();
     signals.dispatchEvent(new Event('kotowari:refresh'));
-    await router.invalidate().catch(() => undefined);
-  }
-
-  async function copyText(value: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
-    } catch {
-      // Clipboard permission can be unavailable in an embedded or non-secure context.
-    }
+    if (token !== generation.current || currentScope.current !== initiative.slug) return;
+    editor.accept(next);
   }
 
   function copyInitiativeId() {
-    return copyText(String(initiative.id));
+    return clipboard.copy(String(initiative.id));
   }
 
   function copyInitiativeURL() {
@@ -452,11 +459,11 @@ export function useInitiativeDetailPresenter() {
       `/initiatives/${encodeURIComponent(initiative.slug)}`,
       window.location.origin,
     );
-    return copyText(url.href);
+    return clipboard.copy(url.href);
   }
 
   function copyInitiativeTitle() {
-    return copyText(initiative.name);
+    return clipboard.copy(initiative.name);
   }
 
   useKeyboard((event) => {
@@ -505,7 +512,7 @@ export function useInitiativeDetailPresenter() {
     focusUpdates,
     reminderMenuOpen,
     reminderEditor: reminderEditor.data,
-    copied,
+    clipboard,
     priority,
     health,
     updates,
@@ -514,7 +521,12 @@ export function useInitiativeDetailPresenter() {
     projectSlugs,
     availableProjects: projects.map((project) => ({ value: project.slug, label: project.name })),
     linkedProjects: projects.filter((project) => projectSlugs.includes(project.slug)),
-    error,
+    favorite: {
+      pending: favorite.saving,
+      error: favorite.error,
+      saved: favoriteSavedScope === initiative.slug,
+      retry: favorite.retry,
+    },
     saving: editor.pending,
     editor,
     deletion,
@@ -542,14 +554,25 @@ export function useInitiativeDetailPresenter() {
       onProjectSlugsChange: (value: string[]) => editor.change('projectSlugs', value),
       onSubmit: saveInitiative,
       onDelete: () => {
-        if (!editor.isPending() && !healthUpdate.isPending()) {
+        if (
+          !editor.isPending() &&
+          !healthUpdate.isPending() &&
+          !favorite.isPending() &&
+          !reminderEditor.isPending()
+        ) {
           healthUpdate.close();
           deletion.request();
         }
       },
       onCloseDeletion: deletion.close,
       onConfirmDeletion: () => {
-        if (!editor.isPending() && !healthUpdate.isPending()) return deletion.confirm();
+        if (
+          !editor.isPending() &&
+          !healthUpdate.isPending() &&
+          !favorite.isPending() &&
+          !reminderEditor.isPending()
+        )
+          return deletion.confirm();
       },
       onSaveBeforeLeaving: saveBeforeLeaving,
       onRetrySave: editor.save,

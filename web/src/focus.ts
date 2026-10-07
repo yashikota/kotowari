@@ -45,11 +45,16 @@ export function useFocusWhen<T extends HTMLElement>(
   return ref;
 }
 
+/** A route landing target is a fallback, not a control the user chose to edit. */
+export function isPassiveFocus(active: Element | null): boolean {
+  return active === document.body || Boolean(active?.matches('[data-route-content]'));
+}
+
 /** Restore focus after pending controls have been rendered enabled again. */
 export function useActionFocusReturn(
   busy: boolean,
   fallback: () => HTMLElement | null,
-  canRestoreFrom: (active: Element | null) => boolean = (active) => active === document.body,
+  canRestoreFrom: (active: Element | null) => boolean = isPassiveFocus,
   scope?: string,
 ) {
   const pending = useRef<HTMLElement | null>(null);
