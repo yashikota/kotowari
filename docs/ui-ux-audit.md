@@ -530,3 +530,25 @@ keys and production build pass. Rejected navigation after confirmed deletion sti
 requires dedicated runtime evidence. Full CI 37601794232 completed with 504 passed
 and one flaky issue-save-feedback case; investigate that save/Enter ordering before
 the next push rather than accepting the retry as proof of stability.
+
+## Title save requested during another pending property write
+
+CI 37601794232 exposed a flaky issue-save-feedback result: the local revised title
+remained visible while the server retained the previous title. Holding the final
+priority write reproduced the same failure deterministically before the fix. Enter
+blurred the readonly title while pending, and the property presenter dropped its
+save request. This was addressed in the presenter rather than by increasing timeout
+or waiting away the pending interaction in the test.
+
+A requested dirty title now waits for the current successful property write. If
+that write fails, its exact retry remains first; the queued title follows successful
+recovery. Repeated Enter does not duplicate an in-flight title write. Editing replaces
+the queued value, and navigation generation prevents it from writing into the next
+issue. Handling unsaved title drafts when leaving still remains open in the audit.
+
+Verification: the gated CI regression passes five repetitions without retries; two
+additional cases check exact priority/title ordering after failure and cancellation
+on next-issue navigation. All 20 related save/queue/copy/archive/deletion cases and
+eight title layout/history/property-menu regressions pass. Mandatory web checks,
+2383 locale keys and production build pass. The full pipeline must be rerun against
+the new pushed commit before claiming CI stability.

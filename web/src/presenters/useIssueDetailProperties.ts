@@ -46,12 +46,14 @@ export function useIssueDetailProperties({
   const failedPatch = useRef<Record<string, unknown> | null>(null);
   const pending = useRef(false);
   const titleDirty = useRef(false);
+  const queuedTitle = useRef<string | null>(null);
   const generation = useRef(0);
   useEffect(() => {
     generation.current++;
     pending.current = false;
     failedPatch.current = null;
     titleDirty.current = false;
+    queuedTitle.current = null;
     setPropertySaveState('idle');
     setPropertySaveError('');
     return () => {
@@ -66,9 +68,11 @@ export function useIssueDetailProperties({
     setIssuePropertyMenu(null);
     setPropertySaveState('saving');
     setPropertySaveError('');
+    let completed = false;
     try {
       await commit(body);
       if (token !== generation.current) return;
+      completed = true;
       failedPatch.current = null;
       if ('title' in body) titleDirty.current = false;
       setPropertySaveState('saved');
@@ -77,7 +81,14 @@ export function useIssueDetailProperties({
       setPropertySaveError(error instanceof Error ? error.message : String(error));
       setPropertySaveState('failed');
     } finally {
-      if (token === generation.current) pending.current = false;
+      if (token === generation.current) {
+        pending.current = false;
+        if (completed && queuedTitle.current !== null) {
+          const title = queuedTitle.current;
+          queuedTitle.current = null;
+          if (titleDirty.current) void patch({ title });
+        }
+      }
     }
   }
   const [optionalPropertyOverrides, setOptionalPropertyOverrides] =
@@ -107,6 +118,7 @@ export function useIssueDetailProperties({
       ) => {
         if (issue) {
           titleDirty.current = true;
+          queuedTitle.current = null;
           onTitleDraftChange(e.target.value);
           failedPatch.current = null;
           setPropertySaveState('idle');
@@ -116,6 +128,12 @@ export function useIssueDetailProperties({
       },
       onTitleBlur: () => {
         if (!issue || !titleDirty.current) return;
+        if (pending.current) {
+          // An explicit save of an existing draft waits for the current property write.
+          // Repeated Enter during the same title write does not duplicate that write.
+          if (failedPatch.current?.title !== issue.title) queuedTitle.current = issue.title;
+          return;
+        }
         return patch({ title: issue.title });
       },
       onStatusChange: (value: string | null) =>
