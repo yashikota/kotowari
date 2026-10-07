@@ -2476,5 +2476,17 @@
     "retry": "文書の作成を再試行",
     "openFailed": "文書は作成されましたが、開けませんでした",
     "openCreated": "作成した文書を開く"
+  },
+  "pageDeletion": {
+    "title": "文書を削除",
+    "description": "「{{title}}」を削除しますか？この操作は取り消せません。",
+    "deleting": "文書を削除しています…",
+    "deleted": "文書を削除しました",
+    "failed": "文書を削除できませんでした",
+    "retry": "文書の削除を再試行",
+    "opening": "文書一覧を開いています…",
+    "openFailed": "文書は削除されましたが、一覧を開けませんでした",
+    "openList": "文書一覧を開く",
+    "deletedDescription": "「{{title}}」は削除されました。"
   }
 }

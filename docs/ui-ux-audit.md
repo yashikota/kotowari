@@ -245,3 +245,28 @@ Escape, failed input preservation, reopening, exact retry and persisted project.
 Rendered modal contrast checks pass; mobile light/dark screenshots were inspected.
 Formatting/lint/types, locale parity and production build pass. The previous pushed
 CI remains in progress at this audit; full UI/UX completion remains unproven.
+
+## Consistent document deletion and CI isolation
+
+Document deletion uses the shared ConfirmActionDialog with readable semantic colors,
+44px actions, wrapped labels, safe initial Cancel focus and local pending/failure/retry
+feedback. Escape and outside dismissal are blocked while pending. Failed deletion
+preserves the document and local draft; confirmed deletion clears its draft. A failed
+navigation retains confirmation so retry opens the list without another deletion.
+Direct rejected-navigation evidence remains outstanding.
+
+Background revision refresh pauses while a modal owns an operation. A browser case
+holds a successful deletion response beyond the refresh interval and confirms the
+pending dialog survives without reloading the deleted route.
+
+Verification: 23 related browser cases pass, including five deletion cases, document
+creation/properties and editor flows. Deletion checks both schemes and languages at
+360px with large text, rendered modal contrast, focus, exact retry and retained drafts.
+Final Japanese light/dark screenshots were inspected. Formatting/lint/types, 2342
+locale keys and production build pass.
+
+CI 37591072362 finished with 456 passes and one filter case failure. Its expected issue
+was outside the virtualized list window after unrelated fixtures accumulated. The
+case now scopes search to its own issues and explicitly seeds/cleans 30 unrelated
+issues; the focused case passes. The next full CI result remains required. Overall
+UI/UX and WCAG conformance remain partially verified.

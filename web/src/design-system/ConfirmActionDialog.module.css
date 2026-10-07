@@ -1,0 +1,10 @@
+.action {
+  min-height: 44px;
+  height: auto;
+  max-width: 100%;
+  padding-block: 8px;
+}
+.action :global(.mantine-Button-label) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

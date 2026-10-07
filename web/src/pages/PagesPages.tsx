@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { adrStatusLabel } from '../i18n/labels.ts';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -229,6 +230,7 @@ export function PageDetailPageView({
 }) {
   const { t } = useTranslation();
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const editingDisabled = model.propertiesSaving || model.deletePending || model.deleteConfirmed;
   const runPropertyAction = useActionFocusReturn(
     model.propertiesSaving,
     () =>
@@ -248,7 +250,7 @@ export function PageDetailPageView({
               actions={
                 <Group gap="xs" wrap="wrap">
                   <NativeSelect
-                    disabled={model.propertiesSaving}
+                    disabled={editingDisabled}
                     aria-label={t('ui.pageStatus')}
                     value={page.status}
                     onChange={handlers.Page_status_onChange0}
@@ -256,7 +258,7 @@ export function PageDetailPageView({
                   />
                   <Button
                     type="button"
-                    disabled={model.propertiesSaving}
+                    disabled={editingDisabled}
                     variant="subtle"
                     color="red"
                     onClick={handlers.onClick1}
@@ -303,7 +305,7 @@ export function PageDetailPageView({
                 onRetry={handlers.onRetryPropertyOptions}
               />
               <DocumentTitle
-                disabled={model.propertiesSaving}
+                disabled={editingDisabled}
                 ref={titleRef}
                 aria-label={t('ui.pageTitle')}
                 value={page.title}
@@ -312,9 +314,7 @@ export function PageDetailPageView({
               />
               <Group gap="md" wrap="wrap" align="flex-end">
                 <NativeSelect
-                  disabled={
-                    model.propertiesSaving || model.optionsLoading || Boolean(model.optionsError)
-                  }
+                  disabled={editingDisabled || model.optionsLoading || Boolean(model.optionsError)}
                   aria-label={t('ui.parentPage')}
                   label={t('ui.parentPage')}
                   value={page.parentId ?? ''}
@@ -328,9 +328,7 @@ export function PageDetailPageView({
                   style={{ flex: 1, minWidth: 160 }}
                 />
                 <NativeSelect
-                  disabled={
-                    model.propertiesSaving || model.optionsLoading || Boolean(model.optionsError)
-                  }
+                  disabled={editingDisabled || model.optionsLoading || Boolean(model.optionsError)}
                   aria-label={t('ui.project')}
                   label={t('field.project')}
                   value={page.projectId ?? ''}
@@ -342,7 +340,7 @@ export function PageDetailPageView({
                   style={{ flex: 1, minWidth: 160 }}
                 />
                 <TextInput
-                  disabled={model.propertiesSaving}
+                  disabled={editingDisabled}
                   type="date"
                   aria-label={t('ui.documentDate')}
                   label={t('ui.documentDate')}
@@ -352,7 +350,7 @@ export function PageDetailPageView({
                 />
               </Group>
               <TextInput
-                disabled={model.propertiesSaving}
+                disabled={editingDisabled}
                 aria-label={t('ui.tags')}
                 label={t('ui.tags')}
                 placeholder={t('ui.tagsCommaSeparated')}
@@ -363,6 +361,31 @@ export function PageDetailPageView({
               <DocumentEditor documentKey={`pages/${slug}/body`} />
               <AIPanel kind="pages" id={slug} />
             </Stack>
+            <ConfirmActionDialog
+              opened={model.deleteOpened}
+              pending={model.deletePending}
+              confirmed={model.deleteConfirmed}
+              title={t(model.deleteConfirmed ? 'pageDeletion.deleted' : 'pageDeletion.title')}
+              description={t(
+                model.deleteConfirmed
+                  ? 'pageDeletion.deletedDescription'
+                  : 'pageDeletion.description',
+                { title: page.title },
+              )}
+              error={model.deleteError}
+              confirmLabel={t(model.deleteConfirmed ? 'pageDeletion.openList' : 'ui.delete')}
+              cancelLabel={t('common.cancel')}
+              savingLabel={t(
+                model.deleteConfirmed ? 'pageDeletion.opening' : 'pageDeletion.deleting',
+              )}
+              savedLabel={t('pageDeletion.deleted')}
+              failureLabel={t(
+                model.deleteConfirmed ? 'pageDeletion.openFailed' : 'pageDeletion.failed',
+              )}
+              retryLabel={t(model.deleteConfirmed ? 'pageDeletion.openList' : 'pageDeletion.retry')}
+              onClose={handlers.onCloseDelete}
+              onConfirm={handlers.onConfirmDelete}
+            />
           </Pane>
         </SplitLayout>
       );

@@ -1,10 +1,9 @@
 import { useRetriableSave } from './useRetriableSave.ts';
-import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
+import { useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
 import { api } from '../api.ts';
-import i18n from '../i18n/index.ts';
 import { useIntent } from '../application/Root.tsx';
 import {
   groupPageList,
@@ -130,7 +129,6 @@ export function usePagesPagePresenter() {
 export function usePageDetailPagePresenter() {
   const { slug } = useParams({ from: '/pages/$slug' });
   const initial = useLoaderData({ from: '/pages/$slug' }) as Page;
-  const router = useRouter();
   const navigate = useNavigate();
   const [page, setPage] = useState(initial);
   const [pages, setPages] = useState<Page[]>([]);
@@ -140,6 +138,58 @@ export function usePageDetailPagePresenter() {
   type Properties = Pick<Page, 'title' | 'status' | 'parentId' | 'projectId' | 'date' | 'tags'>;
   const confirmed = useRef(initial);
   const dirty = useRef(false);
+  const [deleteOpened, setDeleteOpened] = useState(false);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleteNavigating, setDeleteNavigating] = useState(false);
+  const [deleteNavigationError, setDeleteNavigationError] = useState('');
+  const deleted = useRef(false);
+  const deleteGeneration = useRef(0);
+  const navigationPending = useRef(false);
+  useEffect(() => {
+    deleteGeneration.current++;
+    deleted.current = false;
+    navigationPending.current = false;
+    setDeleteOpened(false);
+    setDeleteConfirmed(false);
+    setDeleteNavigating(false);
+    setDeleteNavigationError('');
+    return () => {
+      deleteGeneration.current++;
+    };
+  }, [slug]);
+  async function openDocumentList() {
+    if (navigationPending.current) return;
+    const generation = deleteGeneration.current;
+    navigationPending.current = true;
+    setDeleteNavigating(true);
+    setDeleteNavigationError('');
+    try {
+      await navigate({ to: '/pages' });
+    } catch (cause) {
+      if (generation === deleteGeneration.current)
+        setDeleteNavigationError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      if (generation === deleteGeneration.current) {
+        navigationPending.current = false;
+        setDeleteNavigating(false);
+      }
+    }
+  }
+  const removal = useRetriableSave<string>({
+    scope: slug,
+    save: api.deletePage,
+    onSuccess: () => {
+      deleted.current = true;
+      setDeleteConfirmed(true);
+      try {
+        localStorage.removeItem(`kotowari:draft:${location.origin}:pages/${slug}/body`);
+      } catch {
+        // Unavailable local storage must not turn a confirmed deletion into a failure.
+      }
+      void openDocumentList();
+    },
+    onFailure: () => {},
+  });
   const [propertiesDirty, setPropertiesDirty] = useState(false);
   const [propertiesSaved, setPropertiesSaved] = useState(false);
   const [optionsError, setOptionsError] = useState('');
@@ -199,7 +249,7 @@ export function usePageDetailPagePresenter() {
     mutation.invalidate();
   }
   function save(changes: Partial<Properties>) {
-    if (mutation.isPending()) return;
+    if (mutation.isPending() || removal.isPending() || deleted.current) return;
     const draft: Properties = {
       ...page,
       tags: tagDraft
@@ -237,6 +287,10 @@ export function usePageDetailPagePresenter() {
     propertiesDirty,
     optionsError,
     optionsLoading,
+    deleteOpened,
+    deleteConfirmed,
+    deletePending: removal.saving || deleteNavigating,
+    deleteError: deleteNavigationError || removal.error,
     handlers: {
       onRetryProperties: mutation.retry,
       onSaveProperties: () => save({}),
@@ -245,18 +299,22 @@ export function usePageDetailPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ status: e.target.value }),
       onClick1: () => {
-        if (!window.confirm(i18n.t('ui.deletePageConfirmation', { slug: page.slug }))) {
-          return;
-        }
-        return api.deletePage(slug).then(async () => {
-          await router.invalidate();
-          await navigate({ to: '/pages' });
-        });
+        if (!mutation.isPending() && !removal.isPending() && !deleted.current)
+          setDeleteOpened(true);
+      },
+      onCloseDelete: () => {
+        if (removal.isPending() || navigationPending.current) return;
+        if (deleted.current) return openDocumentList();
+        setDeleteOpened(false);
+      },
+      onConfirmDelete: () => {
+        if (mutation.isPending()) return;
+        return deleted.current ? openDocumentList() : removal.write(slug);
       },
       Page_title_onChange2: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => {
-        if (mutation.isPending()) return;
+        if (mutation.isPending() || removal.isPending() || deleted.current) return;
         markDirty();
         setPage((current) => ({ ...current, title: e.target.value }));
       },
@@ -279,7 +337,7 @@ export function usePageDetailPagePresenter() {
       Tags_onChange7: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
-        if (mutation.isPending()) return;
+        if (mutation.isPending() || removal.isPending() || deleted.current) return;
         markDirty();
         setTagDraft(e.target.value);
       },

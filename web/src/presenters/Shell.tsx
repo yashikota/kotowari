@@ -61,6 +61,7 @@ export function useShellPresenter() {
       if (
         pending ||
         document.hidden ||
+        document.querySelector('[role="dialog"][aria-modal="true"]') ||
         document.activeElement?.matches('input,textarea,select,[contenteditable="true"]')
       )
         return;

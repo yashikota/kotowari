@@ -2489,5 +2489,17 @@
     "retry": "Retry creating document",
     "openFailed": "Document created, but could not be opened",
     "openCreated": "Open created document"
+  },
+  "pageDeletion": {
+    "title": "Delete document",
+    "description": "Delete “{{title}}”? This cannot be undone.",
+    "deleting": "Deleting document…",
+    "deleted": "Document deleted",
+    "failed": "Document could not be deleted",
+    "retry": "Retry deleting document",
+    "opening": "Opening documents…",
+    "openFailed": "Document deleted, but the document list could not be opened",
+    "openList": "Open documents",
+    "deletedDescription": "“{{title}}” has been deleted."
   }
 }
