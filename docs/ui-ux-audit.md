@@ -1077,3 +1077,16 @@ separate from the confirmed destination input reset race. Collection navigation
 and collection layout assertions now explicitly select the main landmark.
 All fourteen related view cases pass without retries, and mandatory web:check
 passes. Demo 37686953707 succeeds; CI 37686953775 Browser (4/4) is still running.
+
+
+## Late route recovery and final contrast regression
+
+Two additional route cases hold the failed-page retry, navigate to another
+favorite project, enter its milestone draft and only then deliver the old failure.
+After response completion and two settled render frames, the current URL, draft,
+focus and cleared busy state remain intact with no old error alert. Both schemes
+pass. The final combined 24-case route/contrast run passes without retries,
+including the full rendered route inventory at mobile/desktop widths. This adds
+evidence for late failure after leaving; rapid A-to-B-to-A transitions and
+root-shell rendering failures still require direct verification. Mandatory
+web:check passes; source matches the previously successful build.

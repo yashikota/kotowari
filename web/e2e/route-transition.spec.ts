@@ -141,3 +141,69 @@ for (const scheme of ['light', 'dark']) {
     }
   });
 }
+
+for (const scheme of ['light', 'dark']) {
+  test(`late failed route retry preserves the next project draft in ${scheme}`, async ({
+    page,
+    request,
+  }) => {
+    await page.addInitScript(
+      (value) => localStorage.setItem('kotowari.color-scheme', value),
+      scheme,
+    );
+    const slug = `route-late-${scheme}-${Date.now()}`;
+    const next = `${slug}-next`;
+    for (const key of [slug, next])
+      expect(
+        (await request.post('/api/projects', { data: { slug: key, name: key } })).ok(),
+      ).toBeTruthy();
+    expect(
+      (await request.patch(`/api/projects/${next}`, { data: { isFavorite: true } })).ok(),
+    ).toBeTruthy();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let reads = 0;
+    await page.route(`**/api/projects/${slug}`, async (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      reads++;
+      if (reads === 2) await gate;
+      return route.fulfill({ status: 503, json: { error: 'Old page still unavailable' } });
+    });
+    try {
+      await page.goto(`/projects/${slug}`);
+      await page.getByRole('button', { name: en.navigationStatus.retry, exact: true }).click();
+      await expect.poll(() => reads).toBe(2);
+      await page
+        .getByRole('navigation', { name: 'Favorites', exact: true })
+        .getByRole('link', { name: next, exact: true })
+        .click();
+      await expect(page).toHaveURL(new RegExp(`/projects/${next}$`));
+      await expect(page.locator('main [inert]')).toHaveCount(0);
+      const name = page
+        .getByRole('form', { name: en.projectMilestones.heading, exact: true })
+        .getByRole('textbox', { name: en.projectMilestones.name, exact: true });
+      await name.fill('Keep current project draft');
+      const oldResponse = page.waitForResponse((response) =>
+        response.url().endsWith(`/api/projects/${slug}`),
+      );
+      release();
+      await (await oldResponse).finished();
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          }),
+      );
+      await expect(page).toHaveURL(new RegExp(`/projects/${next}$`));
+      await expect(name).toHaveValue('Keep current project draft');
+      await expect(name).toBeFocused();
+      await expect(page.locator('main').getByRole('alert')).toHaveCount(0);
+      await expect(page.locator('[data-route-content]')).toHaveAttribute('aria-busy', 'false');
+    } finally {
+      release();
+      for (const key of [slug, next]) await request.delete(`/api/projects/${key}`);
+    }
+  });
+}
