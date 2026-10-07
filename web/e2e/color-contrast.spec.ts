@@ -20,6 +20,7 @@ for (const scheme of ['light', 'dark']) {
           status: 'in_progress',
           priority: 1,
           body: 'Readable issue content',
+          dueDate: '2020-01-02',
         },
       });
       expect(issueResponse.ok()).toBeTruthy();
@@ -83,7 +84,9 @@ for (const scheme of ['light', 'dark']) {
       expect(documentResponse.ok()).toBeTruthy();
       const failures: unknown[] = [];
       for (const route of [
+        '/',
         '/issues',
+        '/board',
         '/projects',
         '/initiatives',
         '/cycles',
@@ -136,8 +139,20 @@ for (const scheme of ['light', 'dark']) {
             scheme === 'light' ? 'rgb(115, 123, 131)' : 'rgb(166, 167, 171)',
           );
         }
-        const results = await contrastFailures(page);
+        const results = await contrastFailures(page, 'body', true);
         failures.push(...results.map((result) => ({ route, ...result })));
+        const focusTarget = page
+          .locator('main :is(button:not(:disabled), a[href], input:not(:disabled)):visible')
+          .first();
+        if (await focusTarget.count()) {
+          await focusTarget.focus();
+          failures.push(
+            ...(await contrastFailures(page)).map((result) => ({
+              route: `${route} focused control`,
+              ...result,
+            })),
+          );
+        }
         if (route.startsWith('/projects/icon-yellow-')) {
           await page.getByRole('button', { name: 'Choose project icon' }).click();
           await expect(page.locator('[data-contrast-icon="Selected icon color"]')).toBeVisible();

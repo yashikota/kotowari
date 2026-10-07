@@ -1,5 +1,6 @@
 import { ActionIcon, Button, Checkbox, Group, Text } from '@mantine/core';
 import {
+  IconCalendarExclamation,
   IconChartBar,
   IconChevronDown,
   IconChevronRight,
@@ -265,10 +266,19 @@ export function IssueListRow({
                 </Text>
               </>
             ) : null}
+            {overdue && !canceled ? (
+              <IconCalendarExclamation
+                size={14}
+                color="var(--mantine-color-red-text)"
+                role="img"
+                aria-label={i18n.t('filters.dueDateValue.overdue')}
+                style={{ flexShrink: 0 }}
+              />
+            ) : null}
             <Text
               size="sm"
               truncate
-              c={canceled ? 'dimmed' : overdue ? 'red.4' : undefined}
+              c={canceled ? 'dimmed' : overdue ? 'var(--mantine-color-red-text)' : undefined}
               td={canceled ? 'line-through' : undefined}
               style={{ flex: 1, minWidth: 0, lineHeight: 1.2 }}
             >
@@ -340,7 +350,11 @@ export function IssueListRow({
               <IssueMetaText>{issue.projectSlug}</IssueMetaText>
             ) : null}
             {shows('dueDate') && issue.dueDate ? (
-              <Text component="span" size="xs" c={overdue ? 'red.4' : 'dimmed'}>
+              <Text
+                component="span"
+                size="xs"
+                c={overdue ? 'var(--mantine-color-red-text)' : 'dimmed'}
+              >
                 {issue.dueDate.slice(5, 10)}
               </Text>
             ) : null}

@@ -401,7 +401,7 @@ export function ProjectCreateDialog({
                   onSearchChange={handlers.onProjectLabelsSearchChange}
                   nothingFoundMessage={
                     projectLabelCreateError ? (
-                      <Text size="xs" c="red">
+                      <Text size="xs" c="var(--mantine-color-error)">
                         {projectLabelCreateError}
                       </Text>
                     ) : projectLabelQuery.trim() ? (

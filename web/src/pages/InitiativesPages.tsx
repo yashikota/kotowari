@@ -239,7 +239,7 @@ export function InitiativesPageView({
                 />
               </Group>
               {error ? (
-                <Text c="red" role="alert">
+                <Text c="var(--mantine-color-error)" role="alert">
                   {error}
                 </Text>
               ) : null}

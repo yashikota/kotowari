@@ -678,7 +678,7 @@ export function ProjectDetailPageView({
                   data-autofocus
                 />
                 {projectTemplateError && (
-                  <Text size="sm" c="red" role="alert">
+                  <Text size="sm" c="var(--mantine-color-error)" role="alert">
                     {projectTemplateError}
                   </Text>
                 )}

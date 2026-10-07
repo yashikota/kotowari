@@ -56,7 +56,7 @@
 }
 
 .activity:focus-visible {
-  outline: 2px solid var(--mantine-primary-color-filled);
+  outline: 2px solid var(--kotowari-focus);
   outline-offset: -2px;
 }
 
@@ -152,7 +152,7 @@
 }
 
 .detailPane:focus-visible {
-  outline: 2px solid var(--mantine-primary-color-filled);
+  outline: 2px solid var(--kotowari-focus);
   outline-offset: -2px;
 }
 

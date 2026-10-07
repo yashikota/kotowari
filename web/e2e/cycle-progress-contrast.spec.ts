@@ -43,6 +43,8 @@ for (const scheme of ['light', 'dark']) {
     if (await expand.isVisible()) await expand.click();
     const grouping = page.getByRole('combobox', { name: 'Group cycle progress by' });
     await expect(grouping).toBeVisible();
+    await expect(page.locator('.mantine-Progress-section').first()).toBeVisible();
+    expect(await contrastFailures(page)).toEqual([]);
     for (const name of ['Priority', 'Labels']) {
       await grouping.click();
       await page.getByRole('option', { name, exact: true }).click();

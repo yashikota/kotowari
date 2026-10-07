@@ -27,6 +27,13 @@ const baseTheme = {
   defaultRadius: 'sm',
   radius: designTokens.radius,
   components: {
+    Loader: {
+      defaultProps: { color: 'var(--mantine-color-anchor)' },
+    },
+    Progress: {
+      defaultProps: { color: 'var(--mantine-color-anchor)' },
+      styles: { root: { backgroundColor: 'var(--mantine-color-disabled)' } },
+    },
     ComboboxChevron: ComboboxChevron.extend({
       styles: (_theme, props) => ({
         chevron: {
@@ -77,6 +84,7 @@ export const theme = themeForFontSize('default');
 /** Shared semantic colors meet AA on the supported surfaces and hover backgrounds. */
 export const cssVariablesForTheme: CSSVariablesResolver = (theme) => {
   const light: Record<string, string> = {
+    '--mantine-color-text': '#212529',
     '--mantine-color-dimmed': '#343a40',
     '--mantine-color-placeholder': '#343a40',
     '--mantine-color-error': '#a61e4d',
@@ -84,6 +92,9 @@ export const cssVariablesForTheme: CSSVariablesResolver = (theme) => {
     '--mantine-color-default-border': '#737b83',
     '--kotowari-control-border': '#737b83',
     '--kotowari-focus': '#3c478f',
+    '--mantine-color-disabled': '#e9ecef',
+    '--mantine-color-disabled-color': '#495057',
+    '--mantine-color-disabled-border': '#737b83',
   };
   const dark: Record<string, string> = {
     '--mantine-color-text': '#f1f3f5',
@@ -94,6 +105,9 @@ export const cssVariablesForTheme: CSSVariablesResolver = (theme) => {
     '--mantine-color-default-border': '#a6a7ab',
     '--kotowari-control-border': '#a6a7ab',
     '--kotowari-focus': '#c7cbef',
+    '--mantine-color-disabled': '#343a40',
+    '--mantine-color-disabled-color': '#dee2e6',
+    '--mantine-color-disabled-border': '#a6a7ab',
   };
   for (const [name, palette] of Object.entries(theme.colors)) {
     if (name === 'dark') continue;

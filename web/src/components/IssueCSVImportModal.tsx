@@ -120,7 +120,7 @@ export function IssueCSVImportModal({
                       {row.rowNumber}. {row.title || t('issueImport.missingTitle')}
                     </Text>
                     {row.error ? (
-                      <Text size="xs" c="red">
+                      <Text size="xs" c="var(--mantine-color-error)">
                         {t(`issueImport.error.${row.error}`)}
                       </Text>
                     ) : null}
@@ -166,7 +166,7 @@ export function IssueCSVImportModal({
               <ScrollArea h={120} type="auto">
                 <Stack gap={4}>
                   {result.failed.slice(0, 20).map((message) => (
-                    <Text key={message} size="xs" c="red">
+                    <Text key={message} size="xs" c="var(--mantine-color-error)">
                       {message}
                     </Text>
                   ))}

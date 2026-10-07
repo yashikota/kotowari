@@ -53,4 +53,24 @@ describe('WCAG color foundations', () => {
       expect(contrastRatio(scheme['--kotowari-focus']!, background)).toBeGreaterThanOrEqual(3);
     }
   });
+  it('keeps pending and disabled content readable without relying on an exemption', () => {
+    const variables = cssVariablesForTheme(theme);
+    for (const scheme of [variables.light, variables.dark]) {
+      const background = scheme['--mantine-color-disabled']!;
+      expect(
+        contrastRatio(scheme['--mantine-color-disabled-color']!, background),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(scheme['--mantine-color-disabled-border']!, background),
+      ).toBeGreaterThanOrEqual(3);
+    }
+    for (const [scheme, background] of [
+      [variables.light, '#e2e2e2'],
+      [variables.dark, '#424242'],
+    ] as const) {
+      expect(contrastRatio(scheme['--mantine-color-anchor']!, background)).toBeGreaterThanOrEqual(
+        3,
+      );
+    }
+  });
 });

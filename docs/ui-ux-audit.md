@@ -1108,3 +1108,34 @@ upload still runs unconditionally. APT parses all four values under local Ubuntu
 Ubuntu apt.conf manual (https://manpages.ubuntu.com/manpages/noble/man5/apt.conf.5.html).
 This bounds stalled setup and makes the failed phase visible; reliable remote
 execution and full CI success still require a fresh run.
+
+## Contrast gaps in shared controls and exceptional states
+
+Replaced twelve screen-specific focus outlines with the shared scheme-aware
+focus token. Loading spinners and linear progress bars now use the readable
+anchor color; progress tracks have an explicit semantic background. Disabled
+text and boundaries have their own readable foreground/background pairs in
+both schemes, even though inactive controls have a WCAG contrast exemption.
+Light body text is explicit rather than inherited from the component library.
+
+Overdue issue titles and dates no longer use the raw light red palette shade.
+An accessible calendar warning icon also identifies overdue rows without color
+alone. Remaining direct red text in CSV import, project creation, cycle resource,
+project template and initiative list failures now uses the semantic error token.
+
+Rendered measurement now covers control icons, loading indicators, linear
+progress, disabled text and focused controls. Focus contrast is measured against
+the surface where the outline is painted: an outside outline uses the parent
+surface, while an inset outline uses the control surface. A dedicated negative
+fixture verifies this distinction. The route inventory includes Home, Board and
+an overdue issue, at 360/1280 px in light/dark schemes. Settings screenshots in
+both schemes were visually inspected.
+
+All 22 contrast/composer/cycle/route cases pass without retries, plus four color
+foundation unit cases. A separate final eight-case measurement/favorite run
+passes after correcting existing uncommitted favorite test assertions to use the
+actual translated save label and the API's omitted-false representation.
+Mandatory web:check and production build pass. Overall UI/UX remains Partial;
+these results cover the measured routes and states rather than certifying every
+possible state. Criteria: https://www.w3.org/TR/WCAG22/#contrast-minimum and
+https://www.w3.org/TR/WCAG22/#non-text-contrast.

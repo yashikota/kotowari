@@ -145,7 +145,7 @@ export function CycleDetailDialogs({
               onChange={onResourceTitleChange}
             />
             {resourceError ? (
-              <Text size="sm" c="red" role="alert">
+              <Text size="sm" c="var(--mantine-color-error)" role="alert">
                 {resourceError}
               </Text>
             ) : null}
