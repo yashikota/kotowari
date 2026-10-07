@@ -1009,3 +1009,23 @@ direct verification. Overall UI/UX remains Partial.
 Remote CI 37684233236 completed with browser failures in milestone/dependency
 navigation. Demo 37684233092 succeeded. Sharding completed but did not establish
 that those navigation failures are fixed; their remote reports need diagnosis.
+
+
+## Initiative colors and keyboard focus contrast
+
+Initiative list icons used saved values as raw CSS colors, bypassing the semantic
+palette: purple on #242424 measured 1.65:1, yellow on #f8f9fa 1.02:1 and pink on
+#f8f9fa 1.46:1. They now use the existing shared icon component, semantic named
+colors and background-adjusted custom hex foregrounds. Text labels remain present;
+color is not the sole identifier.
+
+The route contrast inventory now creates all eight initiative colors plus white,
+black and pale custom colors and scrolls every fixture row into view. Rendered
+light/dark screenshots were inspected. The final four inventory cases pass at
+360/1280px across the existing 27-route inventory. The six-case run including
+measurement regressions passes; the final two measurement cases also pass after
+covering wrapped button labels. Focus measurement now includes focused buttons
+and links as well as inputs. Existing form/error, cycle and hidden-group contrast
+cases passed in the preceding combined run. Mandatory web:check and build pass.
+These results cover the exercised states; whole-product WCAG conformance and
+overall UI/UX completion are not claimed.

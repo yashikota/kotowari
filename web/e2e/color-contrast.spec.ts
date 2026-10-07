@@ -1,3 +1,4 @@
+import { INITIATIVE_COLORS } from '../src/initiative-options.ts';
 import { contrastFailures } from './contrast.ts';
 import { expect, test } from '@playwright/test';
 
@@ -67,6 +68,15 @@ for (const scheme of ['light', 'dark']) {
         expect(response.ok()).toBeTruthy();
         iconRoutes.push(`/projects/${slug}`);
       }
+      const initiativeSlugs: string[] = [];
+      for (const color of [...INITIATIVE_COLORS, '#ffffff', '#000000', '#eeeeee']) {
+        const slug = `initiative-contrast-${color.replace('#', '')}-${stamp}`;
+        const response = await request.post('/api/initiatives', {
+          data: { name: `Initiative ${color} ${stamp}`, slug, color },
+        });
+        expect(response.ok()).toBeTruthy();
+        initiativeSlugs.push(slug);
+      }
       const documentResponse = await request.post('/api/pages', {
         data: { title: `Contrast document ${stamp}`, slug: `contrast-${stamp}` },
       });
@@ -100,6 +110,19 @@ for (const scheme of ['light', 'dark']) {
           if (route === `/projects/contrast-${stamp}`)
             await page.screenshot({ path: testInfo.outputPath('contrast-project-icon.png') });
         }
+        if (route === '/initiatives') {
+          await expect(page.locator('main [data-contrast-icon]').first()).toBeVisible();
+          await page.screenshot({ path: testInfo.outputPath('contrast-initiatives.png') });
+          for (const slug of initiativeSlugs) {
+            const row = page.locator('main tr').filter({
+              has: page.locator(`a[href="/initiatives/${slug}"]`),
+            });
+            await row.scrollIntoViewIfNeeded();
+            failures.push(
+              ...(await contrastFailures(page)).map((result) => ({ route, ...result })),
+            );
+          }
+        }
         if (route === '/config') {
           const name = page.getByRole('textbox', { name: 'Name', exact: true });
           await expect(page.locator('main [data-combobox-chevron]').first()).toHaveAttribute(
@@ -132,6 +155,7 @@ for (const scheme of ['light', 'dark']) {
           await page.screenshot({ path: testInfo.outputPath('contrast-settings.png') });
       }
       await page.screenshot({ path: testInfo.outputPath('contrast-document.png') });
+      for (const slug of initiativeSlugs) await request.delete(`/api/initiatives/${slug}`);
       expect(failures).toEqual([]);
     });
   }

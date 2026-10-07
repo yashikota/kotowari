@@ -22,6 +22,7 @@ import type { InitiativeDisplayProperty } from '../initiative-list.ts';
 import { useInitiativesPagePresenter } from '../presenters/InitiativesPages.tsx';
 import { INITIATIVE_COLORS, INITIATIVE_STATUSES } from '../initiative-options.ts';
 import { useTranslation } from 'react-i18next';
+import { ProjectIconMark } from '../components/ProjectIcon.tsx';
 
 export function InitiativesPageView({
   model,
@@ -275,7 +276,7 @@ function InitiativeListRow({
     <Table.Tr>
       <Table.Td>
         <Group gap="xs" wrap="nowrap" miw={180}>
-          <IconTarget size={17} color={initiative.color} aria-hidden />
+          <ProjectIconMark icon="target" size={17} color={initiative.color} />
           <Link
             to="/initiatives/$slug"
             params={{ slug: initiative.slug }}

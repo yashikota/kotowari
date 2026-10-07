@@ -38,6 +38,7 @@ export async function contrastFailures(page: Page, rootSelector = 'body') {
       const icon = element.getAttribute('data-contrast-icon');
       if (
         !icon &&
+        !element.matches(':focus-visible') &&
         !element.matches('input:not([type=checkbox]):not([type=radio]), textarea, select') &&
         !Array.from(element.childNodes).some(
           (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
@@ -94,15 +95,20 @@ export async function contrastFailures(page: Page, rootSelector = 'body') {
         return paint;
       };
       const paintedBackground = applyOpacity(background);
+      const check = (color: string, minimum: number, label: string) => {
+        const foreground = luminance(applyOpacity(blend(rgb(color), background)));
+        const surface = luminance(paintedBackground);
+        const ratio =
+          (Math.max(foreground, surface) + 0.05) / (Math.min(foreground, surface) + 0.05);
+        if (ratio < minimum) failures.push({ text: label, color, background, ratio });
+      };
+      if (
+        element.matches(':focus-visible') &&
+        style.outlineStyle !== 'none' &&
+        Number.parseFloat(style.outlineWidth) > 0
+      )
+        check(style.outlineColor, 3, 'Keyboard focus');
       if (element.matches('input, textarea, select')) {
-        const check = (color: string, minimum: number, label: string) => {
-          const foreground = luminance(applyOpacity(blend(rgb(color), background)));
-          const surface = luminance(paintedBackground);
-          const ratio =
-            (Math.max(foreground, surface) + 0.05) / (Math.min(foreground, surface) + 0.05);
-          if (ratio < minimum) failures.push({ text: label, color, background, ratio });
-        };
-        if (element.matches(':focus-visible')) check(style.outlineColor, 3, 'Keyboard focus');
         if (element.getAttribute('placeholder'))
           check(getComputedStyle(element, '::placeholder').color, 4.5, 'Input placeholder');
         if (
