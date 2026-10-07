@@ -1,6 +1,7 @@
 import { LoadFailure } from '../design-system/LoadFailure.tsx';
 import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import { ClipboardFeedback, useClipboardFocus } from '../design-system/ClipboardFeedback.tsx';
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
 import { IconPaperclip } from '@tabler/icons-react';
@@ -61,20 +62,16 @@ export function IssueDetailView({
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
-  const runCopy = useActionFocusReturn(
-    model._view === 2 && model.clipboard.pending,
-    () =>
-      document.querySelector<HTMLButtonElement>(
-        '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
-      ) ??
-      (model._view === 2 ? model.clipboard.getInitiator() : null) ??
+  const { runCopy } = useClipboardFocus({
+    clipboard: model._view === 2 ? model.clipboard : null,
+    scope: model._view === 2 ? model.identifier : '',
+    feedbackSelector: '[data-issue-copy-feedback]',
+    menuSelector: '[data-issue-options-menu]',
+    fallback: () =>
       Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
         (button) => button.getAttribute('aria-label') === t('issueActions.button'),
-      ) ??
-      null,
-    undefined,
-    model._view === 2 ? model.identifier : '',
-  );
+      ) ?? null,
+  });
   const runArchive = useActionFocusReturn(
     model._view === 2 && model.archivePending,
     () =>
@@ -88,24 +85,6 @@ export function IssueDetailView({
     undefined,
     model._view === 2 ? model.identifier : '',
   );
-  const copyError = model._view === 2 ? model.clipboard.error : '';
-  useEffect(() => {
-    if (!copyError) return;
-    const frame = requestAnimationFrame(() => {
-      const active = document.activeElement;
-      if (
-        active === document.body ||
-        active?.getAttribute('aria-label') === t('issueActions.button')
-      ) {
-        document
-          .querySelector<HTMLButtonElement>(
-            '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
-          )
-          ?.focus();
-      }
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [copyError, t]);
   const archiveError = model._view === 2 ? model.archiveError : '';
   useEffect(() => {
     if (!archiveError) return;
@@ -165,14 +144,8 @@ export function IssueDetailView({
         <Box maw={1180} mx="auto" px={{ base: 'sm', md: 'xs' }} pb="xl">
           <IssueDetailHeader model={model} />
           <Box mt="xs" data-issue-copy-feedback>
-            <SaveFeedback
-              saving={model.clipboard.pending}
-              saved={model.clipboard.copied}
-              error={model.clipboard.error}
-              savingLabel={t('clipboard.copying')}
-              savedLabel={t('ui.copied')}
-              failureLabel={t('clipboard.failed')}
-              retryLabel={t('clipboard.retry')}
+            <ClipboardFeedback
+              clipboard={model.clipboard}
               onRetry={() => runCopy(model.clipboard.retry)}
             />
           </Box>

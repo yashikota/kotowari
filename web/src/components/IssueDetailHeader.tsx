@@ -12,7 +12,7 @@ import {
 } from '@tabler/icons-react';
 import { useActionFocusReturn } from '../focus.ts';
 import { useTranslation } from 'react-i18next';
-import { useRef } from 'react';
+import { useClipboardFocus } from '../design-system/ClipboardFeedback.tsx';
 import { MetaBadge } from '../mantine-ui.tsx';
 import type { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
 import layoutStyles from './IssueDetail.module.css';
@@ -93,26 +93,16 @@ function CopyShortcut({ label }: { label: string }) {
 
 export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
   const { t } = useTranslation();
-  const copyFromMenu = useRef(false);
-  const returnCopyFocus = useActionFocusReturn(
-    model.clipboard.pending,
-    () =>
-      document.querySelector<HTMLButtonElement>(
-        '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
-      ) ??
-      model.clipboard.getInitiator() ??
+  const { runCopy, onMenuExited } = useClipboardFocus({
+    clipboard: model.clipboard,
+    scope: model.identifier,
+    feedbackSelector: '[data-issue-copy-feedback]',
+    menuSelector: '[data-issue-options-menu]',
+    fallback: () =>
       Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
         (button) => button.getAttribute('aria-label') === t('issueActions.button'),
-      ) ??
-      null,
-    (active) =>
-      active === document.body || active?.getAttribute('aria-label') === t('issueActions.button'),
-    model.identifier,
-  );
-  function runCopy(action: () => unknown) {
-    copyFromMenu.current = Boolean(document.activeElement?.closest('[data-issue-options-menu]'));
-    return returnCopyFocus(action);
-  }
+      ) ?? null,
+  });
   const runArchive = useActionFocusReturn(
     model.archivePending,
     () =>
@@ -156,22 +146,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
       withinPortal
       opened={issueOptionsOpen}
       onChange={handlers.onIssueOptionsChange}
-      onExitTransitionEnd={() => {
-        if (!copyFromMenu.current) return;
-        copyFromMenu.current = false;
-        const active = document.activeElement;
-        if (
-          active === document.body ||
-          active?.getAttribute('aria-label') === t('issueActions.button') ||
-          active?.closest('[data-issue-options-menu]')
-        ) {
-          document
-            .querySelector<HTMLButtonElement>(
-              '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
-            )
-            ?.focus();
-        }
-      }}
+      onExitTransitionEnd={onMenuExited}
     >
       <Box className={layoutStyles.issueHeader}>
         {model.dueDateSaving ? (

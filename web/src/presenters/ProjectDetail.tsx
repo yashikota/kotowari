@@ -1,4 +1,5 @@
 import { useReminderEditor } from './useReminderEditor.ts';
+import { useClipboardCopy } from './useClipboardCopy.ts';
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useRef, useState } from 'react';
@@ -135,37 +136,31 @@ export function useProjectDetailPagePresenter() {
   const [focusProjectTargetDate, setFocusProjectTargetDate] = useState(0);
   const [focusProjectUpdates, setFocusProjectUpdates] = useState(0);
   const [reminderMenuOpen, setReminderMenuOpen] = useState(false);
+  const [projectActionsOpen, setProjectActionsOpen] = useState(false);
   const reminderEditor = useReminderEditor({
     entityKey: slug,
     reminderAt: project.reminderAt,
     save: setReminder,
     onSuccess: () => setReminderMenuOpen(false),
   });
-  const [copied, setCopied] = useState(false);
+  const clipboard = useClipboardCopy(slug);
   const projectStatusSequenceSince = useRef<number | null>(null);
   const projectStatusSequenceSlug = useRef(slug);
 
-  async function copyText(value: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
-    } catch {
-      // Clipboard permission can be unavailable in an embedded or non-secure context.
-    }
-  }
-
   function copyProjectId() {
-    return copyText(String(project.id));
+    setProjectActionsOpen(false);
+    return clipboard.copy(String(project.id));
   }
 
   function copyProjectURL() {
+    setProjectActionsOpen(false);
     const url = new URL(`/projects/${encodeURIComponent(project.slug)}`, window.location.origin);
-    return copyText(url.href);
+    return clipboard.copy(url.href);
   }
 
   function copyProjectTitle() {
-    return copyText(project.name);
+    setProjectActionsOpen(false);
+    return clipboard.copy(project.name);
   }
 
   async function setReminder(value: Date | null) {
@@ -262,7 +257,7 @@ export function useProjectDetailPagePresenter() {
     setProjectUpdateBody('');
     setProjectUpdateOpen(false);
     setReminderMenuOpen(false);
-    setCopied(false);
+    setProjectActionsOpen(false);
   }
 
   async function save(body: Record<string, unknown>) {
@@ -381,8 +376,9 @@ export function useProjectDetailPagePresenter() {
     focusProjectTargetDate,
     focusProjectUpdates,
     reminderMenuOpen,
+    projectActionsOpen,
     reminderEditor: reminderEditor.data,
-    copied,
+    clipboard,
     projectWorkflowStatuses,
     selected,
     project,
@@ -453,6 +449,7 @@ export function useProjectDetailPagePresenter() {
       onRetryReminder: reminderEditor.retry,
       onReminderMenuChange: setReminderMenuOpen,
       onCopyProjectId: copyProjectId,
+      onProjectActionsChange: setProjectActionsOpen,
       onCopyProjectURL: copyProjectURL,
       onCopyProjectTitle: copyProjectTitle,
       onProjectLeadChange: (e: React.ChangeEvent<HTMLSelectElement>) =>

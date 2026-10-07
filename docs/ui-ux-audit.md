@@ -483,3 +483,28 @@ Archive/restore, navigation/draft retention and eleven workflow recovery regress
 pass. Light/dark failure screenshots were inspected; rendered alert contrast, mandatory
 web checks, 2373 locale keys and production build pass. Previous full CI 37598826758
 completed successfully. Other screens' clipboard feedback remains in the ongoing audit.
+
+## Shared clipboard feedback and project recovery
+
+ClipboardFeedback and useClipboardFocus now own translated progress/error/retry/success
+presentation and scoped focus recovery for issue and project details. Project ID,
+canonical URL and title copies use useClipboardCopy instead of silently swallowing
+permission failures and leaving unscoped timers. Copy items are disabled during a
+pending attempt; exact failed values are retained for retry. Connected menu items
+that are closing are excluded as return targets, so recovery returns to the opener.
+
+Reproduced rapid reopening/Escape leaving the project actions menu open before its
+focus trap had initialized, then stealing recovery focus. Project actions are now
+controlled, reset on navigation and handle Escape on the opener as well as inside
+the menu. Tests assert both collapsed state and removal of the menu before failure.
+
+Verification: six project recovery cases passed three repetitions (18 executions),
+covering Japanese/English, light/dark, 360px/large text, pending disabled copies,
+Escape, actual alert contrast, 44px retry, exact URL/title/ID retry and menu/keyboard
+entry paths. Three additional cases cover retained summary drafts/user focus and
+late success/failure after dependency-link navigation with body focus. All 37 related
+clipboard/archive/workflow cases and eight existing project layout/shortcut/save/
+dependency/template cases pass. Japanese light/dark failure screenshots were inspected;
+mandatory web checks, 2373 locale keys and production build pass. Full CI 37601794232
+for the previously pushed changes remains live. Other detail screens' clipboard
+feedback and remaining project mutation recovery still belong to the ongoing audit.

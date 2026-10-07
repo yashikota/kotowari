@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 import { IssueList } from '../components/IssueList.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import { ClipboardFeedback, useClipboardFocus } from '../design-system/ClipboardFeedback.tsx';
 
 import { ProjectActivityFeed } from '../components/ProjectActivityFeed.tsx';
 import { HealthUpdateFeed } from '../components/HealthUpdateFeed.tsx';
@@ -59,6 +60,13 @@ export function ProjectDetailPageView({
   updatesRef: ReturnType<typeof useFocusWhen<HTMLDivElement>>;
 }) {
   const { t } = useTranslation();
+  const { runCopy, onMenuExited } = useClipboardFocus({
+    clipboard: model.clipboard,
+    scope: model.slug,
+    feedbackSelector: '[data-project-copy-feedback]',
+    menuSelector: '[data-project-copy-menu]',
+    fallback: () => document.querySelector<HTMLButtonElement>('[data-project-actions]'),
+  });
   switch (model._view) {
     case 0: {
       const {
@@ -81,7 +89,7 @@ export function ProjectDetailPageView({
         dependencyProjectSlug,
         dependencyKind,
         reminderMenuOpen,
-        copied,
+        clipboard,
         handlers,
       } = model;
       return (
@@ -121,15 +129,24 @@ export function ProjectDetailPageView({
                       onMenuChange={handlers.onReminderMenuChange}
                       onSetReminder={handlers.onSetReminder}
                     />
-                    {copied ? (
-                      <Text size="xs" c="dimmed" role="status">
-                        {t('ui.copied')}
-                      </Text>
-                    ) : null}
-                    <Menu withinPortal position="bottom-end">
+                    <Menu
+                      withinPortal
+                      position="bottom-end"
+                      opened={model.projectActionsOpen}
+                      onChange={handlers.onProjectActionsChange}
+                      onExitTransitionEnd={onMenuExited}
+                    >
                       <Menu.Target>
                         <ActionIcon
                           type="button"
+                          data-project-actions
+                          onKeyDown={(event) => {
+                            if (event.key === 'Escape' && model.projectActionsOpen) {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handlers.onProjectActionsChange(false);
+                            }
+                          }}
                           variant="subtle"
                           color="gray"
                           aria-label={t('issueActions.moreActions')}
@@ -138,14 +155,23 @@ export function ProjectDetailPageView({
                           <IconDotsVertical size={16} stroke={1.8} aria-hidden="true" />
                         </ActionIcon>
                       </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item onClick={handlers.onCopyProjectId}>
+                      <Menu.Dropdown data-project-copy-menu>
+                        <Menu.Item
+                          disabled={clipboard.pending}
+                          onClick={() => runCopy(handlers.onCopyProjectId)}
+                        >
                           {t('issueActions.copyId')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.onCopyProjectURL}>
+                        <Menu.Item
+                          disabled={clipboard.pending}
+                          onClick={() => runCopy(handlers.onCopyProjectURL)}
+                        >
                           {t('issueActions.copyUrl')}
                         </Menu.Item>
-                        <Menu.Item onClick={handlers.onCopyProjectTitle}>
+                        <Menu.Item
+                          disabled={clipboard.pending}
+                          onClick={() => runCopy(handlers.onCopyProjectTitle)}
+                        >
                           {t('issueActions.copyTitle')}
                         </Menu.Item>
                         <Menu.Divider />
@@ -191,6 +217,14 @@ export function ProjectDetailPageView({
                 }
               />
               <Stack gap="md" maw={960} mx="auto" w="100%" py="md">
+                {clipboard.pending || clipboard.error || clipboard.copied ? (
+                  <Box data-project-copy-feedback>
+                    <ClipboardFeedback
+                      clipboard={clipboard}
+                      onRetry={() => runCopy(clipboard.retry)}
+                    />
+                  </Box>
+                ) : null}
                 <SaveFeedback
                   saving={model.projectSaving}
                   saved={model.projectSaved}
