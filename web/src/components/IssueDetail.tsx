@@ -1,3 +1,4 @@
+import { LoadFailure } from '../design-system/LoadFailure.tsx';
 import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
@@ -92,11 +93,24 @@ export function IssueDetailView({
   switch (model._view) {
     case 0: {
       const { error } = model;
-      return <Alert color="red">{error}</Alert>;
+      return (
+        <Box maw={1180} mx="auto" p="md">
+          <LoadFailure
+            title={t('issueLoading.failed')}
+            message={error}
+            retryLabel={t('issueLoading.retry')}
+            backLabel={t('issueLoading.back')}
+            pending={model.loadRetrying}
+            pendingLabel={t('ui.loading')}
+            onRetry={model.handlers.onRetryLoad}
+            onBack={model.handlers.onReturnToList}
+          />
+        </Box>
+      );
     }
     case 1: {
       return (
-        <Text c="dimmed" ta="center" py="xl">
+        <Text role="status" c="dimmed" ta="center" py="xl">
           {t('ui.loading')}
         </Text>
       );

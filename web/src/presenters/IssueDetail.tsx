@@ -1,5 +1,5 @@
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type SetStateAction } from 'react';
 import { api } from '../api.ts';
 import { patchIssueOptimistically } from '../application/issues.ts';
 import {
@@ -62,7 +62,24 @@ export function useIssueDetailPresenter({
   const navigate = useNavigate();
   const router = useRouter();
   const navigationIndex = navigationIds.indexOf(identifier);
-  const [error, setError] = useState('');
+  const [errorRecord, setErrorRecord] = useState({ identifier, message: '' });
+  const error = errorRecord.identifier === identifier ? errorRecord.message : '';
+  function setError(message: SetStateAction<string>) {
+    if (currentIdentifier.current === identifier)
+      setErrorRecord((current) => ({
+        identifier,
+        message:
+          typeof message === 'function'
+            ? message(current.identifier === identifier ? current.message : '')
+            : message,
+      }));
+  }
+  const [loadRetrying, setLoadRetrying] = useState(false);
+  const loadRetryPending = useRef(false);
+  useEffect(() => {
+    loadRetryPending.current = false;
+    setLoadRetrying(false);
+  }, [identifier]);
   const issueData = useIssueDetailData(identifier, (loadError) =>
     setError(loadError instanceof Error ? loadError.message : 'load failed'),
   );
@@ -218,8 +235,40 @@ export function useIssueDetailPresenter({
     onFailure: () => setArchiveSaved(false),
   });
 
+  async function retryLoad() {
+    if (loadRetryPending.current) return;
+    loadRetryPending.current = true;
+    setLoadRetrying(true);
+    try {
+      await issueData.reload();
+      if (currentIdentifier.current !== identifier) return;
+      setError('');
+      requestAnimationFrame(() => {
+        if (currentIdentifier.current === identifier && document.activeElement === document.body) {
+          Array.from(document.querySelectorAll<HTMLTextAreaElement>('textarea'))
+            .find((element) => element.getAttribute('aria-label') === i18n.t('ui.issueTitle'))
+            ?.focus();
+        }
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      if (currentIdentifier.current === identifier) {
+        loadRetryPending.current = false;
+        setLoadRetrying(false);
+      }
+    }
+  }
   if (error) {
-    return { _view: 0 as const, error, handlers: {} };
+    return {
+      _view: 0 as const,
+      error,
+      loadRetrying,
+      handlers: {
+        onRetryLoad: retryLoad,
+        onReturnToList: () => navigate({ to: '/issues', search: {} }),
+      },
+    };
   }
   if (!issue) {
     return { _view: 1 as const, handlers: {} };

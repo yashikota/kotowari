@@ -2526,5 +2526,10 @@
     "saved": "Archive change saved",
     "failed": "Archive change could not be saved",
     "retry": "Retry archive change"
+  },
+  "issueLoading": {
+    "failed": "Issue could not be loaded",
+    "retry": "Retry loading issue",
+    "back": "Back to issues"
   }
 }

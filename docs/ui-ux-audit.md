@@ -381,3 +381,24 @@ before the change and passes after it. Mandatory checks and production build pas
 The previous archive focus/contrast changes remain locally committed pending live
 CI 37596042116. Further late-response interleavings and remaining screens still need
 completion evidence.
+
+## Recoverable issue loading
+
+Issue read failure now uses shared LoadFailure with a clear heading, wrapped error,
+44px retry/back actions and announced pending state. Retry preserves the failure view
+while reading, prevents duplicate requests, restores retry focus on another failure,
+and focuses the editable title after recovery. Returning to the issue list remains
+available while retry is pending. Initial loading is announced as a status.
+
+Errors are scoped to the issue identifier. Stale rejected detail reads are ignored
+before invoking the current error handler, so a previous issue cannot replace a new
+issue's editor with its failure screen.
+
+Verification: 13 browser cases pass, including both-scheme 360px/large-text initial
+failure, held retry failure, recovery focus, 44px actions and rendered contrast; late
+read failure after next-issue navigation followed by a confirmed edit; and returning
+to the list before retry settles. Archive context/draft and deletion cases pass too.
+Final light/dark load failure screenshots were inspected. Mandatory checks, 2369
+locale keys and production build pass. Remote CI 37596042116 remains live (Check
+passed). Ancillary resource failures, repeated route visits, all language/text-size
+combinations and broader screen completion remain unproven.

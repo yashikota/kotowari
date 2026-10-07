@@ -29,18 +29,22 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
   async function reload() {
     const token = ++generation.current;
     const issueRevisionAtStart = issueRevision.current;
+    const result = await Promise.all([
+      api.issue(identifier),
+      api.issues(),
+      api.projects(),
+      api.cycles(),
+      api.labels(),
+      api.adrs(),
+      api.pages(),
+      api.workspace(),
+    ]).catch((cause: unknown) => {
+      if (token !== generation.current) return null;
+      throw cause;
+    });
+    if (token !== generation.current || !result) return;
     const [nextIssue, allIssues, allProjects, allCycles, allLabels, allAdrs, allPages, workspace] =
-      await Promise.all([
-        api.issue(identifier),
-        api.issues(),
-        api.projects(),
-        api.cycles(),
-        api.labels(),
-        api.adrs(),
-        api.pages(),
-        api.workspace(),
-      ]);
-    if (token !== generation.current) return;
+      result;
     if (issueRevisionAtStart === issueRevision.current) setIssue(nextIssue);
     setIssues(allIssues);
     setProjects(allProjects);
