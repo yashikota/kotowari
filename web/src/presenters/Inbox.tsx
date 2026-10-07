@@ -60,6 +60,7 @@ export function useInboxPresenter() {
   const { t, i18n } = useTranslation();
 
   const [storageError, setStorageError] = useState('');
+  const [storageFailureCount, setStorageFailureCount] = useState(0);
   const [storageSaved, setStorageSaved] = useState(false);
   const failedStorage = useRef<{
     update: (current: InboxState) => InboxState;
@@ -83,6 +84,7 @@ export function useInboxPresenter() {
     } catch (cause) {
       failedStorage.current = { update, onSuccess };
       setStorageError(cause instanceof Error ? cause.message : String(cause));
+      setStorageFailureCount((count) => count + 1);
       setStorageSaved(false);
       return false;
     }
@@ -517,6 +519,7 @@ export function useInboxPresenter() {
     snoozeMenuOpen,
     deleteConfirmation,
     storageError,
+    storageFailureCount,
     storageSaved,
     deletionPending: deletion.saving,
     deletionError: deletion.error,

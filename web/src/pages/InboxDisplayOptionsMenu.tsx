@@ -1,11 +1,13 @@
 import { ActionIcon, Menu, Text } from '@mantine/core';
 import { IconAdjustments, IconCheck } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { INBOX_PRIORITY_TYPES, type InboxPriorityType } from '../inbox-state.ts';
 import type { useInboxPresenter } from '../presenters/Inbox.tsx';
 
 type InboxDisplayOptionsModel = Pick<
   ReturnType<typeof useInboxPresenter>,
+  | 'storageFailureCount'
   | 'priorityInboxEnabled'
   | 'priorityTypes'
   | 'badgeCount'
@@ -20,6 +22,8 @@ type InboxDisplayOptionsModel = Pick<
 
 export function InboxDisplayOptionsMenu({ model }: { model: InboxDisplayOptionsModel }) {
   const { t } = useTranslation();
+  const [opened, setOpened] = useState(false);
+  useEffect(() => setOpened(false), [model.storageFailureCount]);
   const priorityTypeLabels: Record<InboxPriorityType, string> = {
     assignedToYou: t('inbox.priorityAssignedToYou'),
     documentActivity: t('inbox.priorityDocumentActivity'),
@@ -33,7 +37,7 @@ export function InboxDisplayOptionsMenu({ model }: { model: InboxDisplayOptionsM
     updateReminders: t('inbox.priorityUpdateReminders'),
   };
   return (
-    <Menu position="bottom-end" withinPortal>
+    <Menu position="bottom-end" withinPortal opened={opened} onChange={setOpened}>
       <Menu.Target>
         <ActionIcon
           type="button"

@@ -56,9 +56,13 @@ function InboxPageView({ model }: { model: InboxModel }) {
   const { t, i18n } = useTranslation();
   const storageFeedbackRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (model.storageError)
-      storageFeedbackRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
-  }, [model.storageError]);
+    if (!model.storageError) return;
+    // Let a failed preference's menu dismiss before focusing its recovery action.
+    const frame = requestAnimationFrame(() =>
+      storageFeedbackRef.current?.querySelector<HTMLButtonElement>('button')?.focus(),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [model.storageError, model.storageFailureCount]);
   const groups = useMemo(() => {
     const now = new Date();
     const dateGroups = (activities: typeof model.activities) => {

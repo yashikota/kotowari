@@ -305,3 +305,18 @@ They check unchanged storage, retained detail context, focus, final persisted ID
 were inspected. Formatting/lint/types, 2350 locale keys and production build pass.
 Preference and automatic read failures share implementation but lack dedicated
 failure browser cases. Previous remote CI 37593839803 remains in progress.
+
+## Inbox preference failure dismissal
+
+Display options now close when storage fails, including repeated failures with the
+same message. Recovery focus waits for the menu dismissal. A failure sequence count
+coordinates focus without treating error text as an event. Users can select another
+setting after a failure; its retry replaces the previous unconfirmed preference.
+
+Verification: 28 inbox browser cases pass. New light/dark cases at 360px/large text
+fail priority-inbox and compact-density writes with identical errors, verify closed
+menus and retry focus, assert unchanged storage, retry only the current preference,
+and check rendered alert contrast. Light/dark screenshots were inspected. Mandatory
+formatting/lint/types and production build pass. Remote CI 37593839803 remains live;
+its Check job succeeded and Unit test is still running. Overall completion remains
+unproven, including dedicated automatic-read failure cases and other screens.
