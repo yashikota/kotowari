@@ -460,3 +460,26 @@ the icon picker with its selection check. All five focused browser cases pass;
 light/dark project and picker screenshots were inspected. Mandatory web checks and
 production build pass. This remains scoped contrast evidence; remaining interaction
 states and scrolled content belong to the ongoing screen audit.
+
+## Clipboard focus recovery across entry paths and navigation
+
+Reproduced immediate clipboard rejection from the issue Copy submenu leaving focus
+on Issue options instead of recovery. Menu exit callbacks had captured the state
+before rejection. Copy-owned menu exits now inspect the rendered recovery target;
+ordinary menu dismissal retains its existing behavior. Keyboard errors share recovery
+focus, and retry falls back to Issue options when a removed menu item cannot receive
+focus. Pending focus requests survive a cancelled animation frame and reschedule.
+
+Also reproduced late copy success/failure moving focus to the next issue's Copy URL
+button when no input was focused. useActionFocusReturn now accepts a navigation
+scope and checks its generation both after completion and before the animation frame;
+issue copy/archive handlers use their identifier. Clipboard initiators reset on scope
+changes. User-moved focus remains untouched.
+
+Verification: 28 related browser cases pass, including eight clipboard cases covering
+both schemes, delayed failure, exact retry, immediate menu/keyboard failure, reduced
+motion, editing focus and late success/failure after navigation with body focus.
+Archive/restore, navigation/draft retention and eleven workflow recovery regressions
+pass. Light/dark failure screenshots were inspected; rendered alert contrast, mandatory
+web checks, 2373 locale keys and production build pass. Previous full CI 37598826758
+completed successfully. Other screens' clipboard feedback remains in the ongoing audit.

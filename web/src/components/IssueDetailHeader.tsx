@@ -12,6 +12,7 @@ import {
 } from '@tabler/icons-react';
 import { useActionFocusReturn } from '../focus.ts';
 import { useTranslation } from 'react-i18next';
+import { useRef } from 'react';
 import { MetaBadge } from '../mantine-ui.tsx';
 import type { useIssueDetailPresenter } from '../presenters/IssueDetail.tsx';
 import layoutStyles from './IssueDetail.module.css';
@@ -92,7 +93,8 @@ function CopyShortcut({ label }: { label: string }) {
 
 export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
   const { t } = useTranslation();
-  const runCopy = useActionFocusReturn(
+  const copyFromMenu = useRef(false);
+  const returnCopyFocus = useActionFocusReturn(
     model.clipboard.pending,
     () =>
       document.querySelector<HTMLButtonElement>(
@@ -105,7 +107,12 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
       null,
     (active) =>
       active === document.body || active?.getAttribute('aria-label') === t('issueActions.button'),
+    model.identifier,
   );
+  function runCopy(action: () => unknown) {
+    copyFromMenu.current = Boolean(document.activeElement?.closest('[data-issue-options-menu]'));
+    return returnCopyFocus(action);
+  }
   const runArchive = useActionFocusReturn(
     model.archivePending,
     () =>
@@ -118,6 +125,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
       null,
     (active) =>
       active === document.body || active?.getAttribute('aria-label') === t('issueActions.button'),
+    model.identifier,
   );
   const {
     identifier,
@@ -148,6 +156,22 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
       withinPortal
       opened={issueOptionsOpen}
       onChange={handlers.onIssueOptionsChange}
+      onExitTransitionEnd={() => {
+        if (!copyFromMenu.current) return;
+        copyFromMenu.current = false;
+        const active = document.activeElement;
+        if (
+          active === document.body ||
+          active?.getAttribute('aria-label') === t('issueActions.button') ||
+          active?.closest('[data-issue-options-menu]')
+        ) {
+          document
+            .querySelector<HTMLButtonElement>(
+              '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
+            )
+            ?.focus();
+        }
+      }}
     >
       <Box className={layoutStyles.issueHeader}>
         {model.dueDateSaving ? (
@@ -326,7 +350,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          <Menu.Dropdown aria-label={t('issueActions.button')}>
+          <Menu.Dropdown aria-label={t('issueActions.button')} data-issue-options-menu>
             <Menu.Item
               component="a"
               href={issueReturnTo}
@@ -389,7 +413,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                   <Menu.Sub.Target>
                     <Menu.Sub.Item>{t('issueActions.copy')}</Menu.Sub.Item>
                   </Menu.Sub.Target>
-                  <Menu.Sub.Dropdown style={{ minWidth: 300 }}>
+                  <Menu.Sub.Dropdown style={{ minWidth: 300 }} data-issue-options-menu>
                     <Menu.Item
                       disabled={clipboard.pending}
                       onClick={() => runCopy(handlers.Copy_id_onClick34)}
@@ -605,7 +629,7 @@ export function IssueDetailHeader({ model }: { model: IssueHeaderModel }) {
                   <Menu.Sub.Target>
                     <Menu.Sub.Item>{t('issueActions.copy')}</Menu.Sub.Item>
                   </Menu.Sub.Target>
-                  <Menu.Sub.Dropdown style={{ minWidth: 300 }}>
+                  <Menu.Sub.Dropdown style={{ minWidth: 300 }} data-issue-options-menu>
                     <Menu.Item
                       disabled={clipboard.pending}
                       onClick={() => runCopy(handlers.Copy_id_onClick34)}

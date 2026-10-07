@@ -47,8 +47,17 @@ export function useActionFocusReturn(
   busy: boolean,
   fallback: () => HTMLElement | null,
   canRestoreFrom: (active: Element | null) => boolean = (active) => active === document.body,
+  scope?: string,
 ) {
   const pending = useRef<HTMLElement | null>(null);
+  const generation = useRef(0);
+  useEffect(() => {
+    generation.current++;
+    pending.current = null;
+    return () => {
+      generation.current++;
+    };
+  }, [scope]);
   const latestFallback = useRef(fallback);
   latestFallback.current = fallback;
   const latestCanRestore = useRef(canRestoreFrom);
@@ -57,21 +66,26 @@ export function useActionFocusReturn(
   useEffect(() => {
     if (busy) return;
     const trigger = pending.current;
-    pending.current = null;
     if (!trigger) return;
+    const token = generation.current;
     const frame = requestAnimationFrame(() => {
+      if (generation.current !== token) return;
+      pending.current = null;
       if (latestCanRestore.current(document.activeElement)) latestFallback.current()?.focus();
     });
     return () => cancelAnimationFrame(frame);
   }, [busy, completion]);
   return async (action: () => unknown) => {
+    const token = generation.current;
     const trigger = document.activeElement;
     try {
       return await action();
     } finally {
-      pending.current =
-        trigger instanceof HTMLElement && trigger !== document.body ? trigger : null;
-      setCompletion((current) => current + 1);
+      if (generation.current === token) {
+        pending.current =
+          trigger instanceof HTMLElement && trigger !== document.body ? trigger : null;
+        setCompletion((current) => current + 1);
+      }
     }
   };
 }

@@ -10,6 +10,7 @@ export function useClipboardCopy(scope: string) {
     timer.current = null;
   }
   useEffect(() => {
+    initiator.current = null;
     clearTimer();
     setCopied(false);
     return clearTimer;
@@ -33,7 +34,9 @@ export function useClipboardCopy(scope: string) {
     copy: (value: string) => {
       if (write.isPending()) return;
       initiator.current =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+          ? document.activeElement
+          : null;
       clearTimer();
       setCopied(false);
       write.invalidate();

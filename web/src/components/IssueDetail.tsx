@@ -66,7 +66,14 @@ export function IssueDetailView({
     () =>
       document.querySelector<HTMLButtonElement>(
         '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
-      ) ?? (model._view === 2 ? model.clipboard.getInitiator() : null),
+      ) ??
+      (model._view === 2 ? model.clipboard.getInitiator() : null) ??
+      Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+        (button) => button.getAttribute('aria-label') === t('issueActions.button'),
+      ) ??
+      null,
+    undefined,
+    model._view === 2 ? model.identifier : '',
   );
   const runArchive = useActionFocusReturn(
     model._view === 2 && model.archivePending,
@@ -78,7 +85,27 @@ export function IssueDetailView({
         (button) => button.getAttribute('aria-label') === t('issueActions.button'),
       ) ??
       null,
+    undefined,
+    model._view === 2 ? model.identifier : '',
   );
+  const copyError = model._view === 2 ? model.clipboard.error : '';
+  useEffect(() => {
+    if (!copyError) return;
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (
+        active === document.body ||
+        active?.getAttribute('aria-label') === t('issueActions.button')
+      ) {
+        document
+          .querySelector<HTMLButtonElement>(
+            '[data-issue-copy-feedback] [role="alert"] button:not(:disabled)',
+          )
+          ?.focus();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [copyError, t]);
   const archiveError = model._view === 2 ? model.archiveError : '';
   useEffect(() => {
     if (!archiveError) return;

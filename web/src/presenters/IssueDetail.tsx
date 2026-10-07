@@ -315,6 +315,7 @@ export function useIssueDetailPresenter({
   }
 
   function copyText(text: string) {
+    setIssueOptionsOpen(false);
     return clipboard.copy(text);
   }
 
