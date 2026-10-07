@@ -508,3 +508,25 @@ dependency/template cases pass. Japanese light/dark failure screenshots were ins
 mandatory web checks, 2373 locale keys and production build pass. Full CI 37601794232
 for the previously pushed changes remains live. Other detail screens' clipboard
 feedback and remaining project mutation recovery still belong to the ongoing audit.
+
+## Project deletion confirmation and recovery
+
+Project detail uses ConfirmActionDialog and useRetriableRemoval for deletion. Cancel
+receives initial focus, pending writes prevent dismissal/duplicates, failures retain
+the current summary/description drafts and focus exact retry, and cancelled dialogs
+return to the actions opener. Property/reminder saves block deletion; project property
+writes and shortcuts cannot run during confirmed removal. Confirmed removal opens the
+list before dispatching refresh, avoiding invalidation of the deleted detail route.
+The shared removal hook separates confirmed deletion from navigation retry.
+
+Verification: five project deletion cases pass, with Japanese/English, light/dark,
+360px/large text, default cancellation focus, 44px actions, no delete on cancellation,
+held failure, Escape while pending, exact retry, retained failed summary/description,
+unchanged server values before removal, actual dialog contrast, final list route and
+server 404. A held property save keeps Delete disabled until it settles. All 26 related
+project copy/layout/shortcut/save/dependency/template and issue deletion cases pass.
+Japanese light/dark failure screenshots were inspected. Mandatory checks, 2383 locale
+keys and production build pass. Rejected navigation after confirmed deletion still
+requires dedicated runtime evidence. Full CI 37601794232 completed with 504 passed
+and one flaky issue-save-feedback case; investigate that save/Enter ordering before
+the next push rather than accepting the retry as proof of stability.

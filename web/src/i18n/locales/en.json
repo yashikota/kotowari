@@ -1,4 +1,15 @@
 {
+  "projectDeletion": {
+    "title": "Delete project",
+    "deleting": "Deleting project…",
+    "deleted": "Project deleted",
+    "failed": "Project could not be deleted",
+    "retry": "Retry deleting project",
+    "opening": "Opening projects…",
+    "openFailed": "Project deleted, but the project list could not be opened",
+    "openList": "Open projects",
+    "deletedDescription": "{{name}} has been deleted."
+  },
   "pageProperties": {
     "saving": "Saving document properties…",
     "saved": "Document properties saved",

@@ -1,5 +1,6 @@
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useClipboardCopy } from './useClipboardCopy.ts';
+import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useLoaderData, useNavigate, useParams, useRouter } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useRef, useState } from 'react';
@@ -144,6 +145,14 @@ export function useProjectDetailPagePresenter() {
     onSuccess: () => setReminderMenuOpen(false),
   });
   const clipboard = useClipboardCopy(slug);
+  const deletion = useRetriableRemoval({
+    scope: slug,
+    remove: api.deleteProject,
+    openList: async () => {
+      await navigate({ to: '/projects' });
+      signals.dispatchEvent(new Event('kotowari:refresh'));
+    },
+  });
   const projectStatusSequenceSince = useRef<number | null>(null);
   const projectStatusSequenceSlug = useRef(slug);
 
@@ -177,6 +186,7 @@ export function useProjectDetailPagePresenter() {
   }
 
   useKeyboard((event) => {
+    if (deletion.opened || deletion.isPending() || deletion.isRemoved()) return false;
     if (projectStatusSequenceSlug.current !== slug) {
       projectStatusSequenceSlug.current = slug;
       projectStatusSequenceSince.current = null;
@@ -261,6 +271,7 @@ export function useProjectDetailPagePresenter() {
   }
 
   async function save(body: Record<string, unknown>) {
+    if (deletion.isPending() || deletion.isRemoved()) return;
     const before = project;
     const token = saveGeneration.current;
     pendingProjectSaves.current++;
@@ -379,6 +390,13 @@ export function useProjectDetailPagePresenter() {
     projectActionsOpen,
     reminderEditor: reminderEditor.data,
     clipboard,
+    deletion: {
+      ...deletion,
+      confirm: () => {
+        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving) return;
+        return deletion.confirm();
+      },
+    },
     projectWorkflowStatuses,
     selected,
     project,
@@ -525,19 +543,20 @@ export function useProjectDetailPagePresenter() {
       },
       onCreateIssue: () => sendIntent('issue.create', { projectId: project.id }),
       onToggleProjectArchived: async () => {
+        if (deletion.isPending() || deletion.isRemoved()) return;
         const archived = !project.archivedAt;
         await api.patchProject(slug, { archived });
         signals.dispatchEvent(new Event('kotowari:refresh'));
         await navigate({ to: '/projects', search: { archived } });
       },
       onDeleteProject: () => {
-        if (!window.confirm(i18n.t('ui.deleteProjectConfirmation', { name: project.name }))) {
-          return;
-        }
-        return api.deleteProject(slug).then(async () => {
-          await router.invalidate();
-          await navigate({ to: '/projects' });
-        });
+        if (pendingProjectSaves.current > 0 || reminderEditor.data.saving) return;
+        setProjectActionsOpen(false);
+        setProjectUpdateOpen(false);
+        setProjectTemplateOpen(false);
+        setReminderMenuOpen(false);
+        reminderEditor.close();
+        deletion.request();
       },
       onDescriptionChange: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],

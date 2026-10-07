@@ -1,4 +1,15 @@
 {
+  "projectDeletion": {
+    "title": "プロジェクトを削除",
+    "deleting": "プロジェクトを削除しています…",
+    "deleted": "プロジェクトを削除しました",
+    "failed": "プロジェクトを削除できませんでした",
+    "retry": "プロジェクトの削除を再試行",
+    "opening": "プロジェクト一覧を開いています…",
+    "openFailed": "プロジェクトは削除しましたが、一覧を開けませんでした",
+    "openList": "プロジェクト一覧を開く",
+    "deletedDescription": "「{{name}}」を削除しました。"
+  },
   "pageProperties": {
     "saving": "文書の属性を保存しています…",
     "saved": "文書の属性を保存しました",
