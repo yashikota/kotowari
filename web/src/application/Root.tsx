@@ -198,7 +198,7 @@ function ErrorNoticeView({
     >
       <Group justify="space-between" wrap="nowrap" align="flex-start">
         <span>{error}</span>
-        <Button type="button" variant="white" color="red" size="compact-xs" onClick={onDismiss}>
+        <Button type="button" variant="default" size="compact-xs" onClick={onDismiss}>
           {dismissLabel}
         </Button>
       </Group>

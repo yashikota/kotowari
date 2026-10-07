@@ -922,3 +922,15 @@ project archive/text navigation and task unsaved titles. The three navigation
 feedback unit cases, mandatory web:check and build pass. No full-CI success or
 all-screen completion is claimed for this revision; the next pushed CI must
 confirm the complete browser suite.
+
+## Creation overlays and global error contrast
+
+Global error dismissal now uses the shared default button surface and text,
+instead of the white variant's palette foreground on a fixed white surface.
+New browser coverage measures issue/project creation, focused inputs and status
+options at 360px and 1280px in both color schemes, plus a real failed favorite
+write's global error notification and its dismissal. All 15 contrast browser
+cases pass without retries, including the existing 27-route rendered inventory,
+hidden groups and opacity/clipping measurement checks. Light/dark screenshots
+were inspected. Mandatory web:check and build pass; 2435 locale keys match.
+This is contrast evidence for the covered states, not a complete WCAG audit.
