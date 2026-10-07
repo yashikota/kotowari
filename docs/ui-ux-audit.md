@@ -443,3 +443,20 @@ restore and keyboard deletion regressions pass too. Final light/dark screenshots
 inspected. Mandatory checks, 2373 locale keys and production build pass. Pushed CI
 37598826758 remains live; Demo succeeded. Menu/keyboard copy paths, scope interleavings,
 and copy operations on other screens still require dedicated evidence.
+
+## Project icon and custom foreground contrast
+
+Project icons and color choices now use shared semantic foreground colors instead
+of fixed palette shades. Custom hexadecimal colors retain their stored value while
+displayed luminance is adjusted for the supported light/dark surfaces. The shared
+foreground helper uses the same 4.8:1 margin as theme palettes. Cycle date markers
+use the semantic muted color, and shared error tokens use the theme error color.
+Selected icon colors also show a check mark instead of relying on background color.
+
+The rendered contrast scanner now measures explicitly marked project/selection
+icons at 3:1. The route sweep covers 27 routes in light/dark at 360px/1280px,
+including all eight named project colors, white, black and pale custom colors, and
+the icon picker with its selection check. All five focused browser cases pass;
+light/dark project and picker screenshots were inspected. Mandatory web checks and
+production build pass. This remains scoped contrast evidence; remaining interaction
+states and scrolled content belong to the ongoing screen audit.

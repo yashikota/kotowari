@@ -18,6 +18,7 @@ import {
   IconBuilding,
   IconCalendar,
   IconChartBar,
+  IconCheck,
   IconCode,
   IconCoffee,
   IconCompass,
@@ -51,6 +52,7 @@ import {
 } from '@tabler/icons-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { accessibleForeground } from '../design-system/contrast.ts';
 
 const PROJECT_ICONS = [
   { key: 'folder', Icon: IconFolder },
@@ -135,8 +137,10 @@ const PROJECT_ICON_COLORS = [
 
 function iconColorStyle(color?: string) {
   const palette = PROJECT_ICON_COLORS.find((item) => item.key === color);
-  if (palette) return `var(--mantine-color-${palette.css}-6)`;
-  return color && /^#[\da-f]{6}$/i.test(color) ? color : 'var(--mantine-color-gray-6)';
+  if (palette) return `var(--mantine-color-${palette.css}-text)`;
+  return color && /^#[\da-f]{6}$/i.test(color)
+    ? accessibleForeground(color)
+    : 'var(--mantine-color-dimmed)';
 }
 
 export function ProjectIconMark({
@@ -158,7 +162,15 @@ export function ProjectIconMark({
   }
   const entry = PROJECT_ICONS.find((item) => item.key === icon) ?? PROJECT_ICONS[0];
   const Icon = entry.Icon;
-  return <Icon aria-hidden size={size} stroke={1.8} color={iconColorStyle(color)} />;
+  return (
+    <Icon
+      aria-hidden
+      data-contrast-icon="Project icon"
+      size={size}
+      stroke={1.8}
+      color={iconColorStyle(color)}
+    />
+  );
 }
 
 export function ProjectIconPicker({
@@ -250,8 +262,20 @@ export function ProjectIconPicker({
                           style={{
                             borderRadius: '50%',
                             backgroundColor: iconColorStyle(item.key),
+                            display: 'grid',
+                            placeItems: 'center',
+                            color: 'var(--mantine-color-body)',
                           }}
-                        />
+                        >
+                          {color === item.key && (
+                            <IconCheck
+                              aria-hidden
+                              data-contrast-icon="Selected icon color"
+                              size={11}
+                              stroke={3}
+                            />
+                          )}
+                        </Box>
                       </ActionIcon>
                     </Tooltip>
                   ))}

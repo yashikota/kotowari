@@ -41,3 +41,8 @@ export function accessibleColor(color: string, background: string, minimum = 4.8
   }
   return target === 0 ? '#000000' : '#ffffff';
 }
+
+/** Custom foreground colors use the same supported surfaces as semantic palettes. */
+export function accessibleForeground(color: string): string {
+  return `light-dark(${accessibleColor(color, '#e2e2e2')}, ${accessibleColor(color, '#424242')})`;
+}

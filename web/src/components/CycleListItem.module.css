@@ -59,7 +59,7 @@
   height: 8px;
   border: 2px solid var(--mantine-color-body);
   border-radius: 50%;
-  background: var(--mantine-color-gray-6);
+  background: var(--mantine-color-dimmed);
 }
 
 .cycleIcon {

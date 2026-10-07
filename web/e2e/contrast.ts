@@ -35,14 +35,20 @@ export async function contrastFailures(page: Page, rootSelector = 'body') {
     const scope = document.querySelector(rootSelector);
     if (!scope) throw new Error(`Contrast scope missing: ${rootSelector}`);
     for (const element of scope.querySelectorAll<HTMLElement>('*')) {
+      const icon = element.getAttribute('data-contrast-icon');
       if (
+        !icon &&
         !element.matches('input:not([type=checkbox]):not([type=radio]), textarea, select') &&
         !Array.from(element.childNodes).some(
           (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
         )
       )
         continue;
-      if (element.closest('svg, script, style, [disabled], [aria-disabled="true"]')) continue;
+      if (
+        element.closest('script, style, [disabled], [aria-disabled="true"]') ||
+        (!icon && element.closest('svg'))
+      )
+        continue;
       const rect = element.getBoundingClientRect();
       const style = getComputedStyle(element);
       if (
@@ -112,9 +118,9 @@ export async function contrastFailures(page: Page, rootSelector = 'body') {
       const large =
         Number.parseFloat(style.fontSize) >= 24 ||
         (Number.parseFloat(style.fontSize) >= 18.66 && Number(style.fontWeight) >= 700);
-      if (ratio < (large ? 3 : 4.5))
+      if (ratio < (icon || large ? 3 : 4.5))
         failures.push({
-          text: element.textContent!.trim().slice(0, 70),
+          text: icon ?? element.textContent!.trim().slice(0, 70),
           color: style.color,
           background,
           ratio,

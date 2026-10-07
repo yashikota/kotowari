@@ -34,9 +34,39 @@ for (const scheme of ['light', 'dark']) {
         ).ok(),
       ).toBeTruthy();
       const projectResponse = await request.post('/api/projects', {
-        data: { name: `Contrast project ${stamp}`, slug: `contrast-${stamp}` },
+        data: {
+          name: `Contrast project ${stamp}`,
+          slug: `contrast-${stamp}`,
+          icon: 'bolt',
+          iconColor: '#ffffff',
+        },
       });
       expect(projectResponse.ok()).toBeTruthy();
+      const iconRoutes: string[] = [];
+      for (const iconColor of [
+        'yellow',
+        'orange',
+        'grey',
+        'blue',
+        'purple',
+        'pink',
+        'red',
+        'green',
+        '#000000',
+        '#eeeeee',
+      ]) {
+        const slug = `icon-${iconColor.replace('#', '')}-${stamp}`;
+        const response = await request.post('/api/projects', {
+          data: {
+            name: `Icon ${iconColor} ${stamp}`,
+            slug,
+            icon: 'bolt',
+            iconColor,
+          },
+        });
+        expect(response.ok()).toBeTruthy();
+        iconRoutes.push(`/projects/${slug}`);
+      }
       const documentResponse = await request.post('/api/pages', {
         data: { title: `Contrast document ${stamp}`, slug: `contrast-${stamp}` },
       });
@@ -60,10 +90,16 @@ for (const scheme of ['light', 'dark']) {
         `/issues/${issue.identifier}`,
         `/projects/contrast-${stamp}`,
         `/pages/contrast-${stamp}`,
+        ...iconRoutes,
       ]) {
         await page.goto(route);
         await expect(page.locator('main')).toBeVisible();
         await page.waitForLoadState('networkidle');
+        if (route.startsWith('/projects/')) {
+          await expect(page.locator('main [data-contrast-icon]').first()).toBeVisible();
+          if (route === `/projects/contrast-${stamp}`)
+            await page.screenshot({ path: testInfo.outputPath('contrast-project-icon.png') });
+        }
         if (route === '/config') {
           const name = page.getByRole('textbox', { name: 'Name', exact: true });
           await name.focus();
@@ -71,6 +107,19 @@ for (const scheme of ['light', 'dark']) {
         }
         const results = await contrastFailures(page);
         failures.push(...results.map((result) => ({ route, ...result })));
+        if (route.startsWith('/projects/icon-yellow-')) {
+          await page.getByRole('button', { name: 'Choose project icon' }).click();
+          await expect(page.locator('[data-contrast-icon="Selected icon color"]')).toBeVisible();
+          failures.push(
+            ...(await contrastFailures(page, '.mantine-Popover-dropdown[role="dialog"]')).map(
+              (result) => ({
+                route: `${route} icon picker`,
+                ...result,
+              }),
+            ),
+          );
+          await page.screenshot({ path: testInfo.outputPath('contrast-icon-picker.png') });
+        }
         if (route === '/config')
           await page.screenshot({ path: testInfo.outputPath('contrast-settings.png') });
       }
