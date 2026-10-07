@@ -131,6 +131,11 @@ export function useProjectDetailPagePresenter() {
   const saveGeneration = useRef(0);
   const pendingProjectSaves = useRef(0);
   saveScope.current = slug;
+  useEffect(() => {
+    return () => {
+      saveGeneration.current++;
+    };
+  }, []);
   const [milestoneName, setMilestoneName] = useState('');
   const [milestoneDescription, setMilestoneDescription] = useState('');
   const [milestoneTargetDate, setMilestoneTargetDate] = useState('');
@@ -242,15 +247,15 @@ export function useProjectDetailPagePresenter() {
   }
 
   async function setReminder(value: Date | null) {
+    const token = saveGeneration.current;
     const next = await api.patchProject(
       slug,
       value ? { reminderAt: value.toISOString() } : { clearReminder: true },
     );
-    if (saveScope.current !== slug) return;
+    if (saveScope.current !== slug || token !== saveGeneration.current) return;
     setProject((current) =>
       current.slug === slug ? { ...current, reminderAt: next.reminderAt } : current,
     );
-    await router.invalidate().catch(() => undefined);
     signals.dispatchEvent(new Event('kotowari:refresh'));
   }
 

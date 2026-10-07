@@ -1,6 +1,51 @@
 import { contrastFailures } from './contrast.ts';
 import { expect, test, type Page } from '@playwright/test';
 
+for (const scheme of ['light', 'dark']) {
+  test(`project reminder updates without reloading independent drafts in ${scheme}`, async ({
+    page,
+    request,
+  }) => {
+    const slug = `reminder-draft-${scheme}-${Date.now()}`;
+    expect((await request.post('/api/projects', { data: { slug, name: slug } })).ok()).toBeTruthy();
+    await page.addInitScript(
+      (color) => localStorage.setItem('kotowari.color-scheme', color),
+      scheme,
+    );
+    let reads = 0;
+    await page.route(`**/api/projects/${slug}/activities`, (route) => {
+      reads++;
+      return route.continue();
+    });
+    try {
+      await page.goto(`/projects/${slug}`);
+      const draft = page
+        .getByRole('form', { name: 'Milestones', exact: true })
+        .getByRole('textbox', { name: 'Milestone name', exact: true });
+      await draft.fill('Independent milestone draft');
+      const readsBefore = reads;
+      await openMenu(page, 'projects');
+      await page.getByRole('menuitem', { name: 'Tomorrow', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Remind me', exact: true })).toHaveAttribute(
+        'title',
+        /.+/,
+      );
+      await expect(draft).toHaveValue('Independent milestone draft');
+      expect(reads).toBe(readsBefore);
+      await openMenu(page, 'projects');
+      await page.getByRole('menuitem', { name: 'Cancel reminder', exact: true }).click();
+      await expect(
+        page.getByRole('button', { name: 'Remind me', exact: true }),
+      ).not.toHaveAttribute('title', /.+/);
+      await expect(draft).toHaveValue('Independent milestone draft');
+      expect(reads).toBe(readsBefore);
+      expect((await (await request.get(`/api/projects/${slug}`)).json()).reminderAt).toBeFalsy();
+    } finally {
+      await request.delete(`/api/projects/${slug}`);
+    }
+  });
+}
+
 async function openMenu(page: Page, kind: string) {
   if (kind === 'issues') {
     await page.getByRole('button', { name: 'Issue options', exact: true }).click();

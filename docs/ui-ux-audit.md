@@ -1203,3 +1203,16 @@ draft preservation, clipboard recovery and initiative metadata in both themes.
 
 Overall UI/UX remains Partial. Full remote CI success and the broader screen/state
 inventory still need authoritative verification.
+
+## Project reminder updates without route reload
+
+Project reminder writes now apply only the confirmed reminder field to local
+state instead of invalidating the whole route. Successful mutations already
+invalidate QueryCache through the shared request layer. A captured save generation
+and unmount cleanup prevent an old reminder response from updating a retired
+presenter. Two light/dark browser cases verify setting and clearing a reminder
+preserve an independent milestone draft and do not reread project activities.
+All 25 related reminder, milestone creation and archive cases pass with zero
+retries; mandatory web:check and production build pass. Remote CI 37695665905
+for d3e7090 is still running, with Unit test successful at the latest observation.
+The broader screen/state inventory remains Partial.
