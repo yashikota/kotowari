@@ -45,6 +45,14 @@ export function ShellView({
   pageTitleRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const adrFeedbackRef = useRef<HTMLDivElement>(null);
+  const pageFeedbackRef = useRef<HTMLDivElement>(null);
+  const runPageCreation = useActionFocusReturn(
+    model.pageSubmitting,
+    () =>
+      pageFeedbackRef.current?.querySelector<HTMLButtonElement>(
+        '[role="alert"] button:not(:disabled)',
+      ) ?? pageTitleRef.current,
+  );
   const runADRCreation = useActionFocusReturn(
     model.adrSubmitting,
     () =>
@@ -382,6 +390,22 @@ export function ShellView({
             autoFocus={false}
           >
             <Stack gap="md">
+              <Box ref={pageFeedbackRef}>
+                <SaveFeedback
+                  saving={model.pageSubmitting}
+                  saved={false}
+                  error={model.pageCreateError}
+                  savingLabel={t('pageComposer.creating')}
+                  savedLabel=""
+                  failureLabel={t(
+                    model.pageCreated ? 'pageComposer.openFailed' : 'pageComposer.failed',
+                  )}
+                  retryLabel={t(
+                    model.pageCreated ? 'pageComposer.openCreated' : 'pageComposer.retry',
+                  )}
+                  onRetry={() => runPageCreation(handlers.submitPage)}
+                />
+              </Box>
               <Textarea
                 ref={pageTitleRef}
                 data-autofocus
@@ -389,14 +413,23 @@ export function ShellView({
                 aria-label={t('modal.pageTitle')}
                 placeholder={t('modal.pageTitle')}
                 value={pageTitle}
-                disabled={model.pageSubmitting}
+                disabled={model.pageSubmitting || model.pageCreated}
+                label={t('modal.pageTitle')}
                 onChange={handlers.Page_title_onChange24}
-                onKeyDown={handlers.Page_title_onKeyDown25}
+                onKeyDown={(event) => {
+                  if (
+                    isSubmitShortcut(event) &&
+                    !event.nativeEvent.isComposing &&
+                    event.keyCode !== 229
+                  )
+                    void runPageCreation(() => handlers.Page_title_onKeyDown25(event));
+                  else void handlers.Page_title_onKeyDown25(event);
+                }}
               />
               <NativeSelect
                 label={t('field.project')}
                 value={model.pageProjectId}
-                disabled={model.pageSubmitting}
+                disabled={model.pageSubmitting || model.pageCreated}
                 onChange={handlers.Page_project_onChange}
                 data={[
                   { value: '', label: t('field.noProject') },
@@ -412,11 +445,11 @@ export function ShellView({
                 </Text>
                 <Button
                   type="button"
-                  onClick={handlers.submitPage}
+                  onClick={() => runPageCreation(handlers.submitPage)}
                   loading={model.pageSubmitting}
                   disabled={!pageTitle.trim() || model.pageSubmitting}
                 >
-                  {t('modal.create')}
+                  {model.pageCreated ? t('pageComposer.openCreated') : t('modal.create')}
                 </Button>
               </Group>
             </Stack>

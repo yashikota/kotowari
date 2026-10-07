@@ -2482,5 +2482,12 @@
     "openFailed": "Decision created, but could not be opened",
     "openCreated": "Open created decision",
     "supersedes": "Revises ADR-{{number}}"
+  },
+  "pageComposer": {
+    "creating": "Creating document…",
+    "failed": "Document could not be created",
+    "retry": "Retry creating document",
+    "openFailed": "Document created, but could not be opened",
+    "openCreated": "Open created document"
   }
 }

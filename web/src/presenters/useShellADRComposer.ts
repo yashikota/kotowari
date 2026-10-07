@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { api } from '../api.ts';
-import type { ADR } from '../types.ts';
+import { useRetriableCreation } from './useRetriableCreation.ts';
 import { useIntent, useIntentHandler } from '../application/Root.tsx';
 import { isSubmitShortcut } from '../keymap.ts';
 
@@ -18,59 +18,43 @@ export function useShellADRComposer(setOpen: (open: boolean) => void) {
   const send = useIntent();
   const [context, setContext] = useState<Context>({});
   const [adrTitle, setAdrTitle] = useState('');
-  const [adrSubmitting, setSubmitting] = useState(false);
-  const [adrCreateError, setError] = useState('');
-  const [adrCreated, setCreated] = useState(false);
-  const inFlight = useRef(false);
-  const created = useRef<ADR | null>(null);
+  const creation = useRetriableCreation({
+    create: api.createADR,
+    open: (adr) =>
+      navigate({
+        to: '/adrs/$identifier',
+        params: { identifier: adr.identifier },
+        state: { autofocus: 'title' },
+      }),
+  });
   const contextKey = useRef('');
   function openCreateADR(next: Context = {}) {
-    if (inFlight.current) return;
+    if (creation.isPending()) return;
     const key = JSON.stringify(next);
     if (contextKey.current !== key) {
       contextKey.current = key;
       setAdrTitle(next.title ?? '');
-      created.current = null;
-      setCreated(false);
-      setError('');
+      creation.reset();
     }
     setContext(next);
     setOpen(true);
   }
   function closeCreateADR() {
-    if (!inFlight.current) setOpen(false);
+    if (!creation.isPending()) setOpen(false);
   }
   async function submitADR() {
     const title = adrTitle.trim();
-    if ((!title && !created.current) || inFlight.current) return;
-    inFlight.current = true;
-    setSubmitting(true);
-    setError('');
-    try {
-      if (!created.current) {
-        created.current = await api.createADR({
-          title,
-          supersedes: context.supersedes,
-          projectSlug: context.projectSlug,
-          issueNumbers: context.issueNumbers ?? (context.issueNumber ? [context.issueNumber] : []),
-        });
-        setCreated(true);
-      }
-      await navigate({
-        to: '/adrs/$identifier',
-        params: { identifier: created.current.identifier },
-        state: { autofocus: 'title' },
-      });
+    if ((!title && !creation.hasCreated()) || creation.isPending()) return;
+    const opened = await creation.submit({
+      title,
+      supersedes: context.supersedes,
+      projectSlug: context.projectSlug,
+      issueNumbers: context.issueNumbers ?? (context.issueNumber ? [context.issueNumber] : []),
+    });
+    if (opened) {
       setOpen(false);
       setAdrTitle('');
       contextKey.current = '';
-      created.current = null;
-      setCreated(false);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      inFlight.current = false;
-      setSubmitting(false);
     }
   }
   useIntentHandler('adr.create', (value) => openCreateADR((value ?? {}) as Context));
@@ -80,9 +64,9 @@ export function useShellADRComposer(setOpen: (open: boolean) => void) {
     closeCreateADR,
     data: {
       adrTitle,
-      adrSubmitting,
-      adrCreateError,
-      adrCreated,
+      adrSubmitting: creation.submitting,
+      adrCreateError: creation.error,
+      adrCreated: creation.created,
       adrLinkIssue: context.issueNumber,
       adrSupersedes: context.supersedes,
     },
@@ -90,9 +74,9 @@ export function useShellADRComposer(setOpen: (open: boolean) => void) {
       submitADR,
       onClick18: closeCreateADR,
       ADR_title_onChange20: (event: ChangeEvent<HTMLTextAreaElement>) => {
-        if (inFlight.current || created.current) return;
+        if (creation.isPending() || creation.hasCreated()) return;
         setAdrTitle(event.currentTarget.value);
-        setError('');
+        creation.invalidate();
       },
       ADR_title_onKeyDown21: (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.nativeEvent.isComposing || event.keyCode === 229) return;

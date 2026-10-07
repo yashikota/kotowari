@@ -2469,5 +2469,12 @@
     "openFailed": "決定は作成されましたが、開けませんでした",
     "openCreated": "作成した決定を開く",
     "supersedes": "ADR-{{number}}を見直します"
+  },
+  "pageComposer": {
+    "creating": "文書を作成しています…",
+    "failed": "文書を作成できませんでした",
+    "retry": "文書の作成を再試行",
+    "openFailed": "文書は作成されましたが、開けませんでした",
+    "openCreated": "作成した文書を開く"
   }
 }

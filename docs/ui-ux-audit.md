@@ -222,3 +222,26 @@ correctly selected that cycle rather than the newly created fixture. The sidebar
 navigation case now isolates its candidate list from other tests and automatic
 schedule creation. All three cycle navigation cases pass locally. The next full
 CI run is required to verify the whole suite; overall UI/UX completion is unproven.
+
+## Consistent document creation recovery
+
+Document and decision creation now share useRetriableCreation. It keeps the failed
+payload until the user edits it, preserves a confirmed record while opening its
+route and guards simultaneous submissions. Confirmed records are not recreated
+when opening is rejected. Direct rejected-navigation UI evidence remains outstanding.
+The shared hook ignores asynchronous UI results after its owner unmounts.
+
+Document creation has local saving/failure/retry feedback, a persistent title label,
+and focus restoration. Title/project inputs and dismissal are blocked while pending.
+Closing and reopening the same context retains the draft and project selection;
+opening a different project context clears them. Retry reuses the original payload,
+including the generated slug for Japanese titles. Successful creation navigates
+without coupling its success to a reload of the old route.
+
+Verification: 22 browser cases pass across the new document creation matrix, decision
+creation, project documents and document list behavior. The new cases cover both
+schemes at 360px/large preference, Japanese titles, keyboard submission, pending
+Escape, failed input preservation, reopening, exact retry and persisted project.
+Rendered modal contrast checks pass; mobile light/dark screenshots were inspected.
+Formatting/lint/types, locale parity and production build pass. The previous pushed
+CI remains in progress at this audit; full UI/UX completion remains unproven.
