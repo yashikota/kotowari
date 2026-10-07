@@ -771,3 +771,33 @@ creation/editing/removal, project drafts/archive/deletion, and issue/page/inbox
 removal regressions after the shared confirmation focus change. Prior pushed CI
 37650441991 is still in progress at this audit point; no full CI completion is
 claimed for the current local changes.
+
+
+## Contrast and entity confirmation follow-up
+
+Secondary text and placeholders use the stronger shared colors introduced in
+d5eb116. Foundation checks now require 7:1 on the darkest supported light surface
+and lightest supported dark surface, with control boundaries and focus at 3:1.
+Rendered settings exposed faint select arrows that text-only checks missed.
+ComboboxChevron now uses the shared secondary-text/error tokens, and its rendered
+SVG is explicitly included in the 3:1 indicator measurement. Settings checks
+assert that the actual arrow is measured.
+
+Issue and project deletion confirmations yield to unsaved-navigation confirmation
+without losing deletion state. Pending DELETE prevents concurrent saving or
+discarding. Staying restores the deletion dialog; failed DELETE permits saving
+and leaving. Confirmed entity removal releases the navigation guard: treating the
+subsequent list navigation as a pending write caused a circular wait after deleting
+a project with failed text drafts. That regression is fixed and all four existing
+locale/theme deletion recovery cases pass.
+
+The related 72-case browser run passes without retries. Mandatory web:check, build
+and the three color foundation tests pass. Prior main CI 37650441991 and Demo
+37650441960 are completed successfully. Overall UI/UX audit remains Partial; these
+measurements are scoped coverage, not a claim of full WCAG conformance.
+
+Final color coverage passes all nine browser cases, including 27 routes across
+light/dark and mobile/desktop widths, selected icons, select indicators and
+group visibility. Settings screenshots in both schemes were inspected after
+the arrow fix. The eight entity deletion/navigation cases were rerun with
+explicitly asserted light/dark scheme selection and pass without retries.

@@ -102,6 +102,10 @@ for (const scheme of ['light', 'dark']) {
         }
         if (route === '/config') {
           const name = page.getByRole('textbox', { name: 'Name', exact: true });
+          await expect(page.locator('main [data-combobox-chevron]').first()).toHaveAttribute(
+            'data-contrast-icon',
+            'Selection indicator',
+          );
           await name.focus();
           await expect(name).toHaveCSS('outline-width', '2px');
           await expect(page.getByRole('button', { name: 'Save workspace', exact: true })).toHaveCSS(

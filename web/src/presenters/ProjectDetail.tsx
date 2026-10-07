@@ -606,7 +606,9 @@ export function useProjectDetailPagePresenter() {
         if (
           pendingProjectSaves.current > 0 ||
           milestoneEdits.isPending() ||
-          milestoneRemoval.isPending()
+          milestoneRemoval.isPending() ||
+          deletion.isPending() ||
+          deletion.isRemoved()
         )
           return;
         const patch = { ...failedProjectPatch.current };

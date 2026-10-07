@@ -38,15 +38,15 @@ describe('WCAG color foundations', () => {
   it('keeps placeholder text, control boundaries and focus visible', () => {
     const variables = cssVariablesForTheme(theme);
     for (const [scheme, background] of [
-      [variables.light, '#f1f3f5'],
-      [variables.dark, '#3b3b3b'],
+      [variables.light, '#e2e2e2'],
+      [variables.dark, '#424242'],
     ] as const) {
       expect(contrastRatio(scheme['--mantine-color-dimmed']!, background)).toBeGreaterThanOrEqual(
-        4.5,
+        7,
       );
       expect(
         contrastRatio(scheme['--mantine-color-placeholder']!, background),
-      ).toBeGreaterThanOrEqual(4.5);
+      ).toBeGreaterThanOrEqual(7);
       expect(
         contrastRatio(scheme['--kotowari-control-border']!, background),
       ).toBeGreaterThanOrEqual(3);

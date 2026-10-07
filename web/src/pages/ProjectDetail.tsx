@@ -82,7 +82,11 @@ export function ProjectDetailPageView({
   });
   const navigation = useUnsavedNavigation({
     dirty: (model.hasUnsavedText || model.milestoneEdits.dirty) && !model.deletion.confirmed,
-    pending: model.projectSaving || model.milestoneEdits.pending || model.milestoneRemoval.pending,
+    pending:
+      model.projectSaving ||
+      model.milestoneEdits.pending ||
+      model.milestoneRemoval.pending ||
+      (model.deletion.pending && !model.deletion.confirmed),
     error: model.projectSaveError || model.milestoneEdits.error,
     save: model.handlers.onSaveUnsavedText,
     scope: model.slug,
@@ -529,13 +533,17 @@ export function ProjectDetailPageView({
             discardLabel={t('unsavedProject.discard')}
             saveLabel={t('unsavedProject.save')}
             savingLabel={t(
-              model.milestoneRemoval.pending
-                ? model.milestoneRemoval.confirmed
-                  ? 'milestoneDeletion.refreshing'
-                  : 'milestoneDeletion.deleting'
-                : model.milestoneEdits.pending
-                  ? 'milestoneSave.saving'
-                  : 'projectSave.saving',
+              model.deletion.pending
+                ? model.deletion.confirmed
+                  ? 'projectDeletion.opening'
+                  : 'projectDeletion.deleting'
+                : model.milestoneRemoval.pending
+                  ? model.milestoneRemoval.confirmed
+                    ? 'milestoneDeletion.refreshing'
+                    : 'milestoneDeletion.deleting'
+                  : model.milestoneEdits.pending
+                    ? 'milestoneSave.saving'
+                    : 'projectSave.saving',
             )}
             failureLabel={t(
               model.milestoneEdits.error && !model.projectSaveError
@@ -544,7 +552,7 @@ export function ProjectDetailPageView({
             )}
           />
           <ConfirmActionDialog
-            opened={model.deletion.opened}
+            opened={model.deletion.opened && !navigation.opened}
             title={t(
               model.deletion.confirmed ? 'projectDeletion.deleted' : 'projectDeletion.title',
             )}
@@ -572,7 +580,9 @@ export function ProjectDetailPageView({
             onClose={model.deletion.close}
             onConfirm={model.deletion.confirm}
             returnFocusTo={() =>
-              document.querySelector<HTMLButtonElement>('[data-project-actions]')
+              navigation.opened
+                ? null
+                : document.querySelector<HTMLButtonElement>('[data-project-actions]')
             }
           />
           <ConfirmActionDialog

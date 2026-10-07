@@ -68,9 +68,15 @@ export function IssueDetailView({
   const { t } = useTranslation();
   const navigation = useUnsavedNavigation({
     dirty: model._view === 2 && model.hasUnsavedTitle && !model.deletion.confirmed,
-    pending: model._view === 2 && model.propertySaveState === 'saving',
+    pending:
+      model._view === 2 &&
+      (model.propertySaveState === 'saving' ||
+        (model.deletion.pending && !model.deletion.confirmed)),
     error: model._view === 2 ? model.propertySaveError : '',
-    save: () => (model._view === 2 ? model.handlers.onTitleBlur() : undefined),
+    save: () =>
+      model._view === 2 && !model.deletion.isPending() && !model.deletion.isRemoved()
+        ? model.handlers.onTitleBlur()
+        : false,
     scope: model._view === 2 ? model.identifier : '',
   });
   const { runCopy } = useClipboardFocus({
@@ -161,7 +167,13 @@ export function IssueDetailView({
             stayLabel={t('unsavedTitle.stay')}
             discardLabel={t('unsavedTitle.discard')}
             saveLabel={t('unsavedTitle.save')}
-            savingLabel={t('issueProperties.saving')}
+            savingLabel={t(
+              model.deletion.pending
+                ? model.deletion.confirmed
+                  ? 'issueDeletion.opening'
+                  : 'issueDeletion.deleting'
+                : 'issueProperties.saving',
+            )}
             failureLabel={t('issueProperties.saveFailed')}
           />
           <Box mt="xs" data-issue-copy-feedback>
@@ -320,7 +332,7 @@ export function IssueDetailView({
             </Box>
           </Box>
           <ConfirmActionDialog
-            opened={model.deletion.opened}
+            opened={model.deletion.opened && !navigation.opened}
             title={t(model.deletion.confirmed ? 'issueDeletion.deleted' : 'issueDeletion.title')}
             description={t(
               model.deletion.confirmed
@@ -346,9 +358,11 @@ export function IssueDetailView({
               model.deletion.confirmed ? 'issueDeletion.openList' : 'issueDeletion.retry',
             )}
             returnFocusTo={() =>
-              Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
-                (button) => button.getAttribute('aria-label') === t('issueActions.button'),
-              ) ?? null
+              navigation.opened
+                ? null
+                : (Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+                    (button) => button.getAttribute('aria-label') === t('issueActions.button'),
+                  ) ?? null)
             }
             onClose={model.deletion.close}
             onConfirm={model.deletion.confirm}

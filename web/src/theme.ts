@@ -1,4 +1,4 @@
-import { createTheme } from '@mantine/core';
+import { ComboboxChevron, createTheme } from '@mantine/core';
 import type { CSSVariablesResolver, MantineThemeOverride } from '@mantine/core';
 import type { FontSize } from './preferences.ts';
 import { accessibleColor } from './design-system/contrast.ts';
@@ -27,6 +27,16 @@ const baseTheme = {
   defaultRadius: 'sm',
   radius: designTokens.radius,
   components: {
+    ComboboxChevron: ComboboxChevron.extend({
+      styles: (_theme, props) => ({
+        chevron: {
+          color: props.error ? 'var(--mantine-color-error)' : 'var(--mantine-color-dimmed)',
+        },
+      }),
+      defaultProps: {
+        attributes: { chevron: { 'data-contrast-icon': 'Selection indicator' } },
+      },
+    }),
     InputWrapper: {
       styles: { error: { fontSize: 'var(--mantine-font-size-sm)' } },
     },
