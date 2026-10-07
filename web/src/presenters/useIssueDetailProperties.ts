@@ -46,6 +46,7 @@ export function useIssueDetailProperties({
   const failedPatch = useRef<Record<string, unknown> | null>(null);
   const pending = useRef(false);
   const titleDirty = useRef(false);
+  const savedTitle = useRef<string | null>(null);
   const queuedTitle = useRef<string | null>(null);
   const generation = useRef(0);
   useEffect(() => {
@@ -53,6 +54,7 @@ export function useIssueDetailProperties({
     pending.current = false;
     failedPatch.current = null;
     titleDirty.current = false;
+    savedTitle.current = null;
     queuedTitle.current = null;
     setPropertySaveState('idle');
     setPropertySaveError('');
@@ -74,7 +76,10 @@ export function useIssueDetailProperties({
       if (token !== generation.current) return;
       completed = true;
       failedPatch.current = null;
-      if ('title' in body) titleDirty.current = false;
+      if (typeof body.title === 'string') {
+        savedTitle.current = body.title;
+        titleDirty.current = false;
+      }
       setPropertySaveState('saved');
     } catch (error) {
       if (token !== generation.current) return;
@@ -110,6 +115,7 @@ export function useIssueDetailProperties({
       optionalIssuePropertyVisibility,
       propertySaveState,
       propertySaveError,
+      hasUnsavedTitle: titleDirty.current,
     },
     handlers: {
       onRetryPropertySave: () => (failedPatch.current ? patch(failedPatch.current) : undefined),
@@ -117,7 +123,8 @@ export function useIssueDetailProperties({
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => {
         if (issue) {
-          titleDirty.current = true;
+          if (!titleDirty.current) savedTitle.current = issue.title;
+          titleDirty.current = e.target.value !== savedTitle.current;
           queuedTitle.current = null;
           onTitleDraftChange(e.target.value);
           failedPatch.current = null;

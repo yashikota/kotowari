@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { fillIssueSearch } from './issue-list-controls.ts';
 
-for (const scenario of ['retry', 'navigation']) {
+for (const scenario of ['retry', 'navigation', 'stay']) {
   test(`queued issue title save preserves context during ${scenario}`, async ({
     page,
     request,
   }) => {
     const stamp = `Title queue ${Date.now()}`;
     const issues: { identifier: string; title: string }[] = [];
-    for (let index = 0; index < (scenario === 'navigation' ? 2 : 1); index++) {
+    for (let index = 0; index < (scenario === 'retry' ? 1 : 2); index++) {
       const created = await request.post('/api/issues', { data: { title: `${stamp} ${index}` } });
       expect(created.ok()).toBeTruthy();
       issues.push(await created.json());
@@ -21,7 +21,7 @@ for (const scenario of ['retry', 'navigation']) {
     let titleAttempts = 0;
     let priorityAttempts = 0;
     try {
-      if (scenario === 'navigation') {
+      if (scenario !== 'retry') {
         await page.goto('/issues');
         await fillIssueSearch(page, stamp);
         const rows = page.getByRole('listbox', { name: 'Issues' }).getByRole('option');
@@ -81,28 +81,33 @@ for (const scenario of ['retry', 'navigation']) {
       } else {
         await page.getByRole('button', { name: 'Navigate to next issue' }).click();
         const other = issues.find((issue) => issue.identifier !== identifier)!;
-        await expect(page).toHaveURL(new RegExp(`/issues/${other.identifier}$`));
-        await expect(title).toHaveValue(other.title);
-        await title.focus();
-        await title.evaluate((element) => element.blur());
-        const response = page.waitForResponse(
-          (response) =>
-            response.url().endsWith(`/api/issues/${identifier}`) &&
-            response.request().method() === 'PATCH',
-        );
+        const dialog = page.getByRole('dialog', { name: 'Unsaved title changes' });
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByRole('button', { name: 'Leave without saving' })).toBeDisabled();
+        await expect(page).toHaveURL(new RegExp(`/issues/${identifier}$`));
+        if (scenario === 'stay') {
+          await dialog.getByRole('button', { name: 'Stay on this page', exact: true }).click();
+          await expect(dialog).not.toBeVisible();
+        }
         release();
-        await response;
-        await page.evaluate(
-          async () =>
-            new Promise<void>((resolve) =>
-              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-            ),
-        );
-        expect(writes).toEqual([{ title: draft }, { priority: 1 }]);
+        if (scenario === 'stay') {
+          await expect
+            .poll(async () => (await (await request.get(`/api/issues/${identifier}`)).json()).title)
+            .toBe(draft);
+          await expect(title).not.toHaveAttribute('readonly');
+          await expect(page).toHaveURL(new RegExp(`/issues/${identifier}$`));
+          await page.getByRole('button', { name: 'Navigate to next issue' }).click();
+        }
+        await expect(page).toHaveURL(new RegExp(`/issues/${other.identifier}$`));
+        expect(writes).toEqual([{ title: draft }, { priority: 1 }, { title: draft }]);
+        expect((await (await request.get(`/api/issues/${identifier}`)).json()).title).toBe(draft);
         await expect(title).toHaveValue(other.title);
         await expect(title).not.toHaveAttribute('readonly');
         await expect(failure).toHaveCount(0);
-        expect(await page.evaluate(() => document.activeElement === document.body)).toBeTruthy();
+        await expect(dialog).not.toBeVisible();
+        await expect
+          .poll(() => page.evaluate(() => document.activeElement === document.body))
+          .toBeTruthy();
       }
     } finally {
       release();

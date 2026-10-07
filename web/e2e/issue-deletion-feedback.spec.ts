@@ -94,8 +94,60 @@ for (const scheme of ['light', 'dark']) {
         expect(await page.evaluate((key) => localStorage.getItem(key), draftKey)).toBeNull();
       } finally {
         release();
-        await request.delete(`/api/issues/${identifier}`);
+        await request
+          .delete(`/api/issues/${identifier}`, { timeout: 5000 })
+          .catch(async (error) => {
+            await testInfo.attach('cleanup-error', {
+              body: String(error),
+              contentType: 'text/plain',
+            });
+          });
       }
     });
   }
 }
+
+test('recovering a delayed body draft preserves the open issue menu', async ({ page, request }) => {
+  const response = await request.post('/api/issues', {
+    data: { title: `Delayed recovery ${Date.now()}` },
+  });
+  expect(response.ok()).toBeTruthy();
+  const { identifier } = await response.json();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.addInitScript((id) => {
+    localStorage.setItem(
+      `kotowari:draft:${location.origin}:issues/${id}/body`,
+      JSON.stringify({ body: 'Recovered while choosing an action', revision: 'old' }),
+    );
+  }, identifier);
+  await page.route(`**/api/documents/issues/${identifier}/body`, async (route) => {
+    await gate;
+    return route.continue();
+  });
+  await page.setViewportSize({ width: 360, height: 800 });
+  try {
+    await page.goto(`/issues/${identifier}`);
+    await page.getByRole('button', { name: en.issueActions.button, exact: true }).click();
+    const menu = page.getByRole('menu');
+    await expect(menu).toBeVisible();
+    release();
+    await expect(page.getByRole('textbox', { name: en.ui.markdownBody, exact: true })).toHaveValue(
+      'Recovered while choosing an action',
+    );
+    await expect(menu).toBeVisible();
+    await expect
+      .poll(() => menu.evaluate((element) => element.contains(document.activeElement)))
+      .toBeTruthy();
+    await menu.getByRole('menuitem', { name: en.issueActions.delete, exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: en.issueDeletion.title, exact: true });
+    await expect(dialog.getByRole('button', { name: en.common.cancel, exact: true })).toBeFocused();
+    await dialog.getByRole('button', { name: en.common.cancel, exact: true }).click();
+    expect((await request.get(`/api/issues/${identifier}`)).ok()).toBeTruthy();
+  } finally {
+    release();
+    await request.delete(`/api/issues/${identifier}`);
+  }
+});

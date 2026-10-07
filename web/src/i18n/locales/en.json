@@ -1,4 +1,11 @@
 {
+  "unsavedTitle": {
+    "title": "Unsaved title changes",
+    "description": "The title has not been saved. Save it before leaving, or leave without saving it.",
+    "stay": "Stay on this page",
+    "discard": "Leave without saving",
+    "save": "Save title and leave"
+  },
   "projectDeletion": {
     "title": "Delete project",
     "deleting": "Deleting project…",

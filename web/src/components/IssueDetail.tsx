@@ -1,6 +1,10 @@
 import { LoadFailure } from '../design-system/LoadFailure.tsx';
 import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import {
+  UnsavedChangesDialog,
+  useUnsavedNavigation,
+} from '../design-system/UnsavedChangesDialog.tsx';
 import { ClipboardFeedback, useClipboardFocus } from '../design-system/ClipboardFeedback.tsx';
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
@@ -62,6 +66,13 @@ export function IssueDetailView({
   noteRef: ReturnType<typeof useFocusWhen<HTMLTextAreaElement>>;
 }) {
   const { t } = useTranslation();
+  const navigation = useUnsavedNavigation({
+    dirty: model._view === 2 && model.hasUnsavedTitle && !model.deletion.confirmed,
+    pending: model._view === 2 && model.propertySaveState === 'saving',
+    error: model._view === 2 ? model.propertySaveError : '',
+    save: () => (model._view === 2 ? model.handlers.onTitleBlur() : undefined),
+    scope: model._view === 2 ? model.identifier : '',
+  });
   const { runCopy } = useClipboardFocus({
     clipboard: model._view === 2 ? model.clipboard : null,
     scope: model._view === 2 ? model.identifier : '',
@@ -143,6 +154,16 @@ export function IssueDetailView({
       return (
         <Box maw={1180} mx="auto" px={{ base: 'sm', md: 'xs' }} pb="xl">
           <IssueDetailHeader model={model} />
+          <UnsavedChangesDialog
+            state={navigation}
+            title={t('unsavedTitle.title')}
+            description={t('unsavedTitle.description')}
+            stayLabel={t('unsavedTitle.stay')}
+            discardLabel={t('unsavedTitle.discard')}
+            saveLabel={t('unsavedTitle.save')}
+            savingLabel={t('issueProperties.saving')}
+            failureLabel={t('issueProperties.saveFailed')}
+          />
           <Box mt="xs" data-issue-copy-feedback>
             <ClipboardFeedback
               clipboard={model.clipboard}

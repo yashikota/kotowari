@@ -559,3 +559,32 @@ Filled buttons and action icons, including controls using the default variant, u
 the shared control boundary token. The page contrast sweep also asserts the actual
 rendered Save workspace button border in both schemes at 360px and 1280px. This
 prevents an omitted variant attribute from bypassing the shared boundary style.
+
+## Unsaved issue title navigation
+
+Issue titles use the shared UnsavedChangesDialog and navigation blocker. Users can
+stay, save the title and leave, or explicitly leave without saving. Pending writes
+complete before navigation; cancelling the navigation does not cancel a write or
+navigate later when it completes. Browser back and before-unload are guarded.
+Returning to the persisted title removes the guard without an unnecessary write.
+The dialog has translated labels, wrapped actions and 44px targets. The localized
+failure/retry dialog was rendered and inspected in both schemes with large text.
+Eight new cases cover locale/theme retry, discard, undo, browser back and reload;
+three queue cases cover retry, deferred navigation and staying during a write.
+Project summary/description and other forms still need equivalent unsaved-navigation
+audits; this does not establish complete cross-screen conformance.
+
+## Delayed draft recovery and menu focus
+
+CI run 37605061148 failed because the Japanese/light issue-deletion case timed out.
+Its initial failure image shows recovered body focus while the issue menu trigger
+remains expanded, but only the successful retry had a trace. A deterministic test
+holding the initial body read reproduced disappearance of the already-open menu
+before the focus fix. Shared useFocusWhen now leaves focus inside an open menu,
+as it already does for an open modal. The reproduction passes five repetitions.
+Playwright retains traces of initial failures, and issue-deletion fixture cleanup
+has a bounded timeout and attaches its error without replacing the original failure.
+
+After both changes, all 38 related document, title-navigation, clipboard, archive
+and deletion cases pass without retries. The earlier focused title-save/history/layout
+and navigation/deletion run passed 19 cases. Full CI remains the broader gate.

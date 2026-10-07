@@ -34,6 +34,9 @@ export function useFocusWhen<T extends HTMLElement>(
     const id = window.requestAnimationFrame(() => {
       const modal = document.querySelector('[role="dialog"][aria-modal="true"]');
       if (modal && !modal.contains(ref.current)) return;
+      const menu = document.querySelector('[role="menu"]');
+      const menuTrigger = document.querySelector('[aria-haspopup="menu"][aria-expanded="true"]');
+      if ((menu || menuTrigger) && !menu?.contains(ref.current)) return;
       ref.current?.focus();
     });
     return () => window.cancelAnimationFrame(id);
