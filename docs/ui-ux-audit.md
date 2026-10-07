@@ -801,3 +801,32 @@ light/dark and mobile/desktop widths, selected icons, select indicators and
 group visibility. Settings screenshots in both schemes were inspected after
 the arrow fix. The eight entity deletion/navigation cases were rerun with
 explicitly asserted light/dark scheme selection and pass without retries.
+
+
+## New milestone drafts and navigation
+
+Project navigation now includes unsubmitted milestone name, description and date
+input, plus confirmed creation awaiting refresh. Browser reload prompts before
+losing that input. Save and leave runs project text, edited milestone rows and new
+milestone creation sequentially, stopping on the first failure. Empty-name
+validation is reported in the navigation dialog; returning retains all input.
+Creation errors and pending/refresh stages use the same shared feedback as the
+form. Retry of confirmed creation refresh does not repeat POST. Concurrent entity
+delete/archive actions are disabled and guarded while creation is pending.
+
+The two previous late-creation navigation cases now verify waiting for the active
+write before moving, or explicitly discarding after failure. They still verify
+that the next project's draft and feedback are independent. Six new cases cover
+en/ja and light/dark at 360px with large text, validation without POST, retained
+input, failure/retry, exact single confirmed record, refresh-only navigation retry,
+date-only draft protection on reload and explicit discard. All six pass without
+retries. Japanese light/dark validation dialogs were rendered and inspected and
+contrast measurements pass.
+
+The 48 related creation/edit/removal/project-navigation cases pass. A separate
+run confirmed the 8 entity-dialog and 7 archive cases; the added reload test first
+exposed a test wait that incorrectly waited for a canceled navigation, corrected
+to explicitly dismiss beforeunload. The final six-case run passes. Mandatory
+web:check and build pass; locales retain 2425 matching keys. Prior main a603331
+is pushed; Demo 37656089018 is successful and CI 37656089187 is still running.
+Overall screen audit remains Partial, including other creation forms and overlays.

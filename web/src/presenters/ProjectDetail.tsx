@@ -533,7 +533,8 @@ export function useProjectDetailPagePresenter() {
           pendingProjectSaves.current > 0 ||
           reminderEditor.data.saving ||
           archive.isPending() ||
-          milestoneEdits.isPending()
+          milestoneEdits.isPending() ||
+          milestoneCreation.isPending()
         )
           return;
         return deletion.confirm();
@@ -591,6 +592,9 @@ export function useProjectDetailPagePresenter() {
     dependencyKind,
     milestoneCreation: {
       scope: slug,
+      dirty: Boolean(
+        milestoneName || milestoneDescription || milestoneTargetDate || milestoneCreation.created,
+      ),
       pending: milestoneCreation.submitting,
       created: milestoneCreation.created,
       saved: milestoneCreated,
@@ -606,11 +610,13 @@ export function useProjectDetailPagePresenter() {
         if (
           pendingProjectSaves.current > 0 ||
           milestoneEdits.isPending() ||
+          milestoneCreation.isPending() ||
           milestoneRemoval.isPending() ||
           deletion.isPending() ||
           deletion.isRemoved()
         )
           return;
+        const token = saveGeneration.current;
         const patch = { ...failedProjectPatch.current };
         if ((project.summary ?? '') !== persistedSummary.current.value)
           patch.summary = project.summary ?? '';
@@ -618,7 +624,15 @@ export function useProjectDetailPagePresenter() {
           patch.description = project.description;
         if (Object.keys(patch).length > 0) await save(patch);
         if (failedProjectPatch.current) return;
-        return milestoneEdits.saveAll();
+        if (!(await milestoneEdits.saveAll())) return;
+        if (token !== saveGeneration.current || saveScope.current !== slug) return;
+        if (
+          milestoneName ||
+          milestoneDescription ||
+          milestoneTargetDate ||
+          milestoneCreation.hasCreated()
+        )
+          return createMilestone();
       },
       onRetryProjectSave: () => {
         if (pendingProjectSaves.current > 0 || !failedProjectPatch.current) return;
@@ -727,7 +741,8 @@ export function useProjectDetailPagePresenter() {
           pendingProjectSaves.current > 0 ||
           reminderEditor.data.saving ||
           archive.isPending() ||
-          milestoneEdits.isPending()
+          milestoneEdits.isPending() ||
+          milestoneCreation.isPending()
         )
           return;
         setProjectActionsOpen(false);
@@ -738,7 +753,8 @@ export function useProjectDetailPagePresenter() {
           pendingProjectSaves.current > 0 ||
           reminderEditor.data.saving ||
           archive.isPending() ||
-          milestoneEdits.isPending()
+          milestoneEdits.isPending() ||
+          milestoneCreation.isPending()
         )
           return;
         setProjectActionsOpen(false);
@@ -786,6 +802,7 @@ export function useProjectDetailPagePresenter() {
       onRemoveMilestone: (id: number, name: string) => {
         if (
           milestoneEdits.isPending() ||
+          milestoneCreation.isPending() ||
           milestoneRemoval.isPending() ||
           deletion.isPending() ||
           deletion.isRemoved()

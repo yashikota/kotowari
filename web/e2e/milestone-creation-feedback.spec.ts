@@ -165,7 +165,7 @@ test('confirmed milestone creation retries refresh without another POST', async 
 });
 
 for (const outcome of ['success', 'failure']) {
-  test(`late milestone creation ${outcome} does not affect the next project`, async ({
+  test(`navigation waits for milestone creation ${outcome} before changing projects`, async ({
     page,
     request,
   }) => {
@@ -200,22 +200,22 @@ for (const outcome of ['success', 'failure']) {
       await form.getByRole('button', { name: en.projectMilestones.add, exact: true }).click();
       await expect(name).toBeDisabled();
       await page.getByRole('link', { name: otherSlug, exact: true }).click();
+      const navigation = page.getByRole('dialog', { name: en.unsavedProject.title, exact: true });
+      await expect(navigation).toBeVisible();
+      await expect(
+        navigation.getByRole('button', { name: en.unsavedProject.discard, exact: true }),
+      ).toBeDisabled();
+      await expect(navigation.getByRole('status')).toContainText(en.milestoneCreation.creating);
+      release();
+      if (outcome === 'failure') {
+        await expect(navigation.getByRole('alert')).toContainText('Old milestone unavailable');
+        await navigation
+          .getByRole('button', { name: en.unsavedProject.discard, exact: true })
+          .click();
+      }
       await expect(page).toHaveURL(new RegExp(`/projects/${otherSlug}$`));
       await expect(name).toBeEnabled();
       await name.fill('New project draft');
-      const response = page.waitForResponse(
-        (response) =>
-          response.url().endsWith(`/api/projects/${slug}/milestones`) &&
-          response.request().method() === 'POST',
-      );
-      release();
-      await response;
-      await page.evaluate(
-        async () =>
-          new Promise<void>((resolve) =>
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-          ),
-      );
       await expect(name).toHaveValue('New project draft');
       await expect(name).toBeFocused();
       await expect(form.getByRole('alert')).toHaveCount(0);

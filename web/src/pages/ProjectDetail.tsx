@@ -81,13 +81,20 @@ export function ProjectDetailPageView({
     triggerSelector: '[data-project-actions]',
   });
   const navigation = useUnsavedNavigation({
-    dirty: (model.hasUnsavedText || model.milestoneEdits.dirty) && !model.deletion.confirmed,
+    dirty:
+      (model.hasUnsavedText || model.milestoneEdits.dirty || model.milestoneCreation.dirty) &&
+      !model.deletion.confirmed,
     pending:
       model.projectSaving ||
       model.milestoneEdits.pending ||
+      model.milestoneCreation.pending ||
       model.milestoneRemoval.pending ||
       (model.deletion.pending && !model.deletion.confirmed),
-    error: model.projectSaveError || model.milestoneEdits.error,
+    error:
+      model.projectSaveError ||
+      model.milestoneEdits.error ||
+      model.milestoneCreation.error ||
+      model.milestoneCreation.nameError,
     save: model.handlers.onSaveUnsavedText,
     scope: model.slug,
   });
@@ -222,6 +229,7 @@ export function ProjectDetailPageView({
                             disabled={
                               model.archivePending ||
                               model.milestoneEdits.pending ||
+                              model.milestoneCreation.pending ||
                               model.projectSaving ||
                               model.reminderEditor.saving ||
                               model.deletion.pending ||
@@ -237,6 +245,7 @@ export function ProjectDetailPageView({
                             disabled={
                               model.projectSaving ||
                               model.milestoneEdits.pending ||
+                              model.milestoneCreation.pending ||
                               model.archivePending ||
                               model.reminderEditor.saving ||
                               model.deletion.pending ||
@@ -541,14 +550,23 @@ export function ProjectDetailPageView({
                   ? model.milestoneRemoval.confirmed
                     ? 'milestoneDeletion.refreshing'
                     : 'milestoneDeletion.deleting'
-                  : model.milestoneEdits.pending
-                    ? 'milestoneSave.saving'
-                    : 'projectSave.saving',
+                  : model.milestoneCreation.pending
+                    ? model.milestoneCreation.created
+                      ? 'milestoneCreation.refreshing'
+                      : 'milestoneCreation.creating'
+                    : model.milestoneEdits.pending
+                      ? 'milestoneSave.saving'
+                      : 'projectSave.saving',
             )}
             failureLabel={t(
               model.milestoneEdits.error && !model.projectSaveError
                 ? 'milestoneSave.failed'
-                : 'projectSave.failed',
+                : (model.milestoneCreation.error || model.milestoneCreation.nameError) &&
+                    !model.projectSaveError
+                  ? model.milestoneCreation.created
+                    ? 'milestoneCreation.refreshFailed'
+                    : 'milestoneCreation.failed'
+                  : 'projectSave.failed',
             )}
           />
           <ConfirmActionDialog
