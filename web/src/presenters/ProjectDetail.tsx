@@ -105,6 +105,7 @@ export function useProjectDetailPagePresenter() {
   latestProject.current = project;
   const summaryDraft = useRef({ slug: data.project.slug, value: data.project.summary ?? '' });
   const persistedSummary = useRef({ slug: data.project.slug, value: data.project.summary ?? '' });
+  const persistedDescription = useRef({ slug: data.project.slug, value: data.project.description });
   const projectSaveQueue = useRef<Promise<void>>(Promise.resolve());
   const [projectSavingCount, setProjectSavingCount] = useState(0);
   const [projectSaveError, setProjectSaveError] = useState('');
@@ -260,6 +261,7 @@ export function useProjectDetailPagePresenter() {
     setProject(data.project);
     summaryDraft.current = { slug: data.project.slug, value: data.project.summary ?? '' };
     persistedSummary.current = { slug: data.project.slug, value: data.project.summary ?? '' };
+    persistedDescription.current = { slug: data.project.slug, value: data.project.description };
     setSelected(null);
     setDependencyProjectSlug('');
     setDependencyKind('blocks');
@@ -301,6 +303,8 @@ export function useProjectDetailPagePresenter() {
         if ('summary' in patch && persistedSummary.current.slug === slug) {
           persistedSummary.current = { slug, value: next.summary ?? '' };
         }
+        if ('description' in patch)
+          persistedDescription.current = { slug, value: next.description };
         setProject((current) => {
           const locallyEditable = [
             'name',
@@ -322,7 +326,13 @@ export function useProjectDetailPagePresenter() {
           ] as const;
           const newerEdits = Object.fromEntries(
             locallyEditable
-              .filter((field) => current[field] !== before[field])
+              .filter(
+                (field) =>
+                  current[field] !== before[field] ||
+                  (field === 'description' &&
+                    !('description' in patch) &&
+                    current.description !== persistedDescription.current.value),
+              )
               .map((field) => [field, current[field]]),
           );
           return current.slug === before.slug ? { ...next, ...newerEdits } : current;
@@ -332,7 +342,10 @@ export function useProjectDetailPagePresenter() {
           latest.slug === slug &&
           ((latest.summary !== before.summary && latest.summary !== next.summary) ||
             (latest.description !== before.description && latest.description !== next.description));
-        setProjectSaved(!newerText);
+        const unsavedText =
+          (latest.summary ?? '') !== persistedSummary.current.value ||
+          latest.description !== persistedDescription.current.value;
+        setProjectSaved(!newerText && !unsavedText);
         await router.invalidate().catch(() => undefined);
       });
     projectSaveQueue.current = pending.then(
@@ -356,8 +369,19 @@ export function useProjectDetailPagePresenter() {
   }
 
   async function refreshProject() {
+    const token = saveGeneration.current;
     await router.invalidate();
-    setProject(await api.project(slug));
+    const next = await api.project(slug);
+    if (saveScope.current !== slug || token !== saveGeneration.current) return;
+    const summary = persistedSummary.current.value;
+    const description = persistedDescription.current.value;
+    setProject((current) => ({
+      ...next,
+      summary: (current.summary ?? '') !== summary ? current.summary : next.summary,
+      description: current.description !== description ? current.description : next.description,
+    }));
+    persistedSummary.current = { slug, value: next.summary ?? '' };
+    persistedDescription.current = { slug, value: next.description };
   }
 
   async function createMilestone(e: React.FormEvent<HTMLFormElement>) {
@@ -428,6 +452,9 @@ export function useProjectDetailPagePresenter() {
     projectTemplateName,
     projectTemplateError,
     projectSaving: projectSavingCount > 0,
+    hasUnsavedText:
+      (project.summary ?? '') !== persistedSummary.current.value ||
+      project.description !== persistedDescription.current.value,
     projectSaveError,
     projectSaved: projectSaved && !projectSaveError,
     availableDependencyProjects: data.projects.filter(
@@ -443,6 +470,15 @@ export function useProjectDetailPagePresenter() {
     milestoneDescription,
     milestoneTargetDate,
     handlers: {
+      onSaveUnsavedText: () => {
+        if (pendingProjectSaves.current > 0) return;
+        const patch = { ...failedProjectPatch.current };
+        if ((project.summary ?? '') !== persistedSummary.current.value)
+          patch.summary = project.summary ?? '';
+        if (project.description !== persistedDescription.current.value)
+          patch.description = project.description;
+        return Object.keys(patch).length > 0 ? save(patch) : undefined;
+      },
       onRetryProjectSave: () => {
         if (pendingProjectSaves.current > 0 || !failedProjectPatch.current) return;
         const patch = { ...failedProjectPatch.current };
@@ -562,9 +598,13 @@ export function useProjectDetailPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => {
         setProjectSaved(false);
-        setProject({ ...project, description: e.target.value });
+        const description = e.target.value;
+        setProject((current) => ({ ...current, description }));
       },
-      onDescriptionBlur: () => save({ description: project.description }),
+      onDescriptionBlur: () =>
+        project.description !== persistedDescription.current.value
+          ? save({ description: project.description })
+          : undefined,
       onSummaryChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
@@ -574,7 +614,9 @@ export function useProjectDetailPagePresenter() {
         setProject((current) => ({ ...current, summary: summaryValue }));
       },
       onSummaryBlur: (e: React.FocusEvent<HTMLInputElement>) =>
-        save({ summary: e.currentTarget.value }),
+        e.currentTarget.value !== persistedSummary.current.value
+          ? save({ summary: e.currentTarget.value })
+          : undefined,
       onProjectIconChange: (value: string) => save({ icon: value }),
       onProjectIconColorChange: (value: string) => save({ iconColor: value }),
       onStartDateChange: (

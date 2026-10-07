@@ -17,6 +17,10 @@ import { useTranslation } from 'react-i18next';
 
 import { IssueList } from '../components/IssueList.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
+import {
+  UnsavedChangesDialog,
+  useUnsavedNavigation,
+} from '../design-system/UnsavedChangesDialog.tsx';
 import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { ClipboardFeedback, useClipboardFocus } from '../design-system/ClipboardFeedback.tsx';
 
@@ -67,6 +71,13 @@ export function ProjectDetailPageView({
     feedbackSelector: '[data-project-copy-feedback]',
     menuSelector: '[data-project-copy-menu]',
     fallback: () => document.querySelector<HTMLButtonElement>('[data-project-actions]'),
+  });
+  const navigation = useUnsavedNavigation({
+    dirty: model.hasUnsavedText && !model.deletion.confirmed,
+    pending: model.projectSaving,
+    error: model.projectSaveError,
+    save: model.handlers.onSaveUnsavedText,
+    scope: model.slug,
   });
   switch (model._view) {
     case 0: {
@@ -462,6 +473,16 @@ export function ProjectDetailPageView({
               </Pane>
             </SplitLayout>
           </Box>
+          <UnsavedChangesDialog
+            state={navigation}
+            title={t('unsavedProject.title')}
+            description={t('unsavedProject.description')}
+            stayLabel={t('unsavedProject.stay')}
+            discardLabel={t('unsavedProject.discard')}
+            saveLabel={t('unsavedProject.save')}
+            savingLabel={t('projectSave.saving')}
+            failureLabel={t('projectSave.failed')}
+          />
           <ConfirmActionDialog
             opened={model.deletion.opened}
             title={t(

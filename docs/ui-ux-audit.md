@@ -588,3 +588,30 @@ has a bounded timeout and attaches its error without replacing the original fail
 After both changes, all 38 related document, title-navigation, clipboard, archive
 and deletion cases pass without retries. The earlier focused title-save/history/layout
 and navigation/deletion run passed 19 cases. Full CI remains the broader gate.
+
+## Project summary and description navigation
+
+Project text editing now reuses UnsavedChangesDialog and the navigation blocker used
+by issue titles. The guard covers both summary and description, browser back and
+before-unload. Users can stay, save the current changes and leave, or deliberately
+discard them. Pending queued saves complete before navigation; choosing to stay
+prevents a later completed write from navigating. Returning to persisted values
+removes the guard and avoids redundant blur writes.
+
+Persisted text snapshots follow confirmed writes. Refreshes after milestone or
+relationship changes preserve dirty summary/description values. Successful writes
+to other properties preserve a failed description, and remaining dirty text prevents
+an inaccurate saved announcement. Save-and-leave retries include the current text
+and any other failed property patch.
+
+Twelve new tests cover locale/theme recovery, retaining failed text across a milestone
+refresh and another property save, pending navigation with newer input, staying during
+pending writes, explicit discard, undo, browser back and reload. Two related runs
+(26 and 22 tests, 38 distinct cases) pass without retries. Mobile large-text dialog
+contrast passes; Japanese light/dark retry screenshots were inspected. Mandatory
+web:check and the build pass, with 2395 matching locale keys. CI for the previous
+pushed change e7a2552 completed successfully (37608272149).
+
+Other editing surfaces, milestone drafts, project update drafts, and archive/restore
+failure recovery remain subject to the full-screen audit. This is not full UI/UX or
+WCAG completion evidence.
