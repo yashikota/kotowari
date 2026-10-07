@@ -2584,5 +2584,16 @@
     "copying": "Copying…",
     "failed": "Could not copy to clipboard",
     "retry": "Retry copying"
+  },
+  "milestoneDeletion": {
+    "title": "Delete milestone",
+    "deleting": "Deleting milestone…",
+    "deleted": "Milestone deleted",
+    "failed": "Milestone could not be deleted",
+    "retry": "Retry deleting milestone",
+    "refresh": "Refresh project",
+    "refreshing": "Refreshing project…",
+    "refreshFailed": "Milestone deleted, but project refresh failed",
+    "refreshDescription": "The milestone has been deleted. Refresh the project to finish updating this screen."
   }
 }

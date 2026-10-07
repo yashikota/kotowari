@@ -82,7 +82,7 @@ export function ProjectDetailPageView({
   });
   const navigation = useUnsavedNavigation({
     dirty: (model.hasUnsavedText || model.milestoneEdits.dirty) && !model.deletion.confirmed,
-    pending: model.projectSaving || model.milestoneEdits.pending,
+    pending: model.projectSaving || model.milestoneEdits.pending || model.milestoneRemoval.pending,
     error: model.projectSaveError || model.milestoneEdits.error,
     save: model.handlers.onSaveUnsavedText,
     scope: model.slug,
@@ -114,7 +114,16 @@ export function ProjectDetailPageView({
       } = model;
       return (
         <Box h="100%" style={{ overflow: 'auto' }}>
-          <Box inert={model.deletion.pending || model.deletion.confirmed ? true : undefined}>
+          <Box
+            inert={
+              model.deletion.pending ||
+              model.deletion.confirmed ||
+              model.milestoneRemoval.pending ||
+              model.milestoneRemoval.confirmed
+                ? true
+                : undefined
+            }
+          >
             <SplitLayout single>
               <Pane single>
                 <PageHeader
@@ -475,6 +484,7 @@ export function ProjectDetailPageView({
                     onEditChange={handlers.onMilestoneEditChange}
                     onSaveEdit={handlers.onSaveMilestoneEdit}
                     onRemove={handlers.onRemoveMilestone}
+                    removed={model.milestoneRemoval.removed && !model.milestoneRemoval.opened}
                   />
                   <ProjectDocumentsSection
                     projectSlug={slug}
@@ -518,8 +528,20 @@ export function ProjectDetailPageView({
             stayLabel={t('unsavedProject.stay')}
             discardLabel={t('unsavedProject.discard')}
             saveLabel={t('unsavedProject.save')}
-            savingLabel={t('projectSave.saving')}
-            failureLabel={t('projectSave.failed')}
+            savingLabel={t(
+              model.milestoneRemoval.pending
+                ? model.milestoneRemoval.confirmed
+                  ? 'milestoneDeletion.refreshing'
+                  : 'milestoneDeletion.deleting'
+                : model.milestoneEdits.pending
+                  ? 'milestoneSave.saving'
+                  : 'projectSave.saving',
+            )}
+            failureLabel={t(
+              model.milestoneEdits.error && !model.projectSaveError
+                ? 'milestoneSave.failed'
+                : 'projectSave.failed',
+            )}
           />
           <ConfirmActionDialog
             opened={model.deletion.opened}
@@ -551,6 +573,55 @@ export function ProjectDetailPageView({
             onConfirm={model.deletion.confirm}
             returnFocusTo={() =>
               document.querySelector<HTMLButtonElement>('[data-project-actions]')
+            }
+          />
+          <ConfirmActionDialog
+            opened={model.milestoneRemoval.opened && !navigation.opened}
+            title={t(
+              model.milestoneRemoval.confirmed
+                ? 'milestoneDeletion.deleted'
+                : 'milestoneDeletion.title',
+            )}
+            description={t(
+              model.milestoneRemoval.confirmed
+                ? 'milestoneDeletion.refreshDescription'
+                : 'projectMilestones.removeConfirmation',
+              { name: model.milestoneRemoval.name },
+            )}
+            pending={model.milestoneRemoval.pending}
+            confirmed={model.milestoneRemoval.confirmed}
+            allowConfirmedClose
+            error={model.milestoneRemoval.error}
+            confirmLabel={t(
+              model.milestoneRemoval.confirmed ? 'milestoneDeletion.refresh' : 'ui.delete',
+            )}
+            cancelLabel={t(model.milestoneRemoval.confirmed ? 'ui.close' : 'common.cancel')}
+            savingLabel={t(
+              model.milestoneRemoval.confirmed
+                ? 'milestoneDeletion.refreshing'
+                : 'milestoneDeletion.deleting',
+            )}
+            savedLabel={t('milestoneDeletion.deleted')}
+            failureLabel={t(
+              model.milestoneRemoval.confirmed
+                ? 'milestoneDeletion.refreshFailed'
+                : 'milestoneDeletion.failed',
+            )}
+            retryLabel={t(
+              model.milestoneRemoval.confirmed
+                ? 'milestoneDeletion.refresh'
+                : 'milestoneDeletion.retry',
+            )}
+            onClose={model.milestoneRemoval.close}
+            onConfirm={model.milestoneRemoval.confirm}
+            returnFocusTo={() =>
+              model.milestoneRemoval.focusId === undefined || navigation.opened
+                ? null
+                : (document.querySelector<HTMLButtonElement>(
+                    `[data-milestone-remove="${model.milestoneRemoval.focusId}"]`,
+                  ) ??
+                  document.querySelector<HTMLButtonElement>('[data-milestone-remove]') ??
+                  document.querySelector<HTMLButtonElement>('[data-milestone-create]'))
             }
           />
           <HealthUpdateComposer

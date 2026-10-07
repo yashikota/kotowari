@@ -43,7 +43,7 @@ export function ProjectMilestoneEditor({
   function saveOnBlur(event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
     if (
       event.relatedTarget instanceof Element &&
-      event.relatedTarget.closest('[data-milestone-save]')
+      event.relatedTarget.closest('[data-milestone-save], [data-milestone-confirm]')
     )
       return;
     void onSave();
@@ -76,6 +76,8 @@ export function ProjectMilestoneEditor({
             size="sm"
           />
           <ActionIcon
+            data-milestone-confirm
+            data-milestone-remove={milestone.id}
             type="button"
             variant="subtle"
             color="red"

@@ -728,3 +728,46 @@ net::ERR_NO_BUFFER_SPACE loading useMatch before the first form interaction. Its
 trace was preserved in the local temporary directory; the subsequent complete run
 passed. Prior CI 37646628920 for 806a2f9 completed successfully before this work was
 pushed. New CI is still required for the current changes.
+
+## Inline milestone deletion and modal priority
+
+Milestone removal now uses ConfirmActionDialog and shared useItemRemoval rather
+than browser confirmation. useItemRemoval composes useRetriableRemoval to own the
+selected key, retained failure, confirmed DELETE, refresh retry, scope reset, success
+announcement and focus target. The project presenter supplies the API operation,
+local confirmed removal and scoped refresh rather than owning this lifecycle.
+
+Cancel preserves row drafts and returns focus to the selected row's remove action.
+Pending deletion blocks repeat requests, Escape dismissal and background controls.
+A failed DELETE retains the selected item and offers retry. A confirmed DELETE
+removes the row locally; failed refresh offers refresh-only retry without repeating
+DELETE. ConfirmActionDialog supports optional close after confirmation for inline
+items. Close or Escape after a failed refresh retains confirmed removal and allows
+continued work. Entity deletion dialogs keep their existing behavior by default.
+Focus returns to the next row or the create action after confirmed removal.
+
+The project unsaved-navigation guard includes milestone removal pending state and
+shows the actual pending operation's label. A deterministic browser-back case found
+the unsaved and deletion dialogs overlapping, with the deletion panel intercepting
+clicks on Save and leave. The milestone confirmation is now hidden while navigation
+confirmation owns the screen, with its state retained. Explicit focus restoration
+is suppressed during that handoff; ConfirmActionDialog lets caller-owned focus
+restoration replace Mantine's automatic restoration.
+
+Eleven new cases cover en/ja and both themes at mobile large text, cancellation with
+unsaved row input, held failure/retry, selected-key switching, preserving another
+row draft, assigned issue unlinking, refresh-only retry, closing or escaping failed
+refresh and continuing creation, late refresh success/failure after browser back,
+and blocking save/navigation while DELETE is pending. All eleven pass without
+retries. Japanese light/dark deletion failures were rendered and inspected; dialog
+contrast passes. Mandatory web:check and build pass, with 2425 matching locale keys.
+
+Unsubmitted creation drafts, combinations of other entity deletion and navigation
+dialogs, and the remaining full-screen audit are still incomplete. This is scoped
+progress; the overall UI/UX objective remains Partial.
+
+The final 64-case related browser run passes without retries, covering milestone
+creation/editing/removal, project drafts/archive/deletion, and issue/page/inbox
+removal regressions after the shared confirmation focus change. Prior pushed CI
+37650441991 is still in progress at this audit point; no full CI completion is
+claimed for the current local changes.

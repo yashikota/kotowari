@@ -25,6 +25,7 @@ export function ProjectMilestonesSection({
   onEditChange,
   onSaveEdit,
   onRemove,
+  removed,
 }: {
   milestones: ProjectMilestone[];
   name: string;
@@ -48,6 +49,7 @@ export function ProjectMilestonesSection({
   onEditChange: ReturnType<typeof useMilestoneEdits>['change'];
   onSaveEdit: ReturnType<typeof useMilestoneEdits>['commit'];
   onRemove: (id: number, name: string) => void;
+  removed: boolean;
 }) {
   const { t } = useTranslation();
   const form = useRef<HTMLFormElement>(null);
@@ -114,7 +116,13 @@ export function ProjectMilestonesSection({
               onChange={onDraftTargetDateChange}
               size="sm"
             />
-            <Button className={actionStyles.action} type="submit" variant="default" size="sm">
+            <Button
+              data-milestone-create
+              className={actionStyles.action}
+              type="submit"
+              variant="default"
+              size="sm"
+            >
               {t('projectMilestones.add')}
             </Button>
           </Group>
@@ -138,6 +146,11 @@ export function ProjectMilestonesSection({
           />
         </Box>
       </Box>
+      {removed && (
+        <Text role="status" size="sm" c="dimmed" mt="sm">
+          {t('milestoneDeletion.deleted')}
+        </Text>
+      )}
       {milestones.length === 0 ? (
         <Text size="sm" c="dimmed" mt="sm">
           {t('projectMilestones.empty')}

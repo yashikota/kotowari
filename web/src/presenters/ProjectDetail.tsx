@@ -1,6 +1,7 @@
 import { useReminderEditor } from './useReminderEditor.ts';
 import { useClipboardCopy } from './useClipboardCopy.ts';
 import { useMilestoneEdits } from './useMilestoneEdits.ts';
+import { useItemRemoval } from './useItemRemoval.ts';
 import { useRetriableCreation } from './useRetriableCreation.ts';
 import { useRetriableSave } from './useRetriableSave.ts';
 import { useRetriableRemoval } from './useRetriableRemoval.ts';
@@ -170,6 +171,19 @@ export function useProjectDetailPagePresenter() {
       signals.dispatchEvent(new Event('kotowari:refresh'));
     },
   });
+  const milestoneRemoval = useItemRemoval<number>({
+    scope: slug,
+    remove: (id) => api.deleteMilestone(slug, id),
+    refresh: refreshProject,
+    onRemoved: (id) => {
+      if (saveScope.current !== slug) return;
+      setProject((current) =>
+        current.slug === slug
+          ? { ...current, milestones: current.milestones.filter((item) => item.id !== id) }
+          : current,
+      );
+    },
+  });
   const [archiveSaved, setArchiveSaved] = useState(false);
   useEffect(() => setArchiveSaved(false), [slug]);
   const archive = useRetriableSave<boolean, Project>({
@@ -244,7 +258,8 @@ export function useProjectDetailPagePresenter() {
   }
 
   useKeyboard((event) => {
-    if (deletion.opened || deletion.isPending() || deletion.isRemoved()) return false;
+    if (deletion.opened || deletion.isPending() || deletion.isRemoved() || milestoneRemoval.opened)
+      return false;
     if (projectStatusSequenceSlug.current !== slug) {
       projectStatusSequenceSlug.current = slug;
       projectStatusSequenceSince.current = null;
@@ -560,6 +575,7 @@ export function useProjectDetailPagePresenter() {
       project.description !== persistedDescription.current.value,
     projectSaveError,
     milestoneEdits,
+    milestoneRemoval,
     archivePending: archive.saving,
     archiveError: archive.error,
     archiveSaved,
@@ -587,7 +603,12 @@ export function useProjectDetailPagePresenter() {
     milestoneTargetDate,
     handlers: {
       onSaveUnsavedText: async () => {
-        if (pendingProjectSaves.current > 0 || milestoneEdits.isPending()) return;
+        if (
+          pendingProjectSaves.current > 0 ||
+          milestoneEdits.isPending() ||
+          milestoneRemoval.isPending()
+        )
+          return;
         const patch = { ...failedProjectPatch.current };
         if ((project.summary ?? '') !== persistedSummary.current.value)
           patch.summary = project.summary ?? '';
@@ -760,11 +781,15 @@ export function useProjectDetailPagePresenter() {
       onCreateADR: () => sendIntent('adr.create', { projectSlug: slug }),
       onMilestoneEditChange: milestoneEdits.change,
       onSaveMilestoneEdit: milestoneEdits.commit,
-      onRemoveMilestone: async (id: number, name: string) => {
-        if (milestoneEdits.isPending()) return;
-        if (!window.confirm(i18n.t('projectMilestones.removeConfirmation', { name }))) return;
-        await api.deleteMilestone(slug, id);
-        await refreshProject();
+      onRemoveMilestone: (id: number, name: string) => {
+        if (
+          milestoneEdits.isPending() ||
+          milestoneRemoval.isPending() ||
+          deletion.isPending() ||
+          deletion.isRemoved()
+        )
+          return;
+        milestoneRemoval.request(id, name);
       },
       onMilestoneNameDraftChange: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],

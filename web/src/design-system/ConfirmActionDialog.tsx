@@ -10,6 +10,7 @@ export function ConfirmActionDialog({
   description,
   pending,
   confirmed = false,
+  allowConfirmedClose = false,
   error,
   confirmLabel,
   cancelLabel,
@@ -26,6 +27,7 @@ export function ConfirmActionDialog({
   description: string;
   pending: boolean;
   confirmed?: boolean;
+  allowConfirmedClose?: boolean;
   error: string;
   confirmLabel: string;
   cancelLabel: string;
@@ -53,6 +55,7 @@ export function ConfirmActionDialog({
       title={title}
       centered
       size="sm"
+      returnFocus={!returnFocusTo}
       closeOnEscape={!pending}
       closeOnClickOutside={!pending}
       withCloseButton={!pending}
@@ -80,7 +83,7 @@ export function ConfirmActionDialog({
           />
         </div>
         <Group justify="flex-end" gap="xs">
-          {!confirmed && (
+          {(!confirmed || allowConfirmedClose) && (
             <Button
               className={styles.action}
               ref={cancelRef}
