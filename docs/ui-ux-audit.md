@@ -320,3 +320,25 @@ and check rendered alert contrast. Light/dark screenshots were inspected. Mandat
 formatting/lint/types and production build pass. Remote CI 37593839803 remains live;
 its Check job succeeded and Unit test is still running. Overall completion remains
 unproven, including dedicated automatic-read failure cases and other screens.
+
+## Shared issue and document removal
+
+Issue deletion now uses ConfirmActionDialog rather than a native browser confirm.
+Issue and document removal share useRetriableRemoval: scoped pending guards, local
+failure/retry, confirmed removal retained during list navigation, late result guards,
+and draft cleanup only after successful deletion. Confirmed removal retries navigation
+without repeating DELETE. Document removal's duplicated lifecycle has been removed.
+The dialog accepts an explicit focus return target for menu-launched operations;
+issue cancellation now returns to the options trigger instead of an unmounted item.
+
+Verification: 24 distinct related browser cases pass: four issue deletion language /
+scheme cases, five document deletion cases, issue property recovery, list filter /
+delete, eleven document property cases and two inbox deletion cases. They cover safe
+Cancel focus, 44px dialog actions, cancellation without DELETE, pending Escape,
+retained failed drafts, exact retry, persisted deletion, and actual modal contrast.
+Final Japanese light/dark issue failure screenshots were inspected. Mandatory checks,
+2360 locale keys and production build pass. Direct rejected-navigation UI evidence,
+issue archive recovery and broader screen auditing remain outstanding.
+
+CI 37593839803 for 817c6bc completed successfully, including Check and Unit test.
+The accumulated inbox and removal changes are ready for a new full CI run.

@@ -80,9 +80,12 @@ test('adhoc filter, custom label, and delete', async ({ page, request }) => {
       'true',
     );
 
-    page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Issue options' }).click();
     await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: 'Delete issue' })
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click();
     await expect(page).toHaveURL(/\/issues/);
     await expect(page.getByRole('option', { name: new RegExp(keepTitle) })).toHaveCount(0);
 

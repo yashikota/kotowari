@@ -1,3 +1,4 @@
+import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useRetriableSave } from './useRetriableSave.ts';
 import { useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
 import type * as React from 'react';
@@ -138,57 +139,17 @@ export function usePageDetailPagePresenter() {
   type Properties = Pick<Page, 'title' | 'status' | 'parentId' | 'projectId' | 'date' | 'tags'>;
   const confirmed = useRef(initial);
   const dirty = useRef(false);
-  const [deleteOpened, setDeleteOpened] = useState(false);
-  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
-  const [deleteNavigating, setDeleteNavigating] = useState(false);
-  const [deleteNavigationError, setDeleteNavigationError] = useState('');
-  const deleted = useRef(false);
-  const deleteGeneration = useRef(0);
-  const navigationPending = useRef(false);
-  useEffect(() => {
-    deleteGeneration.current++;
-    deleted.current = false;
-    navigationPending.current = false;
-    setDeleteOpened(false);
-    setDeleteConfirmed(false);
-    setDeleteNavigating(false);
-    setDeleteNavigationError('');
-    return () => {
-      deleteGeneration.current++;
-    };
-  }, [slug]);
-  async function openDocumentList() {
-    if (navigationPending.current) return;
-    const generation = deleteGeneration.current;
-    navigationPending.current = true;
-    setDeleteNavigating(true);
-    setDeleteNavigationError('');
-    try {
-      await navigate({ to: '/pages' });
-    } catch (cause) {
-      if (generation === deleteGeneration.current)
-        setDeleteNavigationError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      if (generation === deleteGeneration.current) {
-        navigationPending.current = false;
-        setDeleteNavigating(false);
-      }
-    }
-  }
-  const removal = useRetriableSave<string>({
+  const removal = useRetriableRemoval({
     scope: slug,
-    save: api.deletePage,
-    onSuccess: () => {
-      deleted.current = true;
-      setDeleteConfirmed(true);
+    remove: api.deletePage,
+    openList: () => navigate({ to: '/pages' }),
+    onRemoved: () => {
       try {
         localStorage.removeItem(`kotowari:draft:${location.origin}:pages/${slug}/body`);
       } catch {
-        // Unavailable local storage must not turn a confirmed deletion into a failure.
+        /* Unavailable storage must not turn a confirmed removal into a failure. */
       }
-      void openDocumentList();
     },
-    onFailure: () => {},
   });
   const [propertiesDirty, setPropertiesDirty] = useState(false);
   const [propertiesSaved, setPropertiesSaved] = useState(false);
@@ -249,7 +210,7 @@ export function usePageDetailPagePresenter() {
     mutation.invalidate();
   }
   function save(changes: Partial<Properties>) {
-    if (mutation.isPending() || removal.isPending() || deleted.current) return;
+    if (mutation.isPending() || removal.isPending() || removal.isRemoved()) return;
     const draft: Properties = {
       ...page,
       tags: tagDraft
@@ -287,10 +248,10 @@ export function usePageDetailPagePresenter() {
     propertiesDirty,
     optionsError,
     optionsLoading,
-    deleteOpened,
-    deleteConfirmed,
-    deletePending: removal.saving || deleteNavigating,
-    deleteError: deleteNavigationError || removal.error,
+    deleteOpened: removal.opened,
+    deleteConfirmed: removal.confirmed,
+    deletePending: removal.pending,
+    deleteError: removal.error,
     handlers: {
       onRetryProperties: mutation.retry,
       onSaveProperties: () => save({}),
@@ -299,22 +260,16 @@ export function usePageDetailPagePresenter() {
         e: Parameters<NonNullable<React.ComponentProps<'select'>['onChange']>>[0],
       ) => save({ status: e.target.value }),
       onClick1: () => {
-        if (!mutation.isPending() && !removal.isPending() && !deleted.current)
-          setDeleteOpened(true);
+        if (!mutation.isPending()) removal.request();
       },
-      onCloseDelete: () => {
-        if (removal.isPending() || navigationPending.current) return;
-        if (deleted.current) return openDocumentList();
-        setDeleteOpened(false);
-      },
+      onCloseDelete: removal.close,
       onConfirmDelete: () => {
-        if (mutation.isPending()) return;
-        return deleted.current ? openDocumentList() : removal.write(slug);
+        if (!mutation.isPending()) return removal.confirm();
       },
       Page_title_onChange2: (
         e: Parameters<NonNullable<React.ComponentProps<'textarea'>['onChange']>>[0],
       ) => {
-        if (mutation.isPending() || removal.isPending() || deleted.current) return;
+        if (mutation.isPending() || removal.isPending() || removal.isRemoved()) return;
         markDirty();
         setPage((current) => ({ ...current, title: e.target.value }));
       },
@@ -337,7 +292,7 @@ export function usePageDetailPagePresenter() {
       Tags_onChange7: (
         e: Parameters<NonNullable<React.ComponentProps<'input'>['onChange']>>[0],
       ) => {
-        if (mutation.isPending() || removal.isPending() || deleted.current) return;
+        if (mutation.isPending() || removal.isPending() || removal.isRemoved()) return;
         markDirty();
         setTagDraft(e.target.value);
       },

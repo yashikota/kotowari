@@ -19,6 +19,7 @@ export function ConfirmActionDialog({
   retryLabel,
   onClose,
   onConfirm,
+  returnFocusTo,
 }: {
   opened: boolean;
   title: string;
@@ -34,6 +35,7 @@ export function ConfirmActionDialog({
   retryLabel: string;
   onClose: () => unknown;
   onConfirm: () => unknown;
+  returnFocusTo?: () => HTMLElement | null;
 }) {
   const feedbackRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
@@ -54,6 +56,7 @@ export function ConfirmActionDialog({
       closeOnEscape={!pending}
       closeOnClickOutside={!pending}
       withCloseButton={!pending}
+      onExitTransitionEnd={() => returnFocusTo?.()?.focus()}
     >
       <Stack gap="md">
         <Text size="sm" style={{ overflowWrap: 'anywhere' }}>

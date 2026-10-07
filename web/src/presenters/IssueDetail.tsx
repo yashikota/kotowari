@@ -17,6 +17,7 @@ import { usePersonalPreferences } from '../preferences.ts';
 import { useIssueWorkflow } from '../workflow.tsx';
 import { autoAssignOnStartedTransition } from '../application/issue-assignment.ts';
 import { issueSubscriptions } from '../issue-subscriptions.ts';
+import { useRetriableRemoval } from './useRetriableRemoval.ts';
 import { useIssueDetailData } from './useIssueDetailData.ts';
 import { useIssueDetailDueDate } from './useIssueDetailDueDate.ts';
 import { useIssueDetailConversions } from './useIssueDetailConversions.ts';
@@ -185,6 +186,19 @@ export function useIssueDetailPresenter({
   });
   const { data: templateApplyData, handlers: templateApplyHandlers } = templateApplyState;
 
+  const deletion = useRetriableRemoval({
+    scope: identifier,
+    remove: api.deleteIssue,
+    openList: () => navigate({ to: '/issues', search: {} }),
+    onRemoved: () => {
+      try {
+        localStorage.removeItem(`kotowari:draft:${location.origin}:issues/${identifier}/body`);
+      } catch {
+        /* A confirmed removal remains successful if draft storage is unavailable. */
+      }
+    },
+  });
+
   if (error) {
     return { _view: 0 as const, error, handlers: {} };
   }
@@ -198,13 +212,10 @@ export function useIssueDetailPresenter({
       ? `/issues/${encodeURIComponent(identifier)}`
       : new URL(`/issues/${encodeURIComponent(identifier)}`, window.location.origin).href;
   const codingToolURL = buildCodingToolURL(issue, codingToolPreferences, issueURL);
-  async function remove() {
-    if (!window.confirm(i18n.t('issueActions.deleteConfirmation', { identifier }))) {
-      return;
-    }
-    await api.deleteIssue(identifier);
-    await router.invalidate();
-    await navigate({ to: '/issues', search: {} });
+  function remove() {
+    if (propertiesData.propertySaveState === 'saving') return;
+    setIssueOptionsOpen(false);
+    deletion.request();
   }
 
   async function toggleArchive() {
@@ -239,6 +250,7 @@ export function useIssueDetailPresenter({
   }
   return {
     _view: 2 as const,
+    deletion,
     identifier,
     navigationPosition: navigationIndex >= 0 ? navigationIndex + 1 : 1,
     navigationTotal: navigationIds.length,

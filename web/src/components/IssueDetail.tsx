@@ -1,3 +1,4 @@
+import { ConfirmActionDialog } from '../design-system/ConfirmActionDialog.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { DocumentTitle } from '../design-system/DocumentTitle.tsx';
 import { ActionIcon, Alert, Box, Group, Stack, Text } from '@mantine/core';
@@ -223,6 +224,40 @@ export function IssueDetailView({
               </Box>
             </Box>
           </Box>
+          <ConfirmActionDialog
+            opened={model.deletion.opened}
+            title={t(model.deletion.confirmed ? 'issueDeletion.deleted' : 'issueDeletion.title')}
+            description={t(
+              model.deletion.confirmed
+                ? 'issueDeletion.deletedDescription'
+                : 'issueActions.deleteConfirmation',
+              { identifier: model.identifier },
+            )}
+            pending={model.deletion.pending}
+            confirmed={model.deletion.confirmed}
+            error={model.deletion.error}
+            confirmLabel={t(
+              model.deletion.confirmed ? 'issueDeletion.openList' : 'issueActions.delete',
+            )}
+            cancelLabel={t('common.cancel')}
+            savingLabel={t(
+              model.deletion.confirmed ? 'issueDeletion.opening' : 'issueDeletion.deleting',
+            )}
+            savedLabel={t('issueDeletion.deleted')}
+            failureLabel={t(
+              model.deletion.confirmed ? 'issueDeletion.openFailed' : 'issueDeletion.failed',
+            )}
+            retryLabel={t(
+              model.deletion.confirmed ? 'issueDeletion.openList' : 'issueDeletion.retry',
+            )}
+            returnFocusTo={() =>
+              Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+                (button) => button.getAttribute('aria-label') === t('issueActions.button'),
+              ) ?? null
+            }
+            onClose={model.deletion.close}
+            onConfirm={model.deletion.confirm}
+          />
           <IssueDetailDialogs model={model} />
           <IssueApplyTemplateDialog model={model} />
         </Box>
