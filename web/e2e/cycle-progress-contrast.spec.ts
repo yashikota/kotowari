@@ -73,6 +73,9 @@ for (const scheme of ['light', 'dark']) {
         ).toBeGreaterThanOrEqual(3);
       expect(await contrastFailures(page, '#cycle-progress-content')).toEqual([]);
     }
+    await page.locator('#cycle-progress-content [role="img"]').first().hover();
+    await expect(page.locator('.mantine-Tooltip-tooltip')).toBeVisible();
+    expect(await contrastFailures(page, '.mantine-Tooltip-tooltip')).toEqual([]);
     await page.screenshot({ path: testInfo.outputPath('cycle-label-progress.png') });
   });
 }
