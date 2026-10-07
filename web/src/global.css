@@ -34,7 +34,9 @@ html[data-underline-links='true'] :is(p, li, blockquote, .mantine-Text-root, .Pr
 .mantine-Checkbox-input,
 .mantine-Radio-radio,
 .mantine-Switch-track,
-.mantine-Button-root[data-variant='default'] {
+.mantine-Button-root[data-variant='default'],
+.mantine-Button-root[data-variant='filled'],
+.mantine-ActionIcon-root[data-variant='filled'] {
   border-color: var(--kotowari-control-border);
 }
 
