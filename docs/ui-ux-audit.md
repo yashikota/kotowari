@@ -1066,3 +1066,14 @@ running; Browser (1/4) and (2/4) fail on the previous commit. A fresh remote run
 still required to establish that this change resolves those failures. Root-shell
 render exceptions, rapid repeated navigation and wider per-route recovery remain
 verification gaps. Overall UI/UX remains Partial.
+
+
+## Scope view collection regression to its intended list
+
+The complete older Browser (4/4) report contains one unexpected case: workspace
+view collection navigation matches both the sidebar and main-content link, on
+all three attempts (155 expected / 1 unexpected). This is a locator ambiguity,
+separate from the confirmed destination input reset race. Collection navigation
+and collection layout assertions now explicitly select the main landmark.
+All fourteen related view cases pass without retries, and mandatory web:check
+passes. Demo 37686953707 succeeds; CI 37686953775 Browser (4/4) is still running.

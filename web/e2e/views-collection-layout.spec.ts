@@ -35,7 +35,7 @@ for (const scheme of ['light', 'dark']) {
     );
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/views');
-    const collection = page.getByRole('navigation', { name: 'Saved views' });
+    const collection = page.getByRole('main').getByRole('navigation', { name: 'Saved views' });
     const link = collection.getByRole('link').filter({ hasText: name });
     await link.focus();
     expect(

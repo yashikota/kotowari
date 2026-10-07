@@ -31,7 +31,11 @@ test('workspace views page lists saved views and opens them', async ({ page }) =
   await createIssueView(page, name);
   await expect(page).toHaveURL(new RegExp(`/views/${name.toLowerCase().replaceAll(' ', '-')}$`));
   await page.goto('/views');
-  await page.getByRole('navigation', { name: 'Saved views' }).getByRole('link', { name }).click();
+  await page
+    .getByRole('main')
+    .getByRole('navigation', { name: 'Saved views' })
+    .getByRole('link', { name })
+    .click();
   await expect(page).toHaveURL(new RegExp(`/views/${name.toLowerCase().replaceAll(' ', '-')}$`));
   await expect(page.getByRole('heading', { name })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open details' })).toBeVisible();
