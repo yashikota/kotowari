@@ -13,7 +13,10 @@ export function useIssueDetailData(identifier: string, onLoadError: LoadErrorHan
     issueRevision.current++;
     setIssue(nextIssue);
   }, []);
-  const issue = useIssueProjection(storedIssue ? [storedIssue] : [])[0] ?? null;
+  // A reused detail presenter must never expose the previous issue as the new route.
+  const scopedIssue =
+    storedIssue?.identifier === identifier ? storedIssue : cachedIssue(identifier);
+  const issue = useIssueProjection(scopedIssue ? [scopedIssue] : [])[0] ?? null;
   const generation = useRef(0);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);

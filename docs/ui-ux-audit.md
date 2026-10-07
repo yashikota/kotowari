@@ -364,3 +364,20 @@ The workflow case preserving user-moved focus still passes. Final light/dark arc
 failure screenshots were inspected. Mandatory checks, 2365 locale keys and production
 build pass. Current pushed CI 37596042116 remains live. Late scope responses, unsaved
 body interaction and other task actions still require direct evidence.
+
+## Issue navigation context and unsaved archive drafts
+
+A delayed next-issue read reproduced a stale editable title: the URL had changed but
+the reused detail presenter still exposed the preceding issue. useIssueDetailData
+now projects only an issue matching the current identifier, using that identifier's
+cached issue while loading when available. The old issue is never exposed as the
+new route's editable data.
+
+Verification: 15 browser cases pass, including the new held-read regression, late
+archive success/failure after next-issue navigation, failed title plus unsaved body
+retention through archive/restoration in both schemes, existing archive/deletion/
+property recovery, and originating list-order navigation. The held-read case failed
+before the change and passes after it. Mandatory checks and production build pass.
+The previous archive focus/contrast changes remain locally committed pending live
+CI 37596042116. Further late-response interleavings and remaining screens still need
+completion evidence.
