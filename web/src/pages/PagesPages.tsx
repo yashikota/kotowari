@@ -155,10 +155,10 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                       params={{ slug: p.slug }}
                       className={styles.documentLink}
                     >
-                      <Group className={styles.documentRow} pl={12 + Math.min(depth, 4) * 16}>
-                        <Text ff="monospace" size="xs" c="dimmed" w={72} style={{ flexShrink: 0 }}>
-                          {p.status}
-                        </Text>
+                      <Group
+                        className={`${styles.documentRow} ${styles.pageRow}`}
+                        pl={12 + Math.min(depth, 4) * 16}
+                      >
                         <Text
                           lineClamp={2}
                           title={p.title}
@@ -167,6 +167,14 @@ export function PagesPageView({ model }: { model: ReturnType<typeof usePagesPage
                           {p.title}
                         </Text>
                         <Group className={styles.metadata} gap="xs" wrap="wrap">
+                          <Text
+                            className={styles.documentStatus}
+                            size="sm"
+                            c="dimmed"
+                            data-document-status
+                          >
+                            {adrStatusLabel(p.status)}
+                          </Text>
                           <Text className={styles.slug} ff="monospace" size="xs" c="dimmed">
                             {p.slug}
                           </Text>

@@ -1,4 +1,4 @@
-import type { ADRStatus, IssueStatus, IssueType } from '../types.ts';
+import type { IssueStatus, IssueType } from '../types.ts';
 import i18n from './index.ts';
 
 export function issueStatusLabel(status: IssueStatus | 'duplicate'): string {
@@ -13,6 +13,6 @@ export function issueTypeLabel(type: IssueType): string {
   return i18n.t(`issueType.${type}`, { defaultValue: type });
 }
 
-export function adrStatusLabel(status: ADRStatus): string {
+export function adrStatusLabel(status: string): string {
   return i18n.t(`adrStatus.${status}`, { defaultValue: status });
 }

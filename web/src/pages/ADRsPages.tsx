@@ -88,7 +88,12 @@ export function ADRsPageView({ model }: { model: ReturnType<typeof useADRsPagePr
                         {a.title}
                       </Text>
                       <Group className={styles.metadata} gap="xs" wrap="wrap">
-                        <Text size="xs" c="dimmed">
+                        <Text
+                          className={styles.documentStatus}
+                          size="sm"
+                          c="dimmed"
+                          data-document-status
+                        >
                           {adrStatusLabel(a.status)}
                         </Text>
                       </Group>

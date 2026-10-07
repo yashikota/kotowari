@@ -1216,3 +1216,23 @@ All 25 related reminder, milestone creation and archive cases pass with zero
 retries; mandatory web:check and production build pass. Remote CI 37695665905
 for d3e7090 is still running, with Unit test successful at the latest observation.
 The broader screen/state inventory remains Partial.
+
+## Readable document list status and title hierarchy
+
+Page list status labels now use the same translated labels as page detail and
+ADR list/detail, with a fallback for unknown legacy values. Status text uses the
+shared list-row class and the normal small text size. Page rows put status beside
+the slug in metadata; on narrow screens this sits below the title, giving the
+title the full available width. ADR rows retain their identifier column and use
+the same status typography. Render inspection rejected the intermediate fixed
+72px status column because Superseded split into a single trailing character.
+
+Four new browser cases cover English/Japanese and light/dark at 360px with large
+text: all four supported page statuses, both document lists, text contrast,
+metadata bounds, title/status separation and horizontal overflow. Final screenshots
+of both English lists in both themes were inspected. All 26 document list/editor/
+property cases pass without retries; mandatory web:check and production build pass.
+The initial new contrast test used a multi-element scope and failed strict locator
+matching; it now measures the complete main surface. A further 17 ADR list/detail/
+property cases pass, including mobile titles, keyboard focus and cached unlink
+freshness. Overall UI/UX remains Partial.
