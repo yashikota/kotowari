@@ -2199,6 +2199,12 @@
     "save": "Save",
     "saveFailed": "save failed"
   },
+  "navigationStatus": {
+    "loading": "Loading the next page…",
+    "failed": "This page could not be loaded",
+    "retry": "Retry loading page",
+    "retrying": "Retrying page loading…"
+  },
   "projectDate": {
     "change": "Change {{field}}",
     "set": "Set {{field}}",

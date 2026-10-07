@@ -4,9 +4,13 @@ import {
   createRouter,
   lazyRouteComponent,
   redirect,
+  useRouterState,
 } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Alert, Stack, Text } from '@mantine/core';
+import { Alert, Button, Stack, Text } from '@mantine/core';
+import { useRouteRecovery, useRouteRecoveryContext } from './design-system/RouteRecovery.tsx';
+import { useActionFocusReturn, useFocusWhen } from './focus.ts';
+import actionStyles from './design-system/ActionControl.module.css';
 import { Shell } from './components/Shell.tsx';
 import { api } from './api.ts';
 import { issuesQuery, parseIssueSearch, searchToFilter } from './issue-search.ts';
@@ -48,15 +52,52 @@ function ErrorPage({ error }: { error: Error }) {
 }
 
 function ErrorBinding({ error }: { error: Error }) {
-  const { t } = useTranslation();
-  return <ErrorView title={t('common.error')} message={error.message} />;
+  const recovery = useRouteRecoveryContext();
+  return recovery ? (
+    <ErrorView error={error} recovery={recovery} />
+  ) : (
+    <StandaloneErrorView error={error} />
+  );
 }
 
-function ErrorView({ title, message }: { title: string; message: string }) {
+function StandaloneErrorView({ error }: { error: Error }) {
+  const recovery = useRouteRecovery();
+  return <ErrorView error={error} recovery={recovery} />;
+}
+
+function ErrorView({
+  error,
+  recovery,
+}: {
+  error: Error;
+  recovery: ReturnType<typeof useRouteRecovery>;
+}) {
+  const { t } = useTranslation();
+  const scope = useRouterState({ select: (state) => state.location.pathname });
+  const retryRef = useFocusWhen<HTMLButtonElement>(!recovery.saving, [error]);
+  const run = useActionFocusReturn(recovery.saving, () => retryRef.current, undefined, scope);
   return (
-    <Stack p="md">
-      <Alert color="red" title={title}>
-        {message}
+    <Stack p="md" aria-busy={recovery.saving}>
+      <Alert color="red" role="alert" title={t('navigationStatus.failed')}>
+        <Stack gap="sm">
+          <Text size="sm" style={{ overflowWrap: 'anywhere' }}>
+            {recovery.error || error.message}
+          </Text>
+          {recovery.saving ? (
+            <Text role="status" size="sm">
+              {t('navigationStatus.retrying')}
+            </Text>
+          ) : null}
+          <Button
+            ref={retryRef}
+            className={actionStyles.action}
+            variant="default"
+            disabled={recovery.saving}
+            onClick={() => run(() => recovery.write())}
+          >
+            {t('navigationStatus.retry')}
+          </Button>
+        </Stack>
       </Alert>
     </Stack>
   );
@@ -535,6 +576,7 @@ export const router = createRouter({
   routeTree,
   basepath: import.meta.env.BASE_URL,
   defaultPreload: 'intent',
+  defaultErrorComponent: ErrorPage,
   // QueryCache owns freshness and mutation invalidation; route matches must re-read it.
   defaultStaleTime: 0,
   defaultPendingMs: 150,

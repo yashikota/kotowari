@@ -2,6 +2,27 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import { EventScope, Mediator } from './mediator.ts';
 
 describe('Root mediator', () => {
+  it('blocks descendant actions and shortcuts while a parent scope is disabled', () => {
+    const mediator = new Mediator();
+    const page = new EventScope('page', mediator.root);
+    const field = new EventScope('field', page);
+    const save = vi.fn();
+    const shortcut = vi.fn();
+    field.handlers.set('save', save);
+    field.handlers.set('keyboard', shortcut);
+    page.active = false;
+    expect(field.enabled).toBe(false);
+    mediator.dispatch(field, 'save', 'old draft');
+    mediator.dispatch(field, 'keyboard', {});
+    mediator.keyboard(field, {} as KeyboardEvent);
+    expect(save).not.toHaveBeenCalled();
+    expect(shortcut).not.toHaveBeenCalled();
+    expect(mediator.root.enabled).toBe(true);
+    page.active = true;
+    expect(field.enabled).toBe(true);
+    mediator.dispatch(field, 'save', 'new draft');
+    expect(save).toHaveBeenCalledWith('new draft');
+  });
   it('bubbles unhandled intents to the nearest responsible parent', () => {
     const mediator = new Mediator();
     const page = new EventScope('page', mediator.root);

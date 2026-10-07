@@ -2188,6 +2188,12 @@
     "save": "保存",
     "saveFailed": "保存に失敗しました"
   },
+  "navigationStatus": {
+    "loading": "次の画面を読み込んでいます…",
+    "failed": "画面を読み込めませんでした",
+    "retry": "画面の読み込みを再試行",
+    "retrying": "画面の読み込みを再試行しています…"
+  },
   "projectDate": {
     "change": "{{field}}を変更",
     "set": "{{field}}を設定",

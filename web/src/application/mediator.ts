@@ -24,8 +24,12 @@ export class EventScope {
     this.parent = parent;
   }
 
+  get enabled(): boolean {
+    return this.active && (this.parent?.enabled ?? true);
+  }
+
   resolve(type: string): { owner: EventScope; handler: Handler } | undefined {
-    if (!this.active) return undefined;
+    if (!this.enabled) return undefined;
     const handler = this.handlers.get(type);
     return handler ? { owner: this, handler } : this.parent?.resolve(type);
   }
@@ -150,8 +154,9 @@ export class Mediator {
   }
 
   keyboard(source: EventScope, event: KeyboardEvent) {
+    if (!source.enabled) return false;
     for (let scope: EventScope | null = source; scope; scope = scope.parent) {
-      if (scope.active && scope.handlers.get('keyboard')?.(event) === true) return true;
+      if (scope.enabled && scope.handlers.get('keyboard')?.(event) === true) return true;
     }
     return false;
   }

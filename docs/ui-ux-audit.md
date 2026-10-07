@@ -1029,3 +1029,40 @@ and links as well as inputs. Existing form/error, cycle and hidden-group contras
 cases passed in the preceding combined run. Mandatory web:check and build pass.
 These results cover the exercised states; whole-product WCAG conformance and
 overall UI/UX completion are not claimed.
+
+
+## Route transition protection and loading recovery
+
+The complete reports for CI 37684233236 prove that destination milestone and
+dependency inputs were cleared after users/tests entered them before the route
+loader settled. A milestone trace filled the new draft at 191424.925 ms while
+the destination activity read finished around 191431.702 ms. The failures recur
+on all three remote attempts. They are a production interaction race, not a test
+readiness delay to hide with a longer wait.
+
+A shared RouteContent boundary now makes the previous page inert immediately
+while a different pathname is loading. Readable loading feedback remains sticky,
+without lowering text contrast. Presenter scopes inherit disabled state so local
+actions and keyboard shortcuts cannot mutate the old entity during this window.
+The existing viewport height is retained and focus returns to loaded content only
+if focus was lost to the document body, without stealing focus from controls or
+overlays. A held destination activity read reproduced missing protection before
+the fix and passes afterwards in both rendered schemes.
+
+Default child-route errors now preserve the shell and offer a 44px retry action,
+pending feedback and keyboard focus. Retry state belongs to the stable route
+boundary, surviving replacement of failed matches. Direct verification exposed
+that storing it inside the error component re-enabled the button while a retry
+read was still pending; the shared provider fixes that and prevents duplicate
+reads. Japanese/mobile/large-text failure, repeated failure and successful retry
+cases pass in both schemes, including focus after recovery and rendered contrast.
+
+The final combined 60-case browser run passes without retries, covering the new
+four route cases, the sixteen dependency/milestone feedback cases and existing
+layout, input preservation and keyboard regression. Nine mediator unit cases,
+mandatory web:check and build pass with 2474 matching locale keys. Both loading
+and error screenshots were inspected. CI 37686953775 still has Browser (4/4)
+running; Browser (1/4) and (2/4) fail on the previous commit. A fresh remote run is
+still required to establish that this change resolves those failures. Root-shell
+render exceptions, rapid repeated navigation and wider per-route recovery remain
+verification gaps. Overall UI/UX remains Partial.

@@ -381,7 +381,7 @@ export function Root({
               event.target.closest('[data-presenter]')?.getAttribute('data-presenter') ?? '',
             )
           : undefined;
-      const activeScopes = [...mediator.scopes.values()].filter((candidate) => candidate.active);
+      const activeScopes = [...mediator.scopes.values()].filter((candidate) => candidate.enabled);
       if (dialog) {
         // A modal consumes all unhandled keys; never send them to a background list.
         if (!(event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey))) return;

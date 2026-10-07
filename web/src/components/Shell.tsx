@@ -27,6 +27,7 @@ import { IssueComposerOverlays } from './IssueComposerOverlays.tsx';
 import { SaveFeedback } from '../design-system/SaveFeedback.tsx';
 import { ShellSidebar } from './ShellSidebar.tsx';
 import styles from './Shell.module.css';
+import { RouteContent } from '../design-system/RouteContent.tsx';
 
 import { PresenterScope, useActions } from '../application/Root.tsx';
 import { useShellPresenter } from '../presenters/Shell.tsx';
@@ -277,7 +278,9 @@ export function ShellView({
                       {error}
                     </Alert>
                   ) : null}
-                  <Outlet />
+                  <RouteContent>
+                    <Outlet />
+                  </RouteContent>
                 </Box>
               </Box>
             </AppShell.Main>
